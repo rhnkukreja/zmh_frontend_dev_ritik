@@ -1,7 +1,7 @@
 import "@/assets/css/vendors/toastify.css";
+import Toastify, { Options } from "toastify-js";
 import { useRef, createRef, useEffect } from "react";
 import { init, reInit } from "./notification";
-import Toastify, { Options } from "toastify-js";
 import clsx from "clsx";
 
 export interface NotificationElement extends HTMLDivElement {

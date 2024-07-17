@@ -1,14 +1,49 @@
+import React from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+
+import { RootState, AppDispatch } from "../../stores/store";
+import { login } from "../../stores/authenticationSlice";
 import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
-import Alert from "@/components/Base/Alert";
-import Lucide from "@/components/Base/Lucide";
-import clsx from "clsx";
-import _ from "lodash";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
 
-function Main() {
+import clsx from "clsx";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { Link } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import Lucide from "@/components/Base/Lucide";
+import { toast } from "react-toastify";
+
+interface LoginFormInputs {
+  email: string;
+  password: string;
+}
+
+const Main: React.FC = () => {
+  const dispatch: AppDispatch = useAppDispatch();
+  const { loading } = useAppSelector((state: RootState) => state.authentiction);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormInputs>();
+
+  const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
+    try {
+      
+      const response = await dispatch(
+        login({
+          username: data.email,
+          password: data.password,
+        })
+      ).unwrap();
+
+      console.log("response: ", response);
+    } catch (error) {}
+  };
+
   return (
     <>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
@@ -32,84 +67,71 @@ function Main() {
               <div className="text-2xl font-medium">Sign In</div>
               <div className="mt-2.5 text-slate-600">
                 Don't have an account?{" "}
-                <a className="font-medium text-primary" href="">
+                <Link className="font-medium text-primary" to="/register">
                   Sign Up
-                </a>
+                </Link>
               </div>
-              <Alert
-                variant="outline-primary"
-                className="flex items-center px-4 py-3 my-7 bg-primary/5 border-primary/20 rounded-[0.6rem] leading-[1.7]"
-              >
-                {({ dismiss }) => (
-                  <>
-                    <div className="">
-                      <Lucide
-                        icon="Lightbulb"
-                        className="stroke-[0.8] w-7 h-7 mr-2 fill-primary/10"
-                      />
-                    </div>
-                    <div className="ml-1 mr-8">
-                      Welcome to <span className="font-medium">Tailwise</span>{" "}
-                      demo! Simply click{" "}
-                      <span className="font-medium">Sign In</span> to explore
-                      and access our documentation.
-                    </div>
-                    <Alert.DismissButton
-                      type="button"
-                      className="btn-close text-primary"
-                      onClick={dismiss}
-                      aria-label="Close"
-                    >
-                      <Lucide icon="X" className="w-5 h-5" />
-                    </Alert.DismissButton>
-                  </>
-                )}
-              </Alert>
+
               <div className="mt-6">
-                <FormLabel>Email*</FormLabel>
-                <FormInput
-                  type="text"
-                  className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder={users.fakeUsers()[0].email}
-                />
-                <FormLabel className="mt-4">Password*</FormLabel>
-                <FormInput
-                  type="password"
-                  className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder="************"
-                />
-                <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
-                  <div className="flex items-center mr-auto">
-                    <FormCheck.Input
-                      id="remember-me"
-                      type="checkbox"
-                      className="mr-2.5 border"
-                    />
-                    <label
-                      className="cursor-pointer select-none"
-                      htmlFor="remember-me"
-                    >
-                      Remember me
-                    </label>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <FormLabel>Email*</FormLabel>
+                  <FormInput
+                    type="text"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder={users.fakeUsers()[0].email}
+                    {...register("email", { required: "Email is required" })}
+                  />
+                  {errors.email && (
+                    <p className="text-red-500">{errors.email.message}</p>
+                  )}
+                  <FormLabel className="mt-4">Password*</FormLabel>
+                  <FormInput
+                    type="password"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="************"
+                    {...register("password", {
+                      required: "Password is required",
+                    })}
+                  />
+                  {errors.password && (
+                    <p className="text-red-500">{errors.password.message}</p>
+                  )}
+                  <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
+                    <div className="flex items-center mr-auto">
+                      <FormCheck.Input
+                        id="remember-me"
+                        type="checkbox"
+                        className="mr-2.5 border"
+                      />
+                      <label
+                        className="cursor-pointer select-none"
+                        htmlFor="remember-me"
+                      >
+                        Remember me
+                      </label>
+                    </div>
+                    <a href="">Forgot Password?</a>
                   </div>
-                  <a href="">Forgot Password?</a>
-                </div>
-                <div className="mt-5 text-center xl:mt-8 xl:text-left">
-                  <Button
-                    variant="primary"
-                    rounded
-                    className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
-                  >
-                    Sign In
-                  </Button>
-                  <Button
-                    variant="outline-secondary"
-                    rounded
-                    className="bg-white/70 w-full py-3.5 mt-3"
-                  >
-                    Sign Up
-                  </Button>
-                </div>
+                  <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                    <Button
+                      variant="primary"
+                      rounded
+                      className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {loading && (
+                        <Lucide
+                          icon="Loader"
+                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
+                            loading ? "animate-spin" : ""
+                          }`}
+                        />
+                      )}
+                      Log In
+                    </Button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
@@ -189,6 +211,6 @@ function Main() {
       <ThemeSwitcher />
     </>
   );
-}
+};
 
 export default Main;

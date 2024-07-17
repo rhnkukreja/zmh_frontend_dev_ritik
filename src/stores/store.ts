@@ -5,6 +5,7 @@ import sideMenuReducer from "./sideMenuSlice";
 import themeReducer from "./themeSlice";
 import compactMenuReducer from "./compactMenuSlice";
 import pageLoaderReducer from "./pageLoaderSlice";
+import authenticationReducer from "./authenticationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     theme: themeReducer,
     compactMenu: compactMenuReducer,
     pageLoader: pageLoaderReducer,
+    authentiction : authenticationReducer
   },
 });
 

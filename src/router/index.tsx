@@ -59,7 +59,8 @@ import Chart from "../pages/Chart";
 import Slider from "../pages/Slider";
 import ImageZoom from "../pages/ImageZoom";
 import LandingPage from "../pages/LandingPage";
-import Investor_Profiles from "../pages/Investor_Profiles"
+import InvestorProfiles from "../pages/InvestorProfiles"
+import EngagementQuestion from "../pages/EngagementQuestion"
 
 import Layout from "../themes";
 
@@ -299,7 +300,11 @@ function Router() {
         },
         {
           path: "investor-profile",
-          element: <Investor_Profiles />,
+          element: <InvestorProfiles />,
+        },
+        {
+          path: "engagement-question",
+          element: <EngagementQuestion />,
         },
       ],
     },

@@ -5,8 +5,48 @@ import Button from "@/components/Base/Button";
 import clsx from "clsx";
 import _ from "lodash";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { Link } from "react-router-dom";
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
+
+import { AppDispatch, RootState } from "@/stores/store";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { signUp } from "@/stores/authenticationSlice";
+import Lucide from "@/components/Base/Lucide";
+
+interface FormInputs {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  passwordConfirmation: string;
+  agreeToPolicy: boolean;
+}
 
 function Main() {
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormInputs>();
+  const dispatch: AppDispatch = useAppDispatch();
+  const { loading } = useAppSelector((state: RootState) => state.authentiction);
+
+  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
+    console.log("data: ", data);
+
+    const response = await dispatch(
+      signUp({
+        username: data.firstName + data.lastName,
+        email: data.email,
+        password: data.password,
+        user_type: data.agreeToPolicy === true ? "Employer" : "Candidate",
+      })
+    ).unwrap();
+
+    console.log({ response });
+  };
+
   return (
     <>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
@@ -30,87 +70,141 @@ function Main() {
               <div className="text-2xl font-medium">Sign Up</div>
               <div className="mt-2.5 text-slate-600">
                 Already have an account?{" "}
-                <a className="font-medium text-primary" href="">
+                <Link className="font-medium text-primary" to="/login">
                   Sign In
-                </a>
+                </Link>
               </div>
-              <div className="mt-6">
-                <FormLabel>First Name*</FormLabel>
-                <FormInput
-                  type="text"
-                  className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder={users.fakeUsers()[0].name.split(" ")[0]}
-                />
-                <FormLabel className="mt-5">Last Name*</FormLabel>
-                <FormInput
-                  type="text"
-                  className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder={users.fakeUsers()[0].name.split(" ")[1]}
-                />
-                <FormLabel className="mt-5">Email*</FormLabel>
-                <FormInput
-                  type="text"
-                  className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder={users.fakeUsers()[0].email}
-                />
-                <FormLabel className="mt-5">Password*</FormLabel>
-                <FormInput
-                  type="password"
-                  className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder="************"
-                />
-                <div className="grid w-full h-1.5 grid-cols-12 gap-4 mt-3.5">
-                  <div className="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"></div>
-                  <div className="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"></div>
-                  <div className="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"></div>
-                  <div className="h-full col-span-3 border rounded bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"></div>
+              <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
+                <div>
+                  <FormLabel>First Name*</FormLabel>
+                  <FormInput
+                    type="text"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="First Name"
+                    {...register("firstName", {
+                      required: "First name is required",
+                    })}
+                  />
+                  {errors.firstName && (
+                    <span className="text-red-500">
+                      {errors.firstName.message}
+                    </span>
+                  )}
                 </div>
-                <a
-                  href=""
-                  className="block mt-3 text-xs text-slate-500/80 sm:text-sm"
-                >
-                  What is a secure password?
-                </a>
-                <FormLabel className="mt-5">Password Confirmation*</FormLabel>
-                <FormInput
-                  type="password"
-                  className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder="************"
-                />
+                <div className="mt-5">
+                  <FormLabel>Last Name*</FormLabel>
+                  <FormInput
+                    type="text"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="Last Name"
+                    {...register("lastName", {
+                      required: "Last name is required",
+                    })}
+                  />
+                  {errors.lastName && (
+                    <span className="text-red-500">
+                      {errors.lastName.message}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-5">
+                  <FormLabel>Email*</FormLabel>
+                  <FormInput
+                    type="email"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="Email"
+                    {...register("email", { required: "Email is required" })}
+                  />
+                  {errors.email && (
+                    <span className="text-red-500">{errors.email.message}</span>
+                  )}
+                </div>
+                <div className="mt-5">
+                  <FormLabel>Password*</FormLabel>
+                  <FormInput
+                    type="password"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="Password"
+                    {...register("password", {
+                      required: "Password is required",
+                    })}
+                  />
+                  {errors.password && (
+                    <span className="text-red-500">
+                      {errors.password.message}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-5">
+                  <FormLabel>Password Confirmation*</FormLabel>
+                  <FormInput
+                    type="password"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="Confirm Password"
+                    {...register("passwordConfirmation", {
+                      required: "Password confirmation is required",
+                    })}
+                  />
+                  {errors.passwordConfirmation && (
+                    <span className="text-red-500">
+                      {errors.passwordConfirmation.message}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center mt-5 text-xs text-slate-500 sm:text-sm">
-                  <FormCheck.Input
-                    id="remember-me"
-                    type="checkbox"
-                    className="mr-2 border"
+                  <Controller
+                    name="agreeToPolicy"
+                    control={control}
+                    rules={{
+                      required: "You must agree to the privacy policy",
+                    }}
+                    render={({ field }) => (
+                      <FormCheck.Input
+                        id="agree-to-policy"
+                        type="checkbox"
+                        className="mr-2 border"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    )}
                   />
                   <label
                     className="cursor-pointer select-none"
-                    htmlFor="remember-me"
+                    htmlFor="agree-to-policy"
                   >
-                    I agree to the Envato
+                    I agree to the 
                   </label>
                   <a className="ml-1 text-primary dark:text-slate-200" href="">
                     Privacy Policy
                   </a>
                   .
                 </div>
+                {errors.agreeToPolicy && (
+                  <span className="text-red-500">
+                    {errors.agreeToPolicy.message}
+                  </span>
+                )}
                 <div className="mt-5 text-center xl:mt-8 xl:text-left">
                   <Button
+                    type="submit"
                     variant="primary"
                     rounded
+                    disabled={loading}
                     className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
                   >
-                    Sign In
-                  </Button>
-                  <Button
-                    variant="outline-secondary"
-                    rounded
-                    className="bg-white/70 w-full py-3.5 mt-3"
-                  >
+                    {loading && (
+                      <Lucide
+                        icon="Loader"
+                        className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
+                          loading ? "animate-spin" : ""
+                        }`}
+                      />
+                    )}
                     Sign Up
                   </Button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         </div>
