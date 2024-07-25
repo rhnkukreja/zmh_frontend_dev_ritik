@@ -1,3 +1,4 @@
+import { PAGE_SIZE } from "@/constant";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { parseColor } from "tailwindcss/lib/util/color";
@@ -199,6 +200,40 @@ const slideDown = (
   }, duration);
 };
 
+const getPageNumbers = (
+  totalCounts: number,
+  perPageCount = PAGE_SIZE
+): number => {
+  return Math.ceil(totalCounts / perPageCount);
+};
+
+function createDynamicURL<T extends Record<string, string>>(
+  baseURL: string,
+  filters?: T,
+  page?: number
+): string {
+  const queryParams = new URLSearchParams();
+
+  if (filters) {
+    for (const key in filters) {
+      if (filters[key]) {
+        queryParams.append(key, filters[key]);
+      }
+    }
+  }
+
+  const queryString = queryParams.toString();
+  if (page && queryString) {
+    return `${baseURL}?${queryString}&page=${page}`;
+  } else if (queryString) {
+    return `${baseURL}?${queryString}`;
+  } else if (page) {
+    return `${baseURL}?page=${page}`;
+  } else {
+    return baseURL;
+  }
+}
+
 export {
   cutText,
   formatDate,
@@ -214,4 +249,6 @@ export {
   stringToHTML,
   slideUp,
   slideDown,
+  getPageNumbers,
+  createDynamicURL,
 };

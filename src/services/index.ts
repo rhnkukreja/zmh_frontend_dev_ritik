@@ -26,7 +26,7 @@ class AxiosServiceConfig {
         (config: InternalAxiosRequestConfig) => {
           const token = localStorage.getItem("token");
           if (token) {
-            config.headers["Authorization"] = `Bearer ${token}`;
+            config.headers["Authorization"] = `JWT ${token}`;
           }
           return config;
         },

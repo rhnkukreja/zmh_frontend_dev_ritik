@@ -10,7 +10,7 @@ import Button from "@/components/Base/Button";
 
 import clsx from "clsx";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
@@ -21,6 +21,7 @@ interface LoginFormInputs {
 }
 
 const Main: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
 
@@ -32,7 +33,6 @@ const Main: React.FC = () => {
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
-      
       const response = await dispatch(
         login({
           username: data.email,
@@ -40,7 +40,12 @@ const Main: React.FC = () => {
         })
       ).unwrap();
 
-      console.log("response: ", response);
+      if (response.token) {
+        localStorage.setItem("User", JSON.stringify(response));
+        localStorage.setItem("token", response.token);
+        toast.success("Logged In Successfully!");
+        navigate("/");
+      }
     } catch (error) {}
   };
 

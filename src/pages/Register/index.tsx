@@ -5,17 +5,19 @@ import Button from "@/components/Base/Button";
 import clsx from "clsx";
 import _ from "lodash";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 
 import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { signUp } from "@/stores/authenticationSlice";
 import Lucide from "@/components/Base/Lucide";
+import { toast } from "react-toastify";
 
 interface FormInputs {
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
+  username: string;
   email: string;
   password: string;
   passwordConfirmation: string;
@@ -26,25 +28,33 @@ function Main() {
   const {
     register,
     control,
+    watch,
     handleSubmit,
     formState: { errors },
   } = useForm<FormInputs>();
   const dispatch: AppDispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
-    console.log("data: ", data);
+    const { passwordConfirmation, agreeToPolicy, ...restData } = data;
 
-    const response = await dispatch(
-      signUp({
-        username: data.firstName + data.lastName,
-        email: data.email,
-        password: data.password,
-        user_type: data.agreeToPolicy === true ? "Employer" : "Candidate",
-      })
-    ).unwrap();
+    try {
+      const response = await dispatch(
+        signUp({
+          ...restData,
+          user_type: "Admin",
+          phone: "",
+        })
+      ).unwrap();
 
-    console.log({ response });
+      if (response.id) {
+        toast.success("Registered Successfully!");
+        navigate("/login");
+      }
+    } catch (error) {
+      return error;
+    }
   };
 
   return (
@@ -81,13 +91,13 @@ function Main() {
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
                     placeholder="First Name"
-                    {...register("firstName", {
+                    {...register("first_name", {
                       required: "First name is required",
                     })}
                   />
-                  {errors.firstName && (
+                  {errors.first_name && (
                     <span className="text-red-500">
-                      {errors.firstName.message}
+                      {errors.first_name.message}
                     </span>
                   )}
                 </div>
@@ -97,13 +107,13 @@ function Main() {
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
                     placeholder="Last Name"
-                    {...register("lastName", {
+                    {...register("last_name", {
                       required: "Last name is required",
                     })}
                   />
-                  {errors.lastName && (
+                  {errors.last_name && (
                     <span className="text-red-500">
-                      {errors.lastName.message}
+                      {errors.last_name.message}
                     </span>
                   )}
                 </div>
@@ -117,6 +127,21 @@ function Main() {
                   />
                   {errors.email && (
                     <span className="text-red-500">{errors.email.message}</span>
+                  )}
+                </div>
+                <div className="mt-5">
+                  <FormLabel>User Name*</FormLabel>
+                  <FormInput
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="User Name"
+                    {...register("username", {
+                      required: "User Name is required",
+                    })}
+                  />
+                  {errors.username && (
+                    <span className="text-red-500">
+                      {errors.username.message}
+                    </span>
                   )}
                 </div>
                 <div className="mt-5">
@@ -144,6 +169,8 @@ function Main() {
                     placeholder="Confirm Password"
                     {...register("passwordConfirmation", {
                       required: "Password confirmation is required",
+                      validate: (value) =>
+                        value === watch("password") || "Passwords do not match",
                     })}
                   />
                   {errors.passwordConfirmation && (
@@ -152,6 +179,7 @@ function Main() {
                     </span>
                   )}
                 </div>
+
                 <div className="flex items-center mt-5 text-xs text-slate-500 sm:text-sm">
                   <Controller
                     name="agreeToPolicy"
@@ -173,7 +201,7 @@ function Main() {
                     className="cursor-pointer select-none"
                     htmlFor="agree-to-policy"
                   >
-                    I agree to the 
+                    I agree to the
                   </label>
                   <a className="ml-1 text-primary dark:text-slate-200" href="">
                     Privacy Policy

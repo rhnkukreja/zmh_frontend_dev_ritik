@@ -2,15 +2,15 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
   LoginRequestDTO,
-  UserResponseDTO,
-  SignUpRequestDTO
+  SignUpRequestDTO,
 } from "../services/authentiction/auth.type";
 import { userService } from "../services/authentiction";
+import { Login, Register } from "@/types/users";
 
 const name = "authentication";
 
 interface AuthState {
-  user: UserResponseDTO | null;
+  user: Login | null;
   loading: boolean;
   error: string | null;
 }
@@ -21,17 +21,17 @@ const initialState: AuthState = {
   error: null,
 };
 
-export const signUp = createAsyncThunk<UserResponseDTO, SignUpRequestDTO>(
+export const signUp = createAsyncThunk<Register, SignUpRequestDTO>(
   `${name}/signUp`,
   async (userRequest: SignUpRequestDTO) => {
-    return await userService.signUp(userRequest);
+    return (await userService.signUp(userRequest)) as Register;
   }
 );
 
-export const login = createAsyncThunk<UserResponseDTO, LoginRequestDTO>(
+export const login = createAsyncThunk<Login, LoginRequestDTO>(
   `${name}/login`,
   async (userRequest: LoginRequestDTO) => {
-    return await userService.login(userRequest);
+    return (await userService.login(userRequest)) as Login;
   }
 );
 
@@ -52,13 +52,9 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        signUp.fulfilled,
-        (state, action: PayloadAction<UserResponseDTO>) => {
-          state.loading = false;
-          state.user = action.payload;
-        }
-      )
+      .addCase(signUp.fulfilled, (state, action: PayloadAction<Register>) => {
+        state.loading = false;
+      })
       .addCase(signUp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to sign up";
@@ -67,13 +63,10 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        login.fulfilled,
-        (state, action: PayloadAction<UserResponseDTO>) => {
-          state.loading = false;
-          state.user = action.payload;
-        }
-      )
+      .addCase(login.fulfilled, (state, action: PayloadAction<Login>) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to log in";

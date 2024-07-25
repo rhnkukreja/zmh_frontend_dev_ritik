@@ -309,6 +309,7 @@ function Router() {
       ],
     },
     {
+       
       path: "/landing-page",
       element: <LandingPage />,
     },

@@ -1,21 +1,97 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover } from "@/components/Base/Headless";
-import Pagination from "@/components/Base/Pagination";
-import TomSelect from "@/components/Base/TomSelect";
+// import TomSelect from "@/components/Base/TomSelect";
 import { FormInput, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
-import posts from "@/fakers/posts";
-import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import _ from "lodash";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { AppDispatch } from "@/stores/store";
+import {
+  fetchEngagementQuestions,
+  resetFilter,
+  setFilter,
+  setPage,
+} from "@/stores/engagementQuestionSlice";
+import CPagination from "@/components/Pagination";
+import dayjs from "dayjs";
+import TableWrapper from "@/components/TableWrapper";
+import { createDynamicURL } from "@/utils/helper";
+import { baseURL } from "@/constant";
 
 function Main() {
-  const [selectedUser, setSelectedUser] = useState("1");
+  const dispatch: AppDispatch = useAppDispatch();
 
-  console.log(users.fakeUsers());
+  const {
+    questions,
+    loading,
+    page,
+    totalPages,
+    engagementQuestionFilterOptions,
+    filters,
+  } = useAppSelector((state) => state.engagementQuestions);
+
+  useEffect(() => {
+    dispatch(
+      fetchEngagementQuestions(
+        createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
+      )
+    );
+  }, [page, filters.Institution_name]);
+
+  const handleNextPage = () => {
+    if (page < totalPages) {
+      dispatch(setPage(page + 1));
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 1) {
+      dispatch(setPage(page - 1));
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    dispatch(setPage(newPage));
+  };
+
+  const debouncedSearch = _.debounce((searchedValue) => {
+    dispatch(
+      setFilter({
+        key: "Institution_name",
+        value: searchedValue,
+      })
+    );
+  }, 700);
+
+  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    debouncedSearch(e.target.value);
+  }
+  function handleApplyFilter() {
+    dispatch(
+      fetchEngagementQuestions(
+        createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
+      )
+    );
+  }
+
+  const getFilterCount = useMemo(() => {
+    const { Institution_name, ...allFilters } = filters;
+    return Object.values(allFilters).filter((value) => value !== "").length;
+  }, [filters]);
+
+  const onFilterClear = () => {
+    dispatch(resetFilter());
+    dispatch(
+      fetchEngagementQuestions(
+        createDynamicURL(`${baseURL}/engagement_questions/`, undefined, page)
+      )
+    );
+  };
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
@@ -46,6 +122,7 @@ function Main() {
                     type="text"
                     placeholder="Search invester..."
                     className="pl-9 sm:w-64 rounded-[0.5rem]"
+                    onChange={handleSearch}
                   />
                 </div>
               </div>
@@ -91,38 +168,77 @@ function Main() {
                         />
                         Filter
                         <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                          3
+                          {getFilterCount}
                         </div>
                       </Popover.Button>
                       <Popover.Panel placement="bottom-end">
                         <div className="p-2">
-                          <div>
-                            <div className="text-left text-slate-500">User</div>
-                            <TomSelect
-                              className="flex-1 mt-2"
-                              value={selectedUser}
-                              onChange={(e) => {
-                                setSelectedUser(e.target.value);
-                              }}
-                              options={{
-                                placeholder: "Search user",
-                              }}
-                            >
-                              {users.fakeUsers().map((faker, fakerKey) => (
-                                <option key={fakerKey} value={fakerKey}>
-                                  {faker.name}
-                                </option>
-                              ))}
-                            </TomSelect>
-                          </div>
-                          <div className="mt-3">
+                          {/* <div>
                             <div className="text-left text-slate-500">
-                              Review Rate
+                              Type of Engagement
                             </div>
                             <FormSelect className="flex-1 mt-2">
-                              <option value="3+">3+</option>
-                              <option value="4+">4+</option>
-                              <option value="5">5</option>
+                              {engagementQuestionFilterOptions.typeOfEngagement.map(
+                                (type: string, index: number) => {
+                                  return (
+                                    <option key={index} value={type}>
+                                      {type}
+                                    </option>
+                                  );
+                                }
+                              )}
+                            </FormSelect>
+                          </div> */}
+                          {/* <div className="mt-3">
+                            <div className="text-left text-slate-500">
+                              Source
+                            </div>
+                            <FormSelect className="flex-1 mt-2">
+                              {engagementQuestionFilterOptions.source.map(
+                                (source: string, index: number) => {
+                                  return (
+                                    <option key={index} value={source}>
+                                      {source}
+                                    </option>
+                                  );
+                                }
+                              )}
+                            </FormSelect>
+                          </div> */}
+                          <div className="mt-3">
+                            <div className="text-left text-slate-500">
+                              Category
+                            </div>
+                            <FormSelect
+                              defaultValue={
+                                filters.category.length > 0
+                                  ? filters.category
+                                  : "Select Category"
+                              }
+                              className="flex-1 mt-2"
+                              onChange={(
+                                e: React.ChangeEvent<HTMLSelectElement>
+                              ) => {
+                                dispatch(
+                                  setFilter({
+                                    key: "category",
+                                    value: e.target.value,
+                                  })
+                                );
+                              }}
+                            >
+                              <option disabled selected>
+                                Select Category
+                              </option>
+                              {engagementQuestionFilterOptions.category.map(
+                                (category: string, index: number) => {
+                                  return (
+                                    <option key={index} value={category}>
+                                      {category}
+                                    </option>
+                                  );
+                                }
+                              )}
                             </FormSelect>
                           </div>
                           <div className="flex items-center mt-4">
@@ -130,12 +246,17 @@ function Main() {
                               variant="secondary"
                               onClick={() => {
                                 close();
+                                onFilterClear();
                               }}
                               className="w-32 ml-auto"
                             >
-                              Close
+                              Clear
                             </Button>
-                            <Button variant="primary" className="w-32 ml-2">
+                            <Button
+                              onClick={handleApplyFilter}
+                              variant="primary"
+                              className="w-32 ml-2"
+                            >
                               Apply
                             </Button>
                           </div>
@@ -146,73 +267,138 @@ function Main() {
                 </Popover>
               </div>
             </div>
-            <div className="overflow-auto xl:overflow-visible">
-              <Table>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Td className="py-4 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                      Institute Name
-                    </Table.Td>
-
-                    <Table.Td className="py-4 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                      Engagement Date
-                    </Table.Td>
-                    <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                      Category
-                    </Table.Td>
-                    <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                      Engagement Questions
-                    </Table.Td>
-                    <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                      Other Comments
-                    </Table.Td>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {_.take(posts.fakePosts(), 10).map((faker, fakerKey) => (
-                    <Table.Tr key={fakerKey} className="[&_td]:last:border-b-0">
-                      <Table.Td className=" py-4 border-dashed dark:bg-darkmode-600">
-                        <div className="ml-3.5">
-                          <a href="" className="font-medium whitespace-nowrap">
-                            {faker.author.name}
-                          </a>
-                        </div>
+            <div className="overflow-auto xl:overflow-scroll">
+              <TableWrapper isLoading={loading}>
+                <Table>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Td className="py-4 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Institute Name
                       </Table.Td>
 
-                      <Table.Td className="py-4 border-dashed dark:bg-darkmode-600">
-                        <div className="whitespace-nowrap">{faker.date}</div>
+                      <Table.Td className="py-4 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Engagement Date
                       </Table.Td>
-                      <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
-                      <div className="whitespace-nowrap">{faker.title}</div>
+                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Category
                       </Table.Td>
-                      <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
-                      <div className="">{faker.content}</div>
+                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Engagement Questions
+                      </Table.Td>
+                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Company
+                      </Table.Td>
+                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Source
+                      </Table.Td>
+                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Type of Engagement
+                      </Table.Td>
+                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Active
+                      </Table.Td>
+                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        Other Comments
                       </Table.Td>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {questions?.length > 0 &&
+                      questions?.map((question) => (
+                        <Table.Tr
+                          key={question?.id}
+                          className="[&_td]:last:border-b-0"
+                        >
+                          <Table.Td className=" py-4 border-dashed dark:bg-darkmode-600">
+                            <div className="ml-3.5">
+                              <a
+                                href=""
+                                className="font-medium whitespace-nowrap capitalize"
+                              >
+                                {question?.institution_name}
+                              </a>
+                            </div>
+                          </Table.Td>
+
+                          <Table.Td className="py-4 border-dashed dark:bg-darkmode-600">
+                            <div className="whitespace-nowrap">
+                              {dayjs(question.engagement_date).format(
+                                "MMMM D, YYYY"
+                              )}
+                            </div>
+                          </Table.Td>
+                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                            <div className="whitespace-nowrap capitalize">
+                              {question?.category}
+                            </div>
+                          </Table.Td>
+                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                            <Tippy
+                              content={question?.engagement_question}
+                              options={{
+                                theme: "light",
+                              }}
+                            >
+                              <div className="whitespace-nowrap capitalize max-w-xs overflow-hidden text-ellipsis">
+                                {question?.engagement_question}
+                              </div>
+                            </Tippy>
+                          </Table.Td>
+
+                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                            <div className="whitespace-nowrap capitalize">
+                              {question?.company_name}
+                            </div>
+                          </Table.Td>
+                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                            <div className="whitespace-nowrap capitalize">
+                              {question?.source}
+                            </div>
+                          </Table.Td>
+                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                            <div className="whitespace-nowrap">
+                              {question?.type_of_engagement}
+                            </div>
+                          </Table.Td>
+                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                            {question?.active === true ? (
+                              <div className="flex items-center text-xs font-medium rounded-md text-success bg-success/10 border border-success/10 px-1.5 py-px mr-auto sm:mr-0">
+                                <span className="-mt-px">Active</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center text-xs font-medium rounded-md text-danger bg-danger/10 border border-danger/10 px-1.5 py-px mr-auto sm:mr-0">
+                                <span className="-mt-px">In Active</span>
+                              </div>
+                            )}
+                          </Table.Td>
+                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                            <Tippy
+                              content={question?.other_comments}
+                              options={{
+                                theme: "light",
+                              }}
+                            >
+                              <div className="whitespace-nowrap capitalize max-w-xs overflow-hidden text-ellipsis">
+                                {question?.other_comments}
+                              </div>
+                            </Tippy>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                  </Table.Tbody>
+                </Table>
+              </TableWrapper>
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-              <Pagination className="flex-1 w-full mr-auto sm:w-auto">
-                <Pagination.Link>
-                  <Lucide icon="ChevronsLeft" className="w-4 h-4" />
-                </Pagination.Link>
-                <Pagination.Link>
-                  <Lucide icon="ChevronLeft" className="w-4 h-4" />
-                </Pagination.Link>
-                <Pagination.Link>...</Pagination.Link>
-                <Pagination.Link>1</Pagination.Link>
-                <Pagination.Link active>2</Pagination.Link>
-                <Pagination.Link>3</Pagination.Link>
-                <Pagination.Link>...</Pagination.Link>
-                <Pagination.Link>
-                  <Lucide icon="ChevronRight" className="w-4 h-4" />
-                </Pagination.Link>
-                <Pagination.Link>
-                  <Lucide icon="ChevronsRight" className="w-4 h-4" />
-                </Pagination.Link>
-              </Pagination>
+              {questions.length > 0 && (
+                <CPagination
+                  page={page}
+                  totalPages={totalPages}
+                  handleNextPage={handleNextPage}
+                  handlePageChange={handlePageChange}
+                  handlePreviousPage={handlePreviousPage}
+                />
+              )}
               <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>
                 <option>25</option>
