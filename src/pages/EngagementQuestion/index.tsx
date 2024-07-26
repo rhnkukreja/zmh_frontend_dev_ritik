@@ -390,7 +390,7 @@ function Main() {
               </TableWrapper>
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-              {questions.length > 0 && (
+              {questions?.length > 0 && (
                 <CPagination
                   page={page}
                   totalPages={totalPages}
@@ -399,12 +399,12 @@ function Main() {
                   handlePreviousPage={handlePreviousPage}
                 />
               )}
-              <FormSelect className="sm:w-20 rounded-[0.5rem]">
+              {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>
                 <option>25</option>
                 <option>35</option>
                 <option>50</option>
-              </FormSelect>
+              </FormSelect> */}
             </div>
           </div>
         </div>

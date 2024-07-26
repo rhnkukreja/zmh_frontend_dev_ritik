@@ -6,7 +6,8 @@ import themeReducer from "./themeSlice";
 import compactMenuReducer from "./compactMenuSlice";
 import pageLoaderReducer from "./pageLoaderSlice";
 import authenticationReducer from "./authenticationSlice";
-import engagementQuestionsReducer from './engagementQuestionSlice'
+import engagementQuestionsReducer from "./engagementQuestionSlice";
+import investersProfileSliceReducer from "./investersProfileSlice";
 
 export const store = configureStore({
   reducer: {
@@ -16,8 +17,9 @@ export const store = configureStore({
     theme: themeReducer,
     compactMenu: compactMenuReducer,
     pageLoader: pageLoaderReducer,
-    authentiction : authenticationReducer,
+    authentiction: authenticationReducer,
     engagementQuestions: engagementQuestionsReducer,
+    investersProfile: investersProfileSliceReducer,
   },
 });
 

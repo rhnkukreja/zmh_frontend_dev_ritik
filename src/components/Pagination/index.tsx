@@ -17,6 +17,8 @@ const CPagination: React.FC<CPaginationProps> = ({
   handlePreviousPage,
   handleNextPage,
 }) => {
+
+
   const renderPageNumbers = () => {
     const pages = [];
     const startPages = 3;
