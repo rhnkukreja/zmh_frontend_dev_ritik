@@ -20,9 +20,11 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
+import { getColorForCharacter } from "@/utils/helper";
 
 function Main() {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.authentiction);
   const compactMenu = useAppSelector(selectCompactMenu);
   const setCompactMenu = (val: boolean) => {
     localStorage.setItem("compactMenu", val.toString());
@@ -415,12 +417,7 @@ function Main() {
                   >
                     <Lucide icon="LayoutGrid" className="w-[18px] h-[18px]" />
                   </a>
-                  {/* <a
-                    href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
-                  >
-                    <Lucide icon="Moon" className="w-[18px] h-[18px]" />
-                  </a> */}
+
                   <a
                     href=""
                     className="p-2 text-white rounded-full hover:bg-white/5"
@@ -443,14 +440,21 @@ function Main() {
                   </a>
                 </div>
                 <Menu className="ml-5">
-                  <Menu.Button className="overflow-hidden rounded-full w-[36px] h-[36px] border-[3px] border-white/[0.15] image-fit">
-                    <img
-                      alt="Tailwise - Admin Dashboard Template"
-                      src={users.fakeUsers()[0].photo}
-                    />
+                  <Menu.Button
+                    className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
+                    style={{
+                      backgroundColor: getColorForCharacter(
+                        user?.user_name?.[0].toUpperCase() || "a"
+                      ),
+                     
+                    }}
+                  >
+                    <h4 className="text-white md:text-xl ">
+                      {user?.user_name?.[0].toUpperCase() || ""}
+                    </h4>
                   </Menu.Button>
                   <Menu.Items className="w-56 mt-1">
-                    <Menu.Item
+                    {/* <Menu.Item
                       onClick={() => {
                         setSwitchAccount(true);
                       }}
@@ -474,7 +478,7 @@ function Main() {
                     >
                       <Lucide icon="Inbox" className="w-4 h-4 mr-2" />
                       Email Settings
-                    </Menu.Item>
+                    </Menu.Item> */}
                     <Menu.Item
                       onClick={() => {
                         navigate("settings?page=security");
@@ -484,14 +488,14 @@ function Main() {
                       Reset Password
                     </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Item
+                    {/* <Menu.Item
                       onClick={() => {
                         navigate("settings");
                       }}
                     >
                       <Lucide icon="Users" className="w-4 h-4 mr-2" />
                       Profile Info
-                    </Menu.Item>
+                    </Menu.Item> */}
                     <Menu.Item
                       onClick={() => {
                         navigate("login");

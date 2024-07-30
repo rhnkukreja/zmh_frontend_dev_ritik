@@ -13,6 +13,16 @@ class EngagementQuestionService {
       results,
     };
   }
+  public async getSingleEngagementQuestions(id: number): Promise<{
+    results: EngagementQuestions;
+  }> {
+    const response = await axiosInstance.get(`/engagement_questions/${id}`);
+    console.log('response: ', response);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
 }
 
 export const engagementQuestionService = new EngagementQuestionService();

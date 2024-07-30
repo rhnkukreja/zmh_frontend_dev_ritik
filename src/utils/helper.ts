@@ -1,4 +1,4 @@
-import { PAGE_SIZE } from "@/constant";
+import { characterColors, PAGE_SIZE } from "@/constant";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { parseColor } from "tailwindcss/lib/util/color";
@@ -234,6 +234,10 @@ function createDynamicURL<T extends Record<string, string>>(
   }
 }
 
+const getColorForCharacter = (char: string) => {
+  return characterColors[char.toUpperCase()] || "#FFFFFF";
+};
+
 export {
   cutText,
   formatDate,
@@ -251,4 +255,5 @@ export {
   slideDown,
   getPageNumbers,
   createDynamicURL,
+  getColorForCharacter,
 };

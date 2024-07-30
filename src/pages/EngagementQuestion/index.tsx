@@ -5,7 +5,7 @@ import { FormInput, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -13,17 +13,19 @@ import { AppDispatch } from "@/stores/store";
 import {
   fetchEngagementQuestions,
   resetFilter,
+  resetPage,
   setFilter,
   setPage,
 } from "@/stores/engagementQuestionSlice";
 import CPagination from "@/components/Pagination";
-import dayjs from "dayjs";
 import TableWrapper from "@/components/TableWrapper";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import { useNavigate } from "react-router-dom";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const {
     questions,
@@ -40,7 +42,7 @@ function Main() {
         createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
       )
     );
-  }, [page, filters.Institution_name]);
+  }, [page, filters.institution_name]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -61,7 +63,7 @@ function Main() {
   const debouncedSearch = _.debounce((searchedValue) => {
     dispatch(
       setFilter({
-        key: "Institution_name",
+        key: "institution_name",
         value: searchedValue,
       })
     );
@@ -76,10 +78,12 @@ function Main() {
         createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
       )
     );
+
+    dispatch(resetPage());
   }
 
   const getFilterCount = useMemo(() => {
-    const { Institution_name, ...allFilters } = filters;
+    const { institution_name, ...allFilters } = filters;
     return Object.values(allFilters).filter((value) => value !== "").length;
   }, [filters]);
 
@@ -98,15 +102,6 @@ function Main() {
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
           <div className="text-base font-medium group-[.mode--light]:text-white">
             Engagement Questions
-          </div>
-          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-            <Button
-              variant="primary"
-              className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
-            >
-              <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
-              Add New Question
-            </Button>
           </div>
         </div>
         <div className="mt-3.5">
@@ -127,33 +122,6 @@ function Main() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                <Menu>
-                  <Menu.Button
-                    as={Button}
-                    variant="outline-secondary"
-                    className="w-full sm:w-auto"
-                  >
-                    <Lucide
-                      icon="Download"
-                      className="stroke-[1.3] w-4 h-4 mr-2"
-                    />
-                    Export
-                    <Lucide
-                      icon="ChevronDown"
-                      className="stroke-[1.3] w-4 h-4 ml-2"
-                    />
-                  </Menu.Button>
-                  <Menu.Items className="w-40">
-                    <Menu.Item>
-                      <Lucide icon="FileBarChart" className="w-4 h-4 mr-2" />{" "}
-                      PDF
-                    </Menu.Item>
-                    <Menu.Item>
-                      <Lucide icon="FileBarChart" className="w-4 h-4 mr-2" />
-                      CSV
-                    </Menu.Item>
-                  </Menu.Items>
-                </Menu>
                 <Popover className="inline-block">
                   {({ close }) => (
                     <>
@@ -276,9 +244,6 @@ function Main() {
                         Institute Name
                       </Table.Td>
 
-                      <Table.Td className="py-4 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Engagement Date
-                      </Table.Td>
                       <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Category
                       </Table.Td>
@@ -288,17 +253,12 @@ function Main() {
                       <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Company
                       </Table.Td>
-                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Source
-                      </Table.Td>
+
                       <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Type of Engagement
                       </Table.Td>
                       <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Active
-                      </Table.Td>
-                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Other Comments
+                        Action
                       </Table.Td>
                     </Table.Tr>
                   </Table.Thead>
@@ -310,23 +270,16 @@ function Main() {
                           className="[&_td]:last:border-b-0"
                         >
                           <Table.Td className=" py-4 border-dashed dark:bg-darkmode-600">
-                            <div className="ml-3.5">
+                            <div className="ml-3.5 ">
                               <a
                                 href=""
-                                className="font-medium whitespace-nowrap capitalize"
+                                className="font-medium   whitespace-nowrap capitalize"
                               >
                                 {question?.institution_name}
                               </a>
                             </div>
                           </Table.Td>
 
-                          <Table.Td className="py-4 border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap">
-                              {dayjs(question.engagement_date).format(
-                                "MMMM D, YYYY"
-                              )}
-                            </div>
-                          </Table.Td>
                           <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
                             <div className="whitespace-nowrap capitalize">
                               {question?.category}
@@ -339,7 +292,7 @@ function Main() {
                                 theme: "light",
                               }}
                             >
-                              <div className="whitespace-nowrap capitalize max-w-xs overflow-hidden text-ellipsis">
+                              <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                 {question?.engagement_question}
                               </div>
                             </Tippy>
@@ -350,38 +303,28 @@ function Main() {
                               {question?.company_name}
                             </div>
                           </Table.Td>
-                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap capitalize">
-                              {question?.source}
-                            </div>
-                          </Table.Td>
+
                           <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
                             <div className="whitespace-nowrap">
                               {question?.type_of_engagement}
                             </div>
                           </Table.Td>
                           <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
-                            {question?.active === true ? (
-                              <div className="flex items-center text-xs font-medium rounded-md text-success bg-success/10 border border-success/10 px-1.5 py-px mr-auto sm:mr-0">
-                                <span className="-mt-px">Active</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center text-xs font-medium rounded-md text-danger bg-danger/10 border border-danger/10 px-1.5 py-px mr-auto sm:mr-0">
-                                <span className="-mt-px">In Active</span>
-                              </div>
-                            )}
-                          </Table.Td>
-                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
-                            <Tippy
-                              content={question?.other_comments}
-                              options={{
-                                theme: "light",
+                            <Button
+                              onClick={() => {
+                                navigate(
+                                  `/engagement-question/${question?.id}`
+                                );
                               }}
+                              variant="outline-secondary"
+                              className="pl-3.5 pr-4 whitespace-nowrap"
                             >
-                              <div className="whitespace-nowrap capitalize max-w-xs overflow-hidden text-ellipsis">
-                                {question?.other_comments}
-                              </div>
-                            </Tippy>
+                              <Lucide
+                                icon="Eye"
+                                className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
+                              />{" "}
+                              View
+                            </Button>
                           </Table.Td>
                         </Table.Tr>
                       ))}

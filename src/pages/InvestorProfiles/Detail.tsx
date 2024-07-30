@@ -1,24 +1,17 @@
 import "@/assets/css/vendors/simplebar.css";
 import Lucide from "@/components/Base/Lucide";
-import { Menu } from "@/components/Base/Headless";
-import { FormInput, FormTextarea } from "@/components/Base/Form";
-import Tippy from "@/components/Base/Tippy";
-import ImageZoom from "@/components/Base/ImageZoom";
-import users from "@/fakers/users";
-import messages from "@/fakers/messages";
-import projectDetails from "@/fakers/project-details";
-import { Tab } from "@/components/Base/Headless";
+
 
 import { useEffect, createRef, useMemo } from "react";
 import SimpleBar from "simplebar";
-import clsx from "clsx";
+
 import _ from "lodash";
 import Button from "@/components/Base/Button";
 import { useParams } from "react-router-dom";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchSingleInvestersProfile } from "@/stores/investersProfileSlice";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+
 import LoadingWrapper from "@/components/LoadingWrapper";
 
 function Main() {
@@ -26,15 +19,9 @@ function Main() {
   const { singleInvesterProfile, loading } = useAppSelector(
     (state) => state.investersProfile
   );
-  console.log("singleInvesterProfile: ", singleInvesterProfile);
-  const scrollableRef = createRef<HTMLDivElement>();
+  
   const params = useParams();
-
-  useEffect(() => {
-    if (scrollableRef.current) {
-      new SimpleBar(scrollableRef.current);
-    }
-  });
+ 
 
   useEffect(() => {
     dispatch(fetchSingleInvestersProfile(Number(params.id!)));
@@ -78,7 +65,7 @@ function Main() {
                   Key Contacts
                 </h3>
               </div>
-              <div className="max-h-[800px] overflow-y-auto no-scrollbar">
+              <div className=" overflow-y-auto no-scrollbar">
                 {loading ? (
                   <LoadingWrapper height={200} />
                 ) : (
@@ -128,7 +115,7 @@ function Main() {
             </div>
           </div>
           <div className="flex flex-col w-full gap-y-7">
-            <div className="flex flex-col p-5 box box--stacked">
+            <div className="flex flex-col p-4 box box--stacked">
               <h3 className="text-2xl text-left  font-medium leading-none text-primary">
                 Engagement Priorities
               </h3>

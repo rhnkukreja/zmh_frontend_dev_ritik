@@ -2,11 +2,11 @@ import { InvestersProfile } from "@/types/investerProfiles";
 import { axiosInstance } from "../index";
 
 class InvestersProfileService {
-  public async getInvestersProfile(page: number): Promise<{
+  public async getInvestersProfile(url: string): Promise<{
     count: number;
     results: InvestersProfile[];
   }> {
-    const response = await axiosInstance.get(`/investor_profile/?page=${page}`);
+    const response = await axiosInstance.get(url);
     const { count, results } = response.data;
     return {
       count,

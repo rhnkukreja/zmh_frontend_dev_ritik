@@ -7,6 +7,7 @@ const name = "engagementQuestions";
 
 interface EngagementQuestionsState {
   questions: EngagementQuestions[];
+  getSingleQuestion: EngagementQuestions | null;
   totalQuestions: number;
   totalPages: number;
   loading: boolean;
@@ -21,13 +22,14 @@ interface EngagementQuestionsState {
     category: string;
     source: string;
     typeOfEngagement: string;
-    Institution_name: string;
+    institution_name: string;
   };
 }
 
 const initialState: EngagementQuestionsState = {
   questions: [],
   totalQuestions: 0,
+  getSingleQuestion: null,
   loading: false,
   totalPages: 1,
   page: 1,
@@ -41,7 +43,7 @@ const initialState: EngagementQuestionsState = {
     category: "",
     source: "",
     typeOfEngagement: "",
-    Institution_name: "",
+    institution_name: "",
   },
 };
 
@@ -50,6 +52,13 @@ export const fetchEngagementQuestions = createAsyncThunk<
   string
 >(`${name}/fetchEngagementQuestions`, async (url: string) => {
   return await engagementQuestionService.getEngagementQuestions(url);
+});
+
+export const getSingleEngagementQuestions = createAsyncThunk<
+  { results: EngagementQuestions },
+  number
+>(`${name}/getSingleEngagementQuestions`, async (id: number) => {
+  return await engagementQuestionService.getSingleEngagementQuestions(id);
 });
 
 const engagementQuestionsSlice = createSlice({
@@ -77,7 +86,9 @@ const engagementQuestionsSlice = createSlice({
         category: "",
         source: "",
         typeOfEngagement: "",
-        Institution_name: "",
+        institution_name: state.filters.institution_name
+          ? state.filters.institution_name
+          : "",
       };
     },
   },
@@ -103,6 +114,27 @@ const engagementQuestionsSlice = createSlice({
         }
       )
       .addCase(fetchEngagementQuestions.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch engagement questions";
+      })
+      .addCase(getSingleEngagementQuestions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        getSingleEngagementQuestions.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            results: EngagementQuestions;
+          }>
+        ) => {
+          state.loading = false;
+          state.getSingleQuestion = action.payload.results;
+        }
+      )
+      .addCase(getSingleEngagementQuestions.rejected, (state, action) => {
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch engagement questions";

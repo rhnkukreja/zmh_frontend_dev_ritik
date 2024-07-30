@@ -13,6 +13,13 @@ interface nvestersProfileSlice {
   error: string | null;
   totalPages: number;
   page: number;
+  investerProfileFilterOption: {
+    region: string[];
+  };
+  filters: {
+    region: string;
+    institution_name: string;
+  };
 }
 
 const initialState: nvestersProfileSlice = {
@@ -23,13 +30,20 @@ const initialState: nvestersProfileSlice = {
   error: null,
   totalPages: 1,
   page: 1,
+  investerProfileFilterOption: {
+    region: ["NAM", "EMEA" , "APAC"],
+  },
+  filters: {
+    region: "",
+    institution_name: "",
+  },
 };
 
 export const fetchInvestersProfiles = createAsyncThunk<
   { count: number; results: InvestersProfile[] },
-  number
->(`${name}/fetchInvestersProfiles`, async (page: number) => {
-  return await investersProfileService.getInvestersProfile(page);
+  string
+>(`${name}/fetchInvestersProfiles`, async (url: string) => {
+  return await investersProfileService.getInvestersProfile(url);
 });
 export const fetchSingleInvestersProfile = createAsyncThunk<
   { results: InvestersProfile },
@@ -47,6 +61,25 @@ const investersProfileSlice = createSlice({
     },
     resetPage(state) {
       state.page = 1;
+    },
+
+    setFilter(
+      state,
+      action: PayloadAction<{
+        key: keyof typeof initialState.filters;
+        value: string;
+      }>
+    ) {
+      state.filters[action.payload.key] = action.payload.value;
+    },
+
+    resetFilter(state) {
+      state.filters = {
+        region: "",
+        institution_name: state.filters.institution_name
+          ? state.filters.institution_name
+          : "",
+      };
     },
   },
   extraReducers: (builder) => {
@@ -92,4 +125,4 @@ const investersProfileSlice = createSlice({
 });
 
 export default investersProfileSlice.reducer;
-export const { setPage, resetPage } = investersProfileSlice.actions;
+export const { setPage, resetPage , setFilter , resetFilter } = investersProfileSlice.actions;

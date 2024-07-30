@@ -63,13 +63,16 @@ import InvestersProfiles from "../pages/InvestorProfiles";
 
 import DetailInvestersProfile from "../pages/InvestorProfiles/Detail";
 import EngagementQuestion from "../pages/EngagementQuestion";
+import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
 import Layout from "../themes";
+import withAuth from "./protectedRoute";
+import React from "react";
 
 function Router() {
   const routes = [
     {
       path: "/",
-      element: <Layout />,
+      element: React.createElement(withAuth(Layout)),
       children: [
         {
           path: "/",
@@ -310,6 +313,10 @@ function Router() {
         {
           path: "engagement-question",
           element: <EngagementQuestion />,
+        },
+        {
+          path: "engagement-question/:id",
+          element: <DetailEngagementQuesion />,
         },
       ],
     },

@@ -8,7 +8,7 @@ interface LoadingWrapperProps {
 const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ height }) => {
   return (
     <div
-      className="flex my-6 flex-col justify-center items-center px-4 box box--stacked"
+      className="flex my-6 flex-col justify-center items-center px-4 box--no-border-shadow "
       style={{ minHeight: height }}
     >
       <div className="flex flex-col items-center justify-end">
