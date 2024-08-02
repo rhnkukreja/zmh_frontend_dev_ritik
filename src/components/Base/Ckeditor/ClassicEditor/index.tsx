@@ -3,6 +3,7 @@ import { createRef, useEffect, useRef } from "react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import { init, updateData, CkeditorProps, CkeditorElement } from "../ckeditor";
 
+
 function Ckeditor<C extends React.ElementType = "div">({
   disabled = false,
   config = {},
@@ -47,6 +48,7 @@ function Ckeditor<C extends React.ElementType = "div">({
 
   const Component = as || "div";
 
+
   return (
     <Component
       {...computedProps}
@@ -54,6 +56,7 @@ function Ckeditor<C extends React.ElementType = "div">({
       value={props.value}
       onChange={props.onChange}
       className={className}
+      
     />
   );
 }

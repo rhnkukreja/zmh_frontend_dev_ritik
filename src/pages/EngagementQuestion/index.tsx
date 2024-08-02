@@ -240,24 +240,24 @@ function Main() {
                 <Table>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Td className="py-4 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Institute Name
                       </Table.Td>
 
-                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Category
                       </Table.Td>
-                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Engagement Questions
                       </Table.Td>
-                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Company
                       </Table.Td>
 
-                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium text-nowrap bg-slate-50 text-center first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Type of Engagement
                       </Table.Td>
-                      <Table.Td className="py-4 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Action
                       </Table.Td>
                     </Table.Tr>
@@ -269,23 +269,20 @@ function Main() {
                           key={question?.id}
                           className="[&_td]:last:border-b-0"
                         >
-                          <Table.Td className=" py-4 border-dashed dark:bg-darkmode-600">
-                            <div className="ml-3.5 ">
-                              <a
-                                href=""
-                                className="font-medium   whitespace-nowrap capitalize"
-                              >
+                          <Table.Td className=" py-2 border-dashed dark:bg-darkmode-600">
+                            <div className=" font-medium   whitespace-nowrap capitalize">
+                             
                                 {question?.institution_name}
-                              </a>
+                             
                             </div>
                           </Table.Td>
 
-                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
                             <div className="whitespace-nowrap capitalize">
                               {question?.category}
                             </div>
                           </Table.Td>
-                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
                             <Tippy
                               content={question?.engagement_question}
                               options={{
@@ -298,26 +295,27 @@ function Main() {
                             </Tippy>
                           </Table.Td>
 
-                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
                             <div className="whitespace-nowrap capitalize">
                               {question?.company_name}
                             </div>
                           </Table.Td>
 
-                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
                             <div className="whitespace-nowrap">
                               {question?.type_of_engagement}
                             </div>
                           </Table.Td>
-                          <Table.Td className="py-4 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
                             <Button
                               onClick={() => {
                                 navigate(
                                   `/engagement-question/${question?.id}`
                                 );
                               }}
-                              variant="outline-secondary"
-                              className="pl-3.5 pr-4 whitespace-nowrap"
+                              size="sm"
+                              variant="secondary"
+                              elevated
                             >
                               <Lucide
                                 icon="Eye"

@@ -48,7 +48,7 @@ function Main() {
         })
       ).unwrap();
 
-      if (response.id) {
+      if (response?.user_id) {
         toast.success("Registered Successfully!");
         navigate("/login");
       }

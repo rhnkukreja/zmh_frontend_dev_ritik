@@ -86,9 +86,7 @@ const engagementQuestionsSlice = createSlice({
         category: "",
         source: "",
         typeOfEngagement: "",
-        institution_name: state.filters.institution_name
-          ? state.filters.institution_name
-          : "",
+        institution_name: "",
       };
     },
   },

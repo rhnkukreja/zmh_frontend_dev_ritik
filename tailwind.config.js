@@ -49,8 +49,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        "public-sans": ["Public Sans"],
-        "dm-sans": ["DM Sans"],
+        // "public-sans": ["Public Sans"],
+        // "dm-sans": ["DM Sans"],
       },
       backgroundImage: {
         "texture-black":

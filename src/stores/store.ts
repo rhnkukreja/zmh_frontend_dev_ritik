@@ -7,7 +7,8 @@ import compactMenuReducer from "./compactMenuSlice";
 import pageLoaderReducer from "./pageLoaderSlice";
 import authenticationReducer from "./authenticationSlice";
 import engagementQuestionsReducer from "./engagementQuestionSlice";
-import investersProfileSliceReducer from "./investersProfileSlice";
+import investersProfileReducer from "./investersProfileSlice";
+import proxyVotingGuidelineReducer from "./proxyVotingGuidelineSlice";
 
 export const store = configureStore({
   reducer: {
@@ -19,7 +20,8 @@ export const store = configureStore({
     pageLoader: pageLoaderReducer,
     authentiction: authenticationReducer,
     engagementQuestions: engagementQuestionsReducer,
-    investersProfile: investersProfileSliceReducer,
+    investersProfile: investersProfileReducer,
+    proxyVotingGuideline: proxyVotingGuidelineReducer,
   },
 });
 

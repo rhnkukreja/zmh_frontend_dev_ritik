@@ -42,8 +42,8 @@ export interface InvestersProfile {
   voting_guidelines_link: string;
   reporting_expectations: string;
   esg_integration_process: string;
-  key_contacts: KeyContact[];
   references: string;
+  key_contacts: KeyContact[];
   date_created: string;
   date_updated: string;
 }

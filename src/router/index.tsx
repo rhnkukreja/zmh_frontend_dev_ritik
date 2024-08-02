@@ -63,6 +63,7 @@ import InvestersProfiles from "../pages/InvestorProfiles";
 
 import DetailInvestersProfile from "../pages/InvestorProfiles/Detail";
 import EngagementQuestion from "../pages/EngagementQuestion";
+import ProxyVotingGuideline from "../pages/ProxyVotingGuideline";
 import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
 import Layout from "../themes";
 import withAuth from "./protectedRoute";
@@ -313,6 +314,10 @@ function Router() {
         {
           path: "engagement-question",
           element: <EngagementQuestion />,
+        },
+        {
+          path: "proxy-voting-guideline",
+          element: <ProxyVotingGuideline />,
         },
         {
           path: "engagement-question/:id",

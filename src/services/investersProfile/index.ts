@@ -17,7 +17,30 @@ class InvestersProfileService {
     results: InvestersProfile;
   }> {
     const response = await axiosInstance.get(`/investor_profile/${id}`);
-    const  results  = response.data;
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+  public async updateInvestersProfile(
+    id: number,
+    data: Partial<InvestersProfile>
+  ): Promise<{
+    results: InvestersProfile;
+  }> {
+    const response = await axiosInstance.put(`/investor_profile/${id}`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+  public async AddNewInvestersProfile(
+    data: Partial<InvestersProfile>
+  ): Promise<{
+    results: InvestersProfile;
+  }> {
+    const response = await axiosInstance.post(`/investor_profile/`, data);
+    const results = response.data;
     return {
       results,
     };

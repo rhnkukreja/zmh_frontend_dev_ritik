@@ -5,6 +5,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 const name = "investersProfile";
 
+interface UpdateInvestersProfilePayload {
+  id: number;
+  data: Partial<InvestersProfile>;
+}
+
 interface nvestersProfileSlice {
   investersProfile: InvestersProfile[];
   singleInvesterProfile: InvestersProfile | null;
@@ -31,7 +36,7 @@ const initialState: nvestersProfileSlice = {
   totalPages: 1,
   page: 1,
   investerProfileFilterOption: {
-    region: ["NAM", "EMEA" , "APAC"],
+    region: ["NAM", "EMEA", "APAC"],
   },
   filters: {
     region: "",
@@ -50,6 +55,28 @@ export const fetchSingleInvestersProfile = createAsyncThunk<
   number
 >(`${name}/fetchSingleInvestersProfile`, async (id: number) => {
   return await investersProfileService.getSingleInvester(id);
+});
+
+export const updateInvestersProfile = createAsyncThunk<
+  { results: InvestersProfile },
+  UpdateInvestersProfilePayload
+>(
+  `${name}/updateInvestersProfile`,
+  async ({ id, data }: UpdateInvestersProfilePayload) => {
+    const response = await investersProfileService.updateInvestersProfile(
+      id,
+      data
+    );
+    return response;
+  }
+);
+
+export const addNewInvestersProfile = createAsyncThunk<
+  { results: InvestersProfile },
+  Partial<InvestersProfile>
+>(`${name}/addNewInvestersProfile`, async (data: Partial<InvestersProfile>) => {
+  const response = await investersProfileService.AddNewInvestersProfile(data);
+  return response;
 });
 
 const investersProfileSlice = createSlice({
@@ -120,9 +147,37 @@ const investersProfileSlice = createSlice({
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch investers profile";
+      })
+      // update investers
+      .addCase(updateInvestersProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateInvestersProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.singleInvesterProfile = action.payload.results;
+      })
+      .addCase(updateInvestersProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch investers profile";
+      })
+      // Add invester
+      .addCase(addNewInvestersProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addNewInvestersProfile.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(addNewInvestersProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch investers profile";
       });
   },
 });
 
 export default investersProfileSlice.reducer;
-export const { setPage, resetPage , setFilter , resetFilter } = investersProfileSlice.actions;
+export const { setPage, resetPage, setFilter, resetFilter } =
+  investersProfileSlice.actions;
