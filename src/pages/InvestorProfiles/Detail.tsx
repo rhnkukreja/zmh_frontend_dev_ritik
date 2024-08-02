@@ -27,6 +27,9 @@ function Main() {
   const { singleInvesterProfile, loading } = useAppSelector(
     (state) => state.investersProfile
   );
+  const { user } = useAppSelector(
+    (state) => state.authentiction
+  );
   const params = useParams();
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -143,7 +146,7 @@ function Main() {
                   <h4 className="text-[18px] font-bold leading-none text-primary">
                     Key Contacts
                   </h4>
-                  <div
+                  {user?.user_type === "Admin" && <div
                     className="ml-auto cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2  transition-colors duration-200 hover:bg-primary hover:text-white"
                     onClick={toggleExpand}
                   >
@@ -152,7 +155,7 @@ function Main() {
                       className="stroke-[1.3] w-4 h-4 mr-1.5"
                     />
                     Upload
-                  </div>
+                  </div>}
                 </div>
                 {isExpanded && (
                   <div className="w-full mt-6 max-h-[180px]">

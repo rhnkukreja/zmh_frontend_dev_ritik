@@ -41,6 +41,9 @@ function Main() {
     filters,
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
+  const {
+   user
+  } = useAppSelector((state) => state.authentiction);
 
   useEffect(() => {
     dispatch(
@@ -115,7 +118,7 @@ function Main() {
             <div className="text-base font-medium group-[.mode--light]:text-white">
               Invseter Profile
             </div>
-            <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
+            {user?.user_type === "Admin" && <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
                 onClick={() => {
                   setAddNewInvesterModalVisible(true);
@@ -126,7 +129,7 @@ function Main() {
                 <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
                 Add New Invester
               </Button>
-            </div>
+            </div>}
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">

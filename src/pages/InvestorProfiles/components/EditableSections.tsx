@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import { ClassicEditor } from "@/components/Base/Ckeditor";
-import { useAppDispatch } from "@/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { updateInvestersProfile } from "@/stores/investersProfileSlice";
 import { InvestersProfile } from "@/types/investerProfiles";
 import LoadingWrapper from "@/components/LoadingWrapper";
@@ -30,6 +30,11 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const [loading, setLoading] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
+
+  const {
+    user
+   } = useAppSelector((state) => state.authentiction);
+
   const handleSave = async () => {
     setLoading(true);
     dispatch(updateInvestersProfile({ id, data: { [field]: value } }));
@@ -55,7 +60,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
           {title}
         </h4>
 
-        <Button
+       {user?.user_type === "Admin" && <Button
           variant="secondary"
           elevated
           className="px-6"
@@ -63,7 +68,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
         >
           <Lucide icon="PenSquare" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
           Edit
-        </Button>
+        </Button>}
       </div>
       {fetchloading && loading === false ? (
         <LoadingWrapper height={300} />
