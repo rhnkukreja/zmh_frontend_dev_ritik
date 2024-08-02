@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
+import logo from "../../assets/images/logo/zmh-logo.jpg"
 
 interface LoginFormInputs {
   email: string;
@@ -59,12 +60,10 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
-            <div className="rounded-[0.8rem] w-[55px] h-[55px] border border-primary/30 flex items-center justify-center">
-              <div className="relative flex items-center justify-center w-[50px] rounded-[0.6rem] h-[50px] bg-gradient-to-b from-theme-1/90 to-theme-2/90 bg-white">
-                <div className="w-[26px] h-[26px] relative -rotate-45 [&_div]:bg-white">
-                  <div className="absolute w-[20%] left-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                  <div className="absolute w-[20%] inset-0 m-auto h-[120%] rounded-full"></div>
-                  <div className="absolute w-[20%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
+            <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
+              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-180">
+                <div className="w-full h-full overflow-hidden  box   image-fit">
+                  <img alt="Logo" src={logo} />
                 </div>
               </div>
             </div>

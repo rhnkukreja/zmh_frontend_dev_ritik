@@ -12,7 +12,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import Lucide from "@/components/Base/Lucide";
-import users from "@/fakers/users";
+
 import clsx from "clsx";
 import SimpleBar from "simplebar";
 import { Menu } from "@/components/Base/Headless";
@@ -21,6 +21,7 @@ import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
 import { getColorForCharacter } from "@/utils/helper";
+import logo from '../../assets/images/logo/zmh-logo.jpg'
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -146,15 +147,17 @@ function Main() {
               href=""
               className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
             >
-              <div className="flex items-center justify-center w-[34px] rounded-lg h-[34px] bg-gradient-to-b from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-180">
-                <div className="w-[16px] h-[16px] relative -rotate-45 [&_div]:bg-white">
-                  <div className="absolute w-[21%] left-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                  <div className="absolute w-[21%] inset-0 m-auto h-[120%] rounded-full"></div>
-                  <div className="absolute w-[21%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
+              <div className="flex items-center justify-center w-[34px] rounded-sm h-[34px]  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-180">
+                <div className="w-full h-full overflow-hidden  box   image-fit">
+                  <img
+                    alt="Logo"
+                    src={logo}
+                  />
                 </div>
               </div>
+
               <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
-                ECHO
+                ZMH 
               </div>
             </a>
             <a
@@ -446,7 +449,6 @@ function Main() {
                       backgroundColor: getColorForCharacter(
                         user?.user_name?.[0].toUpperCase() || "a"
                       ),
-                     
                     }}
                   >
                     <h4 className="text-white md:text-xl ">
