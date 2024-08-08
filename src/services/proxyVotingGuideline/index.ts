@@ -13,6 +13,34 @@ class ProxyVotingGuidelineService {
       results,
     };
   }
+
+  public async createProxyVotingGuideline(
+    data: Partial<ProxyVotingGuideline>
+  ): Promise<{
+    result: ProxyVotingGuideline;
+  }> {
+    const response = await axiosInstance.post(
+      "/proxy_voting_guidelines/",
+      data
+    );
+
+    return {
+      result: response.data,
+    };
+  }
+
+  public async updateProxyVotingGuideline(
+    id: number,
+    data: Partial<ProxyVotingGuideline>
+  ): Promise<{ result: ProxyVotingGuideline }> {
+    const response = await axiosInstance.put(
+      `/proxy_voting_guidelines/${id}`,
+      data
+    );
+    return {
+      result: response.data,
+    };
+  }
 }
 
 export const proxyVotingGuidelineService = new ProxyVotingGuidelineService();

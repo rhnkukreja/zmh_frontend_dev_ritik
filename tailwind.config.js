@@ -152,7 +152,7 @@ module.exports = {
         },
         // Theme 4 colors
         ".theme-4": {
-          "--color-theme-1": toRGB(colors.sky["700"]),
+          "--color-theme-1": toRGB(colors.black),
           "--color-theme-2": toRGB(colors.rose["800"]),
           "--color-primary": toRGB(colors.sky["700"]),
           "--color-secondary": toRGB(colors.slate["200"]),

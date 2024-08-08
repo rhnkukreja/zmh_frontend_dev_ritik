@@ -1,5 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { EngagementQuestions } from "@/types/engagementQuestions";
+import {
+  EngagementFormData,
+  EngagementQuestions,
+} from "@/types/engagementQuestions";
 import { engagementQuestionService } from "@/services/engagementQuestion";
 import { getPageNumbers } from "@/utils/helper";
 
@@ -59,6 +62,25 @@ export const getSingleEngagementQuestions = createAsyncThunk<
   number
 >(`${name}/getSingleEngagementQuestions`, async (id: number) => {
   return await engagementQuestionService.getSingleEngagementQuestions(id);
+});
+
+export const addEditEngagementQuestion = createAsyncThunk<
+  { results: EngagementQuestions; isEdit: boolean },
+  { id?: number; data: EngagementFormData }
+>(`${name}/addEditEngagementQuestion`, async ({ id, data }) => {
+  let response;
+  if (id) {
+    response = await engagementQuestionService.updateEngagementQuestion(
+      id,
+      data
+    );
+  } else {
+    response = await engagementQuestionService.createEngagementQuestion(data);
+  }
+  return {
+    results: response.results,
+    isEdit: id ? true : false,
+  };
 });
 
 const engagementQuestionsSlice = createSlice({
@@ -136,6 +158,26 @@ const engagementQuestionsSlice = createSlice({
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch engagement questions";
+      })
+      .addCase(addEditEngagementQuestion.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addEditEngagementQuestion.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.isEdit) {
+          const index = state.questions.findIndex(
+            (question) => question.id === action.payload.results.id
+          );
+          if (index !== -1) {
+            state.questions[index] = action.payload.results;
+          }
+        }
+      })
+      .addCase(addEditEngagementQuestion.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to create engagement question";
       });
   },
 });

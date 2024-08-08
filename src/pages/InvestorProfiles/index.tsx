@@ -41,9 +41,7 @@ function Main() {
     filters,
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
-  const {
-   user
-  } = useAppSelector((state) => state.authentiction);
+  const { user } = useAppSelector((state) => state.authentiction);
 
   useEffect(() => {
     dispatch(
@@ -118,18 +116,23 @@ function Main() {
             <div className="text-base font-medium group-[.mode--light]:text-white">
               Invseter Profile
             </div>
-            {user?.user_type === "Admin" && <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-              <Button
-                onClick={() => {
-                  setAddNewInvesterModalVisible(true);
-                }}
-                variant="primary"
-                className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
-              >
-                <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
-                Add New Invester
-              </Button>
-            </div>}
+            {user?.user_type === "Admin" && (
+              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
+                <Button
+                  onClick={() => {
+                    setAddNewInvesterModalVisible(true);
+                  }}
+                  variant="primary"
+                  className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
+                >
+                  <Lucide
+                    icon="PenLine"
+                    className="stroke-[1.3] w-4 h-4 mr-2"
+                  />{" "}
+                  Add New Invester
+                </Button>
+              </div>
+            )}
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
@@ -239,17 +242,17 @@ function Main() {
                           Institution Name
                         </Table.Td>
 
-                        <Table.Td className="py-2 font-medium flex justify-center bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Date
                         </Table.Td>
-                        <Table.Td className="py-2 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
                         </Table.Td>
-                        <Table.Td className="py-2 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className="py-2  font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Download
                         </Table.Td>
-                        <Table.Td className="py-2 text-center font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          View
+                        <Table.Td className="py-2  font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          Action
                         </Table.Td>
                       </Table.Tr>
                     </Table.Thead>
@@ -266,25 +269,25 @@ function Main() {
                               </div>
                             </Table.Td>
 
-                            <Table.Td className="py-2 text-center  border-dashed dark:bg-darkmode-600">
+                            <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
                               <div className="whitespace-nowrap ">
                                 {dayjs(profile?.date_created).format(
                                   "MMMM D, YYYY"
                                 )}
                               </div>
                             </Table.Td>
-                            <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               {profile?.active === true ? (
-                                <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
+                                <div className="flex  justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
                                   <span className="-mt-px">Active</span>
                                 </div>
                               ) : (
-                                <div className="flex items-center justify-center text-xs font-medium rounded-md text-danger bg-danger/10 border  px-1.5 py-1 mr-auto sm:mr-0">
+                                <div className="flex  justify-center text-xs font-medium rounded-md text-danger bg-danger/10 border  px-1.5 py-1 mr-auto sm:mr-0">
                                   <span className="-mt-px">In Active</span>
                                 </div>
                               )}
                             </Table.Td>
-                            <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               <Button size="sm" variant="primary" elevated>
                                 <Lucide
                                   icon="File"
@@ -293,7 +296,7 @@ function Main() {
                                 Download PDF
                               </Button>
                             </Table.Td>
-                            <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               <Button
                                 onClick={() => {
                                   gotoDetailPage(profile.id);
@@ -334,10 +337,12 @@ function Main() {
               </div>
             </div>
           </div>
-          {addNewInvesterModalVisible && <AddNewInvesterProfile
-            addNewInvesterModalVisible={addNewInvesterModalVisible}
-            setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
-          />}
+          {addNewInvesterModalVisible && (
+            <AddNewInvesterProfile
+              addNewInvesterModalVisible={addNewInvesterModalVisible}
+              setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
+            />
+          )}
         </div>
       </div>
     </>

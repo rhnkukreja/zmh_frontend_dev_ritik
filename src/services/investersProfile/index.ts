@@ -1,4 +1,4 @@
-import { InvestersProfile } from "@/types/investerProfiles";
+import { AddNewInvesterType, InvestersProfile } from "@/types/investerProfiles";
 import { axiosInstance } from "../index";
 
 class InvestersProfileService {
@@ -35,7 +35,7 @@ class InvestersProfileService {
     };
   }
   public async AddNewInvestersProfile(
-    data: Partial<InvestersProfile>
+    data: Partial<AddNewInvesterType>
   ): Promise<{
     results: InvestersProfile;
   }> {

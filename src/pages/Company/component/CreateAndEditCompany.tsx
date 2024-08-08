@@ -1,0 +1,216 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import Button from "@/components/Base/Button";
+import { FormCheck, FormInput, FormTextarea } from "@/components/Base/Form";
+import { Dialog } from "@/components/Base/Headless";
+import Lucide from "@/components/Base/Lucide";
+import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
+import { toast } from "react-toastify";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { AppDispatch } from "@/stores/store";
+import { addEditCompany } from "@/stores/companySlice";
+import { CompanyData } from "@/types/company";
+import { bytesToMB } from "@/utils/helper";
+
+interface AddEditCompanyProps {
+  addNewCompanyVisible: boolean;
+  setAddNewCompanyVisible: (visible: boolean) => void;
+  selectedCompany: CompanyData | null;
+}
+
+export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
+  addNewCompanyVisible,
+  setAddNewCompanyVisible,
+  selectedCompany,
+}) => {
+  const dropzoneSingleRef = useRef<DropzoneElement>(null);
+  const dispatch: AppDispatch = useAppDispatch();
+  const { loading } = useAppSelector((state) => state.company);
+
+  const [companyFile, setCompanyFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    const elDropzoneSingleRef = dropzoneSingleRef.current;
+
+    if (elDropzoneSingleRef) {
+      const dropzoneInstance = elDropzoneSingleRef.dropzone;
+
+      const handleComplete = (file: any) => {
+        if (file?.status === "added") {
+          const fileType = file?.name?.split(".")?.pop();
+
+          console.log("file: ", file);
+          if (fileType && !["xlsx"].includes(fileType)) {
+            toast.error("Only excel file are allowed!");
+          } else {
+            setCompanyFile(file);
+          }
+          dropzoneInstance.removeFile(file);
+        }
+        if (file?.status === "error") {
+          const fileType = file?.name?.split(".")?.pop();
+
+          if (fileType && !["xlsx"].includes(fileType)) {
+            toast.error("Only excel file are allowed!");
+          } else {
+            toast.error("Something went wrong!");
+          }
+        }
+      };
+
+      dropzoneInstance.on("addedfile", handleComplete);
+      return () => {
+        dropzoneInstance.off("addedfile", handleComplete);
+      };
+    }
+  }, [dropzoneSingleRef.current, companyFile, addNewCompanyVisible]);
+
+  const { control, handleSubmit } = useForm();
+
+  const onSubmit = async () => {
+    const formData = new FormData();
+
+    if (companyFile) {
+      formData.append("logo", companyFile);
+    }
+
+    try {
+      let response;
+
+      if (selectedCompany) {
+        response = await dispatch(
+          addEditCompany({
+            id: selectedCompany?.id,
+            data: formData as unknown as Partial<CompanyData>,
+          })
+        ).unwrap();
+      } else {
+        response = await dispatch(
+          addEditCompany({
+            data: formData as unknown as Partial<CompanyData>,
+          })
+        ).unwrap();
+      }
+
+      if (response?.results?.id) {
+        toast.success(
+          selectedCompany
+            ? "Company updated successfully"
+            : "Company added successfully"
+        );
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      setAddNewCompanyVisible(false);
+    }
+  };
+
+  return (
+    <Dialog
+      size="lg"
+      open={addNewCompanyVisible}
+      onClose={() => setAddNewCompanyVisible(false)}
+    >
+      <Dialog.Panel className="text-center">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Dialog.Title>
+            <h2 className="mr-auto text-xl font-semibold">
+              {selectedCompany ? "Edit Company" : "Add New Company"}
+            </h2>
+            <div
+              onClick={() => setAddNewCompanyVisible(false)}
+              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+          <Dialog.Description className="px-6 py-4 space-y-6">
+            <div className="w-full">
+              <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                Logo
+              </FormCheck.Label>
+              <div className="w-full max-h-[180px]">
+                {companyFile ? (
+                  <>
+                    <div className="flex items-center w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition sm:px-5 shadow-sm">
+                      <div className="ml-4">
+                        <Lucide
+                          icon="FileText"
+                          className="w-8 h-8 stroke-[1.7] stroke-slate-400/70"
+                        />
+                      </div>
+                      <div className="flex flex-col w-full ml-3 lg:items-center lg:flex-row gap-y-1">
+                        <p className="block font-medium capitalize truncate md:max-w-[100px] sm:max-w-[80px] lg:max-w-[150px] text-ellipsis overflow-hidden whitespace-nowrap lg:text-center">
+                          {companyFile?.name}
+                        </p>
+                        <div className="mr-4 text-xs lg:text-center lg:ml-auto text-slate-500/80">
+                          File size: {bytesToMB(companyFile?.size)} MB
+                        </div>
+                      </div>
+                      <Lucide
+                        onClick={() => {
+                          setCompanyFile(null);
+                        }}
+                        icon="Trash2"
+                        className="w-6 h-6 stroke-[1.7] stroke-slate-400/70"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <Dropzone
+                    ref={dropzoneSingleRef}
+                    options={{
+                      url: "/",
+                      autoProcessQueue: false,
+
+                      clickable: true,
+                      thumbnailWidth: 100,
+                      maxFilesize: 5000,
+                      maxFiles: 1,
+                      paramName: "excel",
+                      acceptedFiles: ".xlsx",
+                    }}
+                    className="dropzone w-full flex flex-col justify-center items-center h-full "
+                  >
+                    <div className="text-[14px] font-medium">
+                      Drop files here or click to upload.
+                    </div>
+                    <div className="text-gray-600">
+                      Only xlsx files are allowed
+                    </div>
+                  </Dropzone>
+                )}
+              </div>
+            </div>
+          </Dialog.Description>
+          <Dialog.Footer className="gap-3 sm:gap-6">
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={() => {
+                setAddNewCompanyVisible(false);
+              }}
+              className="w-20 mr-3"
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" className="w-20">
+              {loading && (
+                <Lucide
+                  icon="Loader"
+                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
+                    loading ? "animate-spin" : ""
+                  }`}
+                />
+              )}
+
+              {!selectedCompany && <>{loading ? "Saving..." : "Save"}</>}
+              {selectedCompany && <>{loading ? "Editing..." : "Edit"}</>}
+            </Button>
+          </Dialog.Footer>
+        </form>
+      </Dialog.Panel>
+    </Dialog>
+  );
+};

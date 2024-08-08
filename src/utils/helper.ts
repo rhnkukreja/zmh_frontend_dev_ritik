@@ -238,6 +238,31 @@ const getColorForCharacter = (char: string) => {
   return characterColors[char.toUpperCase()] || "#FFFFFF";
 };
 
+function bytesToMB(bytes: number): number {
+  return parseFloat((bytes / (1024 * 1024)).toFixed(2));
+}
+
+const getYearRange = (range: number): string[] => {
+  const now = new Date().getUTCFullYear();
+  return Array(now - (now - range))
+    .fill("")
+    .map((v, idx) => now - idx)
+    .map(String);
+};
+
+const formatedDate = (dateString: string): string => {
+  const parsedDate = dayjs(dateString, "D MMM, YYYY");
+
+  const now = dayjs();
+  const fullDate = parsedDate
+    .set("hour", now.hour())
+    .set("minute", now.minute())
+    .set("second", now.second())
+    .set("millisecond", now.millisecond());
+
+  return fullDate.format("YYYY-MM-DDTHH:mm:ss");
+};
+
 export {
   cutText,
   formatDate,
@@ -256,4 +281,7 @@ export {
   getPageNumbers,
   createDynamicURL,
   getColorForCharacter,
+  bytesToMB,
+  getYearRange,
+  formatedDate,
 };

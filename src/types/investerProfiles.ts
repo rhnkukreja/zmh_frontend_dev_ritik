@@ -47,3 +47,15 @@ export interface InvestersProfile {
   date_created: string;
   date_updated: string;
 }
+
+export type AddNewInvesterType = {
+  engagement_priorities: string;
+  voting_guidelines_summary: string;
+  voting_guidelines_link: string;
+  reporting_expectations: string;
+  esg_integration_process: string;
+  references: string;
+  active: string;
+  key_contacts?: any;
+  institution?: number;
+};

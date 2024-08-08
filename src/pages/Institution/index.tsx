@@ -1,58 +1,52 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover } from "@/components/Base/Headless";
-// import TomSelect from "@/components/Base/TomSelect";
 import { FormInput, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
 import { useEffect, useMemo, useState } from "react";
-
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import {
-  fetchEngagementQuestions,
+  fetchInstitutions,
   resetFilter,
   resetPage,
   setFilter,
   setPage,
-} from "@/stores/engagementQuestionSlice";
-
+} from "@/stores/institutionSlice";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
-import { AddEditEngagementQuestion } from "./components/AddEditEngagementQuestion";
-import { EngagementQuestions } from "@/types/engagementQuestions";
+import { Institutions } from "@/types/institutions";
+import { AddEditInstitution } from "./components/CreateAndEditInstitution";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const {
-    questions,
+    institutions,
     loading,
     page,
     totalPages,
-    engagementQuestionFilterOptions,
+    institutionFilterOptions,
     filters,
-  } = useAppSelector((state) => state.engagementQuestions);
+  } = useAppSelector((state) => state.institutions);
 
   const { user } = useAppSelector((state) => state.authentiction);
 
-  const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
-    useState<EngagementQuestions | null>(null);
-
-  const [
-    addNewEngagementQuestionModalVisible,
-    setAddNewEngagementQuestionModalVisible,
-  ] = useState<boolean>(false);
+  const [selectedInstitution, setSelectedInstitution] =
+    useState<Institutions | null>(null);
+  const [addEditInstitutionVisible, setAddEditInstitutionVisible] =
+    useState<boolean>(false);
 
   useEffect(() => {
     dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
+      fetchInstitutions(
+        createDynamicURL(`${baseURL}/institute/`, filters, page)
       )
     );
   }, [page, filters.institution_name]);
@@ -85,10 +79,11 @@ function Main() {
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     debouncedSearch(e.target.value);
   }
+
   function handleApplyFilter() {
     dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
+      fetchInstitutions(
+        createDynamicURL(`${baseURL}/institute/`, filters, page)
       )
     );
     dispatch(resetPage());
@@ -102,35 +97,41 @@ function Main() {
   const onFilterClear = () => {
     dispatch(resetFilter());
     dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, undefined, page)
+      fetchInstitutions(
+        createDynamicURL(`${baseURL}/institute/`, undefined, page)
       )
     );
   };
 
-  const onEditClickHandler = (question: EngagementQuestions) => {
-    setSelectedEngagementQuestion(question);
-    setAddNewEngagementQuestionModalVisible(true);
-  };
+  useEffect(() => {
+    if (addEditInstitutionVisible === false) {
+      setSelectedInstitution(null);
+    }
+  }, [addEditInstitutionVisible]);
+
+  function onEditClickHandler(institution: Institutions) {
+    setSelectedInstitution(institution);
+    setAddEditInstitutionVisible(true);
+  }
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
           <div className="text-base font-medium group-[.mode--light]:text-white">
-            Engagement Questions
+            Institutions
           </div>
           {user?.user_type === "Admin" && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
                 onClick={() => {
-                  setAddNewEngagementQuestionModalVisible(true);
+                  setAddEditInstitutionVisible(true);
                 }}
                 variant="primary"
                 className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
               >
                 <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
-                Add New Engagement Question
+                Add New Institution
               </Button>
             </div>
           )}
@@ -146,7 +147,7 @@ function Main() {
                   />
                   <FormInput
                     type="text"
-                    placeholder="Search invester..."
+                    placeholder="Search institution..."
                     className="pl-9 sm:w-64 rounded-[0.5rem]"
                     onChange={handleSearch}
                   />
@@ -172,12 +173,68 @@ function Main() {
                       </Popover.Button>
                       <Popover.Panel placement="bottom-end">
                         <div className="p-2">
-                          {/* <div>
+                          <div className="mt-3">
                             <div className="text-left text-slate-500">
-                              Type of Engagement
+                              Region
                             </div>
-                            <FormSelect className="flex-1 mt-2">
-                              {engagementQuestionFilterOptions.typeOfEngagement.map(
+                            <FormSelect
+                              defaultValue={
+                                filters.region.length > 0
+                                  ? filters.region
+                                  : "Select Region"
+                              }
+                              className="flex-1 mt-2"
+                              onChange={(
+                                e: React.ChangeEvent<HTMLSelectElement>
+                              ) => {
+                                dispatch(
+                                  setFilter({
+                                    key: "region",
+                                    value: e.target.value,
+                                  })
+                                );
+                              }}
+                            >
+                              <option disabled selected>
+                                Select Region
+                              </option>
+                              {institutionFilterOptions.region.map(
+                                (region: string, index: number) => {
+                                  return (
+                                    <option key={index} value={region}>
+                                      {region}
+                                    </option>
+                                  );
+                                }
+                              )}
+                            </FormSelect>
+                          </div>
+                          {/* <div className="mt-3">
+                            <div className="text-left text-slate-500">
+                              Investor Type
+                            </div>
+                            <FormSelect
+                              defaultValue={
+                                filters.investor_type.length > 0
+                                  ? filters.investor_type
+                                  : "Select Investor Type"
+                              }
+                              className="flex-1 mt-2"
+                              onChange={(
+                                e: React.ChangeEvent<HTMLSelectElement>
+                              ) => {
+                                dispatch(
+                                  setFilter({
+                                    key: "investor_type",
+                                    value: e.target.value,
+                                  })
+                                );
+                              }}
+                            >
+                              <option disabled selected>
+                                Select Investor Type
+                              </option>
+                              {institutionFilterOptions.investor_type.map(
                                 (type: string, index: number) => {
                                   return (
                                     <option key={index} value={type}>
@@ -188,58 +245,6 @@ function Main() {
                               )}
                             </FormSelect>
                           </div> */}
-                          {/* <div className="mt-3">
-                            <div className="text-left text-slate-500">
-                              Source
-                            </div>
-                            <FormSelect className="flex-1 mt-2">
-                              {engagementQuestionFilterOptions.source.map(
-                                (source: string, index: number) => {
-                                  return (
-                                    <option key={index} value={source}>
-                                      {source}
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </FormSelect>
-                          </div> */}
-                          <div className="mt-3">
-                            <div className="text-left text-slate-500">
-                              Category
-                            </div>
-                            <FormSelect
-                              defaultValue={
-                                filters.category.length > 0
-                                  ? filters.category
-                                  : "Select Category"
-                              }
-                              className="flex-1 mt-2"
-                              onChange={(
-                                e: React.ChangeEvent<HTMLSelectElement>
-                              ) => {
-                                dispatch(
-                                  setFilter({
-                                    key: "category",
-                                    value: e.target.value,
-                                  })
-                                );
-                              }}
-                            >
-                              <option disabled selected>
-                                Select Category
-                              </option>
-                              {engagementQuestionFilterOptions.category.map(
-                                (category: string, index: number) => {
-                                  return (
-                                    <option key={index} value={category}>
-                                      {category}
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </FormSelect>
-                          </div>
                           <div className="flex items-center mt-4">
                             <Button
                               variant="secondary"
@@ -272,89 +277,69 @@ function Main() {
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Institute Name
+                        Institution
                       </Table.Td>
-
-                      <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Category
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                        Active
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Engagement Questions
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                        Logo
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Company
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                        Region
                       </Table.Td>
-
-                      <Table.Td className="py-2 font-medium text-nowrap bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Type of Engagement
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                        Investor Type
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Actions
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                        Contact
+                      </Table.Td>
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                        Action
                       </Table.Td>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {questions?.length > 0 ? (
-                      questions?.map((question) => (
-                        <Table.Tr
-                          key={question?.id}
-                          className="[&_td]:last:border-b-0"
-                        >
-                          <Table.Td className=" py-2 border-dashed dark:bg-darkmode-600">
-                            <div className=" font-medium   whitespace-nowrap capitalize">
-                              {question?.institution_name}
+                    {institutions?.length > 0 ? (
+                      institutions?.map((institution: Institutions) => (
+                        <Table.Tr key={institution.id}>
+                          <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
+                            <div className="font-medium">
+                              {institution?.institution}
                             </div>
                           </Table.Td>
-
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap capitalize">
-                              {question?.category}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <Tippy
-                              content={question?.engagement_question}
-                              options={{
-                                theme: "light",
-                              }}
-                            >
-                              <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                {question?.engagement_question}
+                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                            {institution?.active === true ? (
+                              <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
+                                <span className="-mt-px">Active</span>
                               </div>
-                            </Tippy>
+                            ) : (
+                              <div className="flex items-center justify-center text-xs font-medium rounded-md text-danger bg-danger/10 border  px-1.5 py-1 mr-auto sm:mr-0">
+                                <span className="-mt-px">In Active</span>
+                              </div>
+                            )}
+                          </Table.Td>
+                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                            <img
+                              className="w-8 h-8 mx-auto rounded-full"
+                              src={institution?.logo_url}
+                              alt="Institution Logo"
+                            />
+                          </Table.Td>
+                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                            {institution?.region}
+                          </Table.Td>
+                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                            {institution.investor_type}
+                          </Table.Td>
+                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                            {institution?.contact}
                           </Table.Td>
 
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap capitalize">
-                              {question?.company_name}
-                            </div>
-                          </Table.Td>
-
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap">
-                              {question?.type_of_engagement}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="py-2  flex gap-3 border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2 text-center  border-dashed dark:bg-darkmode-600">
                             <Button
                               onClick={() => {
-                                navigate(
-                                  `/engagement-question/${question?.id}`
-                                );
-                              }}
-                              size="sm"
-                              variant="secondary"
-                              elevated
-                            >
-                              <Lucide
-                                icon="Eye"
-                                className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                              />{" "}
-                              View
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                onEditClickHandler(question);
+                                onEditClickHandler(institution);
                               }}
                               size="sm"
                               variant="primary"
@@ -375,7 +360,7 @@ function Main() {
                           colSpan={7}
                           className="py-10 text-center text-slate-500"
                         >
-                          No engagement questions.
+                          No institutions found.
                         </Table.Td>
                       </Table.Tr>
                     )}
@@ -383,35 +368,22 @@ function Main() {
                 </Table>
               </TableWrapper>
             </div>
-            <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-              {questions?.length > 0 && (
-                <CPagination
-                  page={page}
-                  totalPages={totalPages}
-                  handleNextPage={handleNextPage}
-                  handlePageChange={handlePageChange}
-                  handlePreviousPage={handlePreviousPage}
-                />
-              )}
-              {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
-                <option>10</option>
-                <option>25</option>
-                <option>35</option>
-                <option>50</option>
-              </FormSelect> */}
+            <div className="flex justify-end p-5 border-t rounded-b-md">
+              <CPagination
+                page={page}
+                totalPages={totalPages}
+                handleNextPage={handleNextPage}
+                handlePageChange={handlePageChange}
+                handlePreviousPage={handlePreviousPage}
+              />
             </div>
           </div>
         </div>
-
-        {addNewEngagementQuestionModalVisible && (
-          <AddEditEngagementQuestion
-            addNewEngagementQuestionModalVisible={
-              addNewEngagementQuestionModalVisible
-            }
-            setAddNewEngagementQuestionModalVisible={
-              setAddNewEngagementQuestionModalVisible
-            }
-            selectedEngagementQuestion={selectedEngagementQuestion}
+        {addEditInstitutionVisible && (
+          <AddEditInstitution
+            addEditInstitutionVisible={addEditInstitutionVisible}
+            setAddEditInstitutionVisible={setAddEditInstitutionVisible}
+            selectedInstitution={selectedInstitution}
           />
         )}
       </div>

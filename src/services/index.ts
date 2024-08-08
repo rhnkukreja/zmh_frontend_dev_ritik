@@ -2,14 +2,18 @@ import { baseURL } from "@/constant";
 import axios, {
   AxiosError,
   AxiosInstance as AxiosInstanceType,
-  
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
 import { toast } from "react-toastify";
 
+const multipartFormDataUrls = [
+  "/investor_profile/",
+  "/proxy_voting_guidelines/",
+  "/institute/",
+];
 
-function APIErrors(message : string) {
+function APIErrors(message: string) {
   toast.error(message);
 }
 class AxiosServiceConfig {
@@ -28,6 +32,20 @@ class AxiosServiceConfig {
           if (token) {
             config.headers["Authorization"] = `JWT ${token}`;
           }
+
+          const isMultipartFormData = multipartFormDataUrls.some((urlPattern) =>
+            config?.url?.includes(urlPattern)
+          );
+
+          if (
+            (isMultipartFormData && config.method === "post") ||
+            config.method === "put"
+          ) {
+            config.headers["Content-Type"] = `multipart/form-data`;
+          } else {
+            config.headers["Content-Type"] = `application/json`;
+          }
+
           return config;
         },
         (error: AxiosError) => {
@@ -41,7 +59,6 @@ class AxiosServiceConfig {
         },
         (error: AxiosError) => {
           let errorMessage = "";
-
 
           if (error.response) {
             const { data } = error.response as any;
@@ -68,7 +85,7 @@ class AxiosServiceConfig {
             errorMessage = error.message;
           }
 
-          APIErrors(errorMessage)
+          APIErrors(errorMessage);
           return Promise.reject(new Error(errorMessage));
         }
       );

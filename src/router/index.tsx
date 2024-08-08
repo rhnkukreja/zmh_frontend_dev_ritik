@@ -65,9 +65,13 @@ import DetailInvestersProfile from "../pages/InvestorProfiles/Detail";
 import EngagementQuestion from "../pages/EngagementQuestion";
 import ProxyVotingGuideline from "../pages/ProxyVotingGuideline";
 import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
+
+import Institution from "../pages/Institution";
+
 import Layout from "../themes";
 import withAuth from "./protectedRoute";
 import React from "react";
+import CompanyList from "@/pages/Company";
 
 function Router() {
   const routes = [
@@ -308,12 +312,20 @@ function Router() {
           element: <InvestersProfiles />,
         },
         {
+          path: "company",
+          element: <CompanyList />,
+        },
+        {
           path: "investor-profile/:id",
           element: <DetailInvestersProfile />,
         },
         {
           path: "engagement-question",
           element: <EngagementQuestion />,
+        },
+        {
+          path: "institution",
+          element: <Institution />,
         },
         {
           path: "proxy-voting-guideline",

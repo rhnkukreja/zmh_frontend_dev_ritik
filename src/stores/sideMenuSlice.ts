@@ -108,6 +108,17 @@ const initialState: SideMenuState = {
     //   pathname: "/calendar",
     //   title: "Calendar",
     // },
+    "ADMIN",
+    {
+      icon: "Building",
+      pathname: "/institution",
+      title: "Institutions",
+    },
+    {
+      icon: "Factory",
+      pathname: "/company",
+      title: "Company",
+    },
     // "UI WIDGETS",
     // {
     //   icon: "Album",

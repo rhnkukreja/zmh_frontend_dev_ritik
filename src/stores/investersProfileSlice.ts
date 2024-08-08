@@ -1,5 +1,5 @@
 import { investersProfileService } from "@/services/investersProfile";
-import { InvestersProfile } from "@/types/investerProfiles";
+import { AddNewInvesterType, InvestersProfile } from "@/types/investerProfiles";
 import { getPageNumbers } from "@/utils/helper";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
@@ -73,8 +73,8 @@ export const updateInvestersProfile = createAsyncThunk<
 
 export const addNewInvestersProfile = createAsyncThunk<
   { results: InvestersProfile },
-  Partial<InvestersProfile>
->(`${name}/addNewInvestersProfile`, async (data: Partial<InvestersProfile>) => {
+  AddNewInvesterType
+>(`${name}/addNewInvestersProfile`, async (data: AddNewInvesterType) => {
   const response = await investersProfileService.AddNewInvestersProfile(data);
   return response;
 });
