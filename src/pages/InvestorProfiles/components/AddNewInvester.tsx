@@ -6,15 +6,19 @@ import { FormCheck } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { addNewInvestersProfile } from "@/stores/investersProfileSlice";
+import {
+  addNewInvestersProfile,
+  fetchInvestersProfiles,
+} from "@/stores/investersProfileSlice";
 import { AppDispatch } from "@/stores/store";
 import { AddNewInvesterType } from "@/types/investerProfiles";
-import { bytesToMB } from "@/utils/helper";
+import { bytesToMB, createDynamicURL } from "@/utils/helper";
 
 import React, { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect/ServerComponent";
+import { baseURL } from "@/constant";
 
 interface AddNewInvesterProfileProps {
   addNewInvesterModalVisible: boolean;
@@ -27,7 +31,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
-  const { loading } = useAppSelector((state) => state.investersProfile);
+  const { loading, page } = useAppSelector((state) => state.investersProfile);
   const { handleSubmit, control } = useForm<AddNewInvesterType>();
 
   const [selectedInstitution, setSelectedInstitution] = useState<string>("");
@@ -90,6 +94,12 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
       if (response.results?.id) {
         toast.success("New Invester Profile Added");
         setAddNewInvesterModalVisible(false);
+
+        dispatch(
+          fetchInvestersProfiles(
+            createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+          )
+        );
       }
     } catch (error) {
       console.error("Error submitting form:", error);

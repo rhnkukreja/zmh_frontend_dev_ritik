@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { updateInvestersProfile } from "@/stores/investersProfileSlice";
 import { InvestersProfile } from "@/types/investerProfiles";
 import LoadingWrapper from "@/components/LoadingWrapper";
+import ParceHtml from "@/components/ParseHtml";
 
 interface EditableSectionProps {
   id: number;
@@ -30,10 +31,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const [loading, setLoading] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
-
-  const {
-    user
-   } = useAppSelector((state) => state.authentiction);
+  const { user } = useAppSelector((state) => state.authentiction);
 
   const handleSave = async () => {
     setLoading(true);
@@ -54,28 +52,30 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   }, [renderHtml, isEditing]);
 
   return (
-    <div className="flex flex-col w-full ">
+    <div className="flex flex-col w-full  mb-3 ">
       <div className="flex flex-row justify-between items-center px-4 py-3 box ">
-        <h4 className="text-[18px] font-bold text-left  leading-none text-primary">
+        <h4 className="text-[18px] font-bold text-left py-1 leading-none text-primary">
           {title}
         </h4>
 
-       {user?.user_type === "Admin" && <Button
-          variant="secondary"
-          elevated
-          className="px-6"
-          onClick={() => setIsEditing((prevState) => !prevState)}
-        >
-          <Lucide icon="PenSquare" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
-          Edit
-        </Button>}
+        {user?.user_type === "Admin" && (
+          <Button
+            variant="secondary"
+            elevated
+            className="px-6"
+            onClick={() => setIsEditing((prevState) => !prevState)}
+          >
+            <Lucide icon="PenSquare" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
+            {renderHtml ? "Edit" : "Add"}
+          </Button>
+        )}
       </div>
       {fetchloading && loading === false ? (
         <LoadingWrapper height={300} />
       ) : (
         <>
           {isEditing ? (
-            <div className="flex my-8 flex-col px-6 py-6 box ">
+            <div className="flex  flex-col px-6 py-6 box ">
               <div ref={editorRef}>
                 <ClassicEditor value={value} onChange={setValue} />
               </div>
@@ -101,12 +101,13 @@ const EditableSection: React.FC<EditableSectionProps> = ({
               </div>
             </div>
           ) : (
-            <div className="flex my-8 flex-col px-4 pt-4 box">
-              <div
-                className="text-slate-500 mt-0.5 my-3 text-left text-[16px] leading-[25px]"
-                dangerouslySetInnerHTML={{ __html: renderHtml }}
-              />
-            </div>
+            <>
+              {renderHtml ? (
+                <div className="flex  flex-col px-4 pt-4   box">
+                  <ParceHtml htmlString={renderHtml} />
+                </div>
+              ) : null}
+            </>
           )}
         </>
       )}

@@ -279,22 +279,22 @@ function Main() {
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Institution
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Active
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Logo
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Region
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Investor Type
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Contact
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Action
                       </Table.Td>
                     </Table.Tr>
@@ -308,7 +308,7 @@ function Main() {
                               {institution?.institution}
                             </div>
                           </Table.Td>
-                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {institution?.active === true ? (
                               <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
                                 <span className="-mt-px">Active</span>
@@ -319,24 +319,24 @@ function Main() {
                               </div>
                             )}
                           </Table.Td>
-                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                          <Table.Td className="py-2  bg-white border-slate-200/80">
                             <img
                               className="w-8 h-8 mx-auto rounded-full"
                               src={institution?.logo_url}
                               alt="Institution Logo"
                             />
                           </Table.Td>
-                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                          <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution?.region}
                           </Table.Td>
-                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                          <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution.investor_type}
                           </Table.Td>
-                          <Table.Td className="py-2 text-center bg-white border-slate-200/80">
+                          <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution?.contact}
                           </Table.Td>
 
-                          <Table.Td className="py-2 text-center  border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
                             <Button
                               onClick={() => {
                                 onEditClickHandler(institution);

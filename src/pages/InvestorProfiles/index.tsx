@@ -248,11 +248,9 @@ function Main() {
                         <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
                         </Table.Td>
+
                         <Table.Td className="py-2  font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Download
-                        </Table.Td>
-                        <Table.Td className="py-2  font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Action
+                          Actions
                         </Table.Td>
                       </Table.Tr>
                     </Table.Thead>
@@ -287,16 +285,8 @@ function Main() {
                                 </div>
                               )}
                             </Table.Td>
-                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              <Button size="sm" variant="primary" elevated>
-                                <Lucide
-                                  icon="File"
-                                  className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                                />{" "}
-                                Download PDF
-                              </Button>
-                            </Table.Td>
-                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+
+                            <Table.Td className="py-2 flex gap-5 border-dashed dark:bg-darkmode-600">
                               <Button
                                 onClick={() => {
                                   gotoDetailPage(profile.id);
@@ -308,8 +298,15 @@ function Main() {
                                 <Lucide
                                   icon="Eye"
                                   className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                                />{" "}
+                                />
                                 View
+                              </Button>
+                              <Button size="sm" variant="primary" elevated>
+                                <Lucide
+                                  icon="File"
+                                  className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
+                                />
+                                Download
                               </Button>
                             </Table.Td>
                           </Table.Tr>

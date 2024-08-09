@@ -8,9 +8,10 @@ import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
-import { addEditCompany } from "@/stores/companySlice";
+import { addEditCompany, fetchCompanies } from "@/stores/companySlice";
 import { CompanyData } from "@/types/company";
-import { bytesToMB } from "@/utils/helper";
+import { bytesToMB, createDynamicURL } from "@/utils/helper";
+import { baseURL } from "@/constant";
 
 interface AddEditCompanyProps {
   addNewCompanyVisible: boolean;
@@ -25,7 +26,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
 }) => {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading } = useAppSelector((state) => state.company);
+  const { loading, page } = useAppSelector((state) => state.company);
 
   const [companyFile, setCompanyFile] = useState<File | null>(null);
 
@@ -65,7 +66,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
     }
   }, [dropzoneSingleRef.current, companyFile, addNewCompanyVisible]);
 
-  const { control, handleSubmit } = useForm();
+  const { handleSubmit } = useForm();
 
   const onSubmit = async () => {
     const formData = new FormData();
@@ -90,6 +91,12 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
             data: formData as unknown as Partial<CompanyData>,
           })
         ).unwrap();
+
+        dispatch(
+          fetchCompanies(
+            createDynamicURL(`${baseURL}/company/`, undefined, page)
+          )
+        );
       }
 
       if (response?.results?.id) {

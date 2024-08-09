@@ -20,6 +20,7 @@ import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { baseURL } from "@/constant";
 import { toast } from "react-toastify";
 import { KeyContact } from "@/types/investerProfiles";
+import ParceHtml from "@/components/ParseHtml";
 
 function Main() {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
@@ -27,9 +28,7 @@ function Main() {
   const { singleInvesterProfile, loading } = useAppSelector(
     (state) => state.investersProfile
   );
-  const { user } = useAppSelector(
-    (state) => state.authentiction
-  );
+  const { user } = useAppSelector((state) => state.authentiction);
   const params = useParams();
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -117,14 +116,14 @@ function Main() {
                 theme: "light",
               }}
             >
-              <h2 className="sm:text-[1.1rem] text-sm font-bold font-serif text-gray-600 dark:text-gray-100 tracking-wide">
+              <h2 className="sm:text-[1.3rem] text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
                 {singleInvesterProfile?.institution_name || ""}
               </h2>
             </Tippy>
           </div>
 
           <div className="flex flex-row justify-center items-center sm:gap-4 ">
-            <h2 className="hidden sm:text-[1.1rem] sm:inline sm:text-xl text-sm font-bold font-serif text-gray-600 dark:text-gray-100 tracking-wide">
+            <h2 className="hidden sm:text-[1.1rem] sm:inline sm:text-xl text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
               Last Update:
             </h2>
             <p className="flex items-center justify-center text-sm sm:text-[16px] font-medium rounded-md text-primary bg-primary/10 border  px-1.5 py-1 ">
@@ -134,34 +133,36 @@ function Main() {
             </p>
           </div>
         </div>
-        <div className="mt-3.5 flex flex-col lg:flex-row gap-x-6">
+        <div className="mt-3.5 flex flex-col lg:flex-row  gap-x-6">
           <div className="w-full lg:w-[18rem] flex-none">
             <div className="flex flex-col gap-y-7">
               <div
-                className={`relative flex flex-col px-4 py-3 sm:px-2 items-center box transition-all duration-300 ease-in-out overflow-hidden ${
+                className={`relative flex flex-col px-4 py-3 sm:px-2 items-center box  transition-all duration-300 ease-in-out overflow-hidden  ${
                   isExpanded ? "h-[270px] sm:h-[270px]" : "h-[62px]"
                 }`}
               >
-                <div className="flex flex-row items-center justify-between w-full">
+                <div className="flex items-center justify-between  w-full h-full">
                   <h4 className="text-[18px] font-bold leading-none text-primary">
                     Key Contacts
                   </h4>
-                  {user?.user_type === "Admin" && <div
-                    className="ml-auto cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2  transition-colors duration-200 hover:bg-primary hover:text-white"
-                    onClick={toggleExpand}
-                  >
-                    <Lucide
-                      icon="FileText"
-                      className="stroke-[1.3] w-4 h-4 mr-1.5"
-                    />
-                    Upload
-                  </div>}
+                  {user?.user_type === "Admin" && (
+                    <div
+                      className="ml-4 cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2 transition-colors duration-200 hover:bg-primary hover:text-white"
+                      onClick={toggleExpand}
+                    >
+                      <Lucide
+                        icon="FileText"
+                        className="stroke-[1.3] w-4 h-4 mr-1.5"
+                      />
+                      Upload
+                    </div>
+                  )}
                 </div>
+
                 {isExpanded && (
-                  <div className="w-full mt-6 max-h-[180px]">
+                  <div className="w-full mt-3 max-h-[180px]">
                     <Dropzone
                       ref={dropzoneSingleRef}
-                      
                       options={{
                         // url: `https://file.io`,
                         // method: "post",
@@ -198,7 +199,7 @@ function Main() {
                   <>
                     {singleInvesterProfile?.key_contacts?.map(
                       (contacts: KeyContact) => (
-                        <div className="flex mb-6 mt-1 flex-col px-4 box ">
+                        <div className="flex mb-6  flex-col px-4 box ">
                           <div className="flex my-6 flex-col items-center">
                             <div>
                               <div className="w-28 h-28 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
@@ -208,11 +209,11 @@ function Main() {
                                 />
                               </div>
                             </div>
-                            <div className="text-xl mt-3 font-mono font-bold text-center text-gray-800">
+                            <div className="text-xl mt-3  font-bold text-center text-gray-800">
                               {contacts?.name}
                             </div>
                             <div
-                              className="text-slate-500 mt-0.5 font-bold text-center"
+                              className="text-slate-500 mt-0.5 font-semibold text-center"
                               dangerouslySetInnerHTML={{
                                 __html: contacts?.designation,
                               }}
@@ -227,11 +228,7 @@ function Main() {
                                 window.open(contacts?.linkedin, "_blank");
                               }}
                             >
-                              <Lucide
-                                icon="Linkedin"
-                                className="w-4 h-4 stroke-[1.3] mr-2"
-                              />
-                              Linked In
+                              LinkedIn
                             </Button>
                           </div>
                         </div>

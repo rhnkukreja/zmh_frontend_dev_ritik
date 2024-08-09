@@ -3,6 +3,7 @@ import { useForm, Controller } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   addEditInstitution,
+  fetchInstitutions,
   getSingleInstitution,
 } from "@/stores/institutionSlice";
 import { Institutions } from "@/types/institutions";
@@ -13,9 +14,10 @@ import FormInput from "@/components/Base/Form/FormInput";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
-import { bytesToMB, formatedDate } from "@/utils/helper";
+import { bytesToMB, createDynamicURL, formatedDate } from "@/utils/helper";
 import Litepicker from "@/components/Base/Litepicker";
 import TomSelect from "@/components/Base/TomSelect";
+import { baseURL } from "@/constant";
 
 interface InstitutionFormData {
   institution: string;
@@ -40,7 +42,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
 }) => {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const dispatch = useAppDispatch();
-  const { loading } = useAppSelector((state) => state.institutions);
+  const { loading, page } = useAppSelector((state) => state.institutions);
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const { control, handleSubmit, getValues, setValue } =
@@ -126,6 +128,12 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
             data: formData as unknown as Partial<Institutions>,
           })
         ).unwrap();
+
+        dispatch(
+          fetchInstitutions(
+            createDynamicURL(`${baseURL}/institute/`, undefined, page)
+          )
+        );
       }
 
       if (response.results?.id) {

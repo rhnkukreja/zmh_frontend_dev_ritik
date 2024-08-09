@@ -67,7 +67,7 @@ const DetailEngagementQuestion = () => {
 
               <p className="text-gray-500">
                 {dayjs(getSingleQuestion?.engagement_date).format(
-                  "MMMM D, YYYY"
+                  "MMMM , YYYY"
                 )}
               </p>
             </div>

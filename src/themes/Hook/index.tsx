@@ -157,8 +157,8 @@ function Main() {
           >
             <ul className="scrollable">
               {/* BEGIN: First Child */}
-              {formattedMenu.map((menu, menuKey) =>
-                typeof menu == "string" ? (
+              {formattedMenu.map((menu, menuKey) => {
+                return typeof menu == "string" ? (
                   <li className="side-menu__divider" key={menuKey}>
                     {menu}
                   </li>
@@ -319,8 +319,8 @@ function Main() {
                     )}
                     {/* END: Second Child */}
                   </li>
-                )
-              )}
+                );
+              })}
               {/* END: First Child */}
             </ul>
           </div>

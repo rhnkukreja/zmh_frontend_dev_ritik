@@ -4,7 +4,10 @@ import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { addEditEngagementQuestion } from "@/stores/engagementQuestionSlice";
+import {
+  addEditEngagementQuestion,
+  fetchEngagementQuestions,
+} from "@/stores/engagementQuestionSlice";
 import { AppDispatch } from "@/stores/store";
 
 import React from "react";
@@ -17,7 +20,8 @@ import {
   EngagementFormData,
   EngagementQuestions,
 } from "@/types/engagementQuestions";
-import { formatedDate } from "@/utils/helper";
+import { createDynamicURL, formatedDate } from "@/utils/helper";
+import { baseURL } from "@/constant";
 
 interface AddEditEngagementQuestionProps {
   addNewEngagementQuestionModalVisible: boolean;
@@ -34,7 +38,9 @@ export const AddEditEngagementQuestion: React.FC<
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
 
-  const { loading } = useAppSelector((state) => state.engagementQuestions);
+  const { loading, page } = useAppSelector(
+    (state) => state.engagementQuestions
+  );
   const { control, handleSubmit, getValues, setValue } =
     useForm<EngagementFormData>({
       defaultValues: {
@@ -90,6 +96,16 @@ export const AddEditEngagementQuestion: React.FC<
             data: formData as unknown as EngagementFormData,
           })
         ).unwrap();
+
+        dispatch(
+          fetchEngagementQuestions(
+            createDynamicURL(
+              `${baseURL}/engagement_questions/`,
+              undefined,
+              page
+            )
+          )
+        );
       }
 
       if (response?.results?.id) {

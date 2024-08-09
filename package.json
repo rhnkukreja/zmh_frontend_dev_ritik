@@ -31,6 +31,7 @@
     "dropzone": "^6.0.0-beta.2",
     "flat": "^6.0.1",
     "highlight.js": "^11.9.0",
+    "html-react-parser": "^5.1.12",
     "js-beautify": "^1.14.11",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",

@@ -1,6 +1,14 @@
 import { NavigateFunction } from "react-router-dom";
 import { Menu } from "@/stores/sideMenuSlice";
 import { slideUp, slideDown } from "@/utils/helper";
+import { store } from "@/stores/store";
+
+const isAdmin = localStorage.getItem("userType");
+// const getStateData = () => {
+//   return store.getState();
+// };
+
+// const state = getStateData();
 
 interface Location {
   pathname: string;
@@ -33,9 +41,18 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
   return match;
 };
 
+console.log(isAdmin);
+
 const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   const formattedMenu: Array<FormattedMenu | string> = [];
   menu.forEach((item) => {
+    if (
+      typeof item !== "string" &&
+      isAdmin?.toLowerCase() !== "admin" &&
+      ["Company", "Institutions"].includes(item?.title)
+    ) {
+      return;
+    }
     if (typeof item !== "string") {
       const menuItem: FormattedMenu = {
         icon: item.icon,
@@ -66,7 +83,14 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
 
       formattedMenu.push(menuItem);
     } else {
-      formattedMenu.push(item);
+      if (
+        isAdmin?.toLowerCase() !== "admin" &&
+        ["admin"].includes(item.toLowerCase())
+      ) {
+        return;
+      } else {
+        formattedMenu.push(item);
+      }
     }
   });
 

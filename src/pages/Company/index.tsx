@@ -127,13 +127,13 @@ function CompanyList() {
                       <Table.Td className="py-2 font-medium bg-slate-50 border-slate-200/80 text-slate-500">
                         Symbol
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Name
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Company V1
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-center border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Actions
                       </Table.Td>
                     </Table.Tr>
@@ -145,13 +145,13 @@ function CompanyList() {
                           <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                             {company.symbol}
                           </Table.Td>
-                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {company.name}
                           </Table.Td>
-                          <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {company.company_v1}
                           </Table.Td>
-                          <Table.Td className="py-2 text-center flex gap-3 border-dashed dark:bg-darkmode-600">
+                          <Table.Td className="py-2  flex gap-3 border-dashed dark:bg-darkmode-600">
                             <Button size="sm" variant="secondary" elevated>
                               <Lucide
                                 icon="Eye"

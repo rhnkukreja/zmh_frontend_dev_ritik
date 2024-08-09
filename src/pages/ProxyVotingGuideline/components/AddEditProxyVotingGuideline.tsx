@@ -11,8 +11,10 @@ import { AppDispatch } from "@/stores/store";
 import { addEditProxyVotingGuideline } from "@/stores/proxyVotingGuidelineSlice";
 import { ProxyVotingGuideline } from "@/types/proxyVotingGuideline";
 import TomSelect from "@/components/Base/TomSelect";
-import { bytesToMB, getYearRange } from "@/utils/helper";
+import { bytesToMB, createDynamicURL, getYearRange } from "@/utils/helper";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
+import { fetchEngagementQuestions } from "@/stores/engagementQuestionSlice";
+import { baseURL } from "@/constant";
 
 interface PolicyGuidelineFormData {
   institution: string;
@@ -37,7 +39,9 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
 }) => {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading } = useAppSelector((state) => state.proxyVotingGuideline);
+  const { loading, page } = useAppSelector(
+    (state) => state.proxyVotingGuideline
+  );
 
   const [guideLinePdf, setGuideLinePdf] = useState<any>(null);
 
@@ -124,6 +128,16 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
             data: formData as unknown as Partial<ProxyVotingGuideline>,
           })
         ).unwrap();
+
+        dispatch(
+          fetchEngagementQuestions(
+            createDynamicURL(
+              `${baseURL}/engagement_questions/`,
+              undefined,
+              page
+            )
+          )
+        );
       }
 
       if (response?.results?.id) {

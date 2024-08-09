@@ -25,6 +25,7 @@ import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { AddEditEngagementQuestion } from "./components/AddEditEngagementQuestion";
 import { EngagementQuestions } from "@/types/engagementQuestions";
+import dayjs from "dayjs";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -282,12 +283,9 @@ function Main() {
                         Engagement Questions
                       </Table.Td>
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Company
+                        Engagement Date
                       </Table.Td>
 
-                      <Table.Td className="py-2 font-medium text-nowrap bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Type of Engagement
-                      </Table.Td>
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Actions
                       </Table.Td>
@@ -326,15 +324,12 @@ function Main() {
 
                           <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             <div className="whitespace-nowrap capitalize">
-                              {question?.company_name}
+                              {dayjs(question?.engagement_date).format(
+                                "MMMM , YYYY"
+                              )}
                             </div>
                           </Table.Td>
 
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap">
-                              {question?.type_of_engagement}
-                            </div>
-                          </Table.Td>
                           <Table.Td className="py-2  flex gap-3 border-dashed dark:bg-darkmode-600">
                             <Button
                               onClick={() => {

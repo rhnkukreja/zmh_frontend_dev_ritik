@@ -1,7 +1,6 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover } from "@/components/Base/Headless";
-import Pagination from "@/components/Base/Pagination";
-import TomSelect from "@/components/Base/TomSelect";
+
 import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
@@ -276,9 +275,7 @@ function ProxyGuideline() {
                         <Table.Td className="py-2 font-medium bg-slate-50   text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
                         </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Download
-                        </Table.Td>
+
                         <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Actions
                         </Table.Td>
@@ -306,18 +303,30 @@ function ProxyGuideline() {
                                   }}
                                 >
                                   <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                    {guideline?.category}
+                                    {guideline?.category.toString() === "nan"
+                                      ? "--"
+                                      : guideline?.category}
                                   </div>
                                 </Tippy>
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.sub_category}
+                                {guideline?.sub_category &&
+                                guideline?.sub_category.toString() === "nan"
+                                  ? "--"
+                                  : guideline?.sub_category}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.section}
+                                {guideline?.section &&
+                                guideline?.section.toString() === "nan"
+                                  ? "--"
+                                  : guideline?.section}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.policy_guidelines}
+                                {guideline?.policy_guidelines &&
+                                guideline?.policy_guidelines.toString() ===
+                                  "nan"
+                                  ? "--"
+                                  : guideline?.policy_guidelines}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.active === true ? (
@@ -330,7 +339,8 @@ function ProxyGuideline() {
                                   </div>
                                 )}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+
+                              <Table.Td className="py-2  flex gap-3 border-dashed dark:bg-darkmode-600">
                                 <a
                                   href={
                                     guideline?.voting_guidelines_pdf_url || ""
@@ -347,8 +357,6 @@ function ProxyGuideline() {
                                     Download
                                   </Button>
                                 </a>
-                              </Table.Td>
-                              <Table.Td className="py-2  flex gap-3 border-dashed dark:bg-darkmode-600">
                                 <Button
                                   size="sm"
                                   variant="secondary"
@@ -357,10 +365,7 @@ function ProxyGuideline() {
                                     gotoDetailPage(
                                       guideline?.voting_guidelines_pdf_url!
                                     );
-                                    console.log(
-                                      "guideline?.voting_guidelines_pdf_url: ",
-                                      guideline?.voting_guidelines_pdf_url
-                                    );
+
                                     setPdfVisible(true);
                                   }}
                                 >
