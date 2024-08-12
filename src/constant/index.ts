@@ -30,3 +30,5 @@ export const characterColors: {
   Y: "#FF8333",
   Z: "#8333FF",
 };
+
+export const adminRoutes = ["Company", "Institutions"];

@@ -1,6 +1,7 @@
 import { NavigateFunction } from "react-router-dom";
 import { Menu } from "@/stores/sideMenuSlice";
 import { slideUp, slideDown } from "@/utils/helper";
+import { adminRoutes } from "@/constant";
 
 interface Location {
   pathname: string;
@@ -33,10 +34,15 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
   return match;
 };
 
+const isAdmin = localStorage.getItem("userType")?.toLowerCase();
 const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   const formattedMenu: Array<FormattedMenu | string> = [];
+
   menu.forEach((item) => {
     if (typeof item !== "string") {
+      if (item.isAdmin === true && isAdmin !== "admin") {
+        return;
+      }
       const menuItem: FormattedMenu = {
         icon: item.icon,
         title: item.title,
@@ -45,6 +51,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         subMenu: item.subMenu,
         ignore: item.ignore,
       };
+
       menuItem.active =
         ((location.forceActiveMenu !== undefined &&
           menuItem.pathname === location.forceActiveMenu) ||
@@ -56,7 +63,6 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
       if (menuItem.subMenu) {
         menuItem.activeDropdown = findActiveMenu(menuItem.subMenu, location);
 
-        // Nested menu
         const subMenu: Array<FormattedMenu> = [];
         nestedMenu(menuItem.subMenu, location).map(
           (menu) => typeof menu !== "string" && subMenu.push(menu)

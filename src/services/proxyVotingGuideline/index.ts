@@ -34,7 +34,7 @@ class ProxyVotingGuidelineService {
     data: Partial<ProxyVotingGuideline>
   ): Promise<{ result: ProxyVotingGuideline }> {
     const response = await axiosInstance.put(
-      `/proxy_voting_guidelines/${id}`,
+      `/proxy_voting_guidelines/${id}/`,
       data
     );
     return {

@@ -1,5 +1,5 @@
 import Lucide from "@/components/Base/Lucide";
-import { Popover } from "@/components/Base/Headless";
+import { Menu, Popover } from "@/components/Base/Headless";
 
 import { FormInput, FormSelect } from "@/components/Base/Form";
 
@@ -276,38 +276,48 @@ function Main() {
                             </Table.Td>
                             <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               {profile?.active === true ? (
-                                <div className="flex  justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
+                                <div className="inline-flex justify-center text-xs font-medium rounded-md text-success bg-success/10 border px-6 py-1 sm:mr-0">
                                   <span className="-mt-px">Active</span>
                                 </div>
                               ) : (
-                                <div className="flex  justify-center text-xs font-medium rounded-md text-danger bg-danger/10 border  px-1.5 py-1 mr-auto sm:mr-0">
+                                <div className="inline-flex  justify-center text-xs font-medium rounded-md text-danger bg-danger/10 border  px-4 py-1  sm:mr-0">
                                   <span className="-mt-px">In Active</span>
                                 </div>
                               )}
                             </Table.Td>
 
-                            <Table.Td className="py-2 flex gap-5 border-dashed dark:bg-darkmode-600">
-                              <Button
-                                onClick={() => {
-                                  gotoDetailPage(profile.id);
-                                }}
-                                size="sm"
-                                variant="secondary"
-                                elevated
-                              >
-                                <Lucide
-                                  icon="Eye"
-                                  className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                                />
-                                View
-                              </Button>
-                              <Button size="sm" variant="primary" elevated>
-                                <Lucide
-                                  icon="File"
-                                  className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                                />
-                                Download
-                              </Button>
+                            <Table.Td className="w-20 relative py-0 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                              <div className="flex items-center justify-center">
+                                <Menu className="h-5">
+                                  <Menu.Button className="w-5 h-5 text-slate-500">
+                                    <Lucide
+                                      icon="MoreVertical"
+                                      className="w-5 h-5 stroke-slate-400/70 fill-slate-400/70"
+                                    />
+                                  </Menu.Button>
+                                  <Menu.Items className="w-40">
+                                    <Menu.Item
+                                      onClick={() => {
+                                        gotoDetailPage(profile.id);
+                                      }}
+                                    >
+                                      <Lucide
+                                        icon="Eye"
+                                        className="w-4 h-4 mr-2"
+                                      />
+                                      View Details
+                                    </Menu.Item>
+
+                                    <Menu.Item>
+                                      <Lucide
+                                        icon="Download"
+                                        className="w-4 h-4 mr-2"
+                                      />
+                                      Download PDF
+                                    </Menu.Item>
+                                  </Menu.Items>
+                                </Menu>
+                              </div>
                             </Table.Td>
                           </Table.Tr>
                         ))}

@@ -65,6 +65,8 @@ import DetailInvestersProfile from "../pages/InvestorProfiles/Detail";
 import EngagementQuestion from "../pages/EngagementQuestion";
 import ProxyVotingGuideline from "../pages/ProxyVotingGuideline";
 import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
+import DetailInstitutions from "../pages/Institution/components/InstitutionDetail";
+import DetailCompany from "../pages/Company/component/CompanyDetail";
 
 import Institution from "../pages/Institution";
 
@@ -334,6 +336,14 @@ function Router() {
         {
           path: "engagement-question/:id",
           element: <DetailEngagementQuesion />,
+        },
+        {
+          path: "company-detail/:id",
+          element: <DetailCompany />,
+        },
+        {
+          path: "institution-detail/:id",
+          element: <DetailInstitutions />,
         },
       ],
     },

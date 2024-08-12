@@ -220,18 +220,21 @@ function TomSelect<T extends string | string[]>({
         }}
         className={clsx(["tom-select", props.className])}
       >
-        {error ? (
+        {fetchedOption?.length > 0 && error && (
           <option value={error} disabled>
             {error}
           </option>
-        ) : (
+        )}
+
+        {fetchedOption?.length > 0 &&
+          !loading &&
+          !error &&
           fetchedOption?.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
-          ))
-        )}
-        {fetchedOption.length === 0 && loading && !error && (
+          ))}
+        {fetchedOption?.length === 0 && loading && !error && (
           <option value="" disabled>
             <div className="flex justify-center items-center">
               <LoadingIcon icon="oval" className="w-8 h-8" />

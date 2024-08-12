@@ -2,7 +2,7 @@ export class LoginRequestDTO {
   constructor(
     //   public email: string,
     public password: string,
-    public username: string
+    public email: string
   ) {}
 }
 
@@ -17,6 +17,3 @@ export class SignUpRequestDTO {
     public user_type: string
   ) {}
 }
-
-
-

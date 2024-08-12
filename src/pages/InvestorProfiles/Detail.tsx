@@ -21,6 +21,7 @@ import { baseURL } from "@/constant";
 import { toast } from "react-toastify";
 import { KeyContact } from "@/types/investerProfiles";
 import ParceHtml from "@/components/ParseHtml";
+import clsx from "clsx";
 
 function Main() {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
@@ -97,8 +98,18 @@ function Main() {
         (url) =>
           `<a  href="${url.trim()}" target="_blank" rel="noopener noreferrer">${url.trim()}</a>`
       )
-      .join("<br />");
+      .join("<br /><br /><br />");
   }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines_link]);
+
+  const votingGuidelinesText = useMemo(() => {
+    return (
+      singleInvesterProfile?.voting_guidelines_summary
+        ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        ?.replace(/\n/g, "<br />") || ""
+    );
+  }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines_summary]);
+
+  console.log({ singleInvesterProfile, votingGuidelinesText });
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -135,11 +146,15 @@ function Main() {
         </div>
         <div className="mt-3.5 flex flex-col lg:flex-row  gap-x-6">
           <div className="w-full lg:w-[18rem] flex-none">
-            <div className="flex flex-col gap-y-7">
+            <div className="flex flex-col ">
               <div
-                className={`relative flex flex-col px-4 py-3 sm:px-2 items-center box  transition-all duration-300 ease-in-out overflow-hidden  ${
-                  isExpanded ? "h-[270px] sm:h-[270px]" : "h-[62px]"
-                }`}
+                className={clsx(
+                  "relative flex flex-col px-4 py-3 sm:px-2 items-center box transition-all duration-300 ease-in-out overflow-hidden",
+                  isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
+                  user?.user_type?.toLowerCase() === "admin"
+                    ? "h-[62px]"
+                    : "h-[52px]"
+                )}
               >
                 <div className="flex items-center justify-between  w-full h-full">
                   <h4 className="text-[18px] font-bold leading-none text-primary">
@@ -164,8 +179,6 @@ function Main() {
                     <Dropzone
                       ref={dropzoneSingleRef}
                       options={{
-                        // url: `https://file.io`,
-                        // method: "post",
                         url: `${baseURL}/investor_profile/`,
                         method: "put",
                         thumbnailWidth: 100,
@@ -173,17 +186,39 @@ function Main() {
                         maxFiles: 1,
                         paramName: "excel",
                         acceptedFiles: ".xlsx",
-                        // headers: {
-                        //   "Content-Type": "multipart/form-data",
-                        // },
                       }}
                       className="dropzone w-full flex flex-col justify-center items-center h-full "
                     >
-                      <div className="text-[14px] font-medium">
+                      <div className="text-sm font-semibold text-gray-800 mb-2">
                         Drop files here or click to upload.
                       </div>
-                      <div className="text-gray-600">
-                        Only xlsx files are allowed
+                      <div className="p-4 bg-gray-100 rounded-lg shadow-md">
+                        <div className="text-[0.8rem] leading-4 text-gray-600 mb-1">
+                          Only <span className="font-medium">xlsx</span> files
+                          are allowed.
+                        </div>
+                        <div className="text-[0.8rem] leading-4 text-gray-600">
+                          File should contain only 4 columns: <br />
+                          <span className="font-medium text-gray-800">
+                            Name
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            Designation
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            LinkedIn
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            Image
+                          </span>
+                          .
+                        </div>
                       </div>
                     </Dropzone>
                   </div>
@@ -240,7 +275,7 @@ function Main() {
             </div>
           </div>
 
-          <div className="flex flex-col w-full gap-y-7">
+          <div className="flex flex-col w-full gap-y-4">
             <EditableSection
               fetchloading={loading}
               id={Number(params.id)}
@@ -277,21 +312,20 @@ function Main() {
             <EditableSection
               fetchloading={loading}
               id={Number(params.id)}
-              title="Voting Guidelines Link"
-              renderHtml={formatVotingGuidelinesLink || ""}
+              title="Voting Guidelines"
+              renderHtml={votingGuidelinesText + formatVotingGuidelinesLink}
               field="voting_guidelines_link"
             />
-            <EditableSection
+            {/* <EditableSection
               fetchloading={loading}
               id={Number(params.id)}
               title="Voting Guidelines Summary"
               renderHtml={
                 singleInvesterProfile?.voting_guidelines_summary
-                  ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                  ?.replace(/\n/g, "<br />") || ""
+                  
               }
               field="voting_guidelines_summary"
-            />
+            /> */}
             <EditableSection
               fetchloading={loading}
               id={Number(params.id)}

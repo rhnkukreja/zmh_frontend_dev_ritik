@@ -17,9 +17,12 @@ import { baseURL } from "@/constant";
 import { AddEditCompany } from "./component/CreateAndEditCompany";
 import { CompanyData } from "@/types/company";
 import { FormInput } from "@/components/Base/Form";
+import { useNavigate } from "react-router-dom";
+import { Menu } from "@/components/Base/Headless";
 
 function CompanyList() {
   const dispatch: AppDispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const { loading, companies, page, totalPages, filters } = useAppSelector(
     (state) => state.company
@@ -124,11 +127,20 @@ function CompanyList() {
                 <Table>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Td className="py-2 font-medium bg-slate-50 border-slate-200/80 text-slate-500">
-                        Symbol
+                      <Table.Td className="py-2 font-medium text-nowrap bg-slate-50  border-slate-200/80 text-slate-500">
+                        Company ID
                       </Table.Td>
                       <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Name
+                      </Table.Td>
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                        CUSIP
+                      </Table.Td>
+                      <Table.Td className="py-2 text-nowrap font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                        Sector Name
+                      </Table.Td>
+                      <Table.Td className="py-2 font-medium bg-slate-50 border-slate-200/80 text-slate-500">
+                        Symbol
                       </Table.Td>
                       <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Company V1
@@ -142,30 +154,52 @@ function CompanyList() {
                     {companies?.length > 0 &&
                       companies?.map((company) => (
                         <Table.Tr key={company.id}>
-                          <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                            {company.symbol}
+                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                            {company.company_id}
                           </Table.Td>
                           <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {company.name}
                           </Table.Td>
                           <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                            {company.cusip}
+                          </Table.Td>
+                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                            {company.sector_name}
+                          </Table.Td>
+
+                          <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                            {company.symbol}
+                          </Table.Td>
+                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {company.company_v1}
                           </Table.Td>
-                          <Table.Td className="py-2  flex gap-3 border-dashed dark:bg-darkmode-600">
-                            <Button size="sm" variant="secondary" elevated>
-                              <Lucide
-                                icon="Eye"
-                                className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                              />
-                              View
-                            </Button>
-                            <Button size="sm" variant="primary" elevated>
-                              <Lucide
-                                icon="PenLine"
-                                className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                              />
-                              Edit
-                            </Button>
+
+                          <Table.Td className="w-20 relative py-0 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                            <div className="flex items-center justify-center">
+                              <Menu className="h-5">
+                                <Menu.Button className="w-5 h-5 text-slate-500">
+                                  <Lucide
+                                    icon="MoreVertical"
+                                    className="w-5 h-5 stroke-slate-400/70 fill-slate-400/70"
+                                  />
+                                </Menu.Button>
+                                <Menu.Items className="w-40">
+                                  <Menu.Item
+                                    onClick={() => {
+                                      navigate(
+                                        `/company-detail/${company?.id}`
+                                      );
+                                    }}
+                                  >
+                                    <Lucide
+                                      icon="Eye"
+                                      className="w-4 h-4 mr-2"
+                                    />
+                                    View Details
+                                  </Menu.Item>
+                                </Menu.Items>
+                              </Menu>
+                            </div>
                           </Table.Td>
                         </Table.Tr>
                       ))}

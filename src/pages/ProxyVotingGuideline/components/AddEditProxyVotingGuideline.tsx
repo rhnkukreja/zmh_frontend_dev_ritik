@@ -4,7 +4,9 @@ import Button from "@/components/Base/Button";
 import { FormCheck, FormInput, FormTextarea } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
-import ServerTomSelect from "@/components/Base/TomSelect/ServerComponent";
+import ServerTomSelect, {
+  TomSelectElement,
+} from "@/components/Base/TomSelect/ServerComponent";
 import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
@@ -37,6 +39,8 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
   setAddNewProxyVotingGuidelineVisible,
   selectedProxyVotingGuideline,
 }) => {
+  const instituteSelectRef = useRef<any>(null);
+  const categorySelectRef = useRef<any>(null);
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector(
@@ -179,21 +183,6 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Institution
-                </FormCheck.Label>
-                <ServerTomSelect
-                  url="/institute/"
-                  valueKey="id"
-                  labelKey="institution"
-                  value={getValues("institution") || ""}
-                  onChange={(e) => setValue("institution", e.target.value)}
-                  options={{ placeholder: "Select Institute" }}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Year
                 </FormCheck.Label>
                 <TomSelect
@@ -213,7 +202,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                 </TomSelect>
               </div>
 
-              <div className="w-full">
+              <div className="w-full" ref={categorySelectRef}>
                 <FormCheck.Label
                   htmlFor="category"
                   className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
@@ -252,6 +241,21 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                 />
               </div>
 
+              <div className="w-full" ref={instituteSelectRef}>
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  Institution
+                </FormCheck.Label>
+                <ServerTomSelect
+                  url="/institute/"
+                  valueKey="id"
+                  labelKey="institution"
+                  value={getValues("institution") || ""}
+                  onChange={(e) => setValue("institution", e.target.value)}
+                  options={{ placeholder: "Select Institute" }}
+                  className="w-full"
+                />
+              </div>
+
               <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Section
@@ -281,7 +285,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                 />
               </div>
 
-              <div>
+              <div className="mb-20">
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Voting Guidelines Pdf
                 </label>
@@ -328,11 +332,36 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                       }}
                       className="dropzone w-full flex flex-col justify-center items-center h-full "
                     >
-                      <div className="text-[14px] font-medium">
+                      <div className="text-base font-semibold text-gray-800 mb-2">
                         Drop files here or click to upload.
                       </div>
-                      <div className="text-gray-600">
-                        Only xlsx files are allowed
+                      <div className="p-4 bg-gray-100 rounded-lg shadow-md">
+                        <div className="text-sm text-gray-600 mb-1">
+                          Only <span className="font-medium">xlsx</span> files
+                          are allowed.
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          File should contain only 4 columns: <br />
+                          <span className="font-medium text-gray-800">
+                            Name
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            Designation
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            LinkedIn
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            Image
+                          </span>
+                          .
+                        </div>
                       </div>
                     </Dropzone>
                   )}

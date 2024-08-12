@@ -312,20 +312,20 @@ function ProxyGuideline() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.sub_category &&
                                 guideline?.sub_category.toString() === "nan"
-                                  ? "--"
+                                  ? "NA"
                                   : guideline?.sub_category}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.section &&
                                 guideline?.section.toString() === "nan"
-                                  ? "--"
+                                  ? "NA"
                                   : guideline?.section}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.policy_guidelines &&
                                 guideline?.policy_guidelines.toString() ===
                                   "nan"
-                                  ? "--"
+                                  ? "NA"
                                   : guideline?.policy_guidelines}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
@@ -340,55 +340,64 @@ function ProxyGuideline() {
                                 )}
                               </Table.Td>
 
-                              <Table.Td className="py-2  flex gap-3 border-dashed dark:bg-darkmode-600">
-                                <a
-                                  href={
-                                    guideline?.voting_guidelines_pdf_url || ""
-                                  }
-                                  download
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <Button size="sm" variant="primary" elevated>
-                                    <Lucide
-                                      icon="Download"
-                                      className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                                    />
-                                    Download
-                                  </Button>
-                                </a>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  elevated
-                                  onClick={() => {
-                                    gotoDetailPage(
-                                      guideline?.voting_guidelines_pdf_url!
-                                    );
+                              <Table.Td className="w-20 relative py-0 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                <div className="flex items-center justify-center">
+                                  <Menu className="h-5">
+                                    <Menu.Button className="w-5 h-5 text-slate-500">
+                                      <Lucide
+                                        icon="MoreVertical"
+                                        className="w-5 h-5 stroke-slate-400/70 fill-slate-400/70"
+                                      />
+                                    </Menu.Button>
+                                    <Menu.Items className="w-40">
+                                      <Menu.Item>
+                                        <Lucide
+                                          icon="Download"
+                                          className="w-4 h-4 mr-2"
+                                        />
 
-                                    setPdfVisible(true);
-                                  }}
-                                >
-                                  <Lucide
-                                    icon="Eye"
-                                    className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                                  />
-                                  View
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="primary"
-                                  elevated
-                                  onClick={() => {
-                                    onEditClickHandler(guideline);
-                                  }}
-                                >
-                                  <Lucide
-                                    icon="PenLine"
-                                    className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                                  />
-                                  Edit
-                                </Button>
+                                        <a
+                                          href={
+                                            guideline?.voting_guidelines_pdf_url ||
+                                            ""
+                                          }
+                                          download
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          Download PDF
+                                        </a>
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        onClick={() => {
+                                          gotoDetailPage(
+                                            guideline?.voting_guidelines_pdf_url!
+                                          );
+
+                                          setPdfVisible(true);
+                                        }}
+                                      >
+                                        <Lucide
+                                          icon="Eye"
+                                          className="w-4 h-4 mr-2"
+                                        />
+                                        View Details
+                                      </Menu.Item>
+
+                                      <Menu.Item
+                                        onClick={() => {
+                                          onEditClickHandler(guideline);
+                                        }}
+                                      >
+                                        <Lucide
+                                          icon="PenLine"
+                                          className="w-4 h-4 mr-2"
+                                        />
+                                        Edit
+                                      </Menu.Item>
+                                    </Menu.Items>
+                                  </Menu>
+                                </div>
                               </Table.Td>
                             </Table.Tr>
                           )

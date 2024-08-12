@@ -180,11 +180,33 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
                     }}
                     className="dropzone w-full flex flex-col justify-center items-center h-full "
                   >
-                    <div className="text-[14px] font-medium">
+                    <div className="text-base font-semibold text-gray-800 mb-2">
                       Drop files here or click to upload.
                     </div>
-                    <div className="text-gray-600">
-                      Only xlsx files are allowed
+                    <div className="p-4 bg-gray-100 rounded-lg shadow-md">
+                      <div className="text-sm text-gray-600 mb-1">
+                        Only <span className="font-medium">xlsx</span> files are
+                        allowed.
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        File should contain only 4 columns: <br />
+                        <span className="font-medium text-gray-800">Name</span>,
+                        <span className="font-medium text-gray-800">
+                          {" "}
+                          Designation
+                        </span>
+                        ,
+                        <span className="font-medium text-gray-800">
+                          {" "}
+                          LinkedIn
+                        </span>
+                        ,
+                        <span className="font-medium text-gray-800">
+                          {" "}
+                          Image
+                        </span>
+                        .
+                      </div>
                     </div>
                   </Dropzone>
                 )}

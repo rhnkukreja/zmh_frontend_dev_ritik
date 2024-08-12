@@ -198,66 +198,6 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
 
               <div>
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Key Contacts
-                </label>
-                <div className="w-full  max-h-[180px]">
-                  {keyContactsFile ? (
-                    <>
-                      <div className="flex items-center md:max-w-[60%] w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition sm:px-5 shadow-sm">
-                        <div className="ml-4">
-                          <Lucide
-                            icon="FileText"
-                            className="w-8  h-8 stroke-[1.7] stroke-slate-400/70"
-                          />
-                        </div>
-                        <div className="flex flex-col w-full ml-3 lg:items-center lg:flex-row gap-y-1">
-                          <a
-                            href=""
-                            className="block font-medium capitalize truncate lg:text-center"
-                          >
-                            {keyContactsFile?.name}
-                          </a>
-                          <div className="mr-4 text-xs lg:text-center lg:ml-auto text-slate-500/80">
-                            File size: {bytesToMB(188887)} MB
-                          </div>
-                        </div>
-                        <Lucide
-                          onClick={() => {
-                            setKeyContactsFile(null);
-                          }}
-                          icon="Trash2"
-                          className="w-6  h-6 stroke-[1.7] stroke-slate-400/70"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <Dropzone
-                      ref={dropzoneSingleRef}
-                      options={{
-                        url: "/",
-                        autoProcessQueue: false,
-
-                        clickable: true,
-                        thumbnailWidth: 100,
-                        maxFilesize: 5000,
-                        maxFiles: 1,
-                        paramName: "excel",
-                        acceptedFiles: ".xlsx",
-                      }}
-                      className="dropzone w-full flex flex-col justify-center items-center h-full "
-                    >
-                      <div className="text-[14px] font-medium">
-                        Drop files here or click to upload.
-                      </div>
-                      <div className="text-gray-600">
-                        Only xlsx files are allowed
-                      </div>
-                    </Dropzone>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Engagement Priorities
                 </label>
                 <Controller
@@ -346,7 +286,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                 />
               </div>
 
-              <div>
+              <div className="mb-20">
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   References
                 </label>
@@ -362,6 +302,91 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                     />
                   )}
                 />
+              </div>
+              <div className="mb-20">
+                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  Key Contacts
+                </label>
+                <div className="w-full  max-h-[180px] ">
+                  {keyContactsFile ? (
+                    <>
+                      <div className="flex items-center md:max-w-[60%] w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition sm:px-5 shadow-sm">
+                        <div className="ml-4">
+                          <Lucide
+                            icon="FileText"
+                            className="w-8  h-8 stroke-[1.7] stroke-slate-400/70"
+                          />
+                        </div>
+                        <div className="flex flex-col w-full ml-3 lg:items-center lg:flex-row gap-y-1">
+                          <a
+                            href=""
+                            className="block font-medium capitalize truncate lg:text-center"
+                          >
+                            {keyContactsFile?.name}
+                          </a>
+                          <div className="mr-4 text-xs lg:text-center lg:ml-auto text-slate-500/80">
+                            File size: {bytesToMB(188887)} MB
+                          </div>
+                        </div>
+                        <Lucide
+                          onClick={() => {
+                            setKeyContactsFile(null);
+                          }}
+                          icon="Trash2"
+                          className="w-6  h-6 stroke-[1.7] stroke-slate-400/70"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <Dropzone
+                      ref={dropzoneSingleRef}
+                      options={{
+                        url: "/",
+                        autoProcessQueue: false,
+
+                        clickable: true,
+                        thumbnailWidth: 100,
+                        maxFilesize: 5000,
+                        maxFiles: 1,
+                        paramName: "excel",
+                        acceptedFiles: ".xlsx",
+                      }}
+                      className="dropzone w-full flex flex-col justify-center items-center h-full "
+                    >
+                      <div className="text-base font-semibold text-gray-800 mb-2">
+                        Drop files here or click to upload.
+                      </div>
+                      <div className="p-4 bg-gray-100 rounded-lg shadow-md">
+                        <div className="text-sm text-gray-600 mb-1">
+                          Only <span className="font-medium">xlsx</span> files
+                          are allowed.
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          File should contain only 4 columns: <br />
+                          <span className="font-medium text-gray-800">
+                            Name
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            Designation
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            LinkedIn
+                          </span>
+                          ,
+                          <span className="font-medium text-gray-800">
+                            {" "}
+                            Image
+                          </span>
+                          .
+                        </div>
+                      </div>
+                    </Dropzone>
+                  )}
+                </div>
               </div>
             </div>
           </Dialog.Description>

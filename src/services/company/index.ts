@@ -14,6 +14,16 @@ class CompanyService {
     };
   }
 
+  public async getSingleCompany(id: number): Promise<{
+    results: CompanyData;
+  }> {
+    const response = await axiosInstance.get(`/company/${id}/`);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
   public async createCompany(data: Partial<CompanyData>): Promise<{
     result: CompanyData;
   }> {

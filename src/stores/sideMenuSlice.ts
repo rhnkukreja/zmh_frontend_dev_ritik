@@ -9,6 +9,7 @@ export interface Menu {
   pathname?: string;
   subMenu?: Menu[];
   ignore?: boolean;
+  isAdmin?: boolean;
 }
 
 export interface SideMenuState {
@@ -17,12 +18,12 @@ export interface SideMenuState {
 
 const initialState: SideMenuState = {
   menu: [
-    "DASHBOARDS",
-    {
-      icon: "GaugeCircle",
-      pathname: "/",
-      title: "Company Search",
-    },
+    // "DASHBOARDS",
+    // {
+    //   icon: "GaugeCircle",
+    //   pathname: "/",
+    //   title: "Company Search",
+    // },
     // {
     //   icon: "ActivitySquare",
     //   pathname: "/dashboard-overview-2",
@@ -113,11 +114,13 @@ const initialState: SideMenuState = {
       icon: "Building",
       pathname: "/institution",
       title: "Institutions",
+      isAdmin: true,
     },
     {
       icon: "Factory",
       pathname: "/company",
       title: "Company",
+      isAdmin: true,
     },
     // "UI WIDGETS",
     // {

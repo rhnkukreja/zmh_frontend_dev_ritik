@@ -14,7 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
-import logo from "../../assets/images/logo/zmh-logo.jpg"
+import logo from "../../assets/images/logo/zmh-logo.jpg";
 
 interface LoginFormInputs {
   email: string;
@@ -36,7 +36,7 @@ const Main: React.FC = () => {
     try {
       const response = await dispatch(
         login({
-          username: data.email,
+          email: data.email,
           password: data.password,
         })
       ).unwrap();

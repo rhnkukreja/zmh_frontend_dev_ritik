@@ -30,7 +30,7 @@ class InstitutionService {
   ): Promise<{
     results: Institutions;
   }> {
-    const response = await axiosInstance.put(`/institute//${id}`, data);
+    const response = await axiosInstance.put(`/institute/${id}/`, data);
     const results = response.data;
     return {
       results,
@@ -40,7 +40,7 @@ class InstitutionService {
   public async getSingleInstitution(id: number): Promise<{
     results: Institutions;
   }> {
-    const response = await axiosInstance.get(`/institute//${id}`);
+    const response = await axiosInstance.get(`/institute/${id}/`);
     const results = response.data;
     return {
       results,

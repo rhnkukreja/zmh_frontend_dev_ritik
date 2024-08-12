@@ -7,6 +7,7 @@ const name = "company";
 
 interface CompanySliceState {
   companies: CompanyData[];
+  singleCompany: CompanyData | null;
   totalCompanies: number;
   loading: boolean;
   error: string | null;
@@ -22,6 +23,7 @@ interface CompanySliceState {
 
 const initialState: CompanySliceState = {
   companies: [],
+  singleCompany: null,
   totalCompanies: 0,
   loading: false,
   error: null,
@@ -40,6 +42,13 @@ export const fetchCompanies = createAsyncThunk<
   string
 >(`${name}/fetchCompanies`, async (url: string) => {
   return await companyService.getCompanies(url);
+});
+
+export const getSingleCompany = createAsyncThunk<
+  { results: CompanyData },
+  number
+>(`${name}/getSingleCompany`, async (id: number) => {
+  return await companyService.getSingleCompany(id);
 });
 
 export const addEditCompany = createAsyncThunk<
@@ -130,6 +139,23 @@ const companySlice = createSlice({
         state.loading = false;
         state.error =
           action.error.message || "Failed to create or update company";
+      })
+
+      //single company
+      .addCase(getSingleCompany.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        getSingleCompany.fulfilled,
+        (state, action: PayloadAction<{ results: CompanyData }>) => {
+          state.loading = false;
+          state.singleCompany = action.payload.results;
+        }
+      )
+      .addCase(getSingleCompany.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to fetch institution";
       });
   },
 });

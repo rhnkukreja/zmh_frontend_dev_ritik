@@ -22,6 +22,7 @@ import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { Institutions } from "@/types/institutions";
 import { AddEditInstitution } from "./components/CreateAndEditInstitution";
+import dayjs from "dayjs";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -282,9 +283,7 @@ function Main() {
                       <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Active
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
-                        Logo
-                      </Table.Td>
+
                       <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Region
                       </Table.Td>
@@ -293,6 +292,12 @@ function Main() {
                       </Table.Td>
                       <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Contact
+                      </Table.Td>
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                        Created At
+                      </Table.Td>
+                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                        Updated At
                       </Table.Td>
                       <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Action
@@ -304,8 +309,37 @@ function Main() {
                       institutions?.map((institution: Institutions) => (
                         <Table.Tr key={institution.id}>
                           <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
-                            <div className="font-medium">
-                              {institution?.institution}
+                            <div className="flex items-center">
+                              {institution?.logo_url ? (
+                                <div className="w-8 h-8 image-fit zoom-in">
+                                  <Tippy
+                                    as="img"
+                                    alt="Tailwise - Admin Dashboard Template"
+                                    className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                    src={institution?.logo_url}
+                                    content={institution?.institution}
+                                  />
+                                </div>
+                              ) : (
+                                <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                  <Lucide
+                                    icon="User"
+                                    className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                  />
+                                  <a
+                                    href=""
+                                    className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                  ></a>
+                                </div>
+                              )}
+                              <div className="ml-3.5">
+                                <p className="font-medium whitespace-nowrap">
+                                  {institution?.institution}
+                                </p>
+                                <div className="text-slate-500 text-xs whitespace-nowrap mt-0.5">
+                                  {institution?.email}
+                                </div>
+                              </div>
                             </div>
                           </Table.Td>
                           <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
@@ -319,13 +353,7 @@ function Main() {
                               </div>
                             )}
                           </Table.Td>
-                          <Table.Td className="py-2  bg-white border-slate-200/80">
-                            <img
-                              className="w-8 h-8 mx-auto rounded-full"
-                              src={institution?.logo_url}
-                              alt="Institution Logo"
-                            />
-                          </Table.Td>
+
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution?.region}
                           </Table.Td>
@@ -335,22 +363,59 @@ function Main() {
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution?.contact}
                           </Table.Td>
+                          <Table.Td className="py-2  bg-white border-slate-200/80">
+                            <p className="text-gray-500">
+                              {dayjs(institution?.date_created).format(
+                                "MMMM D, YYYY"
+                              )}
+                            </p>
+                          </Table.Td>
+                          <Table.Td className="py-2  bg-white border-slate-200/80">
+                            <p className="text-gray-500">
+                              {dayjs(institution?.date_updated).format(
+                                "MMMM D, YYYY"
+                              )}
+                            </p>
+                          </Table.Td>
 
-                          <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
-                            <Button
-                              onClick={() => {
-                                onEditClickHandler(institution);
-                              }}
-                              size="sm"
-                              variant="primary"
-                              elevated
-                            >
-                              <Lucide
-                                icon="PenLine"
-                                className="w-3.5 h-3.5 mr-1.5 stroke-[1.3]"
-                              />
-                              Edit
-                            </Button>
+                          <Table.Td className="w-20 relative py-0 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                            <div className="flex items-center justify-center">
+                              <Menu className="h-5">
+                                <Menu.Button className="w-5 h-5 text-slate-500">
+                                  <Lucide
+                                    icon="MoreVertical"
+                                    className="w-5 h-5 stroke-slate-400/70 fill-slate-400/70"
+                                  />
+                                </Menu.Button>
+                                <Menu.Items className="w-40">
+                                  <Menu.Item
+                                    onClick={() => {
+                                      navigate(
+                                        `/institution-detail/${institution?.id}`
+                                      );
+                                    }}
+                                  >
+                                    <Lucide
+                                      icon="Eye"
+                                      className="w-4 h-4 mr-2"
+                                    />
+                                    View Details
+                                  </Menu.Item>
+
+                                  <Menu.Item
+                                    onClick={() => {
+                                      onEditClickHandler(institution);
+                                    }}
+                                  >
+                                    <Lucide
+                                      icon="PenLine"
+                                      className="w-4 h-4 mr-2"
+                                    />
+                                    Edit
+                                  </Menu.Item>
+                                </Menu.Items>
+                              </Menu>
+                            </div>
                           </Table.Td>
                         </Table.Tr>
                       ))

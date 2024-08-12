@@ -62,8 +62,9 @@ const EditableSection: React.FC<EditableSectionProps> = ({
           <Button
             variant="secondary"
             elevated
-            className="px-6"
-            onClick={() => setIsEditing((prevState) => !prevState)}
+            size="sm"
+            className="px-3"
+            onClick={() => setIsEditing(true)}
           >
             <Lucide icon="PenSquare" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
             {renderHtml ? "Edit" : "Add"}
@@ -96,14 +97,14 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                       }`}
                     />
                   )}
-                  {loading ? "Saving..." : "Save"}
+                  Save
                 </Button>
               </div>
             </div>
           ) : (
             <>
               {renderHtml ? (
-                <div className="flex  flex-col px-4 pt-4   box">
+                <div className="flex  flex-col px-4 py-3   box ">
                   <ParceHtml htmlString={renderHtml} />
                 </div>
               ) : null}

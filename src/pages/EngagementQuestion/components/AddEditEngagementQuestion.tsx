@@ -147,25 +147,26 @@ export const AddEditEngagementQuestion: React.FC<
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              {/* Company */}
               <div className="w-full">
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Institution Name
+                <FormCheck.Label
+                  htmlFor="company"
+                  className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
+                >
+                  Company
                 </FormCheck.Label>
-                <div className="mt-2">
-                  <ServerTomSelect
-                    url="/institute/"
-                    valueKey="id"
-                    labelKey="institution"
-                    value={getValues("institution")?.toString() || ""}
-                    onChange={(e) => {
-                      setValue("institution", Number(e.target.value));
-                    }}
-                    options={{ placeholder: "Select Institute" }}
-                    className="w-full"
-                  />
-                </div>
+                <ServerTomSelect
+                  url="/company/"
+                  valueKey="id"
+                  labelKey="name"
+                  value={getValues("company")?.toString() || ""}
+                  onChange={(e) => {
+                    setValue("company", Number(e.target.value));
+                  }}
+                  options={{ placeholder: "Select Company" }}
+                  className="w-full"
+                />
               </div>
-
               <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Active
@@ -212,27 +213,6 @@ export const AddEditEngagementQuestion: React.FC<
                     )}
                   />
                 </div>
-              </div>
-
-              {/* Company */}
-              <div className="w-full">
-                <FormCheck.Label
-                  htmlFor="company"
-                  className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
-                >
-                  Company
-                </FormCheck.Label>
-                <ServerTomSelect
-                  url="/company/"
-                  valueKey="id"
-                  labelKey="name"
-                  value={getValues("company")?.toString() || ""}
-                  onChange={(e) => {
-                    setValue("company", Number(e.target.value));
-                  }}
-                  options={{ placeholder: "Select Company" }}
-                  className="w-full"
-                />
               </div>
 
               {/* Type of Engagement */}
@@ -296,6 +276,24 @@ export const AddEditEngagementQuestion: React.FC<
                         className="pl-12"
                       />
                     )}
+                  />
+                </div>
+              </div>
+              <div className="w-full">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  Institution Name
+                </FormCheck.Label>
+                <div className="mt-2">
+                  <ServerTomSelect
+                    url="/institute/"
+                    valueKey="id"
+                    labelKey="institution"
+                    value={getValues("institution")?.toString() || ""}
+                    onChange={(e) => {
+                      setValue("institution", Number(e.target.value));
+                    }}
+                    options={{ placeholder: "Select Institute" }}
+                    className="w-full"
                   />
                 </div>
               </div>

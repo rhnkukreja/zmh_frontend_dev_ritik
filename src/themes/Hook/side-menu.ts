@@ -1,14 +1,8 @@
 import { NavigateFunction } from "react-router-dom";
 import { Menu } from "@/stores/sideMenuSlice";
 import { slideUp, slideDown } from "@/utils/helper";
-import { store } from "@/stores/store";
 
-const isAdmin = localStorage.getItem("userType");
-// const getStateData = () => {
-//   return store.getState();
-// };
-
-// const state = getStateData();
+import { adminRoutes } from "@/constant";
 
 interface Location {
   pathname: string;
@@ -41,15 +35,14 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
   return match;
 };
 
-console.log(isAdmin);
-
+const isAdmin = localStorage.getItem("userType");
 const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   const formattedMenu: Array<FormattedMenu | string> = [];
   menu.forEach((item) => {
     if (
       typeof item !== "string" &&
       isAdmin?.toLowerCase() !== "admin" &&
-      ["Company", "Institutions"].includes(item?.title)
+      adminRoutes.includes(item?.title)
     ) {
       return;
     }
