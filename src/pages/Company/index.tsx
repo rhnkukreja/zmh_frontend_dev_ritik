@@ -174,31 +174,23 @@ function CompanyList() {
                             {company.company_v1}
                           </Table.Td>
 
-                          <Table.Td className="w-20 relative py-0 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                            <div className="flex items-center justify-center">
-                              <Menu className="h-5">
-                                <Menu.Button className="w-5 h-5 text-slate-500">
-                                  <Lucide
-                                    icon="MoreVertical"
-                                    className="w-5 h-5 stroke-slate-400/70 fill-slate-400/70"
-                                  />
-                                </Menu.Button>
-                                <Menu.Items className="w-40">
-                                  <Menu.Item
-                                    onClick={() => {
-                                      navigate(
-                                        `/company-detail/${company?.id}`
-                                      );
-                                    }}
-                                  >
-                                    <Lucide
-                                      icon="Eye"
-                                      className="w-4 h-4 mr-2"
-                                    />
-                                    View Details
-                                  </Menu.Item>
-                                </Menu.Items>
-                              </Menu>
+                          <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                            <div className="flex gap-3 ">
+                              <Button
+                                variant="secondary"
+                                elevated
+                                size="sm"
+                                className="px-3"
+                                onClick={() => {
+                                  navigate(`/company-detail/${company?.id}`);
+                                }}
+                              >
+                                <Lucide
+                                  icon="Eye"
+                                  className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                />
+                                View
+                              </Button>
                             </div>
                           </Table.Td>
                         </Table.Tr>

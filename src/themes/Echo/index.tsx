@@ -20,8 +20,8 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
-import { getColorForCharacter } from "@/utils/helper";
-import logo from '../../assets/images/logo/zmh-logo.jpg'
+import { filterMenu, getColorForCharacter } from "@/utils/helper";
+import logo from "../../assets/images/logo/zmh-logo.jpg";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -71,7 +71,7 @@ function Main() {
       new SimpleBar(scrollableRef.current);
     }
 
-    setFormattedMenu(sideMenu());
+    setFormattedMenu(filterMenu(sideMenu()));
     compactLayout();
 
     window.onresize = () => {
@@ -148,16 +148,13 @@ function Main() {
               className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
             >
               <div className="flex items-center justify-center w-[34px]  h-[34px]  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-180">
-                <div className="w-full h-full overflow-hidden  box   image-fit">
-                  <img
-                    alt="Logo"
-                    src={logo}
-                  />
+                <div className="w-full h-full overflow-hidden     image-fit">
+                  <img alt="Logo" src={logo} />
                 </div>
               </div>
 
               <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
-                ZMH 
+                ZMH
               </div>
             </a>
             <a

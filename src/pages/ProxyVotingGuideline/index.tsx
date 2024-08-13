@@ -340,63 +340,66 @@ function ProxyGuideline() {
                                 )}
                               </Table.Td>
 
-                              <Table.Td className="w-20 relative py-0 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                <div className="flex items-center justify-center">
-                                  <Menu className="h-5">
-                                    <Menu.Button className="w-5 h-5 text-slate-500">
+                              <Table.Td className=" py-2 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                <div className="flex gap-3 ">
+                                  <Button
+                                    variant="secondary"
+                                    elevated
+                                    size="sm"
+                                    className="px-3"
+                                    onClick={() => {
+                                      gotoDetailPage(
+                                        guideline?.voting_guidelines_pdf_url!
+                                      );
+
+                                      setPdfVisible(true);
+                                    }}
+                                  >
+                                    <Lucide
+                                      icon="Eye"
+                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                    />
+                                    View
+                                  </Button>
+                                  {user?.user_type === "Admin" && (
+                                    <Button
+                                      variant="primary"
+                                      elevated
+                                      size="sm"
+                                      className="px-3"
+                                      onClick={() => {
+                                        onEditClickHandler(guideline);
+                                      }}
+                                    >
                                       <Lucide
-                                        icon="MoreVertical"
-                                        className="w-5 h-5 stroke-slate-400/70 fill-slate-400/70"
+                                        icon="PenLine"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                       />
-                                    </Menu.Button>
-                                    <Menu.Items className="w-40">
-                                      <Menu.Item>
-                                        <Lucide
-                                          icon="Download"
-                                          className="w-4 h-4 mr-2"
-                                        />
-
-                                        <a
-                                          href={
-                                            guideline?.voting_guidelines_pdf_url ||
-                                            ""
-                                          }
-                                          download
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        >
-                                          Download PDF
-                                        </a>
-                                      </Menu.Item>
-                                      <Menu.Item
-                                        onClick={() => {
-                                          gotoDetailPage(
-                                            guideline?.voting_guidelines_pdf_url!
-                                          );
-
-                                          setPdfVisible(true);
-                                        }}
-                                      >
-                                        <Lucide
-                                          icon="Eye"
-                                          className="w-4 h-4 mr-2"
-                                        />
-                                        View Details
-                                      </Menu.Item>
-
-                                      <Menu.Item
-                                        onClick={() => {
-                                          onEditClickHandler(guideline);
-                                        }}
-                                      >
-                                        <Lucide
-                                          icon="PenLine"
-                                          className="w-4 h-4 mr-2"
-                                        />
-                                        Edit
-                                      </Menu.Item>
-                                    </Menu.Items>
-                                  </Menu>
+                                      Edit
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="secondary"
+                                    elevated
+                                    size="sm"
+                                    className="px-3"
+                                  >
+                                    <Lucide
+                                      icon="NotebookText"
+                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                    />
+                                    <a
+                                      href={
+                                        guideline?.voting_guidelines_pdf_url ||
+                                        ""
+                                      }
+                                      download
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Download
+                                    </a>
+                                  </Button>
                                 </div>
                               </Table.Td>
                             </Table.Tr>

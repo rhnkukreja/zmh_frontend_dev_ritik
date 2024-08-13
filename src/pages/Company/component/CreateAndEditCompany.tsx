@@ -133,7 +133,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
-            <div className="w-full">
+            <div className={`w-full ${companyFile ? "" : "mb-20"}`}>
               <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                 Logo
               </FormCheck.Label>
@@ -148,7 +148,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
                         />
                       </div>
                       <div className="flex flex-col w-full ml-3 lg:items-center lg:flex-row gap-y-1">
-                        <p className="block font-medium capitalize truncate md:max-w-[100px] sm:max-w-[80px] lg:max-w-[150px] text-ellipsis overflow-hidden whitespace-nowrap lg:text-center">
+                        <p className="block font-medium capitalize truncate    text-ellipsis overflow-hidden whitespace-nowrap lg:text-center">
                           {companyFile?.name}
                         </p>
                         <div className="mr-4 text-xs lg:text-center lg:ml-auto text-slate-500/80">
@@ -224,7 +224,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
             >
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className="w-20">
+            <Button variant="primary" type="submit">
               {loading && (
                 <Lucide
                   icon="Loader"
@@ -234,8 +234,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
                 />
               )}
 
-              {!selectedCompany && <>{loading ? "Saving..." : "Save"}</>}
-              {selectedCompany && <>{loading ? "Editing..." : "Edit"}</>}
+              {selectedCompany ? "Update" : "Save"}
             </Button>
           </Dialog.Footer>
         </form>

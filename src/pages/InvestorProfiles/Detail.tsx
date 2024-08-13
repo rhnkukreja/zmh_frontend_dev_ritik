@@ -20,7 +20,7 @@ import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { baseURL } from "@/constant";
 import { toast } from "react-toastify";
 import { KeyContact } from "@/types/investerProfiles";
-import ParceHtml from "@/components/ParseHtml";
+
 import clsx from "clsx";
 
 function Main() {
@@ -115,9 +115,9 @@ function Main() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col mt-4 md:mt-0 md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="text-base font-medium group-[.mode--light]:text-white">
+          {/* <div className="text-base font-medium group-[.mode--light]:text-white">
             Investers Detail
-          </div>
+          </div> */}
         </div>
         <div className="flex justify-between mt-4 py-4 px-2 gap-y-3 items-center flex-row bg-white box">
           <div className="max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
@@ -184,7 +184,7 @@ function Main() {
                         thumbnailWidth: 100,
                         maxFilesize: 5000,
                         maxFiles: 1,
-                        paramName: "excel",
+
                         acceptedFiles: ".xlsx",
                       }}
                       className="dropzone w-full flex flex-col justify-center items-center h-full "

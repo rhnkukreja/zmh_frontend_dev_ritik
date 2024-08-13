@@ -286,7 +286,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                 />
               </div>
 
-              <div className="mb-20">
+              <div>
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   References
                 </label>
@@ -303,11 +303,11 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                   )}
                 />
               </div>
-              <div className="mb-20">
+              <div className={keyContactsFile ? " " : "mb-20"}>
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Key Contacts
                 </label>
-                <div className="w-full  max-h-[180px] ">
+                <div className="w-full max-h-[180px]  ">
                   {keyContactsFile ? (
                     <>
                       <div className="flex items-center md:max-w-[60%] w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition sm:px-5 shadow-sm">
@@ -411,7 +411,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                   }`}
                 />
               )}
-              {loading ? "Saving..." : "Save"}
+              Save
             </Button>
           </Dialog.Footer>
         </form>

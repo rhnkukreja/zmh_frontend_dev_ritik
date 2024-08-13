@@ -426,7 +426,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
             >
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className="w-20">
+            <Button variant="primary" type="submit">
               {loading && (
                 <Lucide
                   icon="Loader"
@@ -436,12 +436,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                 />
               )}
 
-              {!selectedProxyVotingGuideline && (
-                <>{loading ? "Saving..." : "Save"}</>
-              )}
-              {selectedProxyVotingGuideline && (
-                <>{loading ? "Editing..." : "Edit"}</>
-              )}
+              {selectedProxyVotingGuideline ? "Update" : "Save"}
             </Button>
           </Dialog.Footer>
         </form>

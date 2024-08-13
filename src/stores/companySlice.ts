@@ -61,6 +61,7 @@ export const addEditCompany = createAsyncThunk<
   } else {
     response = await companyService.createCompany(data);
   }
+
   return {
     results: response.result,
     isEdit: id ? true : false,
@@ -124,6 +125,7 @@ const companySlice = createSlice({
       })
       .addCase(addEditCompany.fulfilled, (state, action) => {
         state.loading = false;
+        console.log("action.payload: ", action.payload);
         if (action.payload.isEdit) {
           const index = state.companies.findIndex(
             (company) => company.id === action.payload.results.id
@@ -132,7 +134,9 @@ const companySlice = createSlice({
             state.companies[index] = action.payload.results;
           }
         } else {
-          state.companies.push(action.payload.results);
+          if (state.totalCompanies < 10) {
+            state.companies.push(action.payload.results);
+          }
         }
       })
       .addCase(addEditCompany.rejected, (state, action) => {

@@ -120,6 +120,7 @@ export const AddEditEngagementQuestion: React.FC<
       console.error("Error submitting form:", error);
     }
   };
+
   return (
     <Dialog
       size="xl"
@@ -405,12 +406,7 @@ export const AddEditEngagementQuestion: React.FC<
             >
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={loading}
-              className="w-20"
-            >
+            <Button variant="primary" type="submit" disabled={loading}>
               {loading && (
                 <Lucide
                   icon="Loader"
@@ -418,13 +414,7 @@ export const AddEditEngagementQuestion: React.FC<
                 />
               )}
 
-              {loading
-                ? selectedEngagementQuestion
-                  ? "Updating..."
-                  : "Saving..."
-                : selectedEngagementQuestion
-                ? "Update"
-                : "Save"}
+              {selectedEngagementQuestion ? "Update" : "Save"}
             </Button>
           </Dialog.Footer>
         </form>

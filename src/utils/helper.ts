@@ -1,4 +1,6 @@
 import { characterColors, PAGE_SIZE } from "@/constant";
+import { Menu } from "@/stores/sideMenuSlice";
+import { FormattedMenu } from "@/themes/Echo/side-menu";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { parseColor } from "tailwindcss/lib/util/color";
@@ -263,6 +265,32 @@ const formatedDate = (dateString: string): string => {
   return fullDate.format("YYYY-MM-DDTHH:mm:ss");
 };
 
+const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
+  console.log("menuItems: ", menuItems);
+  const userType = localStorage.getItem("userType")?.toLowerCase() || "";
+  const filteredMenuItems = menuItems.filter((item, index, arr) => {
+    if (userType !== "admin") {
+      if (typeof item === "string" && item.toLowerCase() === "admin") {
+        let i = index + 1;
+        while (
+          i < arr.length &&
+          typeof arr[i] === "object" &&
+          (arr[i] as FormattedMenu).isAdmin === true
+        ) {
+          i++;
+        }
+        return false;
+      }
+      if (typeof item === "object" && item.isAdmin) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  return filteredMenuItems;
+};
+
 export {
   cutText,
   formatDate,
@@ -284,4 +312,5 @@ export {
   bytesToMB,
   getYearRange,
   formatedDate,
+  filterMenu,
 };

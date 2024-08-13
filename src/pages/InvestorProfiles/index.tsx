@@ -1,12 +1,9 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover } from "@/components/Base/Headless";
-
 import { FormInput, FormSelect } from "@/components/Base/Form";
-
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
 import { useEffect, useMemo, useState } from "react";
-
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -243,7 +240,10 @@ function Main() {
                         </Table.Td>
 
                         <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Date
+                          Created Date
+                        </Table.Td>
+                        <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          Updated Date
                         </Table.Td>
                         <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
@@ -274,6 +274,13 @@ function Main() {
                                 )}
                               </div>
                             </Table.Td>
+                            <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
+                              <div className="whitespace-nowrap ">
+                                {dayjs(profile?.date_updated).format(
+                                  "MMMM D, YYYY"
+                                )}
+                              </div>
+                            </Table.Td>
                             <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               {profile?.active === true ? (
                                 <div className="inline-flex justify-center text-xs font-medium rounded-md text-success bg-success/10 border px-6 py-1 sm:mr-0">
@@ -286,37 +293,35 @@ function Main() {
                               )}
                             </Table.Td>
 
-                            <Table.Td className="w-20 relative py-0 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                              <div className="flex items-center justify-center">
-                                <Menu className="h-5">
-                                  <Menu.Button className="w-5 h-5 text-slate-500">
-                                    <Lucide
-                                      icon="MoreVertical"
-                                      className="w-5 h-5 stroke-slate-400/70 fill-slate-400/70"
-                                    />
-                                  </Menu.Button>
-                                  <Menu.Items className="w-40">
-                                    <Menu.Item
-                                      onClick={() => {
-                                        gotoDetailPage(profile.id);
-                                      }}
-                                    >
-                                      <Lucide
-                                        icon="Eye"
-                                        className="w-4 h-4 mr-2"
-                                      />
-                                      View Details
-                                    </Menu.Item>
-
-                                    <Menu.Item>
-                                      <Lucide
-                                        icon="Download"
-                                        className="w-4 h-4 mr-2"
-                                      />
-                                      Download PDF
-                                    </Menu.Item>
-                                  </Menu.Items>
-                                </Menu>
+                            <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                              <div className="flex gap-3 ">
+                                <Button
+                                  variant="secondary"
+                                  elevated
+                                  size="sm"
+                                  className="px-3"
+                                  onClick={() => {
+                                    gotoDetailPage(profile.id);
+                                  }}
+                                >
+                                  <Lucide
+                                    icon="Eye"
+                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                  />
+                                  View
+                                </Button>
+                                <Button
+                                  variant="primary"
+                                  elevated
+                                  size="sm"
+                                  className="px-3"
+                                >
+                                  <Lucide
+                                    icon="Download"
+                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                  />
+                                  Download
+                                </Button>
                               </div>
                             </Table.Td>
                           </Table.Tr>

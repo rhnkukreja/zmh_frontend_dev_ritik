@@ -34,15 +34,11 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
   return match;
 };
 
-const isAdmin = localStorage.getItem("userType")?.toLowerCase();
 const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   const formattedMenu: Array<FormattedMenu | string> = [];
 
   menu.forEach((item) => {
     if (typeof item !== "string") {
-      if (item.isAdmin === true && isAdmin !== "admin") {
-        return;
-      }
       const menuItem: FormattedMenu = {
         icon: item.icon,
         title: item.title,
@@ -50,6 +46,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         pathname: item.pathname,
         subMenu: item.subMenu,
         ignore: item.ignore,
+        isAdmin: item.isAdmin,
       };
 
       menuItem.active =

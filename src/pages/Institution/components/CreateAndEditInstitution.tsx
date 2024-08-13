@@ -403,7 +403,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
             >
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className="w-20">
+            <Button variant="primary" type="submit">
               {loading && (
                 <Lucide
                   icon="Loader"
@@ -413,8 +413,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 />
               )}
 
-              {!selectedInstitution && <>{loading ? "Saving..." : "Save"}</>}
-              {selectedInstitution && <>{loading ? "Updating..." : "Update"}</>}
+              {selectedInstitution ? "Update" : "Save"}
             </Button>
           </Dialog.Footer>
         </form>

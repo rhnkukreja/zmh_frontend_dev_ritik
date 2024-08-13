@@ -35,17 +35,9 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
   return match;
 };
 
-const isAdmin = localStorage.getItem("userType");
 const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   const formattedMenu: Array<FormattedMenu | string> = [];
   menu.forEach((item) => {
-    if (
-      typeof item !== "string" &&
-      isAdmin?.toLowerCase() !== "admin" &&
-      adminRoutes.includes(item?.title)
-    ) {
-      return;
-    }
     if (typeof item !== "string") {
       const menuItem: FormattedMenu = {
         icon: item.icon,
@@ -54,6 +46,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         pathname: item.pathname,
         subMenu: item.subMenu,
         ignore: item.ignore,
+        isAdmin: item.isAdmin,
       };
       menuItem.active =
         ((location.forceActiveMenu !== undefined &&
@@ -76,14 +69,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
 
       formattedMenu.push(menuItem);
     } else {
-      if (
-        isAdmin?.toLowerCase() !== "admin" &&
-        ["admin"].includes(item.toLowerCase())
-      ) {
-        return;
-      } else {
-        formattedMenu.push(item);
-      }
+      formattedMenu.push(item);
     }
   });
 

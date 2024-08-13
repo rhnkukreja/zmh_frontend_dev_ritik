@@ -25,7 +25,7 @@ export const characterColors: {
   T: "#33FFD6",
   U: "#FFD633",
   V: "#FF3380",
-  W: "#80FF33",
+  W: "#34F373",
   X: "#3380FF",
   Y: "#FF8333",
   Z: "#8333FF",

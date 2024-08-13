@@ -172,6 +172,10 @@ const engagementQuestionsSlice = createSlice({
           if (index !== -1) {
             state.questions[index] = action.payload.results;
           }
+        } else {
+          if (state.totalQuestions < 10) {
+            state.questions = [...state.questions, action.payload.results];
+          }
         }
       })
       .addCase(addEditEngagementQuestion.rejected, (state, action) => {

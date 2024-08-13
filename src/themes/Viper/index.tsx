@@ -20,6 +20,7 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
+import { filterMenu } from "@/utils/helper";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -66,7 +67,7 @@ function Main() {
       new SimpleBar(scrollableRef.current);
     }
 
-    setFormattedMenu(sideMenu());
+    setFormattedMenu(filterMenu(sideMenu()));
     compactLayout();
 
     window.onresize = () => {

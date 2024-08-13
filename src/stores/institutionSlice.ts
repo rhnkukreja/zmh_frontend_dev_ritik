@@ -150,7 +150,9 @@ const institutionsSlice = createSlice({
             state.institutions[index] = action.payload.results;
           }
         } else {
-          return;
+          if (state.totalInstitutions < 10) {
+            state.institutions.push(action.payload.results);
+          }
         }
       })
       .addCase(addEditInstitution.rejected, (state, action) => {

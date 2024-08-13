@@ -20,14 +20,14 @@ const DetailEngagementQuestion = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
-      <div className="flex flex-col sm:flex-row justify-between items-center pb-3 mb-2 border-b border-gray-200">
+      <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
         <h1 className="text-xl font-semibold">Engagement Question Details</h1>
         {!loading && getSingleQuestion?.active === true ? (
-          <div className="hidden sm:flex items-center justify-start text-sm font-medium rounded-md text-success bg-success/10 border border-success/10 px-1.5 py-px mt-2 sm:mt-0">
+          <div className=" items-center justify-start text-sm font-medium rounded-md text-success bg-success/10 border border-success/10 px-1.5 py-px mt-2 sm:mt-0">
             <span className="-mt-px">Active</span>
           </div>
         ) : (
-          <div className="hidden sm:flex items-center justify-start text-sm font-medium rounded-md text-danger bg-danger/10 border border-danger/10 px-1.5 py-px mt-2 sm:mt-0">
+          <div className=" items-center justify-start text-sm font-medium rounded-md text-danger bg-danger/10 border border-danger/10 px-1.5 py-px mt-2 sm:mt-0">
             <span className="-mt-px">Inactive</span>
           </div>
         )}

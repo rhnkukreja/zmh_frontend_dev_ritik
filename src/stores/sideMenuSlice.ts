@@ -18,7 +18,13 @@ export interface SideMenuState {
 
 const initialState: SideMenuState = {
   menu: [
-    // "DASHBOARDS",
+    "DASHBOARDS",
+    {
+      icon: "ActivitySquare",
+      pathname: "/inbox",
+      title: "Company Profile",
+      // badge: 4,
+    },
     // {
     //   icon: "GaugeCircle",
     //   pathname: "/",
@@ -60,12 +66,7 @@ const initialState: SideMenuState = {
     //   title: "Hotel",
     // },
     "APPS",
-    {
-      icon: "ActivitySquare",
-      pathname: "/inbox",
-      title: "Company Profile",
-      // badge: 4,
-    },
+
     {
       icon: "FileSearch",
       pathname: "/investor-profile",
@@ -79,7 +80,7 @@ const initialState: SideMenuState = {
       // badge: 4,
     },
     {
-      icon: "NotebookPen",
+      icon: "Vote",
       pathname: "/proxy-voting-guideline",
       title: "Proxy Voting Guideline",
       // badge: 4,

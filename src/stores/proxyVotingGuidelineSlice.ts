@@ -122,11 +122,18 @@ const proxyVotingGuidelineSlice = createSlice({
       .addCase(addEditProxyVotingGuideline.fulfilled, (state, action) => {
         state.loading = false;
         if (action.payload.isEdit) {
-          const index = state.proxyVotingGuidelines.findIndex(
+          const index = state.proxyVotingGuidelines?.findIndex(
             (question) => question.id === action.payload.results.id
           );
           if (index !== -1) {
             state.proxyVotingGuidelines[index] = action.payload.results;
+          }
+        } else {
+          if (state.totalProxyVotingGuidelines < 10) {
+            state.proxyVotingGuidelines = [
+              ...state.proxyVotingGuidelines,
+              action.payload.results,
+            ];
           }
         }
       })

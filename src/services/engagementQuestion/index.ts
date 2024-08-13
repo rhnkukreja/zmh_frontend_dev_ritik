@@ -20,7 +20,7 @@ class EngagementQuestionService {
   public async getSingleEngagementQuestions(id: number): Promise<{
     results: EngagementQuestions;
   }> {
-    const response = await axiosInstance.get(`/engagement_questions/${id}`);
+    const response = await axiosInstance.get(`/engagement_questions/${id}/`);
     const results = response.data;
     return {
       results,
@@ -44,7 +44,7 @@ class EngagementQuestionService {
     results: EngagementQuestions;
   }> {
     const response = await axiosInstance.put(
-      `/engagement_questions/${id}`,
+      `/engagement_questions/${id}/`,
       data
     );
     const results = response.data;
