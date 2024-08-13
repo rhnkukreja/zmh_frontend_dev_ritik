@@ -22,7 +22,6 @@ interface FormInputs {
   email: string;
   password: string;
   passwordConfirmation: string;
-  agreeToPolicy: boolean;
 }
 
 function Main() {
@@ -38,7 +37,7 @@ function Main() {
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
-    const { passwordConfirmation, agreeToPolicy, ...restData } = data;
+    const { passwordConfirmation, ...restData } = data;
 
     try {
       const response = await dispatch(
@@ -69,7 +68,7 @@ function Main() {
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
             <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
-              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-180">
+              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-360">
                 <div className="w-full h-full overflow-hidden     image-fit">
                   <img alt="Logo" src={logo} />
                 </div>
@@ -179,7 +178,7 @@ function Main() {
                   )}
                 </div>
 
-                <div className="flex items-center mt-5 text-xs text-slate-500 sm:text-sm">
+                {/* <div className="flex items-center mt-5 text-xs text-slate-500 sm:text-sm">
                   <Controller
                     name="agreeToPolicy"
                     control={control}
@@ -211,7 +210,7 @@ function Main() {
                   <span className="text-red-500">
                     {errors.agreeToPolicy.message}
                   </span>
-                )}
+                )} */}
                 <div className="mt-5 text-center xl:mt-8 xl:text-left">
                   <Button
                     type="submit"

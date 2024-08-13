@@ -19,6 +19,7 @@ import { CompanyData } from "@/types/company";
 import { FormInput } from "@/components/Base/Form";
 import { useNavigate } from "react-router-dom";
 import { Menu } from "@/components/Base/Headless";
+import Tippy from "@/components/Base/Tippy";
 
 function CompanyList() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -176,21 +177,20 @@ function CompanyList() {
 
                           <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                             <div className="flex gap-3 ">
-                              <Button
-                                variant="secondary"
-                                elevated
-                                size="sm"
-                                className="px-3"
-                                onClick={() => {
-                                  navigate(`/company-detail/${company?.id}`);
+                              <Tippy
+                                content="View "
+                                options={{
+                                  theme: "dark",
                                 }}
                               >
                                 <Lucide
+                                  onClick={() => {
+                                    navigate(`/company-detail/${company?.id}`);
+                                  }}
                                   icon="Eye"
                                   className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                 />
-                                View
-                              </Button>
+                              </Tippy>
                             </div>
                           </Table.Td>
                         </Table.Tr>

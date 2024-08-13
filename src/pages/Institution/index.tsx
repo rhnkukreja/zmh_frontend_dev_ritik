@@ -280,9 +280,9 @@ function Main() {
                       <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Institution
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap  border-slate-200/80 text-slate-500">
+                      {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap  border-slate-200/80 text-slate-500">
                         Active
-                      </Table.Td>
+                      </Table.Td> */}
 
                       <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap border-slate-200/80 text-slate-500">
                         Region
@@ -342,7 +342,7 @@ function Main() {
                               </div>
                             </div>
                           </Table.Td>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                          {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {institution?.active === true ? (
                               <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
                                 <span className="-mt-px">Active</span>
@@ -352,7 +352,7 @@ function Main() {
                                 <span className="-mt-px">In Active</span>
                               </div>
                             )}
-                          </Table.Td>
+                          </Table.Td> */}
 
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution?.region}
@@ -380,39 +380,38 @@ function Main() {
 
                           <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                             <div className="flex gap-3 ">
-                              <Button
-                                variant="secondary"
-                                elevated
-                                size="sm"
-                                className="px-3"
-                                onClick={() => {
-                                  navigate(
-                                    `/institution-detail/${institution?.id}`
-                                  );
+                              <Tippy
+                                content="View"
+                                options={{
+                                  theme: "dark",
                                 }}
                               >
                                 <Lucide
+                                  onClick={() => {
+                                    navigate(
+                                      `/institution-detail/${institution?.id}`
+                                    );
+                                  }}
                                   icon="Eye"
                                   className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                 />
-                                View
-                              </Button>
+                              </Tippy>
+
                               {user?.user_type === "Admin" && (
-                                <Button
-                                  variant="primary"
-                                  elevated
-                                  size="sm"
-                                  className="px-3"
-                                  onClick={() => {
-                                    onEditClickHandler(institution);
+                                <Tippy
+                                  content="Edit"
+                                  options={{
+                                    theme: "dark",
                                   }}
                                 >
                                   <Lucide
+                                    onClick={() => {
+                                      onEditClickHandler(institution);
+                                    }}
                                     icon="PenLine"
                                     className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                   />
-                                  Edit
-                                </Button>
+                                </Tippy>
                               )}
                             </div>
                           </Table.Td>

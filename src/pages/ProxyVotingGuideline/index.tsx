@@ -342,52 +342,48 @@ function ProxyGuideline() {
 
                               <Table.Td className=" py-2 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                 <div className="flex gap-3 ">
-                                  <Button
-                                    variant="secondary"
-                                    elevated
-                                    size="sm"
-                                    className="px-3"
-                                    onClick={() => {
-                                      gotoDetailPage(
-                                        guideline?.voting_guidelines_pdf_url!
-                                      );
-
-                                      setPdfVisible(true);
+                                  <Tippy
+                                    content="View"
+                                    options={{
+                                      theme: "dark",
                                     }}
                                   >
                                     <Lucide
+                                      onClick={() => {
+                                        gotoDetailPage(
+                                          guideline?.voting_guidelines_pdf_url!
+                                        );
+
+                                        setPdfVisible(true);
+                                      }}
                                       icon="Eye"
                                       className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                     />
-                                    View
-                                  </Button>
+                                  </Tippy>
+
                                   {user?.user_type === "Admin" && (
-                                    <Button
-                                      variant="primary"
-                                      elevated
-                                      size="sm"
-                                      className="px-3"
-                                      onClick={() => {
-                                        onEditClickHandler(guideline);
+                                    <Tippy
+                                      content="Edit"
+                                      options={{
+                                        theme: "dark",
                                       }}
                                     >
                                       <Lucide
+                                        onClick={() => {
+                                          onEditClickHandler(guideline);
+                                        }}
                                         icon="PenLine"
                                         className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                       />
-                                      Edit
-                                    </Button>
+                                    </Tippy>
                                   )}
-                                  <Button
-                                    variant="secondary"
-                                    elevated
-                                    size="sm"
-                                    className="px-3"
+
+                                  <Tippy
+                                    content="Download"
+                                    options={{
+                                      theme: "dark",
+                                    }}
                                   >
-                                    <Lucide
-                                      icon="NotebookText"
-                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                    />
                                     <a
                                       href={
                                         guideline?.voting_guidelines_pdf_url ||
@@ -397,9 +393,12 @@ function ProxyGuideline() {
                                       target="_blank"
                                       rel="noopener noreferrer"
                                     >
-                                      Download
+                                      <Lucide
+                                        icon="NotebookText"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                      />
                                     </a>
-                                  </Button>
+                                  </Tippy>
                                 </div>
                               </Table.Td>
                             </Table.Tr>
