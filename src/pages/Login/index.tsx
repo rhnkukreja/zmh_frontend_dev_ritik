@@ -61,7 +61,7 @@ const Main: React.FC = () => {
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
             <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
-              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-180">
+              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
                 <div className="w-full h-full overflow-hidden    image-fit">
                   <img alt="Logo" src={logo} />
                 </div>
