@@ -56,6 +56,9 @@ const options: any = {
             {domToReact(children, options)}
           </p>
         );
+
+      case "br":
+        return <br />;
       default:
         return null;
     }

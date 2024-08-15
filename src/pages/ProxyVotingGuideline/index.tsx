@@ -260,7 +260,7 @@ function ProxyGuideline() {
                         <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Year
                         </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        {/* <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Category
                         </Table.Td>
                         <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
@@ -271,12 +271,12 @@ function ProxyGuideline() {
                         </Table.Td>
                         <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Policy Guidelines
-                        </Table.Td>
+                        </Table.Td> */}
                         <Table.Td className="py-2 font-medium bg-slate-50   text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
                         </Table.Td>
 
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Actions
                         </Table.Td>
                       </Table.Tr>
@@ -295,7 +295,7 @@ function ProxyGuideline() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.year}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 <Tippy
                                   content={guideline?.category}
                                   options={{
@@ -308,8 +308,8 @@ function ProxyGuideline() {
                                       : guideline?.category}
                                   </div>
                                 </Tippy>
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              </Table.Td> */}
+                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.sub_category &&
                                 guideline?.sub_category.toString() === "nan"
                                   ? "NA"
@@ -327,7 +327,7 @@ function ProxyGuideline() {
                                   "nan"
                                   ? "NA"
                                   : guideline?.policy_guidelines}
-                              </Table.Td>
+                              </Table.Td> */}
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.active === true ? (
                                   <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
@@ -340,7 +340,7 @@ function ProxyGuideline() {
                                 )}
                               </Table.Td>
 
-                              <Table.Td className=" py-2 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                              <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                 <div className="flex gap-3 ">
                                   <Tippy
                                     content="View"

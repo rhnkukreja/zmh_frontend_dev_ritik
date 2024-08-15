@@ -366,14 +366,14 @@ function Main() {
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
                               {dayjs(institution?.date_created).format(
-                                "MMMM D, YYYY"
+                                "MMMM , YYYY"
                               )}
                             </p>
                           </Table.Td>
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
                               {dayjs(institution?.date_updated).format(
-                                "MMMM D, YYYY"
+                                "MMMM , YYYY"
                               )}
                             </p>
                           </Table.Td>

@@ -96,9 +96,8 @@ function Main() {
       .filter((url) => url.trim())
       .map(
         (url) =>
-          `<a  href="${url.trim()}" target="_blank" rel="noopener noreferrer">${url.trim()}</a>`
-      )
-      .join("<br /><br /><br />");
+          `<a   href="${url.trim()}" target="_blank" rel="noopener noreferrer">${url.trim()}</a><br>`
+      );
   }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines_link]);
 
   const votingGuidelinesText = useMemo(() => {
@@ -109,8 +108,6 @@ function Main() {
     );
   }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines_summary]);
 
-  console.log({ singleInvesterProfile, votingGuidelinesText });
-
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
@@ -119,28 +116,24 @@ function Main() {
             Investers Detail
           </div> */}
         </div>
-        <div className="flex justify-between mt-4 py-4 px-2 gap-y-3 items-center flex-row bg-white box">
-          <div className="max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
-            <Tippy
-              content={singleInvesterProfile?.institution_name || ""}
-              options={{
-                theme: "light",
-              }}
-            >
-              <h2 className="sm:text-[1.3rem] text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
-                {singleInvesterProfile?.institution_name || ""}
-              </h2>
-            </Tippy>
-          </div>
+        <div className="flex justify-between mt-4  px-2 gap-y-3 items-center flex-row bg-white box">
+          <Tippy
+            content={singleInvesterProfile?.institution_name || ""}
+            options={{
+              theme: "light",
+            }}
+          >
+            <h2 className="sm:text-[1.3rem] md:max-w-[350px] sm:max-w-[200px] py-3 overflow-hidden text-ellipsis whitespace-nowrap  text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
+              {singleInvesterProfile?.institution_name || ""}
+            </h2>
+          </Tippy>
 
-          <div className="flex flex-row justify-center items-center sm:gap-4 ">
+          <div className="flex flex-row justify-center py-3 items-center sm:gap-4 ">
             <h2 className="hidden sm:text-[1.1rem] sm:inline sm:text-xl text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
               Last Update:
             </h2>
             <p className="flex items-center justify-center text-sm sm:text-[16px] font-medium rounded-md text-primary bg-primary/10 border  px-1.5 py-1 ">
-              {dayjs(singleInvesterProfile?.date_updated).format(
-                "MMMM D, YYYY"
-              )}
+              {dayjs(singleInvesterProfile?.date_updated).format("MMMM , YYYY")}
             </p>
           </div>
         </div>
@@ -313,7 +306,9 @@ function Main() {
               fetchloading={loading}
               id={Number(params.id)}
               title="Voting Guidelines"
-              renderHtml={votingGuidelinesText + formatVotingGuidelinesLink}
+              renderHtml={
+                votingGuidelinesText + "<br><br>" + formatVotingGuidelinesLink
+              }
               field="voting_guidelines_link"
             />
             {/* <EditableSection

@@ -52,14 +52,14 @@ const DetailEngagementQuestion = () => {
               </h2>
               <p className="text-gray-500">{getSingleQuestion?.company_name}</p>
             </div>
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <h2 className="text-md font-medium text-gray-700 mb-1">
                 Type of Engagement
               </h2>
               <p className="text-gray-500">
                 {getSingleQuestion?.type_of_engagement}
               </p>
-            </div>
+            </div> */}
             <div className="flex flex-col">
               <h2 className="text-md font-medium text-gray-700 mb-1">
                 Engagement Date
@@ -71,15 +71,19 @@ const DetailEngagementQuestion = () => {
                 )}
               </p>
             </div>
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <h2 className="text-md font-medium text-gray-700 mb-1">Source</h2>
               <p className="text-gray-500">{getSingleQuestion?.source}</p>
-            </div>
+            </div> */}
             <div className="flex flex-col">
               <h2 className="text-md font-medium text-gray-700 mb-1">
                 Category
               </h2>
-              <p className="text-gray-500">{getSingleQuestion?.category}</p>
+              <p className="text-gray-500">
+                {getSingleQuestion?.type_of_engagement +
+                  "-" +
+                  getSingleQuestion?.category}
+              </p>
             </div>
           </div>
 

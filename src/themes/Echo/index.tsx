@@ -147,9 +147,13 @@ function Main() {
               href=""
               className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
             >
-              <div className="flex items-center justify-center w-[34px]  h-[34px]  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
-                <div className="w-full h-full overflow-hidden     image-fit">
-                  <img alt="Logo" src={logo} />
+              <div className="flex items-center justify-center w-[34px] h-[34px] transition-transform ease-in-out group">
+                <div className="w-full h-full overflow-hidden transition-transform duration-500 ease-in-out hover:animate-spinOnce">
+                  <img
+                    alt="Logo"
+                    src={logo}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
 

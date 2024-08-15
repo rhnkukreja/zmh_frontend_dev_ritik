@@ -311,7 +311,9 @@ function Main() {
 
                           <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             <div className="whitespace-nowrap capitalize">
-                              {question?.category}
+                              {question?.type_of_engagement +
+                                "-" +
+                                question?.category}
                             </div>
                           </Table.Td>
                           <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">

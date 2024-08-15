@@ -112,7 +112,7 @@ function Main() {
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="text-base font-medium group-[.mode--light]:text-white">
-              Invseter Profile
+              Invsetor Profile
             </div>
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
@@ -271,14 +271,14 @@ function Main() {
                             <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
                               <div className="whitespace-nowrap ">
                                 {dayjs(profile?.date_created).format(
-                                  "MMMM D, YYYY"
+                                  "MMMM , YYYY"
                                 )}
                               </div>
                             </Table.Td>
                             <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
                               <div className="whitespace-nowrap ">
                                 {dayjs(profile?.date_updated).format(
-                                  "MMMM D, YYYY"
+                                  "MMMM , YYYY"
                                 )}
                               </div>
                             </Table.Td>

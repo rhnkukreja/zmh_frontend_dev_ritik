@@ -58,19 +58,15 @@
   }
 }
 
-@keyframes rotate-360 {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.animate-spinOnce {
+  transition: transform 1s linear;
+  transform: rotate(0deg);
 }
 
-.rotate-360 {
-  animation: rotate-360 1s linear infinite;
+/* On hover */
+.animate-spinOnce {
+  transform: rotate(360deg);
 }
-
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives

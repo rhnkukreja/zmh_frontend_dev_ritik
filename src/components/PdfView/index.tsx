@@ -1,12 +1,8 @@
-import React, { useState } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import React, { useMemo, useState } from "react";
+import { pdfjs } from "react-pdf";
 
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import "react-pdf/dist/esm/Page/TextLayer.css";
 import { Dialog } from "../Base/Headless";
 import Lucide from "../Base/Lucide";
-
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 interface PdfViewerProps {
   file: string;
@@ -19,35 +15,14 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
   pdfVisible,
   setPdfVisible,
 }) => {
-  const [numPages, setNumPages] = useState<any>(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
-
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: any }) => {
-    setNumPages(numPages);
-    setPageNumber(1);
-  };
-
-  const handlePreviousPage = () => {
-    setPageNumber((prevPageNumber) => Math.max(prevPageNumber - 1, 1));
-  };
-
-  const handleNextPage = () => {
-    setPageNumber((prevPageNumber) => Math.min(prevPageNumber + 1, numPages));
-  };
-
-  const handleZoomIn = () => {
-    setScale((prevScale) => prevScale + 0.1);
-  };
-
-  const handleZoomOut = () => {
-    setScale((prevScale) => Math.max(prevScale - 0.1, 0.5));
-  };
+  const fileName = useMemo(() => {
+    return file.split("/").pop();
+  }, [file]);
   return (
-    <Dialog size="lg" open={pdfVisible} onClose={() => setPdfVisible(false)}>
+    <Dialog size="xl" open={pdfVisible} onClose={() => setPdfVisible(false)}>
       <Dialog.Panel className="text-center">
         <Dialog.Title>
-          <h2 className="mr-auto text-xl font-semibold">PDF</h2>
+          <h2 className="mr-auto text-xl font-semibold">{fileName}</h2>
           <div
             onClick={() => setPdfVisible(false)}
             className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
@@ -56,40 +31,28 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
           </div>
         </Dialog.Title>
         <Dialog.Description className="px-6 py-4 space-y-6">
-          <div>
-            <div className="controls">
-              <button onClick={handlePreviousPage} disabled={pageNumber <= 1}>
-                Previous
-              </button>
-              <button
-                onClick={handleNextPage}
-                disabled={pageNumber >= numPages}
-              >
-                Next
-              </button>
-              <span>
-                Page {pageNumber} of {numPages}
-              </span>
-              <button onClick={handleZoomOut} disabled={scale <= 0.5}>
-                Zoom Out
-              </button>
-              <button onClick={handleZoomIn} disabled={scale >= 2.0}>
-                Zoom In
-              </button>
-            </div>
-            <Document
-              file={
-                "https://s29.q4cdn.com/175625835/files/doc_downloads/test.pdf"
-              }
-              onLoadError={(msg) => {
-                console.log(msg);
-              }}
-              onLoadSuccess={onDocumentLoadSuccess}
-              loading="Loading PDF..."
+          {!file ? (
+            <div
+              id="error-message"
+              className=" absolute inset-0 flex items-center justify-center bg-white border border-gray-300 shadow-lg"
             >
-              <Page pageNumber={pageNumber} scale={scale} />
-            </Document>
-          </div>
+              <div className="text-center text-red-600">
+                <p className="text-xl font-semibold">
+                  File not found or unable to display the PDF.
+                </p>
+                <p>Please check the URL or try again later.</p>
+              </div>
+            </div>
+          ) : (
+            <iframe
+              // src={file || ""}
+              src="https://research.google.com/pubs/archive/44678.pdf"
+              width="100%"
+              style={{
+                height: "80vh",
+              }}
+            ></iframe>
+          )}
         </Dialog.Description>
         <Dialog.Footer className="gap-3 sm:gap-6"></Dialog.Footer>
       </Dialog.Panel>
