@@ -1,8 +1,9 @@
 import "@/assets/css/vendors/simplebar.css";
 import Lucide from "@/components/Base/Lucide";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
-import { useEffect, createRef, useMemo, useState, useRef } from "react";
-import SimpleBar from "simplebar";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 import _ from "lodash";
 import Button from "@/components/Base/Button";
@@ -25,6 +26,8 @@ import clsx from "clsx";
 
 function Main() {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const dispatch: AppDispatch = useAppDispatch();
   const { singleInvesterProfile, loading } = useAppSelector(
     (state) => state.investersProfile
@@ -33,6 +36,7 @@ function Main() {
   const params = useParams();
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -108,210 +112,289 @@ function Main() {
     );
   }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines_summary]);
 
+  const handleExportToPDF = async () => {
+    const input = contentRef.current;
+    setIsGeneratingPDF(true);
+
+    const elementsToHide = document.querySelectorAll(".exclude-from-pdf");
+    elementsToHide.forEach((el) => el.classList.add("hidden"));
+
+    if (input) {
+      try {
+        const canvas = await html2canvas(input, {
+          scale: 3,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: null,
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const pdfWidth = 210;
+        const margin = 10;
+        const imgWidth = pdfWidth - 2 * margin;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        // Create a new PDF document
+        const pdf = new jsPDF("p", "mm", [pdfWidth, imgHeight + 2 * margin]);
+
+        // Add the image to the PDF document
+        pdf.addImage(
+          imgData,
+          "PNG",
+          margin,
+          margin,
+          imgWidth,
+          imgHeight,
+          undefined,
+          "FAST"
+        );
+
+        // Download the generated PDF
+        pdf.save(`${singleInvesterProfile?.institution_name}.pdf`);
+
+        // Restore visibility of the hidden elements
+        elementsToHide.forEach((el) => el.classList.remove("hidden"));
+
+        setIsGeneratingPDF(false);
+      } catch (error) {
+        console.error("Could not generate PDF", error);
+        setIsGeneratingPDF(false);
+      }
+    }
+  };
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
-        <div className="flex flex-col mt-4 md:mt-0 md:h-10 gap-y-3 md:items-center md:flex-row">
+        <div className="flex flex-col justify-end mt-4 md:mt-0 md:h-10 gap-y-3 md:items-center md:flex-row md:justify-end sm:justify-end">
           {/* <div className="text-base font-medium group-[.mode--light]:text-white">
             Investers Detail
           </div> */}
-        </div>
-        <div className="flex justify-between mt-4  px-2 gap-y-3 items-center flex-row bg-white box">
-          <Tippy
-            content={singleInvesterProfile?.institution_name || ""}
-            options={{
-              theme: "light",
-            }}
-          >
-            <h2 className="sm:text-[1.3rem] md:max-w-[350px] sm:max-w-[200px] py-3 overflow-hidden text-ellipsis whitespace-nowrap  text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
-              {singleInvesterProfile?.institution_name || ""}
-            </h2>
-          </Tippy>
 
-          <div className="flex flex-row justify-center py-3 items-center sm:gap-4 ">
-            <h2 className="hidden sm:text-[1.1rem] sm:inline sm:text-xl text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
-              Last Update:
-            </h2>
-            <p className="flex items-center justify-center text-sm sm:text-[16px] font-medium rounded-md text-primary bg-primary/10 border  px-1.5 py-1 ">
-              {dayjs(singleInvesterProfile?.date_updated).format("MMMM , YYYY")}
-            </p>
-          </div>
+          <Button
+            type="button"
+            variant="outline-secondary"
+            className=" border-none"
+            onClick={handleExportToPDF}
+          >
+            {isGeneratingPDF ? (
+              <Lucide
+                icon="Loader"
+                className={`w-4 h-4 mr-1.5 stroke-[1.3] group-[.mode--light]:text-white ${
+                  isGeneratingPDF ? "animate-spin" : ""
+                }`}
+              />
+            ) : (
+              <Lucide
+                icon="Download"
+                className="w-4 h-4 mr-1.5 stroke-[1.3] group-[.mode--light]:text-white "
+              />
+            )}
+
+            <div className=" group-[.mode--light]:text-white">Download PDF</div>
+          </Button>
         </div>
-        <div className="mt-3.5 flex flex-col lg:flex-row  gap-x-6">
-          <div className="w-full lg:w-[18rem] flex-none">
-            <div className="flex flex-col ">
-              <div
-                className={clsx(
-                  "relative flex flex-col px-4 py-3 sm:px-2 items-center box transition-all duration-300 ease-in-out overflow-hidden",
-                  isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
-                  user?.user_type?.toLowerCase() === "admin"
-                    ? "h-[62px]"
-                    : "h-[52px]"
+
+        <div ref={contentRef}>
+          <div className="flex justify-between mt-4  px-2 gap-y-3 items-center flex-row bg-white box">
+            <Tippy
+              content={singleInvesterProfile?.institution_name || ""}
+              options={{
+                theme: "light",
+              }}
+            >
+              <h2 className="sm:text-[1.3rem] md:max-w-[350px] sm:max-w-[200px] py-3 overflow-hidden text-ellipsis whitespace-nowrap  text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
+                {singleInvesterProfile?.institution_name || ""}
+              </h2>
+            </Tippy>
+
+            <div className="flex flex-row justify-center py-3 items-center sm:gap-4 ">
+              <h2 className="hidden sm:text-[1.1rem] sm:inline sm:text-xl text-sm font-semibold  text-gray-600 dark:text-gray-100 tracking-wide">
+                Last Update:
+              </h2>
+              <p className="flex items-center justify-center text-sm sm:text-[16px] font-medium rounded-md text-primary bg-primary/10 border  px-1.5 py-1 ">
+                {dayjs(singleInvesterProfile?.date_updated).format(
+                  "MMMM , YYYY"
                 )}
-              >
-                <div className="flex items-center justify-between  w-full h-full">
-                  <h4 className="text-[18px] font-bold leading-none text-primary">
-                    Key Contacts
-                  </h4>
-                  {user?.user_type === "Admin" && (
-                    <div
-                      className="ml-4 cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2 transition-colors duration-200 hover:bg-primary hover:text-white"
-                      onClick={toggleExpand}
-                    >
-                      <Lucide
-                        icon="FileText"
-                        className="stroke-[1.3] w-4 h-4 mr-1.5"
-                      />
-                      Upload
+              </p>
+            </div>
+          </div>
+          <div className="mt-3.5 flex flex-col lg:flex-row  gap-x-6">
+            <div className="w-full lg:w-[18rem] flex-none">
+              <div className="flex flex-col ">
+                <div
+                  className={clsx(
+                    "relative flex flex-col px-4 py-3 sm:px-2 items-center box transition-all duration-300 ease-in-out overflow-hidden",
+                    isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
+                    user?.user_type?.toLowerCase() === "admin"
+                      ? "h-[62px]"
+                      : "h-[52px]"
+                  )}
+                >
+                  <div className="flex items-center justify-between  w-full h-full">
+                    <h4 className="text-[18px] font-bold leading-none text-primary">
+                      Key Contacts
+                    </h4>
+                    {user?.user_type === "Admin" && (
+                      <div
+                        className="exclude-from-pdf ml-4 cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2 transition-colors duration-200 hover:bg-primary hover:text-white"
+                        onClick={toggleExpand}
+                      >
+                        <Lucide
+                          icon="FileText"
+                          className="stroke-[1.3] w-4 h-4 mr-1.5 "
+                        />
+                        Upload
+                      </div>
+                    )}
+                  </div>
+
+                  {isExpanded && (
+                    <div className="w-full mt-3 max-h-[180px] exclude-from-pdf">
+                      <Dropzone
+                        ref={dropzoneSingleRef}
+                        options={{
+                          url: `${baseURL}/investor_profile/`,
+                          method: "put",
+                          thumbnailWidth: 100,
+                          maxFilesize: 5000,
+                          maxFiles: 1,
+
+                          acceptedFiles: ".xlsx",
+                        }}
+                        className="dropzone w-full flex flex-col justify-center items-center h-full "
+                      >
+                        <div className="text-sm font-semibold text-gray-800 mb-2">
+                          Drop files here or click to upload.
+                        </div>
+                        <div className="p-4 bg-gray-100 rounded-lg shadow-md">
+                          <div className="text-[0.8rem] leading-4 text-gray-600 mb-1">
+                            Only <span className="font-medium">xlsx</span> files
+                            are allowed.
+                          </div>
+                          <div className="text-[0.8rem] leading-4 text-gray-600">
+                            File should contain only 4 columns: <br />
+                            <span className="font-medium text-gray-800">
+                              Name
+                            </span>
+                            ,
+                            <span className="font-medium text-gray-800">
+                              {" "}
+                              Designation
+                            </span>
+                            ,
+                            <span className="font-medium text-gray-800">
+                              {" "}
+                              LinkedIn
+                            </span>
+                            ,
+                            <span className="font-medium text-gray-800">
+                              {" "}
+                              Image
+                            </span>
+                            .
+                          </div>
+                        </div>
+                      </Dropzone>
                     </div>
                   )}
                 </div>
-
-                {isExpanded && (
-                  <div className="w-full mt-3 max-h-[180px]">
-                    <Dropzone
-                      ref={dropzoneSingleRef}
-                      options={{
-                        url: `${baseURL}/investor_profile/`,
-                        method: "put",
-                        thumbnailWidth: 100,
-                        maxFilesize: 5000,
-                        maxFiles: 1,
-
-                        acceptedFiles: ".xlsx",
-                      }}
-                      className="dropzone w-full flex flex-col justify-center items-center h-full "
-                    >
-                      <div className="text-sm font-semibold text-gray-800 mb-2">
-                        Drop files here or click to upload.
-                      </div>
-                      <div className="p-4 bg-gray-100 rounded-lg shadow-md">
-                        <div className="text-[0.8rem] leading-4 text-gray-600 mb-1">
-                          Only <span className="font-medium">xlsx</span> files
-                          are allowed.
-                        </div>
-                        <div className="text-[0.8rem] leading-4 text-gray-600">
-                          File should contain only 4 columns: <br />
-                          <span className="font-medium text-gray-800">
-                            Name
-                          </span>
-                          ,
-                          <span className="font-medium text-gray-800">
-                            {" "}
-                            Designation
-                          </span>
-                          ,
-                          <span className="font-medium text-gray-800">
-                            {" "}
-                            LinkedIn
-                          </span>
-                          ,
-                          <span className="font-medium text-gray-800">
-                            {" "}
-                            Image
-                          </span>
-                          .
-                        </div>
-                      </div>
-                    </Dropzone>
-                  </div>
-                )}
-              </div>
-              <div className=" overflow-y-auto no-scrollbar">
-                {loading ? (
-                  <div className="mt-[-20px]">
-                    {" "}
-                    <LoadingWrapper height={200} />
-                  </div>
-                ) : (
-                  <>
-                    {singleInvesterProfile?.key_contacts?.map(
-                      (contacts: KeyContact) => (
-                        <div className="flex mb-6  flex-col px-4 box ">
-                          <div className="flex my-6 flex-col items-center">
-                            <div>
-                              <div className="w-28 h-28 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                <img
-                                  alt="Tailwise - Admin Dashboard Template"
-                                  src={contacts?.image}
-                                />
+                <div className=" overflow-y-auto no-scrollbar">
+                  {loading ? (
+                    <div className="mt-[-20px]">
+                      {" "}
+                      <LoadingWrapper height={200} />
+                    </div>
+                  ) : (
+                    <>
+                      {singleInvesterProfile?.key_contacts?.map(
+                        (contacts: KeyContact) => (
+                          <div className="flex mb-6  flex-col px-4 box ">
+                            <div className="flex my-6 flex-col items-center">
+                              <div>
+                                <div className="w-28 h-28 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                  <img
+                                    alt="Tailwise - Admin Dashboard Template"
+                                    src={contacts?.image}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                            <div className="text-xl mt-3  font-bold text-center text-gray-800">
-                              {contacts?.name}
-                            </div>
-                            <div
-                              className="text-slate-500 mt-0.5 font-semibold text-center"
-                              dangerouslySetInnerHTML={{
-                                __html: contacts?.designation,
-                              }}
-                            />
+                              <div className="text-xl mt-3  font-bold text-center text-gray-800">
+                                {contacts?.name}
+                              </div>
+                              <div
+                                className="text-slate-500 mt-0.5 font-semibold text-center"
+                                dangerouslySetInnerHTML={{
+                                  __html: contacts?.designation,
+                                }}
+                              />
 
-                            <Button
-                              rounded
-                              type="button"
-                              variant="primary"
-                              className="w-full mt-5"
-                              onClick={() => {
-                                window.open(contacts?.linkedin, "_blank");
-                              }}
-                            >
-                              LinkedIn
-                            </Button>
+                              <Button
+                                rounded
+                                type="button"
+                                variant="primary"
+                                className="w-full mt-5 exclude-from-pdf"
+                                onClick={() => {
+                                  window.open(contacts?.linkedin, "_blank");
+                                }}
+                              >
+                                LinkedIn
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    )}
-                  </>
-                )}
+                        )
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex flex-col w-full gap-y-4">
-            <EditableSection
-              fetchloading={loading}
-              id={Number(params.id)}
-              title="Engagement Priorities"
-              renderHtml={
-                singleInvesterProfile?.engagement_priorities
-                  ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                  ?.replace(/\n/g, "<br />") || ""
-              }
-              field="engagement_priorities"
-            />
-            <EditableSection
-              fetchloading={loading}
-              id={Number(params.id)}
-              title="Reporting Expectations"
-              renderHtml={
-                singleInvesterProfile?.reporting_expectations
-                  .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                  ?.replace(/\n/g, "<br />") || ""
-              }
-              field="reporting_expectations"
-            />
-            <EditableSection
-              fetchloading={loading}
-              id={Number(params.id)}
-              title="ESG Integration Process"
-              renderHtml={
-                singleInvesterProfile?.esg_integration_process
-                  .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                  ?.replace(/\n/g, "<br />") || ""
-              }
-              field="esg_integration_process"
-            />
-            <EditableSection
-              fetchloading={loading}
-              id={Number(params.id)}
-              title="Voting Guidelines"
-              renderHtml={
-                votingGuidelinesText + "<br><br>" + formatVotingGuidelinesLink
-              }
-              field="voting_guidelines_link"
-            />
-            {/* <EditableSection
+            <div className="flex flex-col w-full gap-y-4">
+              <EditableSection
+                fetchloading={loading}
+                id={Number(params.id)}
+                title="Engagement Priorities"
+                renderHtml={
+                  singleInvesterProfile?.engagement_priorities
+                    ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                    ?.replace(/\n/g, "<br />") || ""
+                }
+                field="engagement_priorities"
+              />
+              <EditableSection
+                fetchloading={loading}
+                id={Number(params.id)}
+                title="Reporting Expectations"
+                renderHtml={
+                  singleInvesterProfile?.reporting_expectations
+                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                    ?.replace(/\n/g, "<br />") || ""
+                }
+                field="reporting_expectations"
+              />
+              <EditableSection
+                fetchloading={loading}
+                id={Number(params.id)}
+                title="ESG Integration Process"
+                renderHtml={
+                  singleInvesterProfile?.esg_integration_process
+                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                    ?.replace(/\n/g, "<br />") || ""
+                }
+                field="esg_integration_process"
+              />
+              <EditableSection
+                fetchloading={loading}
+                id={Number(params.id)}
+                title="Voting Guidelines"
+                renderHtml={
+                  votingGuidelinesText + "<br><br>" + formatVotingGuidelinesLink
+                }
+                field="voting_guidelines_link"
+              />
+              {/* <EditableSection
               fetchloading={loading}
               id={Number(params.id)}
               title="Voting Guidelines Summary"
@@ -321,13 +404,14 @@ function Main() {
               }
               field="voting_guidelines_summary"
             /> */}
-            <EditableSection
-              fetchloading={loading}
-              id={Number(params.id)}
-              title="References"
-              renderHtml={formatReferences || ""}
-              field="references"
-            />
+              <EditableSection
+                fetchloading={loading}
+                id={Number(params.id)}
+                title="References"
+                renderHtml={formatReferences || ""}
+                field="references"
+              />
+            </div>
           </div>
         </div>
       </div>

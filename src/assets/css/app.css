@@ -67,6 +67,11 @@
 .animate-spinOnce {
   transform: rotate(360deg);
 }
+
+.hide-pdf {
+  display: none !important;
+}
+
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives

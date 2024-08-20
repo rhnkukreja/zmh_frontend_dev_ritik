@@ -42,12 +42,12 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 
   const handleCancel = () => {
     setIsEditing(false);
-    setValue(renderHtml); // Reset the value to initial
+    setValue(renderHtml);
   };
 
   useEffect(() => {
     if (!isEditing) {
-      setValue(renderHtml); // Ensure the value is updated when not editing
+      setValue(renderHtml);
     }
   }, [renderHtml, isEditing]);
 
@@ -63,10 +63,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             variant="secondary"
             elevated
             size="sm"
-            className="px-3"
+            className="px-3 exclude-from-pdf"
             onClick={() => setIsEditing(true)}
           >
-            <Lucide icon="PenSquare" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
+            <Lucide icon="PenSquare" className="w-4 h-4 mr-1.5 stroke-[1.3] " />
             {renderHtml ? "Edit" : "Add"}
           </Button>
         )}
