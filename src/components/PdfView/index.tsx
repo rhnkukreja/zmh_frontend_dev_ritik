@@ -45,11 +45,10 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
             </div>
           ) : (
             <iframe
-              // src={file || ""}
-              src="https://research.google.com/pubs/archive/44678.pdf"
+              src={file || ""}
               width="100%"
               style={{
-                height: "80vh",
+                height: "100vh",
               }}
             ></iframe>
           )}

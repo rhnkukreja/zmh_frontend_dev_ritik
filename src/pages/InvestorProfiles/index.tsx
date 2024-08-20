@@ -295,7 +295,7 @@ function Main() {
                             </Table.Td> */}
 
                             <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                              <div className="flex gap-3 ">
+                              <div className="flex gap-3 justify-center">
                                 <Tippy
                                   content="View"
                                   options={{
@@ -310,7 +310,7 @@ function Main() {
                                     className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
                                   />
                                 </Tippy>
-                                <Tippy
+                                {/* <Tippy
                                   content="Download"
                                   options={{
                                     theme: "dark",
@@ -320,7 +320,7 @@ function Main() {
                                     icon="Download"
                                     className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                   />
-                                </Tippy>
+                                </Tippy> */}
                               </div>
                             </Table.Td>
                           </Table.Tr>
