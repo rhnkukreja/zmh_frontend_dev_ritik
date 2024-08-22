@@ -50,16 +50,16 @@ function Main() {
     getSingleInvesterProfile(params.id!);
   }, [params.id]);
 
-  const formatReferences = useMemo(() => {
-    return singleInvesterProfile?.references
-      .split(";")
-      .filter((url: string) => url.trim())
-      .map(
-        (url: string) =>
-          `<a  href="${url.trim()}" target="_blank" rel="noopener noreferrer">${url.trim()}</a>`
-      )
-      .join("<br />");
-  }, [singleInvesterProfile, singleInvesterProfile?.references]);
+  // const formatReferences = useMemo(() => {
+  //   return singleInvesterProfile?.references
+  //     .split(";")
+  //     .filter((url: string) => url.trim())
+  //     .map(
+  //       (url: string) =>
+  //         `<a  href="${url.trim()}" target="_blank" rel="noopener noreferrer">${url.trim()}</a>`
+  //     )
+  //     .join("<br />");
+  // }, [singleInvesterProfile, singleInvesterProfile?.references]);
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -408,7 +408,7 @@ function Main() {
                 fetchloading={loading}
                 id={Number(params.id)}
                 title="References"
-                renderHtml={formatReferences || ""}
+                renderHtml={singleInvesterProfile?.references || ""}
                 field="references"
               />
             </div>

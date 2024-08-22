@@ -404,11 +404,11 @@ const initialState: SideMenuState = {
     //   pathname: "/icon",
     //   title: "Icon",
     // },
-    {
-      icon: "Droplets",
-      pathname: "/loading-icon",
-      title: "Loading Icon",
-    },
+    // {
+    //   icon: "Droplets",
+    //   pathname: "/loading-icon",
+    //   title: "Loading Icon",
+    // },
     // {
     //   icon: "GalleryHorizontalEnd",
     //   pathname: "/regular-form",
