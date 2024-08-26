@@ -230,7 +230,7 @@ function Main() {
           </Slideover.Description>
         </Slideover.Panel>
       </Slideover>
-      <div
+      {/* <div
         onClick={(event: React.MouseEvent) => {
           event.preventDefault();
           setThemeSwitcherSlideover(true);
@@ -238,7 +238,7 @@ function Main() {
         className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-1"
       >
         <Lucide className="w-5 h-5 animate-spin" icon="Settings" />
-      </div>
+      </div> */}
 
 
       {/* AI Bot Modal & Button */}
@@ -247,7 +247,7 @@ function Main() {
             event.preventDefault();
             setBasicModalPreview(true);
           }}
-          className="fixed bottom-0 right-20 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-2"
+          className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-2"
         >
           <Bot className="w-5 h-5" />
         </div>

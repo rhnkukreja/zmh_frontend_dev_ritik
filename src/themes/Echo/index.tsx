@@ -448,12 +448,13 @@ function Main() {
                   <Menu.Button
                     className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
                     style={{
-                      backgroundColor: getColorForCharacter(
-                        user?.user_name?.[0].toUpperCase() || "a"
-                      ),
+                      backgroundColor: '#FFFFFF'
+                      // (
+                      //    user?.user_name?.[0].toUpperCase() || "a"
+                      // ),
                     }}
                   >
-                    <h4 className="text-white md:text-xl ">
+                    <h4 className="text-[#800000] md:text-xl ">
                       {user?.user_name?.[0].toUpperCase() || ""}
                     </h4>
                   </Menu.Button>

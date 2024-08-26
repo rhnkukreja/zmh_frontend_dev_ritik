@@ -120,9 +120,9 @@ function Main() {
   const formatVotingGuidelinesLink = useMemo(() => {
     return singleInvesterProfile?.voting_guidelines_link
       .split(";")
-      .filter((url) => url.trim())
+      .filter((url: any) => url.trim())
       .map(
-        (url) =>
+        (url: any) =>
           `<a   href="${url.trim()}" target="_blank" rel="noopener noreferrer">${url.trim()}</a><br>`
       );
   }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines_link]);
@@ -416,7 +416,7 @@ function Main() {
                     </div>
                   )}
                 </div>
-                <div className="  max-h-[100vh] overflow-y-auto">
+                <div className="max-h-auto">
                   {loading ? (
                     <div className="mt-[-20px]">
                       <LoadingWrapper height={200} />
