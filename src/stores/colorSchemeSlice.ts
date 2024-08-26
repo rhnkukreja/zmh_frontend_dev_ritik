@@ -60,4 +60,4 @@ export const selectColorScheme = (state: RootState) => {
   return state.colorScheme.value;
 };
 
-export default colorSchemeSlice.reducer;
+export default colorSchemeSlice;

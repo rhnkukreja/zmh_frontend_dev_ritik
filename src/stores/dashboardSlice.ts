@@ -93,4 +93,4 @@ const companySlice = createSlice({
   },
 });
 
-export default companySlice.reducer;
+export default companySlice;

@@ -145,6 +145,6 @@ const proxyVotingGuidelineSlice = createSlice({
   },
 });
 
-export default proxyVotingGuidelineSlice.reducer;
+export default proxyVotingGuidelineSlice;
 export const { setPage, resetPage, setFilter, resetFilter } =
   proxyVotingGuidelineSlice.actions;

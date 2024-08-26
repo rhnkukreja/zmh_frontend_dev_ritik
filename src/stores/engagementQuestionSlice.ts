@@ -186,6 +186,6 @@ const engagementQuestionsSlice = createSlice({
   },
 });
 
-export default engagementQuestionsSlice.reducer;
+export default engagementQuestionsSlice;
 export const { setPage, resetPage, setFilter, resetFilter } =
   engagementQuestionsSlice.actions;

@@ -143,9 +143,9 @@ function CompanyList() {
                       <Table.Td className="py-2 font-medium bg-slate-50 border-slate-200/80 text-slate-500">
                         Symbol
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                      {/* <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Company V1
-                      </Table.Td>
+                      </Table.Td> */}
                       <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
                         Actions
                       </Table.Td>
@@ -153,7 +153,7 @@ function CompanyList() {
                   </Table.Thead>
                   <Table.Tbody>
                     {companies?.length > 0 &&
-                      companies?.map((company) => (
+                      companies?.map((company: CompanyData) => (
                         <Table.Tr key={company.id}>
                           <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {company.company_id}
@@ -171,12 +171,12 @@ function CompanyList() {
                           <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                             {company.symbol}
                           </Table.Td>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                          {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {company.company_v1}
-                          </Table.Td>
+                          </Table.Td> */}
 
-                          <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                            <div className="flex gap-3 ">
+                          <Table.Td className=" py-2 w-20 relative  ">
+                            <div className="flex gap-3  justify-center">
                               <Tippy
                                 content="View "
                                 options={{

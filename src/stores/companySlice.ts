@@ -164,6 +164,6 @@ const companySlice = createSlice({
   },
 });
 
-export default companySlice.reducer;
+export default companySlice;
 export const { setPage, resetPage, setFilter, resetFilter } =
   companySlice.actions;

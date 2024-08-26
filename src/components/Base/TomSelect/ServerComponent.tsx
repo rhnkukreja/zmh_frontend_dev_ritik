@@ -235,11 +235,15 @@ function TomSelect<T extends string | string[]>({
             </option>
           ))}
         {fetchedOption?.length === 0 && loading && !error && (
-          <option value="" disabled>
-            <div className="flex justify-center items-center">
+          <option
+            value=""
+            disabled
+            className="flex justify-center items-center"
+          >
+            <>
               <LoadingIcon icon="oval" className="w-8 h-8" />
               Loading Options...
-            </div>
+            </>
           </option>
         )}
       </select>

@@ -178,6 +178,6 @@ const investersProfileSlice = createSlice({
   },
 });
 
-export default investersProfileSlice.reducer;
+export default investersProfileSlice;
 export const { setPage, resetPage, setFilter, resetFilter } =
   investersProfileSlice.actions;

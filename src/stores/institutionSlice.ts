@@ -162,6 +162,6 @@ const institutionsSlice = createSlice({
   },
 });
 
-export default institutionsSlice.reducer;
+export default institutionsSlice;
 export const { setPage, resetPage, setFilter, resetFilter } =
   institutionsSlice.actions;

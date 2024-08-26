@@ -52,43 +52,57 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   }, [renderHtml, isEditing]);
 
   return (
-    <div className="flex flex-col w-full  mb-3 ">
-      <div className="flex flex-row justify-between items-center px-4 py-3 box ">
-        <h4 className="text-[18px] font-bold text-left py-1 leading-none text-primary">
-          {title}
-        </h4>
-
-        {user?.user_type === "Admin" && (
-          <Button
-            variant="secondary"
-            elevated
-            size="sm"
-            className="px-3 exclude-from-pdf"
-            onClick={() => setIsEditing(true)}
-          >
-            <Lucide icon="PenSquare" className="w-4 h-4 mr-1.5 stroke-[1.3] " />
-            {renderHtml ? "Edit" : "Add"}
-          </Button>
-        )}
-      </div>
+    <div className="box border-none ">
       {fetchloading && loading === false ? (
         <LoadingWrapper height={300} />
       ) : (
         <>
+          <div className="flex flex-row justify-between items-center px-4 py-3.5 border-b-2 border-gray-100 ">
+            <h4 className="text-[18px]  font-semibold text-left py-1 leading-none ">
+              {title}
+            </h4>
+
+            {user?.user_type === "Admin" && (
+              <>
+                {isEditing === true ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="px-3 mr-3"
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    elevated
+                    size="sm"
+                    className="px-3 exclude-from-pdf"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Lucide
+                      icon="PenSquare"
+                      className="w-4 h-4 mr-1.5 stroke-[1.3] "
+                    />
+                    {renderHtml ? "Edit" : "Add"}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
           {isEditing ? (
-            <div className="flex  flex-col px-6 py-6 box ">
+            <div className="flex  flex-col px-4 py-3  ">
               <div ref={editorRef}>
                 <ClassicEditor value={value} onChange={setValue} />
               </div>
               <div className="flex justify-end mt-4">
                 <Button
-                  variant="secondary"
-                  className="px-3 mr-3"
-                  onClick={handleCancel}
+                  size="sm"
+                  variant="primary"
+                  className="px-6"
+                  onClick={handleSave}
                 >
-                  Cancel
-                </Button>
-                <Button variant="primary" className="px-8" onClick={handleSave}>
                   {loading && (
                     <Lucide
                       icon="Loader"
@@ -104,7 +118,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
           ) : (
             <>
               {renderHtml ? (
-                <div className="flex  flex-col px-4 py-3   box ">
+                <div className="flex  flex-col px-4 py-3    ">
                   <ParceHtml htmlString={renderHtml} />
                 </div>
               ) : null}

@@ -18,15 +18,16 @@ import { bytesToMB, createDynamicURL, formatedDate } from "@/utils/helper";
 import Litepicker from "@/components/Base/Litepicker";
 import TomSelect from "@/components/Base/TomSelect";
 import { baseURL } from "@/constant";
+import Error from "@/components/Error";
 
 interface InstitutionFormData {
   institution: string;
-  active: boolean;
-  uploaded_time: string;
+  active?: boolean;
+  uploaded_time?: string;
   region: string;
   investor_type: string;
-  contact: string;
-  email: string;
+  contact?: string;
+  email?: string;
 }
 
 interface AddEditInstitutionProps {
@@ -45,18 +46,23 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   const { loading, page } = useAppSelector((state) => state.institutions);
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
-  const { control, handleSubmit, getValues, setValue } =
-    useForm<InstitutionFormData>({
-      defaultValues: {
-        institution: selectedInstitution?.institution,
-        active: selectedInstitution?.active || false,
-        uploaded_time: selectedInstitution?.uploaded_time,
-        region: selectedInstitution?.region || "NAM",
-        investor_type: selectedInstitution?.investor_type,
-        contact: selectedInstitution?.contact!,
-        email: selectedInstitution?.email!,
-      },
-    });
+  const {
+    control,
+    handleSubmit,
+    // getValues,
+    // setValue,
+    formState: { errors },
+  } = useForm<InstitutionFormData>({
+    defaultValues: {
+      institution: selectedInstitution?.institution,
+      // active: selectedInstitution?.active ,
+      // uploaded_time: selectedInstitution?.uploaded_time,
+      region: selectedInstitution?.region || "NAM",
+      investor_type: selectedInstitution?.investor_type || "Invester",
+      // contact: selectedInstitution?.contact!,
+      // email: selectedInstitution?.email!,
+    },
+  });
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -178,11 +184,17 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 <Controller
                   name="institution"
                   control={control}
-                  render={({ field }) => (
-                    <FormInput
-                      placeholder="Enter Institution Name"
-                      {...field}
-                    />
+                  rules={{ required: "Institution Name is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <FormInput
+                        placeholder="Enter Institution Name"
+                        {...field}
+                      />
+                      {error && (
+                        <Error className="text-red-600 ">{error.message}</Error>
+                      )}
+                    </>
                   )}
                 />
               </div>
@@ -192,25 +204,38 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                   Region
                 </FormCheck.Label>
 
-                <TomSelect
-                  value={getValues("region") || "NAM"}
-                  onChange={(e) => {
-                    setValue("region", e.target.value);
-                  }}
-                  options={{
-                    placeholder: "Select Region ",
-                  }}
-                  className="w-full text-left"
-                >
-                  <option value="NAM" selected>
-                    NAM
-                  </option>
-                  <option value="EMEA">EMEA</option>
-                  <option value="APAC">APAC</option>
-                </TomSelect>
+                <Controller
+                  name="region"
+                  control={control}
+                  defaultValue="NAM"
+                  rules={{ required: "Region is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <TomSelect
+                        value={field.value}
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                        }}
+                        options={{
+                          placeholder: "Select Region",
+                        }}
+                        className="w-full text-left"
+                      >
+                        <option value="NAM">NAM</option>
+                        <option value="EMEA">EMEA</option>
+                        <option value="APAC">APAC</option>
+                      </TomSelect>
+                      {error && (
+                        <Error className="text-red-600 mt-2">
+                          {error.message}
+                        </Error>
+                      )}
+                    </>
+                  )}
+                />
               </div>
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label
                   htmlFor="engagement_date"
                   className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
@@ -246,7 +271,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                 </div>
-              </div>
+              </div> */}
 
               <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
@@ -255,13 +280,37 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 <Controller
                   name="investor_type"
                   control={control}
+                  defaultValue=""
+                  rules={{ required: "Type of Investor is required" }}
                   render={({ field }) => (
-                    <FormInput placeholder="Enter Investor Type" {...field} />
+                    <TomSelect
+                      {...field}
+                      value={field.value?.toString() || ""}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                      }}
+                      options={{
+                        placeholder: "Select Investor Type",
+                      }}
+                      className="w-full text-left"
+                    >
+                      <option value="" disabled selected>
+                        Select Type
+                      </option>
+                      <option value="Investor">Investor</option>
+                      <option value="Proponent">Proponent</option>
+                    </TomSelect>
                   )}
                 />
+
+                {errors.investor_type && (
+                  <Error className="max-w-[100%] ">
+                    {errors.investor_type.message}
+                  </Error>
+                )}
               </div>
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Contact
                 </FormCheck.Label>
@@ -272,9 +321,9 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     <FormInput placeholder="Enter Contact" {...field} />
                   )}
                 />
-              </div>
+              </div> */}
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Email
                 </FormCheck.Label>
@@ -285,9 +334,9 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     <FormInput placeholder="Enter Email" {...field} />
                   )}
                 />
-              </div>
+              </div> */}
 
-              <div>
+              {/* <div>
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Logo
                 </label>
@@ -343,9 +392,9 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     </Dropzone>
                   )}
                 </div>
-              </div>
+              </div> */}
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Active
                 </FormCheck.Label>
@@ -391,7 +440,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </Dialog.Description>
           <Dialog.Footer>

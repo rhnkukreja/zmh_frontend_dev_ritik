@@ -290,9 +290,9 @@ function Main() {
                       <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Investor Type
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
+                      {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Contact
-                      </Table.Td>
+                      </Table.Td> */}
                       <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap border-slate-200/80 text-slate-500">
                         Created At
                       </Table.Td>
@@ -311,16 +311,17 @@ function Main() {
                           <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
                             <div className="flex items-center">
                               {institution?.logo_url ? (
-                                <div className="w-8 h-8 image-fit zoom-in">
-                                  <Tippy
-                                    as="img"
-                                    alt="Tailwise - Admin Dashboard Template"
-                                    className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                    src={institution?.logo_url}
-                                    content={institution?.institution}
-                                  />
-                                </div>
+                                <></>
                               ) : (
+                                // <div className="w-8 h-8 image-fit zoom-in">
+                                //   <Tippy
+                                //     as="img"
+                                //     alt="Tailwise - Admin Dashboard Template"
+                                //     className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                //     src={institution?.logo_url}
+                                //     content={institution?.institution}
+                                //   />
+                                // </div>
                                 <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
                                   <Lucide
                                     icon="User"
@@ -360,9 +361,9 @@ function Main() {
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution.investor_type}
                           </Table.Td>
-                          <Table.Td className="py-2  bg-white border-slate-200/80">
+                          {/* <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution?.contact}
-                          </Table.Td>
+                          </Table.Td> */}
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
                               {dayjs(institution?.date_created).format(
