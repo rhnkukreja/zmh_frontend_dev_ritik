@@ -48,7 +48,7 @@ function Main() {
             <div className="w-full">
               <div className="">
                 {
-                  (dashboardDataList?.length === 0) && loading && (
+                  (!dashboardDataList || dashboardDataList?.length === 0) && loading && (
                     <div className="flex flex-col items-center justify-center pt-20 pb-28">
                       <LoadingIcon color="red" icon="puff" className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]" />
                       <div className="mt-5 text-xl font-medium">
@@ -58,7 +58,7 @@ function Main() {
                   )
                 }
                 {
-                 (dashboardDataList?.length === 0) && !loading && (
+                 (!dashboardDataList || dashboardDataList?.length === 0) && !loading && (
                     <div className="flex flex-col items-center justify-center pt-20 pb-28">
                       <Lucide
                         icon="SearchX"
@@ -71,7 +71,7 @@ function Main() {
                   )
                 }
                 {
-                  dashboardDataList.length > 0 && !loading && (
+                  dashboardDataList?.length > 0 && !loading && (
                     <div>
                       <div className="">
                         <TableWrapper isLoading={loading}>
