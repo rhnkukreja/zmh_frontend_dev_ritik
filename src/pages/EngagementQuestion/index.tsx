@@ -298,7 +298,7 @@ function Main() {
                   </Table.Thead>
                   <Table.Tbody>
                     {questions?.length > 0 ? (
-                      questions?.map((question) => (
+                      questions?.map((question: any) => (
                         <Table.Tr
                           key={question?.id}
                           className="[&_td]:last:border-b-0"
