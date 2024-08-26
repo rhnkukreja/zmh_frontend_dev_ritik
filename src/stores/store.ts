@@ -11,6 +11,7 @@ import investersProfileReducer from "./investersProfileSlice";
 import proxyVotingGuidelineReducer from "./proxyVotingGuidelineSlice";
 import institutionsReducer from "./institutionSlice";
 import companyReducer from "./companySlice";
+import dashboardReducer from "./dashboardSlice";
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     proxyVotingGuideline: proxyVotingGuidelineReducer,
     institutions: institutionsReducer,
     company: companyReducer,
+    dashboard: dashboardReducer
   },
 });
 
