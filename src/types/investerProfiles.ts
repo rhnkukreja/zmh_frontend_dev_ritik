@@ -46,6 +46,7 @@ export interface InvestersProfile {
   key_contacts: KeyContact[];
   date_created: string;
   date_updated: string;
+  file?: any;
 }
 
 export type AddNewInvesterType = {
@@ -57,5 +58,5 @@ export type AddNewInvesterType = {
   references: string;
   active: string;
   key_contacts?: any;
-  institution?: number;
+  institution?: string;
 };

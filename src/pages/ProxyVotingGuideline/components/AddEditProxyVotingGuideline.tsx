@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, SubmitErrorHandler, useForm } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import { FormCheck, FormInput, FormTextarea } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
@@ -17,6 +17,7 @@ import { bytesToMB, createDynamicURL, getYearRange } from "@/utils/helper";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { fetchEngagementQuestions } from "@/stores/engagementQuestionSlice";
 import { baseURL } from "@/constant";
+import Error from "@/components/Error";
 
 interface PolicyGuidelineFormData {
   institution: string;
@@ -40,7 +41,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
   selectedProxyVotingGuideline,
 }) => {
   const instituteSelectRef = useRef<any>(null);
-  const categorySelectRef = useRef<any>(null);
+  // const categorySelectRef = useRef<any>(null);
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector(
@@ -48,6 +49,8 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
   );
 
   const [guideLinePdf, setGuideLinePdf] = useState<any>(null);
+  const [showRequiredStateErrors, setShowRequiredStateErrors] =
+    useState<boolean>(false);
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -59,9 +62,8 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
         if (file?.status === "added") {
           const fileType = file?.name?.split(".")?.pop();
 
-          console.log("file: ", file);
-          if (fileType && !["xlsx"].includes(fileType)) {
-            toast.error("Only excel file are allowed!");
+          if (fileType && !["application/pdf", "pdf"].includes(fileType)) {
+            toast.error("Only pdf file are allowed!");
           } else {
             setGuideLinePdf(file);
           }
@@ -71,7 +73,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
           const fileType = file?.name?.split(".")?.pop();
 
           if (fileType && !["xlsx"].includes(fileType)) {
-            toast.error("Only excel file are allowed!");
+            toast.error("Only pdf file are allowed!");
           } else {
             toast.error("Something went wrong!");
           }
@@ -90,19 +92,22 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
     guideLinePdf,
   ]);
 
-  const { control, handleSubmit, setValue, getValues } =
-    useForm<PolicyGuidelineFormData>({
-      defaultValues: {
-        institution: selectedProxyVotingGuideline?.institution?.toString(),
-        year: selectedProxyVotingGuideline?.year || getYearRange(25)?.[0],
-        category: selectedProxyVotingGuideline?.category || "Environmental",
-        sub_category: selectedProxyVotingGuideline?.sub_category || "",
-        section: selectedProxyVotingGuideline?.section || "",
-        policy_guidelines:
-          selectedProxyVotingGuideline?.policy_guidelines || "",
-        active: selectedProxyVotingGuideline?.active || false,
-      },
-    });
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PolicyGuidelineFormData>({
+    defaultValues: {
+      institution: selectedProxyVotingGuideline?.institution?.toString(),
+      year: selectedProxyVotingGuideline?.year || getYearRange(25)?.[0],
+      // category: selectedProxyVotingGuideline?.category || "Environmental",
+      // sub_category: selectedProxyVotingGuideline?.sub_category || "",
+      // section: selectedProxyVotingGuideline?.section || "",
+      // policy_guidelines:
+      //   selectedProxyVotingGuideline?.policy_guidelines || "",
+      active: selectedProxyVotingGuideline?.active,
+    },
+  });
 
   const onSubmit = async (data: PolicyGuidelineFormData) => {
     const formData = new FormData();
@@ -110,6 +115,12 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
       ...data,
       institution: data.institution ? Number(data.institution) : null,
     };
+
+    if (!guideLinePdf) {
+      return;
+    } else {
+      setShowRequiredStateErrors(false);
+    }
 
     for (const [key, value] of Object.entries(transformedData)) {
       formData.append(key, value as any);
@@ -158,6 +169,11 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
     }
   };
 
+  const onError: SubmitErrorHandler<AddEditPolicyGuidelineProps> = () => {
+    if (!guideLinePdf) {
+      setShowRequiredStateErrors(true);
+    }
+  };
   return (
     <Dialog
       size="xl"
@@ -165,7 +181,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
       onClose={() => setAddNewProxyVotingGuidelineVisible(false)}
     >
       <Dialog.Panel className=" text-center">
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
               {selectedProxyVotingGuideline
@@ -182,27 +198,42 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div className="w-full">
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label
+                  htmlFor="year"
+                  className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
+                >
                   Year
                 </FormCheck.Label>
-                <TomSelect
-                  value={getValues("year") || ""}
-                  onChange={(e) => setValue("year", e.target.value)}
-                  options={{
-                    placeholder: "Select Year",
-                  }}
-                  className="w-full text-left"
-                >
-                  <option value="" disabled selected>
-                    Select Year
-                  </option>
-                  {getYearRange(25)?.map((y: string) => {
-                    return <option value={y}>{y}</option>;
-                  })}
-                </TomSelect>
+
+                <Controller
+                  name="year"
+                  control={control}
+                  rules={{ required: "Year is required" }}
+                  render={({ field }) => (
+                    <TomSelect
+                      {...field}
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      options={{
+                        placeholder: "Select Year",
+                      }}
+                      className="w-full text-left"
+                    >
+                      {getYearRange(25)?.map((y: string) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </TomSelect>
+                  )}
+                />
+
+                {errors.year && (
+                  <Error className="max-w-[100%] ">{errors.year.message}</Error>
+                )}
               </div>
 
-              <div className="w-full" ref={categorySelectRef}>
+              {/* <div className="w-full" ref={categorySelectRef}>
                 <FormCheck.Label
                   htmlFor="category"
                   className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
@@ -226,9 +257,9 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                   <option value="Governance">Governance</option>
                   <option value="Social">Social</option>
                 </TomSelect>
-              </div>
+              </div> */}
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Sub Category
                 </FormCheck.Label>
@@ -239,24 +270,36 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                     <FormInput placeholder="Enter Sub Category" {...field} />
                   )}
                 />
-              </div>
+              </div> */}
 
               <div className="w-full" ref={instituteSelectRef}>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Institution
                 </FormCheck.Label>
-                <ServerTomSelect
-                  url="/institute/"
-                  valueKey="id"
-                  labelKey="institution"
-                  value={getValues("institution") || ""}
-                  onChange={(e) => setValue("institution", e.target.value)}
-                  options={{ placeholder: "Select Institute" }}
-                  className="w-full"
+                <Controller
+                  name="institution"
+                  control={control}
+                  rules={{ required: "Institution is required" }}
+                  render={({ field }) => (
+                    <ServerTomSelect
+                      url="/institute/"
+                      valueKey="id"
+                      labelKey="institution"
+                      value={field.value?.toString() || ""}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      options={{ placeholder: "Select Institute" }}
+                      className="w-full"
+                    />
+                  )}
                 />
+                {errors.institution && (
+                  <Error className="max-w-[100%] ">
+                    {errors.institution.message}
+                  </Error>
+                )}
               </div>
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Section
                 </FormCheck.Label>
@@ -267,9 +310,9 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                     <FormInput placeholder="Enter Section" {...field} />
                   )}
                 />
-              </div>
+              </div> */}
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Policy Guidelines
                 </FormCheck.Label>
@@ -283,13 +326,13 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                     />
                   )}
                 />
-              </div>
+              </div> */}
 
-              <div className="mb-20">
+              <div className="mb-10">
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Voting Guidelines Pdf
                 </label>
-                <div className="w-full  max-h-[180px]">
+                <div className="w-full  max-h-[200px]">
                   {guideLinePdf ? (
                     <>
                       <div className="flex items-center  w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition sm:px-5 shadow-sm">
@@ -327,43 +370,22 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                         thumbnailWidth: 100,
                         maxFilesize: 5000,
                         maxFiles: 1,
-                        paramName: "excel",
-                        acceptedFiles: ".xlsx",
+
+                        acceptedFiles: ".pdf",
                       }}
                       className="dropzone w-full flex flex-col justify-center items-center h-full "
                     >
                       <div className="text-base font-semibold text-gray-800 mb-2">
                         Drop files here or click to upload.
                       </div>
-                      <div className="p-4 bg-gray-100 rounded-lg shadow-md">
-                        <div className="text-sm text-gray-600 mb-1">
-                          Only <span className="font-medium">xlsx</span> files
-                          are allowed.
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          File should contain only 4 columns: <br />
-                          <span className="font-medium text-gray-800">
-                            Name
-                          </span>
-                          ,
-                          <span className="font-medium text-gray-800">
-                            {" "}
-                            Designation
-                          </span>
-                          ,
-                          <span className="font-medium text-gray-800">
-                            {" "}
-                            LinkedIn
-                          </span>
-                          ,
-                          <span className="font-medium text-gray-800">
-                            {" "}
-                            Image
-                          </span>
-                          .
-                        </div>
-                      </div>
+                      Only <span className="font-medium">pdf</span> files are
+                      allowed.
                     </Dropzone>
+                  )}
+                  {!guideLinePdf && showRequiredStateErrors && (
+                    <Error className=" max-w-[100%] ">
+                      Voting Guidelines are required
+                    </Error>
                   )}
                 </div>
               </div>
@@ -376,6 +398,9 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                   <Controller
                     name="active"
                     control={control}
+                    rules={{
+                      required: "Please select whether Active is true or false",
+                    }}
                     render={({ field }) => (
                       <>
                         <FormCheck className="flex items-center mr-2">
@@ -385,7 +410,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                             {...field}
                             value="true"
                             checked={field.value === true}
-                            onChange={(e) => field.onChange(true)}
+                            onChange={() => field.onChange(true)}
                           />
                           <FormCheck.Label
                             htmlFor="radio-switch-4"
@@ -401,7 +426,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                             {...field}
                             value="false"
                             checked={field.value === false}
-                            onChange={(e) => field.onChange(false)}
+                            onChange={() => field.onChange(false)}
                           />
                           <FormCheck.Label
                             htmlFor="radio-switch-5"
@@ -414,6 +439,11 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                     )}
                   />
                 </div>
+                {errors.active && (
+                  <Error className="max-w-[100%] mt-6">
+                    {errors.active.message}
+                  </Error>
+                )}
               </div>
             </div>
           </Dialog.Description>

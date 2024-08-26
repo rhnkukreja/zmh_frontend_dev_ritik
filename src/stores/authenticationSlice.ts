@@ -6,6 +6,7 @@ import {
 } from "../services/authentiction/auth.type";
 import { userService } from "../services/authentiction";
 import { Login, Register } from "@/types/users";
+import { persistor } from "./store";
 
 const name = "authentication";
 
@@ -44,6 +45,8 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
       localStorage.removeItem("token");
+      localStorage.clear();
+      persistor.purge();
     },
   },
   extraReducers: (builder) => {
@@ -78,4 +81,4 @@ const authSlice = createSlice({
 
 export const { logout } = authSlice.actions;
 
-export default authSlice.reducer;
+export default authSlice;

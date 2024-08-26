@@ -11,6 +11,7 @@ const multipartFormDataUrls = [
   "/investor_profile/",
   "/proxy_voting_guidelines/",
   "/institute/",
+  "/company/",
 ];
 
 function APIErrors(message: string) {

@@ -16,6 +16,7 @@ export type CompanyData = {
   cusip: string;
   date_created: string;
   date_updated: string;
+  bulk_upload_file?: any;
 };
 
 export type CompanyFormData = {

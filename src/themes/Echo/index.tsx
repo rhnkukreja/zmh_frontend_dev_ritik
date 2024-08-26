@@ -22,6 +22,7 @@ import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
 import { filterMenu, getColorForCharacter } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
+import { logout } from "@/stores/authenticationSlice";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -502,6 +503,7 @@ function Main() {
                     <Menu.Item
                       onClick={() => {
                         navigate("login");
+                        dispatch(logout());
                       }}
                     >
                       <Lucide icon="Power" className="w-4 h-4 mr-2" />

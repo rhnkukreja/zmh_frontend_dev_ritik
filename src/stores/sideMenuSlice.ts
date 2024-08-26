@@ -465,4 +465,4 @@ export const sideMenuSlice = createSlice({
 
 export const selectSideMenu = (state: RootState) => state.sideMenu.menu;
 
-export default sideMenuSlice.reducer;
+export default sideMenuSlice;

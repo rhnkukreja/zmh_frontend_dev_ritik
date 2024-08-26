@@ -1,4 +1,10 @@
-import { configureStore, ThunkAction, Action } from "@reduxjs/toolkit";
+import {
+  configureStore,
+  ThunkAction,
+  Action,
+  combineReducers,
+  Reducer,
+} from "@reduxjs/toolkit";
 import darkModeReducer from "./darkModeSlice";
 import colorSchemeReducer from "./colorSchemeSlice";
 import sideMenuReducer from "./sideMenuSlice";
@@ -12,22 +18,71 @@ import proxyVotingGuidelineReducer from "./proxyVotingGuidelineSlice";
 import institutionsReducer from "./institutionSlice";
 import companyReducer from "./companySlice";
 
+import storage from "redux-persist/lib/storage";
+import { persistReducer, persistStore, PURGE } from "redux-persist";
+
+type SliceState = {
+  [key: string]: any;
+};
+
+const persistConfig = {
+  key: "root",
+  storage,
+  whitelist: ["authentiction"],
+};
+
+const slices = {
+  darkMode: darkModeReducer,
+  colorScheme: colorSchemeReducer,
+  sideMenu: sideMenuReducer,
+  theme: themeReducer,
+  compactMenu: compactMenuReducer,
+  pageLoader: pageLoaderReducer,
+  authentiction: authenticationReducer,
+  engagementQuestions: engagementQuestionsReducer,
+  investersProfile: investersProfileReducer,
+  proxyVotingGuideline: proxyVotingGuidelineReducer,
+  institutions: institutionsReducer,
+  company: companyReducer,
+};
+const appReducer = combineReducers(
+  Object.entries(slices).reduce(
+    (acc: { [key: string]: Reducer }, [key, slice]) => {
+      acc[key] = slice.reducer;
+      return acc;
+    },
+    {}
+  )
+);
+
+const rootReducer = (
+  state: ReturnType<typeof appReducer> | undefined,
+  action: any
+): ReturnType<typeof appReducer> => {
+  if (action.type === PURGE) {
+    const obj: SliceState = {};
+    Object.entries(slices).forEach(([key, slice]) => {
+      try {
+        obj[key] = slice.getInitialState();
+      } catch (error) {
+        console.log("error: ", error);
+      }
+    });
+    return obj as ReturnType<typeof appReducer>;
+  }
+  return appReducer(state, action);
+};
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 export const store = configureStore({
-  reducer: {
-    darkMode: darkModeReducer,
-    colorScheme: colorSchemeReducer,
-    sideMenu: sideMenuReducer,
-    theme: themeReducer,
-    compactMenu: compactMenuReducer,
-    pageLoader: pageLoaderReducer,
-    authentiction: authenticationReducer,
-    engagementQuestions: engagementQuestionsReducer,
-    investersProfile: investersProfileReducer,
-    proxyVotingGuideline: proxyVotingGuidelineReducer,
-    institutions: institutionsReducer,
-    company: companyReducer,
-  },
+  reducer: persistedReducer,
+  devTools: true,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
+export const persistor = persistStore(store);
 
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
