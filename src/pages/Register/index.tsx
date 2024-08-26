@@ -49,7 +49,7 @@ function Main() {
         })
       ).unwrap();
 
-      if (response?.user_id) {
+      if (response?.email) {
         toast.success("Registered Successfully!");
         navigate("/login");
       }
