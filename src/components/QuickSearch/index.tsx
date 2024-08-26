@@ -104,7 +104,7 @@ function Main(props: MainProps) {
                               Start your search here...
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2 mt-3.5">
+                          {/* <div className="flex flex-wrap gap-2 mt-3.5">
                             <a
                               href=""
                               className="flex items-center gap-x-1.5 border rounded-full px-3 py-0.5 border-slate-300/70 hover:bg-slate-50"
@@ -177,9 +177,9 @@ function Main(props: MainProps) {
                                 </Menu.Item>
                               </Menu.Items>
                             </Menu>
-                          </div>
+                          </div> */}
                         </div>
-                        <div className="px-5 py-4 border-t border-dashed">
+                        {/* <div className="px-5 py-4 border-t border-dashed">
                           <div className="flex items-center">
                             <div className="text-xs uppercase text-slate-500">
                               Users
@@ -296,7 +296,7 @@ function Main(props: MainProps) {
                               )
                             )}
                           </div>
-                        </div>
+                        </div> */}
                       </div>
                     )}
                   </div>

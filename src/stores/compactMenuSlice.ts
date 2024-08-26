@@ -33,4 +33,4 @@ export const selectCompactMenu = (state: RootState) => {
   return state.compactMenu.value;
 };
 
-export default compactMenuSlice.reducer;
+export default compactMenuSlice;

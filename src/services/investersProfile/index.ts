@@ -16,7 +16,7 @@ class InvestersProfileService {
   public async getSingleInvester(id: number): Promise<{
     results: InvestersProfile;
   }> {
-    const response = await axiosInstance.get(`/investor_profile/${id}`);
+    const response = await axiosInstance.get(`/investor_profile/${id}/`);
     const results = response.data;
     return {
       results,
@@ -28,7 +28,7 @@ class InvestersProfileService {
   ): Promise<{
     results: InvestersProfile;
   }> {
-    const response = await axiosInstance.put(`/investor_profile/${id}`, data);
+    const response = await axiosInstance.put(`/investor_profile/${id}/`, data);
     const results = response.data;
     return {
       results,

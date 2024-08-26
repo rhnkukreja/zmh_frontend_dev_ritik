@@ -22,6 +22,7 @@ import {
 } from "@/types/engagementQuestions";
 import { createDynamicURL, formatedDate } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import Error from "@/components/Error";
 
 interface AddEditEngagementQuestionProps {
   addNewEngagementQuestionModalVisible: boolean;
@@ -41,29 +42,32 @@ export const AddEditEngagementQuestion: React.FC<
   const { loading, page } = useAppSelector(
     (state) => state.engagementQuestions
   );
-  const { control, handleSubmit, getValues, setValue } =
-    useForm<EngagementFormData>({
-      defaultValues: {
-        active: selectedEngagementQuestion?.active || false,
+  const {
+    control,
+    handleSubmit,
 
-        engagement_date:
-          selectedEngagementQuestion?.engagement_date instanceof Date
-            ? selectedEngagementQuestion?.engagement_date
-                .toISOString()
-                .split("T")[0]
-            : selectedEngagementQuestion?.engagement_date || "",
+    formState: { errors },
+  } = useForm<EngagementFormData>({
+    defaultValues: {
+      active: selectedEngagementQuestion?.active,
+      engagement_date:
+        selectedEngagementQuestion?.engagement_date instanceof Date
+          ? selectedEngagementQuestion?.engagement_date
+              .toISOString()
+              .split("T")[0]
+          : selectedEngagementQuestion?.engagement_date || "",
 
-        engagement_question:
-          selectedEngagementQuestion?.engagement_question || "",
-        other_comments: selectedEngagementQuestion?.other_comments || "",
-        institution: selectedEngagementQuestion?.institution,
-        company: selectedEngagementQuestion?.company,
-        type_of_engagement:
-          selectedEngagementQuestion?.type_of_engagement || "ESG",
-        source: selectedEngagementQuestion?.source || "Investor Engagement",
-        category: selectedEngagementQuestion?.category || "Environmental",
-      },
-    });
+      engagement_question:
+        selectedEngagementQuestion?.engagement_question || "",
+      other_comments: selectedEngagementQuestion?.other_comments || "",
+      institution: selectedEngagementQuestion?.institution,
+      company: selectedEngagementQuestion?.company,
+      type_of_engagement:
+        selectedEngagementQuestion?.type_of_engagement || "ESG",
+      source: selectedEngagementQuestion?.source || "Investor Engagement",
+      category: selectedEngagementQuestion?.category || "Environmental",
+    },
+  });
 
   const onSubmit = async (data: EngagementFormData) => {
     const transformData = {
@@ -148,7 +152,6 @@ export const AddEditEngagementQuestion: React.FC<
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              {/* Company */}
               <div className="w-full">
                 <FormCheck.Label
                   htmlFor="company"
@@ -156,18 +159,33 @@ export const AddEditEngagementQuestion: React.FC<
                 >
                   Company
                 </FormCheck.Label>
-                <ServerTomSelect
-                  url="/company/"
-                  valueKey="id"
-                  labelKey="name"
-                  value={getValues("company")?.toString() || ""}
-                  onChange={(e) => {
-                    setValue("company", Number(e.target.value));
+
+                <Controller
+                  name="company"
+                  control={control}
+                  rules={{ required: "Company is required" }}
+                  render={({ field }) => {
+                    return (
+                      <ServerTomSelect
+                        url="/company/"
+                        valueKey="id"
+                        labelKey="name"
+                        value={field.value?.toString() || ""}
+                        onChange={(value) => field.onChange(value)}
+                        options={{ placeholder: "Select Company" }}
+                        className="w-full"
+                      />
+                    );
                   }}
-                  options={{ placeholder: "Select Company" }}
-                  className="w-full"
                 />
+
+                {errors.company && (
+                  <Error className="max-w-[100%] ">
+                    {errors.company.message}
+                  </Error>
+                )}
               </div>
+
               <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Active
@@ -176,6 +194,7 @@ export const AddEditEngagementQuestion: React.FC<
                   <Controller
                     name="active"
                     control={control}
+                    rules={{ required: "Active status is required" }}
                     render={({ field }) => (
                       <>
                         <FormCheck className="flex items-center mr-2">
@@ -214,6 +233,11 @@ export const AddEditEngagementQuestion: React.FC<
                     )}
                   />
                 </div>
+                {errors.active && (
+                  <Error className="max-w-[100%] mt-6">
+                    {errors.active?.message}
+                  </Error>
+                )}
               </div>
 
               {/* Type of Engagement */}
@@ -224,25 +248,39 @@ export const AddEditEngagementQuestion: React.FC<
                 >
                   Type of Engagement
                 </FormCheck.Label>
-                <TomSelect
-                  value={getValues("type_of_engagement")?.toString() || ""}
-                  onChange={(e) => {
-                    setValue("type_of_engagement", e.target.value);
-                  }}
-                  options={{
-                    placeholder: "Select  Engagement Type",
-                  }}
-                  className="w-full text-left"
-                >
-                  <option value="" disabled selected>
-                    Select Type
-                  </option>
-                  <option value="ESG">ESG</option>
-                  <option value="Proxy">Proxy</option>
-                </TomSelect>
+                <Controller
+                  name="type_of_engagement"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Type of Engagement is required" }}
+                  render={({ field }) => (
+                    <TomSelect
+                      {...field}
+                      value={field.value?.toString() || ""}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                      }}
+                      options={{
+                        placeholder: "Select Engagement Type",
+                      }}
+                      className="w-full text-left"
+                    >
+                      <option value="" disabled selected>
+                        Select Type
+                      </option>
+                      <option value="ESG">ESG</option>
+                      <option value="Proxy">Proxy</option>
+                    </TomSelect>
+                  )}
+                />
+
+                {errors.type_of_engagement && (
+                  <Error className="max-w-[100%] ">
+                    {errors.type_of_engagement.message}
+                  </Error>
+                )}
               </div>
 
-              {/* Engagement Date */}
               <div className="w-full">
                 <FormCheck.Label
                   htmlFor="engagement_date"
@@ -250,6 +288,7 @@ export const AddEditEngagementQuestion: React.FC<
                 >
                   Engagement Date
                 </FormCheck.Label>
+
                 <div className="relative">
                   <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
                     <Lucide icon="Calendar" className="w-4 h-4" />
@@ -259,6 +298,7 @@ export const AddEditEngagementQuestion: React.FC<
                     name="engagement_date"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Engagement Date is required" }}
                     render={({ field }) => (
                       <Litepicker
                         placeholder="Select Engagement Date"
@@ -279,27 +319,46 @@ export const AddEditEngagementQuestion: React.FC<
                     )}
                   />
                 </div>
+
+                {errors.engagement_date && (
+                  <Error className="max-w-[100%] ">
+                    {errors.engagement_date.message}
+                  </Error>
+                )}
               </div>
+
               <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Institution Name
                 </FormCheck.Label>
+
                 <div className="mt-2">
-                  <ServerTomSelect
-                    url="/institute/"
-                    valueKey="id"
-                    labelKey="institution"
-                    value={getValues("institution")?.toString() || ""}
-                    onChange={(e) => {
-                      setValue("institution", Number(e.target.value));
-                    }}
-                    options={{ placeholder: "Select Institute" }}
-                    className="w-full"
+                  <Controller
+                    name="institution"
+                    control={control}
+                    defaultValue={null}
+                    rules={{ required: "Institution Name is required" }}
+                    render={({ field }) => (
+                      <ServerTomSelect
+                        url="/institute/"
+                        valueKey="id"
+                        labelKey="institution"
+                        value={field.value?.toString() || ""}
+                        onChange={(value) => field.onChange(value)}
+                        options={{ placeholder: "Select Institute" }}
+                        className="w-full"
+                      />
+                    )}
                   />
                 </div>
+
+                {errors.institution && (
+                  <Error className="max-w-[100%] ">
+                    {errors.institution.message}
+                  </Error>
+                )}
               </div>
 
-              {/* Source */}
               <div className="w-full">
                 <FormCheck.Label
                   htmlFor="source"
@@ -307,27 +366,39 @@ export const AddEditEngagementQuestion: React.FC<
                 >
                   Source
                 </FormCheck.Label>
-                <TomSelect
-                  value={getValues("source")?.toString() || ""}
-                  onChange={(e) => {
-                    setValue("source", e.target.value);
-                  }}
-                  options={{
-                    placeholder: "Select Source",
-                  }}
-                  className="w-full text-left"
-                >
-                  <option value="" disabled selected>
-                    Select Source
-                  </option>
-                  <option value="Investor Engagement">
-                    Investor Engagement
-                  </option>
-                  <option value="Letter Campaign">Letter Campaign</option>
-                </TomSelect>
+
+                <Controller
+                  name="source"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Source is required" }}
+                  render={({ field }) => (
+                    <TomSelect
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                      options={{
+                        placeholder: "Select Source",
+                      }}
+                      className="w-full text-left"
+                    >
+                      <option value="" disabled>
+                        Select Source
+                      </option>
+                      <option value="Investor Engagement">
+                        Investor Engagement
+                      </option>
+                      <option value="Letter Campaign">Letter Campaign</option>
+                    </TomSelect>
+                  )}
+                />
+
+                {errors.source && (
+                  <Error className="max-w-[100%] ">
+                    {errors.source.message}
+                  </Error>
+                )}
               </div>
 
-              {/* Category */}
               <div className="w-full">
                 <FormCheck.Label
                   htmlFor="category"
@@ -335,20 +406,36 @@ export const AddEditEngagementQuestion: React.FC<
                 >
                   Category
                 </FormCheck.Label>
-                <TomSelect
-                  value={getValues("category") || ""}
-                  onChange={(e) => {
-                    setValue("category", e.target.value);
-                  }}
-                  options={{
-                    placeholder: "Select your Category",
-                  }}
-                  className="w-full text-left"
-                >
-                  <option value="Environmental">Environmental</option>
-                  <option value="Governance">Governance</option>
-                  <option value="Social">Social</option>
-                </TomSelect>
+
+                <Controller
+                  name="category"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Category is required" }}
+                  render={({ field }) => (
+                    <TomSelect
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                      options={{
+                        placeholder: "Select your Category",
+                      }}
+                      className="w-full text-left"
+                    >
+                      <option value="" disabled>
+                        Select Category
+                      </option>
+                      <option value="Environmental">Environmental</option>
+                      <option value="Governance">Governance</option>
+                      <option value="Social">Social</option>
+                    </TomSelect>
+                  )}
+                />
+
+                {errors.category && (
+                  <Error className="max-w-[100%] ">
+                    {errors.category.message}
+                  </Error>
+                )}
               </div>
 
               {/* Other Comments */}
@@ -380,9 +467,11 @@ export const AddEditEngagementQuestion: React.FC<
                 >
                   Engagement Question
                 </FormCheck.Label>
+
                 <Controller
                   name="engagement_question"
                   control={control}
+                  rules={{ required: "Engagement Question is required" }}
                   render={({ field }) => (
                     <FormTextarea
                       placeholder="Enter Engagement Question"
@@ -391,6 +480,12 @@ export const AddEditEngagementQuestion: React.FC<
                     />
                   )}
                 />
+
+                {errors.engagement_question && (
+                  <Error className="max-w-[100%] ">
+                    {errors.engagement_question.message}
+                  </Error>
+                )}
               </div>
             </div>
           </Dialog.Description>

@@ -19,17 +19,17 @@ export interface SideMenuState {
 const initialState: SideMenuState = {
   menu: [
     "DASHBOARDS",
-    {
-      icon: "ActivitySquare",
-      pathname: "/inbox",
-      title: "Company Profile",
-      // badge: 4,
-    },
     // {
-    //   icon: "GaugeCircle",
-    //   pathname: "/",
-    //   title: "Company Search",
+    //   icon: "ActivitySquare",
+    //   pathname: "/inbox",
+    //   title: "Company Profile",
+    //   // badge: 4,
     // },
+    {
+      icon: "GaugeCircle",
+      pathname: "/",
+      title: "Company Search",
+    },
     // {
     //   icon: "ActivitySquare",
     //   pathname: "/dashboard-overview-2",
@@ -404,11 +404,11 @@ const initialState: SideMenuState = {
     //   pathname: "/icon",
     //   title: "Icon",
     // },
-    {
-      icon: "Droplets",
-      pathname: "/loading-icon",
-      title: "Loading Icon",
-    },
+    // {
+    //   icon: "Droplets",
+    //   pathname: "/loading-icon",
+    //   title: "Loading Icon",
+    // },
     // {
     //   icon: "GalleryHorizontalEnd",
     //   pathname: "/regular-form",
@@ -465,4 +465,4 @@ export const sideMenuSlice = createSlice({
 
 export const selectSideMenu = (state: RootState) => state.sideMenu.menu;
 
-export default sideMenuSlice.reducer;
+export default sideMenuSlice;

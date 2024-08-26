@@ -49,6 +49,7 @@
     "react-router-dom": "^6.21.1",
     "react-toastify": "^10.0.5",
     "react-transition-group": "^4.4.5",
+    "redux-persist": "^6.0.0",
     "simplebar": "^6.2.5",
     "tabulator-tables": "^5.5.2",
     "tiny-slider": "^2.9.4",

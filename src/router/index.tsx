@@ -67,6 +67,7 @@ import ProxyVotingGuideline from "../pages/ProxyVotingGuideline";
 import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
 import DetailInstitutions from "../pages/Institution/components/InstitutionDetail";
 import DetailCompany from "../pages/Company/component/CompanyDetail";
+import ZMHDashboard from "../pages/ZMHDashboard";
 
 import Institution from "../pages/Institution";
 
@@ -83,7 +84,7 @@ function Router() {
       children: [
         {
           path: "/",
-          element: <DashboardOverview1 />,
+          element: <ZMHDashboard />,
         },
         {
           path: "dashboard-overview-2",

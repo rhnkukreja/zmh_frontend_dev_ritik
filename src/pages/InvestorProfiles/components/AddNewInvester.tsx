@@ -15,10 +15,16 @@ import { AddNewInvesterType } from "@/types/investerProfiles";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import {
+  Controller,
+  FieldErrors,
+  SubmitErrorHandler,
+  useForm,
+} from "react-hook-form";
 import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect/ServerComponent";
 import { baseURL } from "@/constant";
+import Error from "@/components/Error";
 
 interface AddNewInvesterProfileProps {
   addNewInvesterModalVisible: boolean;
@@ -32,10 +38,15 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
   const dispatch: AppDispatch = useAppDispatch();
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const { loading, page } = useAppSelector((state) => state.investersProfile);
-  const { handleSubmit, control } = useForm<AddNewInvesterType>();
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<AddNewInvesterType>();
 
-  const [selectedInstitution, setSelectedInstitution] = useState<string>("");
   const [keyContactsFile, setKeyContactsFile] = useState<any>(null);
+  const [showRequiredStateErrors, setShowRequiredStateErrors] =
+    useState<boolean>(false);
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -74,16 +85,22 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
   }, [dropzoneSingleRef.current, keyContactsFile, addNewInvesterModalVisible]);
 
   const onSubmit = async (data: AddNewInvesterType) => {
+    const transformedData = {
+      ...data,
+      institution: data.institution ? Number(data.institution) : null,
+    };
+    if (!keyContactsFile) {
+      return;
+    } else {
+      setShowRequiredStateErrors(false);
+    }
     const formData = new FormData();
 
-    for (const [key, value] of Object.entries(data)) {
+    for (const [key, value] of Object.entries(transformedData)) {
       formData.append(key, value ?? "");
     }
     if (keyContactsFile) {
       formData.append("file", keyContactsFile);
-    }
-    if (selectedInstitution) {
-      formData.append("institution", selectedInstitution.toString());
     }
 
     try {
@@ -105,6 +122,12 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
       console.error("Error submitting form:", error);
     }
   };
+
+  const onError: SubmitErrorHandler<AddNewInvesterType> = () => {
+    if (!keyContactsFile) {
+      setShowRequiredStateErrors(true);
+    }
+  };
   return (
     <Dialog
       size="xl"
@@ -113,8 +136,8 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
         setAddNewInvesterModalVisible(false);
       }}
     >
-      <Dialog.Panel className=" text-center">
-        <form onSubmit={handleSubmit(onSubmit)}>
+      <Dialog.Panel className="text-center">
+        <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">Add New Investor</h2>
             <div
@@ -127,36 +150,50 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
-            <div className="flex flex-col gap-7 ">
+            <div className="flex flex-col gap-7">
+              {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-24">
                 <div className="flex-1 w-full">
-                  <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Institution Name
-                  </label>
-                  <div className="mt-2 text-left">
-                    <TomSelect
-                      url="/institute/"
-                      valueKey="id"
-                      labelKey="institution"
-                      value={selectedInstitution}
-                      onChange={(e) => {
-                        setSelectedInstitution(e.target.value);
-                      }}
-                      options={{
-                        placeholder: "Select Institute",
-                      }}
-                      className="w-full"
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="institution"
+                      control={control}
+                      defaultValue=""
+                      rules={{ required: "Institution Name is required" }}
+                      render={({ field }) => (
+                        <TomSelect
+                          url="/institute/"
+                          valueKey="id"
+                          labelKey="institution"
+                          value={field.value?.toString() || ""}
+                          onChange={(value) => field.onChange(value)}
+                          options={{ placeholder: "Select Institute" }}
+                          className="w-full"
+                        />
+                      )}
                     />
                   </div>
+
+                  {errors.institution && (
+                    <Error className="max-w-[100%] ">
+                      {errors.institution.message}
+                    </Error>
+                  )}
                 </div>
+                {/* Active */}
                 <div className="flex-1 w-full sm:mt-0">
-                  <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Active
-                  </label>
+                  </FormCheck.Label>
                   <div className="flex flex-col sm:flex-row mt-2">
                     <Controller
                       name="active"
                       control={control}
+                      rules={{ required: true }}
                       render={({ field }) => (
                         <>
                           <FormCheck className="flex items-center mr-2">
@@ -193,16 +230,23 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                       )}
                     />
                   </div>
+                  {errors.active && (
+                    <Error className="max-w-[100%] mt-6">
+                      Active status is required
+                    </Error>
+                  )}
                 </div>
               </div>
 
+              {/* Engagement Priorities */}
               <div>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Engagement Priorities
-                </label>
+                </FormCheck.Label>
                 <Controller
                   name="engagement_priorities"
                   control={control}
+                  rules={{ required: true }}
                   render={({ field }) => (
                     <ClassicEditor
                       value={field.value}
@@ -212,12 +256,18 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                     />
                   )}
                 />
+                {errors.engagement_priorities && (
+                  <Error className="lg:max-w-[50%] ">
+                    Engagement Priorities are required
+                  </Error>
+                )}
               </div>
 
+              {/* Voting Guidelines Summary */}
               <div>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Voting Guidelines Summary
-                </label>
+                </FormCheck.Label>
                 <Controller
                   name="voting_guidelines_summary"
                   control={control}
@@ -232,10 +282,11 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                 />
               </div>
 
+              {/* Voting Guidelines Link */}
               <div>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Voting Guidelines Link
-                </label>
+                </FormCheck.Label>
                 <Controller
                   name="voting_guidelines_link"
                   control={control}
@@ -250,13 +301,15 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                 />
               </div>
 
+              {/* Reporting Expectations */}
               <div>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Reporting Expectations
-                </label>
+                </FormCheck.Label>
                 <Controller
                   name="reporting_expectations"
                   control={control}
+                  rules={{ required: true }}
                   render={({ field }) => (
                     <ClassicEditor
                       value={field.value}
@@ -266,12 +319,18 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                     />
                   )}
                 />
+                {errors.reporting_expectations && (
+                  <Error className="lg:max-w-[50%] ">
+                    Reporting Expectations are required
+                  </Error>
+                )}
               </div>
 
+              {/* ESG Integration Process */}
               <div>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   ESG Integration Process
-                </label>
+                </FormCheck.Label>
                 <Controller
                   name="esg_integration_process"
                   control={control}
@@ -286,13 +345,15 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                 />
               </div>
 
+              {/* References */}
               <div>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   References
-                </label>
+                </FormCheck.Label>
                 <Controller
                   name="references"
                   control={control}
+                  rules={{ required: true }}
                   render={({ field }) => (
                     <ClassicEditor
                       value={field.value}
@@ -302,12 +363,18 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                     />
                   )}
                 />
+                {errors.references && (
+                  <Error className="lg:max-w-[50%] ">
+                    References are required
+                  </Error>
+                )}
               </div>
+
               <div className={keyContactsFile ? " " : "mb-20"}>
-                <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Key Contacts
-                </label>
-                <div className="w-full max-h-[180px]  ">
+                </FormCheck.Label>
+                <div className="w-full max-h-[220px]  ">
                   {keyContactsFile ? (
                     <>
                       <div className="flex items-center md:max-w-[60%] w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition sm:px-5 shadow-sm">
@@ -348,7 +415,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                         thumbnailWidth: 100,
                         maxFilesize: 5000,
                         maxFiles: 1,
-                        paramName: "excel",
+
                         acceptedFiles: ".xlsx",
                       }}
                       className="dropzone w-full flex flex-col justify-center items-center h-full "
@@ -386,19 +453,22 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                       </div>
                     </Dropzone>
                   )}
+                  {!keyContactsFile && showRequiredStateErrors && (
+                    <Error className=" lg:max-w-[50%] ">
+                      Key Contacts are required
+                    </Error>
+                  )}
                 </div>
               </div>
             </div>
           </Dialog.Description>
-
-          <Dialog.Footer>
+          <Dialog.Footer className="flex justify-end">
             <Button
-              type="button"
               variant="outline-secondary"
+              className="mr-3"
               onClick={() => {
                 setAddNewInvesterModalVisible(false);
               }}
-              className="w-20 mr-3"
             >
               Cancel
             </Button>

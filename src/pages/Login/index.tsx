@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
+import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 
 interface LoginFormInputs {
   email: string;
@@ -157,58 +158,7 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="sticky top-0 z-10 flex-col justify-center hidden h-screen ml-16 lg:flex xl:ml-28 2xl:ml-36">
-            <div className="leading-[1.4] text-[2.6rem] xl:text-5xl font-medium xl:leading-[1.2] text-white">
-              Embrace Excellence <br /> in Dashboard Development
-            </div>
-            <div className="mt-5 text-base leading-relaxed xl:text-lg text-white/70">
-              Unlock the potential of Tailwise, where developers craft
-              meticulously structured, visually stunning dashboards with
-              feature-rich modules. Join us today to shape the future of your
-              application development.
-            </div>
-            <div className="flex flex-col gap-3 mt-10 xl:items-center xl:flex-row">
-              <div className="flex items-center">
-                <div className="w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-              </div>
-              <div className="text-base xl:ml-2 2xl:ml-3 text-white/70">
-                Over 7k+ strong and growing! Your journey begins here.
-              </div>
-            </div>
+            <CompanyAdvertisement />
           </div>
         </div>
       </div>

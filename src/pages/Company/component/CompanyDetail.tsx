@@ -44,14 +44,14 @@ const DetailCompany = () => {
               <h2 className="text-md font-medium text-gray-700 mb-1">Name</h2>
               <p className="text-gray-500">{singleCompany?.name || "N/A"}</p>
             </div>
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <h2 className="text-md font-medium text-gray-700 mb-1">
                 Company V1
               </h2>
               <p className="text-gray-500">
                 {singleCompany?.company_v1 || "N/A"}
               </p>
-            </div>
+            </div> */}
             <div className="flex flex-col">
               <h2 className="text-md font-medium text-gray-700 mb-1">
                 Stock Exchange
