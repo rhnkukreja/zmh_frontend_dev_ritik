@@ -163,7 +163,7 @@ function ProxyGuideline() {
                     />
                     <FormInput
                       type="text"
-                      placeholder="Search guideline?..."
+                      placeholder="Search Guideline"
                       className="pl-9 sm:w-64 rounded-[0.5rem]"
                       onChange={handleSearch}
                     />
@@ -260,18 +260,26 @@ function ProxyGuideline() {
                         <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Year
                         </Table.Td>
-                        {/* <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Category
-                        </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Sub Category
-                        </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Section
-                        </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Policy Guidelines
-                        </Table.Td> */}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                            Category
+                          </Table.Td>
+                        )}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                            Sub Category
+                          </Table.Td>
+                        )}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                            Section
+                          </Table.Td>
+                        )}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                            Policy Guideline
+                          </Table.Td>
+                        )}
                         {/* <Table.Td className="py-2 font-medium bg-slate-50   text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
                         </Table.Td> */}
@@ -295,39 +303,47 @@ function ProxyGuideline() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.year}
                               </Table.Td>
-                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                <Tippy
-                                  content={guideline?.category}
-                                  options={{
-                                    theme: "light",
-                                  }}
-                                >
-                                  <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                    {guideline?.category.toString() === "nan"
-                                      ? "--"
-                                      : guideline?.category}
-                                  </div>
-                                </Tippy>
-                              </Table.Td> */}
-                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.sub_category &&
-                                guideline?.sub_category.toString() === "nan"
-                                  ? "NA"
-                                  : guideline?.sub_category}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.section &&
-                                guideline?.section.toString() === "nan"
-                                  ? "NA"
-                                  : guideline?.section}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.policy_guidelines &&
-                                guideline?.policy_guidelines.toString() ===
-                                  "nan"
-                                  ? "NA"
-                                  : guideline?.policy_guidelines}
-                              </Table.Td> */}
+                              {guideline?.category && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  <Tippy
+                                    content={guideline?.category}
+                                    options={{
+                                      theme: "light",
+                                    }}
+                                  >
+                                    <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
+                                      {guideline?.category.toString() === "nan"
+                                        ? "--"
+                                        : guideline?.category}
+                                    </div>
+                                  </Tippy>
+                                </Table.Td>
+                              )}
+                              {guideline?.sub_category && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.sub_category &&
+                                  guideline?.sub_category.toString() === "nan"
+                                    ? "NA"
+                                    : guideline?.sub_category}
+                                </Table.Td>
+                              )}
+                              {guideline?.section && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.section &&
+                                  guideline?.section.toString() === "nan"
+                                    ? "NA"
+                                    : guideline?.section}
+                                </Table.Td>
+                              )}
+                              {guideline?.policy_guidelines && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.policy_guidelines &&
+                                  guideline?.policy_guidelines.toString() ===
+                                    "nan"
+                                    ? "NA"
+                                    : guideline?.policy_guidelines}
+                                </Table.Td>
+                              )}
                               {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.active === true ? (
                                   <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">

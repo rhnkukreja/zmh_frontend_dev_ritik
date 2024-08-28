@@ -14,6 +14,8 @@ export type EngagementQuestions = {
   institution_name: string;
   company_name: string;
   company: number;
+  formatted_engagement_date?: string;
+  engagement_with_category?: string;
 };
 
 export type EngagementFormData = {

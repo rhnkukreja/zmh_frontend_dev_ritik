@@ -18,7 +18,7 @@ import proxyVotingGuidelineReducer from "./proxyVotingGuidelineSlice";
 import institutionsReducer from "./institutionSlice";
 import companyReducer from "./companySlice";
 import dashboardReducer from "./dashboardSlice";
-
+import { PersistPartial } from "redux-persist/es/persistReducer";
 import storage from "redux-persist/lib/storage";
 import { persistReducer, persistStore, PURGE } from "redux-persist";
 
@@ -45,7 +45,7 @@ const slices = {
   proxyVotingGuideline: proxyVotingGuidelineReducer,
   institutions: institutionsReducer,
   company: companyReducer,
-  dashboard: dashboardReducer
+  dashboard: dashboardReducer,
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(
@@ -86,8 +86,8 @@ export const store = configureStore({
 });
 export const persistor = persistStore(store);
 
+export type RootState = ReturnType<typeof appReducer> & PersistPartial;
 export type AppDispatch = typeof store.dispatch;
-export type RootState = ReturnType<typeof store.getState>;
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
   RootState,

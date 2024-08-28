@@ -1,40 +1,39 @@
 import Lucide from "@/components/Base/Lucide";
-import { Menu } from "@/components/Base/Headless";
-import ReportBarChart6 from "@/components/ReportBarChart6";
-import ReportRadarChart from "@/components/ReportRadarChart";
+
 import { FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
-import Litepicker from "@/components/Base/Litepicker";
+
 import { useEffect } from "react";
-import clsx from "clsx";
+
 import _ from "lodash";
-import { useLocation } from "react-router-dom";
-import { CompanyDashboard, fetchCompanyDashboard } from "@/stores/dashboardSlice";
+import { useLocation, useSearchParams } from "react-router-dom";
+import {
+  CompanyDashboard,
+  fetchCompanyDashboard,
+} from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import TableWrapper from "@/components/TableWrapper";
 import Table from "@/components/Base/Table";
 import dayjs from "dayjs";
-import CPagination from "@/components/Pagination";
+
 import LoadingIcon from "../../components/Base/LoadingIcon";
 
-
 function Main() {
-
   const location = useLocation();
   const dispatch: AppDispatch = useAppDispatch();
 
-  const queryParams = new URLSearchParams(location.search);
-  const ticker = queryParams.get('ticker')!;
-  const { dashboardDataList, loading } = useAppSelector((state) => state.dashboard);
+  const [searchParams] = useSearchParams();
+  const ticker = searchParams.get("ticker") ?? "";
+  const { dashboardDataList, loading } = useAppSelector(
+    (state) => state.dashboard
+  );
 
   useEffect(() => {
-    dispatch(
-      fetchCompanyDashboard(ticker)
-    );
+    dispatch(fetchCompanyDashboard(ticker));
   }, [ticker]);
-  
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 xl:col-span-8">
@@ -47,18 +46,21 @@ function Main() {
           <div className="p-5 mt-3.5 box ">
             <div className="w-full">
               <div className="">
-                {
-                  (!dashboardDataList || dashboardDataList?.length === 0) && loading && (
+                {(!dashboardDataList || dashboardDataList?.length === 0) &&
+                  loading && (
                     <div className="flex flex-col items-center justify-center pt-20 pb-28">
-                      <LoadingIcon color="red" icon="puff" className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]" />
-                      <div className="mt-5 text-xl font-medium">
-                        Loading...
-                      </div>
+                      <LoadingIcon
+                        color="red"
+                        icon="puff"
+                        className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
+                      />
+                      <div className="mt-5 text-xl font-medium">Loading...</div>
                     </div>
-                  )
-                }
-                {
-                 (!dashboardDataList || dashboardDataList?.length === 0) && !loading && (
+                  )}
+
+                {(!dashboardDataList || dashboardDataList?.length === 0) &&
+                  !loading &&
+                  ticker && (
                     <div className="flex flex-col items-center justify-center pt-20 pb-28">
                       <Lucide
                         icon="SearchX"
@@ -68,31 +70,47 @@ function Main() {
                         No result found
                       </div>
                     </div>
-                  )
-                }
-                {
-                  dashboardDataList?.length > 0 && !loading && (
-                    <div>
-                      <div className="">
-                        <TableWrapper isLoading={loading}>
-                          <Table>
-                            <Table.Thead>
-                              <Table.Tr>
-                                <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Filer Name
-                                </Table.Td>
+                  )}
+                {(!dashboardDataList || dashboardDataList?.length === 0) &&
+                  !loading &&
+                  !ticker && (
+                    <div className="flex flex-col items-center justify-center pt-20 pb-28">
+                      <Lucide
+                        icon="Search"
+                        className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
+                      />
+                      <div className="mt-5 text-xl font-medium">
+                        Search for a company
+                      </div>
+                      <div className="mt-2 text-slate-500">
+                        Enter a company ticker to view dashboard data
+                      </div>
+                    </div>
+                  )}
 
-                                <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                 Source Date
-                                </Table.Td>
-                                <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Percent Ownership
-                                </Table.Td>
-                              </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                              {dashboardDataList?.length > 0 &&
-                                dashboardDataList.map((dashboard: CompanyDashboard) => (
+                {dashboardDataList?.length > 0 && !loading && (
+                  <div>
+                    <div className="min-h-[200px]">
+                      <TableWrapper isLoading={loading}>
+                        <Table>
+                          <Table.Thead>
+                            <Table.Tr>
+                              <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Filer Name
+                              </Table.Td>
+
+                              <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Source Date
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Percent Ownership
+                              </Table.Td>
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {dashboardDataList?.length > 0 &&
+                              dashboardDataList.map(
+                                (dashboard: CompanyDashboard) => (
                                   <Table.Tr
                                     key={dashboard.filer_id}
                                     className="[&_td]:last:border-b-0"
@@ -112,7 +130,7 @@ function Main() {
                                     </Table.Td>
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                       <div className="whitespace-nowrap ">
-                                        {(dashboard?.percent_ownership)}
+                                        {dashboard?.percent_ownership}
                                       </div>
                                     </Table.Td>
 
@@ -123,17 +141,17 @@ function Main() {
                                           options={{
                                             theme: "dark",
                                           }}
-                                        >
-                                        </Tippy>
+                                        ></Tippy>
                                       </div>
                                     </Table.Td>
                                   </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                          </Table>
-                        </TableWrapper>
-                      </div>
-                      {/* <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                )
+                              )}
+                          </Table.Tbody>
+                        </Table>
+                      </TableWrapper>
+                    </div>
+                    {/* <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                         {dashboardDataList?.length > 0 && (
                           <CPagination
                             page={page}
@@ -144,18 +162,13 @@ function Main() {
                           />
                         )}
                       </div> */}
-                    </div>
-                      )
-                }
-               
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-
-
-
 
       <div className="col-span-12 md:col-span-6 xl:col-span-4">
         <div>

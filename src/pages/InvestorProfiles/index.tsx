@@ -143,7 +143,7 @@ function Main() {
                     />
                     <FormInput
                       type="text"
-                      placeholder="Search invester..."
+                      placeholder="Search Investor"
                       className="pl-9 sm:w-64 rounded-[0.5rem]"
                       onChange={handleSearch}
                     />
