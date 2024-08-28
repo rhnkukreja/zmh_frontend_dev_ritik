@@ -12,6 +12,10 @@ import { Slideover } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useState, useEffect } from "react";
 import clsx from "clsx";
+import { Bot } from "lucide-react";
+import CModal from "../DashboardAIModal";
+import { Dialog } from "@/components/Base/Headless";
+import LoadingIcon from "../Base/LoadingIcon";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -21,9 +25,35 @@ function Main() {
     useState(activeColorScheme);
   const [tempActiveTheme, setTempActiveTheme] = useState(activeTheme);
   const [themeSwitcherSlideover, setThemeSwitcherSlideover] = useState(false);
+  
+  const [basicModalPreview, setBasicModalPreview] = useState(false);
+  const [isFrameLoading, setIsFrameLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   const { search } = useLocation();
   const queryParams = new URLSearchParams(search);
+
+ 
+
+  const handleLoad = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(false);
+  };
+
+  const handleError = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(true);
+  };
+
+  const handleCloseModal = () => {
+    setBasicModalPreview(false);
+    setIsFrameLoading(true);
+    setIsError(false);
+  }
 
   const setColorSchemeClass = () => {
     const el = document.querySelectorAll("html")[0];
@@ -113,22 +143,22 @@ function Main() {
                         className={clsx([
                           "h-28 cursor-pointer bg-slate-50 box p-1",
                           tempActiveTheme == theme.name &&
-                            "border-2 border-theme-1/60",
+                          "border-2 border-theme-1/60",
                         ])}
                       >
                         <div className="w-full h-full overflow-hidden rounded-md">
                           {imageAssets[
                             `/src/assets/images/themes/${theme.name}.png`
                           ] !== undefined && (
-                            <img
-                              className="w-full h-full"
-                              src={
-                                imageAssets[
-                                  `/src/assets/images/themes/${theme.name}.png`
-                                ].default
-                              }
-                            />
-                          )}
+                              <img
+                                className="w-full h-full"
+                                src={
+                                  imageAssets[
+                                    `/src/assets/images/themes/${theme.name}.png`
+                                  ].default
+                                }
+                              />
+                            )}
                         </div>
                       </div>
                       <div className="mt-2.5 capitalize text-center text-xs">
@@ -152,7 +182,7 @@ function Main() {
                         className={clsx([
                           "h-12 cursor-pointer bg-slate-50 box rounded-full p-1 border-slate-300/80",
                           tempActiveColorScheme == colorScheme &&
-                            "border-2 border-theme-1/60",
+                          "border-2 border-theme-1/60",
                         ])}
                       >
                         <div className="h-full overflow-hidden rounded-full">
@@ -200,7 +230,7 @@ function Main() {
           </Slideover.Description>
         </Slideover.Panel>
       </Slideover>
-      <div
+      {/* <div
         onClick={(event: React.MouseEvent) => {
           event.preventDefault();
           setThemeSwitcherSlideover(true);
@@ -208,7 +238,55 @@ function Main() {
         className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-1"
       >
         <Lucide className="w-5 h-5 animate-spin" icon="Settings" />
-      </div>
+      </div> */}
+
+
+      {/* AI Bot Modal & Button */}
+        <div
+          onClick={(event: React.MouseEvent) => {
+            event.preventDefault();
+            setBasicModalPreview(true);
+          }}
+          className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-2"
+        >
+          <Bot className="w-5 h-5" />
+        </div>
+
+      {/* <CModal isModalOpen={basicModalPreview}></CModal> */}
+
+
+      <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}
+      >
+        <Dialog.Panel className="p-10 text-center h-full">
+          <div className="relative w-full h-full">
+            {isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white">
+                <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
+                {/* <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500"></div> */}
+              </div>
+            )}
+
+            {isError && !isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
+                <p>Failed to load the embedded content. Please try again later.</p>
+              </div>
+            )}
+
+            <iframe
+              className={`w-full h-full ${isFrameLoading || isError ? 'hidden' : ''}`}
+              src="https://app.korra.ai/zmhdashboard/investorprofiles"
+              title="Embedded Dashboard"
+              onLoad={handleLoad}
+              onError={handleError}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* AI Bot Modal & Button */}
+
     </div>
   );
 }

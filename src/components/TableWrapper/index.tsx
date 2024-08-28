@@ -19,9 +19,7 @@ const TableWrapper: React.FC<TableWrapperProps> = ({ isLoading, children }) => {
           </div>
         </div>
       )}
-      <div className="overflow-auto xl:overflow-scroll relative z-0">
-        {children}
-      </div>
+      <div className="overflow-auto  relative z-0">{children}</div>
     </div>
   );
 };

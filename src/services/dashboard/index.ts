@@ -1,25 +1,33 @@
+import { CompanyData } from "@/types/company";
 import { axiosInstance } from "../index";
+import { CompanyDashboard } from "@/stores/dashboardSlice";
 
 class DashboardService {
   public async fetchCompanyByName(companyName: string): Promise<{
-    results: any;
+    count: number;
+    results: CompanyData[];
   }> {
     const response = await axiosInstance.get(
       `/company/?company_name=${companyName}`
     );
+    const { count, results } = response.data;
     return {
-      results: response.data,
+      count,
+      results,
     };
   }
 
   public async fetchCompanyDashboard(ticker: string): Promise<{
-    results: any;
-  }> {
+    count: number;
+    all_holders_data: CompanyDashboard[];
+  }>  {
     const response = await axiosInstance.get(
       `/company-dashboard/?ticker=${ticker}`
     );
+    const { count, all_holders_data } = response.data;
     return {
-      results: response.data,
+      count,
+      all_holders_data,
     };
   }
 }
