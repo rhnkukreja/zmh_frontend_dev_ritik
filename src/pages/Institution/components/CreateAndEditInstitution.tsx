@@ -58,7 +58,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       // active: selectedInstitution?.active ,
       // uploaded_time: selectedInstitution?.uploaded_time,
       region: selectedInstitution?.region || "NAM",
-      investor_type: selectedInstitution?.investor_type || "Invester",
+      investor_type: selectedInstitution?.investor_type || "Investor",
       // contact: selectedInstitution?.contact!,
       // email: selectedInstitution?.email!,
     },
@@ -297,7 +297,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                       <option value="" disabled selected>
                         Select Type
                       </option>
-                      <option value="Investor">Investor</option>
+                      <option value="investor">investor</option>
                       <option value="Proponent">Proponent</option>
                     </TomSelect>
                   )}

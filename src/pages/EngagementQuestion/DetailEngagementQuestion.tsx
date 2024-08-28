@@ -80,9 +80,7 @@ const DetailEngagementQuestion = () => {
                 Category
               </h2>
               <p className="text-gray-500">
-                {getSingleQuestion?.type_of_engagement +
-                  "-" +
-                  getSingleQuestion?.category}
+                {getSingleQuestion?.engagement_with_category}
               </p>
             </div>
           </div>
@@ -96,14 +94,16 @@ const DetailEngagementQuestion = () => {
             </p>
           </div>
 
-          <div className="flex flex-col">
-            <h2 className="text-md font-medium text-gray-700 mb-1">
-              Other Comments
-            </h2>
-            <p className="text-gray-500">
-              {getSingleQuestion?.other_comments || "None"}
-            </p>
-          </div>
+          {getSingleQuestion?.other_comments && (
+            <div className="flex flex-col">
+              <h2 className="text-md font-medium text-gray-700 mb-1">
+                Other Comments
+              </h2>
+              <p className="text-gray-500">
+                {getSingleQuestion?.other_comments}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

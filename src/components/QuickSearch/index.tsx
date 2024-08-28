@@ -1,7 +1,3 @@
-import users from "@/fakers/users";
-import departments from "@/fakers/departments";
-import products from "@/fakers/products";
-import { Menu } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { FormInput } from "@/components/Base/Form";
 import { Dialog as HeadlessDialog, Transition } from "@headlessui/react";
@@ -21,7 +17,9 @@ interface MainProps {
 function Main(props: MainProps) {
   const dispatch: AppDispatch = useAppDispatch();
   const [search, setSearch] = useState("");
-  const { companyDataList, loading } = useAppSelector((state) => state.dashboard);
+  const { companyDataList, loading } = useAppSelector(
+    (state) => state.dashboard
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,7 +32,6 @@ function Main(props: MainProps) {
     };
   }, []);
 
-
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setSearch(value);
@@ -43,15 +40,18 @@ function Main(props: MainProps) {
 
   const debouncedFetchResults = useCallback(
     _.debounce((query: string) => {
-        dispatch(fetchCompanyByName(query));
-    },500), []
+      dispatch(fetchCompanyByName(query));
+    }, 500),
+    []
   );
 
-  const handleCompanyClick = (event: React.MouseEvent<HTMLAnchorElement>, company: CompanyData) => {
+  const handleCompanyClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    company: CompanyData
+  ) => {
     event.preventDefault();
-    navigate(`/?ticker=${(company?.symbol)}`);
+    navigate(`/?ticker=${company?.symbol}`);
   };
-
 
   return (
     <>
@@ -105,33 +105,34 @@ function Main(props: MainProps) {
                     </div>
                   </div>
                   <div className="relative z-10 pb-1 mt-1 bg-white rounded-lg shadow-lg max-h-[468px] sm:max-h-[615px] overflow-y-auto">
-                    {companyDataList.length === 0  ? (
+                    {companyDataList.length === 0 ? (
                       <div className="flex flex-col items-center justify-center pt-20 pb-28">
                         <Lucide
                           icon="SearchX"
                           className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
                         />
                         <div className="mt-5 text-xl font-medium">
-                          No result found
+                          {search.length > 0
+                            ? "No result found"
+                            : "Search Companies..."}
                         </div>
-                        {
-                          search.length > 0 && (
-                            <div className="w-2/3 mt-3 leading-relaxed text-center text-slate-500">
-                              No results found for
-                              <span className="italic font-medium">"{search}</span>
-                              ". Please try a different search term or check your
-                              spelling.
-                            </div>
-                          )
-                        } 
-                       
+                        {search.length > 0 && (
+                          <div className="w-2/3 mt-3 leading-relaxed text-center text-slate-500">
+                            No results found for
+                            <span className="italic font-medium">
+                              "{search}
+                            </span>
+                            ". Please try a different search term or check your
+                            spelling.
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div>
                         <div className="px-5 py-4">
                           <div className="flex items-center">
                             <div className="text-xs uppercase text-slate-500">
-                              Start your search here...
+                              Search companies here...
                             </div>
                           </div>
                           {/* <div className="flex flex-wrap gap-2 mt-3.5">
@@ -222,10 +223,12 @@ function Main(props: MainProps) {
                             </a> */}
                           </div>
                           <div className="flex flex-col gap-1 mt-3.5">
-                            {(companyDataList)?.map(
-                              (item, key) => (
+                            {companyDataList?.map(
+                              (item: CompanyData, key: number) => (
                                 <a
-                                  onClick={(event) => handleCompanyClick(event, item)}
+                                  onClick={(event) =>
+                                    handleCompanyClick(event, item)
+                                  }
                                   key={key}
                                   className="flex items-center cursor-pointer gap-2.5 hover:bg-slate-50/80 border border-transparent hover:border-slate-100 p-1 rounded-md"
                                 >

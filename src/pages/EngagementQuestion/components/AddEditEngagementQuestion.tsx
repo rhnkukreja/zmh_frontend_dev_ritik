@@ -115,8 +115,8 @@ export const AddEditEngagementQuestion: React.FC<
       if (response?.results?.id) {
         toast.success(
           selectedEngagementQuestion
-            ? "Invester Profile Updated"
-            : "New Invester Profile Added"
+            ? "Investor Profile Updated"
+            : "New Investor Profile Added"
         );
         setAddNewEngagementQuestionModalVisible(false);
       }
