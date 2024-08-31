@@ -1,14 +1,17 @@
+import Button from "@/components/Base/Button";
 import LoadingWrapper from "@/components/LoadingWrapper";
 import { getSingleEngagementQuestions } from "@/stores/engagementQuestionSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import dayjs from "dayjs";
+import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const DetailEngagementQuestion = () => {
   const dispatch: AppDispatch = useAppDispatch();
   const params = useParams();
+  const navigate = useNavigate();
 
   const { getSingleQuestion, loading } = useAppSelector(
     (state) => state.engagementQuestions
@@ -18,7 +21,21 @@ const DetailEngagementQuestion = () => {
     dispatch(getSingleEngagementQuestions(Number(params.id!)));
   }, [params.id]);
 
+  const backToPreviousPage = () => {
+    navigate(`/engagement-question`);
+  }
+
   return (
+    <>
+    <Button
+            type="button"
+            variant="outline-secondary"
+            className=" border-none sm:w-fit"
+            onClick={backToPreviousPage}
+          >
+            <ChevronLeft className="roup-[.mode--light]:text-white text-white" size={18} strokeWidth={1.5} />
+            <div className=" group-[.mode--light]:text-white">Back</div>
+          </Button>
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
       <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
         <h1 className="text-xl font-semibold">Engagement Question Details</h1>
@@ -107,6 +124,7 @@ const DetailEngagementQuestion = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

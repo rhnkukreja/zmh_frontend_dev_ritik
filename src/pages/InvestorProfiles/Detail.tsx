@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 
 import _ from "lodash";
 import Button from "@/components/Base/Button";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -29,6 +29,7 @@ import clsx from "clsx";
 import { FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+import { ChevronLeft } from "lucide-react";
 
 
 function Main() {
@@ -45,7 +46,7 @@ function Main() {
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
+  const navigate = useNavigate();
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -197,10 +198,14 @@ function Main() {
     );
   };
 
+  const backToPreviousPage = () => {
+    navigate(`/investor-profile`);
+  }
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
-        <div className="flex flex-col justify-end  md:mt-0 md:h-10  md:items-center md:flex-row md:justify-end sm:justify-end">
+        <div className="flex flex-col justify-between	md:mt-0 md:h-10 md:items-center md:flex-row">
           {/* <div className="text-base font-medium group-[.mode--light]:text-white">
             Investers Detail
           </div> */}
@@ -208,7 +213,17 @@ function Main() {
           <Button
             type="button"
             variant="outline-secondary"
-            className=" border-none justify-end"
+            className=" border-none sm:w-fit"
+            onClick={backToPreviousPage}
+          >
+            <ChevronLeft className="roup-[.mode--light]:text-white text-white" size={18} strokeWidth={1.5} />
+            <div className=" group-[.mode--light]:text-white">Back</div>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline-secondary"
+            className=" border-none sm:w-fit"
             onClick={handleExportToPDF}
           >
             {isGeneratingPDF ? (
