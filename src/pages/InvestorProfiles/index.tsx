@@ -47,7 +47,22 @@ function Main() {
         createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
       )
     );
+   
   }, [page, filters.institution_name]);
+
+  useEffect(() => {
+    return () => {
+      console.log('destory the component investor' );
+      dispatch(resetPage());
+      dispatch(
+        setFilter({
+          key: "institution_name",
+          value: '',
+        })
+      );
+    }
+  }, [])
+  
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -143,7 +158,7 @@ function Main() {
                     />
                     <FormInput
                       type="text"
-                      placeholder="Search Investor"
+                      placeholder="Search Institute Name"
                       className="pl-9 sm:w-64 rounded-[0.5rem]"
                       onChange={handleSearch}
                     />
@@ -237,19 +252,15 @@ function Main() {
                     <Table.Thead>
                       <Table.Tr>
                         <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Institution Name
+                          Institute Name
                         </Table.Td>
 
-                        <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        {/* <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Created Date
                         </Table.Td>
                         <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Updated Date
-                        </Table.Td>
-                        {/* <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Active
                         </Table.Td> */}
-
                         <Table.Td className="py-2  font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Actions
                         </Table.Td>
@@ -268,7 +279,7 @@ function Main() {
                               </div>
                             </Table.Td>
 
-                            <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
+                            {/* <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
                               <div className="whitespace-nowrap ">
                                 {dayjs(profile?.date_created).format(
                                   "MMMM , YYYY"
@@ -281,19 +292,7 @@ function Main() {
                                   "MMMM , YYYY"
                                 )}
                               </div>
-                            </Table.Td>
-                            {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {profile?.active === true ? (
-                                <div className="inline-flex justify-center text-xs font-medium rounded-md text-success bg-success/10 border px-6 py-1 sm:mr-0">
-                                  <span className="-mt-px">Active</span>
-                                </div>
-                              ) : (
-                                <div className="inline-flex  justify-center text-xs font-medium rounded-md text-danger bg-danger/10 border  px-4 py-1  sm:mr-0">
-                                  <span className="-mt-px">In Active</span>
-                                </div>
-                              )}
                             </Table.Td> */}
-
                             <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                               <div className="flex gap-3 justify-center">
                                 <Tippy

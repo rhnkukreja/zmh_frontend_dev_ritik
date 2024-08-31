@@ -56,7 +56,21 @@ function Main() {
         createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
       )
     );
+    
   }, [page, filters.institution_name]);
+
+  useEffect(() => {
+    return () => {
+      console.log('destory the component engagement' );
+      dispatch(resetPage());
+      dispatch(
+        setFilter({
+          key: "institution_name",
+          value: '',
+        })
+      );
+    }
+  }, [])
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -152,7 +166,7 @@ function Main() {
                   />
                   <FormInput
                     type="text"
-                    placeholder="Search Engagement Question"
+                    placeholder="Search Institute Name"
                     className="pl-9 sm:w-64 rounded-[0.5rem]"
                     onChange={handleSearch}
                   />

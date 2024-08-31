@@ -82,7 +82,7 @@ const initialState: SideMenuState = {
     {
       icon: "Vote",
       pathname: "/proxy-voting-guideline",
-      title: "Proxy Voting Guideline",
+      title: "Voting Guideline",
       // badge: 4,
     },
     // {

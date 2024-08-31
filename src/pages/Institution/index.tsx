@@ -52,6 +52,19 @@ function Main() {
     );
   }, [page, filters.institution_name]);
 
+  useEffect(() => {
+    return () => {
+      console.log('destory the component institution' );
+      dispatch(resetPage());
+      dispatch(
+        setFilter({
+          key: "institution_name",
+          value: '',
+        })
+      );
+    }
+  }, [])
+
   const handleNextPage = () => {
     if (page < totalPages) {
       dispatch(setPage(page + 1));
@@ -310,18 +323,19 @@ function Main() {
                         <Table.Tr key={institution.id}>
                           <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
                             <div className="flex items-center">
-                              {institution?.logo_url ? (
-                                <></>
+                              {/* {institution?.logo_url ? (
+                                <>
+                                  <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                    <Tippy
+                                      as="img"
+                                      alt="Tailwise - Admin Dashboard Template"
+                                      className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                      src={institution?.logo_url}
+                                      content={institution?.institution}
+                                    />
+                                  </div>
+                                </>
                               ) : (
-                                // <div className="w-8 h-8 image-fit zoom-in">
-                                //   <Tippy
-                                //     as="img"
-                                //     alt="Tailwise - Admin Dashboard Template"
-                                //     className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                //     src={institution?.logo_url}
-                                //     content={institution?.institution}
-                                //   />
-                                // </div>
                                 <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
                                   <Lucide
                                     icon="User"
@@ -332,8 +346,8 @@ function Main() {
                                     className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
                                   ></a>
                                 </div>
-                              )}
-                              <div className="ml-3.5">
+                              )} */}
+                              <div className="">
                                 <p className="font-medium whitespace-nowrap">
                                   {institution?.institution}
                                 </p>

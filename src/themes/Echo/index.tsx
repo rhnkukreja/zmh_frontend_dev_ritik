@@ -23,6 +23,7 @@ import ActivitiesPanel from "@/components/ActivitiesPanel";
 import { filterMenu, getColorForCharacter } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
+import { Mail } from "lucide-react";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -149,7 +150,7 @@ function Main() {
               className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
             >
               <div className="flex items-center justify-center w-[34px] h-[34px] transition-transform ease-in-out group">
-                <div className="w-full h-full overflow-hidden transition-transform duration-500 ease-in-out hover:animate-spinOnce">
+                <div className="w-full h-full overflow-hidden transition-transform duration-500 ease-in-out">
                   <img
                     alt="Logo"
                     src={logo}
@@ -158,9 +159,9 @@ function Main() {
                 </div>
               </div>
 
-              <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
+              {/* <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
                 ZMH
-              </div>
+              </div> */}
             </a>
             <a
               href=""
@@ -444,7 +445,8 @@ function Main() {
                     <Lucide icon="Bell" className="w-[18px] h-[18px]" />
                   </a> */}
                 </div>
-                <Menu className="ml-5">
+                <h1 className="ml-5 mr-3 text-white font-bold">{user?.user_name}</h1>
+                <Menu className="">
                   <Menu.Button
                     className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
                     style={{
@@ -458,6 +460,7 @@ function Main() {
                       {user?.user_name?.[0].toUpperCase() || ""}
                     </h4>
                   </Menu.Button>
+                  
                   <Menu.Items className="w-56 mt-1">
                     {/* <Menu.Item
                       onClick={() => {
@@ -483,7 +486,16 @@ function Main() {
                     >
                       <Lucide icon="Inbox" className="w-4 h-4 mr-2" />
                       Email Settings
-                    </Menu.Item> */}
+                    </Menu.Item> */} 
+                    {user?.email && 
+                    <>
+                    <Menu.Item >
+                      <Mail strokeWidth={1} className="w-4 h-4 mr-2" />
+                      <h2>{user?.email}</h2>
+                    </Menu.Item>
+                    <Menu.Divider />
+                    </>
+                    } 
                     <Menu.Item
                       onClick={() => {
                         navigate("settings?page=security");
@@ -492,15 +504,6 @@ function Main() {
                       <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
                     </Menu.Item>
-                    <Menu.Divider />
-                    {/* <Menu.Item
-                      onClick={() => {
-                        navigate("settings");
-                      }}
-                    >
-                      <Lucide icon="Users" className="w-4 h-4 mr-2" />
-                      Profile Info
-                    </Menu.Item> */}
                     <Menu.Item
                       onClick={() => {
                         navigate("login");

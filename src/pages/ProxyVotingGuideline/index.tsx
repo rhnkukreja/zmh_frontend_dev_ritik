@@ -58,6 +58,20 @@ function ProxyGuideline() {
     );
   }, [page, filters.year]);
 
+
+  useEffect(() => {
+    return () => {
+      console.log('destory the component proxy' );
+      dispatch(resetPage());
+      dispatch(
+        setFilter({
+          key: "year",
+          value: '',
+        })
+      );
+    }
+  }, [])
+
   const handleNextPage = () => {
     if (page < totalPages) {
       dispatch(setPage(page + 1));
@@ -132,7 +146,7 @@ function ProxyGuideline() {
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="text-base font-medium group-[.mode--light]:text-white">
-              Proxy Voting Guidelines
+              Voting Guidelines
             </div>
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
@@ -163,7 +177,7 @@ function ProxyGuideline() {
                     />
                     <FormInput
                       type="text"
-                      placeholder="Search Guideline"
+                      placeholder="Search Institute Name"
                       className="pl-9 sm:w-64 rounded-[0.5rem]"
                       onChange={handleSearch}
                     />

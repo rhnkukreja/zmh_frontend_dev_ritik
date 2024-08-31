@@ -28,6 +28,8 @@ import { KeyContact } from "@/types/investerProfiles";
 import clsx from "clsx";
 import { FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
+import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+
 
 function Main() {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
@@ -298,6 +300,7 @@ function Main() {
                     ?.replace(/\n/g, "<br />") || ""
                 }
                 field="engagement_priorities"
+                isReference= {false}
               />
               <EditableSection
                 fetchloading={loading}
@@ -309,6 +312,7 @@ function Main() {
                     ?.replace(/\n/g, "<br />") || ""
                 }
                 field="reporting_expectations"
+                isReference= {false}
               />
               <EditableSection
                 fetchloading={loading}
@@ -320,6 +324,7 @@ function Main() {
                     ?.replace(/\n/g, "<br />") || ""
                 }
                 field="esg_integration_process"
+                isReference= {false}
               />
               <EditableSection
                 fetchloading={loading}
@@ -329,6 +334,7 @@ function Main() {
                   votingGuidelinesText + "<br>" + formatVotingGuidelinesLink
                 }
                 field="voting_guidelines_link"
+                isReference= {false}
               />
 
               <EditableSection
@@ -337,6 +343,7 @@ function Main() {
                 title="References"
                 renderHtml={singleInvesterProfile?.references || ""}
                 field="references"
+                isReference= {true}
               />
             </div>
 
@@ -429,10 +436,19 @@ function Main() {
                             <div className="flex  items-center   border-b border-dashed last:pb-0 last:mb-0 last:border-0">
                               <div>
                                 <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                  <img
-                                    alt="Tailwise - Admin Dashboard Template"
-                                    src={contacts?.image}
-                                  />
+                                  {
+                                    contacts?.image ?
+                                    <img
+                                      alt="Tailwise - Admin Dashboard Template"
+                                      src={contacts?.image}
+                                    />
+                                    :
+                                    <img
+                                      alt="Tailwise - Admin Dashboard Template"
+                                      src={userLinkedinImage}
+                                    />
+                                  }
+                                  
                                 </div>
                               </div>
                               <div className="ml-3.5 w-full">

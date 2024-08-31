@@ -7,6 +7,7 @@ import {
   setPage,
   setFilter,
   resetFilter,
+  resetPage,
 } from "@/stores/companySlice";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
@@ -39,6 +40,14 @@ function CompanyList() {
       fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, page))
     );
   }, [page, filters]);
+
+  useEffect(() => {
+    return () => {
+      console.log('destory the component company' );
+      dispatch(resetPage());
+      dispatch(resetFilter());
+    }
+  }, [])
 
   const handleNextPage = () => {
     if (page < totalPages) {

@@ -15,6 +15,8 @@ import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface FormInputs {
   first_name: string;
@@ -36,6 +38,8 @@ function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
+  const [showPassword, setShowPassword]= useState(false);
+  const [showConfirmPassword, setShowConfirmPassword]= useState(false);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     const { passwordConfirmation, ...restData } = data;
@@ -143,7 +147,7 @@ function Main() {
                     </span>
                   )}
                 </div>
-                <div className="mt-5">
+                <div className="mt-5 relative">
                   <FormLabel>Password*</FormLabel>
                   <FormInput
                     type="password"
@@ -153,6 +157,10 @@ function Main() {
                       required: "Password is required",
                     })}
                   />
+                  <span className="absolute top-[52%] right-[5%] cursor-pointer">
+                    {showPassword && <Eye onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                    {!showPassword && <EyeOff onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                  </span>
                   {errors.password && (
                     <span className="text-red-500">
                       {errors.password.message}
@@ -160,7 +168,7 @@ function Main() {
                   )}
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-5 relative">
                   <FormLabel>Password Confirmation*</FormLabel>
                   <FormInput
                     type="password"
@@ -172,6 +180,10 @@ function Main() {
                         value === watch("password") || "Passwords do not match",
                     })}
                   />
+                  <span className="absolute top-[52%] right-[5%] cursor-pointer">
+                    {showConfirmPassword && <Eye onClick={() => setShowConfirmPassword(!showConfirmPassword)} strokeWidth={0.75} size={20} />}
+                    {!showConfirmPassword && <EyeOff onClick={() => setShowConfirmPassword(!showConfirmPassword)} strokeWidth={0.75} size={20} />}
+                  </span>
                   {errors.passwordConfirmation && (
                     <span className="text-red-500">
                       {errors.passwordConfirmation.message}
@@ -256,7 +268,7 @@ function Main() {
           </div>
         </div>
       </div>
-      <ThemeSwitcher />
+      {/* <ThemeSwitcher /> */}
     </>
   );
 }

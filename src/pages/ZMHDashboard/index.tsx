@@ -31,7 +31,9 @@ function Main() {
   );
 
   useEffect(() => {
-    dispatch(fetchCompanyDashboard(ticker));
+    if(ticker){
+      dispatch(fetchCompanyDashboard(ticker));
+    }
   }, [ticker]);
 
   return (
@@ -134,7 +136,7 @@ function Main() {
                                       </div>
                                     </Table.Td>
 
-                                    <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                    {/* <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex gap-3 justify-center">
                                         <Tippy
                                           content="View"
@@ -143,7 +145,7 @@ function Main() {
                                           }}
                                         ></Tippy>
                                       </div>
-                                    </Table.Td>
+                                    </Table.Td> */}
                                   </Table.Tr>
                                 )
                               )}

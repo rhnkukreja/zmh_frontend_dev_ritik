@@ -26,10 +26,12 @@
 @import "./components/_scrollbar-hidden.css";
 @import "./components/_typing-dots.css";
 @import "./components/_zoom-in.css";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--secondary) var(--primary);
+  font-family: montserrat;
 }
 
 *::-webkit-scrollbar {
@@ -70,6 +72,18 @@
 
 .hide-pdf {
   display: none !important;
+}
+
+@media only screen and (min-width:400px) and (max-width: 600px) {
+  .mobile-text-size {
+    /* background-color: red; */
+  }
+}
+
+.link-ref span {
+  a{
+    color: blue;
+  }
 }
 
 /*

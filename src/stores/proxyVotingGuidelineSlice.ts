@@ -112,7 +112,7 @@ const proxyVotingGuidelineSlice = createSlice({
       .addCase(fetchProxyVotingGuidelines.rejected, (state, action) => {
         state.loading = false;
         state.error =
-          action.error.message || "Failed to fetch proxy voting guidelines";
+          action.error.message || "Failed to fetch voting guidelines";
       })
 
       .addCase(addEditProxyVotingGuideline.pending, (state) => {
