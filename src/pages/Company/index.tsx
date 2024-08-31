@@ -99,11 +99,11 @@ function CompanyList() {
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchValue('');
-    dispatch(
-      fetchCompanies(
-        createDynamicURL(`${baseURL}/company/`, undefined, page)
-      )
-    );
+    // dispatch(
+    //   fetchCompanies(
+    //     createDynamicURL(`${baseURL}/company/`, undefined, page)
+    //   )
+    // );
     dispatch(
       setFilter({
         key: "sector",
