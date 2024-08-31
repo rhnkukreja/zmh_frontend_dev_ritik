@@ -25,10 +25,12 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { AddEditPolicyGuideline } from "./components/AddEditProxyVotingGuideline";
 import PdfViewer from "@/components/PdfView";
+import { Filter, FilterX } from "lucide-react";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState('');
 
   const {
     loading,
@@ -102,6 +104,7 @@ function ProxyGuideline() {
   }, 700);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    setSearchValue(e.target.value);
     debouncedSearch(e.target.value);
   }
 
@@ -123,6 +126,23 @@ function ProxyGuideline() {
       )
     );
   };
+
+  const handleClearAllFilter = () => {
+    dispatch(resetFilter());
+    setSearchValue('');
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
+      )
+    );
+    dispatch(
+      setFilter({
+        key: "year",
+        value: '',
+      })
+    );
+
+  }
 
   const getFilterCount = useMemo(() => {
     const { ...allFilters } = filters;
@@ -169,8 +189,8 @@ function ProxyGuideline() {
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-                <div>
-                  <div className="relative">
+                <div className="flex items-center ">
+                  <div className="relative mr-5 ">
                     <Lucide
                       icon="Search"
                       className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
@@ -180,7 +200,15 @@ function ProxyGuideline() {
                       placeholder="Search Institute Name"
                       className="pl-9 sm:w-64 rounded-[0.5rem]"
                       onChange={handleSearch}
+                      value={searchValue}
                     />
+                  </div>
+
+                  <div className="hover:bg-slate-50">
+                    <Button onClick={handleClearAllFilter}>
+                      <FilterX size={17} strokeWidth={1} className="text-slate-500 mr-3 cursor-pointer	" />
+                      <span className="text-slate-500">Clear Filter</span>
+                    </Button>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">

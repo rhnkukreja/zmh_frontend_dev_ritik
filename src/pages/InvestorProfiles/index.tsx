@@ -23,6 +23,7 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
+import { Filter, FilterX } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -30,6 +31,7 @@ function Main() {
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
+    const [searchValue, setSearchValue] = useState('');
 
   const {
     loading,
@@ -94,6 +96,7 @@ function Main() {
   }, 700);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    setSearchValue(e.target.value);
     debouncedSearch(e.target.value);
   }
 
@@ -115,6 +118,23 @@ function Main() {
       )
     );
   };
+
+  const handleClearAllFilter = () => {
+    dispatch(resetFilter());
+    setSearchValue('');
+    dispatch(
+      fetchInvestersProfiles(
+        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+      )
+    );
+    dispatch(
+      setFilter({
+        key: "institution_name",
+        value: '',
+      })
+    );
+
+  }
 
   const getFilterCount = useMemo(() => {
     const { institution_name, ...allFilters } = filters;
@@ -150,8 +170,8 @@ function Main() {
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-                <div>
-                  <div className="relative">
+                <div className="flex items-center ">
+                  <div className="relative mr-5 ">
                     <Lucide
                       icon="Search"
                       className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
@@ -161,7 +181,15 @@ function Main() {
                       placeholder="Search Institute Name"
                       className="pl-9 sm:w-64 rounded-[0.5rem]"
                       onChange={handleSearch}
+                      value={searchValue}
                     />
+                  </div>
+
+                  <div className="hover:bg-slate-50">
+                    <Button onClick={handleClearAllFilter}>
+                    <FilterX size={17} strokeWidth={1} className="text-slate-500 mr-3 cursor-pointer	"/>
+                     <span className="text-slate-500">Clear Filter</span>
+                      </Button>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">

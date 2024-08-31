@@ -21,6 +21,7 @@ import { FormInput } from "@/components/Base/Form";
 import { useNavigate } from "react-router-dom";
 import { Menu } from "@/components/Base/Headless";
 import Tippy from "@/components/Base/Tippy";
+import { FilterX } from "lucide-react";
 
 function CompanyList() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -34,6 +35,7 @@ function CompanyList() {
     useState<boolean>(false);
   const [selectedCompany] = useState<CompanyData | null>(null);
   const { user } = useAppSelector((state) => state.authentiction);
+  const [searchValue, setSearchValue] = useState('');
 
   useEffect(() => {
     dispatch(
@@ -66,6 +68,8 @@ function CompanyList() {
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+    
     dispatch(
       setFilter({
         key: "sector",
@@ -92,6 +96,23 @@ function CompanyList() {
     return Object.values(allFilters).filter((value) => value !== "").length;
   }, [filters]);
 
+  const handleClearAllFilter = () => {
+    dispatch(resetFilter());
+    setSearchValue('');
+    dispatch(
+      fetchCompanies(
+        createDynamicURL(`${baseURL}/company/`, undefined, page)
+      )
+    );
+    dispatch(
+      setFilter({
+        key: "sector",
+        value: '',
+      })
+    );
+
+  }
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
@@ -117,18 +138,26 @@ function CompanyList() {
         <div className="mt-3.5">
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-              <div>
-                <div className="relative">
+            <div className="flex items-center ">
+                <div className="relative mr-5 ">
                   <Lucide
                     icon="Search"
                     className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
                   />
                   <FormInput
                     type="text"
-                    placeholder="Search Company..."
+                    placeholder="Search Institute Name"
                     className="pl-9 sm:w-64 rounded-[0.5rem]"
                     onChange={handleSearch}
+                    value={searchValue}
                   />
+                </div>
+
+                <div className="hover:bg-slate-50">
+                  <Button onClick={handleClearAllFilter}>
+                    <FilterX size={17} strokeWidth={1} className="text-slate-500 mr-3 cursor-pointer	" />
+                    <span className="text-slate-500">Clear Filter</span>
+                  </Button>
                 </div>
               </div>
             </div>
