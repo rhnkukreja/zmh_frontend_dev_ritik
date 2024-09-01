@@ -21,7 +21,7 @@ import { Eye, EyeOff } from "lucide-react";
 interface FormInputs {
   first_name: string;
   last_name: string;
-  username: string;
+  // username: string;
   email: string;
   password: string;
   passwordConfirmation: string;
@@ -132,7 +132,7 @@ function Main() {
                     <span className="text-red-500">{errors.email.message}</span>
                   )}
                 </div>
-                <div className="mt-5">
+                {/* <div className="mt-5">
                   <FormLabel>User Name*</FormLabel>
                   <FormInput
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
@@ -146,11 +146,11 @@ function Main() {
                       {errors.username.message}
                     </span>
                   )}
-                </div>
+                </div> */}
                 <div className="mt-5 relative">
                   <FormLabel>Password*</FormLabel>
                   <FormInput
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
                     placeholder="Password"
                     {...register("password", {
@@ -171,7 +171,7 @@ function Main() {
                 <div className="mt-5 relative">
                   <FormLabel>Password Confirmation*</FormLabel>
                   <FormInput
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
                     placeholder="Confirm Password"
                     {...register("passwordConfirmation", {

@@ -186,9 +186,14 @@ function Main() {
                   </div>
 
                   <div className="hover:bg-slate-50">
+                  
                     <Button onClick={handleClearAllFilter}>
-                    <FilterX size={17} strokeWidth={1} className="text-slate-500 mr-3 cursor-pointer	"/>
-                     <span className="text-slate-500">Clear Filter</span>
+                    
+                    <Tippy content="Clear Filter"
+                    options={{theme: "light",}}>
+                      <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	"/>
+                    </Tippy>
+                     {/* <span className="text-slate-500">Clear Filter</span> */}
                       </Button>
                   </div>
                 </div>

@@ -445,7 +445,7 @@ function Main() {
                     <Lucide icon="Bell" className="w-[18px] h-[18px]" />
                   </a> */}
                 </div>
-                <h1 className="ml-5 mr-3 text-white font-bold">{user?.user_name}</h1>
+                <h1 className="ml-5 mr-3 text-white font-bold">Hi, {user?.user_name}</h1>
                 <Menu className="">
                   <Menu.Button
                     className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
@@ -461,7 +461,7 @@ function Main() {
                     </h4>
                   </Menu.Button>
                   
-                  <Menu.Items className="w-56 mt-1">
+                  <Menu.Items className="w-auto mt-1">
                     {/* <Menu.Item
                       onClick={() => {
                         setSwitchAccount(true);
@@ -491,7 +491,7 @@ function Main() {
                     <>
                     <Menu.Item >
                       <Mail strokeWidth={1} className="w-4 h-4 mr-2" />
-                      <h2>{user?.email}</h2>
+                      <h2 className="text-[14px]">{user?.email}</h2>
                     </Menu.Item>
                     <Menu.Divider />
                     </>
