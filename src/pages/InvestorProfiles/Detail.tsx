@@ -202,6 +202,37 @@ function Main() {
     navigate(`/investor-profile`);
   }
 
+
+  const checkImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+  
+      img.onload = () => resolve(true); // Image loads successfully
+      img.onerror = () => resolve(false); // Error loading image
+    });
+  };
+  
+
+    const [validImages, setValidImages] = useState<{ [key: string]: string }>({}); // State to store valid image URLs
+  
+    useEffect(() => {
+      
+      const validateImages = async () => {
+        const tempValidImages: { [key: string]: string } = {};
+        for (const contact of singleInvesterProfile?.key_contacts || []) {
+          const isValid = await checkImageUrl(contact.image);
+          tempValidImages[contact.name] = isValid ? contact.image : userLinkedinImage;
+        }
+  
+        setValidImages(tempValidImages);
+      };
+  
+      validateImages();
+    }, [singleInvesterProfile?.key_contacts]); 
+
+
+  
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
@@ -452,16 +483,15 @@ function Main() {
                               <div>
                                 <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                   {
-                                    contacts?.image ?
-                                    <img
-                                      alt="Tailwise - Admin Dashboard Template"
-                                      src={contacts?.image}
+                                  //  contacts?.image ?
+                                    <img alt="Tailwise - Admin Dashboard Template"
+                                    src={validImages[contacts.name] || userLinkedinImage}
                                     />
-                                    :
-                                    <img
-                                      alt="Tailwise - Admin Dashboard Template"
-                                      src={userLinkedinImage}
-                                    />
+                                    //  :
+                                    // <img
+                                    //   alt="Tailwise - Admin Dashboard Template"
+                                    //   src={userLinkedinImage}
+                                    // />
                                   }
                                   
                                 </div>
