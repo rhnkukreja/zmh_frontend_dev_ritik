@@ -45,7 +45,7 @@ function CompanyList() {
 
   useEffect(() => {
     return () => {
-      console.log('destory the component company' );
+      console.log('destory the component company');
       dispatch(resetPage());
       dispatch(resetFilter());
     }
@@ -69,7 +69,7 @@ function CompanyList() {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
-    
+
     dispatch(
       setFilter({
         key: "sector",
@@ -138,8 +138,8 @@ function CompanyList() {
         <div className="mt-3.5">
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-            <div className="flex items-center ">
-                <div className="relative mr-5 ">
+              <div className="flex items-center ">
+                <div className="relative mr-3">
                   <Lucide
                     icon="Search"
                     className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
@@ -154,9 +154,14 @@ function CompanyList() {
                 </div>
 
                 <div className="hover:bg-slate-50">
+
                   <Button onClick={handleClearAllFilter}>
-                    <FilterX size={17} strokeWidth={1} className="text-slate-500 mr-3 cursor-pointer	" />
-                    <span className="text-slate-500">Clear Filter</span>
+
+                    <Tippy content="Clear Filter"
+                      options={{ theme: "light", }}>
+                      <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	" />
+                    </Tippy>
+                    {/* <span className="text-slate-500">Clear Filter</span> */}
                   </Button>
                 </div>
               </div>

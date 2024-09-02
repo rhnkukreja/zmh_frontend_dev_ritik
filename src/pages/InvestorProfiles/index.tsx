@@ -171,7 +171,8 @@ function Main() {
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
                 <div className="flex items-center ">
-                  <div className="relative mr-5 ">
+                  
+                  <div className="relative mr-3">
                     <Lucide
                       icon="Search"
                       className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
@@ -196,6 +197,7 @@ function Main() {
                      {/* <span className="text-slate-500">Clear Filter</span> */}
                       </Button>
                   </div>
+
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   <Popover className="inline-block">
