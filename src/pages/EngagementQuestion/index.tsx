@@ -54,11 +54,22 @@ function Main() {
   ] = useState<boolean>(false);
 
   useEffect(() => {
-    dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
-      )
-    );
+
+    if (filters.institution_name) {
+      dispatch(
+        fetchEngagementQuestions(
+          createDynamicURL(`${baseURL}/engagement_questions/`, filters, 1)
+        )
+      );
+    }
+    else {
+      dispatch(
+        fetchEngagementQuestions(
+          createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
+        )
+      );
+    }
+    
     
   }, [page, filters.institution_name]);
 

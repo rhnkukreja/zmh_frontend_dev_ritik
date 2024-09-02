@@ -53,11 +53,21 @@ function ProxyGuideline() {
   const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
 
   useEffect(() => {
+
+    if(filters.year){
+      dispatch(
+        fetchProxyVotingGuidelines(
+          createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, 1)
+        )
+      );
+    }
+    else {
     dispatch(
       fetchProxyVotingGuidelines(
         createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, page)
       )
     );
+  }
   }, [page, filters.year]);
 
 

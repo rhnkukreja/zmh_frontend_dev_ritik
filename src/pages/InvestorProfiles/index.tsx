@@ -32,7 +32,7 @@ function Main() {
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
     const [searchValue, setSearchValue] = useState('');
-
+    
   const {
     loading,
     investersProfile,
@@ -42,15 +42,26 @@ function Main() {
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
   const { user } = useAppSelector((state) => state.authentiction);
-
+  
   useEffect(() => {
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-      )
-    );
+
+    if(filters.institution_name){
+      dispatch(
+        fetchInvestersProfiles(
+          createDynamicURL(`${baseURL}/investor_profile/`, filters, 1)
+        )
+      );
+    }
+    else {
+        dispatch(
+          fetchInvestersProfiles(
+            createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
+          )
+      );
+    }
    
   }, [page, filters.institution_name]);
+ 
 
   useEffect(() => {
     return () => {

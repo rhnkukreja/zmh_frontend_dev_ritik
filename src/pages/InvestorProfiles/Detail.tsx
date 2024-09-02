@@ -446,8 +446,8 @@ function Main() {
                   ) : (
                     <>
                       {singleInvesterProfile?.key_contacts?.map(
-                        (contacts: KeyContact) => (
-                          <div className="flex py-2  flex-col px-4  border-b-2 border-gray-100 ">
+                        (contacts: KeyContact, index:any) => (
+                          <div key={index} className="flex py-2  flex-col px-4  border-b-2 border-gray-100 ">
                             <div className="flex  items-center   border-b border-dashed last:pb-0 last:mb-0 last:border-0">
                               <div>
                                 <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">

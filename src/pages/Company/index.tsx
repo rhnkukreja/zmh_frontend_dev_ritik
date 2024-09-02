@@ -38,9 +38,18 @@ function CompanyList() {
   const [searchValue, setSearchValue] = useState('');
 
   useEffect(() => {
-    dispatch(
-      fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, page))
-    );
+    
+    if (filters) {
+      dispatch(
+        fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, 1))
+      );
+    }
+    else {
+      dispatch(
+        fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, page))
+      );
+    }
+    
   }, [page, filters]);
 
   useEffect(() => {

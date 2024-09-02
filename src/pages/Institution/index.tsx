@@ -47,11 +47,20 @@ function Main() {
     useState<boolean>(false);
 
   useEffect(() => {
-    dispatch(
-      fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, filters, page)
-      )
-    );
+    if(filters.institution_name){
+      dispatch(
+        fetchInstitutions(
+          createDynamicURL(`${baseURL}/institute/`, filters, 1)
+        )
+      );
+    }
+    else {
+      dispatch(
+        fetchInstitutions(
+          createDynamicURL(`${baseURL}/institute/`, filters, page)
+        )
+      );
+    }
   }, [page, filters.institution_name]);
 
   useEffect(() => {
