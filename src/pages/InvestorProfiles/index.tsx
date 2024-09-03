@@ -134,16 +134,13 @@ function Main() {
     dispatch(resetFilter());
     setSearchValue('');
     dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
-      )
-    );
-    dispatch(
       setFilter({
         key: "institution_name",
         value: '',
       })
     );
+
+    dispatch(resetPage());
 
   }
 

@@ -128,16 +128,12 @@ function Main() {
     dispatch(resetFilter());
     setSearchValue('');
     dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, undefined, page)
-      )
-    );
-    dispatch(
       setFilter({
         key: "institution_name",
         value: '',
       })
     );
+    dispatch(resetPage());
 
   }
 

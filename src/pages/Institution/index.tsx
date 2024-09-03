@@ -133,16 +133,13 @@ function Main() {
     dispatch(resetFilter());
     setSearchValue('');
     dispatch(
-      fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, undefined, page)
-      )
-    );
-    dispatch(
       setFilter({
         key: "institution_name",
         value: '',
       })
     );
+    dispatch(resetPage());
+
 
   }
 

@@ -50,6 +50,7 @@ function Main() {
           ...restData,
           user_type: "Admin",
           phone: "",
+          username: restData?.email
         })
       ).unwrap();
 

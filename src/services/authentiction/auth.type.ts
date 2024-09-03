@@ -13,7 +13,7 @@ export class SignUpRequestDTO {
     public phone: string,
     public email: string,
     public password: string,
-    // public username: string,
+    public username: string,
     public user_type: string
   ) {}
 }

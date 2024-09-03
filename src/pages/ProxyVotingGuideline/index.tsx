@@ -141,16 +141,14 @@ function ProxyGuideline() {
     dispatch(resetFilter());
     setSearchValue('');
     dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
-      )
-    );
-    dispatch(
       setFilter({
         key: "year",
         value: '',
       })
     );
+
+    dispatch(resetPage());
+
 
   }
 

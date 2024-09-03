@@ -120,6 +120,9 @@ function CompanyList() {
       })
     );
 
+    dispatch(resetPage());
+
+
   }
 
   return (
