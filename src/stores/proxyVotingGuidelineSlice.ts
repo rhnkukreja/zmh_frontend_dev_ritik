@@ -17,6 +17,7 @@ interface ProxyVotingGuidelineSlice {
   };
   filters: {
     year: string;
+    institution_name: string;
   };
 }
 
@@ -32,6 +33,8 @@ const initialState: ProxyVotingGuidelineSlice = {
   },
   filters: {
     year: "",
+    institution_name: ""
+
   },
 };
 
@@ -85,6 +88,7 @@ const proxyVotingGuidelineSlice = createSlice({
     resetFilter(state) {
       state.filters = {
         year: "",
+        institution_name: ""
       };
     },
   },

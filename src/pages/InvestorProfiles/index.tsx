@@ -48,7 +48,7 @@ function Main() {
     if(filters.institution_name){
       dispatch(
         fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters, 1)
+          createDynamicURL(`${baseURL}/investor_profile/`, filters)
         )
       );
     }

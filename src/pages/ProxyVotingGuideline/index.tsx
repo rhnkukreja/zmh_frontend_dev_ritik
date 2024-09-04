@@ -54,10 +54,10 @@ function ProxyGuideline() {
 
   useEffect(() => {
 
-    if(filters.year){
+    if(filters.institution_name){
       dispatch(
         fetchProxyVotingGuidelines(
-          createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, 1)
+          createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters)
         )
       );
     }
@@ -68,7 +68,7 @@ function ProxyGuideline() {
       )
     );
   }
-  }, [page, filters.year]);
+  }, [page, filters.institution_name]);
 
 
   useEffect(() => {
@@ -107,7 +107,7 @@ function ProxyGuideline() {
   const debouncedSearch = _.debounce((searchedValue) => {
     dispatch(
       setFilter({
-        key: "year",
+        key: "institution_name",
         value: searchedValue,
       })
     );
@@ -142,7 +142,7 @@ function ProxyGuideline() {
     setSearchValue('');
     dispatch(
       setFilter({
-        key: "year",
+        key: "institution_name",
         value: '',
       })
     );

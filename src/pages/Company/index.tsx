@@ -41,7 +41,7 @@ function CompanyList() {
     
     if (filters) {
       dispatch(
-        fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, 1))
+        fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters))
       );
     }
     else {

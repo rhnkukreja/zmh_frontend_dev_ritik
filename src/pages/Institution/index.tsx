@@ -50,7 +50,7 @@ function Main() {
     if(filters.institution_name){
       dispatch(
         fetchInstitutions(
-          createDynamicURL(`${baseURL}/institute/`, filters, 1)
+          createDynamicURL(`${baseURL}/institute/`, filters)
         )
       );
     }
