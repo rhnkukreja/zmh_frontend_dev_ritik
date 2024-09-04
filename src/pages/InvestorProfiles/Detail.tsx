@@ -335,7 +335,7 @@ function Main() {
             )}
           </div>
           <div className="mt-2 flex flex-col lg:flex-row  gap-x-2">
-            <div className="flex flex-col w-full lg:w-[75rem] gap-y-2">
+            <div className="flex flex-col w-full lg:w-[60%] 2xl:w-[75rem] gap-y-2">
               <EditableSection
                 fetchloading={loading}
                 id={Number(params.id)}
@@ -393,7 +393,7 @@ function Main() {
               />
             </div>
 
-            <div className="w-full lg:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
+            <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
               <div className="flex flex-col box">
                 <div
                   className={clsx(
