@@ -45,22 +45,13 @@ function Main() {
   
   useEffect(() => {
 
-    if(filters.institution_name){
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters)
-        )
-      );
-    }
-    else {
         dispatch(
           fetchInvestersProfiles(
             createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
           )
       );
-    }
    
-  }, [page, filters.institution_name]);
+  }, [page]);
  
 
   useEffect(() => {
@@ -104,6 +95,15 @@ function Main() {
         value: searchedValue,
       })
     );
+    
+    const tempFilter = {institution_name: searchedValue};
+
+    dispatch(
+      fetchInvestersProfiles(
+        createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, 1)
+      )
+    );
+
   }, 700);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
@@ -140,6 +140,12 @@ function Main() {
       })
     );
 
+    dispatch(
+      fetchInvestersProfiles(
+        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+      )
+    );
+
     dispatch(resetPage());
 
   }
@@ -164,7 +170,7 @@ function Main() {
                     setAddNewInvesterModalVisible(true);
                   }}
                   variant="primary"
-                  className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
+                  className="bg-theme-2 border-bg-theme-2 group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
                 >
                   <Lucide
                     icon="PenLine"

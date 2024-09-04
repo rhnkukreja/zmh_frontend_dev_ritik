@@ -108,11 +108,11 @@ function CompanyList() {
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchValue('');
-    // dispatch(
-    //   fetchCompanies(
-    //     createDynamicURL(`${baseURL}/company/`, undefined, page)
-    //   )
-    // );
+    dispatch(
+      fetchCompanies(
+        createDynamicURL(`${baseURL}/company/`, undefined, page)
+      )
+    );
     dispatch(
       setFilter({
         key: "sector",
@@ -139,7 +139,7 @@ function CompanyList() {
                   setAddNewCompanyVisible(true);
                 }}
                 variant="primary"
-                className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
+                className="bg-theme-2 border-bg-theme-2 group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
               >
                 <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
                 Add New Company
