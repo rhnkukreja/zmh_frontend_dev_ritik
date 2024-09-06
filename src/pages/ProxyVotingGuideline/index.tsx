@@ -110,6 +110,15 @@ function ProxyGuideline() {
         value: searchTerms,
       })
     );
+
+    const tempFilter = {institution_name: searchedValue};
+
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, tempFilter, 1)
+      )
+    );
+
   }, 700);
 
   const handleSearch = () => { 
@@ -143,6 +152,12 @@ function ProxyGuideline() {
         key: "institution_name",
         value: "",
       })
+    );
+
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
+      )
     );
 
     dispatch(resetPage());
@@ -179,7 +194,7 @@ function ProxyGuideline() {
                     setAddNewProxyVotingGuidelineVisible(true);
                   }}
                   variant="primary"
-                  className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
+                  className="bg-theme-2 border-bg-theme-2 group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
                 >
                   <Lucide
                     icon="PenLine"
