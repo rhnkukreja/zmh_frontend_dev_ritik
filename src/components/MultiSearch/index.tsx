@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
 
@@ -11,6 +11,7 @@ interface MultiSearchBarProps {
 
 const MultiSearchBar: React.FC<MultiSearchBarProps> = ({ onSearch ,  searchTerms , setSearchTerms}) => {
   const [searchValue, setSearchValue] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
  
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -29,6 +30,14 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({ onSearch ,  searchTerms
     onSearch(searchTerms);
    
   };
+  useEffect(() => {
+   if(searchTerms.length > 0){
+    setIsOpen(true);
+   }else{
+    setIsOpen(false);
+   }
+  
+  }, [searchTerms]);
 
   return (
     <div className="relative mr-3">
@@ -48,7 +57,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({ onSearch ,  searchTerms
         />
 
         {searchTerms.length > 0 && (
-          <div className="search-terms-box bg-white mt-2 p-2 border rounded absolute z-50 left-0 right-0">
+         <>
+         {isOpen && <div className="search-terms-box bg-white mt-2 p-2 border rounded absolute z-50 left-0 right-0">
             <div className="flex flex-wrap gap-2">
               {searchTerms.map((term, index) => (
                 <div
@@ -64,21 +74,34 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({ onSearch ,  searchTerms
                   </button>
                 </div>
               ))}
+              
             </div>
+            <div className='flex gap-2'>
             <button
-              className="send-btn bg-primary text-white mt-2 p-1 rounded w-full"
+              className="send-btn bg-primary text-white mt-2 p-1 rounded w-full "
               onClick={handleSend}
               disabled={!searchTerms}
             >
               Search
             </button>
-          </div>
+            <button
+              className="send-btn bg-secondary  mt-2 p-1 rounded w-full basis-1/2"
+              onClick={()=> {
+                setSearchTerms([])
+              }}
+              
+            >
+              Clear
+            </button>
+            </div>
+          </div>}
+         </>
         )}
       </div>
 
-      {searchTerms.length > 0 && <Lucide
-        icon="X"
-       onClick={() => setSearchTerms([])}
+      {searchTerms.length > 0 &&  <Lucide
+        icon={isOpen ? "ChevronUp" : "ChevronDown"}
+       onClick={() => setIsOpen(!isOpen)}
         className="cursor-pointer absolute inset-y-0 right-3 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500 hover:text-red-500"
       />}
 
