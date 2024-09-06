@@ -444,7 +444,7 @@ function Main() {
                     <Lucide icon="Bell" className="w-[18px] h-[18px]" />
                   </a> */}
                 </div>
-                <h1 className="ml-5 mr-3 text-white font-bold">Hi, {user?.user_name}</h1>
+                <h1 className="ml-5 mr-3 text-white font-bold">Hi, {user?.first_name}</h1>
                 <Menu className="">
                   <Menu.Button
                     className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"

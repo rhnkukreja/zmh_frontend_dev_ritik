@@ -47,20 +47,15 @@ function Main() {
   const { user } = useAppSelector((state) => state.authentiction);
 
   useEffect(() => {
-    if (filters.institution_name) {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters)
-        )
+
+        dispatch(
+          fetchInvestersProfiles(
+            createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
+          )
       );
-    } else {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-        )
-      );
-    }
-  }, [page, filters.institution_name]);
+   
+  }, [page]);
+ 
 
   useEffect(() => {
     return () => {
@@ -139,6 +134,12 @@ function Main() {
         key: "institution_name",
         value: [],
       })
+    );
+
+    dispatch(
+      fetchInvestersProfiles(
+        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+      )
     );
 
     dispatch(

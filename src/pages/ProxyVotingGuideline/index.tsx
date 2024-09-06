@@ -55,20 +55,13 @@ function ProxyGuideline() {
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   useEffect(() => {
-    if (filters.institution_name) {
-      dispatch(
-        fetchProxyVotingGuidelines(
-          createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters)
-        )
-      );
-    } else {
-      dispatch(
-        fetchProxyVotingGuidelines(
-          createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, page)
-        )
-      );
-    }
-  }, [page, filters.institution_name]);
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, page)
+      )
+    );
+  }, [page]);
+
 
   useEffect(() => {
     return () => {
@@ -152,6 +145,12 @@ function ProxyGuideline() {
         key: "institution_name",
         value: "",
       })
+    );
+
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
+      )
     );
 
     dispatch(
