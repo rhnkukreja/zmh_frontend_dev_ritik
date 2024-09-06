@@ -100,13 +100,13 @@ function Main() {
       })
     );
 
-    const tempFilter = {institution_name: searchedValue};
+    // const tempFilter = {institution_name: searchedValue};
 
-    dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, tempFilter, 1)
-      )
-    );
+    // dispatch(
+    //   fetchEngagementQuestions(
+    //     createDynamicURL(`${baseURL}/engagement_questions/`, tempFilter, 1)
+    //   )
+    // );
     dispatch(setPage(1));
 
   }, 700);

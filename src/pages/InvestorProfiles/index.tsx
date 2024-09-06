@@ -97,13 +97,13 @@ function Main() {
       })
     );
     
-    const tempFilter = {institution_name: searchedValue};
+    // const tempFilter = {institution_name: searchedValue};
 
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, 1)
-      )
-    );
+    // dispatch(
+    //   fetchInvestersProfiles(
+    //     createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, 1)
+    //   )
+    // );
 
   }, 700);
 

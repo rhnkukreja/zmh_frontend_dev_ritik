@@ -109,7 +109,7 @@ function CompanyList() {
     dispatch(resetFilter());
     setSearchTerms([]);
    
-    setSearchValue('');
+    // setSearchValue('');
     dispatch(
       fetchCompanies(
         createDynamicURL(`${baseURL}/company/`, undefined, page)
