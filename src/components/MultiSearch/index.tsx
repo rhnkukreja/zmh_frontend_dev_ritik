@@ -84,15 +84,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({ onSearch ,  searchTerms
             >
               Search
             </button>
-            <button
-              className="send-btn bg-secondary  mt-2 p-1 rounded w-full basis-1/2"
-              onClick={()=> {
-                setSearchTerms([])
-              }}
-              
-            >
-              Clear
-            </button>
+           
             </div>
           </div>}
          </>
