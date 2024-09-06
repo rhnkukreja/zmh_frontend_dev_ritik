@@ -218,12 +218,16 @@ function createDynamicURL<T extends Record<string, string>>(
 
   if (filters) {
     for (const key in filters) {
-      if (filters[key]) {
-        queryParams.append(key, filters[key]);
+      const value = filters[key];
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item) queryParams.append(key, item);
+        });
+      } else if (value) {
+        queryParams.append(key, value);
       }
     }
   }
-
   const queryString = queryParams.toString();
   if (page && queryString) {
     return `${baseURL}?${queryString}&page=${page}`;

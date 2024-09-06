@@ -19,6 +19,7 @@ import Table from "@/components/Base/Table";
 import dayjs from "dayjs";
 
 import LoadingIcon from "../../components/Base/LoadingIcon";
+import { Helmet } from "react-helmet-async";
 
 function Main() {
   const location = useLocation();
@@ -37,6 +38,11 @@ function Main() {
   }, [ticker]);
 
   return (
+    <>
+      <Helmet>
+        <title>Investor Dashboard - ZMH Analytics</title>
+        
+      </Helmet>
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 xl:col-span-8">
         <div>
@@ -293,6 +299,7 @@ function Main() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

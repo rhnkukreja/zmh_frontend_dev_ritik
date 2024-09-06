@@ -1,5 +1,5 @@
 import Lucide from "@/components/Base/Lucide";
-import { Menu, Popover } from "@/components/Base/Headless";
+import { Menu, Popover, Tab } from "@/components/Base/Headless";
 import { FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -13,7 +13,7 @@ import {
   resetPage,
   setPage,
 } from "@/stores/investersProfileSlice";
-import dayjs from "dayjs";
+
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
@@ -23,7 +23,9 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
-import { Filter, FilterX } from "lucide-react";
+import { FilterX } from "lucide-react";
+import MultiSearchBar from "@/components/MultiSearch";
+
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -31,8 +33,9 @@ function Main() {
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
-    const [searchValue, setSearchValue] = useState('');
-    
+  const [tab, setTab] = useState<"institutional" | "individual">("institutional");
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+
   const {
     loading,
     investersProfile,
@@ -42,7 +45,7 @@ function Main() {
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
   const { user } = useAppSelector((state) => state.authentiction);
-  
+
   useEffect(() => {
 
         dispatch(
@@ -56,17 +59,15 @@ function Main() {
 
   useEffect(() => {
     return () => {
-      console.log('destory the component investor' );
       dispatch(resetPage());
       dispatch(
         setFilter({
           key: "institution_name",
-          value: '',
+          value: [],
         })
       );
-    }
-  }, [])
-  
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -88,11 +89,11 @@ function Main() {
     navigate(`/investor-profile/${id}`);
   };
 
-  const debouncedSearch = _.debounce((searchedValue) => {
+  const debouncedSearch = _.debounce((searchTerms) => {
     dispatch(
       setFilter({
         key: "institution_name",
-        value: searchedValue,
+        value: searchTerms,
       })
     );
     
@@ -105,11 +106,6 @@ function Main() {
     );
 
   }, 700);
-
-  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearchValue(e.target.value);
-    debouncedSearch(e.target.value);
-  }
 
   function handleApplyFilter() {
     dispatch(
@@ -132,11 +128,11 @@ function Main() {
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
-    setSearchValue('');
+    setSearchTerms([]);
     dispatch(
       setFilter({
         key: "institution_name",
-        value: '',
+        value: [],
       })
     );
 
@@ -146,15 +142,23 @@ function Main() {
       )
     );
 
-    dispatch(resetPage());
+    dispatch(
+      fetchInvestersProfiles(
+        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+      )
+    );
 
-  }
+    dispatch(resetPage());
+  };
 
   const getFilterCount = useMemo(() => {
     const { institution_name, ...allFilters } = filters;
     return Object.values(allFilters).filter((value) => value !== "").length;
   }, [filters]);
 
+  const handleSearch = () => {
+    debouncedSearch(searchTerms);
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -185,33 +189,27 @@ function Main() {
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
                 <div className="flex items-center ">
-                  
-                  <div className="relative mr-3">
-                    <Lucide
-                      icon="Search"
-                      className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
-                    />
-                    <FormInput
-                      type="text"
-                      placeholder="Search Institute Name"
-                      className="pl-9 sm:w-64 rounded-[0.5rem]"
-                      onChange={handleSearch}
-                      value={searchValue}
-                    />
-                  </div>
+                  <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                  />
 
                   <div className="hover:bg-slate-50">
-                  
                     <Button onClick={handleClearAllFilter}>
-                    
-                    <Tippy content="Clear Filter"
-                    options={{theme: "light",}}>
-                      <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	"/>
-                    </Tippy>
-                     {/* <span className="text-slate-500">Clear Filter</span> */}
-                      </Button>
+                      <Tippy
+                        content="Clear Filter"
+                        options={{ theme: "light" }}
+                      >
+                        <FilterX
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                      {/* <span className="text-slate-500">Clear Filter</span> */}
+                    </Button>
                   </div>
-
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   <Popover className="inline-block">
@@ -295,96 +293,83 @@ function Main() {
                   </Popover>
                 </div>
               </div>
-              <div className="overflow-auto xl:overflow-visible">
-                <TableWrapper isLoading={loading}>
-                  <Table>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Institute Name
-                        </Table.Td>
 
-                        {/* <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Created Date
-                        </Table.Td>
-                        <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Updated Date
-                        </Table.Td> */}
-                        <Table.Td className="py-2  font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Actions
-                        </Table.Td>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {investersProfile?.length > 0 &&
-                        investersProfile.map((profile: InvestersProfile) => (
-                          <Table.Tr
-                            key={profile.id}
-                            className="[&_td]:last:border-b-0"
-                          >
-                            <Table.Td className=" py-2 border-dashed dark:bg-darkmode-600">
-                              <div className="whitespace-nowrap capitalize">
-                                {profile?.institution_name}
-                              </div>
-                            </Table.Td>
+              <div className="overflow-auto xl:overflow-visible px-5">
+                <Tab.Group>
+                  <Tab.List variant="link-tabs">
+                    <Tab>
+                      <Tab.Button className="w-full py-2" as="button" onClick={()=>{
+                        setTab("institutional")
+                      }}>
+                        Institutional Investors
+                      </Tab.Button>
+                    </Tab>
+                    <Tab>
+                      <Tab.Button className="w-full py-2" as="button" onClick={()=>{
+                        setTab("individual")
+                      }}>
+                        Individual Investors
+                      </Tab.Button>
+                    </Tab>
+                  </Tab.List>
+                  <Tab.Panels className="mt-5">
+                    <Tab.Panel className="leading-relaxed">
+                      <TableWrapper isLoading={loading}>
+                        {investersProfile?.length > 0 &&
+                          investersProfile.map(
+                            (profile: InvestersProfile, index: number) => {
+                              return (
+                                <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
+                                  <div className="ml-5 flex items-center">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
+                                      {(page - 1) * 10 + index + 1}
+                                    </div>
+                                    <Tippy
+                                      content={profile?.institution_name}
+                                      options={{
+                                        theme: "light",
+                                      }}
+                                    >
+                                      <div className="font-medium text-[0.94rem] truncate ">
+                                        {profile?.institution_name}
+                                      </div>
+                                    </Tippy>
+                                  </div>
 
-                            {/* <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
-                              <div className="whitespace-nowrap ">
-                                {dayjs(profile?.date_created).format(
-                                  "MMMM , YYYY"
-                                )}
-                              </div>
-                            </Table.Td>
-                            <Table.Td className="py-2   border-dashed dark:bg-darkmode-600">
-                              <div className="whitespace-nowrap ">
-                                {dayjs(profile?.date_updated).format(
-                                  "MMMM , YYYY"
-                                )}
-                              </div>
-                            </Table.Td> */}
-                            <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                              <div className="flex gap-3 justify-center">
-                                <Tippy
-                                  content="View"
-                                  options={{
-                                    theme: "dark",
-                                  }}
-                                >
-                                  <Lucide
-                                    onClick={() => {
-                                      gotoDetailPage(profile.id);
+                                  <Tippy
+                                    content="View"
+                                    options={{
+                                      theme: "dark",
                                     }}
-                                    icon="Eye"
-                                    className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
-                                  />
-                                </Tippy>
-                                {/* <Tippy
-                                  content="Download"
-                                  options={{
-                                    theme: "dark",
-                                  }}
-                                >
-                                  <Lucide
-                                    icon="Download"
-                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                  />
-                                </Tippy> */}
-                              </div>
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                    </Table.Tbody>
-                  </Table>
-                </TableWrapper>
+                                  >
+                                    <Lucide
+                                      onClick={() => {
+                                        gotoDetailPage(profile.id);
+                                      }}
+                                      icon="Eye"
+                                      className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                    />
+                                  </Tippy>
+                                </div>
+                              );
+                            }
+                          )}
+                      </TableWrapper>
+                    </Tab.Panel>
+                    <Tab.Panel className="leading-relaxed">
+                      <p className="text-center">No data found</p>
+                    </Tab.Panel>
+                  </Tab.Panels>
+                </Tab.Group>
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                {investersProfile?.length > 0 && (
+                {tab === "institutional" && investersProfile?.length > 0 && (
                   <CPagination
                     page={page}
                     totalPages={totalPages}
-                    handleNextPage={handleNextPage}
+                    // handleNextPage={handleNextPage}
                     handlePageChange={handlePageChange}
-                    handlePreviousPage={handlePreviousPage}
+                    // handlePreviousPage={handlePreviousPage}
                   />
                 )}
                 {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">

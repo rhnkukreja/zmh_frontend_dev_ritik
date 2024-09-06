@@ -26,11 +26,12 @@ import { baseURL } from "@/constant";
 import { AddEditPolicyGuideline } from "./components/AddEditProxyVotingGuideline";
 import PdfViewer from "@/components/PdfView";
 import { Filter, FilterX } from "lucide-react";
+import MultiSearchBar from "@/components/MultiSearch";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState('');
+
 
   const {
     loading,
@@ -51,6 +52,7 @@ function ProxyGuideline() {
 
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
   const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   useEffect(() => {
     dispatch(
@@ -63,16 +65,16 @@ function ProxyGuideline() {
 
   useEffect(() => {
     return () => {
-      console.log('destory the component proxy' );
+      console.log("destory the component proxy");
       dispatch(resetPage());
       dispatch(
         setFilter({
           key: "year",
-          value: '',
+          value: "",
         })
       );
-    }
-  }, [])
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -94,11 +96,11 @@ function ProxyGuideline() {
     setCurrentPdfDoc(pdf);
   };
 
-  const debouncedSearch = _.debounce((searchedValue) => {
+  const debouncedSearch = _.debounce((searchTerms) => {
     dispatch(
       setFilter({
         key: "institution_name",
-        value: searchedValue,
+        value: searchTerms,
       })
     );
 
@@ -112,10 +114,9 @@ function ProxyGuideline() {
 
   }, 700);
 
-  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearchValue(e.target.value);
-    debouncedSearch(e.target.value);
-  }
+  const handleSearch = () => { 
+    debouncedSearch(searchTerms);
+  };
 
   function handleApplyFilter() {
     dispatch(
@@ -138,11 +139,11 @@ function ProxyGuideline() {
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
-    setSearchValue('');
+    setSearchTerms([]);
     dispatch(
       setFilter({
         key: "institution_name",
-        value: '',
+        value: "",
       })
     );
 
@@ -152,10 +153,14 @@ function ProxyGuideline() {
       )
     );
 
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
+      )
+    );
+
     dispatch(resetPage());
-
-
-  }
+  };
 
   const getFilterCount = useMemo(() => {
     const { ...allFilters } = filters;
@@ -203,30 +208,26 @@ function ProxyGuideline() {
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
                 <div className="flex items-center ">
-                <div className="relative mr-3">
-                    <Lucide
-                      icon="Search"
-                      className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
-                    />
-                    <FormInput
-                      type="text"
-                      placeholder="Search Institute Name"
-                      className="pl-9 sm:w-64 rounded-[0.5rem]"
-                      onChange={handleSearch}
-                      value={searchValue}
-                    />
-                  </div>
+                <MultiSearchBar
+                  onSearch={handleSearch}
+                  searchTerms={searchTerms}
+                  setSearchTerms={setSearchTerms}
+                 />
 
                   <div className="hover:bg-slate-50">
-                  
                     <Button onClick={handleClearAllFilter}>
-                    
-                    <Tippy content="Clear Filter"
-                    options={{theme: "light",}}>
-                      <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	"/>
-                    </Tippy>
-                     {/* <span className="text-slate-500">Clear Filter</span> */}
-                      </Button>
+                      <Tippy
+                        content="Clear Filter"
+                        options={{ theme: "light" }}
+                      >
+                        <FilterX
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                      {/* <span className="text-slate-500">Clear Filter</span> */}
+                    </Button>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
@@ -372,36 +373,24 @@ function ProxyGuideline() {
                                     }}
                                   >
                                     <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                      {guideline?.category.toString() === "nan"
-                                        ? "--"
-                                        : guideline?.category}
+                                      {guideline?.category}                                    
                                     </div>
                                   </Tippy>
                                 </Table.Td>
                               )}
                               {guideline?.sub_category && (
                                 <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.sub_category &&
-                                  guideline?.sub_category.toString() === "nan"
-                                    ? "NA"
-                                    : guideline?.sub_category}
+                                  {guideline?.sub_category}
                                 </Table.Td>
                               )}
                               {guideline?.section && (
                                 <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.section &&
-                                  guideline?.section.toString() === "nan"
-                                    ? "NA"
-                                    : guideline?.section}
+                                  {guideline?.section}
                                 </Table.Td>
                               )}
                               {guideline?.policy_guidelines && (
                                 <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.policy_guidelines &&
-                                  guideline?.policy_guidelines.toString() ===
-                                    "nan"
-                                    ? "NA"
-                                    : guideline?.policy_guidelines}
+                                  {guideline?.policy_guidelines}
                                 </Table.Td>
                               )}
                               {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
@@ -489,9 +478,9 @@ function ProxyGuideline() {
                   <CPagination
                     page={page}
                     totalPages={totalPages}
-                    handleNextPage={handleNextPage}
+                    // handleNextPage={handleNextPage}
                     handlePageChange={handlePageChange}
-                    handlePreviousPage={handlePreviousPage}
+                    // handlePreviousPage={handlePreviousPage}
                   />
                 </div>
               )}

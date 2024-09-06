@@ -18,6 +18,7 @@ interface CompanySliceState {
   };
   filters: {
     sector: string;
+    institution_name: string[];
   };
 }
 
@@ -34,6 +35,7 @@ const initialState: CompanySliceState = {
   },
   filters: {
     sector: "",
+    institution_name: [],
   },
 };
 
@@ -82,14 +84,15 @@ const companySlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
-        value: string;
+        value: string | string[];
       }>
     ) {
-      state.filters[action.payload.key] = action.payload.value;
+      state.filters[action.payload.key] = action.payload.value as any;
     },
     resetFilter(state) {
       state.filters = {
         sector: "",
+        institution_name: [],
       };
     },
   },

@@ -23,7 +23,7 @@ interface nvestersProfileSlice {
   };
   filters: {
     region: string;
-    institution_name: string;
+    institution_name: string[];
   };
 }
 
@@ -40,7 +40,7 @@ const initialState: nvestersProfileSlice = {
   },
   filters: {
     region: "",
-    institution_name: "",
+    institution_name: [],
   },
 };
 
@@ -94,10 +94,10 @@ const investersProfileSlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
-        value: string;
+        value: string | string[];
       }>
     ) {
-      state.filters[action.payload.key] = action.payload.value;
+      state.filters[action.payload.key] = action.payload.value as any;
     },
 
     resetFilter(state) {
@@ -105,7 +105,7 @@ const investersProfileSlice = createSlice({
         region: "",
         institution_name: state.filters.institution_name
           ? state.filters.institution_name
-          : "",
+          : [],
       };
     },
   },

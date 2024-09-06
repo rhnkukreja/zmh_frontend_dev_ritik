@@ -17,11 +17,13 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { AddEditCompany } from "./component/CreateAndEditCompany";
 import { CompanyData } from "@/types/company";
-import { FormInput } from "@/components/Base/Form";
+
 import { useNavigate } from "react-router-dom";
-import { Menu } from "@/components/Base/Headless";
+
 import Tippy from "@/components/Base/Tippy";
 import { FilterX } from "lucide-react";
+import MultiSearchBar from "@/components/MultiSearch";
+import _ from "lodash";
 
 function CompanyList() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -35,7 +37,7 @@ function CompanyList() {
     useState<boolean>(false);
   const [selectedCompany] = useState<CompanyData | null>(null);
   const { user } = useAppSelector((state) => state.authentiction);
-  const [searchValue, setSearchValue] = useState('');
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   useEffect(() => {
     
@@ -76,16 +78,14 @@ function CompanyList() {
     dispatch(setPage(newPage));
   };
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
-
+  const debouncedSearch = _.debounce((searchTerms) => {
     dispatch(
       setFilter({
-        key: "sector",
-        value: e.target.value,
+        key: "institution_name",
+        value: searchTerms,
       })
     );
-  };
+  }, 700);
 
   const handleApplyFilter = () => {
     dispatch(
@@ -107,6 +107,8 @@ function CompanyList() {
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
+    setSearchTerms([]);
+   
     setSearchValue('');
     dispatch(
       fetchCompanies(
@@ -115,8 +117,8 @@ function CompanyList() {
     );
     dispatch(
       setFilter({
-        key: "sector",
-        value: '',
+        key: "institution_name",
+        value: [],
       })
     );
 
@@ -124,6 +126,10 @@ function CompanyList() {
 
 
   }
+
+  const handleSearch = () => {
+    debouncedSearch(searchTerms);
+  };
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -151,19 +157,11 @@ function CompanyList() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-                <div className="relative mr-3">
-                  <Lucide
-                    icon="Search"
-                    className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
+              <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
                   />
-                  <FormInput
-                    type="text"
-                    placeholder="Search Institute Name"
-                    className="pl-9 sm:w-64 rounded-[0.5rem]"
-                    onChange={handleSearch}
-                    value={searchValue}
-                  />
-                </div>
 
                 <div className="hover:bg-slate-50">
 
@@ -259,9 +257,9 @@ function CompanyList() {
                 <CPagination
                   page={page}
                   totalPages={totalPages}
-                  handleNextPage={handleNextPage}
+                  // handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
-                  handlePreviousPage={handlePreviousPage}
+                 // handlePreviousPage={handlePreviousPage}
                 />
               </div>
             )}

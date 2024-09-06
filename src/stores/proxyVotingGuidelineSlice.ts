@@ -17,7 +17,7 @@ interface ProxyVotingGuidelineSlice {
   };
   filters: {
     year: string;
-    institution_name: string;
+    institution_name: string[];
   };
 }
 
@@ -33,8 +33,7 @@ const initialState: ProxyVotingGuidelineSlice = {
   },
   filters: {
     year: "",
-    institution_name: ""
-
+    institution_name: [],
   },
 };
 
@@ -80,15 +79,15 @@ const proxyVotingGuidelineSlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
-        value: string;
+        value: string | string[];
       }>
     ) {
-      state.filters[action.payload.key] = action.payload.value;
+      state.filters[action.payload.key] = action.payload.value as any;
     },
     resetFilter(state) {
       state.filters = {
         year: "",
-        institution_name: ""
+        institution_name: [],
       };
     },
   },

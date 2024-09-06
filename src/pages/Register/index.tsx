@@ -17,6 +17,7 @@ import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 interface FormInputs {
   first_name: string;
@@ -65,6 +66,10 @@ function Main() {
 
   return (
     <>
+     <Helmet>
+        <title>ZMH Analytics - ZMH Advisors</title>
+        
+      </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
           className={clsx([
