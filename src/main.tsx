@@ -8,9 +8,13 @@ import "./assets/css/app.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { PersistGate } from "redux-persist/integration/react";
+import { HelmetProvider } from "react-helmet-async";
+
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <BrowserRouter>
+  <HelmetProvider>
+
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <ToastContainer
@@ -24,11 +28,13 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           draggable
           pauseOnHover
           theme="light"
-        />
+          />
 
         <Router />
+      
       </PersistGate>
     </Provider>
+          </HelmetProvider>
     <ScrollToTop />
   </BrowserRouter>
 );

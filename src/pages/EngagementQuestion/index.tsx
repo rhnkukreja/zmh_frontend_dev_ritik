@@ -27,12 +27,11 @@ import { AddEditEngagementQuestion } from "./components/AddEditEngagementQuestio
 import { EngagementQuestions } from "@/types/engagementQuestions";
 import dayjs from "dayjs";
 import { FilterX } from "lucide-react";
+import MultiSearchBar from "@/components/MultiSearch";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState('');
-
 
   const {
     questions,
@@ -47,6 +46,7 @@ function Main() {
 
   const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
     useState<EngagementQuestions | null>(null);
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   const [
     addNewEngagementQuestionModalVisible,
@@ -54,37 +54,33 @@ function Main() {
   ] = useState<boolean>(false);
 
   useEffect(() => {
-
     if (filters.institution_name) {
       dispatch(
         fetchEngagementQuestions(
           createDynamicURL(`${baseURL}/engagement_questions/`, filters, 1)
         )
       );
-    }
-    else {
+    } else {
       dispatch(
         fetchEngagementQuestions(
           createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
         )
       );
     }
-    
-    
   }, [page, filters.institution_name]);
 
   useEffect(() => {
     return () => {
-      console.log('destory the component engagement' );
+      console.log("destory the component engagement");
       dispatch(resetPage());
       dispatch(
         setFilter({
           key: "institution_name",
-          value: '',
+          value: "",
         })
       );
-    }
-  }, [])
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -102,19 +98,19 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
-  const debouncedSearch = _.debounce((searchedValue) => {
+  const debouncedSearch = _.debounce((searchTerms) => {
     dispatch(
       setFilter({
         key: "institution_name",
-        value: searchedValue,
+        value: searchTerms,
       })
     );
   }, 700);
 
-  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearchValue(e.target.value);
-    debouncedSearch(e.target.value);
+  function handleSearch() {
+    debouncedSearch(searchTerms);
   }
+
   function handleApplyFilter() {
     dispatch(
       fetchEngagementQuestions(
@@ -126,16 +122,15 @@ function Main() {
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
-    setSearchValue('');
+    setSearchTerms([]);
     dispatch(
       setFilter({
         key: "institution_name",
-        value: '',
+        value: [],
       })
     );
     dispatch(resetPage());
-
-  }
+  };
 
   const getFilterCount = useMemo(() => {
     const { institution_name, ...allFilters } = filters;
@@ -161,6 +156,25 @@ function Main() {
       setSelectedEngagementQuestion(null);
     }
   }, [addNewEngagementQuestionModalVisible]);
+
+  const groupedQuestions = questions?.reduce((acc: any, question: any) => {
+    const institutionName = question?.institution_name;
+    if (!acc[institutionName]) {
+      acc[institutionName] = [];
+    }
+    acc[institutionName].push(question);
+    return acc;
+  }, {});
+
+  const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+
+  // Toggle the group visibility
+  const toggleGroup = (institutionName: string) => {
+    setOpenGroups((prevState) => ({
+      ...prevState,
+      [institutionName]: !prevState[institutionName], // Toggle current state
+    }));
+  };
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
@@ -187,33 +201,24 @@ function Main() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-                
-                <div className="relative mr-3">
-                  <Lucide
-                    icon="Search"
-                    className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
-                  />
-                  <FormInput
-                    type="text"
-                    placeholder="Search Institute Name"
-                    className="pl-9 sm:w-64 rounded-[0.5rem]"
-                    onChange={handleSearch}
-                    value={searchValue}
-                  />
-                </div>
+                <MultiSearchBar
+                  onSearch={handleSearch}
+                  searchTerms={searchTerms}
+                  setSearchTerms={setSearchTerms}
+                />
 
                 <div className="hover:bg-slate-50">
-
                   <Button onClick={handleClearAllFilter}>
-
-                    <Tippy content="Clear Filter"
-                      options={{ theme: "light", }}>
-                      <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	" />
+                    <Tippy content="Clear Filter" options={{ theme: "light" }}>
+                      <FilterX
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
                     </Tippy>
                     {/* <span className="text-slate-500">Clear Filter</span> */}
                   </Button>
                 </div>
-
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                 <Popover className="inline-block">
@@ -344,7 +349,7 @@ function Main() {
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Engagement Questions
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-medium text-nowrap bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                         Engagement Date
                       </Table.Td>
 
@@ -353,94 +358,129 @@ function Main() {
                       </Table.Td>
                     </Table.Tr>
                   </Table.Thead>
+
                   <Table.Tbody>
-                    {questions?.length > 0 ? (
-                      questions?.map((question: any) => (
-                        <Table.Tr
-                          key={question?.id}
-                          className="[&_td]:last:border-b-0"
-                        >
-                          <Table.Td className=" py-2 border-dashed dark:bg-darkmode-600">
-                            <div className=" font-medium   whitespace-nowrap capitalize">
-                              {question?.institution_name}
-                            </div>
-                          </Table.Td>
-
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap capitalize">
-                              {question?.type_of_engagement +
-                                "-" +
-                                question?.category}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <Tippy
-                              content={question?.engagement_question}
-                              options={{
-                                theme: "light",
-                              }}
-                            >
-                              <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                {question?.engagement_question}
-                              </div>
-                            </Tippy>
-                          </Table.Td>
-
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap capitalize">
-                              {question?.formatted_engagement_date}
-                            </div>
-                          </Table.Td>
-
-                          <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                            <div className="flex gap-3 justify-center">
-                              <Tippy
-                                content="View"
-                                options={{
-                                  theme: "dark",
-                                }}
+                    <>
+                      {groupedQuestions ? (
+                        Object.entries(groupedQuestions).map(
+                          ([institutionName, institutionQuestions]: [
+                            string,
+                            any
+                          ]) => (
+                            <>
+                              <Table.Tr
+                                className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer"
+                                onClick={() => toggleGroup(institutionName)}
                               >
-                                <Lucide
-                                  onClick={() => {
-                                    navigate(
-                                      `/engagement-question/${question?.id}`
-                                    );
-                                  }}
-                                  icon="Eye"
-                                  className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                />
-                              </Tippy>
-
-                              {user?.user_type === "Admin" && (
-                                <Tippy
-                                  content="Edit"
-                                  options={{
-                                    theme: "dark",
-                                  }}
+                                <Table.Td
+                                  colSpan={5}
+                                  className="font-semibold py-2"
                                 >
-                                  <Lucide
-                                    onClick={() => {
-                                      onEditClickHandler(question);
-                                    }}
-                                    icon="PenLine"
-                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                  />
-                                </Tippy>
-                              )}
-                            </div>
+                                  <div className="flex flex-row justify-start items-center">
+                                    <Tippy
+                                      content={institutionName}
+                                      options={{ theme: "light" }}
+                                    >
+                                      {institutionName}
+                                    </Tippy>
+                                    <button className="ml-2 text-blue-500">
+                                      {openGroups[institutionName] ? (
+                                        <Lucide
+                                          icon="ChevronUp"
+                                          className=" w-6 h-6 mr-2 text-black"
+                                        />
+                                      ) : (
+                                        <Lucide
+                                          icon="ChevronDown"
+                                          className=" w-6 h-6 mr-2 text-black"
+                                        />
+                                      )}
+                                    </button>
+                                  </div>
+                                </Table.Td>
+                              </Table.Tr>
+
+                              {openGroups[institutionName] &&
+                                Array.isArray(institutionQuestions) &&
+                                institutionQuestions.map((question: any) => (
+                                  <Table.Tr
+                                    key={question?.id}
+                                    className="[&_td]:last:border-b-0"
+                                  >
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600"></Table.Td>
+
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                      <div className="whitespace-nowrap capitalize">
+                                        {question?.engagement_with_category}
+                                      </div>
+                                    </Table.Td>
+
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                      <Tippy
+                                        content={question?.engagement_question}
+                                        options={{ theme: "light" }}
+                                      >
+                                        <div className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
+                                          {question?.engagement_question}
+                                        </div>
+                                      </Tippy>
+                                    </Table.Td>
+
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                      <div className="whitespace-nowrap capitalize">
+                                        {question?.formatted_engagement_date}
+                                      </div>
+                                    </Table.Td>
+
+                                    <Table.Td className="py-2 w-20 relative box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] border-x-0 dark:bg-darkmode-600">
+                                      <div className="flex gap-3 justify-center">
+                                        <Tippy
+                                          content="View"
+                                          options={{ theme: "light" }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(
+                                                `/engagement-question/${question?.id}`
+                                              )
+                                            }
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
+
+                                        {user?.user_type === "Admin" && (
+                                          <Tippy
+                                            content="Edit"
+                                            options={{ theme: "light" }}
+                                          >
+                                            <Lucide
+                                              onClick={() =>
+                                                onEditClickHandler(question)
+                                              }
+                                              icon="PenLine"
+                                              className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                            />
+                                          </Tippy>
+                                        )}
+                                      </div>
+                                    </Table.Td>
+                                  </Table.Tr>
+                                ))}
+                            </>
+                          )
+                        )
+                      ) : (
+                        <Table.Tr>
+                          <Table.Td
+                            colSpan={5}
+                            className="py-10 text-center text-slate-500"
+                          >
+                            No engagement questions.
                           </Table.Td>
                         </Table.Tr>
-                      ))
-                    ) : (
-                      <Table.Tr>
-                        <Table.Td
-                          colSpan={7}
-                          className="py-10 text-center text-slate-500"
-                        >
-                          No engagement questions.
-                        </Table.Td>
-                      </Table.Tr>
-                    )}
+                      )}
+                    </>
                   </Table.Tbody>
                 </Table>
               </TableWrapper>
@@ -450,9 +490,9 @@ function Main() {
                 <CPagination
                   page={page}
                   totalPages={totalPages}
-                  handleNextPage={handleNextPage}
+                  // handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
-                  handlePreviousPage={handlePreviousPage}
+                  // handlePreviousPage={handlePreviousPage}
                 />
               )}
               {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">

@@ -24,6 +24,7 @@ import { filterMenu, getColorForCharacter } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
 import { Mail } from "lucide-react";
+import { persistor } from "@/stores/store";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -147,7 +148,7 @@ function Main() {
               href=""
               className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
             >
-              <div className="flex items-center justify-center w-[34px] h-[34px] transition-transform ease-in-out group">
+              <div className="flex items-center justify-center w-[40px] h-[40px] transition-transform ease-in-out group">
                 <div className="w-full h-full overflow-hidden transition-transform duration-500 ease-in-out">
                   <img
                     alt="Logo"
@@ -504,8 +505,9 @@ function Main() {
                     </Menu.Item>
                     <Menu.Item
                       onClick={() => {
-                        navigate("login");
-                        dispatch(logout());
+                          navigate("login");
+                          dispatch(logout());
+                          persistor.purge();
                       }}
                     >
                       <Lucide icon="Power" className="w-4 h-4 mr-2" />

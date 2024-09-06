@@ -24,11 +24,12 @@ import { Institutions } from "@/types/institutions";
 import { AddEditInstitution } from "./components/CreateAndEditInstitution";
 import dayjs from "dayjs";
 import { FilterX } from "lucide-react";
+import MultiSearchBar from "@/components/MultiSearch";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState('');
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   const {
     institutions,
@@ -92,19 +93,18 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
-  const debouncedSearch = _.debounce((searchedValue) => {
+  const debouncedSearch = _.debounce((searchTerms) => {
     dispatch(
       setFilter({
         key: "institution_name",
-        value: searchedValue,
+        value: searchTerms,
       })
     );
   }, 700);
 
-  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearchValue(e.target.value);
-    debouncedSearch(e.target.value);
-  }
+  const handleSearch = () => { 
+    debouncedSearch(searchTerms);
+  };
 
   function handleApplyFilter() {
     dispatch(
@@ -131,7 +131,7 @@ function Main() {
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
-    setSearchValue('');
+    setSearchTerms([]);
     dispatch(
       setFilter({
         key: "institution_name",
@@ -180,19 +180,11 @@ function Main() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-                <div className="relative mr-3">
-                  <Lucide
-                    icon="Search"
-                    className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
-                  />
-                  <FormInput
-                    type="text"
-                    placeholder="Search Institute Name"
-                    className="pl-9 sm:w-64 rounded-[0.5rem]"
-                    onChange={handleSearch}
-                    value={searchValue}
-                  />
-                </div>
+              <MultiSearchBar
+                  onSearch={handleSearch}
+                  searchTerms={searchTerms}
+                  setSearchTerms={setSearchTerms}
+                 />
 
                 <div className="hover:bg-slate-50">
 
@@ -409,9 +401,9 @@ function Main() {
                             )}
                           </Table.Td> */}
 
-                          <Table.Td className="py-2  bg-white border-slate-200/80">
+                         {institution?.region && <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution?.region}
-                          </Table.Td>
+                          </Table.Td>}
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution.investor_type}
                           </Table.Td>
@@ -420,16 +412,18 @@ function Main() {
                           </Table.Td> */}
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
-                              {dayjs(institution?.date_created).format(
+                           { institution?.date_created}
+                              {/* {dayjs(institution?.date_created).format(
                                 "MMMM , YYYY"
-                              )}
+                              )} */}
                             </p>
                           </Table.Td>
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
-                              {dayjs(institution?.date_updated).format(
+                              {institution?.date_updated}
+                              {/* {dayjs(institution?.date_updated).format(
                                 "MMMM , YYYY"
-                              )}
+                              )} */}
                             </p>
                           </Table.Td>
 
@@ -490,9 +484,9 @@ function Main() {
               <CPagination
                 page={page}
                 totalPages={totalPages}
-                handleNextPage={handleNextPage}
+                // handleNextPage={handleNextPage}
                 handlePageChange={handlePageChange}
-                handlePreviousPage={handlePreviousPage}
+                // handlePreviousPage={handlePreviousPage}
               />
             </div>
           </div>
