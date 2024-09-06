@@ -111,7 +111,7 @@ function ProxyGuideline() {
       })
     );
 
-    const tempFilter = {institution_name: searchedValue};
+    const tempFilter = {institution_name: searchTerms};
 
     dispatch(
       fetchProxyVotingGuidelines(

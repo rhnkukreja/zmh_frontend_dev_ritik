@@ -102,7 +102,7 @@ function Main() {
       })
     );
     
-    const tempFilter = {institution_name: searchedValue};
+    const tempFilter = {institution_name: searchTerms};
 
     dispatch(
       fetchInvestersProfiles(

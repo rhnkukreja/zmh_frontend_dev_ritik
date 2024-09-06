@@ -105,8 +105,8 @@ function Main() {
         value: searchTerms,
       })
     );
-
-    const tempFilter = {institution_name: searchedValue};
+/// @saad see here no find searchedValue 
+    const tempFilter = {institution_name: searchTerms};
 
     dispatch(
       fetchEngagementQuestions(
