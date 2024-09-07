@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 
 import _ from "lodash";
 import Button from "@/components/Base/Button";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -30,11 +30,14 @@ import { FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { ChevronLeft } from "lucide-react";
-
+import {  setPage } from "@/stores/investersProfileSlice";
 
 function Main() {
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const { currentPage } = location.state || {};
+
   const { control } = useForm();
 
   const dispatch: AppDispatch = useAppDispatch();
@@ -199,6 +202,7 @@ function Main() {
   };
 
   const backToPreviousPage = () => {
+    dispatch(setPage(currentPage));
     navigate(`/investor-profile`);
   }
 

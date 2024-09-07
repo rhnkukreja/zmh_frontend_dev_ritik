@@ -17,7 +17,7 @@ import {
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { setFilter } from "@/stores/investersProfileSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
@@ -30,7 +30,6 @@ import MultiSearchBar from "@/components/MultiSearch";
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
   const [tab, setTab] = useState<"institutional" | "individual">("institutional");
@@ -48,14 +47,13 @@ function Main() {
 
   useEffect(() => {
 
-        dispatch(
-          fetchInvestersProfiles(
-            createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-          )
-      );
-   
+    dispatch(
+      fetchInvestersProfiles(
+        createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
+      )
+    );
   }, [page]);
- 
+
 
   useEffect(() => {
     return () => {
@@ -86,7 +84,8 @@ function Main() {
   };
 
   const gotoDetailPage = (id: number) => {
-    navigate(`/investor-profile/${id}`);
+    const data = { currentPage: page};
+    navigate(`/investor-profile/${id}`, {state: data});
   };
 
   const debouncedSearch = _.debounce((searchTerms) => {
