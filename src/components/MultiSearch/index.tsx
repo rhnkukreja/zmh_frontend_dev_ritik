@@ -84,7 +84,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       <div className="search-container">
         <FormInput
           type="text"
-          placeholder="Search Institute Name"
+          placeholder="Search Institution Name"
           className="pl-9 w-full sm:w-80 rounded-[0.5rem] relative"
           value={searchValue}
           onChange={handleChange}
@@ -112,7 +112,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
               <div className=" text-md font-medium">
                 {searchValue.length > 0 && isLoading && (
                   <span className="flex items-center">
-                    <span>Search Institutes</span>
+                    <span>Search Institution</span>
                     {isLoading && (
                       <Lucide
                         icon="Loader"

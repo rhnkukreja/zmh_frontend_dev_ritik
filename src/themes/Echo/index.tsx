@@ -91,6 +91,11 @@ function Main() {
     }
   };
 
+  const handleToggleMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setCompactMenu(!compactMenu);
+  }
+
   return (
     <div
       className={clsx([
@@ -107,12 +112,12 @@ function Main() {
           { "side-menu--collapsed": compactMenu },
           { "side-menu--on-hover": compactMenuOnHover },
           { "ml-0 after:block": activeMobileMenu },
-          { "-ml-[275px] after:hidden": !activeMobileMenu },
+          { "-ml-[280px] after:hidden": !activeMobileMenu },
         ])}
       >
         <div
           className={clsx([
-            "fixed ml-[275px] w-10 h-10 items-center justify-center xl:hidden z-50",
+            "fixed ml-[280px] w-10 h-10 items-center justify-center xl:hidden z-50",
             { flex: activeMobileMenu },
             { hidden: !activeMobileMenu },
           ])}
@@ -130,25 +135,47 @@ function Main() {
         </div>
         <div
           className={clsx([
-            "h-full box bg-white/[0.95] rounded-none xl:rounded-xl z-20 relative w-[275px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[275px] overflow-hidden flex flex-col",
+            "h-full bg-red box bg-white/[0.95] rounded-none xl:rounded-xl z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
-          onMouseOver={(event) => {
-            event.preventDefault();
-            setCompactMenuOnHover(true);
-          }}
-          onMouseLeave={(event) => {
-            event.preventDefault();
-            setCompactMenuOnHover(false);
-          }}
+          // onMouseOver={(event) => {
+          //   event.preventDefault();
+          //   // setCompactMenuOnHover(true);
+          //   toggleCompactMenu(event);  
+          // }}
+          // onMouseLeave={(event) => {
+          //   event.preventDefault();
+          //   toggleCompactMenu(event);  
+          //   // setCompactMenuOnHover(false);
+          // }}
         >
           <div className={clsx([
-              "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[275px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[275px]",
+              "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
             ])} >
-            <a
+            {
+              compactMenu && <a href=""
+                className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
+              >
+                <div onClick={handleToggleMenu}>
+                  <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3]" />
+                </div>
+              </a>
+            }
+            {
+             !compactMenu && <a
               href=""
-              className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
+              onClick={handleToggleMenu}
+              className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center w-[20px] h-[20px] ml-auto "
             >
-              <div className="flex items-center justify-center w-[40px] h-[40px] transition-transform ease-in-out group">
+              <Lucide icon="X" className="w-5 h-5 stroke-[1.3]" />
+            </a>
+            }
+          </div>
+
+          <a
+              href=""
+              className="mt-5 ml-5 flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-6 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-5"
+            >
+              <div className="flex items-center justify-center w-auto h-[40px] transition-transform ease-in-out group">
                 <div className="w-full h-full overflow-hidden transition-transform duration-500 ease-in-out">
                   <img
                     alt="Logo"
@@ -162,14 +189,6 @@ function Main() {
                 ZMH
               </div> */}
             </a>
-            <a
-              href=""
-              onClick={toggleCompactMenu}
-              className="hidden group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center w-[20px] h-[20px] ml-auto border rounded-full border-slate-600/40 hover:bg-slate-600/5"
-            >
-              <Lucide icon="ArrowLeft" className="w-3.5 h-3.5 stroke-[1.3]" />
-            </a>
-          </div>
           <div
             ref={scrollableRef}
             className={clsx([
@@ -347,7 +366,7 @@ function Main() {
             </ul>
           </div>
         </div>
-        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[275px] group-[.side-menu--collapsed]:xl:ml-[90px] mt-3.5 inset-x-0 top-0">
+        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] mt-3.5 inset-x-0 top-0">
           <div
             className={clsx([
               "top-bar absolute left-0 xl:left-3.5 right-0 h-full mx-5 group",
@@ -536,7 +555,7 @@ function Main() {
       <div
         className={clsx([
           "transition-[margin,width] duration-100 xl:pl-3.5 pt-[54px] pb-16 relative z-10 group mode",
-          { "xl:ml-[275px]": !compactMenu },
+          { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
         ])}

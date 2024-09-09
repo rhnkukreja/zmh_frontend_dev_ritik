@@ -39,7 +39,7 @@ const DetailEngagementQuestion = () => {
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
       <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
         <h1 className="text-xl font-semibold">Engagement Question Details</h1>
-        {!loading && getSingleQuestion?.active === true ? (
+        {/* {!loading && getSingleQuestion?.active === true ? (
           <div className=" items-center justify-start text-sm font-medium rounded-md text-success bg-success/10 border border-success/10 px-1.5 py-px mt-2 sm:mt-0">
             <span className="-mt-px">Active</span>
           </div>
@@ -47,7 +47,7 @@ const DetailEngagementQuestion = () => {
           <div className=" items-center justify-start text-sm font-medium rounded-md text-danger bg-danger/10 border border-danger/10 px-1.5 py-px mt-2 sm:mt-0">
             <span className="-mt-px">Inactive</span>
           </div>
-        )}
+        )} */}
       </div>
 
       {loading ? (
@@ -83,9 +83,7 @@ const DetailEngagementQuestion = () => {
               </h2>
 
               <p className="text-gray-500">
-                {dayjs(getSingleQuestion?.engagement_date).format(
-                  "MMMM , YYYY"
-                )}
+                {getSingleQuestion?.formatted_engagement_date}
               </p>
             </div>
             {/* <div className="flex flex-col">

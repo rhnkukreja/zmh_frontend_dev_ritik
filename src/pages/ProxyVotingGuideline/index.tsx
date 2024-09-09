@@ -27,6 +27,7 @@ import { AddEditPolicyGuideline } from "./components/AddEditProxyVotingGuideline
 import PdfViewer from "@/components/PdfView";
 import { Filter, FilterX } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
+import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -179,6 +180,34 @@ function ProxyGuideline() {
     setAddNewProxyVotingGuidelineVisible(true);
   };
 
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+  const checkImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+    });
+  };
+
+  useEffect(() => {
+    const validateImages = async () => {
+      const tempValidImages: { [key: string]: string } = {};
+      for (const votingGuidline of proxyVotingGuidelines || []) {
+        const isValid = await checkImageUrl(votingGuidline?.image);
+        tempValidImages[votingGuidline?.name] = isValid
+          ? votingGuidline?.image
+          : userLinkedinImage;
+      }
+
+      setValidImages(tempValidImages);
+    };
+
+    validateImages();
+  }, [proxyVotingGuidelines]);
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -317,7 +346,7 @@ function ProxyGuideline() {
                     <Table.Thead>
                       <Table.Tr>
                         <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Institute Name
+                        Institution Name
                         </Table.Td>
                         <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Year
@@ -359,7 +388,18 @@ function ProxyGuideline() {
                               key={guideline?.id}
                               className="[&_td]:last:border-b-0"
                             >
-                              <Table.Td className="py-2  text-nowrap border-dashed dark:bg-darkmode-600">
+                              <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                  {
+                                    <img
+                                      alt="Tailwise - Admin Dashboard Template"
+                                      src={
+                                        validImages[guideline?.institution_name] ||
+                                        userLinkedinImage
+                                      }
+                                    />
+                                  }
+                                </div>
                                 {guideline?.institution_name}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">

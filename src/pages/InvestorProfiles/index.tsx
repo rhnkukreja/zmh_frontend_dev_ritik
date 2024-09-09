@@ -26,6 +26,7 @@ import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
+import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 
 
 function Main() {
@@ -140,6 +141,34 @@ function Main() {
 
     dispatch(resetPage());
   };
+
+  const checkImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+    });
+  };
+
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    const validateImages = async () => {
+      const tempValidImages: { [key: string]: string } = {};
+      for (const profile of investersProfile || []) {
+        const isValid = await checkImageUrl(profile?.image);
+        tempValidImages[profile?.name] = isValid
+          ? profile?.image
+          : userLinkedinImage;
+      }
+
+      setValidImages(tempValidImages);
+    };
+
+    validateImages();
+  }, [investersProfile]);
 
   const getFilterCount = useMemo(() => {
     const { institution_name, ...allFilters } = filters;
@@ -316,7 +345,7 @@ function Main() {
                         setTab("equity")
                         dispatch( resetInvestorProfiles())
                       }}>
-                        Private Equities
+                        Private Equity
                       </Tab.Button>
                     </Tab>
                   </Tab.List>
@@ -329,9 +358,22 @@ function Main() {
                               return (
                                 <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
                                   <div className="ml-5 flex items-center">
-                                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
+                                    {/* <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
                                       {(page - 1) * 10 + index + 1}
-                                    </div>
+                                    </div> */}
+
+                                      <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                        {
+                                          <img
+                                            alt="Tailwise - Admin Dashboard Template"
+                                            src={
+                                              validImages[investersProfile?.name] ||
+                                              userLinkedinImage
+                                            }
+                                          />
+                                        }
+                                      </div>
+                                    
                                     <Tippy
                                       content={profile?.institution_name || ""}
                                       options={{
@@ -373,9 +415,20 @@ function Main() {
                               return (
                                 <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
                                   <div className="ml-5 flex items-center">
-                                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
-                                      {(page - 1) * 10 + index + 1}
+                                    <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                      {
+                                        <img
+                                          alt="Tailwise - Admin Dashboard Template"
+                                          src={
+                                            validImages[investersProfile?.name] ||
+                                            userLinkedinImage
+                                          }
+                                        />
+                                      }
                                     </div>
+                                    {/* <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
+                                      {(page - 1) * 10 + index + 1}
+                                    </div> */}
                                     <Tippy
                                       content={profile?.equity_firm_name || ""}
                                       options={{

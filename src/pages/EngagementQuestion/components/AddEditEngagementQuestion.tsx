@@ -345,7 +345,7 @@ export const AddEditEngagementQuestion: React.FC<
                         labelKey="institution"
                         value={field.value?.toString() || ""}
                         onChange={(value) => field.onChange(value)}
-                        options={{ placeholder: "Select Institute" }}
+                        options={{ placeholder: "Select Institution" }}
                         className="w-full"
                       />
                     )}

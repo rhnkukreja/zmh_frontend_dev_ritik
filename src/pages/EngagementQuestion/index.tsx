@@ -28,6 +28,7 @@ import { EngagementQuestions } from "@/types/engagementQuestions";
 import dayjs from "dayjs";
 import { FilterX } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
+import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -200,6 +201,33 @@ function Main() {
     }));
   };
 
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+  const checkImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+    });
+  };
+
+  useEffect(() => {
+    const validateImages = async () => {
+      const tempValidImages: { [key: string]: string } = {};
+      for (const question of groupedQuestions || []) {
+        const isValid = await checkImageUrl(question?.image);
+        tempValidImages[question?.name] = isValid
+          ? question?.image
+          : userLinkedinImage;
+      }
+
+      setValidImages(tempValidImages);
+    };
+
+    validateImages();
+  }, [groupedQuestions]);
 
 
   return (
@@ -367,7 +395,7 @@ function Main() {
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Institute Name
+                      Institution Name
                       </Table.Td>
 
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
@@ -404,7 +432,17 @@ function Main() {
                                   className="font-semibold py-2"
                                 >
                                   <div className="flex flex-row justify-start items-center">
-                                   
+                                    <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                      {
+                                        <img
+                                          alt="Tailwise - Admin Dashboard Template"
+                                          src={
+                                            validImages[institutionName] ||
+                                            userLinkedinImage
+                                          }
+                                        />
+                                      }
+                                    </div>
                                       {institutionName}
                                     
                                     <button className="ml-2 text-blue-500">
