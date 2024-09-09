@@ -58,14 +58,15 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   const handleSend = (item: string) => {
     setOptions((prev) => prev.filter((option) => option !== item));
     onSearch([...searchTerms, item]);
-    setSearchTerms([...searchTerms, item]);
+    setSearchTerms([...new Set([...searchTerms, item])]);
     setSearchValue("");
+    setIsOpen(false)
   };
   useEffect(() => {
     if (
-      options?.length > 0 ||
-      searchValue.length > 0 ||
-      searchTerms.length > 0
+     
+      searchValue.length > 0 
+      
     ) {
       setIsOpen(true);
     } else {

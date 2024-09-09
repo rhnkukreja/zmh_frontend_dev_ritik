@@ -51,19 +51,19 @@ function Main() {
     
       dispatch(
         fetchInstitutions(
-          createDynamicURL(`${baseURL}/institute/`, filters, page)
+          createDynamicURL(`${baseURL}/institute/`, filters,undefined  , page)
         )
       );
   }, [page]);
 
   useEffect(() => {
     return () => {
-      console.log('destory the component institution');
+     
       dispatch(resetPage());
       dispatch(
         setFilter({
           key: "institution_name",
-          value: '',
+          value: [],
         })
       );
     }
@@ -85,7 +85,9 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
-  const debouncedSearch = _.debounce((searchTerms) => {
+ 
+
+  const handleSearch = (searchTerms : string[]) => { 
     dispatch(
       setFilter({
         key: "institution_name",
@@ -93,18 +95,14 @@ function Main() {
       })
     );
 
-    const tempFilter = {institution_name: searchedValue};
+    const tempFilter = {institution_name: searchTerms};
 
     dispatch(
       fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, tempFilter, 1)
+        createDynamicURL(`${baseURL}/institute/`, tempFilter, undefined, 1)
       )
     );
 
-  }, 700);
-
-  const handleSearch = () => { 
-    debouncedSearch(searchTerms);
   };
 
   function handleApplyFilter() {
@@ -162,6 +160,10 @@ function Main() {
     setAddEditInstitutionVisible(true);
   }
 
+  useEffect(()=>{
+    handleSearch(searchTerms)
+  },[searchTerms , searchTerms?.length])
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
@@ -198,11 +200,11 @@ function Main() {
 
                   <Button onClick={handleClearAllFilter}>
 
-                    <Tippy content="Clear Filter"
+                    <Tippy content="Clear Filters"
                       options={{ theme: "light", }}>
                       <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	" />
                     </Tippy>
-                    {/* <span className="text-slate-500">Clear Filter</span> */}
+                    {/* <span className="text-slate-500">Clear Filters</span> */}
                   </Button>
                 </div>
 
@@ -492,9 +494,9 @@ function Main() {
               <CPagination
                 page={page}
                 totalPages={totalPages}
-                // handleNextPage={handleNextPage}
+                handleNextPage={handleNextPage}
                 handlePageChange={handlePageChange}
-                // handlePreviousPage={handlePreviousPage}
+                handlePreviousPage={handlePreviousPage}
               />
             </div>
           </div>

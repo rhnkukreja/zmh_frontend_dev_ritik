@@ -25,7 +25,7 @@ interface EngagementQuestionsState {
     category: string;
     source: string;
     typeOfEngagement: string;
-    institution_name: [];
+    institution_name: string[];
   };
 }
 
@@ -97,7 +97,7 @@ const engagementQuestionsSlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
-        value: string | [];
+        value: string | string[];
       }>
     ) {
       state.filters[action.payload.key] = action.payload.value as any;

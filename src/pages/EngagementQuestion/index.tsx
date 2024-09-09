@@ -57,7 +57,7 @@ function Main() {
 
       dispatch(
         fetchEngagementQuestions(
-          createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
+          createDynamicURL(`${baseURL}/engagement_questions/`, filters,undefined ,page)
         )
       );
     
@@ -92,33 +92,36 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
-  const debouncedSearch = _.debounce((searchTerms) => {
+  
+
+
+  function handleSearch(searchTerms : string[]) {
     dispatch(
       setFilter({
         key: "institution_name",
         value: searchTerms,
       })
     );
-/// @saad see here no find searchedValue 
+
     const tempFilter = {institution_name: searchTerms};
 
     dispatch(
       fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, tempFilter, 1)
+        createDynamicURL(`${baseURL}/engagement_questions/`, tempFilter, undefined,  1)
       )
     );
     dispatch(setPage(1));
-
-  }, 700);
-
-  function handleSearch() {
-    debouncedSearch(searchTerms);
   }
+
+  useEffect(()=>{
+    handleSearch(searchTerms)
+  },[searchTerms , searchTerms?.length])
+
 
   function handleApplyFilter() {
     dispatch(
       fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, filters, page)
+        createDynamicURL(`${baseURL}/engagement_questions/`, filters,  undefined , page)
       )
     );
     dispatch(resetPage());
@@ -233,14 +236,14 @@ function Main() {
 
                 <div className="hover:bg-slate-50">
                   <Button onClick={handleClearAllFilter}>
-                    <Tippy content="Clear Filter" options={{ theme: "light" }}>
+                    <Tippy content="Clear Filters" options={{ theme: "light" }}>
                       <FilterX
                         size={17}
                         strokeWidth={1}
                         className="text-slate-500 cursor-pointer	"
                       />
                     </Tippy>
-                    {/* <span className="text-slate-500">Clear Filter</span> */}
+                    {/* <span className="text-slate-500">Clear Filters</span> */}
                   </Button>
                 </div>
               </div>
@@ -401,12 +404,9 @@ function Main() {
                                   className="font-semibold py-2"
                                 >
                                   <div className="flex flex-row justify-start items-center">
-                                    <Tippy
-                                      content={institutionName}
-                                      options={{ theme: "light" }}
-                                    >
+                                   
                                       {institutionName}
-                                    </Tippy>
+                                    
                                     <button className="ml-2 text-blue-500">
                                       {openGroups[institutionName] ? (
                                         <Lucide
@@ -514,9 +514,9 @@ function Main() {
                 <CPagination
                   page={page}
                   totalPages={totalPages}
-                  // handleNextPage={handleNextPage}
+                  handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
-                  // handlePreviousPage={handlePreviousPage}
+                  handlePreviousPage={handlePreviousPage}
                 />
               )}
               {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">

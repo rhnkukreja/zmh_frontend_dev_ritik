@@ -212,7 +212,7 @@ const getPageNumbers = (
 function createDynamicURL<T extends Record<string, string | string[]>>(
   baseURL: string,
   filters?: T,
-  extraPrams?: Record<string, string | string[]>,
+  extraPrams?: Record<string, string | string[]> | undefined,
   page?: number
 ): string {
   const queryParams = new URLSearchParams();

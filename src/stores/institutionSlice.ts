@@ -17,7 +17,7 @@ interface InstitutionsState {
     region: string[];
   };
   filters: {
-    institution_name: string;
+    institution_name: string[];
     region: string;
     investor_type: string;
   };
@@ -35,7 +35,7 @@ const initialState: InstitutionsState = {
     region: ["NAM", "EMEA", "APAC"],
   },
   filters: {
-    institution_name: "",
+    institution_name: [],
     region: "",
     investor_type: "",
   },
@@ -85,14 +85,14 @@ const institutionsSlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof InstitutionsState["filters"];
-        value: string;
+        value: string | string[];
       }>
     ) {
-      state.filters[action.payload.key] = action.payload.value;
+      state.filters[action.payload.key] = action.payload.value as any;
     },
     resetFilter(state) {
       state.filters = {
-        institution_name: "",
+        institution_name: [],
         region: "",
         investor_type: "",
       };

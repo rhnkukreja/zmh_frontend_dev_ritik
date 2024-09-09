@@ -21,7 +21,11 @@ import EditableSection from "./components/EditableSections";
 import dayjs from "dayjs";
 import Tippy from "@/components/Base/Tippy";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
-import { baseURL, investorProfileEditableSectionsEquity, investorProfileEditableSectionsInvestors } from "@/constant";
+import {
+  baseURL,
+  investorProfileEditableSectionsEquity,
+  investorProfileEditableSectionsInvestors,
+} from "@/constant";
 import { toast } from "react-toastify";
 import { InvestersProfile, KeyContact } from "@/types/investerProfiles";
 
@@ -280,14 +284,11 @@ function Main() {
 
         <div ref={contentRef}>
           <div className="flex justify-between   px-2 gap-y-3 items-center flex-row bg-white box py-2">
-            <Tippy
-              content={singleInvesterProfile?.institution_name }
-              options={{
-                theme: "light",
-              }}
-            >
+            <div>
               <div className=" text-[18px]  font-semibold text-left py-1 leading-none  md:max-w-[350px] sm:max-w-[200px]  overflow-hidden text-ellipsis whitespace-nowrap ">
-                {singleInvesterProfile?.institution_name }
+                {params?.type! === "investor"
+                  ? singleInvesterProfile?.institution_name
+                  : singleInvesterProfile?.equity_firm_name}
               </div>
 
               <div className="flex flex-row   items-center sm:gap-4 ">
@@ -298,7 +299,7 @@ function Main() {
                   )}
                 </div>
               </div>
-            </Tippy>
+            </div>
 
             {user?.user_type === "Admin" && (
               <div>
@@ -346,23 +347,25 @@ function Main() {
               {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors).map(
                   (key, index) => {
-                    const typedKey = key as keyof typeof investorProfileEditableSectionsInvestors
+                    const typedKey =
+                      key as keyof typeof investorProfileEditableSectionsInvestors;
                     return (
                       <EditableSection
                         key={index}
                         fetchloading={loading}
                         id={Number(params.id)}
-                        title={investorProfileEditableSectionsInvestors?.[typedKey]?.value}
+                        title={
+                          investorProfileEditableSectionsInvestors?.[typedKey]
+                            ?.value
+                        }
                         type={params?.type!}
-                        renderHtml={singleInvesterProfile?.[key]}
-                        // renderHtml={
-                        //   investorProfileEditableSectionsInvestors?.[key]?.value
-                        //   // singleInvesterProfile?.engagement_priorities
-                        //   //   ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                        //   //   ?.replace(/\n/g, "<br />") || ""
-                        // }
+                        // renderHtml={singleInvesterProfile?.[key]}
+                        renderHtml={
+                          singleInvesterProfile?.[key]
+                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                            ?.replace(/\n/g, "<br />") || ""
+                        }
                         field={key as keyof InvestersProfile}
-                        
                       />
                     );
                   }
@@ -371,23 +374,39 @@ function Main() {
               {params?.type === "equity" &&
                 Object.keys(investorProfileEditableSectionsEquity).map(
                   (key, index) => {
-                    const typedKey = key as keyof typeof investorProfileEditableSectionsEquity
+                    const typedKey =
+                      key as keyof typeof investorProfileEditableSectionsEquity;
                     return (
                       <EditableSection
                         key={index}
                         fetchloading={loading}
                         id={Number(params.id)}
-                        title={investorProfileEditableSectionsEquity?.[typedKey]?.value}
+                        title={
+                          investorProfileEditableSectionsEquity?.[typedKey]
+                            ?.value
+                        }
                         type={params?.type!}
-                        renderHtml={singleInvesterProfile?.[key]}
-                        // renderHtml={
-                        //   investorProfileEditableSectionsInvestors?.[key]?.value
-                        //   // singleInvesterProfile?.engagement_priorities
-                        //   //   ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                        //   //   ?.replace(/\n/g, "<br />") || ""
-                        // }
+                        renderHtml={
+                          singleInvesterProfile?.[key]
+                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                            ?.replace(/\n/g, "<br />")
+                            .replace(/\r\n/g, "<br />")
+                            ?.replace(/- (.*?)\:/g, "<li><strong>$1:</strong>")
+                            ?.replace(
+                              /EQT Absolutes:<br \/>/g,
+                              "<h3>EQT Absolutes:</h3>"
+                            )
+                            ?.replace(
+                              /Core KPIs:<br \/>/g,
+                              "<h3>Core KPIs:</h3>"
+                            )
+                            ?.replace(
+                              /Portfolio-Specific KPIs:<br \/>/g,
+                              "<h3>Portfolio-Specific KPIs:</h3>"
+                            )
+                            ?.concat("</li>") || ""
+                        }
                         field={key as keyof InvestersProfile}
-                        
                       />
                     );
                   }

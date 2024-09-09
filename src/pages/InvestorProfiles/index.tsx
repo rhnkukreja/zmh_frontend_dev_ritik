@@ -204,7 +204,7 @@ function Main() {
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
                       <Tippy
-                        content="Clear Filter"
+                        content="Clear Filters"
                         options={{ theme: "light" }}
                       >
                         <FilterX
@@ -213,7 +213,7 @@ function Main() {
                           className="text-slate-500 cursor-pointer	"
                         />
                       </Tippy>
-                      {/* <span className="text-slate-500">Clear Filter</span> */}
+                      {/* <span className="text-slate-500">Clear Filters</span> */}
                     </Button>
                   </div>
                 </div>
@@ -333,7 +333,7 @@ function Main() {
                                       {(page - 1) * 10 + index + 1}
                                     </div>
                                     <Tippy
-                                      content={profile?.institution_name}
+                                      content={profile?.institution_name || ""}
                                       options={{
                                         theme: "light",
                                       }}
@@ -377,14 +377,14 @@ function Main() {
                                       {(page - 1) * 10 + index + 1}
                                     </div>
                                     <Tippy
-                                      content={profile?.institution_name}
+                                      content={profile?.equity_firm_name || ""}
                                       options={{
                                         theme: "light",
                                       }}
                                     >
 
                                       <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full">
-                                        {profile?.institution_name}
+                                        {profile?.equity_firm_name || ""}
                                       </div>
                                     </Tippy>
                                   </div>

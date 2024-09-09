@@ -40,26 +40,23 @@ function CompanyList() {
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   useEffect(() => {
-    
     if (filters) {
       dispatch(
         fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters))
       );
-    }
-    else {
+    } else {
       dispatch(
         fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, page))
       );
     }
-    
   }, [page, filters]);
 
   useEffect(() => {
     return () => {
       dispatch(resetPage());
       dispatch(resetFilter());
-    }
-  }, [])
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -76,15 +73,6 @@ function CompanyList() {
   const handlePageChange = (newPage: number) => {
     dispatch(setPage(newPage));
   };
-
-  const debouncedSearch = _.debounce((searchTerms) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-  }, 700);
 
   const handleApplyFilter = () => {
     dispatch(
@@ -107,12 +95,10 @@ function CompanyList() {
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchTerms([]);
-   
+
     // setSearchValue('');
     dispatch(
-      fetchCompanies(
-        createDynamicURL(`${baseURL}/company/`, undefined, page)
-      )
+      fetchCompanies(createDynamicURL(`${baseURL}/company/`, undefined, page))
     );
     dispatch(
       setFilter({
@@ -122,13 +108,20 @@ function CompanyList() {
     );
 
     dispatch(resetPage());
-
-
-  }
-
-  const handleSearch = () => {
-    debouncedSearch(searchTerms);
   };
+
+  const handleSearch = (searchTerms: string[]) => {
+    dispatch(
+      setFilter({
+        key: "institution_name",
+        value: searchTerms,
+      })
+    );
+  };
+
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -156,21 +149,22 @@ function CompanyList() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-              <MultiSearchBar
-                    onSearch={handleSearch}
-                    searchTerms={searchTerms}
-                    setSearchTerms={setSearchTerms}
-                  />
+                <MultiSearchBar
+                  onSearch={handleSearch}
+                  searchTerms={searchTerms}
+                  setSearchTerms={setSearchTerms}
+                />
 
                 <div className="hover:bg-slate-50">
-
                   <Button onClick={handleClearAllFilter}>
-
-                    <Tippy content="Clear Filter"
-                      options={{ theme: "light", }}>
-                      <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	" />
+                    <Tippy content="Clear Filters" options={{ theme: "light" }}>
+                      <FilterX
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
                     </Tippy>
-                    {/* <span className="text-slate-500">Clear Filter</span> */}
+                    {/* <span className="text-slate-500">Clear Filters</span> */}
                   </Button>
                 </div>
               </div>
@@ -258,7 +252,7 @@ function CompanyList() {
                   totalPages={totalPages}
                   handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
-                 handlePreviousPage={handlePreviousPage}
+                  handlePreviousPage={handlePreviousPage}
                 />
               </div>
             )}
