@@ -135,92 +135,14 @@ function Main(props: MainProps) {
                               Search companies here...
                             </div>
                           </div>
-                          {/* <div className="flex flex-wrap gap-2 mt-3.5">
-                            <a
-                              href=""
-                              className="flex items-center gap-x-1.5 border rounded-full px-3 py-0.5 border-slate-300/70 hover:bg-slate-50"
-                            >
-                              <Lucide
-                                icon="UsersRound"
-                                className="w-4 h-4 stroke-[1.3]"
-                              />
-                              Users
-                            </a>
-                            <a
-                              href=""
-                              className="flex items-center gap-x-1.5 border rounded-full px-3 py-0.5 border-slate-300/70 hover:bg-slate-50"
-                            >
-                              <Lucide
-                                icon="Building2"
-                                className="w-4 h-4 stroke-[1.3]"
-                              />
-                              Departments
-                            </a>
-                            <a
-                              href=""
-                              className="flex items-center gap-x-1.5 border rounded-full px-3 py-0.5 border-slate-300/70 hover:bg-slate-50"
-                            >
-                              <Lucide
-                                icon="KanbanSquare"
-                                className="w-4 h-4 stroke-[1.3]"
-                              />
-                              Products
-                            </a>
-                            <a
-                              href=""
-                              className="flex items-center gap-x-1.5 border rounded-full px-3 py-0.5 border-slate-300/70 hover:bg-slate-50"
-                            >
-                              <Lucide
-                                icon="MailCheck"
-                                className="w-4 h-4 stroke-[1.3]"
-                              />
-                              Mails
-                            </a>
-                            <Menu>
-                              <Menu.Button
-                                as="a"
-                                className="flex items-center gap-x-1.5 border rounded-full px-3 py-0.5 border-slate-300/70 hover:bg-slate-50"
-                              >
-                                More
-                                <Lucide
-                                  icon="ChevronDown"
-                                  className="w-4 h-4 stroke-[1.3] -ml-0.5"
-                                />
-                              </Menu.Button>
-                              <Menu.Items className="w-40">
-                                <Menu.Item>
-                                  <Lucide icon="Map" className="w-4 h-4 mr-2" />{" "}
-                                  Locations
-                                </Menu.Item>
-                                <Menu.Item>
-                                  <Lucide
-                                    icon="FileCheck"
-                                    className="w-4 h-4 mr-2"
-                                  />
-                                  Projects
-                                </Menu.Item>
-                                <Menu.Item>
-                                  <Lucide
-                                    icon="Printer"
-                                    className="w-4 h-4 mr-2"
-                                  />
-                                  Devices
-                                </Menu.Item>
-                              </Menu.Items>
-                            </Menu>
-                          </div> */}
+                         
                         </div>
                         <div className="px-5 py-4 border-t border-dashed">
                           <div className="flex items-center">
                             <div className="text-xs uppercase text-slate-500">
                               Company
                             </div>
-                            {/* <a
-                              className="ml-auto text-xs text-slate-500"
-                              href=""
-                            >
-                              See All
-                            </a> */}
+                           
                           </div>
                           <div className="flex flex-col gap-1 mt-3.5">
                             {companyDataList?.map(
@@ -249,87 +171,7 @@ function Main(props: MainProps) {
                             )}
                           </div>
                         </div>
-                        {/* <div className="px-5 py-4 border-t border-dashed">
-                          <div className="flex items-center">
-                            <div className="text-xs uppercase text-slate-500">
-                              Departments
-                            </div>
-                            <a
-                              className="ml-auto text-xs text-slate-500"
-                              href=""
-                            >
-                              See All
-                            </a>
-                          </div>
-                          <div className="flex flex-col gap-1 mt-3.5">
-                            {_.take(departments.fakeDepartments(), 3).map(
-                              (faker, fakerKey) => (
-                                <a
-                                  href=""
-                                  key={fakerKey}
-                                  className="flex items-center gap-2.5 hover:bg-slate-50/80 border border-transparent hover:border-slate-100 p-1 rounded-md"
-                                >
-                                  <div className="flex items-center justify-center w-6 h-6 overflow-hidden border rounded-md zoom-in border-theme-1/10 box bg-theme-1/10">
-                                    {_.random(0, 1) ? (
-                                      <Lucide
-                                        icon="Store"
-                                        className="w-3.5 h-3.5 stroke-[1.3] text-theme-1"
-                                      />
-                                    ) : (
-                                      <Lucide
-                                        icon="Hotel"
-                                        className="w-3.5 h-3.5 stroke-[1.3] text-theme-1"
-                                      />
-                                    )}
-                                  </div>
-                                  <div className="font-medium truncate">
-                                    {faker.name}
-                                  </div>
-                                  <div className="hidden text-slate-500 sm:block">
-                                    {faker.location.name}
-                                  </div>
-                                </a>
-                              )
-                            )}
-                          </div>
-                        </div> */}
-                        {/* <div className="px-5 py-4 border-t border-dashed">
-                          <div className="flex items-center">
-                            <div className="text-xs uppercase text-slate-500">
-                              Products
-                            </div>
-                            <a
-                              className="ml-auto text-xs text-slate-500"
-                              href=""
-                            >
-                              See All
-                            </a>
-                          </div>
-                          <div className="flex flex-col gap-1 mt-3.5">
-                            {_.take(products.fakeProducts(), 3).map(
-                              (faker, fakerKey) => (
-                                <a
-                                  href=""
-                                  key={fakerKey}
-                                  className="flex items-center gap-2.5 hover:bg-slate-50/80 border border-transparent hover:border-slate-100 p-1 rounded-md"
-                                >
-                                  <div className="w-6 h-6 overflow-hidden border-2 rounded-full image-fit zoom-in border-slate-200/70 box">
-                                    <img
-                                      alt="Tailwise - Admin Dashboard Template"
-                                      src={faker.images[0].path}
-                                    />
-                                  </div>
-                                  <div className="font-medium truncate">
-                                    {faker.name}
-                                  </div>
-                                  <div className="hidden text-slate-500 sm:block">
-                                    {faker.category.name}
-                                  </div>
-                                </a>
-                              )
-                            )}
-                          </div>
-                        </div> */}
+                       
                       </div>
                     )}
                   </div>

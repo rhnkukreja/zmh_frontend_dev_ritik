@@ -1,8 +1,8 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover, Tab } from "@/components/Base/Headless";
-import { FormInput, FormSelect } from "@/components/Base/Form";
+import {  FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
-import Table from "@/components/Base/Table";
+
 import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   fetchInvestersProfiles,
   resetFilter,
+  resetInvestorProfiles,
   resetPage,
   setPage,
 } from "@/stores/investersProfileSlice";
@@ -32,7 +33,7 @@ function Main() {
   const navigate = useNavigate();
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
-  const [tab, setTab] = useState<"institutional" | "individual">("institutional");
+  const [tab, setTab] = useState<"investor" | "equity">("investor");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   const {
@@ -46,14 +47,20 @@ function Main() {
   const { user } = useAppSelector((state) => state.authentiction);
 
   useEffect(() => {
-
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-      )
-    );
-  }, [page]);
-
+    if (filters.institution_name.length > 0) {
+      dispatch(
+        fetchInvestersProfiles(
+          createDynamicURL(`${baseURL}/investor_profile/`, filters , {type: tab})
+        )
+      );
+    } else {
+      dispatch(
+        fetchInvestersProfiles(
+          createDynamicURL(`${baseURL}/investor_profile/`, filters, {type: tab}, page)
+        )
+      );
+    }
+  }, [page, filters.institution_name , tab]);
 
   useEffect(() => {
     return () => {
@@ -85,26 +92,10 @@ function Main() {
 
   const gotoDetailPage = (id: number) => {
     const data = { currentPage: page};
-    navigate(`/investor-profile/${id}`, {state: data});
+    navigate(`/investor-profile/${tab}/${id}`, {state: data});
   };
 
-  const debouncedSearch = _.debounce((searchTerms) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-    
-    const tempFilter = {institution_name: searchTerms};
-
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, 1)
-      )
-    );
-
-  }, 700);
+ 
 
   function handleApplyFilter() {
     dispatch(
@@ -120,7 +111,7 @@ function Main() {
     dispatch(resetFilter());
     dispatch(
       fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+        createDynamicURL(`${baseURL}/investor_profile/`, undefined, {type: tab}, page)
       )
     );
   };
@@ -137,7 +128,7 @@ function Main() {
 
     dispatch(
       fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+        createDynamicURL(`${baseURL}/investor_profile/`, undefined, {type: tab}, page)
       )
     );
 
@@ -155,9 +146,25 @@ function Main() {
     return Object.values(allFilters).filter((value) => value !== "").length;
   }, [filters]);
 
-  const handleSearch = () => {
-    debouncedSearch(searchTerms);
+  const handleSearch = (searchTerms : string[]) => {
+    dispatch(
+      setFilter({
+        key: "institution_name",
+        value: searchTerms,
+      })
+    );
+    const tempFilter = {institution_name: searchTerms};
+    dispatch(
+      fetchInvestersProfiles(
+        createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, {type: tab}, 1)
+      )
+    );
   };
+  useEffect(()=>{
+    handleSearch(searchTerms)
+  },[searchTerms , searchTerms?.length])
+
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -179,7 +186,7 @@ function Main() {
                     icon="PenLine"
                     className="stroke-[1.3] w-4 h-4 mr-2"
                   />{" "}
-                  Add New Invester
+                  Add New Investor
                 </Button>
               </div>
             )}
@@ -197,7 +204,7 @@ function Main() {
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
                       <Tippy
-                        content="Clear Filter"
+                        content="Clear Filters"
                         options={{ theme: "light" }}
                       >
                         <FilterX
@@ -206,7 +213,7 @@ function Main() {
                           className="text-slate-500 cursor-pointer	"
                         />
                       </Tippy>
-                      {/* <span className="text-slate-500">Clear Filter</span> */}
+                      {/* <span className="text-slate-500">Clear Filters</span> */}
                     </Button>
                   </div>
                 </div>
@@ -298,16 +305,18 @@ function Main() {
                   <Tab.List variant="link-tabs">
                     <Tab>
                       <Tab.Button className="w-full py-2" as="button" onClick={()=>{
-                        setTab("institutional")
+                        setTab("investor")
+                       dispatch( resetInvestorProfiles())
                       }}>
                         Institutional Investors
                       </Tab.Button>
                     </Tab>
                     <Tab>
                       <Tab.Button className="w-full py-2" as="button" onClick={()=>{
-                        setTab("individual")
+                        setTab("equity")
+                        dispatch( resetInvestorProfiles())
                       }}>
-                        Individual Investors
+                        Private Equities
                       </Tab.Button>
                     </Tab>
                   </Tab.List>
@@ -324,12 +333,13 @@ function Main() {
                                       {(page - 1) * 10 + index + 1}
                                     </div>
                                     <Tippy
-                                      content={profile?.institution_name}
+                                      content={profile?.institution_name || ""}
                                       options={{
                                         theme: "light",
                                       }}
                                     >
-                                      <div className="font-medium text-[0.94rem] truncate ">
+
+                                      <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full">
                                         {profile?.institution_name}
                                       </div>
                                     </Tippy>
@@ -356,21 +366,62 @@ function Main() {
                       </TableWrapper>
                     </Tab.Panel>
                     <Tab.Panel className="leading-relaxed">
-                      <p className="text-center">No data found</p>
+                    <TableWrapper isLoading={loading}>
+                        {investersProfile?.length > 0 &&
+                          investersProfile.map(
+                            (profile: InvestersProfile, index: number) => {
+                              return (
+                                <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
+                                  <div className="ml-5 flex items-center">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
+                                      {(page - 1) * 10 + index + 1}
+                                    </div>
+                                    <Tippy
+                                      content={profile?.equity_firm_name || ""}
+                                      options={{
+                                        theme: "light",
+                                      }}
+                                    >
+
+                                      <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full">
+                                        {profile?.equity_firm_name || ""}
+                                      </div>
+                                    </Tippy>
+                                  </div>
+
+                                  <Tippy
+                                    content="View"
+                                    options={{
+                                      theme: "dark",
+                                    }}
+                                  >
+                                    <Lucide
+                                      onClick={() => {
+                                        gotoDetailPage(profile.id);
+                                      }}
+                                      icon="Eye"
+                                      className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                    />
+                                  </Tippy>
+                                </div>
+                              );
+                            }
+                          )}
+                      </TableWrapper>
                     </Tab.Panel>
                   </Tab.Panels>
                 </Tab.Group>
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                {tab === "institutional" && investersProfile?.length > 0 && (
+               
                   <CPagination
                     page={page}
                     totalPages={totalPages}
-                    // handleNextPage={handleNextPage}
+                    handleNextPage={handleNextPage}
                     handlePageChange={handlePageChange}
-                    // handlePreviousPage={handlePreviousPage}
+                    handlePreviousPage={handlePreviousPage}
                   />
-                )}
+                
                 {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>
                 <option>25</option>

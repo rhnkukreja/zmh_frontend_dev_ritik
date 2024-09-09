@@ -109,7 +109,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
       ).unwrap();
 
       if (response.results?.id) {
-        toast.success("New Invester Profile Added");
+        toast.success("New Investor Profile Added");
         setAddNewInvesterModalVisible(false);
 
         dispatch(
