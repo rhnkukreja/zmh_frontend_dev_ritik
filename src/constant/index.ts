@@ -32,3 +32,23 @@ export const characterColors: {
 };
 
 export const adminRoutes = ["Company", "Institutions"];
+
+export const investorProfileEditableSectionsInvestors = {
+  engagement_priorities: { value: "Engagement Priorities", type: "investor" },
+  reporting_expectations: { value: "Reporting Expectations", type: "investor" },
+  esg_integration_process: {
+    value: "ESG Integration Process",
+    type: "investor",
+  },
+  voting_guidelines_link: { value: "Voting Guidelines", type: "investor" },
+  references: { value: "References", type: "investor" },
+};
+export const investorProfileEditableSectionsEquity = {
+  equity_firm_name: { value: "Equity Firm Name", type: "equity" },
+  specific_expectations: { value: "Specific Expectations", type: "equity" },
+  checklist: {
+    value: "Checklist",
+    type: "equity",
+  },
+  other: { value: "Other", type: "equity" },
+};

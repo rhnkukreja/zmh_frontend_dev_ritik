@@ -319,7 +319,7 @@ function Router() {
           element: <CompanyList />,
         },
         {
-          path: "investor-profile/:id",
+          path: "investor-profile/:type/:id",
           element: <DetailInvestersProfile />,
         },
         {

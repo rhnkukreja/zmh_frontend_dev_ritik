@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { updateInvestersProfile } from "@/stores/investersProfileSlice";
 import { InvestersProfile } from "@/types/investerProfiles";
 import LoadingWrapper from "@/components/LoadingWrapper";
-import ParceHtml from "@/components/ParseHtml";
+
 import clsx from "clsx";
 
 interface EditableSectionProps {
@@ -16,7 +16,8 @@ interface EditableSectionProps {
   field: keyof InvestersProfile;
   fetchloading: boolean;
   renderHtml: string;
-  isReference: boolean;
+ 
+  type: string
 }
 
 const EditableSection: React.FC<EditableSectionProps> = ({
@@ -26,8 +27,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   field,
   fetchloading,
   renderHtml,
-  isReference
+ 
+  type
 }) => {
+  console.log({field , title})
   const dispatch = useAppDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState<string>(renderHtml);
@@ -38,7 +41,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 
   const handleSave = async () => {
     setLoading(true);
-    dispatch(updateInvestersProfile({ id, data: { [field]: value } }));
+    dispatch(updateInvestersProfile({ id,  type : type , data: { [field]: value } }));
     setLoading(false);
     setIsEditing(false);
   };
@@ -123,7 +126,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
               {renderHtml ? (
                 <div className="flex flex-col px-4 py-3">
                   <span className={clsx(["mobile-text-size xs:text-[10px] sm:text-[14px] leading-[24px]",
-                                    isReference && "text-blue-500" ])} dangerouslySetInnerHTML={{__html: renderHtml}}></span>
+                                    field === "references" && "text-blue-500" ])} dangerouslySetInnerHTML={{__html: renderHtml}}></span>
                   {/* <ParceHtml htmlString={renderHtml} /> */}
                 </div>
               ) : null}

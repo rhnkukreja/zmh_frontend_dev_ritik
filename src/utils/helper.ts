@@ -209,25 +209,39 @@ const getPageNumbers = (
   return Math.ceil(totalCounts / perPageCount);
 };
 
-function createDynamicURL<T extends Record<string, string>>(
+function createDynamicURL<T extends Record<string, string | string[]>>(
   baseURL: string,
   filters?: T,
+  extraPrams?: Record<string, string | string[]>,
   page?: number
 ): string {
   const queryParams = new URLSearchParams();
-
-  if (filters) {
-    for (const key in filters) {
-      const value = filters[key];
+  if (extraPrams) {
+    for (const key in extraPrams) {
+      const value = extraPrams[key];
       if (Array.isArray(value)) {
-        value.forEach((item) => {
-          if (item) queryParams.append(key, item);
-        });
+        if (value.length > 0) {
+          queryParams.append(key, value.join(","));
+        }
       } else if (value) {
         queryParams.append(key, value);
       }
     }
   }
+
+  if (filters) {
+    for (const key in filters) {
+      const value = filters[key];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          queryParams.append(key, JSON.stringify(value));
+        }
+      } else if (value) {
+        queryParams.append(key, value);
+      }
+    }
+  }
+
   const queryString = queryParams.toString();
   if (page && queryString) {
     return `${baseURL}?${queryString}&page=${page}`;

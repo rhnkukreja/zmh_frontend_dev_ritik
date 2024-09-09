@@ -79,7 +79,7 @@ const Main: React.FC = () => {
               <div className="text-2xl font-medium">Sign In</div>
               <div className="mt-2.5 text-slate-600">
                 Don't have an account?
-                <Link className="font-medium text-primary" to="/register">
+                <Link className="ml-2 font-medium text-primary" to="/register">
                   Sign Up
                 </Link>
               </div>

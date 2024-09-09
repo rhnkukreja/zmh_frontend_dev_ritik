@@ -6,71 +6,72 @@ interface CPaginationProps {
   totalPages: number;
   page: number;
   handlePageChange: (page: number) => void;
+  handlePreviousPage: React.MouseEventHandler<SVGSVGElement>;
+  handleNextPage: React.MouseEventHandler<SVGSVGElement>;
 }
 
 const CPagination: React.FC<CPaginationProps> = ({
   totalPages,
   page,
   handlePageChange,
+  handlePreviousPage,
+  handleNextPage,
 }) => {
   const renderPageNumbers = () => {
     const pages = [];
-    const adjacentPages = 3;
+    const startPages = 3;
+    const endPages = 3;
+    const middlePages = 3;
 
-    const addPageLink = (i: number) => {
+    for (let i = 1; i <= startPages; i++) {
+      if (i > totalPages) break;
       pages.push(
         <Pagination.Link key={i} active={i === page}>
           <span onClick={() => handlePageChange(i)}>{i}</span>
         </Pagination.Link>
       );
-    };
-
-    // Add first page
-    addPageLink(1);
-
-    // Add ellipsis if there's a gap after first page
-    if (page - adjacentPages > 2) {
-      pages.push(<Pagination.Link key="leftEllipsis"><span>...</span></Pagination.Link>);
     }
 
-    // Add adjacent pages before current page
-    for (let i = Math.max(2, page - adjacentPages); i < page; i++) {
-      addPageLink(i);
+    
+    if (page > startPages) {
+      pages.push(
+        <Pagination.Link key="dots1" >
+          <span>...</span>
+        </Pagination.Link>
+      );
     }
 
-    // Add current page
-    if (page !== 1 && page !== totalPages) {
-      addPageLink(page);
+  
+    const startMiddle = Math.max(page - 1, startPages + 1);
+    const endMiddle = Math.min(page + middlePages - 1, totalPages - endPages);
+    for (let i = startMiddle; i <= endMiddle; i++) {
+      pages.push(
+        <Pagination.Link key={i} active={i === page}>
+          <span onClick={() => handlePageChange(i)}>{i}</span>
+        </Pagination.Link>
+      );
     }
 
-    // Add adjacent pages after current page
-    for (let i = page + 1; i <= Math.min(totalPages - 1, page + adjacentPages); i++) {
-      addPageLink(i);
+    
+    if (page + middlePages < totalPages - endPages) {
+      pages.push(
+        <Pagination.Link key="dots2" >
+          <span>...</span>
+        </Pagination.Link>
+      );
     }
 
-    // Add ellipsis if there's a gap before last page
-    if (page + adjacentPages < totalPages - 1) {
-      pages.push(<Pagination.Link key="rightEllipsis"><span>...</span></Pagination.Link>);
-    }
-
-    // Add last page
-    if (totalPages !== 1) {
-      addPageLink(totalPages);
+   
+    for (let i = totalPages - endPages + 1; i <= totalPages; i++) {
+      if (i <= startPages + middlePages) continue;
+      pages.push(
+        <Pagination.Link key={i} active={i === page}>
+          <span onClick={() => handlePageChange(i)}>{i}</span>
+        </Pagination.Link>
+      );
     }
 
     return pages;
-  };
-
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      handlePageChange(page - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      handlePageChange(page + 1);
-    }
   };
 
   return (

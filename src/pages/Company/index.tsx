@@ -56,7 +56,6 @@ function CompanyList() {
 
   useEffect(() => {
     return () => {
-      console.log('destory the component company');
       dispatch(resetPage());
       dispatch(resetFilter());
     }
@@ -257,9 +256,9 @@ function CompanyList() {
                 <CPagination
                   page={page}
                   totalPages={totalPages}
-                  // handleNextPage={handleNextPage}
+                  handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
-                 // handlePreviousPage={handlePreviousPage}
+                 handlePreviousPage={handlePreviousPage}
                 />
               </div>
             )}

@@ -88,8 +88,8 @@ function Main() {
             <div className="mt-10">
               <div className="text-2xl font-medium">Sign Up</div>
               <div className="mt-2.5 text-slate-600">
-                Already have an account?{" "}
-                <Link className="font-medium text-primary" to="/login">
+                Already have an account?
+                <Link className="ml-2 font-medium text-primary" to="/login">
                   Sign In
                 </Link>
               </div>

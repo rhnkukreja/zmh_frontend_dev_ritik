@@ -13,7 +13,10 @@ class InvestersProfileService {
       results,
     };
   }
-  public async getSingleInvester(id: number): Promise<{
+  public async getSingleInvester(
+    id: number,
+    type: string
+  ): Promise<{
     results: InvestersProfile;
   }> {
     const response = await axiosInstance.get(`/investor_profile/${id}/`);
@@ -24,11 +27,15 @@ class InvestersProfileService {
   }
   public async updateInvestersProfile(
     id: number,
+    type: string,
     data: Partial<InvestersProfile>
   ): Promise<{
     results: InvestersProfile;
   }> {
-    const response = await axiosInstance.put(`/investor_profile/${id}/`, data);
+    const response = await axiosInstance.put(
+      `/investor_profile/?type=${type}/${id}/`,
+      data
+    );
     const results = response.data;
     return {
       results,
@@ -41,6 +48,21 @@ class InvestersProfileService {
   }> {
     const response = await axiosInstance.post(`/investor_profile/`, data);
     const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async getInstitutionByName(
+    institution: string,
+    type: string
+  ): Promise<{
+    results: InvestersProfile[];
+  }> {
+    const response = await axiosInstance.get(
+      `/investor_profile/?type=${type}&institution_name=${institution}`
+    );
+    const results = response.data.results;
     return {
       results,
     };

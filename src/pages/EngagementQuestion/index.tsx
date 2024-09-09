@@ -179,13 +179,26 @@ function Main() {
 
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
 
-  // Toggle the group visibility
+  useEffect(() => {
+    if (groupedQuestions) {
+      const initialOpenGroups = Object.keys(groupedQuestions).reduce((acc, institutionName) => {
+        // Only set to true if it's not already in the state
+        acc[institutionName] = openGroups[institutionName] ?? true;
+        return acc;
+      }, {} as { [key: string]: boolean });
+      setOpenGroups(initialOpenGroups);
+    }
+  }, [groupedQuestions]);
+
   const toggleGroup = (institutionName: string) => {
     setOpenGroups((prevState) => ({
       ...prevState,
-      [institutionName]: !prevState[institutionName], // Toggle current state
+      [institutionName]: !prevState[institutionName],
     }));
   };
+
+
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
