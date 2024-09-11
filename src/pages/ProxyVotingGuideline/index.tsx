@@ -282,7 +282,7 @@ function ProxyGuideline() {
                           <div className="p-2">
                             <div className="mt-3">
                               <div className="text-left text-slate-500">
-                                Category
+                                Year
                               </div>
                               <FormSelect
                                 defaultValue={

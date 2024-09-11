@@ -9,6 +9,7 @@ interface MultiSearchBarProps {
   onSearch: (terms: string[]) => void;
   searchTerms: string[];
   setSearchTerms: (terms: string[]) => void;
+  placeHolder?: string;
 }
 
 // type FetchedOptionType = {
@@ -20,6 +21,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   onSearch,
   searchTerms,
   setSearchTerms,
+  placeHolder
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [options, setOptions] = useState<string[]>([]);
@@ -84,7 +86,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       <div className="search-container">
         <FormInput
           type="text"
-          placeholder="Search Institution Name"
+          placeholder={placeHolder ?? "Search Institution Name"}
           className="pl-9 w-full sm:w-80 rounded-[0.5rem] relative"
           value={searchValue}
           onChange={handleChange}

@@ -263,7 +263,7 @@ function Main() {
             <div className=" group-[.mode--light]:text-white">Back</div>
           </Button>
 
-          {/* <Button
+          <Button
             type="button"
             variant="outline-secondary"
             className=" border-none sm:w-fit"
@@ -284,7 +284,7 @@ function Main() {
             )}
 
             <div className=" group-[.mode--light]:text-white">Download PDF</div>
-          </Button> */}
+          </Button>
         </div>
 
         <div ref={contentRef}>
