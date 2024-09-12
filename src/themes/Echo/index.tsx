@@ -54,6 +54,7 @@ function Main() {
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
+    // setCompactMenuOnHover(!compactMenuOnHover)
   };
 
   const compactLayout = () => {
@@ -137,18 +138,21 @@ function Main() {
           className={clsx([
             "h-full bg-red box bg-white/[0.95] rounded-none xl:rounded-xl z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
-          // onMouseOver={(event) => {
-          //   event.preventDefault();
-          //   // setCompactMenuOnHover(true);
-          //   toggleCompactMenu(event);  
-          // }}
-          // onMouseLeave={(event) => {
-          //   event.preventDefault();
-          //   toggleCompactMenu(event);  
-          //   // setCompactMenuOnHover(false);
-          // }}
+          onMouseOver={(event) => {
+            event.preventDefault();
+            setCompactMenu(false);
+
+            // setCompactMenuOnHover(true);
+            // toggleCompactMenu(event);  
+          }}
+          onMouseLeave={(event) => {
+            event.preventDefault();
+            setCompactMenu(true);
+            // toggleCompactMenu(event);  
+            // setCompactMenuOnHover(false);
+          }}
         >
-          <div className={clsx([
+          {/* <div className={clsx([
               "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
             ])} >
             {
@@ -169,7 +173,7 @@ function Main() {
               <Lucide icon="X" className="w-5 h-5 stroke-[1.3]" />
             </a>
             }
-          </div>
+          </div> */}
 
           <a
               href=""
