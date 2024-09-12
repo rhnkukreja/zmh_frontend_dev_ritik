@@ -75,6 +75,7 @@ import Layout from "../themes";
 import withAuth from "./protectedRoute";
 import React from "react";
 import CompanyList from "@/pages/Company";
+import SharedHolder from "@/pages/sharedHolder";
 
 function Router() {
   const routes = [
@@ -345,6 +346,10 @@ function Router() {
         {
           path: "institution-detail/:id",
           element: <DetailInstitutions />,
+        },
+        {
+          path: "share-holder-proposal",
+          element: <SharedHolder />,
         },
       ],
     },
