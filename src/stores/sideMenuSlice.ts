@@ -88,14 +88,14 @@ const initialState: SideMenuState = {
     {
       icon: "MailOpen",
       pathname: "/share-holder-proposal",
-      title: "Shareholder Proposal",
+      title: "Shareholder Proposals",
       // badge: 4,
     },
-    // {
-    //   icon: "PanelRightClose",
-    //   pathname: "/file-manager-list",
-    //   title: "File Manager List",
-    // },
+    {
+      icon: "PanelRightClose",
+      pathname: "/peer-analysis",
+      title: "Peer Analysis",
+    },
     // {
     //   icon: "PanelTopClose",
     //   pathname: "/file-manager-grid",

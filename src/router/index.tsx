@@ -76,6 +76,7 @@ import withAuth from "./protectedRoute";
 import React from "react";
 import CompanyList from "@/pages/Company";
 import SharedHolder from "@/pages/sharedHolder";
+import PeerAnalysis from "@/pages/PeerAnalysis";
 
 function Router() {
   const routes = [
@@ -350,6 +351,10 @@ function Router() {
         {
           path: "share-holder-proposal",
           element: <SharedHolder />,
+        },
+        {
+          path: "peer-analysis",
+          element: <PeerAnalysis />,
         },
       ],
     },
