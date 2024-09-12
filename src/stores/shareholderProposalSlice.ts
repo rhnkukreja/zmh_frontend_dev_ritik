@@ -44,26 +44,26 @@ export const fetchProxyVotingGuidelines = createAsyncThunk<
   return await proxyVotingGuidelineService.getProxyVotingGuideline(url);
 });
 
-export const addEditProxyVotingGuideline = createAsyncThunk<
-  { results: ProxyVotingGuideline; isEdit: boolean },
-  { id?: number; data: Partial<ProxyVotingGuideline> }
->(`${name}/addEditProxyVotingGuideline`, async ({ id, data }) => {
-  let response;
-  if (id) {
-    response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
-      id,
-      data
-    );
-  } else {
-    response = await proxyVotingGuidelineService.createProxyVotingGuideline(
-      data
-    );
-  }
-  return {
-    results: response.result,
-    isEdit: id ? true : false,
-  };
-});
+// export const addEditProxyVotingGuideline = createAsyncThunk<
+//   { results: ProxyVotingGuideline; isEdit: boolean },
+//   { id?: number; data: Partial<ProxyVotingGuideline> }
+// >(`${name}/addEditProxyVotingGuideline`, async ({ id, data }) => {
+//   let response;
+//   if (id) {
+//     response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
+//       id,
+//       data
+//     );
+//   } else {
+//     response = await proxyVotingGuidelineService.createProxyVotingGuideline(
+//       data
+//     );
+//   }
+//   return {
+//     results: response.result,
+//     isEdit: id ? true : false,
+//   };
+// });
 
 const proxyVotingGuidelineSlice = createSlice({
   name,
@@ -118,33 +118,33 @@ const proxyVotingGuidelineSlice = createSlice({
           action.error.message || "Failed to fetch voting guidelines";
       })
 
-      .addCase(addEditProxyVotingGuideline.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(addEditProxyVotingGuideline.fulfilled, (state, action) => {
-        state.loading = false;
-        if (action.payload.isEdit) {
-          const index = state.proxyVotingGuidelines?.findIndex(
-            (question) => question.id === action.payload.results.id
-          );
-          if (index !== -1) {
-            state.proxyVotingGuidelines[index] = action.payload.results;
-          }
-        } else {
-          if (state.totalProxyVotingGuidelines < 10) {
-            state.proxyVotingGuidelines = [
-              ...state.proxyVotingGuidelines,
-              action.payload.results,
-            ];
-          }
-        }
-      })
-      .addCase(addEditProxyVotingGuideline.rejected, (state, action) => {
-        state.loading = false;
-        state.error =
-          action.error.message || "Failed to create engagement question";
-      });
+      // .addCase(addEditProxyVotingGuideline.pending, (state) => {
+      //   state.loading = true;
+      //   state.error = null;
+      // })
+      // .addCase(addEditProxyVotingGuideline.fulfilled, (state, action) => {
+      //   state.loading = false;
+      //   if (action.payload.isEdit) {
+      //     const index = state.proxyVotingGuidelines?.findIndex(
+      //       (question) => question.id === action.payload.results.id
+      //     );
+      //     if (index !== -1) {
+      //       state.proxyVotingGuidelines[index] = action.payload.results;
+      //     }
+      //   } else {
+      //     if (state.totalProxyVotingGuidelines < 10) {
+      //       state.proxyVotingGuidelines = [
+      //         ...state.proxyVotingGuidelines,
+      //         action.payload.results,
+      //       ];
+      //     }
+      //   }
+      // })
+      // .addCase(addEditProxyVotingGuideline.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error =
+      //     action.error.message || "Failed to create engagement question";
+      // });
   },
 });
 

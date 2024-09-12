@@ -88,7 +88,7 @@ const initialState: SideMenuState = {
     {
       icon: "MailOpen",
       pathname: "/share-holder-proposal",
-      title: "Shareholder Proposal",
+      title: "Shareholder Proposals",
       // badge: 4,
     },
     // {

@@ -1,6 +1,6 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover, Tab } from "@/components/Base/Headless";
-import { FormCheck, FormSelect } from "@/components/Base/Form";
+import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
 import { useEffect, useMemo, useState } from "react";
@@ -200,7 +200,7 @@ function ShareHolderProposal() {
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="text-base font-medium group-[.mode--light]:text-white">
-              Shareholder Proposal
+              Shareholder Proposals
             </div>
             {/* {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
@@ -297,7 +297,7 @@ function ShareHolderProposal() {
                               </div>
                             </div>
 
-                            <hr className="my-5" />
+                            <hr className="my-3" />
 
                             <div className="">
                               <label className="font-bold">Status</label>
@@ -328,10 +328,10 @@ function ShareHolderProposal() {
                                 </FormCheck>
                               </div>
                             </div>
-                            <hr className="my-3" />
-                            <div className="flex items-center justify-between">
-                              <div className="w-full mr-2 ">
-                                <div className="mt-3">
+                            <hr className="my-2" />
+                            <div>
+                              <div className="flex">
+                                <div className="mt-2 w-full mr-2">
                                   <div className="text-left text-slate-500"> Proponent </div>
                                   <FormSelect
                                     defaultValue={filters.region.length > 0 ? filters.region : "Select Region"}
@@ -354,11 +354,11 @@ function ShareHolderProposal() {
                                     )}
                                   </FormSelect>
                                 </div>
-                                <div className="mt-3">
+                                <div className="mt-2 w-full">
                                   <div className="text-left text-slate-500"> Category </div>
                                   <FormSelect
                                     defaultValue={filters.region.length > 0 ? filters.region : "Select Region"}
-                                    className="flex-1 mt-2"
+                                    className=" mt-2"
                                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                                       dispatch(setFilter({ key: "region", value: e.target.value }));
                                     }} >
@@ -378,9 +378,8 @@ function ShareHolderProposal() {
                                   </FormSelect>
                                 </div>
                               </div>
-
                               <div className="w-full mr-2">
-                                <div className="mt-3">
+                                <div className="mt-2">
                                   <div className="text-left text-slate-500"> Sub Category </div>
                                   <FormSelect
                                     defaultValue={filters.region.length > 0 ? filters.region : "Select Region"}
@@ -403,30 +402,14 @@ function ShareHolderProposal() {
                                     )}
                                   </FormSelect>
                                 </div>
-                                <div className="mt-3">
-                                  <div className="text-left text-slate-500"> Keyword </div>
-                                  <FormSelect
-                                    defaultValue={filters.region.length > 0 ? filters.region : "Select Region"}
-                                    className="flex-1 mt-2"
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                      dispatch(setFilter({ key: "region", value: e.target.value }));
-                                    }} >
-
-                                    <option disabled selected>
-                                      Select Keyword
-                                    </option>
-                                    {investerProfileFilterOption.region.map(
-                                      (region: string, index: number) => {
-                                        return (
-                                          <option key={index} value={region}>
-                                            {region}
-                                          </option>
-                                        );
-                                      }
-                                    )}
-                                  </FormSelect>
-                                </div>
+                               
                               </div>
+                            </div>
+
+
+                            <div className="mt-2">
+                              <div className="text-left text-slate-500"> Keyword </div>
+                              <FormInput type="text" className="col-span-4 flex-1 mt-2" placeholder="Enter Keyword" aria-label="default input inline 1" />
                             </div>
 
                             <div className="flex items-center justify-evenly mt-4">
@@ -464,7 +447,7 @@ function ShareHolderProposal() {
                         setTab("investor")
                         dispatch(resetInvestorProfiles())
                       }}>
-                        Shareholder Proposals Year
+                        Shareholder Proposals
                       </Tab.Button>
                     </Tab>
 
@@ -473,7 +456,7 @@ function ShareHolderProposal() {
                         setTab("investor")
                         dispatch(resetInvestorProfiles())
                       }}>
-                        No Action Letter Year
+                        No Action Letter
                       </Tab.Button>
                     </Tab>
 
@@ -482,7 +465,7 @@ function ShareHolderProposal() {
                         setTab("investor")
                         dispatch(resetInvestorProfiles())
                       }}>
-                        Withdrawn Year
+                        Withdrawn
                       </Tab.Button>
                     </Tab>
 
