@@ -103,7 +103,13 @@
     color: blue;
   }
 }
-
+.filter-section{
+  background: rgb(248 250 252);
+  border: 2px solid rgb(227, 238, 249);
+  border-radius: 15px;
+    margin: 10px;
+    padding: 10px;
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
