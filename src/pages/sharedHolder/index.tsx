@@ -7,19 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import {
-  fetchInvestersProfiles,
-  resetFilter,
-  resetInvestorProfiles,
-  resetPage,
-  setPage,
-} from "@/stores/investersProfileSlice";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
 import { useLocation, useNavigate } from "react-router-dom";
-import { setFilter } from "@/stores/investersProfileSlice";
+import { fetchInvestersProfiles, setFilter } from "@/stores/investersProfileSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
@@ -28,6 +21,15 @@ import MultiSearchBar from "@/components/MultiSearch";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import AddNewInvesterProfile from "../InvestorProfiles/components/AddNewInvester";
 import Table from "@/components/Base/Table";
+import {
+  Controller,
+  FieldErrors,
+  SubmitErrorHandler,
+  useForm,
+} from "react-hook-form";
+import TomSelect from "@/components/Base/TomSelect/ServerComponent";
+import { fetchShareHolderProposal, setPage } from "@/stores/shareholderProposalSlice";
+import { resetPage } from "@/stores/shareholderProposalSlice";
 
 function ShareHolderProposal() {
 
@@ -35,46 +37,55 @@ function ShareHolderProposal() {
   const navigate = useNavigate();
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
-  const [tab, setTab] = useState<"investor" | "equity">("investor");
+  const [tab, setTab] = useState<"proposal" | "no-action" | "withdrawn">("proposal");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   const {
     loading,
-    investersProfile,
+    shareHolderProposal,
     page,
     totalPages,
     filters,
-    investerProfileFilterOption,
-  } = useAppSelector((state) => state.investersProfile);
+    // investerProfileFilterOption,
+  } = useAppSelector((state) => state.sharedHolderNoAction);
   const { user } = useAppSelector((state) => state.authentiction);
 
   useEffect(() => {
-    if (filters.institution_name.length > 0) {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters, { type: tab })
-        )
-      );
-    } else {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters, { type: tab }, page)
-        )
-      );
-    }
-  }, [page, filters.institution_name, tab]);
+      if(tab === 'proposal'){
+        dispatch(
+          fetchShareHolderProposal(
+            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,filters,undefined, page)
+          )
+        );
+      }
+      else if(tab === 'no-action'){
+        dispatch(
+          fetchShareHolderProposal(
+            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`,filters,undefined, page)
+          )
+        );
+      }
+      else if(tab === 'withdrawn'){
+        dispatch(
+          fetchShareHolderProposal(
+            createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/`,filters,undefined, page)
+          )
+        );
+      }
+    
+  }, [page, tab]);
 
-  useEffect(() => {
-    return () => {
-      dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "institution_name",
-          value: [],
-        })
-      );
-    };
-  }, []);
+  // useEffect(() => {
+  //   return () => {
+  //     dispatch(resetPage());
+  //     dispatch(
+  //       setFilter({
+  //         key: "institution_name",
+  //         value: [],
+  //       })
+  //     );
+  //   };
+  // }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -100,47 +111,47 @@ function ShareHolderProposal() {
 
 
   function handleApplyFilter() {
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-      )
-    );
+    // dispatch(
+    //   fetchInvestersProfiles(
+    //     createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
+    //   )
+    // );
 
-    dispatch(resetPage());
+    // dispatch(resetPage());
   }
 
   const onFilterClear = () => {
-    dispatch(resetFilter());
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, { type: tab }, page)
-      )
-    );
+    // dispatch(resetFilter());
+    // dispatch(
+    //   fetchInvestersProfiles(
+    //     createDynamicURL(`${baseURL}/investor_profile/`, undefined, { type: tab }, page)
+    //   )
+    // );
   };
 
   const handleClearAllFilter = () => {
-    dispatch(resetFilter());
-    setSearchTerms([]);
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: [],
-      })
-    );
+    // dispatch(resetFilter());
+    // setSearchTerms([]);
+    // dispatch(
+    //   setFilter({
+    //     key: "institution_name",
+    //     value: [],
+    //   })
+    // );
 
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, { type: tab }, page)
-      )
-    );
+    // dispatch(
+    //   fetchInvestersProfiles(
+    //     createDynamicURL(`${baseURL}/investor_profile/`, undefined, { type: tab }, page)
+    //   )
+    // );
 
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
-      )
-    );
+    // dispatch(
+    //   fetchInvestersProfiles(
+    //     createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+    //   )
+    // );
 
-    dispatch(resetPage());
+    // dispatch(resetPage());
   };
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
@@ -158,7 +169,7 @@ function ShareHolderProposal() {
   useEffect(() => {
     const validateImages = async () => {
       const tempValidImages: { [key: string]: string } = {};
-      for (const profile of investersProfile || []) {
+      for (const profile of shareHolderProposal || []) {
         const isValid = await checkImageUrl(profile?.image);
         tempValidImages[profile?.name] = isValid
           ? profile?.image
@@ -169,30 +180,45 @@ function ShareHolderProposal() {
     };
 
     validateImages();
-  }, [investersProfile]);
+  }, [shareHolderProposal]);
 
-  const getFilterCount = useMemo(() => {
-    const { institution_name, ...allFilters } = filters;
-    return Object.values(allFilters).filter((value) => value !== "").length;
-  }, [filters]);
+  // const getFilterCount = useMemo(() => {
+  //   const { institution_name, ...allFilters } = filters;
+  //   return Object.values(allFilters).filter((value) => value !== "").length;
+  // }, [filters]);
 
   const handleSearch = (searchTerms: string[]) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-    const tempFilter = { institution_name: searchTerms };
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, { type: tab }, 1)
-      )
-    );
+    // dispatch(
+    //   setFilter({
+    //     key: "institution_name",
+    //     value: searchTerms,
+    //   })
+    // );
+    // const tempFilter = { institution_name: searchTerms };
+    // dispatch(
+    //   fetchshareHolderProposal(
+    //     createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, { type: tab }, 1)
+    //   )
+    // );
   };
-  useEffect(() => {
-    handleSearch(searchTerms)
-  }, [searchTerms, searchTerms?.length])
+  // useEffect(() => {
+  //   handleSearch(searchTerms)
+  // }, [searchTerms, searchTerms?.length])
+
+
+  const { handleSubmit, control, formState: { errors } } = useForm<any>();
+
+
+  const onSubmit = async (data: any) => {
+    const transformedData = {
+      ...data,
+      // institution: data.institution ? Number(data.institution) : null,
+    };
+
+    console.log(transformedData);
+
+  };
+
 
   return (
     <>
@@ -262,176 +288,324 @@ function ShareHolderProposal() {
                           />
                           Filter
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {getFilterCount}
+                            0{/* {getFilterCount} */}
                           </div>
                         </Popover.Button>
                         <Popover.Panel placement="bottom-end" className="sm:w-[350px] lg:w-[400px] ">
-                          <div className="p-2">
-                            <div className="">
-                              <label className="font-bold">Year</label>
-                              <div className="flex items-center justify-between mt-2 sm:flex-row">
-                                <FormCheck className="mr-2">
-                                  <FormCheck.Input id="checkbox-switch-4" type="checkbox" value="" />
-                                  <FormCheck.Label htmlFor="checkbox-switch-4">
-                                    2024
-                                  </FormCheck.Label>
-                                </FormCheck>
-                                <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                  <FormCheck.Input id="checkbox-switch-5" type="checkbox" value="" />
-                                  <FormCheck.Label htmlFor="checkbox-switch-5">
-                                    2023
-                                  </FormCheck.Label>
-                                </FormCheck>
-                                <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                  <FormCheck.Input id="checkbox-switch-6" type="checkbox" value="" />
-                                  <FormCheck.Label htmlFor="checkbox-switch-6">
-                                    2022
-                                  </FormCheck.Label>
-                                </FormCheck>
-                                <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                  <FormCheck.Input id="checkbox-switch-6" type="checkbox" value="" />
-                                  <FormCheck.Label htmlFor="checkbox-switch-6">
-                                    2021
-                                  </FormCheck.Label>
-                                </FormCheck>
-                              </div>
-                            </div>
+                          <form onSubmit={handleSubmit(onSubmit)}>
+                            <div className="p-2">
+                              <div className="">
+                                <label className="font-bold">Year</label>
+                                <div className="flex items-center justify-between mt-2 sm:flex-row">
 
-                            <hr className="my-3" />
 
-                            <div className="">
-                              <label className="font-bold">Status</label>
-                              <div className="flex items-center justify-between mt-2 sm:flex-row">
-                                <FormCheck className="mr-2">
-                                  <FormCheck.Input id="radio-switch-4" type="radio" name="horizontal_radio_button" value="horizontal-radio-chris-evans" />
-                                  <FormCheck.Label htmlFor="radio-switch-4">
-                                    All
-                                  </FormCheck.Label>
-                                </FormCheck>
-                                <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                  <FormCheck.Input id="radio-switch-5" type="radio" name="horizontal_radio_button" value="horizontal-radio-liam-neeson" />
-                                  <FormCheck.Label htmlFor="radio-switch-5">
-                                    Pass
-                                  </FormCheck.Label>
-                                </FormCheck>
-                                <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                  <FormCheck.Input id="radio-switch-6" type="radio" name="horizontal_radio_button" value="horizontal-radio-daniel-craig" />
-                                  <FormCheck.Label htmlFor="radio-switch-6">
-                                    Fail
-                                  </FormCheck.Label>
-                                </FormCheck>
-                                <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                  <FormCheck.Input id="radio-switch-6" type="radio" name="horizontal_radio_button" value="horizontal-radio-daniel-craig" />
-                                  <FormCheck.Label htmlFor="radio-switch-6">
-                                    Withdrawn
-                                  </FormCheck.Label>
-                                </FormCheck>
-                              </div>
-                            </div>
-                            <hr className="my-2" />
-                            <div>
-                              <div className="flex">
-                                <div className="mt-2 w-full mr-2">
-                                  <div className="text-left text-slate-500"> Proponent </div>
-                                  <FormSelect
-                                    defaultValue={filters.region.length > 0 ? filters.region : "Select Region"}
-                                    className="flex-1 mt-2"
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                      dispatch(setFilter({ key: "region", value: e.target.value }));
-                                    }} >
+                                <Controller
+                                    name="2024"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <>
 
-                                    <option disabled selected>
-                                      Select Proponent
-                                    </option>
-                                    {investerProfileFilterOption.region.map(
-                                      (region: string, index: number) => {
-                                        return (
-                                          <option key={index} value={region}>
-                                            {region}
-                                          </option>
-                                        );
-                                      }
+                                        <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                          <FormCheck.Input
+                                            id="checkbox-switch-4"
+                                            type="checkbox"
+                                            {...field}
+                                            value="2024"
+                                            checked={field.value}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-switch-5"
+                                            className="ml-2"
+                                          >
+                                            2024
+                                          </FormCheck.Label>
+                                        </FormCheck>
+
+
+                                      </>
                                     )}
-                                  </FormSelect>
-                                </div>
-                                <div className="mt-2 w-full">
-                                  <div className="text-left text-slate-500"> Category </div>
-                                  <FormSelect
-                                    defaultValue={filters.region.length > 0 ? filters.region : "Select Region"}
-                                    className=" mt-2"
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                      dispatch(setFilter({ key: "region", value: e.target.value }));
-                                    }} >
+                                  />
 
-                                    <option disabled selected>
-                                      Select Category
-                                    </option>
-                                    {investerProfileFilterOption.region.map(
-                                      (region: string, index: number) => {
-                                        return (
-                                          <option key={index} value={region}>
-                                            {region}
-                                          </option>
-                                        );
-                                      }
+                                  <Controller
+                                    name="2023"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <>
+
+                                        <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                          <FormCheck.Input
+                                            id="checkbox-switch-4"
+                                            type="checkbox"
+                                            {...field}
+                                            value="2023"
+                                            checked={field.value}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-switch-5"
+                                            className="ml-2"
+                                          >
+                                            2023
+                                          </FormCheck.Label>
+                                        </FormCheck>
+
+
+                                      </>
                                     )}
-                                  </FormSelect>
+                                  />
+
+
+                                  <Controller
+                                    name="2022"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <>
+
+                                        <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                          <FormCheck.Input
+                                            id="checkbox-switch-4"
+                                            type="checkbox"
+                                            {...field}
+                                            value="2022"
+                                            checked={field.value}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-switch-5"
+                                            className="ml-2"
+                                          >
+                                            2022
+                                          </FormCheck.Label>
+                                        </FormCheck>
+
+
+                                      </>
+                                    )}
+                                  />
+
+
+                                  <Controller
+                                    name="2021"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <>
+                                        <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                          <FormCheck.Input
+                                            id="checkbox-switch-4"
+                                            type="checkbox"
+                                            {...field}
+                                            value="2021"
+                                            checked={field.value}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-switch-5"
+                                            className="ml-2"
+                                          >
+                                            2021
+                                          </FormCheck.Label>
+                                        </FormCheck>
+
+                                      </>
+                                    )}
+                                  />
+
+                                  {/* <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                    <FormCheck.Input id="checkbox-switch-5" type="checkbox" value="" />
+                                    <FormCheck.Label htmlFor="checkbox-switch-5">
+                                      2023
+                                    </FormCheck.Label>
+                                  </FormCheck>
+                                  <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                    <FormCheck.Input id="checkbox-switch-6" type="checkbox" value="" />
+                                    <FormCheck.Label htmlFor="checkbox-switch-6">
+                                      2022
+                                    </FormCheck.Label>
+                                  </FormCheck>
+                                  <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                    <FormCheck.Input id="checkbox-switch-6" type="checkbox" value="" />
+                                    <FormCheck.Label htmlFor="checkbox-switch-6">
+                                      2021
+                                    </FormCheck.Label>
+                                  </FormCheck> */}
                                 </div>
                               </div>
-                              <div className="w-full mr-2">
-                                <div className="mt-2">
-                                  <div className="text-left text-slate-500"> Sub Category </div>
-                                  <FormSelect
-                                    defaultValue={filters.region.length > 0 ? filters.region : "Select Region"}
-                                    className="flex-1 mt-2"
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                      dispatch(setFilter({ key: "region", value: e.target.value }));
-                                    }} >
 
-                                    <option disabled selected>
-                                      Select Sub Category
-                                    </option>
-                                    {investerProfileFilterOption.region.map(
-                                      (region: string, index: number) => {
-                                        return (
-                                          <option key={index} value={region}>
-                                            {region}
-                                          </option>
-                                        );
-                                      }
+                              <hr className="my-3" />
+
+                              <div className="">
+                                <label className="font-bold">Status</label>
+                                <div className="flex items-center justify-between mt-2 sm:flex-row">
+
+                                  <Controller
+                                    name="active"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Input
+                                            id="radio-switch-4"
+                                            type="radio"
+                                            {...field}
+                                            value="All"
+                                            checked={field.value === "All"}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="radio-switch-4"
+                                            className="ml-2"
+                                          >
+                                            All
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                        <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                          <FormCheck.Input
+                                            id="radio-switch-5"
+                                            type="radio"
+                                            {...field}
+                                            value="Pass"
+                                            checked={field.value === "Pass"}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="radio-switch-5"
+                                            className="ml-2"
+                                          >
+                                            Pass
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                        <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                          <FormCheck.Input
+                                            id="radio-switch-5"
+                                            type="radio"
+                                            {...field}
+                                            value="fail"
+                                            checked={field.value === "fail"}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="radio-switch-5"
+                                            className="ml-2"
+                                          >
+                                            fail
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                        <FormCheck className="mt-2 mr-2 sm:mt-0">
+                                          <FormCheck.Input
+                                            id="radio-switch-5"
+                                            type="radio"
+                                            {...field}
+                                            value="withdrawn"
+                                            checked={field.value === "withdrawn"}
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="radio-switch-5"
+                                            className="ml-2"
+                                          >
+                                            withdrawn
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                      </>
                                     )}
-                                  </FormSelect>
+                                  />
                                 </div>
-                               
+                              </div>
+                              <hr className="my-2" />
+                              <div>
+                                <div className="flex">
+                                  <div className="mt-2 w-full mr-2">
+                                    <div className="text-left text-slate-500"> Proponent </div>
+                                    <Controller
+                                      name="proponent"
+                                      control={control}
+                                      defaultValue=""
+                                      render={({ field }) => (
+                                        <TomSelect
+                                          url="/institute/"
+                                          valueKey="id"
+                                          labelKey="institution"
+                                          value={field.value?.toString() || ""}
+                                          onChange={(value) => field.onChange(value)}
+                                          options={{ placeholder: "Select Proponent" }}
+                                          className="w-full"
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="mt-2 w-full">
+                                    <div className="text-left text-slate-500"> Category </div>
+                                    <Controller
+                                      name="category"
+                                      control={control}
+                                      defaultValue=""
+                                      render={({ field }) => (
+                                        <TomSelect
+                                          url="/institute/"
+                                          valueKey="id"
+                                          labelKey="institution"
+                                          value={field.value?.toString() || ""}
+                                          onChange={(value) => field.onChange(value)}
+                                          options={{ placeholder: "Select Category" }}
+                                          className="w-full"
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="w-full mr-2">
+                                  <div className="mt-2">
+                                    <div className="text-left text-slate-500"> Sub Category </div>
+                                    <Controller
+                                      name="sub-category"
+                                      control={control}
+                                      defaultValue=""
+                                      render={({ field }) => (
+                                        <TomSelect
+                                          url="/institute/"
+                                          valueKey="id"
+                                          labelKey="institution"
+                                          value={field.value?.toString() || ""}
+                                          onChange={(value) => field.onChange(value)}
+                                          options={{ placeholder: "Select Sub Category" }}
+                                          className="w-full"
+                                        />
+                                      )}
+                                    />
+                                  </div>
+
+                                </div>
+                              </div>
+
+
+                              <div className="mt-2">
+                                <div className="text-left text-slate-500"> Keyword </div>
+                                <Controller
+                                  name="institution"
+                                  control={control}
+                                  defaultValue=""
+                                  render={({ field }) => (
+                                    <FormInput value={field.value?.toString() || ""} onChange={(value) => field.onChange(value)} type="text" className="col-span-4 flex-1 mt-2" placeholder="Enter Keyword" aria-label="default input inline 1" />
+                                  )}
+                                />
+
+                              </div>
+
+                              <div className="flex items-center justify-evenly mt-4">
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    close();
+                                    onFilterClear();
+                                  }}
+                                  className="w-full mx-2"
+                                >
+                                  Clear
+                                </Button>
+                                <Button
+                                  onClick={handleApplyFilter}
+                                  variant="primary"
+                                  className="w-full mx-2"
+                                  type="submit"
+                                >
+                                  Apply
+                                </Button>
                               </div>
                             </div>
-
-
-                            <div className="mt-2">
-                              <div className="text-left text-slate-500"> Keyword </div>
-                              <FormInput type="text" className="col-span-4 flex-1 mt-2" placeholder="Enter Keyword" aria-label="default input inline 1" />
-                            </div>
-
-                            <div className="flex items-center justify-evenly mt-4">
-                              <Button
-                                variant="secondary"
-                                onClick={() => {
-                                  close();
-                                  onFilterClear();
-                                }}
-                                className="w-full mx-2"
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                onClick={handleApplyFilter}
-                                variant="primary"
-                                className="w-full mx-2"
-                              >
-                                Apply
-                              </Button>
-                            </div>
-                          </div>
+                          </form>
                         </Popover.Panel>
                       </>
                     )}
@@ -444,8 +618,10 @@ function ShareHolderProposal() {
                   <Tab.List variant="link-tabs">
                     <Tab>
                       <Tab.Button className="w-full py-2" as="button" onClick={() => {
-                        setTab("investor")
-                        dispatch(resetInvestorProfiles())
+                        setTab("proposal");
+                        dispatch(resetPage());
+
+                        // dispatch(resetInvestorProfiles())
                       }}>
                         Shareholder Proposals
                       </Tab.Button>
@@ -453,8 +629,9 @@ function ShareHolderProposal() {
 
                     <Tab>
                       <Tab.Button className="w-full py-2" as="button" onClick={() => {
-                        setTab("investor")
-                        dispatch(resetInvestorProfiles())
+                        setTab("no-action");
+                        dispatch(resetPage());
+                        // dispatch(resetInvestorProfiles())
                       }}>
                         No Action Letter
                       </Tab.Button>
@@ -462,8 +639,9 @@ function ShareHolderProposal() {
 
                     <Tab>
                       <Tab.Button className="w-full py-2" as="button" onClick={() => {
-                        setTab("investor")
-                        dispatch(resetInvestorProfiles())
+                        setTab("withdrawn");
+                        dispatch(resetPage());
+                        // dispatch(resetInvestorProfiles())
                       }}>
                         Withdrawn
                       </Tab.Button>
@@ -474,90 +652,6 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                        {/* {investersProfile?.length > 0 &&
-                          investersProfile.map(
-                            (profile: InvestersProfile, index: number) => {
-                              return ( */}
-                        <Table>
-                          <Table.Thead>
-                            <Table.Tr>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Year
-                              </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Company
-                              </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Category
-                              </Table.Td>
-                              {user?.user_type === "Admin" && (
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Sub Category
-                                </Table.Td>
-                              )}
-                              {user?.user_type === "Admin" && (
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Proponent
-                                </Table.Td>
-                              )}
-                              {user?.user_type === "Admin" && (
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Proposal Name
-                                </Table.Td>
-                              )}
-                              {user?.user_type === "Admin" && (
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Outcome/Percentage for
-                                </Table.Td>
-                              )}
-
-                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Actions
-                              </Table.Td>
-                            </Table.Tr>
-                          </Table.Thead>
-
-                          <Table.Tbody>
-                            <Table.Tr key={1} className="[&_td]:last:border-b-0">
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                2024
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Apple Inc.
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Social
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Diversity
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                National Center for Public
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                EEO policy
-                              </Table.Td>
-
-                              <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                Fall 0.94%
-                              </Table.Td>
-
-                            </Table.Tr>
-                          </Table.Tbody>
-                        </Table>
-                      </TableWrapper>
-                    </Tab.Panel>
-
-                  </Tab.Panels>
-
-
-                  <Tab.Panels className="mt-5">
-                    <Tab.Panel className="leading-relaxed">
-                      <TableWrapper isLoading={loading}>
-                        {/* {investersProfile?.length > 0 &&
-                          investersProfile.map(
-                            (profile: InvestersProfile, index: number) => {
-                              return ( */}
                         <Table>
                           <Table.Thead>
                             <Table.Tr>
@@ -581,41 +675,36 @@ function ShareHolderProposal() {
                                 </Table.Td>
                               )}
 
-                              {user?.user_type === "Admin" && (
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Outcome
-                                </Table.Td>
-                              )}
-
-                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              {/* <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Actions
-                              </Table.Td>
+                              </Table.Td> */}
                             </Table.Tr>
                           </Table.Thead>
 
                           <Table.Tbody>
-                            <Table.Tr key={1} className="[&_td]:last:border-b-0">
+                          {shareHolderProposal?.length > 0 &&
+                        shareHolderProposal?.map(
+                          (noAction: any) => (
+                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                2024
+                              {noAction?.year}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Fortune Brands Innovations, Inc.
+                              {noAction?.company_name}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Corporate Governance
+                              {noAction?.category}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Simple Majority Voting
+                              {noAction?.sub_category}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                John Chevedden
-                              </Table.Td>
-
-                              <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                Exclude under 14a-8f
+                              {noAction?.proponent}
                               </Table.Td>
 
                             </Table.Tr>
+                            )
+                          )}
                           </Table.Tbody>
                         </Table>
                       </TableWrapper>
@@ -624,15 +713,9 @@ function ShareHolderProposal() {
                   </Tab.Panels>
 
 
-
-
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                        {/* {investersProfile?.length > 0 &&
-                          investersProfile.map(
-                            (profile: InvestersProfile, index: number) => {
-                              return ( */}
                         <Table>
                           <Table.Thead>
                             <Table.Tr>
@@ -642,42 +725,123 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Company
                               </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Category
+                              </Table.Td>
+                              {user?.user_type === "Admin" && (
+                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                  Sub Category
+                                </Table.Td>
+                              )}
                               {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Proponent
                                 </Table.Td>
                               )}
-                              {user?.user_type === "Admin" && (
+
+                              {/* {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Outcome
                                 </Table.Td>
-                              )}
-                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Actions
-                              </Table.Td>
+                              )} */}
                             </Table.Tr>
                           </Table.Thead>
 
                           <Table.Tbody>
-                            <Table.Tr key={1} className="[&_td]:last:border-b-0">
+                          {shareHolderProposal?.length > 0 &&
+                        shareHolderProposal?.map(
+                          (noAction: any) => (
+                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                2021
+                              {noAction?.year}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Bank of America Corp
+                              {noAction?.company_name}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Trillium Asset Management
+                              {noAction?.category}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                Withdrwan
+                              {noAction?.sub_category}
+                              </Table.Td>
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {/* {noAction?.year} */}
                               </Table.Td>
 
                               {/* <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                    Fall 0.94%
-                    </Table.Td>
-                     */}
+                              {noAction?.year}
+                              </Table.Td> */}
+
                             </Table.Tr>
+                            )
+                          )}
+                          </Table.Tbody>
+                        </Table>
+                      </TableWrapper>
+                    </Tab.Panel>
+
+                  </Tab.Panels>
+
+
+
+
+                  <Tab.Panels className="mt-5">
+                    <Tab.Panel className="leading-relaxed">
+                      <TableWrapper isLoading={loading}>
+                        {/* {investersProfile?.length > 0 &&
+                          investersProfile.map(
+                            (profile: InvestersProfile, index: number) => {
+                              return ( */}
+                        <Table>
+                          <Table.Thead>
+                            <Table.Tr>
+                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Year
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Company
+                              </Table.Td>
+                              {user?.user_type === "Admin" && (
+                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                  Proponent
+                                </Table.Td>
+                              )}
+                              {user?.user_type === "Admin" && (
+                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                  Outcome
+                                </Table.Td>
+                              )}
+                              {/* <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Actions
+                              </Table.Td> */}
+                            </Table.Tr>
+                          </Table.Thead>
+
+                          <Table.Tbody>
+                          {shareHolderProposal?.length > 0 &&
+                        shareHolderProposal?.map(
+                          (noAction: any) => (
+                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {noAction?.year}
+                              </Table.Td>
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {noAction?.company_name}
+                              </Table.Td>
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {noAction?.proponent}
+                              </Table.Td>
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {/* {noAction?.year} */}
+                              </Table.Td>
+
+                              {/* <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                              {noAction?.year}
+                              </Table.Td> */}
+
+                            </Table.Tr>
+                            )
+                          )}
                           </Table.Tbody>
                         </Table>
                       </TableWrapper>
@@ -705,12 +869,12 @@ function ShareHolderProposal() {
               </div>
             </div>
           </div>
-          {addNewInvesterModalVisible && (
+          {/* {addNewInvesterModalVisible && (
             <AddNewInvesterProfile
               addNewInvesterModalVisible={addNewInvesterModalVisible}
               setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
             />
-          )}
+          )} */}
         </div>
       </div>
     </>
