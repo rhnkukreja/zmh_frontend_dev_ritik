@@ -1,71 +1,36 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
 import { ProxyVotingGuideline } from "@/types/proxyVotingGuideline";
 import { getPageNumbers } from "@/utils/helper";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
 
-const name = "proxyVotingGuideline";
+const name = "shareholder_proposal";
 
-interface ProxyVotingGuidelineSlice {
-  proxyVotingGuidelines: ProxyVotingGuideline[];
-  totalProxyVotingGuidelines: number;
+interface SharedHolderPrposal {
+  shareHolderProposal: any[];
+  totalShareHolderNoAction: number;
   loading: boolean;
   error: string | null;
   totalPages: number;
   page: number;
-  guidelineFilterOptions: {
-    year: string[];
-  };
-  filters: {
-    year: string;
-    institution_name: string[];
-  };
 }
 
-const initialState: ProxyVotingGuidelineSlice = {
-  proxyVotingGuidelines: [],
-  totalProxyVotingGuidelines: 0,
+const initialState: SharedHolderPrposal = {
+  shareHolderProposal: [],
+  totalShareHolderNoAction: 0,
   loading: false,
   error: null,
   totalPages: 1,
   page: 1,
-  guidelineFilterOptions: {
-    year: ["ALL", "2023", "2024"],
-  },
-  filters: {
-    year: "",
-    institution_name: [],
-  },
 };
 
-export const fetchProxyVotingGuidelines = createAsyncThunk<
-  { count: number; results: ProxyVotingGuideline[] },
+export const fetchShareHolderProposal = createAsyncThunk<
+  { count: number; results: any[] },
   string
->(`${name}/fetchProxyVotingGuidelines`, async (url: string) => {
-  return await proxyVotingGuidelineService.getProxyVotingGuideline(url);
+>(`${name}`, async (url: string) => {
+  return await shareHolderProposalService.getShareHolderProposal(url);
 });
 
-// export const addEditProxyVotingGuideline = createAsyncThunk<
-//   { results: ProxyVotingGuideline; isEdit: boolean },
-//   { id?: number; data: Partial<ProxyVotingGuideline> }
-// >(`${name}/addEditProxyVotingGuideline`, async ({ id, data }) => {
-//   let response;
-//   if (id) {
-//     response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
-//       id,
-//       data
-//     );
-//   } else {
-//     response = await proxyVotingGuidelineService.createProxyVotingGuideline(
-//       data
-//     );
-//   }
-//   return {
-//     results: response.result,
-//     isEdit: id ? true : false,
-//   };
-// });
-
-const proxyVotingGuidelineSlice = createSlice({
+const shareHolderProposal = createSlice({
   name,
   initialState,
   reducers: {
@@ -75,44 +40,44 @@ const proxyVotingGuidelineSlice = createSlice({
     resetPage(state) {
       state.page = 1;
     },
-    setFilter(
-      state,
-      action: PayloadAction<{
-        key: keyof typeof initialState.filters;
-        value: string | string[];
-      }>
-    ) {
-      state.filters[action.payload.key] = action.payload.value as any;
-    },
-    resetFilter(state) {
-      state.filters = {
-        year: "",
-        institution_name: [],
-      };
-    },
+    // setFilter(
+    //   state,
+    //   action: PayloadAction<{
+    //     key: keyof typeof initialState.filters;
+    //     value: string | string[];
+    //   }>
+    // ) {
+    //   state.filters[action.payload.key] = action.payload.value as any;
+    // },
+    // resetFilter(state) {
+    //   state.filters = {
+    //     year: "",
+    //     institution_name: [],
+    //   };
+    // },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchProxyVotingGuidelines.pending, (state) => {
+      .addCase(fetchShareHolderProposal.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(
-        fetchProxyVotingGuidelines.fulfilled,
+        fetchShareHolderProposal.fulfilled,
         (
           state,
           action: PayloadAction<{
             count: number;
-            results: ProxyVotingGuideline[];
+            results: any[];
           }>
         ) => {
           state.loading = false;
-          state.proxyVotingGuidelines = action.payload.results;
-          state.totalProxyVotingGuidelines = action.payload.count;
+          state.shareHolderProposal = action.payload.results;
+          state.totalShareHolderNoAction = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
         }
       )
-      .addCase(fetchProxyVotingGuidelines.rejected, (state, action) => {
+      .addCase(fetchShareHolderProposal.rejected, (state, action) => {
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch voting guidelines";
@@ -148,6 +113,8 @@ const proxyVotingGuidelineSlice = createSlice({
   },
 });
 
-export default proxyVotingGuidelineSlice;
-export const { setPage, resetPage, setFilter, resetFilter } =
-  proxyVotingGuidelineSlice.actions;
+export default shareHolderProposal;
+export const { setPage, resetPage, 
+  //setFilter, resetFilter
+   } =
+  shareHolderProposal.actions;

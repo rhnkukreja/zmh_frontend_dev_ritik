@@ -18,6 +18,8 @@ import proxyVotingGuidelineReducer from "./proxyVotingGuidelineSlice";
 import institutionsReducer from "./institutionSlice";
 import companyReducer from "./companySlice";
 import dashboardReducer from "./dashboardSlice";
+import shareholderNoActionReducer from "./shareholderProposalSlice";
+
 import { PersistPartial } from "redux-persist/es/persistReducer";
 import storage from "redux-persist/lib/storage";
 import { persistReducer, persistStore, PURGE } from "redux-persist";
@@ -46,6 +48,7 @@ const slices = {
   institutions: institutionsReducer,
   company: companyReducer,
   dashboard: dashboardReducer,
+  sharedHolderNoAction: shareholderNoActionReducer
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(
