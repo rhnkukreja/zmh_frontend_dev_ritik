@@ -20,6 +20,9 @@ export interface SharedHolderPrposal {
     keyword: string,
     active: string          
   };
+  shareHolderFilterOption: {
+    category: string[];
+  };
 }
 
 const initialState: SharedHolderPrposal = {
@@ -36,7 +39,10 @@ const initialState: SharedHolderPrposal = {
     sub_category: '',     
     keyword: '',
     active: ''          
-  }
+  },
+  shareHolderFilterOption: {
+    category: ["Corporate Governance", "Environmental", "Executive Compensation", "Social"],
+  },
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<

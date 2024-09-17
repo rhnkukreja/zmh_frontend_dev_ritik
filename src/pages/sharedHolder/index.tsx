@@ -482,8 +482,8 @@ function ShareHolderProposal() {
                                         <TomSelect
                                           // url={`/shareholder_proposal/no_action/?category=${categoryName}&all=true`}
                                           url={`/shareholder_proposal/no_action/?category=Environmental&all=true`}
-                                          valueKey="institution"
-                                          labelKey="institution"
+                                          valueKey="sub_category"
+                                          labelKey="sub_category"
                                           value={field.value?.toString() || ""}
                                           onChange={(value) => field.onChange(value)}
                                           options={{ placeholder: "Select Sub Category" }}
