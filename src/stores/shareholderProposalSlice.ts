@@ -5,13 +5,21 @@ import { shareHolderProposalService } from "@/services/shareholderProposal";
 
 const name = "shareholder_proposal";
 
-interface SharedHolderPrposal {
+export interface SharedHolderPrposal {
   shareHolderProposal: any[];
   totalShareHolderNoAction: number;
   loading: boolean;
   error: string | null;
   totalPages: number;
   page: number;
+  filters : {
+    proponent_name: string, 
+    year: number[],
+    category: string,            
+    sub_category: string,     
+    keyword: string,
+    active: string          
+  };
 }
 
 const initialState: SharedHolderPrposal = {
@@ -21,6 +29,14 @@ const initialState: SharedHolderPrposal = {
   error: null,
   totalPages: 1,
   page: 1,
+  filters : {
+    proponent_name: '', 
+    year: [],
+    category: '',            
+    sub_category: '',     
+    keyword: '',
+    active: ''          
+  }
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<
@@ -40,6 +56,8 @@ const shareHolderProposal = createSlice({
     resetPage(state) {
       state.page = 1;
     },
+    // 
+    
     // setFilter(
     //   state,
     //   action: PayloadAction<{
@@ -114,7 +132,6 @@ const shareHolderProposal = createSlice({
 });
 
 export default shareHolderProposal;
-export const { setPage, resetPage, 
-  //setFilter, resetFilter
+export const { setPage, resetPage, //resetFilter
    } =
   shareHolderProposal.actions;

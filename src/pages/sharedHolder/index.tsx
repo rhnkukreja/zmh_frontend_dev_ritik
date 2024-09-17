@@ -10,16 +10,13 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { InvestersProfile } from "@/types/investerProfiles";
 import { useLocation, useNavigate } from "react-router-dom";
-import { fetchInvestersProfiles, setFilter } from "@/stores/investersProfileSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
-import AddNewInvesterProfile from "../InvestorProfiles/components/AddNewInvester";
 import Table from "@/components/Base/Table";
 import {
   Controller,
@@ -31,14 +28,18 @@ import TomSelect from "@/components/Base/TomSelect/ServerComponent";
 import { fetchShareHolderProposal, setPage } from "@/stores/shareholderProposalSlice";
 import { resetPage } from "@/stores/shareholderProposalSlice";
 
+
+
 function ShareHolderProposal() {
 
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
-    useState<boolean>(false);
+
   const [tab, setTab] = useState<"proposal" | "no-action" | "withdrawn">("proposal");
+
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [applyFilters, setApplyFilters] = useState<ShareHolderFilter | undefined>(undefined);
+  const [categoryName, setCategoryName] = useState<string>('');
 
   const {
     loading,
@@ -54,38 +55,32 @@ function ShareHolderProposal() {
       if(tab === 'proposal'){
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,filters,undefined, page)
+            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,applyFilters,undefined, page)
           )
         );
       }
       else if(tab === 'no-action'){
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`,filters,undefined, page)
+            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`,applyFilters,undefined, page)
           )
         );
       }
       else if(tab === 'withdrawn'){
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/`,filters,undefined, page)
+            createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/`,applyFilters,undefined, page)
           )
         );
       }
-    
-  }, [page, tab]);
 
-  // useEffect(() => {
-  //   return () => {
-  //     dispatch(resetPage());
-  //     dispatch(
-  //       setFilter({
-  //         key: "institution_name",
-  //         value: [],
-  //       })
-  //     );
-  //   };
-  // }, []);
+      // const getFilterCount = useMemo(() => {
+      //   const {proponent_name, ...allFilters } = applyFilters.;
+      //   return Object.values(allFilters).filter((value) => value !== "").length;
+      // }, [applyFilters]);
+    
+  }, [page, tab, applyFilters]);
+
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -103,55 +98,15 @@ function ShareHolderProposal() {
     dispatch(setPage(newPage));
   };
 
-  const gotoDetailPage = (id: number) => {
-    const data = { currentPage: page };
-    navigate(`/investor-profile/${tab}/${id}`, { state: data });
-  };
-
-
-
-  function handleApplyFilter() {
-    // dispatch(
-    //   fetchInvestersProfiles(
-    //     createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-    //   )
-    // );
-
-    // dispatch(resetPage());
-  }
 
   const onFilterClear = () => {
-    // dispatch(resetFilter());
-    // dispatch(
-    //   fetchInvestersProfiles(
-    //     createDynamicURL(`${baseURL}/investor_profile/`, undefined, { type: tab }, page)
-    //   )
-    // );
+    reset();
+    setApplyFilters(undefined);
+    setCategoryName('');
   };
 
   const handleClearAllFilter = () => {
-    // dispatch(resetFilter());
-    // setSearchTerms([]);
-    // dispatch(
-    //   setFilter({
-    //     key: "institution_name",
-    //     value: [],
-    //   })
-    // );
 
-    // dispatch(
-    //   fetchInvestersProfiles(
-    //     createDynamicURL(`${baseURL}/investor_profile/`, undefined, { type: tab }, page)
-    //   )
-    // );
-
-    // dispatch(
-    //   fetchInvestersProfiles(
-    //     createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
-    //   )
-    // );
-
-    // dispatch(resetPage());
   };
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
@@ -188,36 +143,41 @@ function ShareHolderProposal() {
   // }, [filters]);
 
   const handleSearch = (searchTerms: string[]) => {
-    // dispatch(
-    //   setFilter({
-    //     key: "institution_name",
-    //     value: searchTerms,
-    //   })
-    // );
-    // const tempFilter = { institution_name: searchTerms };
-    // dispatch(
-    //   fetchshareHolderProposal(
-    //     createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, { type: tab }, 1)
-    //   )
-    // );
+
   };
-  // useEffect(() => {
-  //   handleSearch(searchTerms)
-  // }, [searchTerms, searchTerms?.length])
+  const { handleSubmit, control, reset, formState: { errors }} = useForm<any>();
 
+      
+  interface ShareHolderFilter {
+    proponent_name: string,
+    year: number[],
+    category: string,
+    sub_category: string,
+    keyword: string,
+    active: string,
+    [key: string]: any;
+  }
 
-  const { handleSubmit, control, formState: { errors } } = useForm<any>();
-
-
-  const onSubmit = async (data: any) => {
-    const transformedData = {
-      ...data,
-      // institution: data.institution ? Number(data.institution) : null,
+  const onSubmit = async (data: ShareHolderFilter) => {
+ 
+    const shareHolderFilter: ShareHolderFilter = {
+      proponent_name: data?.proponent_name, 
+      year: Object.keys(data).filter(key => ['2021', '2022', '2023', '2024'].includes(key) && data[key]).map(Number),
+      category: data?.category,            
+      sub_category: data?.sub_category,     
+      keyword: data?.keyword,
+      active: data?.active           
     };
 
-    console.log(transformedData);
+    setApplyFilters(shareHolderFilter);
 
   };
+
+  const handleCategory = (item:any) => {
+    setCategoryName(item?.target?.value);
+    console.log(categoryName);
+    // return field.value?.toString();
+  }
 
 
   return (
@@ -228,23 +188,6 @@ function ShareHolderProposal() {
             <div className="text-base font-medium group-[.mode--light]:text-white">
               Shareholder Proposals
             </div>
-            {/* {user?.user_type === "Admin" && (
-              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-                <Button
-                  onClick={() => {
-                    setAddNewInvesterModalVisible(true);
-                  }}
-                  variant="primary"
-                  className="bg-theme-2 border-bg-theme-2 group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
-                >
-                  <Lucide
-                    icon="PenLine"
-                    className="stroke-[1.3] w-4 h-4 mr-2"
-                  />
-                  Add New Investor
-                </Button>
-              </div>
-            )} */}
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
@@ -407,24 +350,6 @@ function ShareHolderProposal() {
                                     )}
                                   />
 
-                                  {/* <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                    <FormCheck.Input id="checkbox-switch-5" type="checkbox" value="" />
-                                    <FormCheck.Label htmlFor="checkbox-switch-5">
-                                      2023
-                                    </FormCheck.Label>
-                                  </FormCheck>
-                                  <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                    <FormCheck.Input id="checkbox-switch-6" type="checkbox" value="" />
-                                    <FormCheck.Label htmlFor="checkbox-switch-6">
-                                      2022
-                                    </FormCheck.Label>
-                                  </FormCheck>
-                                  <FormCheck className="mt-2 mr-2 sm:mt-0">
-                                    <FormCheck.Input id="checkbox-switch-6" type="checkbox" value="" />
-                                    <FormCheck.Label htmlFor="checkbox-switch-6">
-                                      2021
-                                    </FormCheck.Label>
-                                  </FormCheck> */}
                                 </div>
                               </div>
 
@@ -535,10 +460,10 @@ function ShareHolderProposal() {
                                       render={({ field }) => (
                                         <TomSelect
                                           url="/institute/"
-                                          valueKey="id"
+                                          valueKey="institution"
                                           labelKey="institution"
                                           value={field.value?.toString() || ""}
-                                          onChange={(value) => field.onChange(value)}
+                                          onChange={(value) => {field.onChange(value); handleCategory(value)}}
                                           options={{ placeholder: "Select Category" }}
                                           className="w-full"
                                         />
@@ -546,7 +471,7 @@ function ShareHolderProposal() {
                                     />
                                   </div>
                                 </div>
-                                <div className="w-full mr-2">
+                                {categoryName && <div className="w-full mr-2">
                                   <div className="mt-2">
                                     <div className="text-left text-slate-500"> Sub Category </div>
                                     <Controller
@@ -555,7 +480,7 @@ function ShareHolderProposal() {
                                       defaultValue=""
                                       render={({ field }) => (
                                         <TomSelect
-                                          url="/institute/"
+                                          url={`/def14a/?category=${categoryName}`}
                                           valueKey="id"
                                           labelKey="institution"
                                           value={field.value?.toString() || ""}
@@ -568,13 +493,14 @@ function ShareHolderProposal() {
                                   </div>
 
                                 </div>
+                                }
                               </div>
 
 
                               <div className="mt-2">
                                 <div className="text-left text-slate-500"> Keyword </div>
                                 <Controller
-                                  name="institution"
+                                  name="keyword"
                                   control={control}
                                   defaultValue=""
                                   render={({ field }) => (
@@ -596,7 +522,7 @@ function ShareHolderProposal() {
                                   Clear
                                 </Button>
                                 <Button
-                                  onClick={handleApplyFilter}
+                                  // onClick={handleApplyFilter}
                                   variant="primary"
                                   className="w-full mx-2"
                                   type="submit"
@@ -620,8 +546,6 @@ function ShareHolderProposal() {
                       <Tab.Button className="w-full py-2" as="button" onClick={() => {
                         setTab("proposal");
                         dispatch(resetPage());
-
-                        // dispatch(resetInvestorProfiles())
                       }}>
                         Shareholder Proposals
                       </Tab.Button>
@@ -631,7 +555,6 @@ function ShareHolderProposal() {
                       <Tab.Button className="w-full py-2" as="button" onClick={() => {
                         setTab("no-action");
                         dispatch(resetPage());
-                        // dispatch(resetInvestorProfiles())
                       }}>
                         No Action Letter
                       </Tab.Button>
@@ -641,7 +564,6 @@ function ShareHolderProposal() {
                       <Tab.Button className="w-full py-2" as="button" onClick={() => {
                         setTab("withdrawn");
                         dispatch(resetPage());
-                        // dispatch(resetInvestorProfiles())
                       }}>
                         Withdrawn
                       </Tab.Button>
@@ -664,20 +586,12 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Category
                               </Table.Td>
-                              {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Sub Category
                                 </Table.Td>
-                              )}
-                              {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Proponent
                                 </Table.Td>
-                              )}
-
-                              {/* <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Actions
-                              </Table.Td> */}
                             </Table.Tr>
                           </Table.Thead>
 
@@ -701,7 +615,6 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               {noAction?.proponent}
                               </Table.Td>
-
                             </Table.Tr>
                             )
                           )}
@@ -728,22 +641,12 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Category
                               </Table.Td>
-                              {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Sub Category
                                 </Table.Td>
-                              )}
-                              {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Proponent
                                 </Table.Td>
-                              )}
-
-                              {/* {user?.user_type === "Admin" && (
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Outcome
-                                </Table.Td>
-                              )} */}
                             </Table.Tr>
                           </Table.Thead>
 
@@ -767,11 +670,6 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               {/* {noAction?.year} */}
                               </Table.Td>
-
-                              {/* <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                              {noAction?.year}
-                              </Table.Td> */}
-
                             </Table.Tr>
                             )
                           )}
@@ -788,10 +686,6 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                        {/* {investersProfile?.length > 0 &&
-                          investersProfile.map(
-                            (profile: InvestersProfile, index: number) => {
-                              return ( */}
                         <Table>
                           <Table.Thead>
                             <Table.Tr>
@@ -801,19 +695,12 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Company
                               </Table.Td>
-                              {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Proponent
                                 </Table.Td>
-                              )}
-                              {user?.user_type === "Admin" && (
                                 <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                   Outcome
                                 </Table.Td>
-                              )}
-                              {/* <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Actions
-                              </Table.Td> */}
                             </Table.Tr>
                           </Table.Thead>
 
@@ -834,11 +721,6 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               {/* {noAction?.year} */}
                               </Table.Td>
-
-                              {/* <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                              {noAction?.year}
-                              </Table.Td> */}
-
                             </Table.Tr>
                             )
                           )}
@@ -869,12 +751,6 @@ function ShareHolderProposal() {
               </div>
             </div>
           </div>
-          {/* {addNewInvesterModalVisible && (
-            <AddNewInvesterProfile
-              addNewInvesterModalVisible={addNewInvesterModalVisible}
-              setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
-            />
-          )} */}
         </div>
       </div>
     </>
