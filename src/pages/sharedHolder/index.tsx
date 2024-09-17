@@ -406,7 +406,7 @@ function ShareHolderProposal() {
                                             htmlFor="radio-switch-5"
                                             className="ml-2"
                                           >
-                                            fail
+                                            Fail
                                           </FormCheck.Label>
                                         </FormCheck>
                                         <FormCheck className="mt-2 mr-2 sm:mt-0">
@@ -421,7 +421,7 @@ function ShareHolderProposal() {
                                             htmlFor="radio-switch-5"
                                             className="ml-2"
                                           >
-                                            withdrawn
+                                            Withdrawn
                                           </FormCheck.Label>
                                         </FormCheck>
                                       </>
@@ -440,8 +440,8 @@ function ShareHolderProposal() {
                                       defaultValue=""
                                       render={({ field }) => (
                                         <TomSelect
-                                          url="/institute/"
-                                          valueKey="id"
+                                          url="/institute/?type=Proponent&all=true"
+                                          valueKey="institution"
                                           labelKey="institution"
                                           value={field.value?.toString() || ""}
                                           onChange={(value) => field.onChange(value)}
@@ -475,14 +475,15 @@ function ShareHolderProposal() {
                                   <div className="mt-2">
                                     <div className="text-left text-slate-500"> Sub Category </div>
                                     <Controller
-                                      name="sub-category"
+                                      name="sub_category"
                                       control={control}
                                       defaultValue=""
                                       render={({ field }) => (
                                         <TomSelect
-                                          url={`/def14a/?category=${categoryName}`}
-                                          valueKey="id"
-                                          labelKey="institution"
+                                          // url={`/shareholder_proposal/no_action/?category=${categoryName}&all=true`}
+                                          url={`/shareholder_proposal/no_action/?category=Environmental&all=true`}
+                                          valueKey="institution_name"
+                                          labelKey="institution_name"
                                           value={field.value?.toString() || ""}
                                           onChange={(value) => field.onChange(value)}
                                           options={{ placeholder: "Select Sub Category" }}
