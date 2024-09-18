@@ -63,10 +63,11 @@ async function fetchOptions({
   valueKey: string;
   labelKey: string;
 }): Promise<FetchedOptionType[]> {
-  const response = await axiosInstance.get(`${url}?all=true`);
+  const response = (url.includes('def14a') || url.includes('Proponent') || url.includes('shareholder_proposal') ) ? await axiosInstance.get(`${url}`) :await axiosInstance.get(`${url}?all=true`);
+
   const data = response.data.results || response.data;
 
-  return data.map((item: any) => ({
+  return data?.map((item: any) => ({
     value: String(item[valueKey]),
     label: item[labelKey],
   }));
