@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { ProxyVotingGuideline } from "@/types/proxyVotingGuideline";
 import { getPageNumbers } from "@/utils/helper";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 

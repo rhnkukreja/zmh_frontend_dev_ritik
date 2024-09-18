@@ -67,7 +67,7 @@ async function fetchOptions({
 
   const data = response.data.results || response.data;
 
-  return data.map((item: any) => ({
+  return data?.map((item: any) => ({
     value: String(item[valueKey]),
     label: item[labelKey],
   }));

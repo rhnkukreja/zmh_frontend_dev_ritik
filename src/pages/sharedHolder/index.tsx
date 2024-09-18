@@ -43,17 +43,15 @@ function ShareHolderProposal() {
     [key: string]: any;
   }
 
-
   const dispatch: AppDispatch = useAppDispatch();
-  const navigate = useNavigate();
-
   const [tab, setTab] = useState<"proposal" | "no-action" | "withdrawn">("proposal");
-
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [applyFilters, setApplyFilters] = useState<ShareHolderFilter | undefined>(undefined);
   const [categoryName, setCategoryName] = useState<string>('');
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
 
+  const { handleSubmit, control, reset, formState: { errors }} = useForm<any>();
 
   const {
     loading,
@@ -63,7 +61,7 @@ function ShareHolderProposal() {
     filters,
     // investerProfileFilterOption,
   } = useAppSelector((state) => state.sharedHolderNoAction);
-  const { user } = useAppSelector((state) => state.authentiction);
+
 
   useEffect(() => {
       if(tab === 'proposal'){
@@ -87,11 +85,6 @@ function ShareHolderProposal() {
           )
         );
       }
-
-      // const getFilterCount = useMemo(() => {
-      //   const {proponent_name, ...allFilters } = applyFilters.;
-      //   return Object.values(allFilters).filter((value) => value !== "").length;
-      // }, [applyFilters]);
     
   }, [page, tab, applyFilters]);
 
@@ -112,7 +105,6 @@ function ShareHolderProposal() {
     dispatch(setPage(newPage));
   };
 
-
   const onFilterClear = () => {
     reset();
     setApplyFilters(undefined);
@@ -120,7 +112,6 @@ function ShareHolderProposal() {
   };
 
   const handleClearAllFilter = () => {
-
   };
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
@@ -133,7 +124,6 @@ function ShareHolderProposal() {
     });
   };
 
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     const validateImages = async () => {
@@ -151,16 +141,7 @@ function ShareHolderProposal() {
     validateImages();
   }, [shareHolderProposal]);
 
-  // const getFilterCount = useMemo(() => {
-  //   const { institution_name, ...allFilters } = filters;
-  //   return Object.values(allFilters).filter((value) => value !== "").length;
-  // }, [filters]);
-
-  const handleSearch = (searchTerms: string[]) => {
-
-  };
-  const { handleSubmit, control, reset, formState: { errors }} = useForm<any>();
-
+  const handleSearch = (searchTerms: string[]) => {};
   
   const onSubmit = async (data: ShareHolderFilter) => {
  
