@@ -32,6 +32,18 @@ import { resetPage } from "@/stores/shareholderProposalSlice";
 
 function ShareHolderProposal() {
 
+      
+  interface ShareHolderFilter {
+    proponent_name: string,
+    year: number[],
+    category: string,
+    sub_category: string,
+    keyword: string,
+    active: string,
+    [key: string]: any;
+  }
+
+
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -40,6 +52,8 @@ function ShareHolderProposal() {
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [applyFilters, setApplyFilters] = useState<ShareHolderFilter | undefined>(undefined);
   const [categoryName, setCategoryName] = useState<string>('');
+  const [filtersLength, setFiltersLength] = useState<number>(0);
+
 
   const {
     loading,
@@ -147,17 +161,7 @@ function ShareHolderProposal() {
   };
   const { handleSubmit, control, reset, formState: { errors }} = useForm<any>();
 
-      
-  interface ShareHolderFilter {
-    proponent_name: string,
-    year: number[],
-    category: string,
-    sub_category: string,
-    keyword: string,
-    active: string,
-    [key: string]: any;
-  }
-
+  
   const onSubmit = async (data: ShareHolderFilter) => {
  
     const shareHolderFilter: ShareHolderFilter = {
@@ -170,6 +174,13 @@ function ShareHolderProposal() {
     };
 
     setApplyFilters(shareHolderFilter);
+
+   const validKeysCount = Object.keys(data).filter(key => {
+      const value = data[key];
+      return value !== undefined && value !== "";
+    })?.length;
+
+    setFiltersLength(validKeysCount);
 
   };
 
@@ -231,7 +242,7 @@ function ShareHolderProposal() {
                           />
                           Filter
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            0{/* {getFilterCount} */}
+                          {filtersLength}
                           </div>
                         </Popover.Button>
                         <Popover.Panel placement="bottom-end" className="sm:w-[350px] lg:w-[400px] ">
@@ -459,7 +470,7 @@ function ShareHolderProposal() {
                                       defaultValue=""
                                       render={({ field }) => (
                                         <TomSelect
-                                          url="/institute/"
+                                          url="/get_shareholder_dropdown_values/"
                                           valueKey="institution"
                                           labelKey="institution"
                                           value={field.value?.toString() || ""}
