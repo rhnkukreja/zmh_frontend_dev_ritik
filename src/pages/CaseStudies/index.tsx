@@ -31,7 +31,7 @@ function CaseStudies() {
         market: string,
         sector: string,
         year: string,
-        institution_name: string,
+        institution_name?: string,
         themes: string,
         proposal_type: string,
         vote: string;
@@ -43,7 +43,7 @@ function CaseStudies() {
 
     const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
-    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
+    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
     const [applyFilters, setApplyFilters] = useState<CaseStudyFilter | undefined>(undefined);
     const { handleSubmit, control, reset, formState: { errors } } = useForm<any>();
     const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -123,7 +123,7 @@ function CaseStudies() {
                                         onSearch={handleSearch}
                                         searchTerms={searchTerms}
                                         setSearchTerms={setSearchTerms}
-                                        placeHolder="Search Investor"
+                                        placeHolder="Search Institution Name"
                                     />
 
                                     <div className="hover:bg-slate-50">
@@ -246,26 +246,6 @@ function CaseStudies() {
                                         </div>
 
                                         <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
-
-                                            <div className="w-full mx-2">
-                                                <div className="text-left text-slate-500"> Institution Name </div>
-                                                <Controller
-                                                    name="institution_name"
-                                                    control={control}
-                                                    defaultValue=""
-                                                    render={({ field }) => (
-                                                        <TomSelect
-                                                            url="/institute/?type=Proponent&all=true"
-                                                            valueKey="institution"
-                                                            labelKey="institution"
-                                                            value={field.value?.toString() || ""}
-                                                            onChange={(value) => field.onChange(value)}
-                                                            options={{ placeholder: "Select Institution Name" }}
-                                                            className="w-full"
-                                                        />
-                                                    )}
-                                                />
-                                            </div>
 
                                             <div className="w-full mx-2">
                                                 <div className="text-left text-slate-500"> Themes </div>
