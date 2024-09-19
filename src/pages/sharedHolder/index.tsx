@@ -51,7 +51,7 @@ function ShareHolderProposal() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
 
-  const { handleSubmit, control, reset, formState: { errors }} = useForm<any>();
+  const { handleSubmit, control, reset, formState: { errors }} = useForm<ShareHolderFilter>();
 
   const {
     loading,
@@ -106,9 +106,18 @@ function ShareHolderProposal() {
   };
 
   const onFilterClear = () => {
-    reset();
     setApplyFilters(undefined);
     setCategoryName('');
+    setFiltersLength(0);
+    // reset();
+    reset({
+      year: [],  
+      status: "All",
+      proponent: "",
+      category: "",
+      keyword: "",
+      sub_category: ""
+    });
   };
 
   const handleClearAllFilter = () => {
@@ -451,6 +460,7 @@ function ShareHolderProposal() {
                                       defaultValue=""
                                       render={({ field }) => (
                                         <TomSelect
+                                          // url="/api/"
                                           url="/get_shareholder_dropdown_values/"
                                           valueKey="institution"
                                           labelKey="institution"
@@ -506,6 +516,7 @@ function ShareHolderProposal() {
                               <div className="flex items-center justify-evenly mt-4">
                                 <Button
                                   variant="secondary"
+                                  type="button"
                                   onClick={() => {
                                     close();
                                     onFilterClear();
