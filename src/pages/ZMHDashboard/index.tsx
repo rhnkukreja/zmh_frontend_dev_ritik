@@ -11,15 +11,17 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyDashboard,
+  setPage,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import TableWrapper from "@/components/TableWrapper";
 import Table from "@/components/Base/Table";
-import dayjs from "dayjs";
-
 import LoadingIcon from "../../components/Base/LoadingIcon";
 import { Helmet } from "react-helmet-async";
+import CPagination from "@/components/Pagination";
+import { createDynamicURL } from "@/utils/helper";
+import { baseURL } from "@/constant";
 
 function Main() {
   const location = useLocation();
@@ -27,15 +29,35 @@ function Main() {
 
   const [searchParams] = useSearchParams();
   const ticker = searchParams.get("ticker") ?? "";
-  const { dashboardDataList, loading } = useAppSelector(
+  const { dashboardDataList, loading, page, totalPages, } = useAppSelector(
     (state) => state.dashboard
   );
 
   useEffect(() => {
     if(ticker){
-      dispatch(fetchCompanyDashboard(ticker));
+      dispatch(fetchCompanyDashboard(
+        createDynamicURL(`${baseURL}/company-dashboard/?ticker=${ticker}&`, undefined,undefined, page)
+      )
+      );
     }
-  }, [ticker]);
+  }, [ticker, page]);
+
+
+  const handleNextPage = () => {
+    if (page < totalPages) {
+      dispatch(setPage(page + 1));
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 1) {
+      dispatch(setPage(page - 1));
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    dispatch(setPage(newPage));
+  };
 
   return (
     <>
@@ -131,9 +153,7 @@ function Main() {
 
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                       <div className="whitespace-nowrap ">
-                                        {dayjs(dashboard?.source_date).format(
-                                          "MMMM,YYYY"
-                                        )}
+                                        {dashboard?.source_date}
                                       </div>
                                     </Table.Td>
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
@@ -159,17 +179,16 @@ function Main() {
                         </Table>
                       </TableWrapper>
                     </div>
-                    {/* <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                        {dashboardDataList?.length > 0 && (
-                          <CPagination
-                            page={page}
-                            totalPages={totalPages}
-                            handleNextPage={handleNextPage}
-                            handlePageChange={handlePageChange}
-                            handlePreviousPage={handlePreviousPage}
-                          />
-                        )}
-                      </div> */}
+                      <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+
+                        <CPagination
+                          page={page}
+                          totalPages={totalPages}
+                          handleNextPage={handleNextPage}
+                          handlePageChange={handlePageChange}
+                          handlePreviousPage={handlePreviousPage}
+                        />
+                      </div>
                   </div>
                 )}
               </div>

@@ -17,17 +17,15 @@ class DashboardService {
     };
   }
 
-  public async fetchCompanyDashboard(ticker: string): Promise<{
+  public async fetchCompanyDashboard(url: string): Promise<{
     count: number;
-    all_holders_data: CompanyDashboard[];
+    results: CompanyDashboard[];
   }>  {
-    const response = await axiosInstance.get(
-      `/company-dashboard/?ticker=${ticker}`
-    );
-    const { count, all_holders_data } = response.data;
+    const response = await axiosInstance.get(url);
+    const { count, results } = response.data;
     return {
       count,
-      all_holders_data,
+      results,
     };
   }
 }

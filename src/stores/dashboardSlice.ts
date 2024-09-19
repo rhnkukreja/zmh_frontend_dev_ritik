@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
 import { Filer } from "@/types/dashboard";
 import { CompanyData } from "@/types/company";
+import { getPageNumbers } from "@/utils/helper";
 
 const name = "dashboard";
 
@@ -25,6 +26,11 @@ interface CompanySliceState {
   dashboardData: CompanyDashboard | null;
   loading: boolean;
   error: string | null;
+  page: number;
+  totalPages: number;
+  // totalCompanyPages: number;
+  totalCompanyDashboard: number,
+  // totalSearchBarCount: number;
 }
 
 const initialState: CompanySliceState = {
@@ -34,6 +40,11 @@ const initialState: CompanySliceState = {
   dashboardData: null,
   loading: false,
   error: null,
+  page: 1,
+  totalPages: 1,
+  totalCompanyDashboard: 0,
+  // totalCompanyPages: 1,
+  // totalSearchBarCount: 0
 };
 
 export const fetchCompanyByName = createAsyncThunk<
@@ -44,16 +55,23 @@ export const fetchCompanyByName = createAsyncThunk<
 });
 
 export const fetchCompanyDashboard = createAsyncThunk<
-  { count: number; all_holders_data: CompanyDashboard[] },
+  { count: number; results: CompanyDashboard[] },
   string
->(`${name}/fetchCompanyDashboard`, async (ticker: string) => {
-  return await dashboardService.fetchCompanyDashboard(ticker);
+>(`${name}/fetchCompanyDashboard`, async (url: string) => {
+  return await dashboardService.fetchCompanyDashboard(url);
 });
 
 const companySlice = createSlice({
   name,
   initialState,
-  reducers: {},
+  reducers: {
+    setPage(state, action: PayloadAction<number>) {
+      state.page = action.payload;
+    },
+    resetPage(state) {
+      state.page = 1;
+    },
+  },
   extraReducers: (builder) => {
     builder
 
@@ -63,9 +81,11 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchCompanyByName.fulfilled,
-        (state, action: PayloadAction<{ results: CompanyData[] }>) => {
+        (state, action: PayloadAction<{count: number; results: CompanyData[] }>) => {
           state.loading = false;
           state.companyDataList = action.payload.results;
+          // state.totalSearchBarCount = action.payload.count;
+          // state.totalCompanyPages = getPageNumbers(action.payload.count);
         }
       )
       .addCase(fetchCompanyByName.rejected, (state, action) => {
@@ -80,9 +100,11 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchCompanyDashboard.fulfilled,
-        (state, action: PayloadAction<{ all_holders_data: CompanyDashboard[] }>) => {
+        (state, action: PayloadAction<{ count: number; results: CompanyDashboard[] }>) => {
           state.loading = false;
-          state.dashboardDataList = action.payload.all_holders_data;
+          state.dashboardDataList = action.payload.results;
+          state.totalCompanyDashboard = action.payload.count;
+          state.totalPages = getPageNumbers(action.payload.count);
         }
       )
       .addCase(fetchCompanyDashboard.rejected, (state, action) => {
@@ -94,3 +116,5 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
+export const { setPage, resetPage} =
+companySlice.actions;
