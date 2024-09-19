@@ -96,11 +96,11 @@ const initialState: SideMenuState = {
       pathname: "/peer-analysis",
       title: "Peer Analysis",
     },
-    // {
-    //   icon: "PanelTopClose",
-    //   pathname: "/file-manager-grid",
-    //   title: "File Manager Grid",
-    // },
+    {
+      icon: "PanelTopClose",
+      pathname: "/case-studies",
+      title: "Case Studies",
+    },
     // {
     //   icon: "PanelTopClose",
     //   pathname: "/point-of-sale",

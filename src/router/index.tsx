@@ -77,6 +77,7 @@ import React from "react";
 import CompanyList from "@/pages/Company";
 import SharedHolder from "@/pages/sharedHolder";
 import PeerAnalysis from "@/pages/PeerAnalysis";
+import CaseStudies from "@/pages/CaseStudies";
 
 function Router() {
   const routes = [
@@ -355,6 +356,10 @@ function Router() {
         {
           path: "peer-analysis",
           element: <PeerAnalysis />,
+        },
+        {
+          path: "case-studies",
+          element: <CaseStudies />,
         },
       ],
     },
