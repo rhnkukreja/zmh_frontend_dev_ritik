@@ -25,10 +25,13 @@ import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { AddEditEngagementQuestion } from "./components/AddEditEngagementQuestion";
 import { EngagementQuestions } from "@/types/engagementQuestions";
-import dayjs from "dayjs";
-import { FilterX } from "lucide-react";
+
+import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -48,6 +51,32 @@ function Main() {
   const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
     useState<EngagementQuestions | null>(null);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [groupedQuestions, setGroupedQuestions] = useState<any>([]);
+  const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+  const checkImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+    });
+  };
+
+  const validateImages = async () => {
+    if (!questions) return;
+    const tempValidImages: { [key: string]: string } = {};
+    for (const question of questions) {
+      const isValid = await checkImageUrl(question?.image);
+      tempValidImages[question?.name] = isValid
+        ? question?.image
+        : userLinkedinImage;
+    }
+
+    setValidImages(tempValidImages);
+  };
 
   const [
     addNewEngagementQuestionModalVisible,
@@ -55,13 +84,16 @@ function Main() {
   ] = useState<boolean>(false);
 
   useEffect(() => {
-
-      dispatch(
-        fetchEngagementQuestions(
-          createDynamicURL(`${baseURL}/engagement_questions/`, filters,undefined ,page)
+    dispatch(
+      fetchEngagementQuestions(
+        createDynamicURL(
+          `${baseURL}/engagement_questions/`,
+          filters,
+          undefined,
+          page
         )
-      );
-    
+      )
+    );
   }, [page]);
 
   useEffect(() => {
@@ -93,10 +125,7 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
-  
-
-
-  function handleSearch(searchTerms : string[]) {
+  function handleSearch(searchTerms: string[]) {
     dispatch(
       setFilter({
         key: "institution_name",
@@ -104,25 +133,34 @@ function Main() {
       })
     );
 
-    const tempFilter = {institution_name: searchTerms};
+    const tempFilter = { institution_name: searchTerms };
 
     dispatch(
       fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, tempFilter, undefined,  1)
+        createDynamicURL(
+          `${baseURL}/engagement_questions/`,
+          tempFilter,
+          undefined,
+          1
+        )
       )
     );
     dispatch(setPage(1));
   }
 
-  useEffect(()=>{
-    handleSearch(searchTerms)
-  },[searchTerms , searchTerms?.length])
-
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
 
   function handleApplyFilter() {
     dispatch(
       fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, filters,  undefined , page)
+        createDynamicURL(
+          `${baseURL}/engagement_questions/`,
+          filters,
+          undefined,
+          page
+        )
       )
     );
     dispatch(resetPage());
@@ -172,25 +210,31 @@ function Main() {
     }
   }, [addNewEngagementQuestionModalVisible]);
 
-  const groupedQuestions = questions?.reduce((acc: any, question: any) => {
-    const institutionName = question?.institution_name;
-    if (!acc[institutionName]) {
-      acc[institutionName] = [];
-    }
-    acc[institutionName].push(question);
-    return acc;
-  }, {});
+  useEffect(() => {
+    const groupedQuestions = questions?.reduce((acc: any, question: any) => {
+      const institutionName = question?.institution_name;
+      if (!acc[institutionName]) {
+        acc[institutionName] = [];
+      }
+      acc[institutionName].push(question);
+      return acc;
+    }, {});
 
-  const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+    setGroupedQuestions(groupedQuestions);
+  }, [questions]);
 
   useEffect(() => {
     if (groupedQuestions) {
-      const initialOpenGroups = Object.keys(groupedQuestions).reduce((acc, institutionName) => {
-        // Only set to true if it's not already in the state
-        acc[institutionName] = openGroups[institutionName] ?? true;
-        return acc;
-      }, {} as { [key: string]: boolean });
+      const initialOpenGroups = Object.keys(groupedQuestions).reduce(
+        (acc, institutionName) => {
+          acc[institutionName] = openGroups[institutionName] ?? true;
+          return acc;
+        },
+        {} as { [key: string]: boolean }
+      );
       setOpenGroups(initialOpenGroups);
+
+      validateImages();
     }
   }, [groupedQuestions]);
 
@@ -201,34 +245,37 @@ function Main() {
     }));
   };
 
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
-
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
-
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
+  const getSavedSearches = () => {
+    setSearchTerms([
+      ...user?.saved_search["Engagement Questions"]?.institution,
+    ]);
+    dispatch(
+      setFilter({
+        key: "category",
+        value: user?.saved_search["Engagement Questions"]?.category,
+      })
+    );
   };
 
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const question of groupedQuestions || []) {
-        const isValid = await checkImageUrl(question?.image);
-        tempValidImages[question?.name] = isValid
-          ? question?.image
-          : userLinkedinImage;
-      }
-
-      setValidImages(tempValidImages);
-    };
-
-    validateImages();
-  }, [groupedQuestions]);
-
+  const saveSearch = async () => {
+    const res = await commonService.saveSearches({
+      module: "Engagement Questions",
+      institution: searchTerms,
+      category: filters["category"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Engagement Questions",
+          value: {
+            institution: searchTerms,
+            category: filters["category"],
+          },
+        })
+      );
+      toast.success(res?.Success || "Searched saved successfully");
+    }
+  };
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -274,8 +321,23 @@ function Main() {
                     {/* <span className="text-slate-500">Clear Filters</span> */}
                   </Button>
                 </div>
+
+                <div className="hover:bg-slate-50 ml-2">
+                  <Button onClick={saveSearch}>
+                    <Tippy content="Save Searches" options={{ theme: "light" }}>
+                      <SaveAll
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
+                  </Button>
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                <div className="hover:bg-slate-50 ml-2">
+                  <Button onClick={getSavedSearches}>Get Last Searches</Button>
+                </div>
                 <Popover className="inline-block">
                   {({ close }) => (
                     <>
@@ -395,7 +457,7 @@ function Main() {
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                      Institution Name
+                        Institution Name
                       </Table.Td>
 
                       <Table.Td className="py-2 font-medium bg-slate-50  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
@@ -443,8 +505,8 @@ function Main() {
                                         />
                                       }
                                     </div>
-                                      {institutionName}
-                                    
+                                    {institutionName}
+
                                     <button className="ml-2 text-blue-500">
                                       {openGroups[institutionName] ? (
                                         <Lucide

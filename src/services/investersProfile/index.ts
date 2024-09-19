@@ -33,7 +33,7 @@ class InvestersProfileService {
     results: InvestersProfile;
   }> {
     const response = await axiosInstance.put(
-      `/investor_profile/?type=${type}/${id}/`,
+      `/investor_profile/${id}/?type=${type}`,
       data
     );
     const results = response.data;

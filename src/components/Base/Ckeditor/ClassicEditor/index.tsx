@@ -1,6 +1,7 @@
 import "@/assets/css/vendors/ckeditor.css";
 import { createRef, useEffect, useRef } from "react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+
 import { init, updateData, CkeditorProps, CkeditorElement } from "../ckeditor";
 
 
@@ -31,6 +32,8 @@ function Ckeditor<C extends React.ElementType = "div">({
   const editorRef = createRef<CkeditorElement>();
   const cacheData = useRef("");
   const initialRender = useRef(true);
+
+  console.log({value})
 
   useEffect(() => {
     if (editorRef.current) {

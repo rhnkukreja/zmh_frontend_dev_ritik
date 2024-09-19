@@ -25,14 +25,16 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { AddEditPolicyGuideline } from "./components/AddEditProxyVotingGuideline";
 import PdfViewer from "@/components/PdfView";
-import { Filter, FilterX } from "lucide-react";
+import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-
 
   const {
     loading,
@@ -62,7 +64,6 @@ function ProxyGuideline() {
       )
     );
   }, [page]);
-
 
   useEffect(() => {
     return () => {
@@ -97,9 +98,7 @@ function ProxyGuideline() {
     setCurrentPdfDoc(pdf);
   };
 
-
-
-  const handleSearch = (searchTerms : string[]) => { 
+  const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
         key: "institution_name",
@@ -107,18 +106,23 @@ function ProxyGuideline() {
       })
     );
 
-    const tempFilter = {institution_name: searchTerms};
+    const tempFilter = { institution_name: searchTerms };
 
     dispatch(
       fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, tempFilter, undefined, 1)
+        createDynamicURL(
+          `${baseURL}/proxy_voting_guidelines/`,
+          tempFilter,
+          undefined,
+          1
+        )
       )
     );
   };
 
-  useEffect(()=>{
-    handleSearch(searchTerms)
-  },[searchTerms , searchTerms?.length])
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
 
   function handleApplyFilter() {
     dispatch(
@@ -208,6 +212,36 @@ function ProxyGuideline() {
     validateImages();
   }, [proxyVotingGuidelines]);
 
+  const getSavedSearches = () => {
+    setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
+    dispatch(
+      setFilter({
+        key: "year",
+        value: user?.saved_search["Voting Guidelines"]?.year,
+      })
+    );
+  };
+
+  const saveSearch = async () => {
+    const res = await commonService.saveSearches({
+      module: "Voting Guidelines",
+      institution: searchTerms,
+      year: filters["year"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Voting Guidelines",
+          value: {
+            institution: searchTerms,
+            year: filters["year"],
+          },
+        })
+      );
+      toast.success(res?.Success || "Searched saved successfully");
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -238,11 +272,11 @@ function ProxyGuideline() {
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
                 <div className="flex items-center ">
-                <MultiSearchBar
-                  onSearch={handleSearch}
-                  searchTerms={searchTerms}
-                  setSearchTerms={setSearchTerms}
-                 />
+                  <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                  />
 
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
@@ -259,8 +293,29 @@ function ProxyGuideline() {
                       {/* <span className="text-slate-500">Clear Filters</span> */}
                     </Button>
                   </div>
+
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={saveSearch}>
+                      <Tippy
+                        content="Save Searches"
+                        options={{ theme: "light" }}
+                      >
+                        <SaveAll
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={getSavedSearches}>
+                      Get Last Searches
+                    </Button>
+                  </div>
+
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -346,7 +401,7 @@ function ProxyGuideline() {
                     <Table.Thead>
                       <Table.Tr>
                         <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                        Institution Name
+                          Institution Name
                         </Table.Td>
                         <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Year
@@ -394,8 +449,9 @@ function ProxyGuideline() {
                                     <img
                                       alt="Tailwise - Admin Dashboard Template"
                                       src={
-                                        validImages[guideline?.institution_name] ||
-                                        userLinkedinImage
+                                        validImages[
+                                          guideline?.institution_name
+                                        ] || userLinkedinImage
                                       }
                                     />
                                   }
@@ -414,7 +470,7 @@ function ProxyGuideline() {
                                     }}
                                   >
                                     <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                      {guideline?.category}                                    
+                                      {guideline?.category}
                                     </div>
                                   </Tippy>
                                 </Table.Td>

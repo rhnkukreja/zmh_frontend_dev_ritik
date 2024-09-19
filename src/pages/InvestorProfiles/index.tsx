@@ -1,6 +1,6 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover, Tab } from "@/components/Base/Headless";
-import {  FormSelect } from "@/components/Base/Form";
+import { FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
 import { useEffect, useMemo, useState } from "react";
@@ -18,16 +18,18 @@ import {
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { setFilter } from "@/stores/investersProfileSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX } from "lucide-react";
+import { FilterX, FolderSearch2, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
-
+import { toast } from "react-toastify";
+import { commonService } from "@/services/common";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -47,21 +49,30 @@ function Main() {
   } = useAppSelector((state) => state.investersProfile);
   const { user } = useAppSelector((state) => state.authentiction);
 
+  console.log({ user });
+
   useEffect(() => {
     if (filters.institution_name.length > 0) {
       dispatch(
         fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters , {type: tab})
+          createDynamicURL(`${baseURL}/investor_profile/`, filters, {
+            type: tab,
+          })
         )
       );
     } else {
       dispatch(
         fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters, {type: tab}, page)
+          createDynamicURL(
+            `${baseURL}/investor_profile/`,
+            filters,
+            { type: tab },
+            page
+          )
         )
       );
     }
-  }, [page, filters.institution_name , tab]);
+  }, [page, filters.institution_name, tab]);
 
   useEffect(() => {
     return () => {
@@ -92,11 +103,9 @@ function Main() {
   };
 
   const gotoDetailPage = (id: number) => {
-    const data = { currentPage: page};
-    navigate(`/investor-profile/${tab}/${id}`, {state: data});
+    const data = { currentPage: page };
+    navigate(`/investor-profile/${tab}/${id}`, { state: data });
   };
-
- 
 
   function handleApplyFilter() {
     dispatch(
@@ -112,7 +121,12 @@ function Main() {
     dispatch(resetFilter());
     dispatch(
       fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, {type: tab}, page)
+        createDynamicURL(
+          `${baseURL}/investor_profile/`,
+          undefined,
+          { type: tab },
+          page
+        )
       )
     );
   };
@@ -129,7 +143,12 @@ function Main() {
 
     dispatch(
       fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, {type: tab}, page)
+        createDynamicURL(
+          `${baseURL}/investor_profile/`,
+          undefined,
+          { type: tab },
+          page
+        )
       )
     );
 
@@ -175,24 +194,60 @@ function Main() {
     return Object.values(allFilters).filter((value) => value !== "").length;
   }, [filters]);
 
-  const handleSearch = (searchTerms : string[]) => {
+  const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
         key: "institution_name",
         value: searchTerms,
       })
     );
-    const tempFilter = {institution_name: searchTerms};
+    const tempFilter = { institution_name: searchTerms };
     dispatch(
       fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, tempFilter, {type: tab}, 1)
+        createDynamicURL(
+          `${baseURL}/investor_profile/`,
+          tempFilter,
+          { type: tab },
+          1
+        )
       )
     );
   };
-  useEffect(()=>{
-    handleSearch(searchTerms)
-  },[searchTerms , searchTerms?.length])
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
 
+  const getSavedSearches = () => {
+    setSearchTerms([...user?.saved_search["Investor Profile"]?.institution]);
+    dispatch(
+      setFilter({
+        key: "region",
+        value: user?.saved_search["Investor Profile"]?.region,
+      })
+    );
+  };
+
+  const saveSearch =  async () => {
+    const res = await commonService.saveSearches({
+      module: "Investor Profile",
+      institution: searchTerms,
+      region: filters["region"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Investor Profile",
+          value: {
+            institution: searchTerms,
+            region: filters["region"],
+          },
+        })
+      );
+      toast.success(
+        res?.Success || "Searched saved successfully"
+      );
+    }
+  }
 
   return (
     <>
@@ -239,14 +294,37 @@ function Main() {
                         <FilterX
                           size={17}
                           strokeWidth={1}
-                          className="text-slate-500 cursor-pointer	"
+                          className="text-slate-500 cursor-pointer"
                         />
                       </Tippy>
                       {/* <span className="text-slate-500">Clear Filters</span> */}
                     </Button>
                   </div>
+
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button
+                      onClick={saveSearch}
+                    >
+                      <Tippy
+                        content="Save Searches"
+                        options={{ theme: "light" }}
+                      >
+                        <SaveAll
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={getSavedSearches}>
+                      Get Last Searches
+                    </Button>
+                  </div>
+
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -333,18 +411,26 @@ function Main() {
                 <Tab.Group>
                   <Tab.List variant="link-tabs">
                     <Tab>
-                      <Tab.Button className="w-full py-2" as="button" onClick={()=>{
-                        setTab("investor")
-                       dispatch( resetInvestorProfiles())
-                      }}>
+                      <Tab.Button
+                        className="w-full py-2"
+                        as="button"
+                        onClick={() => {
+                          setTab("investor");
+                          dispatch(resetInvestorProfiles());
+                        }}
+                      >
                         Institutional Investors
                       </Tab.Button>
                     </Tab>
                     <Tab>
-                      <Tab.Button className="w-full py-2" as="button" onClick={()=>{
-                        setTab("equity")
-                        dispatch( resetInvestorProfiles())
-                      }}>
+                      <Tab.Button
+                        className="w-full py-2"
+                        as="button"
+                        onClick={() => {
+                          setTab("equity");
+                          dispatch(resetInvestorProfiles());
+                        }}
+                      >
                         Private Equity
                       </Tab.Button>
                     </Tab>
@@ -362,25 +448,25 @@ function Main() {
                                       {(page - 1) * 10 + index + 1}
                                     </div> */}
 
-                                      <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                        {
-                                          <img
-                                            alt="Tailwise - Admin Dashboard Template"
-                                            src={
-                                              validImages[investersProfile?.name] ||
-                                              userLinkedinImage
-                                            }
-                                          />
-                                        }
-                                      </div>
-                                    
+                                    <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                      {
+                                        <img
+                                          alt="Tailwise - Admin Dashboard Template"
+                                          src={
+                                            validImages[
+                                              investersProfile?.name
+                                            ] || userLinkedinImage
+                                          }
+                                        />
+                                      }
+                                    </div>
+
                                     <Tippy
                                       content={profile?.institution_name || ""}
                                       options={{
                                         theme: "light",
                                       }}
                                     >
-
                                       <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full">
                                         {profile?.institution_name}
                                       </div>
@@ -408,7 +494,7 @@ function Main() {
                       </TableWrapper>
                     </Tab.Panel>
                     <Tab.Panel className="leading-relaxed">
-                    <TableWrapper isLoading={loading}>
+                      <TableWrapper isLoading={loading}>
                         {investersProfile?.length > 0 &&
                           investersProfile.map(
                             (profile: InvestersProfile, index: number) => {
@@ -420,8 +506,9 @@ function Main() {
                                         <img
                                           alt="Tailwise - Admin Dashboard Template"
                                           src={
-                                            validImages[investersProfile?.name] ||
-                                            userLinkedinImage
+                                            validImages[
+                                              investersProfile?.name
+                                            ] || userLinkedinImage
                                           }
                                         />
                                       }
@@ -435,7 +522,6 @@ function Main() {
                                         theme: "light",
                                       }}
                                     >
-
                                       <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full">
                                         {profile?.equity_firm_name || ""}
                                       </div>
@@ -466,15 +552,14 @@ function Main() {
                 </Tab.Group>
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-               
-                  <CPagination
-                    page={page}
-                    totalPages={totalPages}
-                    handleNextPage={handleNextPage}
-                    handlePageChange={handlePageChange}
-                    handlePreviousPage={handlePreviousPage}
-                  />
-                
+                <CPagination
+                  page={page}
+                  totalPages={totalPages}
+                  handleNextPage={handleNextPage}
+                  handlePageChange={handlePageChange}
+                  handlePreviousPage={handlePreviousPage}
+                />
+
                 {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>
                 <option>25</option>

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
-import { axiosInstance } from "@/services";
+
 import { investersProfileService } from "@/services/investersProfile";
 import _ from "lodash";
 
