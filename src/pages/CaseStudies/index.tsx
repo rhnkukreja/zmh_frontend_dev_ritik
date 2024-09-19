@@ -45,7 +45,7 @@ function CaseStudies() {
 
     const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
     const [applyFilters, setApplyFilters] = useState<CaseStudyFilter | undefined>(undefined);
-    const { handleSubmit, control, reset, formState: { errors } } = useForm<any>();
+    const { handleSubmit, control, reset, formState: { errors } } = useForm<CaseStudyFilter>();
     const [filtersLength, setFiltersLength] = useState<number>(0);
 
     const {
