@@ -284,7 +284,6 @@ const formatedDate = (dateString: string): string => {
 };
 
 const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
-  console.log("menuItems: ", menuItems);
   const userType = localStorage.getItem("userType")?.toLowerCase() || "";
   const filteredMenuItems = menuItems.filter((item, index, arr) => {
     if (userType !== "admin") {

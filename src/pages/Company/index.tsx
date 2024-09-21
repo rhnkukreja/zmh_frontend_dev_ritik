@@ -21,9 +21,11 @@ import { CompanyData } from "@/types/company";
 import { useNavigate } from "react-router-dom";
 
 import Tippy from "@/components/Base/Tippy";
-import { FilterX } from "lucide-react";
+import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import _ from "lodash";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
 
 function CompanyList() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -166,6 +168,31 @@ function CompanyList() {
                       />
                     </Tippy>
                     {/* <span className="text-slate-500">Clear Filters</span> */}
+                  </Button>
+                </div>
+
+                <div className="hover:bg-slate-50 ml-2">
+                  <Button
+                    onClick={async () => {
+                      const res = await commonService.saveSearches({
+                        module: "Company",
+                        company: searchTerms,
+                       
+                      });
+                      if (res?.Success) {
+                        toast.success(
+                          res?.Success || "Searched saved successfully"
+                        );
+                      }
+                    }}
+                  >
+                    <Tippy content="Save Searches" options={{ theme: "light" }}>
+                     <SaveAll
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
                   </Button>
                 </div>
               </div>

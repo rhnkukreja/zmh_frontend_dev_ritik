@@ -48,6 +48,16 @@ const authSlice = createSlice({
       localStorage.clear();
       persistor.purge();
     },
+
+    setSavedSearch(state, action: PayloadAction<{ key: string; value: any }>) {
+      if (state?.user) {
+        const updatedSearch = {
+          ...state.user.saved_search,
+          [action.payload.key]: action.payload.value,
+        };
+        state.user.saved_search = updatedSearch;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -79,6 +89,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setSavedSearch } = authSlice.actions;
 
 export default authSlice;

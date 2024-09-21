@@ -22,9 +22,12 @@ import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { Institutions } from "@/types/institutions";
 import { AddEditInstitution } from "./components/CreateAndEditInstitution";
-import dayjs from "dayjs";
-import { FilterX } from "lucide-react";
+
+import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -48,17 +51,15 @@ function Main() {
     useState<boolean>(false);
 
   useEffect(() => {
-    
-      dispatch(
-        fetchInstitutions(
-          createDynamicURL(`${baseURL}/institute/`, filters,undefined  , page)
-        )
-      );
+    dispatch(
+      fetchInstitutions(
+        createDynamicURL(`${baseURL}/institute/`, filters, undefined, page)
+      )
+    );
   }, [page]);
 
   useEffect(() => {
     return () => {
-     
       dispatch(resetPage());
       dispatch(
         setFilter({
@@ -66,8 +67,8 @@ function Main() {
           value: [],
         })
       );
-    }
-  }, [])
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -85,9 +86,7 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
- 
-
-  const handleSearch = (searchTerms : string[]) => { 
+  const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
         key: "institution_name",
@@ -95,14 +94,13 @@ function Main() {
       })
     );
 
-    const tempFilter = {institution_name: searchTerms};
+    const tempFilter = { institution_name: searchTerms };
 
     dispatch(
       fetchInstitutions(
         createDynamicURL(`${baseURL}/institute/`, tempFilter, undefined, 1)
       )
     );
-
   };
 
   function handleApplyFilter() {
@@ -134,7 +132,7 @@ function Main() {
     dispatch(
       setFilter({
         key: "institution_name",
-        value: '',
+        value: "",
       })
     );
 
@@ -145,9 +143,7 @@ function Main() {
     );
 
     dispatch(resetPage());
-
-
-  }
+  };
 
   useEffect(() => {
     if (addEditInstitutionVisible === false) {
@@ -160,9 +156,39 @@ function Main() {
     setAddEditInstitutionVisible(true);
   }
 
-  useEffect(()=>{
-    handleSearch(searchTerms)
-  },[searchTerms , searchTerms?.length])
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
+
+  const getSavedSearches = () => {
+    setSearchTerms([...user?.saved_search["Institution"]?.institution]);
+    dispatch(
+      setFilter({
+        key: "region",
+        value: user?.saved_search["Institution"]?.region,
+      })
+    );
+  };
+
+  const saveSearch = async () => {
+    const res = await commonService.saveSearches({
+      module: "Institution",
+      institution: searchTerms,
+      region: filters["region"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Institution",
+          value: {
+            institution: searchTerms,
+            region: filters["region"],
+          },
+        })
+      );
+      toast.success(res?.Success || "Searched saved successfully");
+    }
+  };
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -190,26 +216,42 @@ function Main() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-              <MultiSearchBar
+                <MultiSearchBar
                   onSearch={handleSearch}
                   searchTerms={searchTerms}
                   setSearchTerms={setSearchTerms}
-                 />
+                />
 
                 <div className="hover:bg-slate-50">
-
                   <Button onClick={handleClearAllFilter}>
-
-                    <Tippy content="Clear Filters"
-                      options={{ theme: "light", }}>
-                      <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer	" />
+                    <Tippy content="Clear Filters" options={{ theme: "light" }}>
+                      <FilterX
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
                     </Tippy>
                     {/* <span className="text-slate-500">Clear Filters</span> */}
                   </Button>
                 </div>
 
+                <div className="hover:bg-slate-50 ml-2">
+                  <Button onClick={saveSearch}>
+                    <Tippy content="Save Searches" options={{ theme: "light" }}>
+                      <SaveAll
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
+                  </Button>
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                <div className="hover:bg-slate-50 ml-2">
+                  <Button onClick={getSavedSearches}>Get Last Searches</Button>
+                </div>
+
                 <Popover className="inline-block">
                   {({ close }) => (
                     <>
@@ -411,9 +453,11 @@ function Main() {
                             )}
                           </Table.Td> */}
 
-                         {institution?.region && <Table.Td className="py-2  bg-white border-slate-200/80">
-                            {institution?.region}
-                          </Table.Td>}
+                          {institution?.region && (
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {institution?.region}
+                            </Table.Td>
+                          )}
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution.investor_type}
                           </Table.Td>
@@ -422,7 +466,7 @@ function Main() {
                           </Table.Td> */}
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
-                           { institution?.date_created}
+                              {institution?.date_created}
                               {/* {dayjs(institution?.date_created).format(
                                 "MMMM , YYYY"
                               )} */}
