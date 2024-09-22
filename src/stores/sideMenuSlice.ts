@@ -425,11 +425,11 @@ const initialState: SideMenuState = {
     //   pathname: "/datepicker",
     //   title: "Datepicker",
     // },
-    // {
-    //   icon: "Disc3",
-    //   pathname: "/tom-select",
-    //   title: "Tom Select",
-    // },
+    {
+      icon: "Disc3",
+      pathname: "/tom-select",
+      title: "Tom Select",
+    },
     // {
     //   icon: "Sandwich",
     //   pathname: "/file-upload",

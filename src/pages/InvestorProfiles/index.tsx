@@ -24,7 +24,7 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, FolderSearch2, SaveAll } from "lucide-react";
+import { FilterX,  SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { toast } from "react-toastify";
@@ -49,7 +49,7 @@ function Main() {
   } = useAppSelector((state) => state.investersProfile);
   const { user } = useAppSelector((state) => state.authentiction);
 
-  console.log({ user });
+  
 
   useEffect(() => {
     if (filters.institution_name.length > 0) {
@@ -283,6 +283,7 @@ function Main() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
+                    
                   />
 
                   <div className="hover:bg-slate-50">

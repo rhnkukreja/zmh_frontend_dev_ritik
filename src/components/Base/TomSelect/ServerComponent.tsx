@@ -52,6 +52,7 @@ export interface TomSelectProps<T extends string | string[] = string | string[]>
   labelKey: string;
   valueKey: string;
   url: string;
+  isMultiple? : boolean
 }
 
 async function fetchOptions({
@@ -83,6 +84,7 @@ function TomSelect<T extends string | string[]>({
   valueKey,
   labelKey,
   url,
+  isMultiple = false,
   ...computedProps
 }: TomSelectProps<T>) {
   const props = {
@@ -207,8 +209,10 @@ function TomSelect<T extends string | string[]>({
   return (
     <div className="mt-2 text-left">
       <select
+        
         {...computedProps}
         ref={tomSelectRef}
+        multiple={isMultiple}
         value={props.value}
         onChange={(e) => {
           if (props.onChange) {

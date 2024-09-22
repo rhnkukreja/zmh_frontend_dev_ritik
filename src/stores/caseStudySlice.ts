@@ -6,6 +6,7 @@ const name = "shareholder_proposal";
 
 export interface CaseStudies {
   caseStudies: any[];
+  singleCaseStudy: any;
   totalCaseStudies: number;
   loading: boolean;
   error: string | null;
@@ -13,34 +14,35 @@ export interface CaseStudies {
   page: number;
   filters: {
     keyword: string;
-    market: string;
-    sector: string;
-    year: string;
-    institution_name: string;
-    themes: string;
-    proposal_type: string;
-    vote: string;
-    company_name?: string;
+    market: string[];
+    sector: string[];
+    year: string[];
+    institution_name: string[];
+    themes: string[];
+    proposal_type: string[];
+    vote: string[];
+    company_name?: string[];
   };
 }
 
 const initialState: CaseStudies = {
   caseStudies: [],
+  singleCaseStudy: null,
   totalCaseStudies: 0,
   loading: false,
   error: null,
   totalPages: 1,
   page: 1,
   filters: {
-    market: "",
-    year: "",
-    sector: "",
-    institution_name: "",
+    market: [],
+    year: [],
+    sector: [],
+    institution_name: [],
     keyword: "",
-    themes: "",
-    proposal_type: "",
-    vote: "",
-    company_name: "",
+    themes: [],
+    proposal_type: [],
+    vote: [],
+    company_name: [],
   },
 };
 
@@ -49,6 +51,13 @@ export const fetchCaseStudies = createAsyncThunk<
   string
 >(`${name}`, async (url: string) => {
   return await caseStudiesService.getCaseStudies(url);
+});
+
+export const getSingleSingleCaseStudy = createAsyncThunk<
+  { result: any },
+  number
+>(`${name}/getSingleSingleCaseStudy`, async (id) => {
+  return await caseStudiesService.getSingleSingleCaseStudy(id);
 });
 
 const caseStudies = createSlice({
@@ -63,21 +72,28 @@ const caseStudies = createSlice({
     },
     //
 
-    // setFilter(
-    //   state,
-    //   action: PayloadAction<{
-    //     key: keyof typeof initialState.filters;
-    //     value: string | string[];
-    //   }>
-    // ) {
-    //   state.filters[action.payload.key] = action.payload.value as any;
-    // },
-    // resetFilter(state) {
-    //   state.filters = {
-    //     year: "",
-    //     institution_name: [],
-    //   };
-    // },
+    setFilter(
+      state,
+      action: PayloadAction<{
+        key: keyof typeof initialState.filters;
+        value: string | string[];
+      }>
+    ) {
+      state.filters[action.payload.key] = action.payload.value as any;
+    },
+    resetFilter(state) {
+      state.filters = {
+        keyword: "",
+        market: [],
+        proposal_type: [],
+        sector: [],
+        themes: [],
+        vote: [],
+        year: [],
+        company_name: [],
+        institution_name: [],
+      };
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -104,35 +120,22 @@ const caseStudies = createSlice({
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch voting guidelines";
+      })
+      //single case study
+      .addCase(getSingleSingleCaseStudy.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getSingleSingleCaseStudy.fulfilled, (state, action) => {
+        debugger;
+        state.loading = false;
+        state.error = null;
+        state.singleCaseStudy = action.payload.result;
+      })
+      .addCase(getSingleSingleCaseStudy.rejected, (state) => {
+        state.loading = false;
+        state.error = null;
       });
-
-    // .addCase(addEditProxyVotingGuideline.pending, (state) => {
-    //   state.loading = true;
-    //   state.error = null;
-    // })
-    // .addCase(addEditProxyVotingGuideline.fulfilled, (state, action) => {
-    //   state.loading = false;
-    //   if (action.payload.isEdit) {
-    //     const index = state.proxyVotingGuidelines?.findIndex(
-    //       (question) => question.id === action.payload.results.id
-    //     );
-    //     if (index !== -1) {
-    //       state.proxyVotingGuidelines[index] = action.payload.results;
-    //     }
-    //   } else {
-    //     if (state.totalProxyVotingGuidelines < 10) {
-    //       state.proxyVotingGuidelines = [
-    //         ...state.proxyVotingGuidelines,
-    //         action.payload.results,
-    //       ];
-    //     }
-    //   }
-    // })
-    // .addCase(addEditProxyVotingGuideline.rejected, (state, action) => {
-    //   state.loading = false;
-    //   state.error =
-    //     action.error.message || "Failed to create engagement question";
-    // });
   },
 });
 

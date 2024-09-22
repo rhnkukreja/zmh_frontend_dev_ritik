@@ -78,6 +78,7 @@ import CompanyList from "@/pages/Company";
 import SharedHolder from "@/pages/sharedHolder";
 import PeerAnalysis from "@/pages/PeerAnalysis";
 import CaseStudies from "@/pages/CaseStudies";
+import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
 
 function Router() {
   const routes = [
@@ -360,6 +361,10 @@ function Router() {
         {
           path: "case-studies",
           element: <CaseStudies />,
+        },
+        {
+          path: "case-studies/:id",
+          element: <DetailCaseStudies />,
         },
       ],
     },
