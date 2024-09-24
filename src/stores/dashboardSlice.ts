@@ -16,7 +16,7 @@ export type CompanyDashboard = {
   filer_id: number;
   percent_ownership: number;
   source: string;
-  source_date: Date
+  source_date: Date,
 };
 
 interface CompanySliceState {
@@ -31,6 +31,7 @@ interface CompanySliceState {
   // totalCompanyPages: number;
   totalCompanyDashboard: number,
   // totalSearchBarCount: number;
+  company_Global_Search: string;
 }
 
 const initialState: CompanySliceState = {
@@ -43,6 +44,8 @@ const initialState: CompanySliceState = {
   page: 1,
   totalPages: 1,
   totalCompanyDashboard: 0,
+  company_Global_Search: ''
+
   // totalCompanyPages: 1,
   // totalSearchBarCount: 0
 };
@@ -70,6 +73,9 @@ const companySlice = createSlice({
     },
     resetPage(state) {
       state.page = 1;
+    },
+    setDashboardGlobalSearch(state, action: PayloadAction<string>) {
+      state.company_Global_Search = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -116,5 +122,5 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage} =
+export const { setPage, resetPage, setDashboardGlobalSearch} =
 companySlice.actions;

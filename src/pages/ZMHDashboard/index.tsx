@@ -22,6 +22,8 @@ import { Helmet } from "react-helmet-async";
 import CPagination from "@/components/Pagination";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import InvestorCard from "@/components/InvestorCard";
+import CaseStudiesCard from "@/components/CaseStudiesCard";
 
 function Main() {
   const location = useLocation();
@@ -63,142 +65,15 @@ function Main() {
     <>
       <Helmet>
         <title>Investor Dashboard - ZMH Analytics</title>
-        
       </Helmet>
+
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 xl:col-span-8">
-        <div>
-          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="text-base font-medium group-[.mode--light]:text-white">
-              General Report
-            </div>
-          </div>
-          <div className="p-5 mt-3.5 box ">
-            <div className="w-full">
-              <div className="">
-                {(!dashboardDataList || dashboardDataList?.length === 0) &&
-                  loading && (
-                    <div className="flex flex-col items-center justify-center pt-20 pb-28">
-                      <LoadingIcon
-                        color="red"
-                        icon="puff"
-                        className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
-                      />
-                      <div className="mt-5 text-xl font-medium">Loading...</div>
-                    </div>
-                  )}
-
-                {(!dashboardDataList || dashboardDataList?.length === 0) &&
-                  !loading &&
-                  ticker && (
-                    <div className="flex flex-col items-center justify-center pt-20 pb-28">
-                      <Lucide
-                        icon="SearchX"
-                        className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
-                      />
-                      <div className="mt-5 text-xl font-medium">
-                        No result found
-                      </div>
-                    </div>
-                  )}
-                {(!dashboardDataList || dashboardDataList?.length === 0) &&
-                  !loading &&
-                  !ticker && (
-                    <div className="flex flex-col items-center justify-center pt-20 pb-28">
-                      <Lucide
-                        icon="Search"
-                        className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
-                      />
-                      <div className="mt-5 text-xl font-medium">
-                        Search for a company
-                      </div>
-                      <div className="mt-2 text-slate-500">
-                        Enter a company ticker to view dashboard data
-                      </div>
-                    </div>
-                  )}
-
-                {dashboardDataList?.length > 0 && !loading && (
-                  <div>
-                    <div className="min-h-[200px]">
-                      <TableWrapper isLoading={loading}>
-                        <Table>
-                          <Table.Thead>
-                            <Table.Tr>
-                              <Table.Td className="py-2 font-medium bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Filer Name
-                              </Table.Td>
-
-                              <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Source Date
-                              </Table.Td>
-                              <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Percent Ownership
-                              </Table.Td>
-                            </Table.Tr>
-                          </Table.Thead>
-                          <Table.Tbody>
-                            {dashboardDataList?.length > 0 &&
-                              dashboardDataList.map(
-                                (dashboard: CompanyDashboard) => (
-                                  <Table.Tr
-                                    key={dashboard.filer_id}
-                                    className="[&_td]:last:border-b-0"
-                                  >
-                                    <Table.Td className=" py-2 border-dashed dark:bg-darkmode-600">
-                                      <div className="whitespace-nowrap capitalize">
-                                        {dashboard?.filer_name}
-                                      </div>
-                                    </Table.Td>
-
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      <div className="whitespace-nowrap ">
-                                        {dashboard?.source_date}
-                                      </div>
-                                    </Table.Td>
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      <div className="whitespace-nowrap ">
-                                        {dashboard?.percent_ownership}
-                                      </div>
-                                    </Table.Td>
-
-                                    {/* <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex gap-3 justify-center">
-                                        <Tippy
-                                          content="View"
-                                          options={{
-                                            theme: "dark",
-                                          }}
-                                        ></Tippy>
-                                      </div>
-                                    </Table.Td> */}
-                                  </Table.Tr>
-                                )
-                              )}
-                          </Table.Tbody>
-                        </Table>
-                      </TableWrapper>
-                    </div>
-                      <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-
-                        <CPagination
-                          page={page}
-                          totalPages={totalPages}
-                          handleNextPage={handleNextPage}
-                          handlePageChange={handlePageChange}
-                          handlePreviousPage={handlePreviousPage}
-                        />
-                      </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+         <InvestorCard />
       </div>
 
       <div className="col-span-12 md:col-span-6 xl:col-span-4">
-        <div>
+        {/* <div>
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="text-base font-medium xl:group-[.mode--light]:text-white">
               Patient Overview
@@ -315,7 +190,9 @@ function Main() {
               See Full Report
             </Button>
           </div>
-        </div>
+        </div> */}
+
+        <CaseStudiesCard />
       </div>
     </div>
     </>

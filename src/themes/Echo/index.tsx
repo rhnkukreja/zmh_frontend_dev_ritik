@@ -23,8 +23,11 @@ import ActivitiesPanel from "@/components/ActivitiesPanel";
 import { filterMenu, getColorForCharacter } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
-import { Mail } from "lucide-react";
-import { persistor } from "@/stores/store";
+import { FilterX, Mail } from "lucide-react";
+import { persistor, RootState } from "@/stores/store";
+import Button from "@/components/Base/Button";
+import Tippy from "@/components/Base/Tippy";
+import { setDashboardGlobalSearch } from "@/stores/dashboardSlice";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -56,6 +59,7 @@ function Main() {
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
   };
+  const { company_Global_Search } = useAppSelector((state: RootState) => state.dashboard);
 
   const compactLayout = () => {
     if (window.innerWidth <= 1600) {
@@ -421,12 +425,29 @@ function Main() {
                 className="relative justify-center flex-1 hidden xl:flex"
                 onClick={() => setQuickSearch(true)}
               >
-                <div className="bg-white/[0.12] border-transparent border w-[350px] flex items-center py-2 px-3.5 rounded-[0.5rem] text-white/60 cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100">
+                <div className={clsx([
+                  'bg-white/[0.12] border-transparent border w-[600px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
+                  company_Global_Search !== '' ? 'text-white' : 'text-white/60'])}>
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">Quick search...</div>
+                  <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? 'Selected Search ' + company_Global_Search : 'Quick search...'}</div>
                   <div>⌘K</div>
                 </div>
               </div>
+                <div className="ml-5 bg-white border-transparent rounded-lg">
+                  <Button onClick={()=> dispatch(setDashboardGlobalSearch(''))}>
+                    <Tippy
+                      content="Clear Search"
+                      options={{ theme: "light" }}
+                    >
+                      <FilterX
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
+                    {/* <span className="text-slate-500">Clear Filters</span> */}
+                  </Button>
+                </div>
               <QuickSearch
                 quickSearch={quickSearch}
                 setQuickSearch={setQuickSearch}

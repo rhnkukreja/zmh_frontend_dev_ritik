@@ -3,7 +3,7 @@ import { FormInput } from "@/components/Base/Form";
 import { Dialog as HeadlessDialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect, useCallback } from "react";
 import _ from "lodash";
-import { fetchCompanyByName } from "@/stores/dashboardSlice";
+import { fetchCompanyByName, setDashboardGlobalSearch } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +51,7 @@ function Main(props: MainProps) {
   ) => {
     event.preventDefault();
     navigate(`/?ticker=${company?.symbol}`);
+    dispatch(setDashboardGlobalSearch(company?.name));
   };
 
   return (

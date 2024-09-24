@@ -75,19 +75,20 @@ function ShareHolderProposal() {
     // investerProfileFilterOption,
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
+  const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
     setIsFilterCollapse(!isFilterCollapse);
   };
 
   useEffect(() => {
-      if(tab === 'proposal'){
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,applyFilters,undefined, page)
-          )
-        );
-      }
+    if (tab === 'proposal') {
+      dispatch(
+        fetchShareHolderProposal(
+          createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,{ globalSearch: company_Global_Search,
+                                                                         ...applyFilters }, undefined, page)));
+    }
       else if(tab === 'no-action'){
         dispatch(
           fetchShareHolderProposal(

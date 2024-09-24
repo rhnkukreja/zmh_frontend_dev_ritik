@@ -18,7 +18,7 @@ export interface SideMenuState {
 
 const initialState: SideMenuState = {
   menu: [
-    "DASHBOARDS",
+    "DASHBOARD",
     // {
     //   icon: "ActivitySquare",
     //   pathname: "/inbox",
