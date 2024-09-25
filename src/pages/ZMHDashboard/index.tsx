@@ -22,6 +22,8 @@ import { Helmet } from "react-helmet-async";
 import CPagination from "@/components/Pagination";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import InvestorCard from "@/components/InvestorCard";
+import CaseStudiesCard from "@/components/CaseStudiesCard";
 
 function Main() {
   const location = useLocation();
@@ -63,9 +65,8 @@ function Main() {
     <>
       <Helmet>
         <title>Investor Dashboard - ZMH Analytics</title>
-        
       </Helmet>
-    <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+      <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 xl:col-span-8">
         <div>
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
@@ -130,7 +131,7 @@ function Main() {
                               </Table.Td>
 
                               <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Source Date
+                                Revenue
                               </Table.Td>
                               <Table.Td className="py-2 font-medium  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Percent Ownership
@@ -153,7 +154,7 @@ function Main() {
 
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                       <div className="whitespace-nowrap ">
-                                        {dashboard?.source_date}
+                                        {dashboard?.revenue}
                                       </div>
                                     </Table.Td>
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
@@ -317,7 +318,17 @@ function Main() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+    {/* <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+      <div className="col-span-12 xl:col-span-8">
+         <InvestorCard />
+      </div>
+
+      <div className="col-span-12 md:col-span-6 xl:col-span-4">
+        <CaseStudiesCard />
+      </div>
+    </div> */}
     </>
   );
 }

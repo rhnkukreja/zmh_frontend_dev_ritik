@@ -29,12 +29,13 @@ import { resetPage } from "@/stores/shareholderProposalSlice";
 import TomSelect from "@/components/Base/TomSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { ShareHolderDropdown } from "@/types/shareHolder";
+import clsx from "clsx";
 
 
 
 function ShareHolderProposal() {
 
-      
+
   interface ShareHolderFilter {
     institution: string[];
     status: string[];
@@ -64,7 +65,8 @@ function ShareHolderProposal() {
     year: [],
   });
 
-  const { handleSubmit, control, reset, formState: { errors }, setValue, watch} = useForm<ShareHolderFilter>();
+  const { handleSubmit, control, reset, formState: { errors }, setValue, watch } = useForm<ShareHolderFilter>();
+  const navigate = useNavigate();
 
   const {
     loading,
@@ -75,34 +77,37 @@ function ShareHolderProposal() {
     // investerProfileFilterOption,
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
+  const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
     setIsFilterCollapse(!isFilterCollapse);
   };
 
   useEffect(() => {
-      if(tab === 'proposal'){
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,applyFilters,undefined, page)
-          )
-        );
-      }
-      else if(tab === 'no-action'){
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`,applyFilters,undefined, page)
-          )
-        );
-      }
-      else if(tab === 'withdrawn'){
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/`,applyFilters,undefined, page)
-          )
-        );
-      }
-    
+    if (tab === 'proposal') {
+      dispatch(
+        fetchShareHolderProposal(
+          createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`, {
+            globalSearch: company_Global_Search,
+            ...applyFilters
+          }, undefined, page)));
+    }
+    else if (tab === 'no-action') {
+      dispatch(
+        fetchShareHolderProposal(
+          createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`, applyFilters, undefined, page)
+        )
+      );
+    }
+    else if (tab === 'withdrawn') {
+      dispatch(
+        fetchShareHolderProposal(
+          createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/`, applyFilters, undefined, page)
+        )
+      );
+    }
+
   }, [page, tab, applyFilters]);
 
 
@@ -201,7 +206,7 @@ function ShareHolderProposal() {
       } as ShareHolderFilter;
     });
   };
-  
+
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
     setApplyFilters({ ...shareHolderFilters, institution_name: searchTerms });
     const validKeysCount = Object.keys(shareHolderFilters).filter((key) => {
@@ -271,7 +276,7 @@ function ShareHolderProposal() {
                           />
                           Filter
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                          {filtersLength}
+                            {filtersLength}
                           </div>
                         </Popover.Button>
                       </>
@@ -437,8 +442,8 @@ function ShareHolderProposal() {
                         />
                       </div>
 
-                      
-                      
+
+
 
                       <div className=" w-full mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
@@ -492,7 +497,7 @@ function ShareHolderProposal() {
                                 </option>
                               ) : (
                                 <>
-                                  {apiDropdownOptions?.proponent?.map((proponent:any) => (
+                                  {apiDropdownOptions?.proponent?.map((proponent: any) => (
                                     <option key={proponent} value={proponent}>
                                       {proponent}
                                     </option>
@@ -708,40 +713,73 @@ function ShareHolderProposal() {
                                 Company
                               </Table.Td>
                               <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                Category
+                                Proponent
                               </Table.Td>
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Sub Category
-                                </Table.Td>
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Proponent
-                                </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Proposal No
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Outcome/Percentage for
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                No Action Letters
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Actions
+                              </Table.Td>
                             </Table.Tr>
                           </Table.Thead>
 
                           <Table.Tbody>
-                          {shareHolderProposal?.length > 0 &&
-                        shareHolderProposal?.map(
-                          (noAction: any) => (
-                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.year}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.company_name}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.category}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.sub_category}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.proponent}
-                              </Table.Td>
-                            </Table.Tr>
-                            )
-                          )}
+                            {shareHolderProposal?.length > 0 &&
+                              shareHolderProposal?.map(
+                                (noAction: any) => (
+                                  <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.company_name}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.proponent_name}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.proposal_num}
+                                    </Table.Td>
+                                    <Table.Td className={clsx(["py-2 font-semibold border-dashed dark:bg-darkmode-600", noAction?.outcome_percentage?.includes('Fail') && 'text-red-600',
+                                      noAction?.outcome_percentage?.includes('Withdrawn') && 'text-green-600', noAction?.outcome_percentage?.includes('Pass') && 'text-blue-600'])}>
+                                      {noAction?.outcome_percentage ? noAction?.outcome_percentage : 'Meeting not held or Results not available'}
+                                    </Table.Td>
+                                    <Table.Td className={clsx(["py-2 font-semibold border-dashed dark:bg-darkmode-600",
+                                      noAction?.nl_exist && 'text-blue-600 underline cursor-pointer'])}
+                                      onClick={() => {
+                                        const id = noAction?.nl_exist === true ? noAction?.no_action_link?.split('/').filter(Boolean).pop() : 0;
+                                        console.log(id + noAction?.no_action_link);
+                                        noAction?.nl_exist === true && navigate(`/share-holder-proposal/${id}?url=shareholder_proposal/no_action`)
+                                      }}>
+                                      {noAction?.nl_exist === true ? 'Yes' : ''}
+                                    </Table.Td>
+                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <div className="flex">
+                                        <Tippy
+                                          content="View"
+                                          options={{
+                                            theme: "dark",
+                                          }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(`/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`)}
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </Table.Td>
+                                  </Table.Tr>
+                                )
+                              )}
                           </Table.Tbody>
                         </Table>
                       </TableWrapper>
@@ -765,38 +803,64 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Category
                               </Table.Td>
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Sub Category
-                                </Table.Td>
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Proponent
-                                </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Sub Category
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Proponent
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Outcome
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Actions
+                              </Table.Td>
                             </Table.Tr>
                           </Table.Thead>
 
                           <Table.Tbody>
-                          {shareHolderProposal?.length > 0 &&
-                        shareHolderProposal?.map(
-                          (noAction: any) => (
-                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.year}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.company_name}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.category}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.sub_category}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {/* {noAction?.year} */}
-                              </Table.Td>
-                            </Table.Tr>
-                            )
-                          )}
+                            {shareHolderProposal?.length > 0 &&
+                              shareHolderProposal?.map(
+                                (noAction: any) => (
+                                  <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.company_name}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.category}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.sub_category}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.proponent_name}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.staff_response}
+                                    </Table.Td>
+                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <div className="flex">
+                                        <Tippy
+                                          content="View"
+                                          options={{
+                                            theme: "dark",
+                                          }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(`/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`)}
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </Table.Td>
+                                  </Table.Tr>
+                                )
+                              )}
                           </Table.Tbody>
                         </Table>
                       </TableWrapper>
@@ -819,35 +883,55 @@ function ShareHolderProposal() {
                               <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                                 Company
                               </Table.Td>
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Proponent
-                                </Table.Td>
-                                <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                  Outcome
-                                </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Proponent
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Outcome
+                              </Table.Td>
+                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                Actions
+                              </Table.Td>
                             </Table.Tr>
                           </Table.Thead>
 
                           <Table.Tbody>
-                          {shareHolderProposal?.length > 0 &&
-                        shareHolderProposal?.map(
-                          (noAction: any) => (
-                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.year}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.company_name}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {noAction?.proponent}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {/* {noAction?.year} */}
-                              </Table.Td>
-                            </Table.Tr>
-                            )
-                          )}
+                            {shareHolderProposal?.length > 0 &&
+                              shareHolderProposal?.map(
+                                (noAction: any) => (
+                                  <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.company_name}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.proponent_name}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.status}
+                                    </Table.Td>
+                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <div className="flex">
+                                        <Tippy
+                                          content="View"
+                                          options={{
+                                            theme: "dark",
+                                          }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(`/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/withdrawn`)}
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </Table.Td>
+                                  </Table.Tr>
+                                )
+                              )}
                           </Table.Tbody>
                         </Table>
                       </TableWrapper>
@@ -857,7 +941,6 @@ function ShareHolderProposal() {
                 </Tab.Group>
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-
                 <CPagination
                   page={page}
                   totalPages={totalPages}
@@ -865,13 +948,6 @@ function ShareHolderProposal() {
                   handlePageChange={handlePageChange}
                   handlePreviousPage={handlePreviousPage}
                 />
-
-                {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
-                <option>10</option>
-                <option>25</option>
-                <option>35</option>
-                <option>50</option>
-              </FormSelect> */}
               </div>
             </div>
           </div>

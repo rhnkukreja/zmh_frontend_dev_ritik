@@ -1,4 +1,4 @@
-import { ShareHolderDropdown } from "@/types/shareHolder";
+import { ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
 import { axiosInstance } from "../index";
 
 class ShareHolderProposalService {
@@ -24,6 +24,17 @@ class ShareHolderProposalService {
     const result = response.data;
     return {
       result: result,
+    };
+  }
+
+
+  public async getSingleShareHolder(url: string ,id: number): Promise<{
+    results: ShareHolderData;
+  }> {
+    const response = await axiosInstance.get(`/${url}/${id}`);
+    const results = response.data;
+    return {
+      results,
     };
   }
 

@@ -1,23 +1,25 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
+import { ShareHolderData } from "@/types/shareHolder";
 
 const name = "shareholder_proposal";
 
 export interface SharedHolderPrposal {
   shareHolderProposal: any[];
+  getSingleShareHolder: any | null;
   totalShareHolderNoAction: number;
   loading: boolean;
   error: string | null;
   totalPages: number;
   page: number;
-  filters : {
-    proponent_name: string, 
-    year: number[],
-    category: string,            
-    sub_category: string,     
-    keyword: string,
-    active: string          
+  filters: {
+    proponent_name: string;
+    year: number[];
+    category: string;
+    sub_category: string;
+    keyword: string;
+    active: string;
   };
   shareHolderFilterOption: {
     category: string[];
@@ -26,21 +28,27 @@ export interface SharedHolderPrposal {
 
 const initialState: SharedHolderPrposal = {
   shareHolderProposal: [],
+  getSingleShareHolder: null,
   totalShareHolderNoAction: 0,
   loading: false,
   error: null,
   totalPages: 1,
   page: 1,
-  filters : {
-    proponent_name: '', 
+  filters: {
+    proponent_name: "",
     year: [],
-    category: '',            
-    sub_category: '',     
-    keyword: '',
-    active: ''          
+    category: "",
+    sub_category: "",
+    keyword: "",
+    active: "",
   },
   shareHolderFilterOption: {
-    category: ["Corporate Governance", "Environmental", "Executive Compensation", "Social"],
+    category: [
+      "Corporate Governance",
+      "Environmental",
+      "Executive Compensation",
+      "Social",
+    ],
   },
 };
 
@@ -49,6 +57,13 @@ export const fetchShareHolderProposal = createAsyncThunk<
   string
 >(`${name}`, async (url: string) => {
   return await shareHolderProposalService.getShareHolderProposal(url);
+});
+
+export const getSingleShareHolderData = createAsyncThunk<
+  { results: any },
+  { url: string; id: number }
+>(`${name}/getSingleShareHolder`, async ({ url, id }) => {
+  return await shareHolderProposalService.getSingleShareHolder(url, id);
 });
 
 const shareHolderProposal = createSlice({
@@ -61,8 +76,8 @@ const shareHolderProposal = createSlice({
     resetPage(state) {
       state.page = 1;
     },
-    // 
-    
+    //
+
     // setFilter(
     //   state,
     //   action: PayloadAction<{
@@ -105,38 +120,32 @@ const shareHolderProposal = createSlice({
         state.error =
           action.error.message || "Failed to fetch voting guidelines";
       })
-
-      // .addCase(addEditProxyVotingGuideline.pending, (state) => {
-      //   state.loading = true;
-      //   state.error = null;
-      // })
-      // .addCase(addEditProxyVotingGuideline.fulfilled, (state, action) => {
-      //   state.loading = false;
-      //   if (action.payload.isEdit) {
-      //     const index = state.proxyVotingGuidelines?.findIndex(
-      //       (question) => question.id === action.payload.results.id
-      //     );
-      //     if (index !== -1) {
-      //       state.proxyVotingGuidelines[index] = action.payload.results;
-      //     }
-      //   } else {
-      //     if (state.totalProxyVotingGuidelines < 10) {
-      //       state.proxyVotingGuidelines = [
-      //         ...state.proxyVotingGuidelines,
-      //         action.payload.results,
-      //       ];
-      //     }
-      //   }
-      // })
-      // .addCase(addEditProxyVotingGuideline.rejected, (state, action) => {
-      //   state.loading = false;
-      //   state.error =
-      //     action.error.message || "Failed to create engagement question";
-      // });
+      .addCase(getSingleShareHolderData.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        getSingleShareHolderData.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            results: ShareHolderData;
+          }>
+        ) => {
+          state.loading = false;
+          state.getSingleShareHolder = action.payload.results;
+        }
+      )
+      .addCase(getSingleShareHolderData.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch engagement questions";
+      });
   },
 });
 
 export default shareHolderProposal;
-export const { setPage, resetPage, //resetFilter
-   } =
-  shareHolderProposal.actions;
+export const {
+  setPage,
+  resetPage, //resetFilter
+} = shareHolderProposal.actions;
