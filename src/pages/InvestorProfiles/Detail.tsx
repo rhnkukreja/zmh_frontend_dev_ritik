@@ -367,8 +367,8 @@ function Main() {
                         // renderHtml={singleInvesterProfile?.[key]}
                         renderHtml={
                           singleInvesterProfile?.[key]
-                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                            ?.replace(/\n/g, "<br />") || ""
+                            // ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                            // ?.replace(/\n/g, "<br />") || ""
                         }
                         field={key as keyof InvestersProfile}
                       />

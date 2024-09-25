@@ -310,11 +310,14 @@ function ProxyGuideline() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  <div className="hover:bg-slate-50 ml-2">
-                    <Button onClick={getSavedSearches}>
-                      Get Last Searches
-                    </Button>
-                  </div>
+                {user?.saved_search?.["Voting Guidelines"] !== undefined && (
+                    <div className="hover:bg-slate-50 ml-2">
+                      <Button onClick={getSavedSearches}>
+                        Get Last Searches
+                      </Button>
+                    </div>
+                  )}
+
 
                   <Popover className="inline-block">
                     {({ close }) => (

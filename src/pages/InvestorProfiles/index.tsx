@@ -24,7 +24,7 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX,  SaveAll } from "lucide-react";
+import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { toast } from "react-toastify";
@@ -48,8 +48,6 @@ function Main() {
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
   const { user } = useAppSelector((state) => state.authentiction);
-
-  
 
   useEffect(() => {
     if (filters.institution_name.length > 0) {
@@ -227,7 +225,7 @@ function Main() {
     );
   };
 
-  const saveSearch =  async () => {
+  const saveSearch = async () => {
     const res = await commonService.saveSearches({
       module: "Investor Profile",
       institution: searchTerms,
@@ -243,11 +241,9 @@ function Main() {
           },
         })
       );
-      toast.success(
-        res?.Success || "Searched saved successfully"
-      );
+      toast.success(res?.Success || "Searched saved successfully");
     }
-  }
+  };
 
   return (
     <>
@@ -283,7 +279,6 @@ function Main() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    
                   />
 
                   <div className="hover:bg-slate-50">
@@ -303,9 +298,7 @@ function Main() {
                   </div>
 
                   <div className="hover:bg-slate-50 ml-2">
-                    <Button
-                      onClick={saveSearch}
-                    >
+                    <Button onClick={saveSearch}>
                       <Tippy
                         content="Save Searches"
                         options={{ theme: "light" }}
@@ -320,11 +313,13 @@ function Main() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  <div className="hover:bg-slate-50 ml-2">
-                    <Button onClick={getSavedSearches}>
-                      Get Last Searches
-                    </Button>
-                  </div>
+                  {user?.saved_search?.["Investor Profile"] !== undefined && (
+                    <div className="hover:bg-slate-50 ml-2">
+                      <Button onClick={getSavedSearches}>
+                        Get Last Searches
+                      </Button>
+                    </div>
+                  )}
 
                   <Popover className="inline-block">
                     {({ close }) => (
