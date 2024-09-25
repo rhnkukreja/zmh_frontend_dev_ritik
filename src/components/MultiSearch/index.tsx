@@ -173,8 +173,13 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                       handleSearch(item, e.target.checked);
                                     }}
                                   />
+                                  <label
+                                    htmlFor={`checkbox-switch-${key}`}
+                                    className="cursor-pointer pl-2"
+                                  >
+                                    <span>{item}</span>
+                                  </label>
                                 </FormCheck>
-                                <span>{item}</span>
                               </div>
                             );
                           })}
