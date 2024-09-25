@@ -79,6 +79,7 @@ import SharedHolder from "@/pages/sharedHolder";
 import PeerAnalysis from "@/pages/PeerAnalysis";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
+import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
 
 function Router() {
   const routes = [
@@ -353,6 +354,10 @@ function Router() {
         {
           path: "share-holder-proposal",
           element: <SharedHolder />,
+        },
+        {
+          path: "share-holder-proposal/:id",
+          element: <DetailShareHolder />,
         },
         {
           path: "peer-analysis",
