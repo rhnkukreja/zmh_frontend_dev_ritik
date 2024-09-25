@@ -1,3 +1,4 @@
+import { ShareHolderDropdown } from "@/types/shareHolder";
 import { axiosInstance } from "../index";
 
 class ShareHolderProposalService {
@@ -10,6 +11,19 @@ class ShareHolderProposalService {
     return {
       count,
       results,
+    };
+  }
+
+
+  public async getShareHolderDropdownValues(): Promise<{
+    result: ShareHolderDropdown;
+  }> {
+    const response = await axiosInstance.get(
+      `/get_shareholder_dropdown_values/`
+    );
+    const result = response.data;
+    return {
+      result: result,
     };
   }
 
