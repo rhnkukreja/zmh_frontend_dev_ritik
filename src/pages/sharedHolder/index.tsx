@@ -757,8 +757,8 @@ function ShareHolderProposal() {
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.proposal_num}
                                     </Table.Td>
-                                    <Table.Td className={clsx(["py-2 font-semibold border-dashed dark:bg-darkmode-600", noAction?.outcome_percentage?.includes('Fail') && 'text-red-600',
-                                      noAction?.outcome_percentage?.includes('Withdrawn') && 'text-green-600', noAction?.outcome_percentage?.includes('Pass') && 'text-blue-600'])}>
+                                    <Table.Td className={clsx(["py-2 border-dashed dark:bg-darkmode-600", noAction?.outcome_percentage?.includes('Fail') && 'text-red-600  font-semibold',
+                                      noAction?.outcome_percentage?.includes('Withdrawn') && '', noAction?.outcome_percentage?.includes('Pass') && 'text-blue-600  font-semibold'])}>
                                       {noAction?.outcome_percentage ? noAction?.outcome_percentage : 'Meeting not held or Results not available'}
                                     </Table.Td>
                                     <Table.Td className={clsx(["py-2 font-semibold border-dashed dark:bg-darkmode-600",

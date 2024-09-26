@@ -412,28 +412,28 @@ function Main() {
                 </a>
               </div>
               {/* BEGIN: Breadcrumb */}
-              <Breadcrumb light className="flex-1 hidden xl:block">
+              {/* <Breadcrumb light className="flex-1 hidden xl:block">
                 <Breadcrumb.Link to="/">App</Breadcrumb.Link>
                 <Breadcrumb.Link to="/">Dashboards</Breadcrumb.Link>
                 <Breadcrumb.Link to="/" active={true}>
                   Analytics
                 </Breadcrumb.Link>
-              </Breadcrumb>
+              </Breadcrumb> */}
               {/* END: Breadcrumb */}
               {/* BEGIN: Search */}
               <div
-                className="relative justify-center flex-1 hidden xl:flex"
+                className="relative justify-center hidden xl:flex"
                 onClick={() => setQuickSearch(true)}
               >
                 <div className={clsx([
-                  'bg-white/[0.12] border-transparent border w-[600px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
+                  'bg-white/[0.12] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
                   company_Global_Search !== '' ? 'text-white' : 'text-white/60'])}>
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
                   <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? 'Selected Search ' + company_Global_Search : 'Quick search...'}</div>
                   <div>⌘K</div>
                 </div>
               </div>
-                <div className="ml-5 bg-white border-transparent rounded-lg">
+                {/* <div className="ml-5 bg-white border-transparent rounded-lg">
                   <Button onClick={()=> dispatch(setDashboardGlobalSearch(''))}>
                     <Tippy
                       content="Clear Search"
@@ -445,9 +445,8 @@ function Main() {
                         className="text-slate-500 cursor-pointer	"
                       />
                     </Tippy>
-                    {/* <span className="text-slate-500">Clear Filters</span> */}
                   </Button>
-                </div>
+                </div> */}
               <QuickSearch
                 quickSearch={quickSearch}
                 setQuickSearch={setQuickSearch}

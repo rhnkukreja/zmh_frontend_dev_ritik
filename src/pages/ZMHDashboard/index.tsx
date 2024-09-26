@@ -24,6 +24,7 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import InvestorCard from "@/components/InvestorCard";
 import CaseStudiesCard from "@/components/CaseStudiesCard";
+import AGMSummaryCard from "@/components/AGMSummaryCard";
 
 function Main() {
   const location = useLocation();
@@ -66,7 +67,7 @@ function Main() {
       <Helmet>
         <title>Investor Dashboard - ZMH Analytics</title>
       </Helmet>
-      <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+      {/* <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 xl:col-span-8">
         <div>
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
@@ -162,17 +163,6 @@ function Main() {
                                         {dashboard?.percent_ownership}
                                       </div>
                                     </Table.Td>
-
-                                    {/* <Table.Td className="w-20 relative py-2 box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex gap-3 justify-center">
-                                        <Tippy
-                                          content="View"
-                                          options={{
-                                            theme: "dark",
-                                          }}
-                                        ></Tippy>
-                                      </div>
-                                    </Table.Td> */}
                                   </Table.Tr>
                                 )
                               )}
@@ -318,17 +308,21 @@ function Main() {
           </div>
         </div>
       </div>
-      </div>
+      </div> */}
 
-    {/* <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-      <div className="col-span-12 xl:col-span-8">
+    <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+      <div className="col-span-12 xl:col-span-12">
          <InvestorCard />
       </div>
 
-      <div className="col-span-12 md:col-span-6 xl:col-span-4">
+      <div className="col-span-12 xl:col-span-12">
+         <AGMSummaryCard />
+      </div>
+
+      <div className="col-span-12 xl:col-span-12">
         <CaseStudiesCard />
       </div>
-    </div> */}
+    </div>
     </>
   );
 }
