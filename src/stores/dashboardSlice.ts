@@ -17,6 +17,7 @@ export type CompanyDashboard = {
   percent_ownership: number;
   source: string;
   source_date: Date,
+  proxy_advisor_influence: string,
 };
 
 interface CompanySliceState {
@@ -44,8 +45,7 @@ const initialState: CompanySliceState = {
   page: 1,
   totalPages: 1,
   totalCompanyDashboard: 0,
-  company_Global_Search: ''
-
+  company_Global_Search: 'Amazon.com, Inc.'
   // totalCompanyPages: 1,
   // totalSearchBarCount: 0
 };

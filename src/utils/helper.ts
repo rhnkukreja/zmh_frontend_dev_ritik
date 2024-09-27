@@ -308,6 +308,17 @@ const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   return filteredMenuItems;
 };
 
+const downloadCSV = (csvContent: any, name: string) => {
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("download", `${name}.csv`);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
 export {
   cutText,
   formatDate,
@@ -330,4 +341,5 @@ export {
   getYearRange,
   formatedDate,
   filterMenu,
+  downloadCSV
 };

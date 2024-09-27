@@ -1,14 +1,10 @@
 import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
-import Breadcrumb from "@/components/Base/Breadcrumb";
 import { useState, useEffect, createRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
-import {
-  selectCompactMenu,
-  setCompactMenu as setCompactMenuStore,
-} from "@/stores/compactMenuSlice";
+import { selectCompactMenu, setCompactMenu as setCompactMenuStore } from "@/stores/compactMenuSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import Lucide from "@/components/Base/Lucide";
@@ -25,8 +21,6 @@ import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
 import { FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
-import Button from "@/components/Base/Button";
-import Tippy from "@/components/Base/Tippy";
 import { setDashboardGlobalSearch } from "@/stores/dashboardSlice";
 
 function Main() {
@@ -118,15 +112,13 @@ function Main() {
           { "side-menu--on-hover": compactMenuOnHover },
           { "ml-0 after:block": activeMobileMenu },
           { "-ml-[280px] after:hidden": !activeMobileMenu },
-        ])}
-      >
+        ])}>
         <div
           className={clsx([
             "fixed ml-[280px] w-10 h-10 items-center justify-center xl:hidden z-50",
             { flex: activeMobileMenu },
             { hidden: !activeMobileMenu },
-          ])}
-        >
+          ])}>
           <a
             href=""
             onClick={(event) => {
@@ -140,14 +132,11 @@ function Main() {
         </div>
         <div
           className={clsx([
-            "h-full bg-red box bg-white/[0.95] rounded-none xl:rounded-xl z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
+            "h-full box bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none xl:rounded-xl z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
           onMouseOver={(event) => {
             event.preventDefault();
             setCompactMenu(false);
-
-            // setCompactMenuOnHover(true);
-            // toggleCompactMenu(event);  
           }}
           onMouseLeave={(event) => {
             event.preventDefault();
@@ -229,11 +218,13 @@ function Main() {
                         setFormattedMenu([...formattedMenu]);
                       }}
                     >
-                      <Lucide
+                      {/* <Lucide
                         icon={menu.icon}
                         className="side-menu__link__icon"
-                      />
-                      <div className="side-menu__link__title">{menu.title}</div>
+                      /> */}
+                      <img className='fill-red-900' src={menu.icon}/>
+
+                      <div className="side-menu__link__title link_color">{menu.title}</div>
                       {menu.badge && (
                         <div className="side-menu__link__badge">
                           {menu.badge}
@@ -283,7 +274,7 @@ function Main() {
                                   icon={subMenu.icon}
                                   className="side-menu__link__icon"
                                 />
-                                <div className="side-menu__link__title">
+                                <div className="side-menu__link__title link_color">
                                   {subMenu.title}
                                 </div>
                                 {subMenu.badge && (
@@ -345,7 +336,7 @@ function Main() {
                                               icon={lastSubMenu.icon}
                                               className="side-menu__link__icon"
                                             />
-                                            <div className="side-menu__link__title">
+                                            <div className="side-menu__link__title link_color">
                                               {lastSubMenu.title}
                                             </div>
                                             {lastSubMenu.badge && (
