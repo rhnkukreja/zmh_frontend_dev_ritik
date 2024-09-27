@@ -229,13 +229,13 @@ function ShareHolderProposal() {
     setApplyFilters((prev) => {
       return {
         ...prev,
-        institution_name: searchTerms.length > 0 ? searchTerms : undefined,
+        proponent_name: searchTerms.length > 0 ? searchTerms : undefined,
       } as ShareHolderFilter;
     });
   };
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
-    setApplyFilters({ ...shareHolderFilters, institution_name: searchTerms });
+    setApplyFilters({ ...shareHolderFilters, proponent_name: searchTerms });
     const validKeysCount = Object.keys(shareHolderFilters).filter((key) => {
       const value = shareHolderFilters[key];
       return value !== undefined && value !== "" && value.length !== 0;

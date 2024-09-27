@@ -134,7 +134,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
               <div className=" text-md font-medium">
                 {searchValue.length > 0 && isLoading && (
                   <span className="flex items-center">
-                    <span>Search Institution</span>
+                    <span>Searching</span>
                     {isLoading && (
                       <Lucide
                         icon="Loader"
