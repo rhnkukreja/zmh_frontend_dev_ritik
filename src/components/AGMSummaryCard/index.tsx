@@ -5,22 +5,36 @@ import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
+import FormSelect from '../Base/Form/FormSelect';
 
 
 const index = () => {
     return (
         <div className="p-5 mt-3.5 box ">
             <div className="w-full">
-                <div className='flex justify-between items-center sm:flex-col md:flex-row'>
-                    <h1 className='text-lg font-bold'>Top 5 Investor</h1>
-                    <div className='flex justify-between items-center gap-4 sm:flex-col md:flex-row'>
-                        <div className='flex justify-between items-center gap-2'>
-                            <img
-                                alt="flag-icon"
-                                src={flagIcon}
-                            />
-                            <h4 className='font-semibold'>Some text</h4>
+                <div className='flex justify-between items-center xs:flex-col md:flex-row'>
+                    <div className='flex justify-between items-center gap-4 xs:flex-col md:flex-row'>
+                    <h1 className='text-lg font-bold'>Previous AGM Summary</h1>
+                        <div className=''>
+                            {/* <div className="text-left text-slate-500">
+                                Select Year
+                            </div> */}
+                            <FormSelect 
+                                defaultValue={"Select Year"}
+                                className="flex-1">
+                                <option >
+                                    2024
+                                </option>
+                                <option >
+                                    2023
+                                </option>
+                            </FormSelect>
                         </div>
+                        <div className='p-2 bg-white rounded-md  border-red-800 border-2 font-semibold text-red-800 border-solid'>
+                           View More
+                        </div>
+                    </div>
+                    <div className='flex justify-between items-center gap-4'>
                         <div className='box p-[5px]'>
                             <img
                                 alt="download-icon"
@@ -43,25 +57,28 @@ const index = () => {
                                 <Table.Thead>
                                     <Table.Tr>
                                         <Table.Td className="py-2 font-medium h-[50px] bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                            Investor
+                                            Proposal
                                         </Table.Td>
                                         <Table.Td className="py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                            Ownership
+                                        For
                                         </Table.Td>
                                         <Table.Td className="py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                        Eng Priorities
+                                        Against
                                         </Table.Td>
                                         <Table.Td className="py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                        Proxy Advisor Influence
+                                        Abstain
                                         </Table.Td>
                                         <Table.Td className="py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                        Investor Engaged with Company
+                                        Label
                                         </Table.Td>
                                         <Table.Td className="py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                        Engagements Disclosed
+                                        Label
                                         </Table.Td>
                                         <Table.Td className="py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                        Voted Against Directors
+                                        Label
+                                        </Table.Td>
+                                        <Table.Td className="py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                        Label
                                         </Table.Td>
                                     </Table.Tr>
                                 </Table.Thead>
@@ -69,22 +86,9 @@ const index = () => {
                                     <Table.Tr
                                         className="[&_td]:last:border-b-0">
                                         <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                            <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                                <img
-                                                    alt="Tailwise - Admin Dashboard Template"
-                                                    src={userLinkedinImage}
-                                                />
-                                                
-                                            </div>
+                                           
                                             <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className='underline '>Bezos Jeffrey P</h1>
-                                                <img className='w-3'
-                                                    alt="flag-icon"
-                                                    src={flagIcon}
-                                                />
-                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    P
-                                                </div>
+                                                <h1 className=' '>Bezos Jeffrey P</h1>
                                             </div>
                                                 
                                         </Table.Td>
@@ -100,29 +104,28 @@ const index = () => {
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                            ISS, GL
+                                            Yes
                                             </div>
                                         </Table.Td>
                                         
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
-                                                    S
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                        
@@ -131,22 +134,9 @@ const index = () => {
                                     <Table.Tr
                                         className="[&_td]:last:border-b-0">
                                         <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                            <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                                <img
-                                                    alt="Tailwise - Admin Dashboard Template"
-                                                    src={userLinkedinImage}
-                                                />
-                                                
-                                            </div>
+                                           
                                             <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className='underline '>Bezos Jeffrey P</h1>
-                                                <img className='w-3'
-                                                    alt="flag-icon"
-                                                    src={flagIcon}
-                                                />
-                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    P
-                                                </div>
+                                                <h1 className=' '>Bezos Jeffrey P</h1>
                                             </div>
                                                 
                                         </Table.Td>
@@ -162,29 +152,175 @@ const index = () => {
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                            ISS, GL
+                                            Yes
                                             </div>
                                         </Table.Td>
                                         
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
-                                                    S
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                       
+                                    </Table.Tr>
+
+
+                                    <Table.Tr
+                                        className="[&_td]:last:border-b-0">
+                                        <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                           
+                                            <div className='flex items-center font-semibold gap-2'>
+                                                <h1 className=' '>Bezos Jeffrey P</h1>
+                                            </div>
+                                                
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                                11.43%
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                                -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                            Yes
+                                            </div>
+                                        </Table.Td>
+                                        
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                       
+                                    </Table.Tr>
+
+
+                                    <Table.Tr
+                                        className="[&_td]:last:border-b-0">
+                                        <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                           
+                                            <div className='flex items-center font-semibold gap-2'>
+                                                <h1 className=' '>Bezos Jeffrey P</h1>
+                                            </div>
+                                                
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                                11.43%
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                                -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                            Yes
+                                            </div>
+                                        </Table.Td>
+                                        
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                       
+                                    </Table.Tr>
+
+
+                                    <Table.Tr
+                                        className="[&_td]:last:border-b-0">
+                                        <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                           
+                                            <div className='flex items-center font-semibold gap-2'>
+                                                <h1 className=' '>Bezos Jeffrey P</h1>
+                                            </div>
+                                                
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                                11.43%
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                                -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                            Yes
+                                            </div>
+                                        </Table.Td>
+                                        
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                        
@@ -193,22 +329,9 @@ const index = () => {
                                     <Table.Tr
                                         className="[&_td]:last:border-b-0">
                                         <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                            <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                                <img
-                                                    alt="Tailwise - Admin Dashboard Template"
-                                                    src={userLinkedinImage}
-                                                />
-                                                
-                                            </div>
+                                           
                                             <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className='underline '>Bezos Jeffrey P</h1>
-                                                <img className='w-3'
-                                                    alt="flag-icon"
-                                                    src={flagIcon}
-                                                />
-                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    P
-                                                </div>
+                                                <h1 className=' '>Bezos Jeffrey P</h1>
                                             </div>
                                                 
                                         </Table.Td>
@@ -224,53 +347,40 @@ const index = () => {
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                            ISS, GL
+                                            Yes
                                             </div>
                                         </Table.Td>
                                         
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
-                                                    S
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                        
                                     </Table.Tr>
 
+
                                     <Table.Tr
                                         className="[&_td]:last:border-b-0">
                                         <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                            <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                                <img
-                                                    alt="Tailwise - Admin Dashboard Template"
-                                                    src={userLinkedinImage}
-                                                />
-                                                
-                                            </div>
+                                           
                                             <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className='underline '>Bezos Jeffrey P</h1>
-                                                <img className='w-3'
-                                                    alt="flag-icon"
-                                                    src={flagIcon}
-                                                />
-                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    P
-                                                </div>
+                                                <h1 className=' '>Bezos Jeffrey P</h1>
                                             </div>
                                                 
                                         </Table.Td>
@@ -286,219 +396,33 @@ const index = () => {
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                            ISS, GL
+                                            Yes
                                             </div>
                                         </Table.Td>
                                         
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
-                                                    S
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                ✔
-                                                </div>
+                                        <div className="whitespace-nowrap ">
+                                            -
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                            -
                                             </div>
                                         </Table.Td>
                                        
                                     </Table.Tr>
 
-                                    <Table.Tr
-                                        className="[&_td]:last:border-b-0">
-                                        <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                            <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                                <img
-                                                    alt="Tailwise - Admin Dashboard Template"
-                                                    src={userLinkedinImage}
-                                                />
-                                                
-                                            </div>
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className='underline '>Bezos Jeffrey P</h1>
-                                                <img className='w-3'
-                                                    alt="flag-icon"
-                                                    src={flagIcon}
-                                                />
-                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    P
-                                                </div>
-                                            </div>
-                                                
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                11.43%
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                -
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            ISS, GL
-                                            </div>
-                                        </Table.Td>
-                                        
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    ✔
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
-                                                    S
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                ✔
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                       
-                                    </Table.Tr>
-
-                                    <Table.Tr
-                                        className="[&_td]:last:border-b-0">
-                                        <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                            <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                                <img
-                                                    alt="Tailwise - Admin Dashboard Template"
-                                                    src={userLinkedinImage}
-                                                />
-                                                
-                                            </div>
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className='underline '>Bezos Jeffrey P</h1>
-                                                <img className='w-3'
-                                                    alt="flag-icon"
-                                                    src={flagIcon}
-                                                />
-                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    P
-                                                </div>
-                                            </div>
-                                                
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                11.43%
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                -
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            ISS, GL
-                                            </div>
-                                        </Table.Td>
-                                        
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    ✔
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
-                                                    S
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                ✔
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                       
-                                    </Table.Tr>
-
-                                    <Table.Tr
-                                        className="[&_td]:last:border-b-0">
-                                        <Table.Td className="flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                            <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                                <img
-                                                    alt="Tailwise - Admin Dashboard Template"
-                                                    src={userLinkedinImage}
-                                                />
-                                                
-                                            </div>
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className='underline '>Bezos Jeffrey P</h1>
-                                                <img className='w-3'
-                                                    alt="flag-icon"
-                                                    src={flagIcon}
-                                                />
-                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    P
-                                                </div>
-                                            </div>
-                                                
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                11.43%
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                -
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            ISS, GL
-                                            </div>
-                                        </Table.Td>
-                                        
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                    ✔
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
-                                                    S
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                ✔
-                                                </div>
-                                            </div>
-                                        </Table.Td>
-                                       
-                                    </Table.Tr>
 
                                     
 
