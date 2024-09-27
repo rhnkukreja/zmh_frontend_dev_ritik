@@ -94,6 +94,7 @@ function Ckeditor<C extends React.ElementType = "div">({
       value={props.value}
       onChange={props.onChange}
       className={className}
+      
     />
   );
 }

@@ -150,14 +150,13 @@ function Main() {
   //       ?.replace(/\n/g, "<br />") || ""
   //   );
   // }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines]);
-
   const handleExportToPDF = async () => {
     const input = contentRef.current;
     setIsGeneratingPDF(true);
-
+  
     const elementsToHide = document.querySelectorAll(".exclude-from-pdf");
     elementsToHide.forEach((el) => el.classList.add("hidden"));
-
+  
     if (input) {
       try {
         const canvas = await html2canvas(input, {
@@ -167,16 +166,16 @@ function Main() {
           logging: false,
           backgroundColor: null,
         });
-
+  
         const imgData = canvas.toDataURL("image/png");
         const pdfWidth = 210;
         const margin = 10;
         const imgWidth = pdfWidth - 2 * margin;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
+  
         // Create a new PDF document
         const pdf = new jsPDF("p", "mm", [pdfWidth, imgHeight + 2 * margin]);
-
+  
         // Add the image to the PDF document
         pdf.addImage(
           imgData,
@@ -188,10 +187,22 @@ function Main() {
           undefined,
           "FAST"
         );
+  
+        const links = Array.from(input.querySelectorAll("a"));
+  
+        links.forEach((link, index) => {
+          const { href } = link;
+          const text = link.textContent || href;
+  
+          const x = margin + 10; 
+          const y = imgHeight + margin + 10 + (index * 10);
 
+          pdf.text(text, x, y);
+          pdf.link(x, y - 6, pdf.getTextWidth(text), 10, { url: href }); 
+        });
+  
         pdf.save(`${singleInvesterProfile?.institution_name}.pdf`);
         elementsToHide.forEach((el) => el.classList.remove("hidden"));
-
         setIsGeneratingPDF(false);
       } catch (error) {
         console.error("Could not generate PDF", error);
@@ -199,6 +210,7 @@ function Main() {
       }
     }
   };
+  
 
   const updateActive = async (value: boolean) => {
     await handleApiCall({ active: value }, (response) =>
@@ -350,7 +362,7 @@ function Main() {
               } gap-y-2`}
             >
               {params?.type === "investor" &&
-                Object.keys(investorProfileEditableSectionsInvestors).map(
+                Object.keys(investorProfileEditableSectionsInvestors)?.map(
                   (key, index) => {
                     const typedKey =
                       key as keyof typeof investorProfileEditableSectionsInvestors;
@@ -393,23 +405,23 @@ function Main() {
                         type={params?.type!}
                         renderHtml={
                           singleInvesterProfile?.[key]
-                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                            ?.replace(/\n/g, "<br />")
-                            .replace(/\r\n/g, "<br />")
-                            ?.replace(/- (.*?)\:/g, "<li><strong>$1:</strong>")
-                            ?.replace(
-                              /EQT Absolutes:<br \/>/g,
-                              "<h3>EQT Absolutes:</h3>"
-                            )
-                            ?.replace(
-                              /Core KPIs:<br \/>/g,
-                              "<h3>Core KPIs:</h3>"
-                            )
-                            ?.replace(
-                              /Portfolio-Specific KPIs:<br \/>/g,
-                              "<h3>Portfolio-Specific KPIs:</h3>"
-                            )
-                            ?.concat("</li>") || ""
+                            // ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                            // ?.replace(/\n/g, "<br />")
+                            // .replace(/\r\n/g, "<br />")
+                            // ?.replace(/- (.*?)\:/g, "<li><strong>$1:</strong>")
+                            // ?.replace(
+                            //   /EQT Absolutes:<br \/>/g,
+                            //   "<h3>EQT Absolutes:</h3>"
+                            // )
+                            // ?.replace(
+                            //   /Core KPIs:<br \/>/g,
+                            //   "<h3>Core KPIs:</h3>"
+                            // )
+                            // ?.replace(
+                            //   /Portfolio-Specific KPIs:<br \/>/g,
+                            //   "<h3>Portfolio-Specific KPIs:</h3>"
+                            // )
+                            // ?.concat("</li>") || ""
                         }
                         field={key as keyof InvestersProfile}
                       />

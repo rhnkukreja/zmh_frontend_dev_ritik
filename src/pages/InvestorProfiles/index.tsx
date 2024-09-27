@@ -279,6 +279,9 @@ function Main() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                    placeHolder="Search Institution"
                   />
 
                   <div className="hover:bg-slate-50">
@@ -435,113 +438,134 @@ function Main() {
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
                         {investersProfile?.length > 0 &&
-                          investersProfile.map(
-                            (profile: InvestersProfile, index: number) => {
-                              return (
-                                <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
-                                  <div className="ml-5 flex items-center">
-                                    {/* <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
+                          investersProfile.map((profile: InvestersProfile) => {
+                            return (
+                              <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
+                                <div className="ml-5 flex items-center">
+                                  {/* <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
                                       {(page - 1) * 10 + index + 1}
                                     </div> */}
 
-                                    <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                      {
-                                        <img
+                                  {profile?.institution_logo_url ? (
+                                    <>
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                        <Tippy
+                                          as="img"
                                           alt="Tailwise - Admin Dashboard Template"
-                                          src={
-                                            validImages[
-                                              investersProfile?.name
-                                            ] || userLinkedinImage
+                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                          src={profile?.institution_logo_url}
+                                          content={
+                                            profile?.institution_name || ""
                                           }
                                         />
-                                      }
-                                    </div>
-
-                                    <Tippy
-                                      content={profile?.institution_name || ""}
-                                      options={{
-                                        theme: "light",
-                                      }}
-                                    >
-                                      <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full">
-                                        {profile?.institution_name}
                                       </div>
-                                    </Tippy>
-                                  </div>
+                                    </>
+                                  ) : (
+                                    <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                      <Lucide
+                                        icon="User"
+                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                      />
+                                      <a
+                                        href=""
+                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                      ></a>
+                                    </div>
+                                  )}
 
                                   <Tippy
-                                    content="View"
+                                    content={profile?.institution_name || ""}
                                     options={{
-                                      theme: "dark",
+                                      theme: "light",
                                     }}
                                   >
-                                    <Lucide
-                                      onClick={() => {
-                                        gotoDetailPage(profile.id);
-                                      }}
-                                      icon="Eye"
-                                      className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
-                                    />
+                                    <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4">
+                                      {profile?.institution_name}
+                                    </div>
                                   </Tippy>
                                 </div>
-                              );
-                            }
-                          )}
+
+                                <Tippy
+                                  content="View"
+                                  options={{
+                                    theme: "dark",
+                                  }}
+                                >
+                                  <Lucide
+                                    onClick={() => {
+                                      gotoDetailPage(profile.id);
+                                    }}
+                                    icon="Eye"
+                                    className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                  />
+                                </Tippy>
+                              </div>
+                            );
+                          })}
                       </TableWrapper>
                     </Tab.Panel>
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
                         {investersProfile?.length > 0 &&
-                          investersProfile.map(
-                            (profile: InvestersProfile, index: number) => {
-                              return (
-                                <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
-                                  <div className="ml-5 flex items-center">
-                                    <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                      {
-                                        <img
+                          investersProfile.map((profile: InvestersProfile) => {
+                            return (
+                              <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
+                                <div className="ml-5 flex items-center">
+                                  {profile?.institution_logo_url ? (
+                                    <>
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                        <Tippy
+                                          as="img"
                                           alt="Tailwise - Admin Dashboard Template"
-                                          src={
-                                            validImages[
-                                              investersProfile?.name
-                                            ] || userLinkedinImage
+                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                          src={profile?.institution_logo_url}
+                                          content={
+                                            profile?.equity_firm_name || ""
                                           }
                                         />
-                                      }
-                                    </div>
-                                    {/* <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
-                                      {(page - 1) * 10 + index + 1}
-                                    </div> */}
-                                    <Tippy
-                                      content={profile?.equity_firm_name || ""}
-                                      options={{
-                                        theme: "light",
-                                      }}
-                                    >
-                                      <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full">
-                                        {profile?.equity_firm_name || ""}
                                       </div>
-                                    </Tippy>
-                                  </div>
-
+                                    </>
+                                  ) : (
+                                    <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                      <Lucide
+                                        icon="User"
+                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                      />
+                                      <a
+                                        href=""
+                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                      ></a>
+                                    </div>
+                                  )}
                                   <Tippy
-                                    content="View"
+                                    content={profile?.equity_firm_name || ""}
                                     options={{
-                                      theme: "dark",
+                                      theme: "light",
                                     }}
                                   >
-                                    <Lucide
-                                      onClick={() => {
-                                        gotoDetailPage(profile.id);
-                                      }}
-                                      icon="Eye"
-                                      className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
-                                    />
+                                    <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4">
+                                      {profile?.equity_firm_name || ""}
+                                    </div>
                                   </Tippy>
                                 </div>
-                              );
-                            }
-                          )}
+
+                                <Tippy
+                                  content="View"
+                                  options={{
+                                    theme: "dark",
+                                  }}
+                                >
+                                  <Lucide
+                                    onClick={() => {
+                                      gotoDetailPage(profile.id);
+                                    }}
+                                    icon="Eye"
+                                    className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                  />
+                                </Tippy>
+                              </div>
+                            );
+                          })}
                       </TableWrapper>
                     </Tab.Panel>
                   </Tab.Panels>

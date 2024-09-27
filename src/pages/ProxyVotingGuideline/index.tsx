@@ -276,6 +276,9 @@ function ProxyGuideline() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                    placeHolder="Search Institution"
                   />
 
                   <div className="hover:bg-slate-50">
@@ -310,14 +313,13 @@ function ProxyGuideline() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                {user?.saved_search?.["Voting Guidelines"] !== undefined && (
+                  {user?.saved_search?.["Voting Guidelines"] !== undefined && (
                     <div className="hover:bg-slate-50 ml-2">
                       <Button onClick={getSavedSearches}>
                         Get Last Searches
                       </Button>
                     </div>
                   )}
-
 
                   <Popover className="inline-block">
                     {({ close }) => (
@@ -447,19 +449,38 @@ function ProxyGuideline() {
                               className="[&_td]:last:border-b-0"
                             >
                               <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                  {
-                                    <img
-                                      alt="Tailwise - Admin Dashboard Template"
-                                      src={
-                                        validImages[
-                                          guideline?.institution_name
-                                        ] || userLinkedinImage
-                                      }
+                                {guideline?.institution_logo_url ? (
+                                  <>
+                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <Tippy
+                                        as="img"
+                                        alt="Tailwise - Admin Dashboard Template"
+                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                        src={guideline?.institution_logo_url}
+                                        content={
+                                          guideline?.institution_name || ""
+                                        }
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                    <Lucide
+                                      icon="User"
+                                      className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
                                     />
-                                  }
+                                    <a
+                                      href=""
+                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                    ></a>
+                                  </div>
+                                )}
+
+                                <div className="ml-4">
+                                  <p className="font-medium whitespace-nowrap">
+                                    {guideline?.institution_name}
+                                  </p>
                                 </div>
-                                {guideline?.institution_name}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.year}

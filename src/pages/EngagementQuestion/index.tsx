@@ -65,16 +65,17 @@ function Main() {
     });
   };
 
+ 
   const validateImages = async () => {
     if (!questions) return;
     const tempValidImages: { [key: string]: string } = {};
     for (const question of questions) {
-      const isValid = await checkImageUrl(question?.image);
-      tempValidImages[question?.name] = isValid
-        ? question?.image
+      const isValid = await checkImageUrl(question?.institution_logo_url);
+      tempValidImages[question?.institution_name] = isValid
+        ? question?.institution_logo_url
         : userLinkedinImage;
     }
-
+ 
     setValidImages(tempValidImages);
   };
 
@@ -303,11 +304,14 @@ function Main() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-                <MultiSearchBar
-                  onSearch={handleSearch}
-                  searchTerms={searchTerms}
-                  setSearchTerms={setSearchTerms}
-                />
+              <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                     placeHolder="Search Institution"
+                  />
 
                 <div className="hover:bg-slate-50">
                   <Button onClick={handleClearAllFilter}>

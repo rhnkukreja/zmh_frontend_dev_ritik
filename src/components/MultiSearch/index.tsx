@@ -4,12 +4,15 @@ import Lucide from "@/components/Base/Lucide";
 
 import { investersProfileService } from "@/services/investersProfile";
 import _ from "lodash";
+import { axiosInstance } from "@/services";
 
 interface MultiSearchBarProps {
   onSearch: (terms: string[]) => void;
   searchTerms: string[];
   setSearchTerms: (terms: string[]) => void;
   placeHolder?: string;
+  url: string | string[];
+  getOptionKey: string | string[];
 }
 
 // type FetchedOptionType = {
@@ -22,6 +25,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   searchTerms,
   setSearchTerms,
   placeHolder,
+  url,
+  getOptionKey,
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [options, setOptions] = useState<string[]>([]);
@@ -30,12 +35,28 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
 
   async function fetchOptions(query: string): Promise<any> {
     setIsLoading(true);
-    const response = await investersProfileService.getInstitutionByName(
-      query,
-      "profiles"
-    );
-    setIsLoading(false);
-    return response.results?.map((item: any) => item.institution_name);
+    try {
+      const responses = await Promise.all(
+        Array.isArray(url)
+          ? url?.map((u) =>
+              axiosInstance.get(
+                `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
+              )
+            )
+          : [axiosInstance.get(`${url}&${getOptionKey}=${query}`)]
+      );
+      return responses.flatMap(
+        (response) =>
+          response.data.results?.map(
+            (item: any) => item?.[getOptionKey as string]
+          ) || []
+      );
+    } catch (error) {
+      console.error("Error fetching options:", error);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const debouncedFetchResults = useCallback(

@@ -216,11 +216,14 @@ function Main() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-                <MultiSearchBar
-                  onSearch={handleSearch}
-                  searchTerms={searchTerms}
-                  setSearchTerms={setSearchTerms}
-                />
+              <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                     placeHolder="Search Institution"
+                  />
 
                 <div className="hover:bg-slate-50">
                   <Button onClick={handleClearAllFilter}>
@@ -391,15 +394,15 @@ function Main() {
                       <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Investor Type
                       </Table.Td>
-                      {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
-                        Contact
-                      </Table.Td> */}
+                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
+                        Whale Wisdom Filer
+                      </Table.Td>
                       <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap border-slate-200/80 text-slate-500">
                         Created At
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
+                      {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Updated At
-                      </Table.Td>
+                      </Table.Td> */}
                       <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Action
                       </Table.Td>
@@ -411,7 +414,7 @@ function Main() {
                         <Table.Tr key={institution.id}>
                           <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
                             <div className="flex items-center">
-                              {/* {institution?.logo_url ? (
+                              {institution?.logo_url ? (
                                 <>
                                   <div className="w-8 h-8 image-fit zoom-in object-contain">
                                     <Tippy
@@ -434,8 +437,8 @@ function Main() {
                                     className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
                                   ></a>
                                 </div>
-                              )} */}
-                              <div className="">
+                              )}
+                              <div className="ml-4">
                                 <p className="font-medium whitespace-nowrap">
                                   {institution?.institution}
                                 </p>
@@ -465,9 +468,9 @@ function Main() {
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution.investor_type}
                           </Table.Td>
-                          {/* <Table.Td className="py-2  bg-white border-slate-200/80">
-                            {institution?.contact}
-                          </Table.Td> */}
+                          <Table.Td className="py-2  bg-white border-slate-200/80">
+                            {institution?.whale_wisdom_filer_id}
+                          </Table.Td>
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
                               {institution?.date_created}
@@ -476,14 +479,12 @@ function Main() {
                               )} */}
                             </p>
                           </Table.Td>
-                          <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
+                          {/* <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
                               {institution?.date_updated}
-                              {/* {dayjs(institution?.date_updated).format(
-                                "MMMM , YYYY"
-                              )} */}
+                              
                             </p>
-                          </Table.Td>
+                          </Table.Td> */}
 
                           <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                             <div className="flex gap-3 ">

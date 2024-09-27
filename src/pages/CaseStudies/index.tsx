@@ -178,7 +178,6 @@ function CaseStudies() {
     if (user?.saved_search["Case Studies"]) {
       const savedSearch = user.saved_search["Case Studies"];
       setSearchTerms([...savedSearch.institution]);
-
       setValue("keyword", savedSearch.keyword || "");
       setValue("market", savedSearch.market || []);
       setValue("sector", savedSearch.sector || []);
@@ -186,7 +185,6 @@ function CaseStudies() {
       setValue("themes", savedSearch.themes || []);
       setValue("proposal_type", savedSearch.proposal_type || []);
       setValue("vote", savedSearch.vote || []);
-
       setApplyFilters({
         keyword: savedSearch.keyword || "",
         market: savedSearch.market || [],
@@ -196,9 +194,10 @@ function CaseStudies() {
         proposal_type: savedSearch.proposal_type || [],
         vote: savedSearch.vote || [],
       });
+      setIsFilterCollapse(true)
     }
   };
-  console.log({ user });
+ 
   const saveSearch = async () => {
     const res = await commonService.saveSearches({
       module: "Case Studies",
@@ -250,6 +249,9 @@ function CaseStudies() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                     placeHolder="Search Institution"
                   />
 
                   <div className="hover:bg-slate-50">
@@ -790,9 +792,40 @@ function CaseStudies() {
                             key={item?.id}
                             className="[&_td]:last:border-b-0"
                           >
-                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {item?.institution_name}
-                            </Table.Td>
+                             <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                {item?.institution_logo_url ? (
+                                  <>
+                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <Tippy
+                                        as="img"
+                                        alt="Tailwise - Admin Dashboard Template"
+                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                        src={item?.institution_logo_url}
+                                        content={
+                                          item?.institution_name || ""
+                                        }
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                    <Lucide
+                                      icon="User"
+                                      className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                    />
+                                    <a
+                                      href=""
+                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                    ></a>
+                                  </div>
+                                )}
+
+                                <div className="ml-4">
+                                  <p className="font-medium whitespace-nowrap">
+                                    {item?.institution_name}
+                                  </p>
+                                </div>
+                              </Table.Td>
                             <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                               {item?.company_name}
                             </Table.Td>

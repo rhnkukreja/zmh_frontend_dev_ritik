@@ -28,6 +28,7 @@ interface InstitutionFormData {
   investor_type: string;
   contact?: string;
   email?: string;
+  whale_wisdom_filer_id: string;
 }
 
 interface AddEditInstitutionProps {
@@ -310,18 +311,27 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 )}
               </div>
 
-              {/* <div className="w-full">
+              <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Contact
+                  Whale Wisdom Filer Id
                 </FormCheck.Label>
                 <Controller
-                  name="contact"
+                  name="whale_wisdom_filer_id"
                   control={control}
+                  rules={{ required: "Whale Wisdom Filer Id is required" }} // {{ edit_1 }}
                   render={({ field }) => (
-                    <FormInput placeholder="Enter Contact" {...field} />
+                    <FormInput
+                      placeholder="Enter Whale Wisdom Filer Id"
+                      {...field}
+                    />
                   )}
                 />
-              </div> */}
+                {errors.whale_wisdom_filer_id && (
+                  <Error className="max-w-[100%] ">
+                    {errors.whale_wisdom_filer_id.message}
+                  </Error>
+                )}
+              </div>
 
               {/* <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">

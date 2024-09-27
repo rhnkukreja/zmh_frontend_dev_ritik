@@ -54,8 +54,8 @@ class InvestersProfileService {
   }
 
   public async getInstitutionByName(
-    institution: string,
-    type: string
+    type: string,
+    institution: string
   ): Promise<{
     results: InvestersProfile[];
   }> {

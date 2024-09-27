@@ -27,9 +27,9 @@ type CompanyPayload = {
   company: string[];
 };
 
-type ShareholderProposalPayload = {
+export type ShareholderProposalPayload = {
   module: "Shareholder Proposal";
-  company: string[];
+  company?: string[];
   proponent: string[];
   category: string[];
   sub_category: string[];
