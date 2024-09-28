@@ -62,7 +62,7 @@ const index = () => {
                     </div>
                     <div className='flex justify-between items-center gap-4 xs:mt-4 md:mt-0'>
                         <Tippy
-                            content='Download CSV'
+                            content='Download Excel'
                             options={{ theme: "light" }}
                         >
                             <div className='box p-[5px] cursor-pointer' onClick={convertDivTableToCSV}>

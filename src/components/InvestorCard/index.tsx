@@ -101,7 +101,7 @@ const index = () => {
                                     <h4 className='font-semibold'>Some text</h4>
                                 </div>
                                 <Tippy
-                                    content='Download CSV'
+                                    content='Download Excel'
                                     options={{ theme: "light" }}
                                 >
                                     <div className='box p-[5px] cursor-pointer' onClick={convertDivTableToCSV}>
