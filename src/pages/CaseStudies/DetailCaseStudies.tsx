@@ -43,7 +43,7 @@ const DetailCaseStudies = () => {
       <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
           <h1 className="text-xl font-semibold">Case Studies</h1>
-          {loading === false && (
+          {/* {loading === false && (
             <Button
               type="button"
               variant="outline-primary"
@@ -68,7 +68,7 @@ const DetailCaseStudies = () => {
                 Download PDF
               </div>
             </Button>
-          )}
+          )} */}
         </div>
 
         {loading ? (
