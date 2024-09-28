@@ -361,12 +361,14 @@ function Main() {
                 params?.type! === "investor" ? "lg:w-[60%] 2xl:w-[75rem]" : ""
               } gap-y-2`}
             >
-              {params?.type === "investor" &&
+                            {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors)?.map(
                   (key, index) => {
                     const typedKey =
                       key as keyof typeof investorProfileEditableSectionsInvestors;
-                    return (
+                    // Check if the value exists before rendering
+                    const value = singleInvesterProfile?.[key];
+                    return value ? ( // Only render if value is truthy
                       <EditableSection
                         key={index}
                         fetchloading={loading}
@@ -376,15 +378,14 @@ function Main() {
                             ?.value
                         }
                         type={params?.type!}
-                        // renderHtml={singleInvesterProfile?.[key]}
                         renderHtml={
-                          singleInvesterProfile?.[key]
-                            // ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                            // ?.replace(/\n/g, "<br />") || ""
+                          value
+                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                            ?.replace(/\n/g, "<br />") || ""
                         }
                         field={key as keyof InvestersProfile}
                       />
-                    );
+                    ) : null; // Render nothing if value is falsy
                   }
                 )}
 
@@ -405,23 +406,23 @@ function Main() {
                         type={params?.type!}
                         renderHtml={
                           singleInvesterProfile?.[key]
-                            // ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                            // ?.replace(/\n/g, "<br />")
-                            // .replace(/\r\n/g, "<br />")
-                            // ?.replace(/- (.*?)\:/g, "<li><strong>$1:</strong>")
-                            // ?.replace(
-                            //   /EQT Absolutes:<br \/>/g,
-                            //   "<h3>EQT Absolutes:</h3>"
-                            // )
-                            // ?.replace(
-                            //   /Core KPIs:<br \/>/g,
-                            //   "<h3>Core KPIs:</h3>"
-                            // )
-                            // ?.replace(
-                            //   /Portfolio-Specific KPIs:<br \/>/g,
-                            //   "<h3>Portfolio-Specific KPIs:</h3>"
-                            // )
-                            // ?.concat("</li>") || ""
+                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                            ?.replace(/\n/g, "<br />")
+                            .replace(/\r\n/g, "<br />")
+                            ?.replace(/- (.*?)\:/g, "<li><strong>$1:</strong>")
+                            ?.replace(
+                              /EQT Absolutes:<br \/>/g,
+                              "<h3>EQT Absolutes:</h3>"
+                            )
+                            ?.replace(
+                              /Core KPIs:<br \/>/g,
+                              "<h3>Core KPIs:</h3>"
+                            )
+                            ?.replace(
+                              /Portfolio-Specific KPIs:<br \/>/g,
+                              "<h3>Portfolio-Specific KPIs:</h3>"
+                            )
+                            ?.concat("</li>") || ""
                         }
                         field={key as keyof InvestersProfile}
                       />

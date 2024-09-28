@@ -7,6 +7,7 @@ import { updateInvestersProfile } from "@/stores/investersProfileSlice";
 import { InvestersProfile } from "@/types/investerProfiles";
 import LoadingWrapper from "@/components/LoadingWrapper";
 
+import clsx from "clsx";
 
 
 interface EditableSectionProps {
@@ -38,6 +39,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAppSelector((state) => state.authentiction);
+
   const handleSave = async () => {
     setLoading(true);
     dispatch(
@@ -106,7 +108,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             <div className="flex  flex-col px-4 py-3  ">
               <div ref={editorRef}>
                
-                <ClassicEditor  value={value} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing} />
+                <ClassicEditor value={value} onChange={setValue} />
               </div>
               <div className="flex justify-end mt-4">
                 <Button
@@ -131,8 +133,14 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             <>
               {renderHtml ? (
                 <div className="flex flex-col px-4 py-3">
-                  <ClassicEditor value={renderHtml} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing}  />
-                
+                  <span
+                    className={clsx([
+                      "mobile-text-size xs:text-[10px] sm:text-[14px] leading-[24px]",
+                      field === "references" && "text-blue-500",
+                    ])}
+                    dangerouslySetInnerHTML={{ __html: renderHtml }}
+                  ></span>
+                  {/* <ParceHtml htmlString={renderHtml} /> */}
                 </div>
               ) : null}
             </>
