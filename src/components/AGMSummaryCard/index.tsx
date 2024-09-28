@@ -10,12 +10,15 @@ import Tippy from '../Base/Tippy';
 import { downloadCSV } from '@/utils/helper';
 import { useState } from 'react';
 import summary from "@/assets/json/brhc10049413_8k.json";
+import { useLocation } from 'react-router-dom';
+import clsx from 'clsx';
 
 
 const index = () => {
 
-    const [summaryCard, setSummaryCard] = useState(summary)
-
+    const location = useLocation();
+    const locationPathName = location?.pathname;
+    
     const convertDivTableToCSV = () => {
         // Get the table element
         const table = document.querySelector(".table_2");
@@ -44,11 +47,8 @@ const index = () => {
             <div className="w-full">
                 <div className='flex justify-between items-center xs:flex-col md:flex-row py-3'>
                     <div className='flex justify-between items-center gap-4 xs:flex-col md:flex-row'>
-                        <h1 className='text-lg font-bold'>Previous AGM Summary</h1>
-                        <div className=''>
-                            {/* <div className="text-left text-[#000000B2]">
-                                Select Year
-                            </div> */}
+                        <h1 className='text-lg font-bold'>Previous AGM Summary 2024</h1>
+                        {/* <div className=''>
                             <FormSelect
                                 defaultValue={"Select Year"}
                                 className="flex-1 xs:w-[240px] md:w-auto">
@@ -62,7 +62,7 @@ const index = () => {
                         </div>
                         <div className='p-2 bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid'>
                             View More
-                        </div>
+                        </div> */}
                     </div>
                     <div className='flex justify-between items-center gap-4 xs:mt-4 md:mt-0'>
                         <Tippy
@@ -76,17 +76,27 @@ const index = () => {
                                 />
                             </div>
                         </Tippy>
-                        <div className='box p-2'>
-                            <img
-                                alt="tab-icon"
-                                src={tabIcon}
-                            />
-                        </div>
+                        {
+                            locationPathName === '/' &&
+                            <Tippy
+                                content='Open on New Tab'
+                                options={{ theme: "light" }}
+                            >
+                                <div className='box p-2 cursor-pointer' onClick={() =>
+                                    window.open("summary-details", "_blank")
+                                }>
+                                    <img
+                                        alt="tab-icon"
+                                        src={tabIcon}
+                                    />
+                                </div>
+                            </Tippy>
+                        }
                     </div>
                 </div>
 
                 <div className='mt-5'>
-                    <div className="min-h-[400px] max-h-[400px] overflow-y-scroll">
+                    <div className={clsx([locationPathName === '/' && 'min-h-[400px] max-h-[400px] overflow-y-scroll'])}>
                         <TableWrapper>
                             <Table className="table_2">
                             <Table.Thead className='sticky'>

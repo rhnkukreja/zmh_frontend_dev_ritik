@@ -1,4 +1,3 @@
-import Lucide from '../Base/Lucide';
 import TableWrapper from '../TableWrapper';
 import Table from "@/components/Base/Table";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
@@ -12,14 +11,16 @@ import {
     setPage,
 } from "@/stores/dashboardSlice";
 import { AppDispatch } from "@/stores/store";
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { createDynamicURL, downloadCSV } from '@/utils/helper';
 import { baseURL } from '@/constant';
 import Tippy from '../Base/Tippy';
+import clsx from 'clsx';
 
 const index = () => {
     const location = useLocation();
+    const locationPathName = location?.pathname;
     const dispatch: AppDispatch = useAppDispatch();
 
     const [searchParams] = useSearchParams();
@@ -62,30 +63,30 @@ const index = () => {
         const table = document.querySelector(".table");
         const rows = table?.querySelectorAll(".row");
         let csvContent = "";
-    
+
         // Iterate over each row
         rows?.forEach((row) => {
-          const cells = row.querySelectorAll(".cell");
-          let rowData: any = [];
-    
-          // Iterate over each cell and get the text content
-          cells.forEach((cell) => {
-            rowData.push(cell.textContent);
-          });
-    
-          // Join cells with commas to form a CSV row
-          csvContent += rowData.join(",") + "\n";
+            const cells = row.querySelectorAll(".cell");
+            let rowData: any = [];
+
+            // Iterate over each cell and get the text content
+            cells.forEach((cell) => {
+                rowData.push(cell.textContent);
+            });
+
+            // Join cells with commas to form a CSV row
+            csvContent += rowData.join(",") + "\n";
         });
-    
+
         downloadCSV(csvContent, 'Investor');
-      };
-    
-      
+    };
+
+
 
     return (
         <>
-        <div className="p-y-5 mb-1 font-semibold text-lg text-white" >
-        {company_Global_Search}
+            <div className="p-y-5 mb-1 font-semibold text-lg text-white" >
+                {company_Global_Search}
             </div>
             <div className="p-5 mt-3.5 box">
                 <div className="w-full">
@@ -98,7 +99,7 @@ const index = () => {
                                         alt="flag-icon"
                                         src={flagIcon}
                                     />
-                                    <h4 className='font-semibold'>Some text</h4>
+                                    <h4 className='font-semibold'>History of Schedule 13D filing</h4>
                                 </div>
                                 <Tippy
                                     content='Download Excel'
@@ -111,18 +112,29 @@ const index = () => {
                                         />
                                     </div>
                                 </Tippy>
-                                <div className='box p-2'>
-                                    <img
-                                        alt="tab-icon"
-                                        src={tabIcon}
-                                    />
-                                </div>
+                                {
+                                    locationPathName === '/' &&
+                                    <Tippy
+                                        content='Open on New Tab'
+                                        options={{ theme: "light" }}
+                                    >
+                                        <div className='box p-2 cursor-pointer' onClick={() =>
+                                            window.open("investor-details", "_blank")
+                                        }>
+                                            <img
+                                                alt="tab-icon"
+                                                src={tabIcon}
+                                            />
+                                        </div>
+                                    </Tippy>
+                                }
+
                             </div>
                         </div>
                     }
 
                     <div className='mt-5'>
-                        <div className="min-h-[300px] max-h-[300px] overflow-y-scroll">
+                        <div className={clsx([locationPathName === '/' && 'min-h-[300px] max-h-[300px] overflow-y-scroll'])}>
                             <TableWrapper isLoading={loading}>
                                 <Table className="table">
                                     <Table.Thead>
@@ -154,7 +166,7 @@ const index = () => {
                                         {dashboardDataList?.length > 0 &&
                                             dashboardDataList.map(
                                                 (dashboard: CompanyDashboard) => (
-                                                    <Table.Tr 
+                                                    <Table.Tr
                                                         key={dashboard.filer_id}
                                                         className="row [&_td]:last:border-b-0">
                                                         <Table.Td className="cell flex items-center">

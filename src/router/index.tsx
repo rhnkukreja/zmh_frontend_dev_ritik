@@ -80,6 +80,8 @@ import PeerAnalysis from "@/pages/PeerAnalysis";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
+import InvestorCardDetails from "@/pages/InvestorCardDetails";
+import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
 
 function Router() {
   const routes = [
@@ -370,6 +372,14 @@ function Router() {
         {
           path: "case-studies/:id",
           element: <DetailCaseStudies />,
+        },
+        {
+          path: "investor-details",
+          element: <InvestorCardDetails />,
+        },
+        {
+          path: "summary-details",
+          element: <AgmSummaryDetails /> ,
         },
       ],
     },
