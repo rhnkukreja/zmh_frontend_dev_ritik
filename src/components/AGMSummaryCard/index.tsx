@@ -38,7 +38,7 @@ const index = () => {
     return (
         <div className="p-5 mt-3.5 box ">
             <div className="w-full">
-                <div className='flex justify-between items-center xs:flex-col md:flex-row'>
+                <div className='flex justify-between items-center xs:flex-col md:flex-row py-3'>
                     <div className='flex justify-between items-center gap-4 xs:flex-col md:flex-row'>
                         <h1 className='text-lg font-bold'>Previous AGM Summary</h1>
                         <div className=''>
@@ -47,7 +47,7 @@ const index = () => {
                             </div> */}
                             <FormSelect
                                 defaultValue={"Select Year"}
-                                className="flex-1">
+                                className="flex-1 xs:w-[240px] md:w-auto">
                                 <option >
                                     2024
                                 </option>
@@ -56,13 +56,13 @@ const index = () => {
                                 </option>
                             </FormSelect>
                         </div>
-                        <div className='p-2 bg-white rounded-md  border-red-800 border-2 font-semibold text-red-800 border-solid'>
+                        <div className='p-2 bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid'>
                             View More
                         </div>
                     </div>
-                    <div className='flex justify-between items-center gap-4'>
+                    <div className='flex justify-between items-center gap-4 xs:mt-4 md:mt-0'>
                         <Tippy
-                            content='Download CSV'
+                            content='Download Excel'
                             options={{ theme: "light" }}
                         >
                             <div className='box p-[5px] cursor-pointer' onClick={convertDivTableToCSV}>

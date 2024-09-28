@@ -89,36 +89,37 @@ const index = () => {
             </div>
             <div className="p-5 mt-3.5 box">
                 <div className="w-full">
-                    {dashboardDataList?.length > 0 && <div className='flex justify-between items-center sm:flex-col md:flex-row'>
-                        <h1 className='text-lg font-bold'>Top {dashboardDataList?.length} Investor</h1>
-                        <div className='flex justify-between items-center gap-4 sm:flex-col md:flex-row'>
-                            <div className='flex justify-between items-center gap-2'>
-                                <img
-                                    alt="flag-icon"
-                                    src={flagIcon}
-                                />
-                                <h4 className='font-semibold'>Some text</h4>
-                            </div>
-                            <Tippy
-                                content='Download CSV'
-                                options={{ theme: "light" }}
-                            >
-                                <div className='box p-[5px] cursor-pointer' onClick={convertDivTableToCSV}>
+                    {/* {dashboardDataList?.length > 0 && */}
+                        <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
+                            <h1 className='text-lg font-bold'>Top {dashboardDataList?.length} Investor</h1>
+                            <div className='flex justify-between items-center gap-4 sm:flex-row'>
+                                <div className='flex justify-between items-center gap-2'>
                                     <img
-                                        alt="download-icon"
-                                        src={downloadIcon}
+                                        alt="flag-icon"
+                                        src={flagIcon}
+                                    />
+                                    <h4 className='font-semibold'>Some text</h4>
+                                </div>
+                                <Tippy
+                                    content='Download Excel'
+                                    options={{ theme: "light" }}
+                                >
+                                    <div className='box p-[5px] cursor-pointer' onClick={convertDivTableToCSV}>
+                                        <img
+                                            alt="download-icon"
+                                            src={downloadIcon}
+                                        />
+                                    </div>
+                                </Tippy>
+                                <div className='box p-2'>
+                                    <img
+                                        alt="tab-icon"
+                                        src={tabIcon}
                                     />
                                 </div>
-                            </Tippy>
-                            <div className='box p-2'>
-                                <img
-                                    alt="tab-icon"
-                                    src={tabIcon}
-                                />
                             </div>
                         </div>
-                    </div>
-                    }
+                    {/* } */}
 
                     <div className='mt-5'>
                         <div className="min-h-[300px] max-h-[300px] overflow-y-scroll">
