@@ -115,7 +115,7 @@ const index = () => {
                                 {
                                     locationPathName === '/' &&
                                     <Tippy
-                                        content='Open on New Tab'
+                                        content='Expand'
                                         options={{ theme: "light" }}
                                     >
                                         <div className='box p-2 cursor-pointer' onClick={() =>
