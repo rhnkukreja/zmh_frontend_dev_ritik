@@ -407,7 +407,72 @@ function Main() {
               </div>
 
               <div className="overflow-auto xl:overflow-visible px-5">
-                <Tab.Group>
+                <TableWrapper isLoading={loading}>
+                  {investersProfile?.length > 0 &&
+                    investersProfile.map((profile: InvestersProfile) => {
+                      return (
+                        <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
+                          <div className="ml-5 flex items-center">
+                            {/* <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
+                                      {(page - 1) * 10 + index + 1}
+                                    </div> */}
+
+                            {profile?.institution_logo_url ? (
+                              <>
+                                <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                  <Tippy
+                                    as="img"
+                                    alt="Tailwise - Admin Dashboard Template"
+                                    className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                    src={profile?.institution_logo_url}
+                                    content={profile?.institution_name || ""}
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                <Lucide
+                                  icon="User"
+                                  className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                />
+                                <a
+                                  href=""
+                                  className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                ></a>
+                              </div>
+                            )}
+
+                            <Tippy
+                              content={profile?.institution_name || ""}
+                              options={{
+                                theme: "light",
+                              }}
+                            >
+                              <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4">
+                                {profile?.institution_name}
+                              </div>
+                            </Tippy>
+                          </div>
+
+                          <Tippy
+                            content="View"
+                            options={{
+                              theme: "dark",
+                            }}
+                          >
+                            <Lucide
+                              onClick={() => {
+                                gotoDetailPage(profile.id);
+                              }}
+                              icon="Eye"
+                              className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                            />
+                          </Tippy>
+                        </div>
+                      );
+                    })}
+                </TableWrapper>
+                {/* <Tab.Group>
                   <Tab.List variant="link-tabs">
                     <Tab>
                       <Tab.Button
@@ -435,75 +500,7 @@ function Main() {
                     </Tab>
                   </Tab.List>
                   <Tab.Panels className="mt-5">
-                    <Tab.Panel className="leading-relaxed">
-                      <TableWrapper isLoading={loading}>
-                        {investersProfile?.length > 0 &&
-                          investersProfile.map((profile: InvestersProfile) => {
-                            return (
-                              <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
-                                <div className="ml-5 flex items-center">
-                                  {/* <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
-                                      {(page - 1) * 10 + index + 1}
-                                    </div> */}
-
-                                  {profile?.institution_logo_url ? (
-                                    <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
-                                        <Tippy
-                                          as="img"
-                                          alt="Tailwise - Admin Dashboard Template"
-                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                          src={profile?.institution_logo_url}
-                                          content={
-                                            profile?.institution_name || ""
-                                          }
-                                        />
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                      <Lucide
-                                        icon="User"
-                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
-                                      />
-                                      <a
-                                        href=""
-                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
-                                      ></a>
-                                    </div>
-                                  )}
-
-                                  <Tippy
-                                    content={profile?.institution_name || ""}
-                                    options={{
-                                      theme: "light",
-                                    }}
-                                  >
-                                    <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4">
-                                      {profile?.institution_name}
-                                    </div>
-                                  </Tippy>
-                                </div>
-
-                                <Tippy
-                                  content="View"
-                                  options={{
-                                    theme: "dark",
-                                  }}
-                                >
-                                  <Lucide
-                                    onClick={() => {
-                                      gotoDetailPage(profile.id);
-                                    }}
-                                    icon="Eye"
-                                    className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
-                                  />
-                                </Tippy>
-                              </div>
-                            );
-                          })}
-                      </TableWrapper>
-                    </Tab.Panel>
+                    <Tab.Panel className="leading-relaxed"></Tab.Panel>
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
                         {investersProfile?.length > 0 &&
@@ -569,7 +566,7 @@ function Main() {
                       </TableWrapper>
                     </Tab.Panel>
                   </Tab.Panels>
-                </Tab.Group>
+                </Tab.Group> */}
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                 <CPagination
