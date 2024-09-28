@@ -316,7 +316,7 @@ function ProxyGuideline() {
                   {user?.saved_search?.["Voting Guidelines"] !== undefined && (
                     <div className="hover:bg-slate-50 ml-2">
                       <Button onClick={getSavedSearches}>
-                        Get Last Searches
+                        Previous Search
                       </Button>
                     </div>
                   )}
@@ -405,29 +405,29 @@ function ProxyGuideline() {
                   <Table>
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                           Institution Name
                         </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                           Year
                         </Table.Td>
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                             Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                             Sub Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                             Section
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                             Policy Guideline
                           </Table.Td>
                         )}
@@ -435,7 +435,7 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                        <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                           Actions
                         </Table.Td>
                       </Table.Tr>

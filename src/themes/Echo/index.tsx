@@ -8,7 +8,7 @@ import { selectCompactMenu, setCompactMenu as setCompactMenuStore } from "@/stor
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import Lucide from "@/components/Base/Lucide";
-
+import { Dialog } from "@/components/Base/Headless";
 import clsx from "clsx";
 import SimpleBar from "simplebar";
 import { Menu } from "@/components/Base/Headless";
@@ -22,6 +22,8 @@ import { logout } from "@/stores/authenticationSlice";
 import { FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 import { setDashboardGlobalSearch } from "@/stores/dashboardSlice";
+import LoadingIcon from "@/components/Base/LoadingIcon";
+import aiIcon from '@/assets/images/zmh-images/ai-Icon.png'
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -47,6 +49,10 @@ function Main() {
   const scrollableRef = createRef<HTMLDivElement>();
 
   const [topBarActive, setTopBarActive] = useState(false);
+
+  const [basicModalPreview, setBasicModalPreview] = useState(false);
+  const [isFrameLoading, setIsFrameLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -93,6 +99,26 @@ function Main() {
   const handleToggleMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
+  }
+
+  const handleLoad = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(false);
+  };
+
+  const handleError = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(true);
+  };
+
+  const handleCloseModal = () => {
+    setBasicModalPreview(false);
+    setIsFrameLoading(true);
+    setIsError(false);
   }
 
   return (
@@ -420,7 +446,7 @@ function Main() {
                   'bg-white/[0.12] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
                   company_Global_Search !== '' ? 'text-white' : 'text-white/60'])}>
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? 'Selected Search ' + company_Global_Search : 'Quick search...'}</div>
+                  <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? company_Global_Search : 'Quick search...'}</div>
                   <div>⌘K</div>
                 </div>
               </div>
@@ -446,17 +472,34 @@ function Main() {
               {/* BEGIN: Notification & User Menu */}
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
-                  {/* <a
+                  <a
                     href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setActivitiesPanel(true);
+                    // bg-gradient-to-b to-[#000000CC] from-[#9F1239]
+                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239] hover:to-[#9f123a9b] hover:from-[#0000005c]
+                   border-white border-2 text-white rounded-md "
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      setBasicModalPreview(true);
                     }}
                   >
-                    <Lucide icon="LayoutGrid" className="w-[18px] h-[18px]" />
-                  </a> */}
+                    <div className="flex items-center justify-center">
+                    <img src={aiIcon} alt='ai icon'/>
+                    <span className="ml-3 font-bold">AI Assistant</span>
+                    </div>
+                  </a>
 
+                  {/* <div
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      setBasicModalPreview(true);
+                    }}
+                    className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white
+           rounded-full shadow-lg cursor-pointer bg-gradient-to-r
+            from-red-500 to-blue-500"
+                  >
+                    <div className="flex items-center justify-between m-3">
+                      <span className="ml-3 font-bold">AI Assistant</span></div>
+                  </div> */}
                   <a
                     href=""
                     className="p-2 text-white rounded-full hover:bg-white/5"
@@ -581,6 +624,38 @@ function Main() {
           </div>
         </div>
       </div>
+
+      <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}
+      >
+        <Dialog.Panel className="p-10 text-center h-full">
+          <div className="relative w-full h-full">
+            {isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white">
+                <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
+                {/* <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500"></div> */}
+              </div>
+            )}
+
+            {isError && !isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
+                <p>Failed to load the embedded content. Please try again later.</p>
+              </div>
+            )}
+
+            <iframe
+              className={`w-full h-full ${isFrameLoading || isError ? 'hidden' : ''}`}
+              src="https://app.korra.ai/zmhdashboard/investorprofiles"
+              title="Embedded Dashboard"
+              onLoad={handleLoad}
+              onError={handleError}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* AI Bot Modal & Button */}
     </div>
   );
 }

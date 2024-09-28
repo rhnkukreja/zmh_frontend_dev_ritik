@@ -362,7 +362,7 @@ function ShareHolderProposal() {
                     undefined && (
                     <div className="hover:bg-slate-50 ml-2">
                       <Button onClick={getSavedSearches}>
-                        Get Last Searches
+                        Previous Search
                       </Button>
                     </div>
                   )}
@@ -826,25 +826,25 @@ function ShareHolderProposal() {
                         <Table>
                           <Table.Thead>
                             <Table.Tr>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Year
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Company
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Proponent
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] w-[150px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Proposal No
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Outcome/Percentage for
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 No Action Letters
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Actions
                               </Table.Td>
                             </Table.Tr>
@@ -860,7 +860,7 @@ function ShareHolderProposal() {
                                   <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                     {noAction?.year}
                                   </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
+                                  <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                     <Tippy
                                       content={noAction?.company_name}
                                       options={{ theme: "light" }}
@@ -868,7 +868,7 @@ function ShareHolderProposal() {
                                       {noAction?.company_name}
                                     </Tippy>
                                   </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
+                                  <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                     <Tippy
                                       content={noAction?.proponent_name}
                                       options={{ theme: "light" }}
@@ -876,21 +876,21 @@ function ShareHolderProposal() {
                                       {noAction?.proponent_name}
                                     </Tippy>
                                   </Table.Td>
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                     {noAction?.proposal_num}
                                   </Table.Td>
                                   <Table.Td
                                     className={clsx([
-                                      "py-2 font-semibold border-dashed dark:bg-darkmode-600",
+                                      "py-2  border-dashed dark:bg-darkmode-600 text-wrap",
                                       noAction?.outcome_percentage?.includes(
                                         "Fail"
-                                      ) && "text-red-600",
+                                      ) && "text-red-600 font-semibold",
                                       noAction?.outcome_percentage?.includes(
                                         "Withdrawn"
-                                      ) && "text-green-600",
+                                      ) && "font-semibold",
                                       noAction?.outcome_percentage?.includes(
                                         "Pass"
-                                      ) && "text-blue-600",
+                                      ) && "text-blue-600 font-semibold",
                                     ])}
                                   >
                                     {noAction?.outcome_percentage
@@ -953,25 +953,25 @@ function ShareHolderProposal() {
                         <Table>
                           <Table.Thead>
                             <Table.Tr>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Year
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Company
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Category
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Sub Category
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Proponent
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Outcome
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Actions
                               </Table.Td>
                             </Table.Tr>
@@ -1051,19 +1051,19 @@ function ShareHolderProposal() {
                         <Table>
                           <Table.Thead>
                             <Table.Tr>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Year
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Company
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Proponent
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Outcome
                               </Table.Td>
-                              <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 Actions
                               </Table.Td>
                             </Table.Tr>

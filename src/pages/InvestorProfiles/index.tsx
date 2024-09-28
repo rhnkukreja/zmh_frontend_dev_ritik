@@ -319,7 +319,7 @@ function Main() {
                   {user?.saved_search?.["Investor Profile"] !== undefined && (
                     <div className="hover:bg-slate-50 ml-2">
                       <Button onClick={getSavedSearches}>
-                        Get Last Searches
+                        Previous Search
                       </Button>
                     </div>
                   )}

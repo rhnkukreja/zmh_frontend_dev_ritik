@@ -8,9 +8,13 @@ import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import FormSelect from '../Base/Form/FormSelect';
 import Tippy from '../Base/Tippy';
 import { downloadCSV } from '@/utils/helper';
+import { useState } from 'react';
+import summary from "@/assets/json/brhc10049413_8k.json";
 
 
 const index = () => {
+
+    const [summaryCard, setSummaryCard] = useState(summary)
 
     const convertDivTableToCSV = () => {
         // Get the table element
@@ -42,7 +46,7 @@ const index = () => {
                     <div className='flex justify-between items-center gap-4 xs:flex-col md:flex-row'>
                         <h1 className='text-lg font-bold'>Previous AGM Summary</h1>
                         <div className=''>
-                            {/* <div className="text-left text-slate-500">
+                            {/* <div className="text-left text-[#000000B2]">
                                 Select Year
                             </div> */}
                             <FormSelect
@@ -82,356 +86,146 @@ const index = () => {
                 </div>
 
                 <div className='mt-5'>
-                    <div className="min-h-[300px] max-h-[300px] overflow-y-scroll">
+                    <div className="min-h-[400px] max-h-[400px] overflow-y-scroll">
                         <TableWrapper>
                             <Table className="table_2">
-                                <Table.Thead>
-                                    <Table.Tr className="row_2">
-                                        <Table.Td className="cell_2 py-2 font-medium h-[50px] bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                            Proposal
+                            <Table.Thead className='sticky'>
+                                    <Table.Tr className="row_2 sticky top-0 z-10">
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            Nominee
                                         </Table.Td>
-                                        <Table.Td className="cell_2 py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                             For
                                         </Table.Td>
-                                        <Table.Td className="cell_2 py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                             Against
                                         </Table.Td>
-                                        <Table.Td className="cell_2 py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                            Abstain
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            Abstained
                                         </Table.Td>
-                                        <Table.Td className="cell_2 py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                             Broker Non-Vote
                                         </Table.Td>
                                     </Table.Tr>
                                 </Table.Thead>
-                                <Table.Tbody>
-                                    <Table.Tr
+                                <Table.Tbody className=''>
+                                    {summary.nominees?.length > 0 &&
+                                        summary.nominees?.map((nominee: any) => (
+                                            <Table.Tr key={nominee?.id}
+                                                className="row_2 [&_td]:last:border-b-0">
+                                                <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
+
+                                                    <div className='flex items-center font-semibold gap-2'>
+                                                        <h1 className=' '>{nominee?.Nominee}</h1>
+                                                    </div>
+
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {nominee?.For}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {nominee?.Against}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {nominee?.Abstained}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {nominee?.Broker_non}
+                                                    </div>
+                                                </Table.Td>
+                                            </Table.Tr>
+                                        ))}
+                                </Table.Tbody>
+
+                            </Table>
+                        </TableWrapper>
+
+                        <TableWrapper>
+                            <Table className="table_2">
+                                <Table.Thead className='sticky'>
+                                    <Table.Tr className="row_2 sticky top-0 z-10">
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            Proposal
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            For
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            Against
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            Abstained
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            Broker Non-Vote
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            1 Year
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            2 Year
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            3 Year
+                                        </Table.Td>
+                                    </Table.Tr>
+                                </Table.Thead>
+                                <Table.Tbody className=''>
+                                {summary.proposals?.length > 0 &&
+                              summary.proposals?.map((proposal: any) => (
+                                    <Table.Tr key={proposal?.id}
                                         className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                        <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
 
                                             <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>James Bell</h1>
+                                                <h1 className=' '>{proposal?.Proposal}</h1>
                                             </div>
 
                                         </Table.Td>
                                         <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                                9465679895
+                                            {proposal?.For}
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                                66756373
+                                            {proposal?.Against}
                                             </div>
                                         </Table.Td>
                                         <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                                27788697
+                                            {proposal?.Abstained}
                                             </div>
                                         </Table.Td>
-
                                         <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                             <div className="whitespace-nowrap ">
-                                                3199709505
+                                            {proposal?.Broker_non}
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                            {proposal?.Year_1}
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                            {proposal?.Year_2}
+                                            </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            <div className="whitespace-nowrap ">
+                                            {proposal?.Year_3}
                                             </div>
                                         </Table.Td>
                                     </Table.Tr>
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Tim Cook</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Tim Cook</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Tim Cook</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Al Gore</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Alex Gorsky</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Andrea Jung</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Art Levinson</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Monica Lozano</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-                                    <Table.Tr
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex h-[50px] w-[260px] flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>Ron Sugar</h1>
-                                            </div>
-
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                9384013653
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                154755524
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                21455788
-                                            </div>
-                                        </Table.Td>
-
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                                3199709505
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-
-
-
+                                    ))}
                                 </Table.Tbody>
                             </Table>
                         </TableWrapper>

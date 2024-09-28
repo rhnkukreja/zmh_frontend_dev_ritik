@@ -89,7 +89,7 @@ const index = () => {
             </div>
             <div className="p-5 mt-3.5 box">
                 <div className="w-full">
-                    {/* {dashboardDataList?.length > 0 && */}
+                    {dashboardDataList?.length > 0 &&
                         <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
                             <h1 className='text-lg font-bold'>Top {dashboardDataList?.length} Investor</h1>
                             <div className='flex justify-between items-center gap-4 sm:flex-row'>
@@ -119,7 +119,7 @@ const index = () => {
                                 </div>
                             </div>
                         </div>
-                    {/* } */}
+                    }
 
                     <div className='mt-5'>
                         <div className="min-h-[300px] max-h-[300px] overflow-y-scroll">
@@ -127,25 +127,25 @@ const index = () => {
                                 <Table className="table">
                                     <Table.Thead>
                                         <Table.Tr className="row">
-                                            <Table.Td className="cell py-2 font-medium h-[50px] bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                            <Table.Td className="cell py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                 Investor
                                             </Table.Td>
-                                            <Table.Td className="cell py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                            <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                 Ownership
                                             </Table.Td>
-                                            <Table.Td className="cell py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                            <Table.Td className="cell py-2 font-semibold w-[180px] h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                 Eng Priorities
                                             </Table.Td>
-                                            <Table.Td className="cell py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                            <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                 Proxy Advisor Influence
                                             </Table.Td>
-                                            <Table.Td className="cell py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                                Investor Engaged with Company
+                                            <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                Engaged with Company
                                             </Table.Td>
-                                            <Table.Td className="cell py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                                                Engagements Disclosed
+                                            <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                Engagement Topic
                                             </Table.Td>
-                                            <Table.Td className="cell py-2 font-medium h-[50px]  bg-slate-50 first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                                            <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                 Voted Against Directors
                                             </Table.Td>
                                         </Table.Tr>
@@ -157,30 +157,28 @@ const index = () => {
                                                     <Table.Tr 
                                                         key={dashboard.filer_id}
                                                         className="row [&_td]:last:border-b-0">
-                                                        <Table.Td className="cell flex items-center gap-x-2">
+                                                        <Table.Td className="cell flex items-center">
                                                             <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                                                 <img
                                                                     alt="Tailwise - Admin Dashboard Template"
                                                                     src={userLinkedinImage}
                                                                 />
-
                                                             </div>
 
-                                                            <Tippy
-                                                                content={dashboard?.filer_name}
-                                                                options={{ theme: "light" }}
-                                                            >
-                                                                <div className='flex items-center font-semibold gap-2 min-w-[250px]'>
-                                                                    <h1 className='underline whitespace-nowrap capitalize  max-w-[180px] overflow-hidden text-ellipsis '>{dashboard?.filer_name}</h1>
-                                                                    <img className='w-3'
+                                                            <div className='flex justify-between items-center w-[220px]'>
+                                                                <div className='flex items-center font-semibold '>
+                                                                    <h1 className='underline whitespace-nowrap capitalize max-w-[150px] text-wrap'>{dashboard?.filer_name}</h1>
+                                                                    <img className='w-3 ml-2'
                                                                         alt="flag-icon"
                                                                         src={flagIcon}
                                                                     />
-                                                                    <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                                        {dashboard?.filer_name.charAt(0)}
-                                                                    </div>
+
                                                                 </div>
-                                                            </Tippy>
+
+                                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
+                                                                    {dashboard?.filer_name.charAt(0)}
+                                                                </div>
+                                                            </div>
 
 
                                                         </Table.Td>
@@ -202,21 +200,21 @@ const index = () => {
 
                                                         <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                                                <div className='bg-green-400 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
+                                                                <div className='bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
                                                                     ✔
                                                                 </div>
                                                             </div>
                                                         </Table.Td>
                                                         <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                                                <div className='bg-yellow-400 font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
+                                                                <div className='bg-[#F5A623] font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '>
                                                                     S
                                                                 </div>
                                                             </div>
                                                         </Table.Td>
                                                         <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                                                <div className='bg-red-600 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
+                                                                <div className='bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
                                                                     ✔
                                                                 </div>
                                                             </div>

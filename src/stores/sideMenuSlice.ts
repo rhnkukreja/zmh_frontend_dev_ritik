@@ -26,7 +26,7 @@ export interface SideMenuState {
 
 const initialState: any = {
   menu: [
-    "DASHBOARD",
+    "",
     // {
     //   icon: "ActivitySquare",
     //   pathname: "/inbox",
@@ -74,7 +74,7 @@ const initialState: any = {
     //   pathname: "/dashboard-overview-8",
     //   title: "Hotel",
     // },
-    "APPS",
+    // "APPS",
     {
       icon: ProfileIcon,
       pathname: "/investor-profile",
@@ -83,7 +83,7 @@ const initialState: any = {
     {
       icon: EngagementIcon,
       pathname: "/engagement-question",
-      title: "Engagement Questions",
+      title: "Engagement Question",
     },
     {
       icon: VotingIcon,
@@ -120,7 +120,7 @@ const initialState: any = {
     //   pathname: "/calendar",
     //   title: "Calendar",
     // },
-    "ADMIN",
+    "Additional",
     {
       icon: caseStudyIcon,
       pathname: "/institution",
