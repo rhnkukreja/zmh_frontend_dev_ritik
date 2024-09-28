@@ -484,7 +484,7 @@ function Main() {
                   >
                     <div className="flex items-center justify-center">
                     <img src={aiIcon} alt='ai icon'/>
-                    <span className="ml-3 font-bold">AI Assistant</span>
+                    <span className="ml-3 font-bold hidden xl:flex">AI Assistant</span>
                     </div>
                   </a>
 
