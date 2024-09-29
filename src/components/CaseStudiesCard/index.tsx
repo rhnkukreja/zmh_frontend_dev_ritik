@@ -156,6 +156,14 @@ const index = () => {
                   </div>
 
               </div>
+              {/* <a href="https://cse.google.com/cse?cx=YOUR_CSE_ID#gsc.q=Amazon" target="_blank">Search Amazon</a>
+
+              <iframe
+                  src="https://cse.google.com/cse?cx=860f2a6398fa1457c#gsc.q=%22Amazon%22&gsc.sort=date"
+                  title="Embedded Dashboard"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+              ></iframe> */}
           </div>
       </div>
   )

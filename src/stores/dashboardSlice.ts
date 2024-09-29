@@ -3,6 +3,7 @@ import { dashboardService } from "@/services/dashboard";
 import { Filer } from "@/types/dashboard";
 import { CompanyData } from "@/types/company";
 import { getPageNumbers } from "@/utils/helper";
+import { AGMSummary } from "@/types/AGMSummary";
 
 const name = "dashboard";
 
@@ -16,8 +17,8 @@ export type CompanyDashboard = {
   filer_id: number;
   percent_ownership: number;
   source: string;
-  source_date: Date,
-  proxy_advisor_influence: string,
+  source_date: Date;
+  proxy_advisor_influence: string;
 };
 
 interface CompanySliceState {
@@ -29,10 +30,9 @@ interface CompanySliceState {
   error: string | null;
   page: number;
   totalPages: number;
-  // totalCompanyPages: number;
-  totalCompanyDashboard: number,
-  // totalSearchBarCount: number;
+  totalCompanyDashboard: number;
   company_Global_Search: string;
+  agmSummaryDetails: AGMSummary;
 }
 
 const initialState: CompanySliceState = {
@@ -45,13 +45,17 @@ const initialState: CompanySliceState = {
   page: 1,
   totalPages: 1,
   totalCompanyDashboard: 0,
-  company_Global_Search: 'Amazon.com, Inc.'
+  company_Global_Search: "Amazon.com, Inc.",
+  agmSummaryDetails: {
+    nominees: [],
+    proposals: [],
+  },
   // totalCompanyPages: 1,
   // totalSearchBarCount: 0
 };
 
 export const fetchCompanyByName = createAsyncThunk<
-{ count: number; results: CompanyData[] },
+  { count: number; results: CompanyData[] },
   string
 >(`${name}/fetchCompanyByName`, async (companyName: string) => {
   return await dashboardService.fetchCompanyByName(companyName);
@@ -62,6 +66,13 @@ export const fetchCompanyDashboard = createAsyncThunk<
   string
 >(`${name}/fetchCompanyDashboard`, async (url: string) => {
   return await dashboardService.fetchCompanyDashboard(url);
+});
+
+export const fetchAGMSummaryDashboard = createAsyncThunk<
+  { count: number; results: AGMSummary },
+  string
+>(`${name}/fetchAGMSummaryDashboard`, async (url: string) => {
+  return await dashboardService.fetchAGMSummaryDashboard(url);
 });
 
 const companySlice = createSlice({
@@ -87,7 +98,10 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchCompanyByName.fulfilled,
-        (state, action: PayloadAction<{count: number; results: CompanyData[] }>) => {
+        (
+          state,
+          action: PayloadAction<{ count: number; results: CompanyData[] }>
+        ) => {
           state.loading = false;
           state.companyDataList = action.payload.results;
           // state.totalSearchBarCount = action.payload.count;
@@ -106,7 +120,10 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchCompanyDashboard.fulfilled,
-        (state, action: PayloadAction<{ count: number; results: CompanyDashboard[] }>) => {
+        (
+          state,
+          action: PayloadAction<{ count: number; results: CompanyDashboard[] }>
+        ) => {
           state.loading = false;
           state.dashboardDataList = action.payload.results;
           state.totalCompanyDashboard = action.payload.count;
@@ -117,10 +134,32 @@ const companySlice = createSlice({
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
+      })
+      .addCase(fetchAGMSummaryDashboard.pending, (state) => {
+        state.agmSummaryDetails = {nominees:[], proposals:[]};
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchAGMSummaryDashboard.fulfilled,
+        (
+          state,
+          action: PayloadAction<{ count: number; results: AGMSummary }>
+        ) => {
+          state.loading = false;
+          state.agmSummaryDetails = action.payload.results;
+          // state.totalCompanyDashboard = action.payload.count;
+          // state.totalPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchAGMSummaryDashboard.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
       });
   },
 });
 
 export default companySlice;
-export const { setPage, resetPage, setDashboardGlobalSearch} =
-companySlice.actions;
+export const { setPage, resetPage, setDashboardGlobalSearch } =
+  companySlice.actions;

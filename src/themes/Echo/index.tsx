@@ -447,7 +447,7 @@ function Main() {
                   company_Global_Search !== '' ? 'text-white' : 'text-white/60'])}>
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
                   <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? company_Global_Search : 'Quick search...'}</div>
-                  <div>⌘K</div>
+                  {/* <div>⌘K</div> */}
                 </div>
               </div>
                 {/* <div className="ml-5 bg-white border-transparent rounded-lg">

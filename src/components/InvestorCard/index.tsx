@@ -99,7 +99,7 @@ const index = () => {
                                         alt="flag-icon"
                                         src={flagIcon}
                                     />
-                                    <h4 className='font-semibold'>History of Schedule 13D filing</h4>
+                                    <h4 className='font-semibold'>History of Schedule 13D Filing</h4>
                                 </div>
                                 <Tippy
                                     content='Download Excel'
@@ -140,16 +140,16 @@ const index = () => {
                                     <Table.Thead>
                                         <Table.Tr className="row">
                                             <Table.Td className="cell py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                                Investor
+                                            Shareholder
+                                            </Table.Td>
+                                            <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            % Ownership
+                                            </Table.Td>
+                                            <Table.Td className="cell py-2 font-semibold  h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                            Proxy Advisory Influence
                                             </Table.Td>
                                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                                Ownership
-                                            </Table.Td>
-                                            <Table.Td className="cell py-2 font-semibold w-[180px] h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                                Eng Priorities
-                                            </Table.Td>
-                                            <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                                Proxy Advisor Influence
+                                            ESG Integration
                                             </Table.Td>
                                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                 Engaged with Company
@@ -179,7 +179,8 @@ const index = () => {
 
                                                             <div className='flex justify-between items-center w-[220px]'>
                                                                 <div className='flex items-center font-semibold '>
-                                                                    <h1 className='underline whitespace-nowrap capitalize max-w-[150px] text-wrap'>{dashboard?.filer_name}</h1>
+                                                                    <h1 className='underline whitespace-nowrap capitalize max-w-[150px] text-wrap'>
+                                                                        {dashboard?.filer_name?.toLowerCase().replace(/\b\w/g, s => s.toUpperCase())}</h1>
                                                                     <img className='w-3 ml-2'
                                                                         alt="flag-icon"
                                                                         src={flagIcon}
@@ -188,7 +189,7 @@ const index = () => {
                                                                 </div>
 
                                                                 <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
-                                                                    {dashboard?.filer_name.charAt(0)}
+                                                                    P
                                                                 </div>
                                                             </div>
 

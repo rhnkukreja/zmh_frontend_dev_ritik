@@ -5,8 +5,31 @@
             "Apple Inc.": "Annual Meeting - 10 March, 2023"
         }
     ],
+    "nominees_headers": [
+        {
+            "field": "Nominee",
+            "header": "Nominee Name etc"
+        },
+        {
+            "field": "For",
+            "header": "For"
+        },
+        {
+            "field": "Against",
+            "header": "Against"
+        },
+        {
+            "field": "Abstained",
+            "header": "Abstained"
+        },
+        {
+            "field": "Broker_non",
+            "header": "Broker Non-Vote"
+        }
+    ],
     "nominees": [
         {
+            "id": 1,
             "Nominee": "James Bell",
             "For": 9465679895,
             "Against": 66756373,
@@ -68,6 +91,36 @@
             "Against": 360662024,
             "Abstained": 26730117,
             "Broker_non": 3199709505
+        }
+    ],
+    "proposal_headers": [
+        {
+            "field": "Proposal",
+            "header": "Proposal"
+        },
+        {
+            "field": "For",
+            "header": "For"
+        },
+        {
+            "field": "Against",
+            "header": "Against"
+        },
+        {
+            "field": "Abstained",
+            "header": "Abstained"
+        },
+        {
+            "field": "Year_1",
+            "header": "1 Year"
+        },
+        {
+            "field": "Year_2",
+            "header": "2 Year"
+        },
+        {
+            "field": "Year_3",
+            "header": "3 Year"
         }
     ],
     "proposals": [

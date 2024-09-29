@@ -7,18 +7,27 @@ import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import FormSelect from '../Base/Form/FormSelect';
 import Tippy from '../Base/Tippy';
-import { downloadCSV } from '@/utils/helper';
-import { useState } from 'react';
+import { createDynamicURL, downloadCSV } from '@/utils/helper';
+import { useEffect, useState } from 'react';
 import summary from "@/assets/json/brhc10049413_8k.json";
 import { useLocation } from 'react-router-dom';
 import clsx from 'clsx';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
+import { fetchAGMSummaryDashboard } from '@/stores/dashboardSlice';
+import { baseURL } from '@/constant';
+import { AppDispatch } from '@/stores/store';
+import { Nominee } from '@/types/AGMSummary';
 
 
 const index = () => {
 
     const location = useLocation();
     const locationPathName = location?.pathname;
-    
+    const dispatch: AppDispatch = useAppDispatch();
+    const { agmSummaryDetails, loading, page } = useAppSelector(
+        (state) => state.dashboard
+    );
+
     const convertDivTableToCSV = () => {
         // Get the table element
         const table = document.querySelector(".table_2");
@@ -41,6 +50,13 @@ const index = () => {
 
         downloadCSV(csvContent, 'Agm-Summary');
     };
+
+    useEffect(() => {
+        dispatch(fetchAGMSummaryDashboard(
+            createDynamicURL(`${baseURL}/company-dashboard`, undefined, undefined, page)
+        )
+        );
+    }, [page]);
 
     return (
         <div className="p-5 mt-3.5 box ">
@@ -99,7 +115,7 @@ const index = () => {
                     <div className={clsx([locationPathName === '/' && 'min-h-[400px] max-h-[400px] overflow-y-scroll'])}>
                         <TableWrapper>
                             <Table className="table_2">
-                            <Table.Thead className='sticky'>
+                                <Table.Thead className='sticky'>
                                     <Table.Tr className="row_2 sticky top-0 z-10">
                                         <Table.Td className="cell_2 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                             Nominee
@@ -188,54 +204,54 @@ const index = () => {
                                     </Table.Tr>
                                 </Table.Thead>
                                 <Table.Tbody className=''>
-                                {summary.proposals?.length > 0 &&
-                              summary.proposals?.map((proposal: any) => (
-                                    <Table.Tr key={proposal?.id}
-                                        className="row_2 [&_td]:last:border-b-0">
-                                        <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
+                                    {summary.proposals?.length > 0 &&
+                                        summary.proposals?.map((proposal: any) => (
+                                            <Table.Tr key={proposal?.id}
+                                                className="row_2 [&_td]:last:border-b-0">
+                                                <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
 
-                                            <div className='flex items-center font-semibold gap-2'>
-                                                <h1 className=' '>{proposal?.Proposal}</h1>
-                                            </div>
+                                                    <div className='flex items-center font-semibold gap-2'>
+                                                        <h1 className=' '>{proposal?.Proposal}</h1>
+                                                    </div>
 
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            {proposal?.For}
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            {proposal?.Against}
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            {proposal?.Abstained}
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            {proposal?.Broker_non}
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            {proposal?.Year_1}
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            {proposal?.Year_2}
-                                            </div>
-                                        </Table.Td>
-                                        <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                            <div className="whitespace-nowrap ">
-                                            {proposal?.Year_3}
-                                            </div>
-                                        </Table.Td>
-                                    </Table.Tr>
-                                    ))}
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {proposal?.For}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {proposal?.Against}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {proposal?.Abstained}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {proposal?.Broker_non}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {proposal?.Year_1}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {proposal?.Year_2}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                                    <div className="whitespace-nowrap ">
+                                                        {proposal?.Year_3}
+                                                    </div>
+                                                </Table.Td>
+                                            </Table.Tr>
+                                        ))}
                                 </Table.Tbody>
                             </Table>
                         </TableWrapper>
