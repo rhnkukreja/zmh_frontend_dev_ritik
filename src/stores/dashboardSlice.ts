@@ -19,6 +19,15 @@ export type CompanyDashboard = {
   source: string;
   source_date: Date;
   proxy_advisor_influence: string;
+  institution_name: string;
+  institution_logo_url: string;
+  esg_integration: boolean;
+  company_engaged: boolean;
+  flag_13d: boolean;
+  engagement_topic: string;
+  voted_against_directors: boolean;
+
+  // percent_ownership: string;
 };
 
 interface CompanySliceState {
@@ -32,7 +41,7 @@ interface CompanySliceState {
   totalPages: number;
   totalCompanyDashboard: number;
   company_Global_Search: string;
-  agmSummaryDetails: AGMSummary;
+  agmSummaryDetails: any;
 }
 
 const initialState: CompanySliceState = {
@@ -45,11 +54,12 @@ const initialState: CompanySliceState = {
   page: 1,
   totalPages: 1,
   totalCompanyDashboard: 0,
-  company_Global_Search: "Amazon.com, Inc.",
-  agmSummaryDetails: {
-    nominees: [],
-    proposals: [],
-  },
+  company_Global_Search: "Apple Inc.",
+  agmSummaryDetails: ''
+  // {
+  //   nominees: [],
+  //   proposals: [],
+  // },
   // totalCompanyPages: 1,
   // totalSearchBarCount: 0
 };
@@ -62,14 +72,14 @@ export const fetchCompanyByName = createAsyncThunk<
 });
 
 export const fetchCompanyDashboard = createAsyncThunk<
-  { count: number; results: CompanyDashboard[] },
+  { results: CompanyDashboard[] },
   string
 >(`${name}/fetchCompanyDashboard`, async (url: string) => {
   return await dashboardService.fetchCompanyDashboard(url);
 });
 
 export const fetchAGMSummaryDashboard = createAsyncThunk<
-  { count: number; results: AGMSummary },
+  { results: any },
   string
 >(`${name}/fetchAGMSummaryDashboard`, async (url: string) => {
   return await dashboardService.fetchAGMSummaryDashboard(url);
@@ -122,12 +132,12 @@ const companySlice = createSlice({
         fetchCompanyDashboard.fulfilled,
         (
           state,
-          action: PayloadAction<{ count: number; results: CompanyDashboard[] }>
+          action: PayloadAction<{ results: CompanyDashboard[] }>
         ) => {
-          state.loading = false;
           state.dashboardDataList = action.payload.results;
-          state.totalCompanyDashboard = action.payload.count;
-          state.totalPages = getPageNumbers(action.payload.count);
+          state.loading = false;
+          // state.totalCompanyDashboard = action.payload.count;
+          // state.totalPages = getPageNumbers(action.payload.count);
         }
       )
       .addCase(fetchCompanyDashboard.rejected, (state, action) => {
@@ -136,7 +146,7 @@ const companySlice = createSlice({
           action.error.message || "Failed to fetch company dashboard";
       })
       .addCase(fetchAGMSummaryDashboard.pending, (state) => {
-        state.agmSummaryDetails = {nominees:[], proposals:[]};
+        state.agmSummaryDetails = '';
         state.loading = true;
         state.error = null;
       })
@@ -144,7 +154,7 @@ const companySlice = createSlice({
         fetchAGMSummaryDashboard.fulfilled,
         (
           state,
-          action: PayloadAction<{ count: number; results: AGMSummary }>
+          action: PayloadAction<{ results:any }>
         ) => {
           state.loading = false;
           state.agmSummaryDetails = action.payload.results;

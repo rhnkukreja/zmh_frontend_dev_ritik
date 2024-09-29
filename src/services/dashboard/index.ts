@@ -19,27 +19,20 @@ class DashboardService {
   }
 
   public async fetchCompanyDashboard(url: string): Promise<{
-    count: number;
     results: CompanyDashboard[];
   }>  {
     const response = await axiosInstance.get(url);
-    const { count, results } = response.data;
+    const results = response.data;
     return {
-      count,
       results,
     };
   }
 
-  public async fetchAGMSummaryDashboard(url: string): Promise<{
-    count: number;
-    results: AGMSummary;
+  public async fetchAGMSummaryDashboard(url: string): Promise<{results:any;
   }>  {
     const response = await axiosInstance.get(url);
-    const { count, results } = response.data;
-    return {
-      count,
-      results,
-    };
+    const results = response.data;
+    return {results};
   }
 }
 
