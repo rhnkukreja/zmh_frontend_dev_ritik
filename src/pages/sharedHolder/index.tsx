@@ -823,7 +823,7 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                      <div className="overflow-auto max-h-[350px]">
+                      <div className="overflow-auto max-h-[400px]">
 
                         <Table>
                           <Table.Thead>
@@ -953,7 +953,7 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                      <div className="overflow-auto max-h-[350px]">
+                      <div className="overflow-auto max-h-[400px]">
 
                         <Table>
                           <Table.Thead>
@@ -1054,7 +1054,7 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                      <div className="overflow-auto max-h-[350px]">
+                      <div className="overflow-auto max-h-[400px]">
 
                         <Table>
                           <Table.Thead>

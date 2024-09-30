@@ -764,7 +764,7 @@ function CaseStudies() {
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
-                  <div className="overflow-auto max-h-[350px]">
+                  <div className="overflow-auto max-h-[400px]">
                     
                     <Table>
                       <Table.Thead>

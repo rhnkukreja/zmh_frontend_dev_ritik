@@ -293,7 +293,7 @@ const index = () => {
       <div className="mt-5">
         <div className={clsx([locationPathName === "/" && "min-h-[300px]"])}>
           <TableWrapper isLoading={loading}>
-            <div className="overflow-auto max-h-[350px]">
+            <div className="overflow-auto max-h-[400px]">
               <Table>
                 <Table.Thead>
                   <Table.Tr className="row">
