@@ -12,7 +12,7 @@ import {
 } from "@/stores/dashboardSlice";
 import { AppDispatch } from "@/stores/store";
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createDynamicURL, downloadCSV } from '@/utils/helper';
 import { baseURL } from '@/constant';
 import Tippy from '../Base/Tippy';
@@ -30,6 +30,7 @@ const index = () => {
         (state) => state.dashboard
     );
     const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+    const navigate = useNavigate();
 
 
     useEffect(() => {
@@ -40,6 +41,34 @@ const index = () => {
             );
         }
     }, [ticker, page]);
+
+
+    const checkImageUrl = async (url: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = url;
+  
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+      });
+    };
+
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+  
+  useEffect(() => {
+    const validateImages = async () => {
+      const tempValidImages: { [key: string]: string } = {};
+      for (const dashbboard of dashboardDataList || []) {
+        const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
+        tempValidImages[dashbboard?.institution_name] = isValid ? dashbboard?.institution_logo_url : userLinkedinImage;
+      }
+
+      setValidImages(tempValidImages);
+    };
+
+    validateImages();
+  }, [dashboardDataList]);
 
 
     const handleNextPage = () => {
@@ -90,13 +119,13 @@ const index = () => {
                 {company_Global_Search}
             </div>
             {
-                dashboardDataList?.length > 0 &&
+                // dashboardDataList?.length > 0 &&
                 <>
                     <div className="p-5 mt-3.5 box">
                         <div className="w-full">
-                            {dashboardDataList?.length > 0 &&
+                            {/* {dashboardDataList?.length > 0 && */}
                                 <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
-                                    <h1 className='text-lg font-bold'>Top {dashboardDataList?.length} Investor</h1>
+                                    <h1 className='text-lg font-bold'>Top {dashboardDataList?.length || 20} Investor</h1>
                                     <div className='flex justify-between items-center gap-4 sm:flex-row'>
                                         <div className='flex justify-between items-center gap-2'>
                                             <img
@@ -135,7 +164,7 @@ const index = () => {
 
                                     </div>
                                 </div>
-                            }
+                            {/* } */}
 
                             <div className='mt-5'>
                                 <div className={clsx([locationPathName === '/' && 'min-h-[300px] max-h-[300px] overflow-y-scroll'])}>
@@ -180,7 +209,11 @@ const index = () => {
                                                                             <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                                                                 <img
                                                                                     alt="Tailwise - Admin Dashboard Template"
-                                                                                    src={dashboard?.institution_logo_url ?? userLinkedinImage}
+                                                                                    
+                                                                                    src= {validImages[dashboard.institution_name] ||
+                                                                                      userLinkedinImage}
+                                                                                    
+                                                                                    // {dashboard?.institution_logo_url ?? userLinkedinImage}
                                                                                 />
                                                                             </div>
 
@@ -197,7 +230,9 @@ const index = () => {
 
                                                                                 </div>
 
-                                                                                <div className='bg-red-900 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white '>
+                                                                                <div 
+                                                                                onClick={()=> navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}`) } 
+                                                                                className='bg-red-900 hover:bg-red-700 font-semibold flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] text-white '>
                                                                                     P
                                                                                 </div>
                                                                             </div>
