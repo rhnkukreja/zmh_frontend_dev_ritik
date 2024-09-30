@@ -1,4 +1,5 @@
 import { baseURL } from "@/constant";
+import { persistor } from "@/stores/store";
 import axios, {
   AxiosError,
   AxiosInstance as AxiosInstanceType,
@@ -11,11 +12,31 @@ const multipartFormDataUrls = [
   "/investor_profile/",
   "/proxy_voting_guidelines/",
   "/institute/",
+  "/company/",
 ];
 
+const logout = () => {
+  localStorage.clear();
+  persistor.purge();
+  window.location.replace("/");
+};
+
 function APIErrors(message: string) {
-  toast.error(message);
+  if (
+    message &&
+    message
+      ?.toLowerCase()
+      .includes(
+        "Signature has expired".toLowerCase() ||
+          "signature has expired.".toLowerCase()
+      )
+  ) {
+    return logout();
+  } else {
+    toast.error(message);
+  }
 }
+
 class AxiosServiceConfig {
   private static instance: AxiosInstanceType;
 

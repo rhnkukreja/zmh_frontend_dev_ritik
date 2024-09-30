@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, SubmitErrorHandler, useForm } from "react-hook-form";
 import Button from "@/components/Base/Button";
-import { FormCheck, FormInput, FormTextarea } from "@/components/Base/Form";
+import { FormCheck } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
@@ -12,6 +12,7 @@ import { addEditCompany, fetchCompanies } from "@/stores/companySlice";
 import { CompanyData } from "@/types/company";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import Error from "@/components/Error";
 
 interface AddEditCompanyProps {
   addNewCompanyVisible: boolean;
@@ -29,6 +30,8 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
   const { loading, page } = useAppSelector((state) => state.company);
 
   const [companyFile, setCompanyFile] = useState<File | null>(null);
+  const [showRequiredStateErrors, setShowRequiredStateErrors] =
+    useState<boolean>(false);
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -70,9 +73,14 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
 
   const onSubmit = async () => {
     const formData = new FormData();
+    if (!companyFile) {
+      return;
+    } else {
+      setShowRequiredStateErrors(false);
+    }
 
     if (companyFile) {
-      formData.append("logo", companyFile);
+      formData.append("bulk_upload_file", companyFile);
     }
 
     try {
@@ -99,17 +107,23 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
         );
       }
 
-      if (response?.results?.id) {
+      if (response?.results?.company_id === null) {
         toast.success(
           selectedCompany
             ? "Company updated successfully"
-            : "Company added successfully"
+            : "File uploaded successfully"
         );
       }
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
       setAddNewCompanyVisible(false);
+    }
+  };
+
+  const onError: SubmitErrorHandler<any> = () => {
+    if (!companyFile) {
+      setShowRequiredStateErrors(true);
     }
   };
 
@@ -120,7 +134,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
       onClose={() => setAddNewCompanyVisible(false)}
     >
       <Dialog.Panel className="text-center">
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
               {selectedCompany ? "Edit Company" : "Add New Company"}
@@ -135,7 +149,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className={`w-full ${companyFile ? "" : "mb-20"}`}>
               <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                Logo
+                Company
               </FormCheck.Label>
               <div className="w-full max-h-[180px]">
                 {companyFile ? (
@@ -175,7 +189,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
                       thumbnailWidth: 100,
                       maxFilesize: 5000,
                       maxFiles: 1,
-                      paramName: "excel",
+
                       acceptedFiles: ".xlsx",
                     }}
                     className="dropzone w-full flex flex-col justify-center items-center h-full "
@@ -211,6 +225,11 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
                   </Dropzone>
                 )}
               </div>
+              {!companyFile && showRequiredStateErrors && (
+                <Error className=" max-w-[100%] ">
+                  Voting Guidelines are required
+                </Error>
+              )}
             </div>
           </Dialog.Description>
           <Dialog.Footer className="gap-3 sm:gap-6">

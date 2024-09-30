@@ -1,4 +1,5 @@
-export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
+// export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
+export const baseURL = `https://zmh-backend-prod-06c2601b6e50.herokuapp.com`;
 export const PAGE_SIZE = 10;
 export const characterColors: {
   [key: string]: string;
@@ -32,3 +33,23 @@ export const characterColors: {
 };
 
 export const adminRoutes = ["Company", "Institutions"];
+
+export const investorProfileEditableSectionsInvestors = {
+  engagement_priorities: { value: "Engagement Priorities", type: "investor" },
+  reporting_expectations: { value: "Reporting Expectations", type: "investor" },
+  esg_integration_process: {
+    value: "ESG Integration Process",
+    type: "investor",
+  },
+  voting_guidelines: { value: "Voting Guidelines", type: "investor" },
+  references: { value: "References", type: "investor" },
+};
+export const investorProfileEditableSectionsEquity = {
+  equity_firm_name: { value: "Equity Firm Name", type: "equity" },
+  specific_expectations: { value: "Specific Expectations", type: "equity" },
+  checklist: {
+    value: "Checklist",
+    type: "equity",
+  },
+  other: { value: "Other", type: "equity" },
+};

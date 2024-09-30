@@ -209,17 +209,35 @@ const getPageNumbers = (
   return Math.ceil(totalCounts / perPageCount);
 };
 
-function createDynamicURL<T extends Record<string, string>>(
+function createDynamicURL<T extends Record<string, string | string[]>>(
   baseURL: string,
   filters?: T,
+  extraPrams?: Record<string, string | string[]> | undefined,
   page?: number
 ): string {
   const queryParams = new URLSearchParams();
+  if (extraPrams) {
+    for (const key in extraPrams) {
+      const value = extraPrams[key];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          queryParams.append(key, value.join(","));
+        }
+      } else if (value) {
+        queryParams.append(key, value);
+      }
+    }
+  }
 
   if (filters) {
     for (const key in filters) {
-      if (filters[key]) {
-        queryParams.append(key, filters[key]);
+      const value = filters[key];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          queryParams.append(key, JSON.stringify(value));
+        }
+      } else if (value) {
+        queryParams.append(key, value);
       }
     }
   }
@@ -266,7 +284,6 @@ const formatedDate = (dateString: string): string => {
 };
 
 const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
-  console.log("menuItems: ", menuItems);
   const userType = localStorage.getItem("userType")?.toLowerCase() || "";
   const filteredMenuItems = menuItems.filter((item, index, arr) => {
     if (userType !== "admin") {
@@ -291,6 +308,17 @@ const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   return filteredMenuItems;
 };
 
+const downloadCSV = (csvContent: any, name: string) => {
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("download", `${name}.csv`);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
 export {
   cutText,
   formatDate,
@@ -313,4 +341,5 @@ export {
   getYearRange,
   formatedDate,
   filterMenu,
+  downloadCSV
 };

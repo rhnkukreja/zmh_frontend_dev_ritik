@@ -25,6 +25,12 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { AddEditPolicyGuideline } from "./components/AddEditProxyVotingGuideline";
 import PdfViewer from "@/components/PdfView";
+import { FilterX, SaveAll } from "lucide-react";
+import MultiSearchBar from "@/components/MultiSearch";
+import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -49,6 +55,7 @@ function ProxyGuideline() {
 
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
   const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   useEffect(() => {
     dispatch(
@@ -56,7 +63,20 @@ function ProxyGuideline() {
         createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, page)
       )
     );
-  }, [page, filters.year]);
+  }, [page]);
+
+  useEffect(() => {
+    return () => {
+      console.log("destory the component proxy");
+      dispatch(resetPage());
+      dispatch(
+        setFilter({
+          key: "year",
+          value: "",
+        })
+      );
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -78,18 +98,31 @@ function ProxyGuideline() {
     setCurrentPdfDoc(pdf);
   };
 
-  const debouncedSearch = _.debounce((searchedValue) => {
+  const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
-        key: "year",
-        value: searchedValue,
+        key: "institution_name",
+        value: searchTerms,
       })
     );
-  }, 700);
 
-  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    debouncedSearch(e.target.value);
-  }
+    const tempFilter = { institution_name: searchTerms };
+
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(
+          `${baseURL}/proxy_voting_guidelines/`,
+          tempFilter,
+          undefined,
+          1
+        )
+      )
+    );
+  };
+
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
 
   function handleApplyFilter() {
     dispatch(
@@ -110,6 +143,31 @@ function ProxyGuideline() {
     );
   };
 
+  const handleClearAllFilter = () => {
+    dispatch(resetFilter());
+    setSearchTerms([]);
+    dispatch(
+      setFilter({
+        key: "institution_name",
+        value: "",
+      })
+    );
+
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
+      )
+    );
+
+    dispatch(
+      fetchProxyVotingGuidelines(
+        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
+      )
+    );
+
+    dispatch(resetPage());
+  };
+
   const getFilterCount = useMemo(() => {
     const { ...allFilters } = filters;
     return Object.values(allFilters).filter((value) => value !== "").length;
@@ -126,13 +184,71 @@ function ProxyGuideline() {
     setAddNewProxyVotingGuidelineVisible(true);
   };
 
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+  const checkImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+    });
+  };
+
+  useEffect(() => {
+    const validateImages = async () => {
+      const tempValidImages: { [key: string]: string } = {};
+      for (const votingGuidline of proxyVotingGuidelines || []) {
+        const isValid = await checkImageUrl(votingGuidline?.image);
+        tempValidImages[votingGuidline?.name] = isValid
+          ? votingGuidline?.image
+          : userLinkedinImage;
+      }
+
+      setValidImages(tempValidImages);
+    };
+
+    validateImages();
+  }, [proxyVotingGuidelines]);
+
+  const getSavedSearches = () => {
+    setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
+    dispatch(
+      setFilter({
+        key: "year",
+        value: user?.saved_search["Voting Guidelines"]?.year,
+      })
+    );
+  };
+
+  const saveSearch = async () => {
+    const res = await commonService.saveSearches({
+      module: "Voting Guidelines",
+      institution: searchTerms,
+      year: filters["year"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Voting Guidelines",
+          value: {
+            institution: searchTerms,
+            year: filters["year"],
+          },
+        })
+      );
+      toast.success(res?.Success || "Searched saved successfully");
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="text-base font-medium group-[.mode--light]:text-white">
-              Proxy Voting Guidelines
+              Voting Guidelines
             </div>
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
@@ -141,7 +257,7 @@ function ProxyGuideline() {
                     setAddNewProxyVotingGuidelineVisible(true);
                   }}
                   variant="primary"
-                  className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
+                  className="bg-theme-2 border-bg-theme-2 group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
                 >
                   <Lucide
                     icon="PenLine"
@@ -155,21 +271,56 @@ function ProxyGuideline() {
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-                <div>
-                  <div className="relative">
-                    <Lucide
-                      icon="Search"
-                      className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
-                    />
-                    <FormInput
-                      type="text"
-                      placeholder="Search guideline?..."
-                      className="pl-9 sm:w-64 rounded-[0.5rem]"
-                      onChange={handleSearch}
-                    />
+                <div className="flex items-center ">
+                  <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                    placeHolder="Search Institution"
+                  />
+
+                  <div className="hover:bg-slate-50">
+                    <Button onClick={handleClearAllFilter}>
+                      <Tippy
+                        content="Clear Filters"
+                        options={{ theme: "light" }}
+                      >
+                        <FilterX
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                      {/* <span className="text-slate-500">Clear Filters</span> */}
+                    </Button>
+                  </div>
+
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={saveSearch}>
+                      <Tippy
+                        content="Save Searches"
+                        options={{ theme: "light" }}
+                      >
+                        <SaveAll
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                    </Button>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                  {user?.saved_search?.["Voting Guidelines"] !== undefined && (
+                    <div className="hover:bg-slate-50 ml-2">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
+
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -191,7 +342,7 @@ function ProxyGuideline() {
                           <div className="p-2">
                             <div className="mt-3">
                               <div className="text-left text-slate-500">
-                                Category
+                                Year
                               </div>
                               <FormSelect
                                 defaultValue={
@@ -254,29 +405,37 @@ function ProxyGuideline() {
                   <Table>
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Institute Name
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          Institution Name
                         </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                           Year
                         </Table.Td>
-                        {/* <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Category
-                        </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Sub Category
-                        </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Section
-                        </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Policy Guidelines
-                        </Table.Td> */}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            Category
+                          </Table.Td>
+                        )}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            Sub Category
+                          </Table.Td>
+                        )}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            Section
+                          </Table.Td>
+                        )}
+                        {user?.user_type === "Admin" && (
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            Policy Guideline
+                          </Table.Td>
+                        )}
                         {/* <Table.Td className="py-2 font-medium bg-slate-50   text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
                         </Table.Td> */}
 
-                        <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                           Actions
                         </Table.Td>
                       </Table.Tr>
@@ -289,45 +448,72 @@ function ProxyGuideline() {
                               key={guideline?.id}
                               className="[&_td]:last:border-b-0"
                             >
-                              <Table.Td className="py-2  text-nowrap border-dashed dark:bg-darkmode-600">
-                                {guideline?.institution_name}
+                              <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                {guideline?.institution_logo_url ? (
+                                  <>
+                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <Tippy
+                                        as="img"
+                                        alt="Tailwise - Admin Dashboard Template"
+                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                        src={guideline?.institution_logo_url}
+                                        content={
+                                          guideline?.institution_name || ""
+                                        }
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                    <Lucide
+                                      icon="User"
+                                      className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                    />
+                                    <a
+                                      href=""
+                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                    ></a>
+                                  </div>
+                                )}
+
+                                <div className="ml-4">
+                                  <p className="font-medium whitespace-nowrap">
+                                    {guideline?.institution_name}
+                                  </p>
+                                </div>
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.year}
                               </Table.Td>
-                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                <Tippy
-                                  content={guideline?.category}
-                                  options={{
-                                    theme: "light",
-                                  }}
-                                >
-                                  <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                    {guideline?.category.toString() === "nan"
-                                      ? "--"
-                                      : guideline?.category}
-                                  </div>
-                                </Tippy>
-                              </Table.Td> */}
-                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.sub_category &&
-                                guideline?.sub_category.toString() === "nan"
-                                  ? "NA"
-                                  : guideline?.sub_category}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.section &&
-                                guideline?.section.toString() === "nan"
-                                  ? "NA"
-                                  : guideline?.section}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.policy_guidelines &&
-                                guideline?.policy_guidelines.toString() ===
-                                  "nan"
-                                  ? "NA"
-                                  : guideline?.policy_guidelines}
-                              </Table.Td> */}
+                              {guideline?.category && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  <Tippy
+                                    content={guideline?.category}
+                                    options={{
+                                      theme: "light",
+                                    }}
+                                  >
+                                    <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
+                                      {guideline?.category}
+                                    </div>
+                                  </Tippy>
+                                </Table.Td>
+                              )}
+                              {guideline?.sub_category && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.sub_category}
+                                </Table.Td>
+                              )}
+                              {guideline?.section && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.section}
+                                </Table.Td>
+                              )}
+                              {guideline?.policy_guidelines && (
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.policy_guidelines}
+                                </Table.Td>
+                              )}
                               {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.active === true ? (
                                   <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">

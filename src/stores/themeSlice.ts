@@ -81,7 +81,10 @@ export const themeSlice = createSlice({
   name: "theme",
   initialState,
   reducers: {
-    setTheme: (state: { value: any; }, action: PayloadAction<Themes["name"]>) => {
+    setTheme: (
+      state: { value: any },
+      action: PayloadAction<Themes["name"]>
+    ) => {
       state.value = action.payload;
     },
   },
@@ -97,4 +100,4 @@ export const selectTheme = (state: RootState) => {
   return state.theme.value;
 };
 
-export default themeSlice.reducer;
+export default themeSlice;

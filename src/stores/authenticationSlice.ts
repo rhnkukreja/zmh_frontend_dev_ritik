@@ -6,6 +6,7 @@ import {
 } from "../services/authentiction/auth.type";
 import { userService } from "../services/authentiction";
 import { Login, Register } from "@/types/users";
+import { persistor } from "./store";
 
 const name = "authentication";
 
@@ -44,6 +45,18 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
       localStorage.removeItem("token");
+      localStorage.clear();
+      persistor.purge();
+    },
+
+    setSavedSearch(state, action: PayloadAction<{ key: string; value: any }>) {
+      if (state?.user) {
+        const updatedSearch = {
+          ...state.user.saved_search,
+          [action.payload.key]: action.payload.value,
+        };
+        state.user.saved_search = updatedSearch;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -76,6 +89,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setSavedSearch } = authSlice.actions;
 
-export default authSlice.reducer;
+export default authSlice;

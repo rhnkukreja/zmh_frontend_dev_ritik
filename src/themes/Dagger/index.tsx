@@ -21,6 +21,7 @@ import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
 import { filterMenu } from "@/utils/helper";
+import { logout } from "@/stores/authenticationSlice";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -266,6 +267,7 @@ function Main() {
                     <Menu.Item
                       onClick={() => {
                         navigate("login");
+                        dispatch(logout());
                       }}
                     >
                       <Lucide icon="Power" className="w-4 h-4 mr-2" />

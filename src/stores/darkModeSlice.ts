@@ -29,4 +29,4 @@ export const selectDarkMode = (state: RootState) => {
   return state.darkMode.value;
 };
 
-export default darkModeSlice.reducer;
+export default darkModeSlice;

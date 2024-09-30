@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 import { RootState, AppDispatch } from "../../stores/store";
@@ -16,6 +16,8 @@ import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
+import { Eye, EyeOff } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 interface LoginFormInputs {
   email: string;
@@ -25,6 +27,7 @@ interface LoginFormInputs {
 const Main: React.FC = () => {
   const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
+  const [showPassword, setShowPassword]= useState(false);
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
 
   const {
@@ -53,6 +56,10 @@ const Main: React.FC = () => {
 
   return (
     <>
+       <Helmet>
+        <title>ZMH Analytics - ZMH Advisors</title>
+        
+      </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
           className={clsx([
@@ -71,8 +78,8 @@ const Main: React.FC = () => {
             <div className="mt-10">
               <div className="text-2xl font-medium">Sign In</div>
               <div className="mt-2.5 text-slate-600">
-                Don't have an account?{" "}
-                <Link className="font-medium text-primary" to="/register">
+                Don't have an account?
+                <Link className="ml-2 font-medium text-primary" to="/register">
                   Sign Up
                 </Link>
               </div>
@@ -90,14 +97,22 @@ const Main: React.FC = () => {
                     <p className="text-red-500">{errors.email.message}</p>
                   )}
                   <FormLabel className="mt-4">Password*</FormLabel>
-                  <FormInput
-                    type="password"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="************"
-                    {...register("password", {
-                      required: "Password is required",
-                    })}
-                  />
+                 <div className="relative">
+                  
+                    <FormInput
+                      type={showPassword ? "text" : "password"}
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="************"
+                      {...register("password", {
+                        required: "Password is required",
+                      })}
+                    />
+                    <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                      {showPassword && <Eye onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                      {!showPassword && <EyeOff onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                    </span>
+                  </div>
+
                   {errors.password && (
                     <p className="text-red-500">{errors.password.message}</p>
                   )}
@@ -162,7 +177,7 @@ const Main: React.FC = () => {
           </div>
         </div>
       </div>
-      <ThemeSwitcher />
+      {/* <ThemeSwitcher /> */}
     </>
   );
 };

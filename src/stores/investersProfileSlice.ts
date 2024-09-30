@@ -7,6 +7,7 @@ const name = "investersProfile";
 
 interface UpdateInvestersProfilePayload {
   id: number;
+  type: string;
   data: Partial<InvestersProfile>;
 }
 
@@ -23,7 +24,7 @@ interface nvestersProfileSlice {
   };
   filters: {
     region: string;
-    institution_name: string;
+    institution_name: string[];
   };
 }
 
@@ -40,7 +41,7 @@ const initialState: nvestersProfileSlice = {
   },
   filters: {
     region: "",
-    institution_name: "",
+    institution_name: [],
   },
 };
 
@@ -52,9 +53,9 @@ export const fetchInvestersProfiles = createAsyncThunk<
 });
 export const fetchSingleInvestersProfile = createAsyncThunk<
   { results: InvestersProfile },
-  number
->(`${name}/fetchSingleInvestersProfile`, async (id: number) => {
-  return await investersProfileService.getSingleInvester(id);
+  { id: number; type: string }
+>(`${name}/fetchSingleInvestersProfile`, async ({ id, type }) => {
+  return await investersProfileService.getSingleInvester(id, type);
 });
 
 export const updateInvestersProfile = createAsyncThunk<
@@ -62,9 +63,10 @@ export const updateInvestersProfile = createAsyncThunk<
   UpdateInvestersProfilePayload
 >(
   `${name}/updateInvestersProfile`,
-  async ({ id, data }: UpdateInvestersProfilePayload) => {
+  async ({ id, type, data }: UpdateInvestersProfilePayload) => {
     const response = await investersProfileService.updateInvestersProfile(
       id,
+      type,
       data
     );
     return response;
@@ -94,10 +96,10 @@ const investersProfileSlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
-        value: string;
+        value: string | string[];
       }>
     ) {
-      state.filters[action.payload.key] = action.payload.value;
+      state.filters[action.payload.key] = action.payload.value as any;
     },
 
     resetFilter(state) {
@@ -105,8 +107,14 @@ const investersProfileSlice = createSlice({
         region: "",
         institution_name: state.filters.institution_name
           ? state.filters.institution_name
-          : "",
+          : [],
       };
+    },
+    resetInvestorProfiles(state) {
+      state.investersProfile = [];
+      state.page = 1;
+      state.totalInvestersProfile = 0;
+      state.totalPages = 1;
     },
   },
   extraReducers: (builder) => {
@@ -178,6 +186,11 @@ const investersProfileSlice = createSlice({
   },
 });
 
-export default investersProfileSlice.reducer;
-export const { setPage, resetPage, setFilter, resetFilter } =
-  investersProfileSlice.actions;
+export default investersProfileSlice;
+export const {
+  setPage,
+  resetPage,
+  setFilter,
+  resetFilter,
+  resetInvestorProfiles,
+} = investersProfileSlice.actions;

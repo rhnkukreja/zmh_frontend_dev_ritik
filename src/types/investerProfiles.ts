@@ -34,18 +34,27 @@ export interface ESGIntegrationProcess {
 
 export interface InvestersProfile {
   id: number;
-  institution: number;
-  institution_name: string;
+  institution: number | null;
+  institution_name: string | null;
   active: boolean;
-  engagement_priorities: string;
-  voting_guidelines_summary: string;
-  voting_guidelines_link: string;
-  reporting_expectations: string;
-  esg_integration_process: string;
-  references: string;
-  key_contacts: KeyContact[];
+  engagement_priorities: string | null;
+  voting_guidelines_summary: string | null;
+  voting_guidelines_link: string | null;
+  reporting_expectations: string | null;
+  esg_integration_process: string | null;
+  references: string | null;
+  key_contacts?: KeyContact[] | null;
   date_created: string;
   date_updated: string;
+  file?: any | null;
+  checklist?: string | null;
+  other?: string | null;
+  created_by?: number;
+  created_by_email?: string;
+  updated_by?: string | null;
+  equity_firm_name?: string | null;
+  specific_expectations?: string | null;
+  institution_logo_url?: string;
 }
 
 export type AddNewInvesterType = {
@@ -57,5 +66,5 @@ export type AddNewInvesterType = {
   references: string;
   active: string;
   key_contacts?: any;
-  institution?: number;
+  institution?: string;
 };

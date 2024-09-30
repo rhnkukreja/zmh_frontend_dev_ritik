@@ -67,6 +67,7 @@ import ProxyVotingGuideline from "../pages/ProxyVotingGuideline";
 import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
 import DetailInstitutions from "../pages/Institution/components/InstitutionDetail";
 import DetailCompany from "../pages/Company/component/CompanyDetail";
+import ZMHDashboard from "../pages/ZMHDashboard";
 
 import Institution from "../pages/Institution";
 
@@ -74,6 +75,13 @@ import Layout from "../themes";
 import withAuth from "./protectedRoute";
 import React from "react";
 import CompanyList from "@/pages/Company";
+import SharedHolder from "@/pages/sharedHolder";
+import PeerAnalysis from "@/pages/PeerAnalysis";
+import CaseStudies from "@/pages/CaseStudies";
+import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
+import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
+import InvestorCardDetails from "@/pages/InvestorCardDetails";
+import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
 
 function Router() {
   const routes = [
@@ -83,7 +91,7 @@ function Router() {
       children: [
         {
           path: "/",
-          element: <DashboardOverview1 />,
+          element: <ZMHDashboard />,
         },
         {
           path: "dashboard-overview-2",
@@ -318,7 +326,7 @@ function Router() {
           element: <CompanyList />,
         },
         {
-          path: "investor-profile/:id",
+          path: "investor-profile/:type/:id",
           element: <DetailInvestersProfile />,
         },
         {
@@ -344,6 +352,34 @@ function Router() {
         {
           path: "institution-detail/:id",
           element: <DetailInstitutions />,
+        },
+        {
+          path: "share-holder-proposal",
+          element: <SharedHolder />,
+        },
+        {
+          path: "share-holder-proposal/:id",
+          element: <DetailShareHolder />,
+        },
+        {
+          path: "peer-analysis",
+          element: <PeerAnalysis />,
+        },
+        {
+          path: "case-studies",
+          element: <CaseStudies />,
+        },
+        {
+          path: "case-studies/:id",
+          element: <DetailCaseStudies />,
+        },
+        {
+          path: "investor-details",
+          element: <InvestorCardDetails />,
+        },
+        {
+          path: "summary-details",
+          element: <AgmSummaryDetails /> ,
         },
       ],
     },

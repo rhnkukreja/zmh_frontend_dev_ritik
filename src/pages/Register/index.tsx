@@ -15,11 +15,14 @@ import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 interface FormInputs {
   first_name: string;
   last_name: string;
-  username: string;
+  // username: string;
   email: string;
   password: string;
   passwordConfirmation: string;
@@ -36,6 +39,8 @@ function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
+  const [showPassword, setShowPassword]= useState(false);
+  const [showConfirmPassword, setShowConfirmPassword]= useState(false);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     const { passwordConfirmation, ...restData } = data;
@@ -46,10 +51,11 @@ function Main() {
           ...restData,
           user_type: "Admin",
           phone: "",
+          username: restData?.email
         })
       ).unwrap();
 
-      if (response?.user_id) {
+      if (response?.email) {
         toast.success("Registered Successfully!");
         navigate("/login");
       }
@@ -60,6 +66,10 @@ function Main() {
 
   return (
     <>
+     <Helmet>
+        <title>ZMH Analytics - ZMH Advisors</title>
+        
+      </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
           className={clsx([
@@ -78,8 +88,8 @@ function Main() {
             <div className="mt-10">
               <div className="text-2xl font-medium">Sign Up</div>
               <div className="mt-2.5 text-slate-600">
-                Already have an account?{" "}
-                <Link className="font-medium text-primary" to="/login">
+                Already have an account?
+                <Link className="ml-2 font-medium text-primary" to="/login">
                   Sign In
                 </Link>
               </div>
@@ -128,7 +138,7 @@ function Main() {
                     <span className="text-red-500">{errors.email.message}</span>
                   )}
                 </div>
-                <div className="mt-5">
+                {/* <div className="mt-5">
                   <FormLabel>User Name*</FormLabel>
                   <FormInput
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
@@ -142,17 +152,21 @@ function Main() {
                       {errors.username.message}
                     </span>
                   )}
-                </div>
-                <div className="mt-5">
+                </div> */}
+                <div className="mt-5 relative">
                   <FormLabel>Password*</FormLabel>
                   <FormInput
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
                     placeholder="Password"
                     {...register("password", {
                       required: "Password is required",
                     })}
                   />
+                  <span className="absolute top-[52%] right-[5%] cursor-pointer">
+                    {showPassword && <Eye onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                    {!showPassword && <EyeOff onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                  </span>
                   {errors.password && (
                     <span className="text-red-500">
                       {errors.password.message}
@@ -160,10 +174,10 @@ function Main() {
                   )}
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-5 relative">
                   <FormLabel>Password Confirmation*</FormLabel>
                   <FormInput
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
                     placeholder="Confirm Password"
                     {...register("passwordConfirmation", {
@@ -172,6 +186,10 @@ function Main() {
                         value === watch("password") || "Passwords do not match",
                     })}
                   />
+                  <span className="absolute top-[52%] right-[5%] cursor-pointer">
+                    {showConfirmPassword && <Eye onClick={() => setShowConfirmPassword(!showConfirmPassword)} strokeWidth={0.75} size={20} />}
+                    {!showConfirmPassword && <EyeOff onClick={() => setShowConfirmPassword(!showConfirmPassword)} strokeWidth={0.75} size={20} />}
+                  </span>
                   {errors.passwordConfirmation && (
                     <span className="text-red-500">
                       {errors.passwordConfirmation.message}
@@ -256,7 +274,7 @@ function Main() {
           </div>
         </div>
       </div>
-      <ThemeSwitcher />
+      {/* <ThemeSwitcher /> */}
     </>
   );
 }

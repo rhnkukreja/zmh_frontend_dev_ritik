@@ -17,6 +17,7 @@ interface ProxyVotingGuidelineSlice {
   };
   filters: {
     year: string;
+    institution_name: string[];
   };
 }
 
@@ -32,6 +33,7 @@ const initialState: ProxyVotingGuidelineSlice = {
   },
   filters: {
     year: "",
+    institution_name: [],
   },
 };
 
@@ -77,14 +79,15 @@ const proxyVotingGuidelineSlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
-        value: string;
+        value: string | string[];
       }>
     ) {
-      state.filters[action.payload.key] = action.payload.value;
+      state.filters[action.payload.key] = action.payload.value as any;
     },
     resetFilter(state) {
       state.filters = {
         year: "",
+        institution_name: [],
       };
     },
   },
@@ -112,7 +115,7 @@ const proxyVotingGuidelineSlice = createSlice({
       .addCase(fetchProxyVotingGuidelines.rejected, (state, action) => {
         state.loading = false;
         state.error =
-          action.error.message || "Failed to fetch proxy voting guidelines";
+          action.error.message || "Failed to fetch voting guidelines";
       })
 
       .addCase(addEditProxyVotingGuideline.pending, (state) => {
@@ -145,6 +148,6 @@ const proxyVotingGuidelineSlice = createSlice({
   },
 });
 
-export default proxyVotingGuidelineSlice.reducer;
+export default proxyVotingGuidelineSlice;
 export const { setPage, resetPage, setFilter, resetFilter } =
   proxyVotingGuidelineSlice.actions;

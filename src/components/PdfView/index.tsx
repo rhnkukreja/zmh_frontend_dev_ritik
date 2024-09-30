@@ -16,7 +16,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
   setPdfVisible,
 }) => {
   const fileName = useMemo(() => {
-    return file.split("/").pop();
+    return file?.split("/")?.pop();
   }, [file]);
   return (
     <Dialog size="xl" open={pdfVisible} onClose={() => setPdfVisible(false)}>

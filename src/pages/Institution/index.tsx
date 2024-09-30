@@ -22,11 +22,17 @@ import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { Institutions } from "@/types/institutions";
 import { AddEditInstitution } from "./components/CreateAndEditInstitution";
-import dayjs from "dayjs";
+
+import { FilterX, SaveAll } from "lucide-react";
+import MultiSearchBar from "@/components/MultiSearch";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   const {
     institutions,
@@ -47,10 +53,22 @@ function Main() {
   useEffect(() => {
     dispatch(
       fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, filters, page)
+        createDynamicURL(`${baseURL}/institute/`, filters, undefined, page)
       )
     );
-  }, [page, filters.institution_name]);
+  }, [page]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(resetPage());
+      dispatch(
+        setFilter({
+          key: "institution_name",
+          value: [],
+        })
+      );
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -68,18 +86,22 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
-  const debouncedSearch = _.debounce((searchedValue) => {
+  const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
         key: "institution_name",
-        value: searchedValue,
+        value: searchTerms,
       })
     );
-  }, 700);
 
-  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    debouncedSearch(e.target.value);
-  }
+    const tempFilter = { institution_name: searchTerms };
+
+    dispatch(
+      fetchInstitutions(
+        createDynamicURL(`${baseURL}/institute/`, tempFilter, undefined, 1)
+      )
+    );
+  };
 
   function handleApplyFilter() {
     dispatch(
@@ -104,6 +126,25 @@ function Main() {
     );
   };
 
+  const handleClearAllFilter = () => {
+    dispatch(resetFilter());
+    setSearchTerms([]);
+    dispatch(
+      setFilter({
+        key: "institution_name",
+        value: "",
+      })
+    );
+
+    dispatch(
+      fetchInstitutions(
+        createDynamicURL(`${baseURL}/institute/`, undefined, page)
+      )
+    );
+
+    dispatch(resetPage());
+  };
+
   useEffect(() => {
     if (addEditInstitutionVisible === false) {
       setSelectedInstitution(null);
@@ -114,6 +155,40 @@ function Main() {
     setSelectedInstitution(institution);
     setAddEditInstitutionVisible(true);
   }
+
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
+
+  const getSavedSearches = () => {
+    setSearchTerms([...user?.saved_search["Institution"]?.institution]);
+    dispatch(
+      setFilter({
+        key: "region",
+        value: user?.saved_search["Institution"]?.region,
+      })
+    );
+  };
+
+  const saveSearch = async () => {
+    const res = await commonService.saveSearches({
+      module: "Institution",
+      institution: searchTerms,
+      region: filters["region"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Institution",
+          value: {
+            institution: searchTerms,
+            region: filters["region"],
+          },
+        })
+      );
+      toast.success(res?.Success || "Searched saved successfully");
+    }
+  };
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -129,7 +204,7 @@ function Main() {
                   setAddEditInstitutionVisible(true);
                 }}
                 variant="primary"
-                className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
+                className="bg-theme-2 border-bg-theme-2 group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
               >
                 <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
                 Add New Institution
@@ -140,21 +215,50 @@ function Main() {
         <div className="mt-3.5">
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-              <div>
-                <div className="relative">
-                  <Lucide
-                    icon="Search"
-                    className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500"
+              <div className="flex items-center ">
+              <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                     placeHolder="Search Institution"
                   />
-                  <FormInput
-                    type="text"
-                    placeholder="Search institution..."
-                    className="pl-9 sm:w-64 rounded-[0.5rem]"
-                    onChange={handleSearch}
-                  />
+
+                <div className="hover:bg-slate-50">
+                  <Button onClick={handleClearAllFilter}>
+                    <Tippy content="Clear Filters" options={{ theme: "light" }}>
+                      <FilterX
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
+                    {/* <span className="text-slate-500">Clear Filters</span> */}
+                  </Button>
+                </div>
+
+                <div className="hover:bg-slate-50 ml-2">
+                  <Button onClick={saveSearch}>
+                    <Tippy content="Save Searches" options={{ theme: "light" }}>
+                      <SaveAll
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
+                  </Button>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+              {user?.saved_search?.["Institution"] !== undefined && (
+                    <div className="hover:bg-slate-50 ml-2">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
+
                 <Popover className="inline-block">
                   {({ close }) => (
                     <>
@@ -277,29 +381,29 @@ function Main() {
                 <Table>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                         Institution
                       </Table.Td>
                       {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap  border-slate-200/80 text-slate-500">
                         Active
                       </Table.Td> */}
 
-                      <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                         Region
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                         Investor Type
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
-                        Contact
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                        Whale Wisdom Filer
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                         Created At
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
+                      {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Updated At
-                      </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
+                      </Table.Td> */}
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                         Action
                       </Table.Td>
                     </Table.Tr>
@@ -311,15 +415,17 @@ function Main() {
                           <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
                             <div className="flex items-center">
                               {institution?.logo_url ? (
-                                <div className="w-8 h-8 image-fit zoom-in">
-                                  <Tippy
-                                    as="img"
-                                    alt="Tailwise - Admin Dashboard Template"
-                                    className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                    src={institution?.logo_url}
-                                    content={institution?.institution}
-                                  />
-                                </div>
+                                <>
+                                  <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                    <Tippy
+                                      as="img"
+                                      alt="Tailwise - Admin Dashboard Template"
+                                      className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                      src={institution?.logo_url}
+                                      content={institution?.institution}
+                                    />
+                                  </div>
+                                </>
                               ) : (
                                 <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
                                   <Lucide
@@ -332,7 +438,7 @@ function Main() {
                                   ></a>
                                 </div>
                               )}
-                              <div className="ml-3.5">
+                              <div className="ml-4">
                                 <p className="font-medium whitespace-nowrap">
                                   {institution?.institution}
                                 </p>
@@ -354,29 +460,31 @@ function Main() {
                             )}
                           </Table.Td> */}
 
-                          <Table.Td className="py-2  bg-white border-slate-200/80">
-                            {institution?.region}
-                          </Table.Td>
+                          {institution?.region && (
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {institution?.region}
+                            </Table.Td>
+                          )}
                           <Table.Td className="py-2  bg-white border-slate-200/80">
                             {institution.investor_type}
                           </Table.Td>
                           <Table.Td className="py-2  bg-white border-slate-200/80">
-                            {institution?.contact}
+                            {institution?.whale_wisdom_filer_id}
                           </Table.Td>
                           <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
-                              {dayjs(institution?.date_created).format(
+                              {institution?.date_created}
+                              {/* {dayjs(institution?.date_created).format(
                                 "MMMM , YYYY"
-                              )}
+                              )} */}
                             </p>
                           </Table.Td>
-                          <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
+                          {/* <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
-                              {dayjs(institution?.date_updated).format(
-                                "MMMM , YYYY"
-                              )}
+                              {institution?.date_updated}
+                              
                             </p>
-                          </Table.Td>
+                          </Table.Td> */}
 
                           <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                             <div className="flex gap-3 ">

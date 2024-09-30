@@ -52,6 +52,7 @@ export interface TomSelectProps<T extends string | string[] = string | string[]>
   labelKey: string;
   valueKey: string;
   url: string;
+  isMultiple? : boolean
 }
 
 async function fetchOptions({
@@ -63,10 +64,11 @@ async function fetchOptions({
   valueKey: string;
   labelKey: string;
 }): Promise<FetchedOptionType[]> {
-  const response = await axiosInstance.get(`${url}?all=true`);
+  const response = (url.includes('def14a') || url.includes('Proponent') || url.includes('shareholder_proposal') ) ? await axiosInstance.get(`${url}`) :await axiosInstance.get(`${url}?all=true`);
+
   const data = response.data.results || response.data;
 
-  return data.map((item: any) => ({
+  return data?.map((item: any) => ({
     value: String(item[valueKey]),
     label: item[labelKey],
   }));
@@ -82,6 +84,7 @@ function TomSelect<T extends string | string[]>({
   valueKey,
   labelKey,
   url,
+  isMultiple = false,
   ...computedProps
 }: TomSelectProps<T>) {
   const props = {
@@ -206,8 +209,10 @@ function TomSelect<T extends string | string[]>({
   return (
     <div className="mt-2 text-left">
       <select
+        
         {...computedProps}
         ref={tomSelectRef}
+        multiple={isMultiple}
         value={props.value}
         onChange={(e) => {
           if (props.onChange) {
@@ -235,11 +240,15 @@ function TomSelect<T extends string | string[]>({
             </option>
           ))}
         {fetchedOption?.length === 0 && loading && !error && (
-          <option value="" disabled>
-            <div className="flex justify-center items-center">
+          <option
+            value=""
+            disabled
+            className="flex justify-center items-center"
+          >
+            <>
               <LoadingIcon icon="oval" className="w-8 h-8" />
               Loading Options...
-            </div>
+            </>
           </option>
         )}
       </select>

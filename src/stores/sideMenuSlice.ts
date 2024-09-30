@@ -1,6 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 import { icons } from "@/components/Base/Lucide";
+import caseStudyIcon from '@/assets/images/zmh-images/Case_Studies_icon.svg';
+import CompanyIcon from '@/assets/images/zmh-images/company_icon.svg';
+import EngagementIcon from '@/assets/images/zmh-images/engagement_icon.svg';
+import PeerCaseIcon from '@/assets/images/zmh-images/peer_analysis_icon.svg';
+import ShareHolderIcon from '@/assets/images/zmh-images/shareholder_icon.svg';
+import VotingIcon from '@/assets/images/zmh-images/voting_icon.svg';
+import ProfileIcon from '@/assets/images/zmh-images/profile_icon.svg';
+
 
 export interface Menu {
   icon: keyof typeof icons;
@@ -16,20 +24,21 @@ export interface SideMenuState {
   menu: Array<Menu | string>;
 }
 
-const initialState: SideMenuState = {
+const initialState: any = {
   menu: [
-    "DASHBOARDS",
-    {
-      icon: "ActivitySquare",
-      pathname: "/inbox",
-      title: "Company Profile",
-      // badge: 4,
-    },
+    "",
     // {
-    //   icon: "GaugeCircle",
-    //   pathname: "/",
-    //   title: "Company Search",
+    //   icon: "ActivitySquare",
+    //   pathname: "/inbox",
+    //   title: "Company Profile",
+    //   // badge: 4,
     // },
+    {
+      // icon: CompanyIcon,
+      icon: ProfileIcon,
+      pathname: "/",
+      title: "Company Search",
+    },
     // {
     //   icon: "ActivitySquare",
     //   pathname: "/dashboard-overview-2",
@@ -65,36 +74,37 @@ const initialState: SideMenuState = {
     //   pathname: "/dashboard-overview-8",
     //   title: "Hotel",
     // },
-    "APPS",
-
+    // "APPS",
     {
-      icon: "FileSearch",
+      icon: ProfileIcon,
       pathname: "/investor-profile",
       title: "Investor Profile",
-      // badge: 4,
     },
     {
-      icon: "NotebookPen",
+      icon: EngagementIcon,
       pathname: "/engagement-question",
-      title: "Engagement Questions",
-      // badge: 4,
+      title: "Engagement Question",
     },
     {
-      icon: "Vote",
+      icon: VotingIcon,
       pathname: "/proxy-voting-guideline",
-      title: "Proxy Voting Guideline",
-      // badge: 4,
+      title: "Voting Guidelines",
     },
-    // {
-    //   icon: "PanelRightClose",
-    //   pathname: "/file-manager-list",
-    //   title: "File Manager List",
-    // },
-    // {
-    //   icon: "PanelTopClose",
-    //   pathname: "/file-manager-grid",
-    //   title: "File Manager Grid",
-    // },
+    {
+      icon: ShareHolderIcon,
+      pathname: "/share-holder-proposal",
+      title: "Shareholder Proposals",
+    },
+    {
+      icon: PeerCaseIcon,
+      pathname: "/peer-analysis",
+      title: "Peer Analysis",
+    },
+    {
+      icon: caseStudyIcon,
+      pathname: "/case-studies",
+      title: "Case Studies",
+    },
     // {
     //   icon: "PanelTopClose",
     //   pathname: "/point-of-sale",
@@ -110,15 +120,15 @@ const initialState: SideMenuState = {
     //   pathname: "/calendar",
     //   title: "Calendar",
     // },
-    "ADMIN",
+    "Additional",
     {
-      icon: "Building",
+      icon: caseStudyIcon,
       pathname: "/institution",
       title: "Institutions",
       isAdmin: true,
     },
     {
-      icon: "Factory",
+      icon: caseStudyIcon,
       pathname: "/company",
       title: "Company",
       isAdmin: true,
@@ -465,4 +475,4 @@ export const sideMenuSlice = createSlice({
 
 export const selectSideMenu = (state: RootState) => state.sideMenu.menu;
 
-export default sideMenuSlice.reducer;
+export default sideMenuSlice;

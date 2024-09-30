@@ -19,7 +19,7 @@ const CompanyAdvertisement = () => {
 
       <div className="mt-8">
         <iframe
-          className="w-full h-64"
+          className="w-full lg:w-[90%] xl:w-[90%] 2xl:w-[80%] thumbnail-section"
           src="https://www.youtube.com/embed/JorKwO75Vx8"
           title="YouTube video"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
