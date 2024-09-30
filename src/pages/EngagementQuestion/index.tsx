@@ -65,7 +65,6 @@ function Main() {
     });
   };
 
- 
   const validateImages = async () => {
     if (!questions) return;
     const tempValidImages: { [key: string]: string } = {};
@@ -75,7 +74,7 @@ function Main() {
         ? question?.institution_logo_url
         : userLinkedinImage;
     }
- 
+
     setValidImages(tempValidImages);
   };
 
@@ -304,14 +303,14 @@ function Main() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-              <MultiSearchBar
-                    onSearch={handleSearch}
-                    searchTerms={searchTerms}
-                    setSearchTerms={setSearchTerms}
-                    url="/investor_profile/?type=profiles"
-                    getOptionKey="institution_name"
-                     placeHolder="Search Institution"
-                  />
+                <MultiSearchBar
+                  onSearch={handleSearch}
+                  searchTerms={searchTerms}
+                  setSearchTerms={setSearchTerms}
+                  url="/investor_profile/?type=profiles"
+                  getOptionKey="institution_name"
+                  placeHolder="Search Institution"
+                />
 
                 <div className="hover:bg-slate-50">
                   <Button onClick={handleClearAllFilter}>
@@ -339,13 +338,11 @@ function Main() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-              {user?.saved_search?.["Engagement Questions"] !== undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
-                  )}
+                {user?.saved_search?.["Engagement Questions"] !== undefined && (
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={getSavedSearches}>Previous Search</Button>
+                  </div>
+                )}
                 <Popover className="inline-block">
                   {({ close }) => (
                     <>
@@ -459,162 +456,168 @@ function Main() {
                 </Popover>
               </div>
             </div>
-            <div className="overflow-auto xl:overflow-scroll">
+            <div className="overflow-auto xl:overflow-scroll px-5">
               <TableWrapper isLoading={loading}>
+              <div className="overflow-auto max-h-[350px]">
                 <Table>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Institution Name
                       </Table.Td>
 
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Category
                       </Table.Td>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Engagement Questions
                       </Table.Td>
-                      <Table.Td className="text-wrap py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                      <Table.Td className="text-wrap py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Engagement Date
                       </Table.Td>
 
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Actions
                       </Table.Td>
                     </Table.Tr>
                   </Table.Thead>
 
-                  <Table.Tbody>
-                    <>
-                      {groupedQuestions ? (
-                        Object.entries(groupedQuestions).map(
-                          ([institutionName, institutionQuestions]: [
-                            string,
-                            any
-                          ]) => (
-                            <>
-                              <Table.Tr
-                                className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer"
-                                onClick={() => toggleGroup(institutionName)}
-                              >
-                                <Table.Td
-                                  colSpan={5}
-                                  className="font-semibold py-2"
+                    <Table.Tbody className="!max-h-400px overflow-auto">
+                
+                      <>
+                        {groupedQuestions ? (
+                          Object.entries(groupedQuestions).map(
+                            ([institutionName, institutionQuestions]: [
+                              string,
+                              any
+                            ]) => (
+                              <>
+                                <Table.Tr
+                                  className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer"
+                                  onClick={() => toggleGroup(institutionName)}
                                 >
-                                  <div className="flex flex-row justify-start items-center">
-                                    <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                      {
-                                        <img
-                                          alt="Tailwise - Admin Dashboard Template"
-                                          src={
-                                            validImages[institutionName] ||
-                                            userLinkedinImage
-                                          }
-                                        />
-                                      }
-                                    </div>
-                                    {institutionName}
-
-                                    <button className="ml-2 text-blue-500">
-                                      {openGroups[institutionName] ? (
-                                        <Lucide
-                                          icon="ChevronUp"
-                                          className=" w-6 h-6 mr-2 text-black"
-                                        />
-                                      ) : (
-                                        <Lucide
-                                          icon="ChevronDown"
-                                          className=" w-6 h-6 mr-2 text-black"
-                                        />
-                                      )}
-                                    </button>
-                                  </div>
-                                </Table.Td>
-                              </Table.Tr>
-
-                              {openGroups[institutionName] &&
-                                Array.isArray(institutionQuestions) &&
-                                institutionQuestions.map((question: any) => (
-                                  <Table.Tr
-                                    key={question?.id}
-                                    className="[&_td]:last:border-b-0"
+                                  <Table.Td
+                                    colSpan={5}
+                                    className="font-semibold py-2"
                                   >
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600"></Table.Td>
-
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      <div className="whitespace-nowrap capitalize">
-                                        {question?.engagement_with_category}
+                                    <div className="flex flex-row justify-start items-center">
+                                      <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                        {
+                                          <img
+                                            alt="Tailwise - Admin Dashboard Template"
+                                            src={
+                                              validImages[institutionName] ||
+                                              userLinkedinImage
+                                            }
+                                          />
+                                        }
                                       </div>
-                                    </Table.Td>
+                                      {institutionName}
 
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      <Tippy
-                                        content={question?.engagement_question}
-                                        options={{ theme: "light" }}
-                                      >
-                                        <div className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
-                                          {question?.engagement_question}
+                                      <button className="ml-2 text-blue-500">
+                                        {openGroups[institutionName] ? (
+                                          <Lucide
+                                            icon="ChevronUp"
+                                            className=" w-6 h-6 mr-2 text-black"
+                                          />
+                                        ) : (
+                                          <Lucide
+                                            icon="ChevronDown"
+                                            className=" w-6 h-6 mr-2 text-black"
+                                          />
+                                        )}
+                                      </button>
+                                    </div>
+                                  </Table.Td>
+                                </Table.Tr>
+
+                                {openGroups[institutionName] &&
+                                  Array.isArray(institutionQuestions) &&
+                                  institutionQuestions.map((question: any) => (
+                                    <Table.Tr
+                                      key={question?.id}
+                                      className="[&_td]:last:border-b-0"
+                                    >
+                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600"></Table.Td>
+
+                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap capitalize">
+                                          {question?.engagement_with_category}
                                         </div>
-                                      </Tippy>
-                                    </Table.Td>
+                                      </Table.Td>
 
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      <div className="whitespace-nowrap capitalize">
-                                        {question?.formatted_engagement_date}
-                                      </div>
-                                    </Table.Td>
-
-                                    <Table.Td className="py-2 w-20 relative box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex gap-3 justify-center">
+                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                         <Tippy
-                                          content="View"
+                                          content={
+                                            question?.engagement_question
+                                          }
                                           options={{ theme: "light" }}
                                         >
-                                          <Lucide
-                                            onClick={() =>
-                                              navigate(
-                                                `/engagement-question/${question?.id}`
-                                              )
-                                            }
-                                            icon="Eye"
-                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                          />
+                                          <div className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
+                                            {question?.engagement_question}
+                                          </div>
                                         </Tippy>
+                                      </Table.Td>
 
-                                        {user?.user_type === "Admin" && (
+                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap capitalize">
+                                          {question?.formatted_engagement_date}
+                                        </div>
+                                      </Table.Td>
+
+                                      <Table.Td className="py-2 w-20 relative box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] border-x-0 dark:bg-darkmode-600">
+                                        <div className="flex gap-3 justify-center">
                                           <Tippy
-                                            content="Edit"
+                                            content="View"
                                             options={{ theme: "light" }}
                                           >
                                             <Lucide
                                               onClick={() =>
-                                                onEditClickHandler(question)
+                                                navigate(
+                                                  `/engagement-question/${question?.id}`
+                                                )
                                               }
-                                              icon="PenLine"
+                                              icon="Eye"
                                               className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                             />
                                           </Tippy>
-                                        )}
-                                      </div>
-                                    </Table.Td>
-                                  </Table.Tr>
-                                ))}
-                            </>
+
+                                          {user?.user_type === "Admin" && (
+                                            <Tippy
+                                              content="Edit"
+                                              options={{ theme: "light" }}
+                                            >
+                                              <Lucide
+                                                onClick={() =>
+                                                  onEditClickHandler(question)
+                                                }
+                                                icon="PenLine"
+                                                className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                              />
+                                            </Tippy>
+                                          )}
+                                        </div>
+                                      </Table.Td>
+                                    </Table.Tr>
+                                  ))}
+                              </>
+                            )
                           )
-                        )
-                      ) : (
-                        <Table.Tr>
-                          <Table.Td
-                            colSpan={5}
-                            className="py-10 text-center text-slate-500"
-                          >
-                            No engagement questions.
-                          </Table.Td>
-                        </Table.Tr>
-                      )}
-                    </>
-                  </Table.Tbody>
+                        ) : (
+                          <Table.Tr>
+                            <Table.Td
+                              colSpan={5}
+                              className="py-10 text-center text-slate-500"
+                            >
+                              No engagement questions.
+                            </Table.Td>
+                          </Table.Tr>
+                        )}
+                      </>
+                  
+                    </Table.Tbody>
                 </Table>
+                </div>
               </TableWrapper>
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
