@@ -36,11 +36,11 @@ const index = () => {
     useEffect(() => {
         if (ticker) {
             dispatch(fetchCompanyDashboard(
-                createDynamicURL(`${baseURL}/company-dashboard/?ticker=${ticker}`, undefined, undefined)
+                createDynamicURL(`${baseURL}/company-dashboard/?ticker=${ticker}`)
             )
             );
         }
-    }, [ticker, page]);
+    }, [ticker]);
 
 
     const checkImageUrl = async (url: string): Promise<boolean> => {
@@ -70,22 +70,6 @@ const index = () => {
         validateImages();
     }, [dashboardDataList]);
 
-
-    const handleNextPage = () => {
-        if (page < totalPages) {
-            dispatch(setPage(page + 1));
-        }
-    };
-
-    const handlePreviousPage = () => {
-        if (page > 1) {
-            dispatch(setPage(page - 1));
-        }
-    };
-
-    const handlePageChange = (newPage: number) => {
-        dispatch(setPage(newPage));
-    };
 
 
     const convertDivTableToCSV = () => {
@@ -119,7 +103,7 @@ const index = () => {
                 {company_Global_Search}
             </div>
             {
-                // dashboardDataList?.length > 0 &&
+                dashboardDataList?.length !== 0 &&
                 <>
                     <div className="p-5 mt-3.5 box">
                         <div className="w-full">
@@ -317,19 +301,15 @@ const index = () => {
 
             {
                 !dashboardDataList && loading &&
-                <div className='h-52'>
-                    <div className="absolute inset-0 flex items-center justify-center bg-white">
-                        <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
-                    </div>
+                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                    <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
                 </div>
             }
 
             {
-                !dashboardDataList && !loading &&
-                <div className='h-52'>
-                    <div className="absolute inset-0 flex items-center justify-center bg-white">
+                dashboardDataList?.length === 0 && !loading &&
+                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                         <h1 className='font-semibold'> Investors Records Not Found..</h1>
-                    </div>
                 </div>
             }
         </>
