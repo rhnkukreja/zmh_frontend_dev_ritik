@@ -167,30 +167,32 @@ const index = () => {
                             {/* } */}
 
                             <div className='mt-5'>
-                                <div className={clsx([locationPathName === '/' && 'min-h-[300px] max-h-[300px] overflow-y-scroll'])}>
+                                <div className={clsx([locationPathName === '/' && 'min-h-[300px] '])}>
                                     <TableWrapper isLoading={loading}>
+                                    <div className="overflow-auto max-h-[400px]">
+
                                         <Table className="table">
                                             <Table.Thead>
                                                 <Table.Tr className="row">
-                                                    <Table.Td className="cell py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                    <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Shareholder
                                                     </Table.Td>
-                                                    <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                    <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         % Ownership
                                                     </Table.Td>
-                                                    <Table.Td className="cell py-2 font-semibold  h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                    <Table.Td className="cell py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Proxy Advisory Influence
                                                     </Table.Td>
-                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         ESG Integration
                                                     </Table.Td>
-                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Engaged with Company
                                                     </Table.Td>
-                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Engagement Topic
                                                     </Table.Td>
-                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                    <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Voted Against Directors
                                                     </Table.Td>
                                                 </Table.Tr>
@@ -294,6 +296,7 @@ const index = () => {
                                                     )}
                                             </Table.Tbody>
                                         </Table>
+                                    </div>
                                     </TableWrapper>
                                 </div>
 

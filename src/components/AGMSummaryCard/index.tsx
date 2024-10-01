@@ -4,17 +4,18 @@ import Table from "@/components/Base/Table";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
-import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
-import FormSelect from "../Base/Form/FormSelect";
+
 import Tippy from "../Base/Tippy";
 import { downloadCSV } from "@/utils/helper";
-import { useState } from "react";
+
 import summary from "@/assets/json/brhc10049413_8k.json";
 import { useLocation } from "react-router-dom";
 import clsx from "clsx";
+import { useAppSelector } from "@/stores/hooks";
 
 const index = () => {
   const location = useLocation();
+  const { loading } = useAppSelector((state) => state.dashboard);
   const locationPathName = location?.pathname;
 
   const convertDivTableToCSV = () => {
@@ -86,7 +87,7 @@ const index = () => {
 
         <div className="mt-5">
           <div className={clsx([locationPathName === "/" && "min-h-[350px] "])}>
-            <TableWrapper>
+            <TableWrapper isLoading={loading}>
               <div className="overflow-auto max-h-[400px]">
                 <Table className="table_2">
                   <Table.Thead className="sticky">
@@ -109,45 +110,51 @@ const index = () => {
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody className="">
-                    {summary.nominees?.length > 0 &&
-                      summary.nominees?.map((nominee: any) => (
-                        <Table.Tr
-                          key={nominee?.id}
-                          className="row_2 [&_td]:last:border-b-0"
-                        >
-                          <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
-                            <div className="flex items-center font-semibold gap-2">
-                              <h1 className=" ">{nominee?.Nominee}</h1>
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {nominee?.For}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {nominee?.Against}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {nominee?.Abstained}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {nominee?.Broker_non}
-                            </div>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
+                    {!loading ? (
+                      <>
+                        {summary.nominees?.length > 0 &&
+                          summary.nominees?.map((nominee: any) => (
+                            <Table.Tr
+                              key={nominee?.id}
+                              className="row_2 [&_td]:last:border-b-0"
+                            >
+                              <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
+                                <div className="flex items-center font-semibold gap-2">
+                                  <h1 className=" ">{nominee?.Nominee}</h1>
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {nominee?.For}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {nominee?.Against}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {nominee?.Abstained}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {nominee?.Broker_non}
+                                </div>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                      </>
+                    ) : (
+                      <div className="min-h-[350px]"></div>
+                    )}
                   </Table.Tbody>
                 </Table>
               </div>
             </TableWrapper>
 
-            <TableWrapper>
+            <TableWrapper isLoading={loading}>
               <div className="overflow-auto max-h-[400px]">
                 <Table className="table_2">
                   <Table.Thead className="sticky">
@@ -179,54 +186,60 @@ const index = () => {
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody className="">
-                    {summary.proposals?.length > 0 &&
-                      summary.proposals?.map((proposal: any) => (
-                        <Table.Tr
-                          key={proposal?.id}
-                          className="row_2 [&_td]:last:border-b-0"
-                        >
-                          <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
-                            <div className="flex items-center font-semibold gap-2">
-                              <h1 className=" ">{proposal?.Proposal}</h1>
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {proposal?.For}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {proposal?.Against}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {proposal?.Abstained}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {proposal?.Broker_non}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {proposal?.Year_1}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {proposal?.Year_2}
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                            <div className="whitespace-nowrap ">
-                              {proposal?.Year_3}
-                            </div>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
+                    {!loading ? (
+                      <>
+                        {summary.proposals?.length > 0 &&
+                          summary.proposals?.map((proposal: any) => (
+                            <Table.Tr
+                              key={proposal?.id}
+                              className="row_2 [&_td]:last:border-b-0"
+                            >
+                              <Table.Td className="cell_2 flex w-[260px] flex-row justify-start items-center py-2 border-dashed dark:bg-darkmode-600">
+                                <div className="flex items-center font-semibold gap-2">
+                                  <h1 className=" ">{proposal?.Proposal}</h1>
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {proposal?.For}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {proposal?.Against}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {proposal?.Abstained}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {proposal?.Broker_non}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {proposal?.Year_1}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {proposal?.Year_2}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell_2 py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                <div className="whitespace-nowrap ">
+                                  {proposal?.Year_3}
+                                </div>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                      </>
+                    ) : (
+                      <div className="min-h-[350px]"></div>
+                    )}
                   </Table.Tbody>
                 </Table>
               </div>
