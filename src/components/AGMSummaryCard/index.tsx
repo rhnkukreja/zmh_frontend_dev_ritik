@@ -165,7 +165,9 @@ const index = () => {
                                                                         key={headerIndex}
                                                                         className="cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left"
                                                                     >
-                                                                        <h1 className={clsx([headerIndex === 0 && 'font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
+                                                                        <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
+                                                                        headerIndex === agmSummaryDetails?.nominees_headers?.length - 1 &&
+                                                                        parseFloat(nominee[nomineeHeader?.field]) > 15 && 'text-red-700 font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
 
                                                                     </Table.Td>
                                                                 ))}
@@ -175,13 +177,14 @@ const index = () => {
                                         </Table>
                                     </TableWrapper>
 
+
                                     <br />
                                     <TableWrapper isLoading={loading}>
                                         <Table className="table_3 w-full">
                                             <Table.Thead className="sticky top-0 z-10">
                                                 <Table.Tr className="row_3">
-                                                    {agmSummaryDetails?.proposal_headers?.length > 0 &&
-                                                        agmSummaryDetails?.proposal_headers.map((proposalHeader: any, headerIndex: number) => (
+                                                    {
+                                                        agmSummaryDetails?.proposals_headers.map((proposalHeader: any, headerIndex: number) => (
                                                             <Table.Td
                                                                 key={headerIndex}
                                                                 className="cell_3 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] w-[150px] text-left"
@@ -194,15 +197,18 @@ const index = () => {
 
                                             <Table.Tbody>
                                                 {agmSummaryDetails?.proposals?.length > 0 &&
-                                                    agmSummaryDetails?.proposals.map((proposal: any, nomineeIndex: number) => (
-                                                        <Table.Tr key={nomineeIndex} className="row_3 [&_td]:last:border-b-0">
-                                                            {agmSummaryDetails?.proposal_headers?.length > 0 &&
-                                                                agmSummaryDetails?.proposal_headers.map((proposalHeader: any, headerIndex: number) => (
+                                                    agmSummaryDetails?.proposals.map((proposal: any, proposalIndex: number) => (
+                                                        <Table.Tr key={proposalIndex} className="row_3 [&_td]:last:border-b-0">
+                                                            {agmSummaryDetails?.proposals_headers?.length > 0 &&
+                                                                agmSummaryDetails?.proposals_headers.map((proposalHeader: any, headerIndex: number) => (
                                                                     <Table.Td
                                                                         key={headerIndex}
                                                                         className="cell_3 py-2 border-dashed dark:bg-darkmode-600  text-left"
                                                                     >
-                                                                        <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]'])}>{proposal[proposalHeader?.field]}</h1>
+                                                                        <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
+                                                                        headerIndex === agmSummaryDetails?.proposals_headers?.length - 1 &&
+                                                                        parseFloat(proposal[proposalHeader?.field]) > 15 && 'text-red-700 font-semibold'])}>
+                                                                            {proposal[proposalHeader?.field]}</h1>
 
                                                                     </Table.Td>
                                                                 ))}

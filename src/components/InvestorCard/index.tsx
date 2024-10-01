@@ -44,31 +44,31 @@ const index = () => {
 
 
     const checkImageUrl = async (url: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.src = url;
-  
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-      });
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = url;
+
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+        });
     };
 
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+    const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
 
-  
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const dashbboard of dashboardDataList || []) {
-        const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
-        tempValidImages[dashbboard?.institution_name] = isValid ? dashbboard?.institution_logo_url : userLinkedinImage;
-      }
 
-      setValidImages(tempValidImages);
-    };
+    useEffect(() => {
+        const validateImages = async () => {
+            const tempValidImages: { [key: string]: string } = {};
+            for (const dashbboard of dashboardDataList || []) {
+                const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
+                tempValidImages[dashbboard?.institution_name] = isValid ? dashbboard?.institution_logo_url : userLinkedinImage;
+            }
 
-    validateImages();
-  }, [dashboardDataList]);
+            setValidImages(tempValidImages);
+        };
+
+        validateImages();
+    }, [dashboardDataList]);
 
 
     const handleNextPage = () => {
@@ -124,46 +124,46 @@ const index = () => {
                     <div className="p-5 mt-3.5 box">
                         <div className="w-full">
                             {/* {dashboardDataList?.length > 0 && */}
-                                <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
-                                    <h1 className='text-lg font-bold'>Top {dashboardDataList?.length || 20} Investor</h1>
-                                    <div className='flex justify-between items-center gap-4 sm:flex-row'>
-                                        <div className='flex justify-between items-center gap-2'>
+                            <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
+                                <h1 className='text-lg font-bold'>Top {dashboardDataList?.length || 20} Investor</h1>
+                                <div className='flex justify-between items-center gap-4 sm:flex-row'>
+                                    <div className='flex justify-between items-center gap-2'>
+                                        <img
+                                            alt="flag-icon"
+                                            src={flagIcon}
+                                        />
+                                        <h4 className='font-semibold'>History of Schedule 13D Filing</h4>
+                                    </div>
+                                    <Tippy
+                                        content='Download Excel'
+                                        options={{ theme: "light" }}
+                                    >
+                                        <div className='box p-[5px] cursor-pointer' onClick={convertDivTableToCSV}>
                                             <img
-                                                alt="flag-icon"
-                                                src={flagIcon}
+                                                alt="download-icon"
+                                                src={downloadIcon}
                                             />
-                                            <h4 className='font-semibold'>History of Schedule 13D Filing</h4>
                                         </div>
+                                    </Tippy>
+                                    {
+                                        locationPathName === '/' &&
                                         <Tippy
-                                            content='Download Excel'
+                                            content='Expand'
                                             options={{ theme: "light" }}
                                         >
-                                            <div className='box p-[5px] cursor-pointer' onClick={convertDivTableToCSV}>
+                                            <div className='box p-2 cursor-pointer' onClick={() =>
+                                                window.open("investor-details", "_blank")
+                                            }>
                                                 <img
-                                                    alt="download-icon"
-                                                    src={downloadIcon}
+                                                    alt="tab-icon"
+                                                    src={tabIcon}
                                                 />
                                             </div>
                                         </Tippy>
-                                        {
-                                            locationPathName === '/' &&
-                                            <Tippy
-                                                content='Expand'
-                                                options={{ theme: "light" }}
-                                            >
-                                                <div className='box p-2 cursor-pointer' onClick={() =>
-                                                    window.open("investor-details", "_blank")
-                                                }>
-                                                    <img
-                                                        alt="tab-icon"
-                                                        src={tabIcon}
-                                                    />
-                                                </div>
-                                            </Tippy>
-                                        }
+                                    }
 
-                                    </div>
                                 </div>
+                            </div>
                             {/* } */}
 
                             <div className='mt-5'>
@@ -209,11 +209,11 @@ const index = () => {
                                                                             <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                                                                 <img
                                                                                     alt="Tailwise - Admin Dashboard Template"
-                                                                                    
-                                                                                    src= {validImages[dashboard.institution_name] ||
-                                                                                      userLinkedinImage}
-                                                                                    
-                                                                                    // {dashboard?.institution_logo_url ?? userLinkedinImage}
+
+                                                                                    src={validImages[dashboard.institution_name] ||
+                                                                                        userLinkedinImage}
+
+                                                                                // {dashboard?.institution_logo_url ?? userLinkedinImage}
                                                                                 />
                                                                             </div>
 
@@ -230,11 +230,12 @@ const index = () => {
 
                                                                                 </div>
 
-                                                                                <div 
-                                                                                onClick={()=> navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}`) } 
-                                                                                className='bg-red-900 hover:bg-red-700 font-semibold flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] text-white '>
+                                                                                {dashboard?.investor_profile_id && <div
+                                                                                    onClick={() => window.open(`/investor-profile/investor/${dashboard?.investor_profile_id}`, "_blank")}
+                                                                                    className='bg-red-900 hover:bg-red-700 font-semibold flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] text-white '>
                                                                                     P
                                                                                 </div>
+                                                                                }
                                                                             </div>
 
 
@@ -272,11 +273,22 @@ const index = () => {
                                                                         </Table.Td>
                                                                         <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                                                                <div className={clsx([dashboard?.engagement_topic?.toLowerCase() === 's' && 'bg-[#F5A623] ',
-                                                                                dashboard?.engagement_topic?.toLowerCase() === 'e' && 'bg-[#05703E] ',
-                                                                                dashboard?.engagement_topic?.toLowerCase() === 'g' && 'bg-[#115096] ', 'font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white '])}>
-                                                                                    {dashboard?.engagement_topic}
+                                                                                <div className="flex space-x-2">
+                                                                                    {dashboard?.engagement_topic?.split('').map((char, index) => (
+                                                                                        <div
+                                                                                            key={index}
+                                                                                            className={clsx([
+                                                                                                char.toLowerCase() === 's' && 'bg-[#F5A623]',
+                                                                                                char.toLowerCase() === 'e' && 'bg-[#05703E]',
+                                                                                                char.toLowerCase() === 'g' && 'bg-[#115096]',
+                                                                                                'font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white'
+                                                                                            ])}
+                                                                                        >
+                                                                                            {char}
+                                                                                        </div>
+                                                                                    ))}
                                                                                 </div>
+
                                                                             </div>
                                                                         </Table.Td>
                                                                         <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
