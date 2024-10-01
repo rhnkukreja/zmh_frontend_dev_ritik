@@ -81,10 +81,10 @@ const index = () => {
 
     return (
         <>
-            <div className="p-5 mt-3.5 box ">
-                <div className="w-full">
-                    {
-                        agmSummaryDetails?.Year &&
+            {
+                agmSummaryDetails?.Year && <div className="p-5 mt-3.5 box ">
+                    <div className="w-full">
+
                         <>
                             <div className='flex justify-between items-center xs:flex-col md:flex-row py-3'>
                                 <div className='flex justify-between items-center gap-4 xs:flex-col md:flex-row'>
@@ -224,26 +224,23 @@ const index = () => {
 
                             </div>
                         </>
-                    }
-                    {
-                        !agmSummaryDetails && loading &&
-                        <div className='h-52'>
-                            <div className="absolute inset-0 flex items-center justify-center bg-white">
-                                <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
-                            </div>
-                        </div>
-                    }
-                    {
-                        !agmSummaryDetails?.Year && !loading &&
-                        <div className='h-52'>
-                            <div className="absolute inset-0 flex items-center justify-center bg-white">
-                           <h1 className='font-semibold'> Previous AGM Summary Records Not Found..</h1>
-                            </div>
-                        </div>
-                    }
-
+                    </div>
                 </div>
-            </div>
+            }
+
+            {
+                !agmSummaryDetails && loading &&
+                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                    <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
+                </div>
+            }
+            
+            {
+                !agmSummaryDetails?.Year && !loading &&
+                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                    <h1 className='font-semibold'> Previous AGM Summary Records Not Found..</h1>
+                </div>
+            }
         </>
     )
 }
