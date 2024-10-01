@@ -194,10 +194,10 @@ function CaseStudies() {
         proposal_type: savedSearch.proposal_type || [],
         vote: savedSearch.vote || [],
       });
-      setIsFilterCollapse(true)
+      setIsFilterCollapse(true);
     }
   };
- 
+
   const saveSearch = async () => {
     const res = await commonService.saveSearches({
       module: "Case Studies",
@@ -251,7 +251,7 @@ function CaseStudies() {
                     setSearchTerms={setSearchTerms}
                     url="/investor_profile/?type=profiles"
                     getOptionKey="institution_name"
-                     placeHolder="Search Institution"
+                    placeHolder="Search Institution"
                   />
 
                   <div className="hover:bg-slate-50">
@@ -762,95 +762,99 @@ function CaseStudies() {
                 </form>
               )}
 
-              <div className="overflow-auto xl:overflow-visible px-5">
+              <div className=" px-5">
                 <TableWrapper isLoading={loading}>
-                  <Table>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                          Institution Name
-                        </Table.Td>
-                        <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                          Company
-                        </Table.Td>
-                        <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                          Year
-                        </Table.Td>
-                        <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                          Industry
-                        </Table.Td>
-                        <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                          Available Case Studies
-                        </Table.Td>
-                      </Table.Tr>
-                    </Table.Thead>
+                  <div className="overflow-auto max-h-[400px]">
+                    
+                    <Table>
+                      <Table.Thead>
+                        <Table.Tr >
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Institution Name
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Company
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Year
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Industry
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Available Case Studies
+                          </Table.Td>
+                        </Table.Tr>
+                      </Table.Thead>
 
-                    <Table.Tbody>
-                      {caseStudies?.length > 0 &&
-                        caseStudies?.map((item: any) => (
-                          <Table.Tr
-                            key={item?.id}
-                            className="[&_td]:last:border-b-0"
-                          >
-                             <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                      <Table.Tbody>
+                        {caseStudies?.length > 0 &&
+                          caseStudies?.map((item: any) => (
+                            <Table.Tr
+                              key={item?.id}
+                              className="[&_td]:last:border-b-0"
+                            >
+                              <Table.Td className="flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
                                 {item?.institution_logo_url ? (
                                   <>
                                     <div className="w-8 h-8 image-fit zoom-in object-contain">
                                       <Tippy
                                         as="img"
-                                        alt="Tailwise - Admin Dashboard Template"
+                                        alt="Institution Logo"
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                         src={item?.institution_logo_url}
-                                        content={
-                                          item?.institution_name || ""
-                                        }
+                                        content={item?.institution_name || ""}
                                       />
                                     </div>
                                   </>
                                 ) : (
-                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                  <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
                                     <Lucide
                                       icon="User"
                                       className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
                                     />
                                     <a
                                       href=""
-                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
                                     ></a>
                                   </div>
                                 )}
-
                                 <div className="ml-4">
                                   <p className="font-medium whitespace-nowrap">
                                     {item?.institution_name}
                                   </p>
                                 </div>
                               </Table.Td>
-                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {item?.company_name}
-                            </Table.Td>
-                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {item?.year}
-                            </Table.Td>
-                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {item?.industry}
-                            </Table.Td>
-
-                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              <Button
-                                className="px-9 rounded-none"
-                                variant="facebook"
-                                onClick={() => {
-                                  navigate(`/case-studies/${item?.id}`);
-                                }}
-                              >
-                                Review
-                              </Button>
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                    </Table.Tbody>
-                  </Table>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                {item?.company_name}
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                {item?.year}
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                {item?.industry}
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                <div className="flex gap-3 justify-center">
+                                  <Tippy
+                                    content="View"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <Lucide
+                                      onClick={() => {
+                                        navigate(`/case-studies/${item?.id}`);
+                                      }}
+                                      icon="Eye"
+                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                    />
+                                  </Tippy>
+                                </div>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                      </Table.Tbody>
+                    </Table>
+                  </div>
                 </TableWrapper>
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">

@@ -42,6 +42,17 @@
   scrollbar-color: var(--secondary) var(--primary);
   font-family: montserrat;
 }
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.sticky-table {
+  position: sticky;
+
+  top: 0;
+  z-index: 10;
+}
 
 *::-webkit-scrollbar {
   width: 15px;
@@ -122,7 +133,6 @@
 .echo .side-menu__link--active .side-menu__link__title {
   /* color: #9F1239 !important; */
   color: white !important;
-
 }
 
 .echo .side-menu__link__title {
@@ -131,14 +141,14 @@
 
 .echo .side-menu__divider {
   color: white !important;
-} 
+}
 @media (min-width: 1280px) {
   .echo .side-menu--collapsed .side-menu__divider {
-      color: transparent !important;
+    color: transparent !important;
   }
 }
 .echo .side-menu ul.scrollable > li > .side-menu__link--active {
-  background: #ab123d !important;;
+  background: #ab123d !important;
   /* border-color: #e2e8f0; */
   border: 2px solid #e2e8f0;
   box-shadow: 0px 2px 3px #0000000b;

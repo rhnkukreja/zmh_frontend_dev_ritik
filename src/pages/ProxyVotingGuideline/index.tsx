@@ -400,34 +400,36 @@ function ProxyGuideline() {
                   </Popover>
                 </div>
               </div>
-              <div className="overflow-auto xl:overflow-visible">
+              <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={loading}>
+                <div className="overflow-auto max-h-[400px]">
+
                   <Table>
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Institution Name
                         </Table.Td>
-                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Year
                         </Table.Td>
                         {user?.user_type === "Admin" && (
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Sub Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Section
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Policy Guideline
                           </Table.Td>
                         )}
@@ -435,7 +437,7 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Actions
                         </Table.Td>
                       </Table.Tr>
@@ -592,6 +594,7 @@ function ProxyGuideline() {
                         )}
                     </Table.Tbody>
                   </Table>
+                </div>
                 </TableWrapper>
               </div>
               {totalPages > 1 && (
