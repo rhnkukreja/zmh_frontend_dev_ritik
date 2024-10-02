@@ -256,29 +256,23 @@ function Main() {
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
-        <div className="flex flex-col justify-between	md:mt-0 md:h-10 md:items-center md:flex-row">
-          {/* <div className="text-base font-medium group-[.mode--light]:text-white">
-            Investers Detail
-          </div> */}
-
+        <div className="flex flex-col justify-between	md:mt-0 md:h-10 md:items-center md:flex-row mb-4">
           <Button
-            type="button"
-            variant="outline-secondary"
-            className=" border-none sm:w-fit"
             onClick={backToPreviousPage}
+            variant="primary"
+            className="bg-theme-2 border-bg-theme-2"
           >
             <ChevronLeft
               className="roup-[.mode--light]:text-white text-white"
               size={18}
               strokeWidth={1.5}
             />
-            <div className=" group-[.mode--light]:text-white">Back</div>
+            Back
           </Button>
 
           <Button
-            type="button"
-            variant="outline-secondary"
-            className=" border-none sm:w-fit"
+            variant="primary"
+            className="bg-theme-2 border-bg-theme-2"
             onClick={handleExportToPDF}
           >
             {isGeneratingPDF ? (

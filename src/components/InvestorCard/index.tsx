@@ -99,7 +99,7 @@ const index = () => {
 
     return (
         <>
-            <div className="p-y-5 mb-1 font-semibold text-lg text-white" >
+            <div className="p-y-5 mb-1 font-semibold text-xl text-black" >
                 {company_Global_Search}
             </div>
             {
