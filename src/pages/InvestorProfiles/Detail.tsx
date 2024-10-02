@@ -406,23 +406,23 @@ function Main() {
                         type={params?.type!}
                         renderHtml={
                           singleInvesterProfile?.[key]
-                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                            ?.replace(/\n/g, "<br />")
-                            .replace(/\r\n/g, "<br />")
-                            ?.replace(/- (.*?)\:/g, "<li><strong>$1:</strong>")
-                            ?.replace(
-                              /EQT Absolutes:<br \/>/g,
-                              "<h3>EQT Absolutes:</h3>"
-                            )
-                            ?.replace(
-                              /Core KPIs:<br \/>/g,
-                              "<h3>Core KPIs:</h3>"
-                            )
-                            ?.replace(
-                              /Portfolio-Specific KPIs:<br \/>/g,
-                              "<h3>Portfolio-Specific KPIs:</h3>"
-                            )
-                            ?.concat("</li>") || ""
+                            // ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                            // ?.replace(/\n/g, "<br />")
+                            // .replace(/\r\n/g, "<br />")
+                            // ?.replace(/- (.*?)\:/g, "<li><strong>$1:</strong>")
+                            // ?.replace(
+                            //   /EQT Absolutes:<br \/>/g,
+                            //   "<h3>EQT Absolutes:</h3>"
+                            // )
+                            // ?.replace(
+                            //   /Core KPIs:<br \/>/g,
+                            //   "<h3>Core KPIs:</h3>"
+                            // )
+                            // ?.replace(
+                            //   /Portfolio-Specific KPIs:<br \/>/g,
+                            //   "<h3>Portfolio-Specific KPIs:</h3>"
+                            // )
+                            // ?.concat("</li>") || ""
                         }
                         field={key as keyof InvestersProfile}
                       />

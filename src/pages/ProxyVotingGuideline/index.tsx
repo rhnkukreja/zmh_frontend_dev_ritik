@@ -1,7 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
-import { Menu, Popover } from "@/components/Base/Headless";
+import {  Popover } from "@/components/Base/Headless";
 
-import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
+import {  FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -34,7 +34,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
-  const navigate = useNavigate();
+ 
 
   const {
     loading,
@@ -184,33 +184,33 @@ function ProxyGuideline() {
     setAddNewProxyVotingGuidelineVisible(true);
   };
 
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+  // const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
 
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
+  // const checkImageUrl = async (url: string): Promise<boolean> => {
+  //   return new Promise((resolve) => {
+  //     const img = new Image();
+  //     img.src = url;
 
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  };
+  //     img.onload = () => resolve(true);
+  //     img.onerror = () => resolve(false);
+  //   });
+  // };
 
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const votingGuidline of proxyVotingGuidelines || []) {
-        const isValid = await checkImageUrl(votingGuidline?.image);
-        tempValidImages[votingGuidline?.name] = isValid
-          ? votingGuidline?.image
-          : userLinkedinImage;
-      }
+  // useEffect(() => {
+  //   const validateImages = async () => {
+  //     const tempValidImages: { [key: string]: string } = {};
+  //     for (const votingGuidline of proxyVotingGuidelines || []) {
+  //       const isValid = await checkImageUrl(votingGuidline?.image);
+  //       tempValidImages[votingGuidline?.name] = isValid
+  //         ? votingGuidline?.image
+  //         : userLinkedinImage;
+  //     }
 
-      setValidImages(tempValidImages);
-    };
+  //     setValidImages(tempValidImages);
+  //   };
 
-    validateImages();
-  }, [proxyVotingGuidelines]);
+  //   validateImages();
+  // }, [proxyVotingGuidelines]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
