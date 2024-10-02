@@ -20,7 +20,7 @@ import companyReducer from "./companySlice";
 import dashboardReducer from "./dashboardSlice";
 import shareholderNoActionReducer from "./shareholderProposalSlice";
 import caseStudiesReducer from "./caseStudySlice";
-
+import peerAnalysisReducer from "./peerAnalysisSlice";
 
 import { PersistPartial } from "redux-persist/es/persistReducer";
 import storage from "redux-persist/lib/storage";
@@ -52,7 +52,7 @@ const slices = {
   dashboard: dashboardReducer,
   sharedHolderNoAction: shareholderNoActionReducer,
   caseStudies: caseStudiesReducer,
-
+  peerAnalysis: peerAnalysisReducer,
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(

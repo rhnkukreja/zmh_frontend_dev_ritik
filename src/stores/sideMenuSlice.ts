@@ -1,14 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 import { icons } from "@/components/Base/Lucide";
-import caseStudyIcon from '@/assets/images/zmh-images/Case_Studies_icon.svg';
-import CompanyIcon from '@/assets/images/zmh-images/company_icon.svg';
-import EngagementIcon from '@/assets/images/zmh-images/engagement_icon.svg';
-import PeerCaseIcon from '@/assets/images/zmh-images/peer_analysis_icon.svg';
-import ShareHolderIcon from '@/assets/images/zmh-images/shareholder_icon.svg';
-import VotingIcon from '@/assets/images/zmh-images/voting_icon.svg';
-import ProfileIcon from '@/assets/images/zmh-images/profile_icon.svg';
-
+import caseStudyIcon from "@/assets/images/zmh-images/Case_Studies_icon.svg";
+import CompanyIcon from "@/assets/images/zmh-images/company_icon.svg";
+import EngagementIcon from "@/assets/images/zmh-images/engagement_icon.svg";
+import PeerCaseIcon from "@/assets/images/zmh-images/peer_analysis_icon.svg";
+import ShareHolderIcon from "@/assets/images/zmh-images/shareholder_icon.svg";
+import VotingIcon from "@/assets/images/zmh-images/voting_icon.svg";
+import ProfileIcon from "@/assets/images/zmh-images/profile_icon.svg";
 
 export interface Menu {
   icon: keyof typeof icons;
@@ -120,7 +119,7 @@ const initialState: any = {
     //   pathname: "/calendar",
     //   title: "Calendar",
     // },
-    "Additional",
+    // "Additional",
     {
       icon: caseStudyIcon,
       pathname: "/institution",
@@ -132,6 +131,12 @@ const initialState: any = {
       pathname: "/company",
       title: "Company",
       isAdmin: true,
+    },
+    "Coming Soon",
+    {
+      icon: caseStudyIcon,
+      pathname: "#",
+      title: "Notes",
     },
     // "UI WIDGETS",
     // {
