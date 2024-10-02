@@ -55,10 +55,6 @@ type PeerAnalysisPayload = {
   module: "Peer Analysis";
   company: string[];
   institution: string[];
-  country: string[];
-  sector: string[];
-  category: string[];
-  year: string[];
 };
 
 export type PayloadModule =

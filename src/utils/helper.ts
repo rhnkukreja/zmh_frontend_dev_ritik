@@ -287,7 +287,7 @@ const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   const userType = localStorage.getItem("userType")?.toLowerCase() || "";
   const filteredMenuItems = menuItems.filter((item, index, arr) => {
     if (userType !== "admin") {
-      if (typeof item === "string" && item.toLowerCase() === "admin") {
+      if (typeof item === "string" && item.toLowerCase() === "Additional") {
         let i = index + 1;
         while (
           i < arr.length &&
@@ -341,5 +341,5 @@ export {
   getYearRange,
   formatedDate,
   filterMenu,
-  downloadCSV
+  downloadCSV,
 };
