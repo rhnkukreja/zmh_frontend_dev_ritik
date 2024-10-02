@@ -1,6 +1,5 @@
-
 import Button from "@/components/Base/Button";
-import { useEffect,  useState } from "react";
+import { useEffect, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -14,9 +13,6 @@ import {
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-
-import {  useNavigate } from "react-router-dom";
-
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
@@ -29,10 +25,11 @@ import { TypesPeerAnalysis } from "@/types/peerAnalysis";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
+import Lucide from "@/components/Base/Lucide";
 
 function PeerAnalysis() {
   const dispatch: AppDispatch = useAppDispatch();
- 
+
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
@@ -180,11 +177,8 @@ function PeerAnalysis() {
   }, [searchTerms, searchTerms?.length]);
 
   const getSavedSearches = () => {
-    setSearchTerms([
-      ...user?.saved_search["Peer Analysis"]?.institution,
-    ]);
+    setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
 
-    
     dispatch(
       setFilter({
         key: "company",
@@ -202,7 +196,7 @@ function PeerAnalysis() {
     if (res?.Success) {
       dispatch(
         setSavedSearch({
-          key:  "Peer Analysis",
+          key: "Peer Analysis",
           value: {
             institution: searchTerms,
             category: filters["company"],
@@ -212,7 +206,6 @@ function PeerAnalysis() {
       toast.success(res?.Success || "Searched saved successfully");
     }
   };
-
 
   return (
     <>
@@ -270,23 +263,28 @@ function PeerAnalysis() {
                   </div>
 
                   <div className="hover:bg-slate-50 ml-2">
-                  <Button onClick={saveSearch}>
-                    <Tippy content="Save Searches" options={{ theme: "light" }}>
-                      <SaveAll
-                        size={17}
-                        strokeWidth={1}
-                        className="text-slate-500 cursor-pointer	"
-                      />
-                    </Tippy>
-                  </Button>
-                </div>
+                    <Button onClick={saveSearch}>
+                      <Tippy
+                        content="Save Searches"
+                        options={{ theme: "light" }}
+                      >
+                        <SaveAll
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                {user?.saved_search?.["Peer Analysis"] !== undefined && (
-                  <div className="hover:bg-slate-50 ml-2">
-                    <Button onClick={getSavedSearches}>Previous Search</Button>
-                  </div>
-                )}
+                  {user?.saved_search?.["Peer Analysis"] !== undefined && (
+                    <div className="hover:bg-slate-50 ml-2">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -301,7 +299,7 @@ function PeerAnalysis() {
                       <Table.Thead>
                         <Table.Tr>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Institution Name
+                            Institution Name
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
@@ -332,8 +330,39 @@ function PeerAnalysis() {
                         {peerAnalysisData?.length > 0 &&
                           peerAnalysisData?.map((peer: TypesPeerAnalysis) => (
                             <Table.Tr key={peer?.id}>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {peer?.institution_name}
+                              <Table.Td>
+                                <div className=" flex flex-row justify-start items-center ">
+                                  {peer?.institution_logo_url ? (
+                                    <>
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                        <Tippy
+                                          as="img"
+                                          alt="Tailwise - Admin Dashboard Template"
+                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                          src={peer?.institution_logo_url}
+                                          content={peer?.institution_name || ""}
+                                        />
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                      <Lucide
+                                        icon="User"
+                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                      />
+                                      <a
+                                        href=""
+                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                      ></a>
+                                    </div>
+                                  )}
+
+                                  <div className="ml-4">
+                                    <p className="font-medium whitespace-nowrap">
+                                      {peer?.institution_name}
+                                    </p>
+                                  </div>
+                                </div>
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.year}
