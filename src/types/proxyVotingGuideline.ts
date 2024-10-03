@@ -13,4 +13,5 @@ export type ProxyVotingGuideline = {
   active: boolean;
   date_created: string;
   date_updated: string;
+  institution_logo_url: string;
 };

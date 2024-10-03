@@ -235,22 +235,26 @@ function Main() {
           event.preventDefault();
           setThemeSwitcherSlideover(true);
         }}
-        className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-1"
+        className="fixed bottom-0 right-20 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-1"
       >
         <Lucide className="w-5 h-5 animate-spin" icon="Settings" />
       </div> */}
 
 
       {/* AI Bot Modal & Button */}
-        <div
+        {/* <div
           onClick={(event: React.MouseEvent) => {
             event.preventDefault();
             setBasicModalPreview(true);
           }}
-          className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white rounded-full shadow-lg cursor-pointer w-14 h-14 bg-theme-2"
+          className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white
+           rounded-full shadow-lg cursor-pointer bg-gradient-to-r
+            from-red-500 to-blue-500"
         >
+          <div className="flex items-center justify-between m-3">
           <Bot className="w-5 h-5" />
-        </div>
+          <span className="ml-3 font-bold">AI Assistant</span></div>
+        </div> */}
 
       {/* <CModal isModalOpen={basicModalPreview}></CModal> */}
 

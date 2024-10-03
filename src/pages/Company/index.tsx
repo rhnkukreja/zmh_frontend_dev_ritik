@@ -21,9 +21,11 @@ import { CompanyData } from "@/types/company";
 import { useNavigate } from "react-router-dom";
 
 import Tippy from "@/components/Base/Tippy";
-import { FilterX } from "lucide-react";
+import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import _ from "lodash";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
 
 function CompanyList() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -128,7 +130,7 @@ function CompanyList() {
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
           <div className="text-base font-medium group-[.mode--light]:text-white">
-            Company List
+            Company
           </div>
           {user?.user_type === "Admin" && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
@@ -149,11 +151,14 @@ function CompanyList() {
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex items-center ">
-                <MultiSearchBar
-                  onSearch={handleSearch}
-                  searchTerms={searchTerms}
-                  setSearchTerms={setSearchTerms}
-                />
+              <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                     placeHolder="Search Institution"
+                  />
 
                 <div className="hover:bg-slate-50">
                   <Button onClick={handleClearAllFilter}>
@@ -167,32 +172,58 @@ function CompanyList() {
                     {/* <span className="text-slate-500">Clear Filters</span> */}
                   </Button>
                 </div>
+
+                <div className="hover:bg-slate-50 ml-2">
+                  <Button
+                    onClick={async () => {
+                      const res = await commonService.saveSearches({
+                        module: "Company",
+                        company: searchTerms,
+                       
+                      });
+                      if (res?.Success) {
+                        toast.success(
+                          res?.Success || "Searched saved successfully"
+                        );
+                      }
+                    }}
+                  >
+                    <Tippy content="Save Searches" options={{ theme: "light" }}>
+                     <SaveAll
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="overflow-auto xl:overflow-visible">
+            <div className=" px-5">
               <TableWrapper isLoading={loading}>
+              <div className="overflow-auto max-h-[400px]">
                 <Table>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Td className="py-2 font-medium text-nowrap bg-slate-50  border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Company ID
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Name
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         CUSIP
                       </Table.Td>
-                      <Table.Td className="py-2 text-nowrap font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Sector Name
                       </Table.Td>
-                      <Table.Td className="py-2 font-medium bg-slate-50 border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Symbol
                       </Table.Td>
-                      {/* <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                      {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Company V1
                       </Table.Td> */}
-                      <Table.Td className="py-2 font-medium bg-slate-50  border-slate-200/80 text-slate-500">
+                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Actions
                       </Table.Td>
                     </Table.Tr>
@@ -243,6 +274,7 @@ function CompanyList() {
                       ))}
                   </Table.Tbody>
                 </Table>
+                </div>
               </TableWrapper>
             </div>
             {totalPages > 1 && (

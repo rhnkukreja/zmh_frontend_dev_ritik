@@ -33,7 +33,7 @@ class InvestersProfileService {
     results: InvestersProfile;
   }> {
     const response = await axiosInstance.put(
-      `/investor_profile/?type=${type}/${id}/`,
+      `/investor_profile/${id}/?type=${type}`,
       data
     );
     const results = response.data;
@@ -54,8 +54,8 @@ class InvestersProfileService {
   }
 
   public async getInstitutionByName(
-    institution: string,
-    type: string
+    type: string,
+    institution: string
   ): Promise<{
     results: InvestersProfile[];
   }> {

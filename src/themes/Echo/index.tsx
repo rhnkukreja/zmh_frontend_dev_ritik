@@ -1,18 +1,14 @@
 import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
-import Breadcrumb from "@/components/Base/Breadcrumb";
 import { useState, useEffect, createRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
-import {
-  selectCompactMenu,
-  setCompactMenu as setCompactMenuStore,
-} from "@/stores/compactMenuSlice";
+import { selectCompactMenu, setCompactMenu as setCompactMenuStore } from "@/stores/compactMenuSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import Lucide from "@/components/Base/Lucide";
-
+import { Dialog } from "@/components/Base/Headless";
 import clsx from "clsx";
 import SimpleBar from "simplebar";
 import { Menu } from "@/components/Base/Headless";
@@ -23,8 +19,11 @@ import ActivitiesPanel from "@/components/ActivitiesPanel";
 import { filterMenu, getColorForCharacter } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
-import { Mail } from "lucide-react";
-import { persistor } from "@/stores/store";
+import { FilterX, Mail } from "lucide-react";
+import { persistor, RootState } from "@/stores/store";
+import { setDashboardGlobalSearch } from "@/stores/dashboardSlice";
+import LoadingIcon from "@/components/Base/LoadingIcon";
+import aiIcon from '@/assets/images/zmh-images/ai-Icon.png'
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -51,10 +50,16 @@ function Main() {
 
   const [topBarActive, setTopBarActive] = useState(false);
 
+  const [basicModalPreview, setBasicModalPreview] = useState(false);
+  const [isFrameLoading, setIsFrameLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
+    // setCompactMenuOnHover(!compactMenuOnHover)
   };
+  const { company_Global_Search } = useAppSelector((state: RootState) => state.dashboard);
 
   const compactLayout = () => {
     if (window.innerWidth <= 1600) {
@@ -91,6 +96,31 @@ function Main() {
     }
   };
 
+  const handleToggleMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setCompactMenu(!compactMenu);
+  }
+
+  const handleLoad = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(false);
+  };
+
+  const handleError = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(true);
+  };
+
+  const handleCloseModal = () => {
+    setBasicModalPreview(false);
+    setIsFrameLoading(true);
+    setIsError(false);
+  }
+
   return (
     <div
       className={clsx([
@@ -107,16 +137,14 @@ function Main() {
           { "side-menu--collapsed": compactMenu },
           { "side-menu--on-hover": compactMenuOnHover },
           { "ml-0 after:block": activeMobileMenu },
-          { "-ml-[275px] after:hidden": !activeMobileMenu },
-        ])}
-      >
+          { "-ml-[280px] after:hidden": !activeMobileMenu },
+        ])}>
         <div
           className={clsx([
-            "fixed ml-[275px] w-10 h-10 items-center justify-center xl:hidden z-50",
+            "fixed ml-[280px] w-10 h-10 items-center justify-center xl:hidden z-50",
             { flex: activeMobileMenu },
             { hidden: !activeMobileMenu },
-          ])}
-        >
+          ])}>
           <a
             href=""
             onClick={(event) => {
@@ -130,25 +158,47 @@ function Main() {
         </div>
         <div
           className={clsx([
-            "h-full box bg-white/[0.95] rounded-none xl:rounded-xl z-20 relative w-[275px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[275px] overflow-hidden flex flex-col",
+            "h-full box bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none xl:rounded-xl z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
           onMouseOver={(event) => {
             event.preventDefault();
-            setCompactMenuOnHover(true);
+            setCompactMenu(false);
           }}
           onMouseLeave={(event) => {
             event.preventDefault();
-            setCompactMenuOnHover(false);
+            setCompactMenu(true);
+            // toggleCompactMenu(event);  
+            // setCompactMenuOnHover(false);
           }}
         >
-          <div className={clsx([
-              "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[275px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[275px]",
+          {/* <div className={clsx([
+              "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
             ])} >
-            <a
+            {
+              compactMenu && <a href=""
+                className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
+              >
+                <div onClick={handleToggleMenu}>
+                  <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3]" />
+                </div>
+              </a>
+            }
+            {
+             !compactMenu && <a
               href=""
-              className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
+              onClick={handleToggleMenu}
+              className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center w-[20px] h-[20px] ml-auto "
             >
-              <div className="flex items-center justify-center w-[40px] h-[40px] transition-transform ease-in-out group">
+              <Lucide icon="X" className="w-5 h-5 stroke-[1.3]" />
+            </a>
+            }
+          </div> */}
+
+          <a
+              href=""
+              className="mt-5 ml-5 flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-6 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-5"
+            >
+              <div className="flex items-center justify-center w-auto h-[40px] transition-transform ease-in-out group">
                 <div className="w-full h-full overflow-hidden transition-transform duration-500 ease-in-out">
                   <img
                     alt="Logo"
@@ -162,14 +212,6 @@ function Main() {
                 ZMH
               </div> */}
             </a>
-            <a
-              href=""
-              onClick={toggleCompactMenu}
-              className="hidden group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center w-[20px] h-[20px] ml-auto border rounded-full border-slate-600/40 hover:bg-slate-600/5"
-            >
-              <Lucide icon="ArrowLeft" className="w-3.5 h-3.5 stroke-[1.3]" />
-            </a>
-          </div>
           <div
             ref={scrollableRef}
             className={clsx([
@@ -202,11 +244,13 @@ function Main() {
                         setFormattedMenu([...formattedMenu]);
                       }}
                     >
-                      <Lucide
+                      {/* <Lucide
                         icon={menu.icon}
                         className="side-menu__link__icon"
-                      />
-                      <div className="side-menu__link__title">{menu.title}</div>
+                      /> */}
+                      <img className='fill-red-900' src={menu.icon}/>
+
+                      <div className="side-menu__link__title link_color">{menu.title}</div>
                       {menu.badge && (
                         <div className="side-menu__link__badge">
                           {menu.badge}
@@ -256,7 +300,7 @@ function Main() {
                                   icon={subMenu.icon}
                                   className="side-menu__link__icon"
                                 />
-                                <div className="side-menu__link__title">
+                                <div className="side-menu__link__title link_color">
                                   {subMenu.title}
                                 </div>
                                 {subMenu.badge && (
@@ -318,7 +362,7 @@ function Main() {
                                               icon={lastSubMenu.icon}
                                               className="side-menu__link__icon"
                                             />
-                                            <div className="side-menu__link__title">
+                                            <div className="side-menu__link__title link_color">
                                               {lastSubMenu.title}
                                             </div>
                                             {lastSubMenu.badge && (
@@ -347,7 +391,7 @@ function Main() {
             </ul>
           </div>
         </div>
-        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[275px] group-[.side-menu--collapsed]:xl:ml-[90px] mt-3.5 inset-x-0 top-0">
+        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] mt-3.5 inset-x-0 top-0">
           <div
             className={clsx([
               "top-bar absolute left-0 xl:left-3.5 right-0 h-full mx-5 group",
@@ -385,25 +429,41 @@ function Main() {
                 </a>
               </div>
               {/* BEGIN: Breadcrumb */}
-              <Breadcrumb light className="flex-1 hidden xl:block">
+              {/* <Breadcrumb light className="flex-1 hidden xl:block">
                 <Breadcrumb.Link to="/">App</Breadcrumb.Link>
                 <Breadcrumb.Link to="/">Dashboards</Breadcrumb.Link>
                 <Breadcrumb.Link to="/" active={true}>
                   Analytics
                 </Breadcrumb.Link>
-              </Breadcrumb>
+              </Breadcrumb> */}
               {/* END: Breadcrumb */}
               {/* BEGIN: Search */}
               <div
-                className="relative justify-center flex-1 hidden xl:flex"
+                className="relative justify-center hidden xl:flex"
                 onClick={() => setQuickSearch(true)}
               >
-                <div className="bg-white/[0.12] border-transparent border w-[350px] flex items-center py-2 px-3.5 rounded-[0.5rem] text-white/60 cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100">
+                <div className={clsx([
+                  'bg-white/[0.12] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
+                  company_Global_Search !== '' ? 'text-white' : 'text-white/60'])}>
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">Quick search...</div>
-                  <div>⌘K</div>
+                  <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? company_Global_Search : 'Quick search...'}</div>
+                  {/* <div>⌘K</div> */}
                 </div>
               </div>
+                {/* <div className="ml-5 bg-white border-transparent rounded-lg">
+                  <Button onClick={()=> dispatch(setDashboardGlobalSearch(''))}>
+                    <Tippy
+                      content="Clear Search"
+                      options={{ theme: "light" }}
+                    >
+                      <FilterX
+                        size={17}
+                        strokeWidth={1}
+                        className="text-slate-500 cursor-pointer	"
+                      />
+                    </Tippy>
+                  </Button>
+                </div> */}
               <QuickSearch
                 quickSearch={quickSearch}
                 setQuickSearch={setQuickSearch}
@@ -412,17 +472,34 @@ function Main() {
               {/* BEGIN: Notification & User Menu */}
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
-                  {/* <a
+                  <a
                     href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setActivitiesPanel(true);
+                    // bg-gradient-to-b to-[#000000CC] from-[#9F1239]
+                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239] hover:to-[#9f123a9b] hover:from-[#0000005c]
+                   border-white border-2 text-white rounded-md "
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      setBasicModalPreview(true);
                     }}
                   >
-                    <Lucide icon="LayoutGrid" className="w-[18px] h-[18px]" />
-                  </a> */}
+                    <div className="flex items-center justify-center">
+                    <img src={aiIcon} alt='ai icon'/>
+                    <span className="ml-3 font-bold hidden xl:flex">AI Assistant</span>
+                    </div>
+                  </a>
 
+                  {/* <div
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      setBasicModalPreview(true);
+                    }}
+                    className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white
+           rounded-full shadow-lg cursor-pointer bg-gradient-to-r
+            from-red-500 to-blue-500"
+                  >
+                    <div className="flex items-center justify-between m-3">
+                      <span className="ml-3 font-bold">AI Assistant</span></div>
+                  </div> */}
                   <a
                     href=""
                     className="p-2 text-white rounded-full hover:bg-white/5"
@@ -536,7 +613,7 @@ function Main() {
       <div
         className={clsx([
           "transition-[margin,width] duration-100 xl:pl-3.5 pt-[54px] pb-16 relative z-10 group mode",
-          { "xl:ml-[275px]": !compactMenu },
+          { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
         ])}
@@ -547,6 +624,38 @@ function Main() {
           </div>
         </div>
       </div>
+
+      <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}
+      >
+        <Dialog.Panel className="p-10 text-center h-full">
+          <div className="relative w-full h-full">
+            {isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white">
+                <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
+                {/* <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500"></div> */}
+              </div>
+            )}
+
+            {isError && !isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
+                <p>Failed to load the embedded content. Please try again later.</p>
+              </div>
+            )}
+
+            <iframe
+              className={`w-full h-full ${isFrameLoading || isError ? 'hidden' : ''}`}
+              src="https://app.korra.ai/zmhdashboard/investorprofiles"
+              title="Embedded Dashboard"
+              onLoad={handleLoad}
+              onError={handleError}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* AI Bot Modal & Button */}
     </div>
   );
 }

@@ -11,4 +11,6 @@ export type Institutions = {
   email: string | null;
   date_created: string;
   date_updated: string;
+  uploaded_time_caspio: string;
+  whale_wisdom_filer_id: string | number;
 };

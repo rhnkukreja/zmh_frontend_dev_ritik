@@ -1,14 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { FormInput } from "@/components/Base/Form";
+import { FormCheck, FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
-import { axiosInstance } from "@/services";
+
 import { investersProfileService } from "@/services/investersProfile";
 import _ from "lodash";
+import { axiosInstance } from "@/services";
 
 interface MultiSearchBarProps {
   onSearch: (terms: string[]) => void;
   searchTerms: string[];
   setSearchTerms: (terms: string[]) => void;
+  placeHolder?: string;
+  url: string | string[];
+  getOptionKey: string | string[];
 }
 
 // type FetchedOptionType = {
@@ -20,6 +24,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   onSearch,
   searchTerms,
   setSearchTerms,
+  placeHolder,
+  url,
+  getOptionKey,
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [options, setOptions] = useState<string[]>([]);
@@ -28,18 +35,34 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
 
   async function fetchOptions(query: string): Promise<any> {
     setIsLoading(true);
-    const response = await investersProfileService.getInstitutionByName(
-      query,
-      "profiles"
-    );
-    setIsLoading(false);
-    return response.results?.map((item: any) => item.institution_name);
+    try {
+      const responses = await Promise.all(
+        Array.isArray(url)
+          ? url?.map((u) =>
+              axiosInstance.get(
+                `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
+              )
+            )
+          : [axiosInstance.get(`${url}&${getOptionKey}=${query}`)]
+      );
+      return responses.flatMap(
+        (response) =>
+          response.data.results?.map(
+            (item: any) => item?.[getOptionKey as string]
+          ) || []
+      );
+    } catch (error) {
+      console.error("Error fetching options:", error);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const debouncedFetchResults = useCallback(
     _.debounce(async (query: string) => {
       const options = await fetchOptions(query);
-      setOptions(options);
+      setOptions(Array.isArray(options) ? [...new Set(options)] : []);
     }, 900),
     []
   );
@@ -51,28 +74,27 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
 
   const removeTerm = (term: string) => {
     const newTerms = searchTerms.filter((institute) => institute !== term);
-    setOptions((prev) => [...prev, term]);
+    setOptions((prev) => [...new Set([...prev, term])]);
     setSearchTerms(newTerms);
   };
 
-  const handleSend = (item: string) => {
-    setOptions((prev) => prev.filter((option) => option !== item));
-    onSearch([...searchTerms, item]);
-    setSearchTerms([...new Set([...searchTerms, item])]);
-    setSearchValue("");
-    setIsOpen(false)
+  const handleSearch = (item: string, isChecked: boolean) => {
+    if (isChecked === false) {
+      removeTerm(item);
+    } else {
+      // setOptions((prev) => prev.filter((option) => option !== item));
+      onSearch([...searchTerms, item]);
+      setSearchTerms([...new Set([...searchTerms, item])]);
+      setSearchValue("");
+    }
   };
   useEffect(() => {
-    if (
-     
-      searchValue.length > 0 
-      
-    ) {
+    if (searchValue.length > 0) {
       setIsOpen(true);
-    } else {
+    } else if (searchValue.length === 0 && searchTerms?.length === 0) {
       setIsOpen(false);
     }
-  }, [options, searchValue]);
+  }, [searchValue, searchTerms]);
 
   return (
     <div className="relative mr-3 w-full sm:w-auto">
@@ -84,7 +106,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       <div className="search-container">
         <FormInput
           type="text"
-          placeholder="Search Institute Name"
+          placeholder={placeHolder ?? "Search Institution Name"}
           className="pl-9 w-full sm:w-80 rounded-[0.5rem] relative"
           value={searchValue}
           onChange={handleChange}
@@ -112,7 +134,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
               <div className=" text-md font-medium">
                 {searchValue.length > 0 && isLoading && (
                   <span className="flex items-center">
-                    <span>Search Institutes</span>
+                    <span>Searching</span>
                     {isLoading && (
                       <Lucide
                         icon="Loader"
@@ -161,10 +183,24 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                             return (
                               <div
                                 key={key}
-                                onClick={() => handleSend(item)}
                                 className="flex items-center cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-md"
                               >
-                                <span>{item}</span>
+                                <FormCheck className="mr-2">
+                                  <FormCheck.Input
+                                    id={`checkbox-switch-${key}`}
+                                    type="checkbox"
+                                    checked={searchTerms.includes(item)}
+                                    onChange={(e) => {
+                                      handleSearch(item, e.target.checked);
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`checkbox-switch-${key}`}
+                                    className="cursor-pointer pl-2"
+                                  >
+                                    <span>{item}</span>
+                                  </label>
+                                </FormCheck>
                               </div>
                             );
                           })}

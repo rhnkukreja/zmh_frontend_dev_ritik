@@ -1,5 +1,5 @@
 import { useAppSelector } from "@/stores/hooks";
-import React, { ComponentType, useEffect, useState } from 'react';
+import React, { ComponentType, useEffect } from 'react';
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 

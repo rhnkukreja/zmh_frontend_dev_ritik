@@ -1,7 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
-import { Menu, Popover } from "@/components/Base/Headless";
+import {  Popover } from "@/components/Base/Headless";
 
-import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
+import {  FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -25,13 +25,16 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { AddEditPolicyGuideline } from "./components/AddEditProxyVotingGuideline";
 import PdfViewer from "@/components/PdfView";
-import { Filter, FilterX } from "lucide-react";
+import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
+import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+import { commonService } from "@/services/common";
+import { toast } from "react-toastify";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
-  const navigate = useNavigate();
-
+ 
 
   const {
     loading,
@@ -61,7 +64,6 @@ function ProxyGuideline() {
       )
     );
   }, [page]);
-
 
   useEffect(() => {
     return () => {
@@ -96,9 +98,7 @@ function ProxyGuideline() {
     setCurrentPdfDoc(pdf);
   };
 
-
-
-  const handleSearch = (searchTerms : string[]) => { 
+  const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
         key: "institution_name",
@@ -106,18 +106,23 @@ function ProxyGuideline() {
       })
     );
 
-    const tempFilter = {institution_name: searchTerms};
+    const tempFilter = { institution_name: searchTerms };
 
     dispatch(
       fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, tempFilter, undefined, 1)
+        createDynamicURL(
+          `${baseURL}/proxy_voting_guidelines/`,
+          tempFilter,
+          undefined,
+          1
+        )
       )
     );
   };
 
-  useEffect(()=>{
-    handleSearch(searchTerms)
-  },[searchTerms , searchTerms?.length])
+  useEffect(() => {
+    handleSearch(searchTerms);
+  }, [searchTerms, searchTerms?.length]);
 
   function handleApplyFilter() {
     dispatch(
@@ -179,6 +184,64 @@ function ProxyGuideline() {
     setAddNewProxyVotingGuidelineVisible(true);
   };
 
+  // const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+  // const checkImageUrl = async (url: string): Promise<boolean> => {
+  //   return new Promise((resolve) => {
+  //     const img = new Image();
+  //     img.src = url;
+
+  //     img.onload = () => resolve(true);
+  //     img.onerror = () => resolve(false);
+  //   });
+  // };
+
+  // useEffect(() => {
+  //   const validateImages = async () => {
+  //     const tempValidImages: { [key: string]: string } = {};
+  //     for (const votingGuidline of proxyVotingGuidelines || []) {
+  //       const isValid = await checkImageUrl(votingGuidline?.image);
+  //       tempValidImages[votingGuidline?.name] = isValid
+  //         ? votingGuidline?.image
+  //         : userLinkedinImage;
+  //     }
+
+  //     setValidImages(tempValidImages);
+  //   };
+
+  //   validateImages();
+  // }, [proxyVotingGuidelines]);
+
+  const getSavedSearches = () => {
+    setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
+    dispatch(
+      setFilter({
+        key: "year",
+        value: user?.saved_search["Voting Guidelines"]?.year,
+      })
+    );
+  };
+
+  const saveSearch = async () => {
+    const res = await commonService.saveSearches({
+      module: "Voting Guidelines",
+      institution: searchTerms,
+      year: filters["year"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Voting Guidelines",
+          value: {
+            institution: searchTerms,
+            year: filters["year"],
+          },
+        })
+      );
+      toast.success(res?.Success || "Searched saved successfully");
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -209,11 +272,14 @@ function ProxyGuideline() {
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
                 <div className="flex items-center ">
-                <MultiSearchBar
-                  onSearch={handleSearch}
-                  searchTerms={searchTerms}
-                  setSearchTerms={setSearchTerms}
-                 />
+                  <MultiSearchBar
+                    onSearch={handleSearch}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
+                    url="/investor_profile/?type=profiles"
+                    getOptionKey="institution_name"
+                    placeHolder="Search Institution"
+                  />
 
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
@@ -230,8 +296,31 @@ function ProxyGuideline() {
                       {/* <span className="text-slate-500">Clear Filters</span> */}
                     </Button>
                   </div>
+
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={saveSearch}>
+                      <Tippy
+                        content="Save Searches"
+                        options={{ theme: "light" }}
+                      >
+                        <SaveAll
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                  {user?.saved_search?.["Voting Guidelines"] !== undefined && (
+                    <div className="hover:bg-slate-50 ml-2">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
+
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -253,7 +342,7 @@ function ProxyGuideline() {
                           <div className="p-2">
                             <div className="mt-3">
                               <div className="text-left text-slate-500">
-                                Category
+                                Year
                               </div>
                               <FormSelect
                                 defaultValue={
@@ -311,34 +400,36 @@ function ProxyGuideline() {
                   </Popover>
                 </div>
               </div>
-              <div className="overflow-auto xl:overflow-visible">
+              <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={loading}>
+                <div className="overflow-auto max-h-[400px]">
+
                   <Table>
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
-                          Institute Name
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Institution Name
                         </Table.Td>
-                        <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Year
                         </Table.Td>
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Sub Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Section
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-medium bg-slate-50  text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Policy Guideline
                           </Table.Td>
                         )}
@@ -346,7 +437,7 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                        <Table.Td className="py-2 font-medium bg-slate-50 w-[150px] text-nowrap  first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Actions
                         </Table.Td>
                       </Table.Tr>
@@ -359,8 +450,39 @@ function ProxyGuideline() {
                               key={guideline?.id}
                               className="[&_td]:last:border-b-0"
                             >
-                              <Table.Td className="py-2  text-nowrap border-dashed dark:bg-darkmode-600">
-                                {guideline?.institution_name}
+                              <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                {guideline?.institution_logo_url ? (
+                                  <>
+                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <Tippy
+                                        as="img"
+                                        alt="Tailwise - Admin Dashboard Template"
+                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                        src={guideline?.institution_logo_url}
+                                        content={
+                                          guideline?.institution_name || ""
+                                        }
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                    <Lucide
+                                      icon="User"
+                                      className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                    />
+                                    <a
+                                      href=""
+                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                    ></a>
+                                  </div>
+                                )}
+
+                                <div className="ml-4">
+                                  <p className="font-medium whitespace-nowrap">
+                                    {guideline?.institution_name}
+                                  </p>
+                                </div>
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.year}
@@ -374,7 +496,7 @@ function ProxyGuideline() {
                                     }}
                                   >
                                     <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                      {guideline?.category}                                    
+                                      {guideline?.category}
                                     </div>
                                   </Tippy>
                                 </Table.Td>
@@ -472,6 +594,7 @@ function ProxyGuideline() {
                         )}
                     </Table.Tbody>
                   </Table>
+                </div>
                 </TableWrapper>
               </div>
               {totalPages > 1 && (

@@ -54,6 +54,7 @@ export interface InvestersProfile {
   updated_by?: string | null;
   equity_firm_name?: string | null;
   specific_expectations?: string | null;
+  institution_logo_url?: string;
 }
 
 export type AddNewInvesterType = {

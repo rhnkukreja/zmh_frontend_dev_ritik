@@ -1,6 +1,7 @@
 import { CompanyData } from "@/types/company";
 import { axiosInstance } from "../index";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
+import { AGMSummary } from "@/types/AGMSummary";
 
 class DashboardService {
   public async fetchCompanyByName(companyName: string): Promise<{
@@ -17,18 +18,21 @@ class DashboardService {
     };
   }
 
-  public async fetchCompanyDashboard(ticker: string): Promise<{
-    count: number;
-    all_holders_data: CompanyDashboard[];
+  public async fetchCompanyDashboard(url: string): Promise<{
+    results: CompanyDashboard[];
   }>  {
-    const response = await axiosInstance.get(
-      `/company-dashboard/?ticker=${ticker}`
-    );
-    const { count, all_holders_data } = response.data;
+    const response = await axiosInstance.get(url);
+    const results = response.data;
     return {
-      count,
-      all_holders_data,
+      results,
     };
+  }
+
+  public async fetchAGMSummaryDashboard(url: string): Promise<{results:any;
+  }>  {
+    const response = await axiosInstance.get(url);
+    const results = response.data;
+    return {results};
   }
 }
 

@@ -43,6 +43,7 @@ module.exports = {
         "3xl": "1600px",
       },
       colors: {
+        header: "#f2f2f2",
         theme: {
           1: "rgb(var(--color-theme-1) / <alpha-value>)",
           2: "rgb(var(--color-theme-2) / <alpha-value>)",
