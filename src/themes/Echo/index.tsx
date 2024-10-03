@@ -124,15 +124,15 @@ function Main() {
   return (
     <div
       className={clsx([
-        "echo group bg-gradient-to-b from-slate-200/70 to-slate-50 background relative min-h-screen",
-        "before:content-[''] before:h-[370px] before:w-screen before:bg-gradient-to-t before:from-theme-1/80 before:to-theme-2 [&.background--hidden]:before:opacity-0 before:transition-[opacity,height] before:ease-in-out before:duration-300 before:top-0 before:fixed",
+        "echo group bg-[#0000000D] relative h-auto",
+        "before:content-[''] before:h-[370px] before:w-screen bg-[#0000000D] h-7 [&.background--hidden]:before:opacity-0 before:transition-[opacity,height] before:ease-in-out before:duration-300 before:top-0 before:fixed",
         "after:content-[''] after:h-[370px] after:w-screen [&.background--hidden]:after:opacity-0 after:transition-[opacity,height] after:ease-in-out after:duration-300 after:top-0 after:fixed after:bg-texture-white after:bg-contain after:bg-fixed after:bg-[center_-13rem] after:bg-no-repeat",
-        topBarActive && "background--hidden",
+        topBarActive && "background--hidden", 'bg-[#0000000D]'
       ])}
     >
       <div
         className={clsx([
-          "xl:ml-0 shadow-xl transition-[margin,padding] duration-300 xl:shadow-none fixed top-0 left-0 z-50 side-menu group inset-y-0 xl:py-3.5 xl:pl-3.5",
+          "xl:ml-0 shadow-xl transition-[margin,padding] duration-300 xl:shadow-none fixed top-0 left-0 z-50 side-menu group inset-y-0",
           "after:content-[''] after:fixed after:inset-0 after:bg-black/80 after:xl:hidden",
           { "side-menu--collapsed": compactMenu },
           { "side-menu--on-hover": compactMenuOnHover },
@@ -158,7 +158,7 @@ function Main() {
         </div>
         <div
           className={clsx([
-            "h-full box bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none xl:rounded-xl z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
+            "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
           onMouseOver={(event) => {
             event.preventDefault();
@@ -179,7 +179,7 @@ function Main() {
                 className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
               >
                 <div onClick={handleToggleMenu}>
-                  <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3]" />
+                  <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3] text-white" />
                 </div>
               </a>
             }
@@ -189,17 +189,17 @@ function Main() {
               onClick={handleToggleMenu}
               className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center w-[20px] h-[20px] ml-auto "
             >
-              <Lucide icon="X" className="w-5 h-5 stroke-[1.3]" />
+              <Lucide icon="X" className="w-5 h-5 stroke-[1.3] text-white" />
             </a>
             }
           </div> */}
 
           <a
               href=""
-              className="mt-5 ml-5 flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-6 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-5"
+              className="mt-5 flex items-center justify-center transition-[margin] duration-700"
             >
-              <div className="flex items-center justify-center w-auto h-[40px] transition-transform ease-in-out group">
-                <div className="w-full h-full overflow-hidden transition-transform duration-500 ease-in-out">
+              <div className="flex items-center justify-center w-auto h-[80px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
+                <div className="w-full h-full overflow-hidden transition-transform duration-700 ease-in">
                   <img
                     alt="Logo"
                     src={logo}
@@ -212,6 +212,10 @@ function Main() {
                 ZMH
               </div> */}
             </a>
+            {/* <hr /> */}
+
+            {/* <div className=" border-t text-white"></div> */}
+
           <div
             ref={scrollableRef}
             className={clsx([
@@ -244,11 +248,10 @@ function Main() {
                         setFormattedMenu([...formattedMenu]);
                       }}
                     >
-                      {/* <Lucide
-                        icon={menu.icon}
-                        className="side-menu__link__icon"
-                      /> */}
-                      <img className='fill-red-900' src={menu.icon}/>
+                        <Lucide
+                          icon={menu.icon}
+                          className="side-menu__link__icon side-menu__link--active"
+                        />
 
                       <div className="side-menu__link__title link_color">{menu.title}</div>
                       {menu.badge && (
@@ -391,7 +394,7 @@ function Main() {
             </ul>
           </div>
         </div>
-        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] mt-3.5 inset-x-0 top-0">
+        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] bg-white inset-x-0 top-0">
           <div
             className={clsx([
               "top-bar absolute left-0 xl:left-3.5 right-0 h-full mx-5 group",
@@ -402,8 +405,7 @@ function Main() {
             <div
               className="
                 container flex items-center w-full h-full transition-[padding,background-color,border-color] ease-in-out duration-300 box bg-transparent border-transparent shadow-none 
-                group-[.top-bar--active]:box group-[.top-bar--active]:px-5
-                group-[.top-bar--active]:bg-transparent group-[.top-bar--active]:border-transparent group-[.top-bar--active]:bg-gradient-to-r group-[.top-bar--active]:from-theme-1 group-[.top-bar--active]:to-theme-2
+                
               "
             >
               <div className="flex items-center gap-1 xl:hidden">
@@ -413,13 +415,13 @@ function Main() {
                     event.preventDefault();
                     setActiveMobileMenu(true);
                   }}
-                  className="p-2 text-white rounded-full hover:bg-white/5"
+                  className="p-2 text-[#545454] rounded-full bg-[#D9D9D926]"
                 >
                   <Lucide icon="AlignJustify" className="w-[18px] h-[18px]" />
                 </a>
                 <a
                   href=""
-                  className="p-2 text-white rounded-full hover:bg-white/5"
+                  className="p-2 text-[#545454] rounded-full bg-[#D9D9D926]"
                   onClick={(e) => {
                     e.preventDefault();
                     setQuickSearch(true);
@@ -428,42 +430,20 @@ function Main() {
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
                 </a>
               </div>
-              {/* BEGIN: Breadcrumb */}
-              {/* <Breadcrumb light className="flex-1 hidden xl:block">
-                <Breadcrumb.Link to="/">App</Breadcrumb.Link>
-                <Breadcrumb.Link to="/">Dashboards</Breadcrumb.Link>
-                <Breadcrumb.Link to="/" active={true}>
-                  Analytics
-                </Breadcrumb.Link>
-              </Breadcrumb> */}
-              {/* END: Breadcrumb */}
-              {/* BEGIN: Search */}
+              
               <div
                 className="relative justify-center hidden xl:flex"
                 onClick={() => setQuickSearch(true)}
               >
                 <div className={clsx([
-                  'bg-white/[0.12] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
-                  company_Global_Search !== '' ? 'text-white' : 'text-white/60'])}>
+                  'bg-[#D9D9D926] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
+                  company_Global_Search !== '' ? 'text-[#545454]' : 'text-[#545454]'])}>
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
                   <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? company_Global_Search : 'Quick search...'}</div>
                   {/* <div>⌘K</div> */}
                 </div>
               </div>
-                {/* <div className="ml-5 bg-white border-transparent rounded-lg">
-                  <Button onClick={()=> dispatch(setDashboardGlobalSearch(''))}>
-                    <Tippy
-                      content="Clear Search"
-                      options={{ theme: "light" }}
-                    >
-                      <FilterX
-                        size={17}
-                        strokeWidth={1}
-                        className="text-slate-500 cursor-pointer	"
-                      />
-                    </Tippy>
-                  </Button>
-                </div> */}
+              
               <QuickSearch
                 quickSearch={quickSearch}
                 setQuickSearch={setQuickSearch}
@@ -475,7 +455,7 @@ function Main() {
                   <a
                     href=""
                     // bg-gradient-to-b to-[#000000CC] from-[#9F1239]
-                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239] hover:to-[#9f123a9b] hover:from-[#0000005c]
+                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
                    border-white border-2 text-white rounded-md "
                     onClick={(event: React.MouseEvent) => {
                       event.preventDefault();
@@ -484,25 +464,12 @@ function Main() {
                   >
                     <div className="flex items-center justify-center">
                     <img src={aiIcon} alt='ai icon'/>
-                    <span className="ml-3 font-bold hidden xl:flex">AI Assistant</span>
+                    <span className="ml-3 font-semibold hidden xl:flex">AI Assistant</span>
                     </div>
                   </a>
-
-                  {/* <div
-                    onClick={(event: React.MouseEvent) => {
-                      event.preventDefault();
-                      setBasicModalPreview(true);
-                    }}
-                    className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white
-           rounded-full shadow-lg cursor-pointer bg-gradient-to-r
-            from-red-500 to-blue-500"
-                  >
-                    <div className="flex items-center justify-between m-3">
-                      <span className="ml-3 font-bold">AI Assistant</span></div>
-                  </div> */}
                   <a
                     href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
+                    className="p-2 text-[#000000] rounded-full hover:bg-white/5"
                     onClick={(e) => {
                       e.preventDefault();
                       requestFullscreen();
@@ -510,29 +477,16 @@ function Main() {
                   >
                     <Lucide icon="Expand" className="w-[18px] h-[18px]" />
                   </a>
-                  {/* <a
-                    href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setNotificationsPanel(true);
-                    }}
-                  >
-                    <Lucide icon="Bell" className="w-[18px] h-[18px]" />
-                  </a> */}
                 </div>
-                <h1 className="ml-5 mr-3 text-white font-bold">Hi, {user?.first_name}</h1>
+                <h1 className="ml-3 mr-3 text-[#000000] font-bold">Hi, {user?.first_name}</h1>
                 <Menu className="">
                   <Menu.Button
                     className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
                     style={{
-                      backgroundColor: '#FFFFFF'
-                      // (
-                      //    user?.user_name?.[0].toUpperCase() || "a"
-                      // ),
+                      backgroundColor: '#800000'
                     }}
                   >
-                    <h4 className="text-[#800000] md:text-xl ">
+                    <h4 className="text-white md:text-xl ">
                       {user?.user_name?.[0].toUpperCase() || ""}
                     </h4>
                   </Menu.Button>
@@ -592,6 +546,7 @@ function Main() {
                     </Menu.Item>
                   </Menu.Items>
                 </Menu>
+
               </div>
               <ActivitiesPanel
                 activitiesPanel={activitiesPanel}
