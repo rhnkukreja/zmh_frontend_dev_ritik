@@ -281,7 +281,7 @@ function Main() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="font-semibold text-xl text-black">
+          <div className="font-semibold text-xl ">
             Engagement Questions
           </div>
           {user?.user_type === "Admin" && (
@@ -518,12 +518,12 @@ function Main() {
                                         {openGroups[institutionName] ? (
                                           <Lucide
                                             icon="ChevronUp"
-                                            className=" w-6 h-6 mr-2 text-black"
+                                            className=" w-6 h-6 mr-2 "
                                           />
                                         ) : (
                                           <Lucide
                                             icon="ChevronDown"
-                                            className=" w-6 h-6 mr-2 text-black"
+                                            className=" w-6 h-6 mr-2 "
                                           />
                                         )}
                                       </button>
