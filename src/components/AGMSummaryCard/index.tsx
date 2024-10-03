@@ -101,9 +101,10 @@ const index = () => {
                                 </option>
                             </FormSelect>
                         </div>
+                        */}
                         <div className='p-2 bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid'>
                             View More
-                        </div> */}
+                        </div> 
                                 </div>
                                 <div className='flex justify-between items-center gap-4 xs:mt-4 md:mt-0'>
                                     <Tippy

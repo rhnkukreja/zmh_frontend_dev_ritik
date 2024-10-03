@@ -198,7 +198,7 @@ function Main() {
               href=""
               className="mt-5 flex items-center justify-center transition-[margin] duration-700"
             >
-              <div className="flex items-center justify-center w-auto h-[60px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
+              <div className="flex items-center justify-center w-auto h-[80px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
                 <div className="w-full h-full overflow-hidden transition-transform duration-700 ease-in">
                   <img
                     alt="Logo"
@@ -464,7 +464,7 @@ function Main() {
                   >
                     <div className="flex items-center justify-center">
                     <img src={aiIcon} alt='ai icon'/>
-                    <span className="ml-3 font-bold hidden xl:flex">AI Assistant</span>
+                    <span className="ml-3 font-semibold hidden xl:flex">AI Assistant</span>
                     </div>
                   </a>
                   <a
@@ -478,6 +478,7 @@ function Main() {
                     <Lucide icon="Expand" className="w-[18px] h-[18px]" />
                   </a>
                 </div>
+                <h1 className="ml-3 mr-3 text-[#000000] font-bold">Hi, {user?.first_name}</h1>
                 <Menu className="">
                   <Menu.Button
                     className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
@@ -545,7 +546,6 @@ function Main() {
                     </Menu.Item>
                   </Menu.Items>
                 </Menu>
-                <h1 className="ml-3 mr-3 text-[#000000] font-bold">Hi, {user?.first_name}</h1>
 
               </div>
               <ActivitiesPanel
