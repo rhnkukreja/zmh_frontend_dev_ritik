@@ -26,13 +26,16 @@ const DetailCompany = () => {
   return (
     <>
      <Button
-        type="button"
-        variant="outline-secondary"
-        className=" border-none sm:w-fit"
         onClick={backToPreviousPage}
+        variant="primary"
+        className="bg-theme-2 border-bg-theme-2 mb-4"
       >
-        <ChevronLeft className="roup-[.mode--light]:text-white text-white" size={18} strokeWidth={1.5} />
-        <div className=" group-[.mode--light]:text-white">Back</div>
+        <ChevronLeft
+          className="roup-[.mode--light]:text-white text-white"
+          size={18}
+          strokeWidth={1.5}
+        />
+        Back
       </Button>
 
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
