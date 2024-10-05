@@ -1,7 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
-import { Menu, Popover } from "@/components/Base/Headless";
+import {  Popover } from "@/components/Base/Headless";
 
-import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
+import {  FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -34,7 +34,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
-  const navigate = useNavigate();
+ 
 
   const {
     loading,
@@ -184,33 +184,33 @@ function ProxyGuideline() {
     setAddNewProxyVotingGuidelineVisible(true);
   };
 
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+  // const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
 
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
+  // const checkImageUrl = async (url: string): Promise<boolean> => {
+  //   return new Promise((resolve) => {
+  //     const img = new Image();
+  //     img.src = url;
 
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  };
+  //     img.onload = () => resolve(true);
+  //     img.onerror = () => resolve(false);
+  //   });
+  // };
 
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const votingGuidline of proxyVotingGuidelines || []) {
-        const isValid = await checkImageUrl(votingGuidline?.image);
-        tempValidImages[votingGuidline?.name] = isValid
-          ? votingGuidline?.image
-          : userLinkedinImage;
-      }
+  // useEffect(() => {
+  //   const validateImages = async () => {
+  //     const tempValidImages: { [key: string]: string } = {};
+  //     for (const votingGuidline of proxyVotingGuidelines || []) {
+  //       const isValid = await checkImageUrl(votingGuidline?.image);
+  //       tempValidImages[votingGuidline?.name] = isValid
+  //         ? votingGuidline?.image
+  //         : userLinkedinImage;
+  //     }
 
-      setValidImages(tempValidImages);
-    };
+  //     setValidImages(tempValidImages);
+  //   };
 
-    validateImages();
-  }, [proxyVotingGuidelines]);
+  //   validateImages();
+  // }, [proxyVotingGuidelines]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
@@ -247,7 +247,7 @@ function ProxyGuideline() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl text-black">
+            <div className="font-semibold text-xl ">
               Voting Guidelines
             </div>
             {user?.user_type === "Admin" && (
@@ -400,34 +400,36 @@ function ProxyGuideline() {
                   </Popover>
                 </div>
               </div>
-              <div className="overflow-auto xl:overflow-visible">
+              <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={loading}>
+                <div className="overflow-auto max-h-[400px]">
+
                   <Table>
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Institution Name
                         </Table.Td>
-                        <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Year
                         </Table.Td>
                         {user?.user_type === "Admin" && (
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Sub Category
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Section
                           </Table.Td>
                         )}
                         {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Policy Guideline
                           </Table.Td>
                         )}
@@ -435,7 +437,7 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Actions
                         </Table.Td>
                       </Table.Tr>
@@ -592,6 +594,7 @@ function ProxyGuideline() {
                         )}
                     </Table.Tbody>
                   </Table>
+                </div>
                 </TableWrapper>
               </div>
               {totalPages > 1 && (

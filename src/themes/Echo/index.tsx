@@ -249,7 +249,7 @@ function Main() {
                       }}
                     >
                         <Lucide
-                          icon={menu.icon}
+                          icon={menu?.icon}
                           className="side-menu__link__icon side-menu__link--active"
                         />
 

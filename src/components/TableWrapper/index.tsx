@@ -8,7 +8,7 @@ interface TableWrapperProps {
 
 const TableWrapper: React.FC<TableWrapperProps> = ({ isLoading, children }) => {
   return (
-    <div className="relative">
+    <div className="relative ">
       {isLoading && (
         <div className="absolute inset-0 bg-white bg-opacity-35 flex justify-center items-center z-10">
           <div className="flex flex-col items-center justify-end">

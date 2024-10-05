@@ -42,6 +42,17 @@
   scrollbar-color: var(--secondary) var(--primary);
   font-family: montserrat;
 }
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.sticky-table {
+  position: sticky;
+
+  top: 0;
+  z-index: 10;
+}
 
 *::-webkit-scrollbar {
   width: 15px;
@@ -131,10 +142,10 @@
 
 .echo .side-menu__divider {
   color: white !important;
-} 
+}
 @media (min-width: 1280px) {
   .echo .side-menu--collapsed .side-menu__divider {
-      color: transparent !important;
+    color: transparent !important;
   }
 }
 .echo .side-menu ul.scrollable > li > .side-menu__link--active {
