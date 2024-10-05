@@ -67,8 +67,6 @@ function Main() {
       </div>
 
       <div className="col-span-12 xl:col-span-12">
-          
-      
         <CaseStudiesCard />
       </div>
     </div>

@@ -26,7 +26,7 @@ const index = () => {
 
     const [searchParams] = useSearchParams();
     const ticker = searchParams.get("ticker") ?? "AAPL";
-    const { dashboardDataList, investorCardLoader, page, totalPages, } = useAppSelector(
+    const { dashboardDataList, investorCardLoading, page, totalPages} = useAppSelector(
         (state) => state.dashboard
     );
     const { company_Global_Search } = useAppSelector((state) => state.dashboard);
@@ -155,7 +155,7 @@ const index = () => {
 
                             <div className='mt-5'>
                                 <div>
-                                    <TableWrapper isLoading={investorCardLoader}>
+                                    <TableWrapper isLoading={investorCardLoading}>
                                         <div className={clsx([locationPathName === '/' && 'overflow-auto max-h-[400px]'])}>
                                             <Table className="table">
                                                 <Table.Thead>
@@ -305,14 +305,14 @@ const index = () => {
             }
 
             {
-                dashboardDataList.length === 0 && investorCardLoader &&
+                dashboardDataList.length === 0 && investorCardLoading &&
                 <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                     <LoadingIcon color="#800000" icon="three-dots" className="w-16 h-16" />
                 </div>
             }
 
             {
-                dashboardDataList?.length === 0 && !investorCardLoader &&
+                dashboardDataList?.length === 0 && !investorCardLoading &&
                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                         <h1 className='font-semibold'> Investors Records Not Found..</h1>
                 </div>

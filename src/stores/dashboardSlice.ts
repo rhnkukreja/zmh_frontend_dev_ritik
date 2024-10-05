@@ -42,7 +42,11 @@ interface CompanySliceState {
   totalCompanyDashboard: number;
   company_Global_Search: string;
   agmSummaryDetails: any;
-  investorCardLoader: boolean;
+  caseStudyDetails: any;
+  caseStudyLoading: boolean;
+  investorCardLoading: boolean;
+  vdsProxyDetails: any;
+  vdsProxyLoading: boolean;
 }
 
 const initialState: CompanySliceState = {
@@ -57,7 +61,12 @@ const initialState: CompanySliceState = {
   totalCompanyDashboard: 0,
   company_Global_Search: "Apple Inc.",
   agmSummaryDetails: '',
-  investorCardLoader: true
+  investorCardLoading: true,
+  caseStudyDetails: '',
+  caseStudyLoading: true,
+  vdsProxyDetails: '',
+  vdsProxyLoading: true
+
   // {
   //   nominees: [],
   //   proposals: [],
@@ -85,6 +94,21 @@ export const fetchAGMSummaryDashboard = createAsyncThunk<
   string
 >(`${name}/fetchAGMSummaryDashboard`, async (url: string) => {
   return await dashboardService.fetchAGMSummaryDashboard(url);
+});
+
+export const fetchCaseStudyDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchCaseStudyDashboard`, async (url: string) => {
+  return await dashboardService.fetchCaseStudyDashboard(url);
+});
+
+
+export const fetchVdsProxyDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchVdsProxyDashboard`, async (url: string) => {
+  return await dashboardService.fetchVdsProxyDashboard(url);
 });
 
 const companySlice = createSlice({
@@ -127,7 +151,7 @@ const companySlice = createSlice({
 
       .addCase(fetchCompanyDashboard.pending, (state) => {
         state.dashboardDataList = [];
-        state.investorCardLoader = true;
+        state.investorCardLoading = true;
         state.error = null;
       })
       .addCase(
@@ -137,13 +161,13 @@ const companySlice = createSlice({
           action: PayloadAction<{ results: CompanyDashboard[] }>
         ) => {
           state.dashboardDataList = action.payload.results;
-          state.investorCardLoader = false;
+          state.investorCardLoading = false;
           // state.totalCompanyDashboard = action.payload.count;
           // state.totalPages = getPageNumbers(action.payload.count);
         }
       )
       .addCase(fetchCompanyDashboard.rejected, (state, action) => {
-        state.investorCardLoader = false;
+        state.investorCardLoading = false;
         state.error = action.error.message || "Failed to fetch company dashboard";
       })
       .addCase(fetchAGMSummaryDashboard.pending, (state) => {
@@ -165,6 +189,51 @@ const companySlice = createSlice({
       )
       .addCase(fetchAGMSummaryDashboard.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.error.message || "Failed to fetch company dashboard";
+      })
+
+      .addCase(fetchCaseStudyDashboard.pending, (state) => {
+        state.caseStudyDetails = '';
+        state.caseStudyLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchCaseStudyDashboard.fulfilled,
+        (
+          state,
+          action: PayloadAction<{ results:any }>
+        ) => {
+          state.caseStudyLoading = false;
+          state.caseStudyDetails = action.payload.results;
+          // state.totalCompanyDashboard = action.payload.count;
+          // state.totalPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchCaseStudyDashboard.rejected, (state, action) => {
+        state.caseStudyLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+
+      .addCase(fetchVdsProxyDashboard.pending, (state) => {
+        state.vdsProxyDetails = '';
+        state.vdsProxyLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchVdsProxyDashboard.fulfilled,
+        (
+          state,
+          action: PayloadAction<{ results:any }>
+        ) => {
+          state.vdsProxyLoading = false;
+          state.vdsProxyDetails = action.payload.results;
+          // state.totalCompanyDashboard = action.payload.count;
+          // state.totalPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchVdsProxyDashboard.rejected, (state, action) => {
+        state.vdsProxyLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       });
