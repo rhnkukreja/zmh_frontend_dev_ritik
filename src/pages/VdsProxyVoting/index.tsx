@@ -36,7 +36,9 @@ const index = () => {
             {
                 vdsProxyDetails?.vds_report?.length > 0 && <div className="p-5 mt-3.5 box ">
                     <div className="w-full">
-
+                        <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
+                            <h1 className='text-lg font-bold'>VDS Proxy Voting</h1>
+                        </div>
                         <>
                             <div className='mt-5'>
                                 <div >
