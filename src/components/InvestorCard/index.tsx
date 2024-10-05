@@ -32,10 +32,6 @@ const index = () => {
     const { company_Global_Search } = useAppSelector((state) => state.dashboard);
     const navigate = useNavigate();
 
-    console.log(dashboardDataList)
-                console.log(investorCardLoader)
-
-
     useEffect(() => {
         if (ticker) {
             dispatch(fetchCompanyDashboard(
@@ -160,25 +156,25 @@ const index = () => {
                                             <Table className="table">
                                                 <Table.Thead>
                                                     <Table.Tr className="row">
-                                                        <Table.Td className="cell py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                        <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                             Shareholder
                                                         </Table.Td>
-                                                        <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                        <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                             % Ownership
                                                         </Table.Td>
-                                                        <Table.Td className="cell py-2 font-semibold  h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                        <Table.Td className="cell py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                             Proxy Advisory Influence
                                                         </Table.Td>
-                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                             ESG Integration
                                                         </Table.Td>
-                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                             Engaged with Company
                                                         </Table.Td>
-                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                             Engagement Topic
                                                         </Table.Td>
-                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                                        <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                                             Voted Against Directors
                                                         </Table.Td>
                                                     </Table.Tr>
