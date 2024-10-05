@@ -42,6 +42,7 @@ interface CompanySliceState {
   totalCompanyDashboard: number;
   company_Global_Search: string;
   agmSummaryDetails: any;
+  investorCardLoader: boolean;
 }
 
 const initialState: CompanySliceState = {
@@ -49,13 +50,14 @@ const initialState: CompanySliceState = {
   companyData: null,
   dashboardDataList: [],
   dashboardData: null,
-  loading: false,
+  loading: true,
   error: null,
   page: 1,
   totalPages: 1,
   totalCompanyDashboard: 0,
   company_Global_Search: "Apple Inc.",
-  agmSummaryDetails: ''
+  agmSummaryDetails: '',
+  investorCardLoader: true
   // {
   //   nominees: [],
   //   proposals: [],
@@ -125,7 +127,7 @@ const companySlice = createSlice({
 
       .addCase(fetchCompanyDashboard.pending, (state) => {
         state.dashboardDataList = [];
-        state.loading = true;
+        state.investorCardLoader = true;
         state.error = null;
       })
       .addCase(
@@ -135,15 +137,14 @@ const companySlice = createSlice({
           action: PayloadAction<{ results: CompanyDashboard[] }>
         ) => {
           state.dashboardDataList = action.payload.results;
-          state.loading = false;
+          state.investorCardLoader = false;
           // state.totalCompanyDashboard = action.payload.count;
           // state.totalPages = getPageNumbers(action.payload.count);
         }
       )
       .addCase(fetchCompanyDashboard.rejected, (state, action) => {
-        state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch company dashboard";
+        state.investorCardLoader = false;
+        state.error = action.error.message || "Failed to fetch company dashboard";
       })
       .addCase(fetchAGMSummaryDashboard.pending, (state) => {
         state.agmSummaryDetails = '';

@@ -232,7 +232,7 @@ const index = () => {
             {
                 !agmSummaryDetails && loading &&
                 <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                    <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
+                   <LoadingIcon color="#800000" icon="three-dots" className="w-16 h-16" />
                 </div>
             }
             
