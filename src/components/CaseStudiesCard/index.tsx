@@ -46,8 +46,8 @@ const index = () => {
         const validateImages = async () => {
             const tempValidImages: { [key: string]: string } = {};
             for (const caseStudyItem of caseStudyDetails?.items || []) {
-                const isValid = await checkImageUrl(caseStudyItem?.pagemap?.cse_thumbnail[0]?.src);
-                tempValidImages[caseStudyItem?.title] = isValid ? caseStudyItem?.pagemap?.cse_thumbnail[0]?.src : investorIcon;
+                const isValid = await checkImageUrl(caseStudyItem?.pagemap?.cse_thumbnail?.length > 0 && caseStudyItem?.pagemap?.cse_thumbnail[0]?.src);
+                tempValidImages[caseStudyItem?.title] = isValid ? caseStudyItem?.pagemap?.cse_thumbnail?.length > 0 && caseStudyItem?.pagemap?.cse_thumbnail[0]?.src : investorIcon;
             }
 
             setValidImages(tempValidImages);
@@ -86,9 +86,9 @@ const index = () => {
                                                     </div>
                                                 </div>
 
-                                                <div>
+                                                {/* <div>
                                                     <h2 className='font-semibold'>30-Aug-2024</h2>
-                                                </div>
+                                                </div> */}
                                             </div>
                                         ))}
 
