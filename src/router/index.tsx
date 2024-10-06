@@ -82,6 +82,8 @@ import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
 import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
+import VdsProxyVoting from "@/pages/VdsProxyVoting";
+
 
 function Router() {
   const routes = [
@@ -380,6 +382,10 @@ function Router() {
         {
           path: "summary-details",
           element: <AgmSummaryDetails /> ,
+        },
+        {
+          path: "vds-details",
+          element: <VdsProxyVoting/> ,
         },
       ],
     },

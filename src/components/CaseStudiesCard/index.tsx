@@ -1,172 +1,114 @@
+import { useSearchParams } from "react-router-dom";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { useEffect, useState } from "react";
+import { createDynamicURL } from "@/utils/helper";
+import { baseURL } from "@/constant";
+import { fetchCaseStudyDashboard } from "@/stores/dashboardSlice";
+import { AppDispatch } from "@/stores/store";
+import LoadingIcon from "../Base/LoadingIcon";
 
 const index = () => {
-  return (
-      <div className="p-5 mt-3.5 box ">
-          <div className="w-full">
-              <div className='flex justify-between items-center px-3'>
-                  <h1 className='text-lg font-bold'>Recent Investor Mentions</h1>
-              </div>
+    const [searchParams] = useSearchParams();
+    const ticker = searchParams.get("ticker") ?? "AAPL";
+    const dispatch: AppDispatch = useAppDispatch();
 
-              <div className=''>
-                  <div className="min-h-[300px] max-h-[400px] overflow-y-scroll p-3">
-                      <hr />
+    const pageNumber = 1;
+    const { caseStudyDetails, caseStudyLoading, page, totalPages } = useAppSelector((state) => state.dashboard);
+    const { company_Global_Search } = useAppSelector((state) => state.dashboard);
 
-                      <div className='flex items-center justify-between py-3'>
-                          <div className='flex items-center justify-between gap-4'>
-                              <div className='w-[60px]'>
-                                  <img src={investorIcon} />
-                              </div>
-                              <div className=' flex flex-col justify-between gap-y-2'>
+    useEffect(() => {
+        if (ticker) {
+            dispatch(fetchCaseStudyDashboard(
+                createDynamicURL(`https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q=${company_Global_Search}&dateRestrict=y1&start=${pageNumber}`)
+            )
+            );
+        }
 
-                                  <h1 className='font-semibold underline text-md'>All Cap Growth Strategy</h1>
-                                  <span className='font-regular text-xs'>cf-store.widencdn.net › franklintempletonprod › pdf</span>
-                                  <span className='font-regular w-[900px] font-wrap text-xs'>On an individual stock basis, leading individual contributors to absolute returns in the first quarter included positions in Citrix. Systems, Amazon.com, Vertex...</span>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h2 className='font-semibold'>30-Aug-2024</h2>
-                          </div>
-                      </div>
-
-                      <hr />
-
-                      <div className='flex items-center justify-between py-3'>
-                          <div className='flex items-center justify-between gap-4'>
-                              <div className='w-[60px]'>
-                                  <img src={investorIcon} />
-                              </div>
-                              <div className=' flex flex-col justify-between gap-y-2'>
-
-                                  <h1 className='font-semibold underline text-md'>All Cap Growth Strategy</h1>
-                                  <span className='font-regular text-xs'>cf-store.widencdn.net › franklintempletonprod › pdf</span>
-                                  <span className='font-regular w-[900px] font-wrap text-xs'>On an individual stock basis, leading individual contributors to absolute returns in the first quarter included positions in Citrix. Systems, Amazon.com, Vertex...</span>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h2 className='font-semibold'>30-Aug-2024</h2>
-                          </div>
-                      </div>
-
-                      <hr />
-
-                      <div className='flex items-center justify-between py-3'>
-                          <div className='flex items-center justify-between gap-4'>
-                              <div className='w-[60px]'>
-                                  <img src={investorIcon} />
-                              </div>
-                              <div className=' flex flex-col justify-between gap-y-2'>
-
-                                  <h1 className='font-semibold underline text-md'>All Cap Growth Strategy</h1>
-                                  <span className='font-regular text-xs'>cf-store.widencdn.net › franklintempletonprod › pdf</span>
-                                  <span className='font-regular w-[900px] font-wrap text-xs'>On an individual stock basis, leading individual contributors to absolute returns in the first quarter included positions in Citrix. Systems, Amazon.com, Vertex...</span>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h2 className='font-semibold'>30-Aug-2024</h2>
-                          </div>
-                      </div>
-
-                      <hr />
-
-                      <div className='flex items-center justify-between py-3'>
-                          <div className='flex items-center justify-between gap-4'>
-                              <div className='w-[60px]'>
-                                  <img src={investorIcon} />
-                              </div>
-                              <div className=' flex flex-col justify-between gap-y-2'>
-
-                                  <h1 className='font-semibold underline text-md'>All Cap Growth Strategy</h1>
-                                  <span className='font-regular text-xs'>cf-store.widencdn.net › franklintempletonprod › pdf</span>
-                                  <span className='font-regular w-[900px] font-wrap text-xs'>On an individual stock basis, leading individual contributors to absolute returns in the first quarter included positions in Citrix. Systems, Amazon.com, Vertex...</span>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h2 className='font-semibold'>30-Aug-2024</h2>
-                          </div>
-                      </div>
-
-                      <hr />
-
-                      <div className='flex items-center justify-between py-3'>
-                          <div className='flex items-center justify-between gap-4'>
-                              <div className='w-[60px]'>
-                                  <img src={investorIcon} />
-                              </div>
-                              <div className=' flex flex-col justify-between gap-y-2'>
-
-                                  <h1 className='font-semibold underline text-md'>All Cap Growth Strategy</h1>
-                                  <span className='font-regular text-xs'>cf-store.widencdn.net › franklintempletonprod › pdf</span>
-                                  <span className='font-regular w-[900px] font-wrap text-xs'>On an individual stock basis, leading individual contributors to absolute returns in the first quarter included positions in Citrix. Systems, Amazon.com, Vertex...</span>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h2 className='font-semibold'>30-Aug-2024</h2>
-                          </div>
-                      </div>
-
-                      <hr />
-
-                      <div className='flex items-center justify-between py-3'>
-                          <div className='flex items-center justify-between gap-4'>
-                              <div className='w-[60px]'>
-                                  <img src={investorIcon} />
-                              </div>
-                              <div className=' flex flex-col justify-between gap-y-2'>
-
-                                  <h1 className='font-semibold underline text-md'>All Cap Growth Strategy</h1>
-                                  <span className='font-regular text-xs'>cf-store.widencdn.net › franklintempletonprod › pdf</span>
-                                  <span className='font-regular w-[900px] font-wrap text-xs'>On an individual stock basis, leading individual contributors to absolute returns in the first quarter included positions in Citrix. Systems, Amazon.com, Vertex...</span>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h2 className='font-semibold'>30-Aug-2024</h2>
-                          </div>
-                      </div>
-
-                      <hr />
-
-                      <div className='flex items-center justify-between py-3'>
-                          <div className='flex items-center justify-between gap-4'>
-                              <div className='w-[60px]'>
-                                  <img src={investorIcon} />
-                              </div>
-                              <div className=' flex flex-col justify-between gap-y-2'>
-
-                                  <h1 className='font-semibold underline text-md'>All Cap Growth Strategy</h1>
-                                  <span className='font-regular text-xs'>cf-store.widencdn.net › franklintempletonprod › pdf</span>
-                                  <span className='font-regular w-[900px] font-wrap text-xs'>On an individual stock basis, leading individual contributors to absolute returns in the first quarter included positions in Citrix. Systems, Amazon.com, Vertex...</span>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h2 className='font-semibold'>30-Aug-2024</h2>
-                          </div>
-                      </div>
-
-                      <hr />
+    }, [ticker]);
 
 
-                  </div>
 
-              </div>
-              {/* <a href="https://cse.google.com/cse?cx=YOUR_CSE_ID#gsc.q=Amazon" target="_blank">Search Amazon</a>
+    const checkImageUrl = async (url: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = url;
 
-              <iframe
-                  src="https://cse.google.com/cse?cx=860f2a6398fa1457c#gsc.q=%22Amazon%22&gsc.sort=date"
-                  title="Embedded Dashboard"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-              ></iframe> */}
-          </div>
-      </div>
-  )
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+        });
+    };
+
+    const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
+
+    useEffect(() => {
+        const validateImages = async () => {
+            const tempValidImages: { [key: string]: string } = {};
+            for (const caseStudyItem of caseStudyDetails?.items || []) {
+                const isValid = await checkImageUrl(caseStudyItem?.pagemap?.cse_thumbnail[0]?.src);
+                tempValidImages[caseStudyItem?.title] = isValid ? caseStudyItem?.pagemap?.cse_thumbnail[0]?.src : investorIcon;
+            }
+
+            setValidImages(tempValidImages);
+        };
+
+        validateImages();
+    }, [caseStudyDetails]);
+
+
+    return (
+        <>
+            {
+                caseStudyDetails?.items && <div className="p-5 mt-3.5 box ">
+                    <div className="w-full">
+                        <div className='flex justify-between items-center px-3'>
+                            <h1 className='text-lg font-bold'>Recent Investor Mentions</h1>
+                        </div>
+
+                        <div className=''>
+                            <div className="min-h-[300px] max-h-[400px] overflow-y-scroll p-3">
+                                <hr />
+                                {caseStudyDetails?.items?.length > 0 &&
+                                    caseStudyDetails?.items.map(
+                                        (caseStudy: any, key: any) => (
+                                            <div key={key} className='flex items-center justify-between py-3'>
+                                                <div className='flex items-center justify-between gap-4'>
+                                                    <div className='w-[50px]'>
+                                                        <img src={validImages[caseStudy?.title]} />
+                                                    </div>
+                                                    <div className=' flex flex-col justify-between gap-y-2'>
+
+                                                        <h1 onClick={() => window.open(caseStudy?.link, "_blank")}
+                                                            className='font-semibold cursor-pointer underline text-md w-[900px] font-wrap hover:text-[#9F1239]'>{caseStudy?.title}</h1>
+                                                        <span className='font-regular w-[900px] font-wrap text-xs' dangerouslySetInnerHTML={{ __html: caseStudy?.htmlSnippet }}>
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <h2 className='font-semibold'>30-Aug-2024</h2>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            }
+
+            {
+                caseStudyDetails?.items?.length === 0 && caseStudyLoading &&
+                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                    <LoadingIcon color="#800000" icon="three-dots" className="w-16 h-16" />
+                </div>
+            }
+        </>
+
+    )
 }
 
 export default index
