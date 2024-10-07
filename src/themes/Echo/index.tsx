@@ -244,6 +244,7 @@ function Main() {
                       ])}
                       onClick={(event: React.MouseEvent) => {
                         event.preventDefault();
+                        menu.title !== 'Notes' &&
                         linkTo(menu, navigate);
                         setFormattedMenu([...formattedMenu]);
                       }}
