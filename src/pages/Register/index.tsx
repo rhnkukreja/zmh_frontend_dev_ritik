@@ -17,7 +17,6 @@ import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 import { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-
 import CompanySelect from "@/components/ReactSelectAsync";
 
 interface FormInputs {
