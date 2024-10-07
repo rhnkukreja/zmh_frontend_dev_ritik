@@ -1,12 +1,11 @@
-import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
-import Tippy from "@/components/Base/Tippy";
-import users from "@/fakers/users";
+import { FormInput, FormLabel } from "@/components/Base/Form";
+
 import Button from "@/components/Base/Button";
 import clsx from "clsx";
 import _ from "lodash";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
+
 import { Link, useNavigate } from "react-router-dom";
-import { useForm, SubmitHandler, Controller } from "react-hook-form";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 
 import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -15,14 +14,19 @@ import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+
+import CompanySelect from "@/components/ReactSelectAsync";
 
 interface FormInputs {
   first_name: string;
   last_name: string;
-  // username: string;
+  company?: {
+    value: number;
+    label: string;
+  };
   email: string;
   password: string;
   passwordConfirmation: string;
@@ -36,22 +40,24 @@ function Main() {
     handleSubmit,
     formState: { errors },
   } = useForm<FormInputs>();
+  const companySelectRef = useRef<any>(null);
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
-  const [showPassword, setShowPassword]= useState(false);
-  const [showConfirmPassword, setShowConfirmPassword]= useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     const { passwordConfirmation, ...restData } = data;
-
+    
     try {
       const response = await dispatch(
         signUp({
           ...restData,
           user_type: "Admin",
           phone: "",
-          username: restData?.email
+          username: restData?.email,
+          company : restData?.company?.value || null 
         })
       ).unwrap();
 
@@ -66,9 +72,8 @@ function Main() {
 
   return (
     <>
-     <Helmet>
+      <Helmet>
         <title>ZMH Analytics - ZMH Advisors</title>
-        
       </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
@@ -138,21 +143,21 @@ function Main() {
                     <span className="text-red-500">{errors.email.message}</span>
                   )}
                 </div>
-                {/* <div className="mt-5">
-                  <FormLabel>User Name*</FormLabel>
-                  <FormInput
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="User Name"
-                    {...register("username", {
-                      required: "User Name is required",
-                    })}
+
+                <div className="w-full mt-5" ref={companySelectRef}>
+                  <FormLabel>Select Company</FormLabel>
+                  <Controller
+                    name="company"
+                    control={control}
+                
+                    render={({ field }) => (
+                      <CompanySelect
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
                   />
-                  {errors.username && (
-                    <span className="text-red-500">
-                      {errors.username.message}
-                    </span>
-                  )}
-                </div> */}
+                </div>
                 <div className="mt-5 relative">
                   <FormLabel>Password*</FormLabel>
                   <FormInput
@@ -164,8 +169,20 @@ function Main() {
                     })}
                   />
                   <span className="absolute top-[52%] right-[5%] cursor-pointer">
-                    {showPassword && <Eye onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
-                    {!showPassword && <EyeOff onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                    {showPassword && (
+                      <Eye
+                        onClick={() => setShowPassword(!showPassword)}
+                        strokeWidth={0.75}
+                        size={20}
+                      />
+                    )}
+                    {!showPassword && (
+                      <EyeOff
+                        onClick={() => setShowPassword(!showPassword)}
+                        strokeWidth={0.75}
+                        size={20}
+                      />
+                    )}
                   </span>
                   {errors.password && (
                     <span className="text-red-500">
@@ -187,8 +204,24 @@ function Main() {
                     })}
                   />
                   <span className="absolute top-[52%] right-[5%] cursor-pointer">
-                    {showConfirmPassword && <Eye onClick={() => setShowConfirmPassword(!showConfirmPassword)} strokeWidth={0.75} size={20} />}
-                    {!showConfirmPassword && <EyeOff onClick={() => setShowConfirmPassword(!showConfirmPassword)} strokeWidth={0.75} size={20} />}
+                    {showConfirmPassword && (
+                      <Eye
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        strokeWidth={0.75}
+                        size={20}
+                      />
+                    )}
+                    {!showConfirmPassword && (
+                      <EyeOff
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        strokeWidth={0.75}
+                        size={20}
+                      />
+                    )}
                   </span>
                   {errors.passwordConfirmation && (
                     <span className="text-red-500">

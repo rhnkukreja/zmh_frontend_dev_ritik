@@ -14,11 +14,17 @@ interface AuthState {
   user: Login | null;
   loading: boolean;
   error: string | null;
+  companyGlobalSearchName: string;
+  companyGlobalSearchId: number | undefined;
+  companyGlobalSearchTicker: string | undefined;
 }
 
 const initialState: AuthState = {
   user: null,
   loading: false,
+  companyGlobalSearchName: "",
+  companyGlobalSearchId: undefined,
+  companyGlobalSearchTicker: undefined,
   error: null,
 };
 
@@ -40,6 +46,18 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    setDashboardGlobalSearch(
+      state,
+      action: PayloadAction<{
+        name: string;
+        id: number;
+        ticker: string;
+      }>
+    ) {
+      state.companyGlobalSearchName = action.payload.name;
+      state.companyGlobalSearchId = action.payload.id;
+      state.companyGlobalSearchTicker = action.payload.ticker;
+    },
     logout(state) {
       state.user = null;
       state.loading = false;
@@ -89,6 +107,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, setSavedSearch } = authSlice.actions;
+export const { logout, setSavedSearch, setDashboardGlobalSearch } =
+  authSlice.actions;
 
 export default authSlice;

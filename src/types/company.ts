@@ -17,6 +17,7 @@ export type CompanyData = {
   date_created: string;
   date_updated: string;
   bulk_upload_file?: any;
+  created_by_email: string;
 };
 
 export type CompanyFormData = {

@@ -21,7 +21,7 @@ import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
 import { FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
-import { setDashboardGlobalSearch } from "@/stores/dashboardSlice";
+
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import aiIcon from '@/assets/images/zmh-images/ai-Icon.png'
 
@@ -59,7 +59,9 @@ function Main() {
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
   };
-  const { company_Global_Search } = useAppSelector((state: RootState) => state.dashboard);
+  const { companyGlobalSearchName } = useAppSelector((state: RootState) => state.authentiction);
+
+
 
   const compactLayout = () => {
     if (window.innerWidth <= 1600) {
@@ -444,26 +446,13 @@ function Main() {
               >
                 <div className={clsx([
                   'bg-white/[0.12] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
-                  company_Global_Search !== '' ? 'text-white' : 'text-white/60'])}>
+                  companyGlobalSearchName !== '' ? 'text-white' : 'text-white/60'])}>
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? company_Global_Search : 'Quick search...'}</div>
+                  <div className="ml-2.5 mr-auto">{companyGlobalSearchName !== '' ? companyGlobalSearchName : 'Quick search...'}</div>
                   {/* <div>⌘K</div> */}
                 </div>
               </div>
-                {/* <div className="ml-5 bg-white border-transparent rounded-lg">
-                  <Button onClick={()=> dispatch(setDashboardGlobalSearch(''))}>
-                    <Tippy
-                      content="Clear Search"
-                      options={{ theme: "light" }}
-                    >
-                      <FilterX
-                        size={17}
-                        strokeWidth={1}
-                        className="text-slate-500 cursor-pointer	"
-                      />
-                    </Tippy>
-                  </Button>
-                </div> */}
+                
               <QuickSearch
                 quickSearch={quickSearch}
                 setQuickSearch={setQuickSearch}

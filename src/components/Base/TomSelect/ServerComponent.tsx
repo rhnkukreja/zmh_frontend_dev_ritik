@@ -52,7 +52,8 @@ export interface TomSelectProps<T extends string | string[] = string | string[]>
   labelKey: string;
   valueKey: string;
   url: string;
-  isMultiple? : boolean
+  isMultiple?: boolean;
+  ContainerClassName?: string;
 }
 
 async function fetchOptions({
@@ -64,7 +65,12 @@ async function fetchOptions({
   valueKey: string;
   labelKey: string;
 }): Promise<FetchedOptionType[]> {
-  const response = (url.includes('def14a') || url.includes('Proponent') || url.includes('shareholder_proposal') ) ? await axiosInstance.get(`${url}`) :await axiosInstance.get(`${url}?all=true`);
+  const response =
+    url.includes("def14a") ||
+    url.includes("Proponent") ||
+    url.includes("shareholder_proposal")
+      ? await axiosInstance.get(`${url}`)
+      : await axiosInstance.get(`${url}?all=true`);
 
   const data = response.data.results || response.data;
 
@@ -76,6 +82,7 @@ async function fetchOptions({
 
 function TomSelect<T extends string | string[]>({
   className = "",
+  ContainerClassName = "",
   options = {},
   value,
   onOptionAdd = () => {},
@@ -85,10 +92,12 @@ function TomSelect<T extends string | string[]>({
   labelKey,
   url,
   isMultiple = false,
+
   ...computedProps
 }: TomSelectProps<T>) {
   const props = {
     className: className,
+    ContainerClassName: ContainerClassName,
     options: options,
     value: value,
     onOptionAdd: onOptionAdd,
@@ -207,9 +216,8 @@ function TomSelect<T extends string | string[]>({
   }, [tomSelectRef, props.value, props.className]);
 
   return (
-    <div className="mt-2 text-left">
+    <div className={`mt-2 text-left !${ContainerClassName}`}>
       <select
-        
         {...computedProps}
         ref={tomSelectRef}
         multiple={isMultiple}

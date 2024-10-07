@@ -11,7 +11,7 @@ import {
     setPage,
 } from "@/stores/dashboardSlice";
 import { AppDispatch } from "@/stores/store";
-import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import {  useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { createDynamicURL, downloadCSV } from '@/utils/helper';
 import { baseURL } from '@/constant';
@@ -26,11 +26,11 @@ const index = () => {
 
     const [searchParams] = useSearchParams();
     const ticker = searchParams.get("ticker") ?? "AAPL";
-    const { dashboardDataList, loading, page, totalPages, } = useAppSelector(
+    const { dashboardDataList, loading } = useAppSelector(
         (state) => state.dashboard
     );
-    const { company_Global_Search } = useAppSelector((state) => state.dashboard);
-    const navigate = useNavigate();
+    const { companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
+ 
 
 
     useEffect(() => {
@@ -100,7 +100,7 @@ const index = () => {
     return (
         <>
             <div className="p-y-5 mb-1 font-semibold text-lg text-white" >
-                {company_Global_Search}
+                {companyGlobalSearchName}
             </div>
             {
                 dashboardDataList?.length !== 0 &&

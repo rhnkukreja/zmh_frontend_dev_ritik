@@ -18,7 +18,7 @@ import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+
 import AddNewInvesterProfile from "../InvestorProfiles/components/AddNewInvester";
 import Table from "@/components/Base/Table";
 import { TypesPeerAnalysis } from "@/types/peerAnalysis";
@@ -35,7 +35,18 @@ function PeerAnalysis() {
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const { loading, peerAnalysisData, page, totalPages, filters } =
     useAppSelector((state) => state.peerAnalysis);
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
+
+  useEffect(() => {
+    dispatch(
+      setFilter({
+        key: "company",
+        value: [companyGlobalSearchName],
+      })
+    );
+  }, [companyGlobalSearchName]);
 
   useEffect(() => {
     if (filters.institution_name.length > 0) {
@@ -56,7 +67,7 @@ function PeerAnalysis() {
         )
       );
     }
-  }, [page, filters.institution_name]);
+  }, [page, filters]);
 
   useEffect(() => {
     return () => {
@@ -110,8 +121,8 @@ function PeerAnalysis() {
     setSearchTerms([]);
     dispatch(
       setFilter({
-        key: "institution_name",
-        value: [],
+        key: "company",
+        value: [companyGlobalSearchName],
       })
     );
 
@@ -130,34 +141,6 @@ function PeerAnalysis() {
     dispatch(resetPage());
   };
 
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
-
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  };
-
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
-
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const profile of peerAnalysisData || []) {
-        const isValid = await checkImageUrl(profile?.image);
-        tempValidImages[profile?.name] = isValid
-          ? profile?.image
-          : userLinkedinImage;
-      }
-
-      setValidImages(tempValidImages);
-    };
-
-    validateImages();
-  }, [peerAnalysisData]);
-
   const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
@@ -165,16 +148,20 @@ function PeerAnalysis() {
         value: searchTerms,
       })
     );
-    const tempFilter = { institution_name: searchTerms };
+
+    const tempFilter = { ...filters, institution_name: searchTerms };
     dispatch(
       fetchPeerAnalysis(
         createDynamicURL(`${baseURL}/peer_analysis/`, tempFilter, undefined, 1)
       )
     );
   };
+
   useEffect(() => {
+    
     handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
+  }, [searchTerms, searchTerms?.length, filters?.company]);
+
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
@@ -199,7 +186,7 @@ function PeerAnalysis() {
           key: "Peer Analysis",
           value: {
             institution: searchTerms,
-            category: filters["company"],
+            company: filters["company"],
           },
         })
       );

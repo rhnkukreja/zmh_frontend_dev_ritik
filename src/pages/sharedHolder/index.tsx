@@ -44,13 +44,17 @@ function ShareHolderProposal() {
     proponent: string[];
     category: string[];
     sub_category: string[];
+    company: string[];
     year: string[];
     keyword: string;
     [key: string]: any;
   }
 
   const dispatch: AppDispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
+
   const [tab, setTab] = useState<"proposal" | "no-action" | "withdrawn">(
     "proposal"
   );
@@ -60,7 +64,7 @@ function ShareHolderProposal() {
   >(undefined);
 
   const [filtersLength, setFiltersLength] = useState<number>(0);
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
@@ -83,16 +87,9 @@ function ShareHolderProposal() {
   } = useForm<ShareHolderFilter>();
   const navigate = useNavigate();
 
-  const {
-    loading,
-    shareHolderProposal,
-    page,
-    totalPages,
-    filters,
-    // investerProfileFilterOption,
-  } = useAppSelector((state) => state.sharedHolderNoAction);
-
-  const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+  const { loading, shareHolderProposal, page, totalPages } = useAppSelector(
+    (state) => state.sharedHolderNoAction
+  );
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -106,7 +103,6 @@ function ShareHolderProposal() {
           createDynamicURL(
             `${baseURL}/shareholder_proposal/def14a/`,
             {
-              globalSearch: company_Global_Search,
               ...applyFilters,
             },
             undefined,
@@ -188,9 +184,11 @@ function ShareHolderProposal() {
     setValue("proponent", []);
     setValue("institution", []);
 
+
     setApplyFilters({
       keyword: "",
       category: [],
+      company: [companyGlobalSearchName],
       sub_category: [],
       year: [],
       status: [],
@@ -198,32 +196,6 @@ function ShareHolderProposal() {
       institution: [],
     });
   };
-
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
-
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  };
-
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const profile of shareHolderProposal || []) {
-        const isValid = await checkImageUrl(profile?.image);
-        tempValidImages[profile?.name] = isValid
-          ? profile?.image
-          : userLinkedinImage;
-      }
-
-      setValidImages(tempValidImages);
-    };
-
-    validateImages();
-  }, [shareHolderProposal]);
 
   const handleSearch = (searchTerms: string[]) => {
     setApplyFilters((prev) => {
@@ -235,7 +207,11 @@ function ShareHolderProposal() {
   };
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
-    setApplyFilters({ ...shareHolderFilters, proponent_name: searchTerms });
+    setApplyFilters({
+      ...shareHolderFilters,
+      proponent_name: searchTerms,
+      company: [companyGlobalSearchName],
+    });
     const validKeysCount = Object.keys(shareHolderFilters).filter((key) => {
       const value = shareHolderFilters[key];
       return value !== undefined && value !== "" && value.length !== 0;
@@ -244,11 +220,19 @@ function ShareHolderProposal() {
     setFiltersLength(validKeysCount);
   };
 
-  // const handleCategory = (item:any) => {
-  //   setCategoryName(item?.target?.value);
-  //   console.log(categoryName);
-  //   // return field.value?.toString();
-  // }
+  useEffect(() => {
+    setApplyFilters((prev) => ({
+      
+      company: [companyGlobalSearchName],
+      status: prev?.status || [],
+      proponent: prev?.proponent || [],
+      category: prev?.category || [],
+      sub_category: prev?.sub_category || [],
+      year: prev?.year || [],
+      keyword: prev?.keyword || "",
+    }));
+  }, [companyGlobalSearchName]);
+
   const getSavedSearches = () => {
     if (user?.saved_search["Shareholder Proposal"]) {
       const savedSearch = user.saved_search["Shareholder Proposal"];
@@ -266,6 +250,7 @@ function ShareHolderProposal() {
         sub_category: savedSearch.sub_category || [],
         year: savedSearch.year || [],
         status: savedSearch.status || [],
+        company: savedSearch?.company,
       });
       setIsFilterCollapse(true);
     }
@@ -280,6 +265,7 @@ function ShareHolderProposal() {
       year: applyFilters?.year || [],
       status: applyFilters?.status || [],
       keyword: applyFilters?.keyword || "",
+      company: [companyGlobalSearchName]
     });
     if (res?.Success) {
       dispatch(
@@ -292,6 +278,7 @@ function ShareHolderProposal() {
             year: watch("year") || [],
             status: watch("status") || [],
             keyword: watch("keyword") || "",
+            company: [companyGlobalSearchName],
           },
         })
       );
@@ -823,129 +810,128 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                      <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px]">
+                          <Table>
+                            <Table.Thead>
+                              <Table.Tr>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Year
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Company
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proposal No
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Outcome/Percentage for
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  No Action Letters
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Actions
+                                </Table.Td>
+                              </Table.Tr>
+                            </Table.Thead>
 
-                        <Table>
-                          <Table.Thead>
-                            <Table.Tr>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Year
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Company
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Proponent
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Proposal No
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Outcome/Percentage for
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                No Action Letters
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Actions
-                              </Table.Td>
-                            </Table.Tr>
-                          </Table.Thead>
-
-                          <Table.Tbody>
-                            {shareHolderProposal?.length > 0 &&
-                              shareHolderProposal?.map((noAction: any) => (
-                                <Table.Tr
-                                  key={noAction?.id}
-                                  className="[&_td]:last:border-b-0"
-                                >
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {noAction?.year}
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                    <Tippy
-                                      content={noAction?.company_name}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.company_name}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                    <Tippy
-                                      content={noAction?.proponent_name}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.proponent_name}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                    {noAction?.proposal_num}
-                                  </Table.Td>
-                                  <Table.Td
-                                    className={clsx([
-                                      "py-2  border-dashed dark:bg-darkmode-600 text-wrap",
-                                      noAction?.outcome_percentage?.includes(
-                                        "Fail"
-                                      ) && "text-red-600 font-semibold",
-                                      noAction?.outcome_percentage?.includes(
-                                        "Withdrawn"
-                                      ) && "font-semibold",
-                                      noAction?.outcome_percentage?.includes(
-                                        "Pass"
-                                      ) && "text-blue-600 font-semibold",
-                                    ])}
+                            <Table.Tbody>
+                              {shareHolderProposal?.length > 0 &&
+                                shareHolderProposal?.map((noAction: any) => (
+                                  <Table.Tr
+                                    key={noAction?.id}
+                                    className="[&_td]:last:border-b-0"
                                   >
-                                    {noAction?.outcome_percentage
-                                      ? noAction?.outcome_percentage
-                                      : "Meeting not held or Results not available"}
-                                  </Table.Td>
-                                  <Table.Td
-                                    className={clsx([
-                                      "py-2 font-semibold border-dashed dark:bg-darkmode-600",
-                                      noAction?.nl_exist &&
-                                        "text-blue-600 underline cursor-pointer",
-                                    ])}
-                                    onClick={() => {
-                                      const id =
-                                        noAction?.nl_exist === true
-                                          ? noAction?.no_action_link
-                                              ?.split("/")
-                                              .filter(Boolean)
-                                              .pop()
-                                          : 0;
-                                      noAction?.nl_exist === true &&
-                                        navigate(
-                                          `/share-holder-proposal/${id}?url=shareholder_proposal/no_action`
-                                        );
-                                    }}
-                                  >
-                                    {noAction?.nl_exist === true ? "Yes" : ""}
-                                  </Table.Td>
-                                  <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                    <div className="flex">
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                       <Tippy
-                                        content=" See Details"
-                                        options={{
-                                          theme: "dark",
-                                        }}
+                                        content={noAction?.company_name}
+                                        options={{ theme: "light" }}
                                       >
-                                        <Lucide
-                                          onClick={() =>
-                                            navigate(
-                                              `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
-                                            )
-                                          }
-                                          icon="Eye"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
+                                        {noAction?.company_name}
                                       </Tippy>
-                                    </div>
-                                  </Table.Td>
-                                </Table.Tr>
-                              ))}
-                          </Table.Tbody>
-                        </Table>
-                      </div>
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
+                                      <Tippy
+                                        content={noAction?.proponent_name}
+                                        options={{ theme: "light" }}
+                                      >
+                                        {noAction?.proponent_name}
+                                      </Tippy>
+                                    </Table.Td>
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                      {noAction?.proposal_num}
+                                    </Table.Td>
+                                    <Table.Td
+                                      className={clsx([
+                                        "py-2  border-dashed dark:bg-darkmode-600 text-wrap",
+                                        noAction?.outcome_percentage?.includes(
+                                          "Fail"
+                                        ) && "text-red-600 font-semibold",
+                                        noAction?.outcome_percentage?.includes(
+                                          "Withdrawn"
+                                        ) && "font-semibold",
+                                        noAction?.outcome_percentage?.includes(
+                                          "Pass"
+                                        ) && "text-blue-600 font-semibold",
+                                      ])}
+                                    >
+                                      {noAction?.outcome_percentage
+                                        ? noAction?.outcome_percentage
+                                        : "Meeting not held or Results not available"}
+                                    </Table.Td>
+                                    <Table.Td
+                                      className={clsx([
+                                        "py-2 font-semibold border-dashed dark:bg-darkmode-600",
+                                        noAction?.nl_exist &&
+                                          "text-blue-600 underline cursor-pointer",
+                                      ])}
+                                      onClick={() => {
+                                        const id =
+                                          noAction?.nl_exist === true
+                                            ? noAction?.no_action_link
+                                                ?.split("/")
+                                                .filter(Boolean)
+                                                .pop()
+                                            : 0;
+                                        noAction?.nl_exist === true &&
+                                          navigate(
+                                            `/share-holder-proposal/${id}?url=shareholder_proposal/no_action`
+                                          );
+                                      }}
+                                    >
+                                      {noAction?.nl_exist === true ? "Yes" : ""}
+                                    </Table.Td>
+                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <div className="flex">
+                                        <Tippy
+                                          content=" See Details"
+                                          options={{
+                                            theme: "dark",
+                                          }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(
+                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
+                                              )
+                                            }
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </Table.Td>
+                                  </Table.Tr>
+                                ))}
+                            </Table.Tbody>
+                          </Table>
+                        </div>
                       </TableWrapper>
                     </Tab.Panel>
                   </Tab.Panels>
@@ -953,100 +939,99 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                      <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px]">
+                          <Table>
+                            <Table.Thead>
+                              <Table.Tr>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Year
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Company
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Category
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Sub Category
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Outcome
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Actions
+                                </Table.Td>
+                              </Table.Tr>
+                            </Table.Thead>
 
-                        <Table>
-                          <Table.Thead>
-                            <Table.Tr>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Year
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Company
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Category
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Sub Category
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Proponent
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Outcome
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Actions
-                              </Table.Td>
-                            </Table.Tr>
-                          </Table.Thead>
-
-                          <Table.Tbody>
-                            {shareHolderProposal?.length > 0 &&
-                              shareHolderProposal?.map((noAction: any) => (
-                                <Table.Tr
-                                  key={noAction?.id}
-                                  className="[&_td]:last:border-b-0"
-                                >
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {noAction?.year}
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                    <Tippy
-                                      content={noAction?.company_name}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.company_name}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {noAction?.category}
-                                  </Table.Td>
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {noAction?.sub_category}
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                    <Tippy
-                                      content={noAction?.proponent_name}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.proponent_name}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                    <Tippy
-                                      content={noAction?.staff_response}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.staff_response}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                    <div className="flex">
+                            <Table.Tbody>
+                              {shareHolderProposal?.length > 0 &&
+                                shareHolderProposal?.map((noAction: any) => (
+                                  <Table.Tr
+                                    key={noAction?.id}
+                                    className="[&_td]:last:border-b-0"
+                                  >
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                       <Tippy
-                                        content=" See Details"
-                                        options={{
-                                          theme: "dark",
-                                        }}
+                                        content={noAction?.company_name}
+                                        options={{ theme: "light" }}
                                       >
-                                        <Lucide
-                                          onClick={() =>
-                                            navigate(
-                                              `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
-                                            )
-                                          }
-                                          icon="Eye"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
+                                        {noAction?.company_name}
                                       </Tippy>
-                                    </div>
-                                  </Table.Td>
-                                </Table.Tr>
-                              ))}
-                          </Table.Tbody>
-                        </Table>
-                      </div>
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.category}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.sub_category}
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
+                                      <Tippy
+                                        content={noAction?.proponent_name}
+                                        options={{ theme: "light" }}
+                                      >
+                                        {noAction?.proponent_name}
+                                      </Tippy>
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
+                                      <Tippy
+                                        content={noAction?.staff_response}
+                                        options={{ theme: "light" }}
+                                      >
+                                        {noAction?.staff_response}
+                                      </Tippy>
+                                    </Table.Td>
+                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <div className="flex">
+                                        <Tippy
+                                          content=" See Details"
+                                          options={{
+                                            theme: "dark",
+                                          }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(
+                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
+                                              )
+                                            }
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </Table.Td>
+                                  </Table.Tr>
+                                ))}
+                            </Table.Tbody>
+                          </Table>
+                        </div>
                       </TableWrapper>
                     </Tab.Panel>
                   </Tab.Panels>
@@ -1054,88 +1039,87 @@ function ShareHolderProposal() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
                       <TableWrapper isLoading={loading}>
-                      <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px]">
+                          <Table>
+                            <Table.Thead>
+                              <Table.Tr>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Year
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Company
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Outcome
+                                </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Actions
+                                </Table.Td>
+                              </Table.Tr>
+                            </Table.Thead>
 
-                        <Table>
-                          <Table.Thead>
-                            <Table.Tr>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Year
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Company
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Proponent
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Outcome
-                              </Table.Td>
-                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                Actions
-                              </Table.Td>
-                            </Table.Tr>
-                          </Table.Thead>
-
-                          <Table.Tbody>
-                            {shareHolderProposal?.length > 0 &&
-                              shareHolderProposal?.map((noAction: any) => (
-                                <Table.Tr
-                                  key={noAction?.id}
-                                  className="[&_td]:last:border-b-0"
-                                >
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {noAction?.year}
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[200px] overflow-hidden text-ellipsis">
-                                    <Tippy
-                                      content={noAction?.company_name}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.company_name}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
-                                    <Tippy
-                                      content={noAction?.proponent_name}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.proponent_name}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                    <Tippy
-                                      content={noAction?.status}
-                                      options={{ theme: "light" }}
-                                    >
-                                      {noAction?.status}
-                                    </Tippy>
-                                  </Table.Td>
-                                  <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                    <div className="flex">
+                            <Table.Tbody>
+                              {shareHolderProposal?.length > 0 &&
+                                shareHolderProposal?.map((noAction: any) => (
+                                  <Table.Tr
+                                    key={noAction?.id}
+                                    className="[&_td]:last:border-b-0"
+                                  >
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[200px] overflow-hidden text-ellipsis">
                                       <Tippy
-                                        content=" See Details"
-                                        options={{
-                                          theme: "dark",
-                                        }}
+                                        content={noAction?.company_name}
+                                        options={{ theme: "light" }}
                                       >
-                                        <Lucide
-                                          onClick={() =>
-                                            navigate(
-                                              `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/withdrawn`
-                                            )
-                                          }
-                                          icon="Eye"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
+                                        {noAction?.company_name}
                                       </Tippy>
-                                    </div>
-                                  </Table.Td>
-                                </Table.Tr>
-                              ))}
-                          </Table.Tbody>
-                        </Table>
-                      </div>
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
+                                      <Tippy
+                                        content={noAction?.proponent_name}
+                                        options={{ theme: "light" }}
+                                      >
+                                        {noAction?.proponent_name}
+                                      </Tippy>
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
+                                      <Tippy
+                                        content={noAction?.status}
+                                        options={{ theme: "light" }}
+                                      >
+                                        {noAction?.status}
+                                      </Tippy>
+                                    </Table.Td>
+                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <div className="flex">
+                                        <Tippy
+                                          content=" See Details"
+                                          options={{
+                                            theme: "dark",
+                                          }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(
+                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/withdrawn`
+                                              )
+                                            }
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </Table.Td>
+                                  </Table.Tr>
+                                ))}
+                            </Table.Tbody>
+                          </Table>
+                        </div>
                       </TableWrapper>
                     </Tab.Panel>
                   </Tab.Panels>

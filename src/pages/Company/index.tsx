@@ -26,6 +26,7 @@ import MultiSearchBar from "@/components/MultiSearch";
 import _ from "lodash";
 import { commonService } from "@/services/common";
 import { toast } from "react-toastify";
+import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function CompanyList() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -38,8 +39,19 @@ function CompanyList() {
   const [addNewCompanyVisible, setAddNewCompanyVisible] =
     useState<boolean>(false);
   const [selectedCompany] = useState<CompanyData | null>(null);
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+
+  useEffect(() => {
+    dispatch(
+      setFilter({
+        key: "company",
+        value: [companyGlobalSearchName],
+      })
+    );
+  }, [companyGlobalSearchName]);
 
   useEffect(() => {
     if (filters) {
@@ -89,41 +101,33 @@ function CompanyList() {
     );
   };
 
-  const getFilterCount = useMemo(() => {
-    const { ...allFilters } = filters;
-    return Object.values(allFilters).filter((value) => value !== "").length;
-  }, [filters]);
-
-  const handleClearAllFilter = () => {
-    dispatch(resetFilter());
-    setSearchTerms([]);
-
-    // setSearchValue('');
-    dispatch(
-      fetchCompanies(createDynamicURL(`${baseURL}/company/`, undefined, page))
-    );
+  const getSavedSearches = () => {
+    setSearchTerms([...user?.saved_search["Company"]?.company]);
     dispatch(
       setFilter({
-        key: "institution_name",
-        value: [],
-      })
-    );
-
-    dispatch(resetPage());
-  };
-
-  const handleSearch = (searchTerms: string[]) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
+        key: "company",
+        value: user?.saved_search["Company"]?.company,
       })
     );
   };
 
-  useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
+  const saveSearch = async () => {
+    const res = await commonService.saveSearches({
+      module: "Company",
+      company: filters["company"],
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Company",
+          value: {
+            company: filters["company"],
+          },
+        })
+      );
+      toast.success(res?.Success || "Searched saved successfully");
+    }
+  };
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -150,46 +154,17 @@ function CompanyList() {
         <div className="mt-3.5">
           <div className="flex flex-col box box--stacked">
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-              <div className="flex items-center ">
-              <MultiSearchBar
-                    onSearch={handleSearch}
-                    searchTerms={searchTerms}
-                    setSearchTerms={setSearchTerms}
-                    url="/investor_profile/?type=profiles"
-                    getOptionKey="institution_name"
-                     placeHolder="Search Institution"
-                  />
-
-                <div className="hover:bg-slate-50">
-                  <Button onClick={handleClearAllFilter}>
-                    <Tippy content="Clear Filters" options={{ theme: "light" }}>
-                      <FilterX
-                        size={17}
-                        strokeWidth={1}
-                        className="text-slate-500 cursor-pointer	"
-                      />
-                    </Tippy>
-                    {/* <span className="text-slate-500">Clear Filters</span> */}
-                  </Button>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                {user?.saved_search?.["Company"] !== undefined && (
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={getSavedSearches}>Previous Search</Button>
+                  </div>
+                )}
 
                 <div className="hover:bg-slate-50 ml-2">
-                  <Button
-                    onClick={async () => {
-                      const res = await commonService.saveSearches({
-                        module: "Company",
-                        company: searchTerms,
-                       
-                      });
-                      if (res?.Success) {
-                        toast.success(
-                          res?.Success || "Searched saved successfully"
-                        );
-                      }
-                    }}
-                  >
+                  <Button onClick={saveSearch}>
                     <Tippy content="Save Searches" options={{ theme: "light" }}>
-                     <SaveAll
+                      <SaveAll
                         size={17}
                         strokeWidth={1}
                         className="text-slate-500 cursor-pointer	"
@@ -201,79 +176,81 @@ function CompanyList() {
             </div>
             <div className=" px-5">
               <TableWrapper isLoading={loading}>
-              <div className="overflow-auto max-h-[400px]">
-                <Table>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Company ID
-                      </Table.Td>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Name
-                      </Table.Td>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        CUSIP
-                      </Table.Td>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Sector Name
-                      </Table.Td>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Symbol
-                      </Table.Td>
-                      {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                <div className="overflow-auto max-h-[400px]">
+                  <Table>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Company ID
+                        </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Name
+                        </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          CUSIP
+                        </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Sector Name
+                        </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Symbol
+                        </Table.Td>
+                        {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                         Company V1
                       </Table.Td> */}
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Actions
-                      </Table.Td>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {companies?.length > 0 &&
-                      companies?.map((company: CompanyData) => (
-                        <Table.Tr key={company.id}>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            {company.company_id}
-                          </Table.Td>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            {company.name}
-                          </Table.Td>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            {company.cusip}
-                          </Table.Td>
-                          <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                            {company.sector_name}
-                          </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Actions
+                        </Table.Td>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {companies?.length > 0 &&
+                        companies?.map((company: CompanyData) => (
+                          <Table.Tr key={company.id}>
+                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {company.company_id}
+                            </Table.Td>
+                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {company.name}
+                            </Table.Td>
+                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {company.cusip}
+                            </Table.Td>
+                            <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {company.sector_name}
+                            </Table.Td>
 
-                          <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                            {company.symbol}
-                          </Table.Td>
-                          {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              {company.symbol}
+                            </Table.Td>
+                            {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {company.company_v1}
                           </Table.Td> */}
 
-                          <Table.Td className=" py-2 w-20 relative  ">
-                            <div className="flex gap-3  justify-center">
-                              <Tippy
-                                content="View "
-                                options={{
-                                  theme: "dark",
-                                }}
-                              >
-                                <Lucide
-                                  onClick={() => {
-                                    navigate(`/company-detail/${company?.id}`);
+                            <Table.Td className=" py-2 w-20 relative  ">
+                              <div className="flex gap-3  justify-center">
+                                <Tippy
+                                  content="View "
+                                  options={{
+                                    theme: "dark",
                                   }}
-                                  icon="Eye"
-                                  className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                />
-                              </Tippy>
-                            </div>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
-                  </Table.Tbody>
-                </Table>
+                                >
+                                  <Lucide
+                                    onClick={() => {
+                                      navigate(
+                                        `/company-detail/${company?.id}`
+                                      );
+                                    }}
+                                    icon="Eye"
+                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                  />
+                                </Tippy>
+                              </div>
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                    </Table.Tbody>
+                  </Table>
                 </div>
               </TableWrapper>
             </div>

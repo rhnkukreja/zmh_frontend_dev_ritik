@@ -98,6 +98,18 @@ table {
   height: 400px;
 }
 
+.css-13cymwt-control,
+.css-13cymwt-control:hover,
+.css-13cymwt-control:focus,
+.css-t3ipsp-control,
+.css-t3ipsp-control:hover,
+.css-t3ipsp-control:focus {
+  padding-block: 5px !important;
+  border-radius: 10px !important;
+  border-color: #d5dde7 !important;
+  box-shadow: #d5dde7 !important;
+}
+
 @media only screen and (min-width: 1400px) and (max-width: 1580px) {
   .thumbnail-section {
     /* width: 100%; */
