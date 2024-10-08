@@ -10,13 +10,12 @@ import Tippy from '../Base/Tippy';
 import { createDynamicURL, downloadCSV } from '@/utils/helper';
 import { useEffect, useState } from 'react';
 import summary from "@/assets/json/brhc10049413_8k.json";
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { fetchAGMSummaryDashboard } from '@/stores/dashboardSlice';
 import { baseURL } from '@/constant';
 import { AppDispatch } from '@/stores/store';
-import { Nominee } from '@/types/AGMSummary';
 import LoadingIcon from '../Base/LoadingIcon';
 
 
@@ -31,7 +30,8 @@ const index = () => {
     const [searchParams] = useSearchParams();
     const ticker = searchParams.get("ticker") ?? "AAPL";
     const { company_Global_Search } = useAppSelector((state) => state.dashboard);
-    
+    const navigate = useNavigate();
+
     const convertDivTableToCSV = () => {
         // Get the table element
         const table = document.querySelector(".table_2");
@@ -79,6 +79,11 @@ const index = () => {
         );
     }, [ticker]);
 
+    const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+        window.open(`vds-details/?ticker=${ticker}`, '_blank');
+    };
+
     return (
         <>
             {
@@ -101,9 +106,13 @@ const index = () => {
                                 </option>
                             </FormSelect>
                         </div>
-                        <div className='p-2 bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid'>
-                            View More
-                        </div> */}
+                        */}
+                                    <div onClick={(event: any) => handleViewMore(event)} 
+                                    className='p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
+                                    md:w-auto flex items-center justify-center border-red-800 border-2
+                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white'>
+                                        View More
+                                    </div>
                                 </div>
                                 <div className='flex justify-between items-center gap-4 xs:mt-4 md:mt-0'>
                                     <Tippy
@@ -144,7 +153,7 @@ const index = () => {
                                             <Table.Thead className="sticky top-0 z-10">
                                                 <Table.Tr className="row_2">
                                                     {agmSummaryDetails?.nominees_headers?.length > 0 &&
-                                                        agmSummaryDetails?.nominees_headers.map((nomineeHeader: any, headerIndex: number) => (
+                                                        agmSummaryDetails?.nominees_headers?.map((nomineeHeader: any, headerIndex: number) => (
                                                             <Table.Td
                                                                 key={headerIndex}
                                                                 className="cell_2 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] w-[150px] text-left"
@@ -157,17 +166,17 @@ const index = () => {
 
                                             <Table.Tbody>
                                                 {agmSummaryDetails?.nominees?.length > 0 &&
-                                                    agmSummaryDetails?.nominees.map((nominee: any, nomineeIndex: number) => (
+                                                    agmSummaryDetails?.nominees?.map((nominee: any, nomineeIndex: number) => (
                                                         <Table.Tr key={nomineeIndex} className="row_2 [&_td]:last:border-b-0">
                                                             {agmSummaryDetails?.nominees_headers?.length > 0 &&
-                                                                agmSummaryDetails?.nominees_headers.map((nomineeHeader: any, headerIndex: number) => (
+                                                                agmSummaryDetails?.nominees_headers?.map((nomineeHeader: any, headerIndex: number) => (
                                                                     <Table.Td
                                                                         key={headerIndex}
                                                                         className="cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left"
                                                                     >
                                                                         <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
                                                                         headerIndex === agmSummaryDetails?.nominees_headers?.length - 1 &&
-                                                                        parseFloat(nominee[nomineeHeader?.field]) > 15 && 'text-red-700 font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
+                                                                        parseFloat(nominee[nomineeHeader?.field]) < 0.85 && 'text-red-700 font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
 
                                                                     </Table.Td>
                                                                 ))}
@@ -184,7 +193,7 @@ const index = () => {
                                             <Table.Thead className="sticky top-0 z-10">
                                                 <Table.Tr className="row_3">
                                                     {
-                                                        agmSummaryDetails?.proposals_headers.map((proposalHeader: any, headerIndex: number) => (
+                                                        agmSummaryDetails?.proposals_headers?.map((proposalHeader: any, headerIndex: number) => (
                                                             <Table.Td
                                                                 key={headerIndex}
                                                                 className="cell_3 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] w-[150px] text-left"
@@ -197,17 +206,17 @@ const index = () => {
 
                                             <Table.Tbody>
                                                 {agmSummaryDetails?.proposals?.length > 0 &&
-                                                    agmSummaryDetails?.proposals.map((proposal: any, proposalIndex: number) => (
+                                                    agmSummaryDetails?.proposals?.map((proposal: any, proposalIndex: number) => (
                                                         <Table.Tr key={proposalIndex} className="row_3 [&_td]:last:border-b-0">
                                                             {agmSummaryDetails?.proposals_headers?.length > 0 &&
-                                                                agmSummaryDetails?.proposals_headers.map((proposalHeader: any, headerIndex: number) => (
+                                                                agmSummaryDetails?.proposals_headers?.map((proposalHeader: any, headerIndex: number) => (
                                                                     <Table.Td
                                                                         key={headerIndex}
                                                                         className="cell_3 py-2 border-dashed dark:bg-darkmode-600  text-left"
                                                                     >
                                                                         <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
                                                                         headerIndex === agmSummaryDetails?.proposals_headers?.length - 1 &&
-                                                                        parseFloat(proposal[proposalHeader?.field]) > 15 && 'text-red-700 font-semibold'])}>
+                                                                        parseFloat(proposal[proposalHeader?.field]) < 0.85 && 'text-red-700 font-semibold'])}>
                                                                             {proposal[proposalHeader?.field]}</h1>
 
                                                                     </Table.Td>
@@ -231,10 +240,10 @@ const index = () => {
             {
                 !agmSummaryDetails && loading &&
                 <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                    <LoadingIcon color="red" icon="puff" className="w-16 h-16" />
+                    <LoadingIcon color="#800000" icon="three-dots" className="w-16 h-16" />
                 </div>
             }
-            
+
             {
                 !agmSummaryDetails?.Year && !loading &&
                 <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">

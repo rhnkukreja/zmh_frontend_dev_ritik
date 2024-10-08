@@ -80,7 +80,7 @@ const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {
-    if (menu.pathname !== undefined) {
+    if (menu.pathname !== undefined && menu.pathname !== 'Notes') {
       navigate(menu.pathname);
     }
   }

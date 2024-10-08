@@ -1,13 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 import { icons } from "@/components/Base/Lucide";
-import caseStudyIcon from "@/assets/images/zmh-images/Case_Studies_icon.svg";
-import CompanyIcon from "@/assets/images/zmh-images/company_icon.svg";
-import EngagementIcon from "@/assets/images/zmh-images/engagement_icon.svg";
-import PeerCaseIcon from "@/assets/images/zmh-images/peer_analysis_icon.svg";
-import ShareHolderIcon from "@/assets/images/zmh-images/shareholder_icon.svg";
-import VotingIcon from "@/assets/images/zmh-images/voting_icon.svg";
-import ProfileIcon from "@/assets/images/zmh-images/profile_icon.svg";
 
 export interface Menu {
   icon: keyof typeof icons;
@@ -34,7 +27,7 @@ const initialState: any = {
     // },
     {
       // icon: CompanyIcon,
-      icon: ProfileIcon,
+      icon: 'Building2',
       pathname: "/",
       title: "Company Search",
     },
@@ -75,35 +68,37 @@ const initialState: any = {
     // },
     // "APPS",
     {
-      icon: ProfileIcon,
+      icon: 'Landmark',
       pathname: "/investor-profile",
       title: "Investor Profile",
     },
     {
-      icon: EngagementIcon,
+      icon: 'FileSearch2',
+      pathname: "/case-studies",
+      title: "Case Studies",
+    },
+    {
+      icon: 'MessageCircle',
       pathname: "/engagement-question",
       title: "Engagement Question",
     },
     {
-      icon: VotingIcon,
-      pathname: "/proxy-voting-guideline",
-      title: "Voting Guidelines",
-    },
-    {
-      icon: ShareHolderIcon,
-      pathname: "/share-holder-proposal",
-      title: "Shareholder Proposals",
-    },
-    {
-      icon: PeerCaseIcon,
+      icon: 'Network',
       pathname: "/peer-analysis",
       title: "Peer Analysis",
     },
     {
-      icon: caseStudyIcon,
-      pathname: "/case-studies",
-      title: "Case Studies",
+      icon: 'FileText',
+      pathname: "/proxy-voting-guideline",
+      title: "Voting Guidelines",
     },
+    {
+      icon: 'Hand',
+      pathname: "/share-holder-proposal",
+      title: "Shareholder Proposals",
+    },
+    
+    
     // {
     //   icon: "PanelTopClose",
     //   pathname: "/point-of-sale",
@@ -121,20 +116,20 @@ const initialState: any = {
     // },
     // "Additional",
     {
-      icon: caseStudyIcon,
+      icon: 'School',
       pathname: "/institution",
       title: "Institutions",
       isAdmin: true,
     },
     {
-      icon: caseStudyIcon,
+      icon: 'Building',
       pathname: "/company",
       title: "Company",
       isAdmin: true,
     },
     "Coming Soon",
     {
-      icon: caseStudyIcon,
+      icon: 'Briefcase',
       pathname: "#",
       title: "Notes",
     },

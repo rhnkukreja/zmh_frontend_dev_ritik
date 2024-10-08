@@ -34,6 +34,27 @@ class DashboardService {
     const results = response.data;
     return {results};
   }
+
+  public async fetchCaseStudyDashboard(url: string): Promise<{results:any;
+  }>  {
+    const response = await axiosInstance.get(url);
+    const results = response.data;
+    return {results};
+  }
+
+  public async fetchVdsProxyDashboard(url: string): Promise<{results:any;
+  }>  {
+    const response = await axiosInstance.get(url);
+    const results = response.data;
+    return {results};
+  }
+
+  public async fetchInvestorProfileDetails(url: string): Promise<{results:any;
+  }>  {
+    const response = await axiosInstance.get(url);
+    const results = response.data;
+    return {results};
+  }
 }
 
 export const dashboardService = new DashboardService();
