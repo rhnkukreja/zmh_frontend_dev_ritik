@@ -489,16 +489,16 @@ function ProxyGuideline() {
                               </Table.Td>
                               {guideline?.category && (
                                 <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  <Tippy
+                                  {/* <Tippy
                                     content={guideline?.category}
                                     options={{
                                       theme: "light",
                                     }}
-                                  >
+                                  > */}
                                     <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                       {guideline?.category}
                                     </div>
-                                  </Tippy>
+                                  {/* </Tippy> */}
                                 </Table.Td>
                               )}
                               {guideline?.sub_category && (

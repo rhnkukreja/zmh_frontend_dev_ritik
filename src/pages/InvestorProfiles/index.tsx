@@ -441,17 +441,19 @@ function Main() {
                                 ></a>
                               </div>
                             )}
-
+{/* 
                             <Tippy
                               content={profile?.institution_name || ""}
                               options={{
                                 theme: "light",
                               }}
-                            >
+                            > */}
+                            <span>
                               <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4">
                                 {profile?.institution_name}
                               </div>
-                            </Tippy>
+                            </span>
+                            {/* </Tippy> */}
                           </div>
 
                           <Tippy
