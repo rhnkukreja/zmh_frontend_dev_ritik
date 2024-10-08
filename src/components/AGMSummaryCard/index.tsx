@@ -176,7 +176,7 @@ const index = () => {
                                                                     >
                                                                         <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
                                                                         headerIndex === agmSummaryDetails?.nominees_headers?.length - 1 &&
-                                                                        parseFloat(nominee[nomineeHeader?.field]) < 85 && 'text-red-700 font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
+                                                                        parseFloat(nominee[nomineeHeader?.field]) < 0.85 && 'text-red-700 font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
 
                                                                     </Table.Td>
                                                                 ))}
@@ -216,7 +216,7 @@ const index = () => {
                                                                     >
                                                                         <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
                                                                         headerIndex === agmSummaryDetails?.proposals_headers?.length - 1 &&
-                                                                        parseFloat(proposal[proposalHeader?.field]) > 15 && 'text-red-700 font-semibold'])}>
+                                                                        parseFloat(proposal[proposalHeader?.field]) < 0.85 && 'text-red-700 font-semibold'])}>
                                                                             {proposal[proposalHeader?.field]}</h1>
 
                                                                     </Table.Td>
