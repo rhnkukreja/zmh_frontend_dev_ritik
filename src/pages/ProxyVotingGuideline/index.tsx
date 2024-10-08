@@ -363,7 +363,7 @@ function ProxyGuideline() {
                                 }}
                               >
                                 <option disabled selected>
-                                  Select Category
+                                  Select Year
                                 </option>
                                 {guidelineFilterOptions?.year?.map(
                                   (category: string, index: number) => (

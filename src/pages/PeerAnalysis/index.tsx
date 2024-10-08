@@ -26,13 +26,42 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
+import { Popover } from "@/components/Base/Headless";
+import { FormCheck, FormInput } from "@/components/Base/Form";
+import { Controller, useForm } from "react-hook-form";
+import TomSelect from "@/components/Base/TomSelect";
+TomSelect;
 
+interface PeerAnalysisFilter {
+  category: string[];
+
+  year: string[];
+}
 function PeerAnalysis() {
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<PeerAnalysisFilter>();
   const dispatch: AppDispatch = useAppDispatch();
+
+  const [applyFilters, setApplyFilters] = useState<
+    PeerAnalysisFilter | undefined
+  >(undefined);
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [filtersLength, setFiltersLength] = useState<number>(0);
+
+  const [apiDropdownOptions] = useState<PeerAnalysisFilter>({
+    category: ["Social", "Governance", "Environment"],
+    year: ["2023", "2024"],
+  });
   const { loading, peerAnalysisData, page, totalPages, filters } =
     useAppSelector((state) => state.peerAnalysis);
   const { user, companyGlobalSearchName } = useAppSelector(
@@ -109,9 +138,16 @@ function PeerAnalysis() {
 
   const onFilterClear = () => {
     dispatch(resetFilter());
+    reset()
     dispatch(
       fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, undefined, page)
+        createDynamicURL(
+          `${baseURL}/peer_analysis/`,
+          {
+            ...applyFilters,
+          },
+          page
+        )
       )
     );
   };
@@ -128,13 +164,25 @@ function PeerAnalysis() {
 
     dispatch(
       fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, undefined, page)
+        createDynamicURL(
+          `${baseURL}/peer_analysis/`,
+          {
+            ...applyFilters,
+          },
+          page
+        )
       )
     );
 
     dispatch(
       fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, undefined, page)
+        createDynamicURL(
+          `${baseURL}/peer_analysis/`,
+          {
+            ...applyFilters,
+          },
+          page
+        )
       )
     );
 
@@ -152,16 +200,21 @@ function PeerAnalysis() {
     const tempFilter = { ...filters, institution_name: searchTerms };
     dispatch(
       fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, tempFilter, undefined, 1)
+        createDynamicURL(
+          `${baseURL}/peer_analysis/`,
+          tempFilter,
+          {
+            ...applyFilters,
+          },
+          1
+        )
       )
     );
   };
 
   useEffect(() => {
-    
     handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length, filters?.company]);
-
+  }, [searchTerms, searchTerms?.length, filters?.company, applyFilters]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
@@ -194,15 +247,26 @@ function PeerAnalysis() {
     }
   };
 
-    return (
-        <>
-            <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-                <div className="col-span-12">
-                    <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-                        <div className="font-semibold text-xl ">
-                            Peer Analysis
-                        </div>
-                        {/* {user?.user_type === "Admin" && (
+  const onSubmit = async (peerAnalysisFilters: PeerAnalysisFilter) => {
+    setApplyFilters({
+      ...peerAnalysisFilters,
+    });
+    const validKeysCount = Object.keys(peerAnalysisFilters).filter((key) => {
+      const value = peerAnalysisFilters[key as keyof PeerAnalysisFilter];
+      return Array.isArray(value)
+        ? value.length !== 0
+        : value !== undefined && value !== "";
+    })?.length;
+
+    setFiltersLength(validKeysCount);
+  };
+  return (
+    <>
+      <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+        <div className="col-span-12">
+          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
+            <div className="font-semibold text-xl ">Peer Analysis</div>
+            {/* {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
                   onClick={() => {
@@ -272,6 +336,186 @@ function PeerAnalysis() {
                       </Button>
                     </div>
                   )}
+                  <Popover className="inline-block">
+                    {({ close }) => (
+                      <>
+                        <Popover.Button
+                          as={Button}
+                          variant="outline-secondary"
+                          className="w-full sm:w-auto"
+                          // onClick={handleCollapseFilter}
+                        >
+                          <Lucide
+                            icon="ArrowDownWideNarrow"
+                            className="stroke-[1.3] w-4 h-4 mr-2"
+                          />
+                          Filter
+                          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                            {filtersLength}
+                          </div>
+                        </Popover.Button>
+                        <Popover.Panel placement="bottom-end">
+                          <form onSubmit={handleSubmit(onSubmit)}>
+                            <div className="p-2">
+                              <div className="mt-3">
+                                <div className="w-full  my-2">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    Year
+                                    {apiDropdownOptions?.year?.length > 0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`year`}
+                                            checked={
+                                              apiDropdownOptions?.year
+                                                ?.length ===
+                                              watch("year")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "year",
+                                                  apiDropdownOptions?.year
+                                                );
+                                              } else {
+                                                setValue("year", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="year"
+                                    control={control}
+                                    defaultValue={[]}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select Year",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        <>
+                                          {apiDropdownOptions?.year?.map(
+                                            (year: string) => {
+                                              return (
+                                                <option value={year}>
+                                                  {year}
+                                                </option>
+                                              );
+                                            }
+                                          )}
+                                        </>
+                                      </TomSelect>
+                                    )}
+                                  />
+                                </div>
+
+                                <div className="w-full  my-2">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    Category
+                                    {apiDropdownOptions?.category?.length >
+                                      0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`category`}
+                                            checked={
+                                              apiDropdownOptions.category
+                                                .length ===
+                                              watch("category")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "category",
+                                                  apiDropdownOptions.category
+                                                );
+                                              } else {
+                                                setValue("category", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="category"
+                                    control={control}
+                                    defaultValue={[]}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select Category",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        <>
+                                          {apiDropdownOptions?.category.length >
+                                            0 &&
+                                            apiDropdownOptions?.category?.map(
+                                              (category: string) => {
+                                                return (
+                                                  <option value={category}>
+                                                    {category}
+                                                  </option>
+                                                );
+                                              }
+                                            )}
+                                        </>
+                                      </TomSelect>
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center mt-4">
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    close();
+                                    onFilterClear();
+                                  }}
+                                  className="w-32 ml-auto"
+                                >
+                                  Clear
+                                </Button>
+                                <Button
+                                  onClick={handleApplyFilter}
+                                  variant="primary"
+                                  className="w-32 ml-2"
+                                >
+                                  Apply
+                                </Button>
+                              </div>
+                            </div>
+                          </form>
+                        </Popover.Panel>
+                      </>
+                    )}
+                  </Popover>
                 </div>
               </div>
 

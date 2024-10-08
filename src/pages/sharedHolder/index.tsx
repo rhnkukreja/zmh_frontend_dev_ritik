@@ -63,9 +63,9 @@ function ShareHolderProposal() {
     ShareHolderFilter | undefined
   >(undefined);
 
+  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
-  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -75,7 +75,7 @@ function ShareHolderProposal() {
       category: [],
       sub_category: [],
       year: [],
-    });
+  });
 
   const {
     handleSubmit,
@@ -184,7 +184,6 @@ function ShareHolderProposal() {
     setValue("proponent", []);
     setValue("institution", []);
 
-
     setApplyFilters({
       keyword: "",
       category: [],
@@ -222,7 +221,6 @@ function ShareHolderProposal() {
 
   useEffect(() => {
     setApplyFilters((prev) => ({
-      
       company: [companyGlobalSearchName],
       status: prev?.status || [],
       proponent: prev?.proponent || [],
@@ -265,7 +263,7 @@ function ShareHolderProposal() {
       year: applyFilters?.year || [],
       status: applyFilters?.status || [],
       keyword: applyFilters?.keyword || "",
-      company: [companyGlobalSearchName]
+      company: [companyGlobalSearchName],
     });
     if (res?.Success) {
       dispatch(
@@ -293,9 +291,7 @@ function ShareHolderProposal() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">
-              Shareholder Proposals
-            </div>
+            <div className="font-semibold text-xl ">Shareholder Proposals</div>
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
