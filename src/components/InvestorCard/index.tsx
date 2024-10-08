@@ -203,7 +203,8 @@ const index = () => {
 
                                                                                 <div className='flex justify-between items-center w-[220px]'>
                                                                                     <div className='flex items-center font-semibold '>
-                                                                                        <h1 className='cell underline whitespace-nowrap capitalize max-w-[150px] text-wrap'>
+                                                                                        <h1 onClick={() => dashboard?.investor_profile_id && window.open(`/investor-company-details/${dashboard?.investor_profile_id}`, "_blank")}
+                                                                                        className={clsx(['cell whitespace-nowrap capitalize max-w-[150px] text-wrap', dashboard?.investor_profile_id && 'cursor-pointer underline'])}>
                                                                                             {dashboard?.institution_name?.toLowerCase().replace(/\b\w/g, s => s.toUpperCase())}</h1>
                                                                                         {
                                                                                             dashboard?.flag_13d === true && <img className='w-3 ml-2'

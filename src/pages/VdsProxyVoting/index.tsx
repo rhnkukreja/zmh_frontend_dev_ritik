@@ -37,7 +37,7 @@ const index = () => {
                 vdsProxyDetails?.vds_report?.length > 0 && <div className="p-5 mt-3.5 box ">
                     <div className="w-full">
                         <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
-                            <h1 className='text-lg font-bold'>VDS Proxy Voting</h1>
+                            <h1 className='text-lg font-bold'>Proxy Voting</h1>
                         </div>
                         <>
                             <div className='mt-5'>
@@ -69,7 +69,8 @@ const index = () => {
                                                                         key={headerIndex}
                                                                         className="cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left"
                                                                     >
-                                                                        <h1>{vdsProxy[vdsHeader?.field]}</h1>
+                                                                        <h1 className={clsx([vdsProxy[vdsHeader?.field].includes('Against') && 'text-red-700 font-semibold'])}
+                                                                        >{vdsProxy[vdsHeader?.field]}</h1>
 
                                                                     </Table.Td>
                                                                 ))}
@@ -96,7 +97,7 @@ const index = () => {
             {
                 vdsProxyDetails?.vds_report?.length === 0 && !vdsProxyLoading &&
                 <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                    <h1 className='font-semibold'> VDS Proxy Records Not Found..</h1>
+                    <h1 className='font-semibold'> Proxy Records Not Found..</h1>
                 </div>
             }
         </>

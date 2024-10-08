@@ -23,7 +23,10 @@ import { FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 import { setDashboardGlobalSearch } from "@/stores/dashboardSlice";
 import LoadingIcon from "@/components/Base/LoadingIcon";
-import aiIcon from '@/assets/images/zmh-images/ai-Icon.png'
+import aiIcon from '@/assets/images/zmh-images/ai-Icon.png';
+import sideBarIcon from '@/assets/images/zmh-images/Group 1597887028.png';
+import Tippy from "@/components/Base/Tippy";
+
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -160,18 +163,18 @@ function Main() {
           className={clsx([
             "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
-          onMouseOver={(event) => {
-            event.preventDefault();
-            setCompactMenu(false);
-          }}
-          onMouseLeave={(event) => {
-            event.preventDefault();
-            setCompactMenu(true);
-            // toggleCompactMenu(event);  
-            // setCompactMenuOnHover(false);
-          }}
+          // onMouseOver={(event) => {
+          //   event.preventDefault();
+          //   setCompactMenu(false);
+          // }}
+          // onMouseLeave={(event) => {
+          //   event.preventDefault();
+          //   setCompactMenu(true);
+          //   // toggleCompactMenu(event);  
+          //   // setCompactMenuOnHover(false);
+          // }}
         >
-          {/* <div className={clsx([
+          <div className={clsx([
               "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
             ])} >
             {
@@ -179,7 +182,8 @@ function Main() {
                 className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
               >
                 <div onClick={handleToggleMenu}>
-                  <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3] text-white" />
+                  <img className=" w-8" src={sideBarIcon}/>
+                  {/* <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3] text-white" /> */}
                 </div>
               </a>
             }
@@ -187,12 +191,13 @@ function Main() {
              !compactMenu && <a
               href=""
               onClick={handleToggleMenu}
-              className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center w-[20px] h-[20px] ml-auto "
+              className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center  ml-auto "
             >
-              <Lucide icon="X" className="w-5 h-5 stroke-[1.3] text-white" />
+                                <img className=" w-8 rotate-180" src={sideBarIcon}/>
+              {/* <Lucide icon="X" className="w-5 h-5 stroke-[1.3] text-white" /> */}
             </a>
             }
-          </div> */}
+          </div>
 
           <a
               href=""
@@ -244,15 +249,30 @@ function Main() {
                       ])}
                       onClick={(event: React.MouseEvent) => {
                         event.preventDefault();
+                        menu.title !== 'Notes' &&
                         linkTo(menu, navigate);
                         setFormattedMenu([...formattedMenu]);
                       }}
                     >
-                        <Lucide
-                          icon={menu?.icon}
-                          className="side-menu__link__icon side-menu__link--active"
-                        />
+                        <Tippy
+                          content={menu.title}
+                          options={{ theme: "light" }}
+                        >
+                          {menu.title !== 'Shareholder Proposals' && <Lucide
+                            icon={menu?.icon}
+                            className="side-menu__link__icon side-menu__link--active"
+                          />}
 
+                          {
+                            menu.title === 'Shareholder Proposals' &&
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                              className="lucide lucide-hand-helping side-menu__link__icon side-menu__link--active">
+                              <path d="M11 12h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14" />
+                              <path d="m7 18 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9" /><path d="m2 13 6 6" /></svg>
+                          }
+                        </Tippy>
+                       
                       <div className="side-menu__link__title link_color">{menu.title}</div>
                       {menu.badge && (
                         <div className="side-menu__link__badge">

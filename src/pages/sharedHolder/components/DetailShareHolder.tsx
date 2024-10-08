@@ -19,7 +19,7 @@ const DetailShareHolder = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const url = searchParams.get('url');
-  const headingTitle = url?.includes('withdrawn') ? 'With Drawn Details'
+  const headingTitle = url?.includes('withdrawn') ? 'Withdrawn Proposal Details'
     : url?.includes('def14a') ? 'Shareholder Proposal Details' : url?.includes('no_action') ? 'No Action Letter Details' : ''
   useEffect(() => {
     dispatch(getSingleShareHolderData({ url: url!, id: Number(params.id!) }));

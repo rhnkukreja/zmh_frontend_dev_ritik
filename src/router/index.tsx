@@ -83,6 +83,8 @@ import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder
 import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
 import VdsProxyVoting from "@/pages/VdsProxyVoting";
+import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
+
 
 
 function Router() {
@@ -386,6 +388,10 @@ function Router() {
         {
           path: "vds-details",
           element: <VdsProxyVoting/> ,
+        },
+        {
+          path: "investor-company-details/:id",
+          element: <InvestorCompanyDetails/> ,
         },
       ],
     },
