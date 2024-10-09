@@ -221,7 +221,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
       const value = extraPrams[key];
       if (Array.isArray(value)) {
         if (value.length > 0) {
-          queryParams.append(key, value.join(","));
+          queryParams.append(key, JSON.stringify(value));
         }
       } else if (value) {
         queryParams.append(key, value);

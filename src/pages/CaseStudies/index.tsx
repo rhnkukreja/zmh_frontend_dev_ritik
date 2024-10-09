@@ -32,6 +32,7 @@ function CaseStudies() {
     sector: string[];
     year: string[];
     institution_name?: string[];
+    company?: string[];
     themes: string[];
     proposal_type: string[];
     vote: string[];
@@ -41,12 +42,28 @@ function CaseStudies() {
 
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
+
+  useEffect(() => {
+    setApplyFilters((prev) => ({
+      keyword: prev?.keyword || "",
+      market: prev?.market || [],
+      sector: prev?.sector || [],
+      year: prev?.year || [],
+      themes: prev?.themes || [],
+      proposal_type: prev?.proposal_type || [],
+      vote: prev?.vote || [],
+      institution_name: prev?.proponent || [],
+      company: [companyGlobalSearchName],
+    }));
+  }, [companyGlobalSearchName]);
 
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] = useState<FlterDropdown>({
-    company: [],
+    // company: [],
     institution: [],
     market: [],
     proposal_type: [],
@@ -143,6 +160,7 @@ function CaseStudies() {
       keyword: "",
       market: [],
       sector: [],
+      company: [companyGlobalSearchName],
       year: [],
       themes: [],
       proposal_type: [],
@@ -165,7 +183,11 @@ function CaseStudies() {
   };
 
   const onSubmit = async (caseStudyFilters: CaseStudyFilter) => {
-    setApplyFilters({ ...caseStudyFilters, institution_name: searchTerms });
+    setApplyFilters({
+      ...caseStudyFilters,
+      institution_name: searchTerms,
+      company: [companyGlobalSearchName],
+    });
     const validKeysCount = Object.keys(caseStudyFilters).filter((key) => {
       const value = caseStudyFilters[key];
       return value !== undefined && value !== "" && value.length !== 0;
@@ -193,6 +215,7 @@ function CaseStudies() {
         themes: savedSearch.themes || [],
         proposal_type: savedSearch.proposal_type || [],
         vote: savedSearch.vote || [],
+        company: savedSearch.company,
       });
       setIsFilterCollapse(true);
     }
@@ -209,7 +232,7 @@ function CaseStudies() {
       vote: watch("vote") || [],
       year: watch("year") || [],
       keyword: watch("keyword") || "",
-      company: [],
+      company: [companyGlobalSearchName],
     });
     if (res?.Success) {
       dispatch(
@@ -224,7 +247,7 @@ function CaseStudies() {
             vote: watch("vote") || [],
             year: watch("year") || [],
             keyword: watch("keyword") || "",
-            company: [],
+            company: [companyGlobalSearchName],
           },
         })
       );
@@ -765,10 +788,9 @@ function CaseStudies() {
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
                   <div className="overflow-auto max-h-[400px]">
-                    
                     <Table>
                       <Table.Thead>
-                        <Table.Tr >
+                        <Table.Tr>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Institution Name
                           </Table.Td>

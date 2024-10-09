@@ -4,6 +4,9 @@ export type Login = {
   user_type: string;
   user_name: string;
   saved_search?: any;
+  company_id?: number;
+  company_name?: string;
+  company_ticker?: string;
 };
 
 export type Register = {

@@ -274,7 +274,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
 
               <div className="w-full" ref={instituteSelectRef}>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Institution
+                  Institution Name
                 </FormCheck.Label>
                 <Controller
                   name="institution"

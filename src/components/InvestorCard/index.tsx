@@ -10,7 +10,7 @@ import {
     fetchCompanyDashboard,
     setPage,
 } from "@/stores/dashboardSlice";
-import { AppDispatch } from "@/stores/store";
+import { AppDispatch, RootState } from "@/stores/store";
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { createDynamicURL, downloadCSV } from '@/utils/helper';
@@ -29,7 +29,9 @@ const index = () => {
     const { dashboardDataList, investorCardLoading, page, totalPages} = useAppSelector(
         (state) => state.dashboard
     );
-    const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+
+    const { companyGlobalSearchName } = useAppSelector((state: RootState) => state.authentiction);
+   
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -100,7 +102,7 @@ const index = () => {
     return (
         <>
             <div className="p-y-5 mb-1 font-semibold text-xl " >
-                {company_Global_Search}
+                {companyGlobalSearchName}
             </div>
             {
                 dashboardDataList?.length !== 0 &&

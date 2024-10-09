@@ -1,5 +1,5 @@
 export type FlterDropdown = {
-  company: string[];
+  // company: string[];
   institution: string[];
   market: string[];
   proposal_type: string[];
