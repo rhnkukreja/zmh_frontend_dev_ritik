@@ -43,11 +43,11 @@ const index = () => {
                         </div> */}
                         <div className=''>
                             <div className='flex justify-between items-center xs:flex-col lg:flex-row'>
-                                <div className='w-[652px] mr-4'>
+                                <div className=' mr-4'>
                                     <ContactCard contacts={investorProfileDetails?.contacts} />
                                 </div>
 
-                                <div className='w-[652px]'>
+                                <div className=''>
                                     <PDFCard pdfDocuments={investorProfileDetails?.documents} />
                                 </div>
                             </div>
