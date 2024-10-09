@@ -1,5 +1,5 @@
 import Button from "@/components/Base/Button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -47,14 +47,11 @@ function PeerAnalysis() {
     setValue,
     watch,
   } = useForm<PeerAnalysisFilter>();
+  
   const dispatch: AppDispatch = useAppDispatch();
 
-  const [applyFilters, setApplyFilters] = useState<
-    PeerAnalysisFilter | undefined
-  >(undefined);
-
-  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
-    useState<boolean>(false);
+  const [applyFilters, setApplyFilters] = useState<PeerAnalysisFilter | undefined>(undefined);
+  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] = useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
@@ -62,51 +59,29 @@ function PeerAnalysis() {
     category: ["Social", "Governance", "Environment"],
     year: ["2023", "2024"],
   });
-  const { loading, peerAnalysisData, page, totalPages, filters } =
-    useAppSelector((state) => state.peerAnalysis);
-  const { user, companyGlobalSearchName } = useAppSelector(
-    (state) => state.authentiction
-  );
+
+  const { loading, peerAnalysisData, page, totalPages, filters } = useAppSelector((state) => state.peerAnalysis);
+  const { user, companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
 
   useEffect(() => {
-    dispatch(
-      setFilter({
-        key: "global_search",
-        value: [companyGlobalSearchName],
-      })
-    );
+    // Set the global search filter only if the companyGlobalSearchName changes
+    if (companyGlobalSearchName) {
+      dispatch(setFilter({ key: "global_search", value: [companyGlobalSearchName] }));
+    }
   }, [companyGlobalSearchName]);
 
   useEffect(() => {
-    if (filters.institution_name.length > 0) {
-      dispatch(
-        fetchPeerAnalysis(
-          createDynamicURL(`${baseURL}/peer_analysis/`, filters)
-        )
-      );
-    } else {
-      dispatch(
-        fetchPeerAnalysis(
-          createDynamicURL(
-            `${baseURL}/peer_analysis/`,
-            filters,
-            undefined,
-            page
-          )
-        )
-      );
+    // Fetch peer analysis only if institution_name or global_search filters are present
+    if (filters.institution_name.length > 0 || filters.global_search?.length > 0) {
+      dispatch(fetchPeerAnalysis(createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)));
     }
-  }, [page, filters , filters?.global_search]);
+  }, [page, filters?.institution_name, filters?.global_search]);
 
   useEffect(() => {
     return () => {
+      // Reset page and clear filters when the component unmounts
       dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "institution_name",
-          value: [],
-        })
-      );
+      dispatch(setFilter({ key: "institution_name", value: [] }));
     };
   }, []);
 
@@ -126,105 +101,39 @@ function PeerAnalysis() {
     dispatch(setPage(newPage));
   };
 
-  function handleApplyFilter() {
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, filters, page)
-      )
-    );
-
+  const handleApplyFilter = () => {
+    dispatch(fetchPeerAnalysis(createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)));
     dispatch(resetPage());
-  }
+  };
 
   const onFilterClear = () => {
+    reset();
     dispatch(resetFilter());
-    reset()
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(
-          `${baseURL}/peer_analysis/`,
-          {
-            ...applyFilters,
-          },
-          page
-        )
-      )
-    );
+    dispatch(fetchPeerAnalysis(createDynamicURL(`${baseURL}/peer_analysis/`, { ...applyFilters }, undefined , 1)));
   };
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchTerms([]);
-    dispatch(
-      setFilter({
-        key: "global_search",
-        value: [companyGlobalSearchName],
-      })
-    );
-
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(
-          `${baseURL}/peer_analysis/`,
-          {
-            ...applyFilters,
-          },
-          page
-        )
-      )
-    );
-
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(
-          `${baseURL}/peer_analysis/`,
-          {
-            ...applyFilters,
-          },
-          page
-        )
-      )
-    );
-
+    dispatch(setFilter({ key: "global_search", value: [companyGlobalSearchName] }));
     dispatch(resetPage());
   };
 
-  const handleSearch = (searchTerms: string[]) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-
-    const tempFilter = { ...filters, institution_name: searchTerms };
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(
-          `${baseURL}/peer_analysis/`,
-          tempFilter,
-          {
-            ...applyFilters,
-          },
-          1
-        )
-      )
-    );
-  };
+  const handleSearch = useCallback((searchTerms: string[]) => {
+    dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+    const updatedFilters = { ...filters, institution_name: searchTerms };
+    dispatch(fetchPeerAnalysis(createDynamicURL(`${baseURL}/peer_analysis/`, updatedFilters, undefined, 1)));
+  }, [dispatch, filters]);
 
   useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length, filters?.global_search, applyFilters]);
+    if (searchTerms?.length || filters?.global_search?.length || applyFilters) {
+      handleSearch(searchTerms);
+    }
+  }, [searchTerms, filters?.global_search, applyFilters, handleSearch]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
-
-    dispatch(
-      setFilter({
-        key: "global_search",
-        value: user?.saved_search["Peer Analysis"]?.global_search,
-      })
-    );
+    dispatch(setFilter({ key: "global_search", value: user?.saved_search["Peer Analysis"]?.global_search }));
   };
 
   const saveSearch = async () => {
@@ -233,6 +142,7 @@ function PeerAnalysis() {
       institution: searchTerms,
       global_search: filters["global_search"],
     });
+
     if (res?.Success) {
       dispatch(
         setSavedSearch({
@@ -243,19 +153,15 @@ function PeerAnalysis() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success(res?.Success || "Search saved successfully");
     }
   };
 
   const onSubmit = async (peerAnalysisFilters: PeerAnalysisFilter) => {
-    setApplyFilters({
-      ...peerAnalysisFilters,
-    });
+    setApplyFilters({ ...peerAnalysisFilters });
     const validKeysCount = Object.keys(peerAnalysisFilters).filter((key) => {
       const value = peerAnalysisFilters[key as keyof PeerAnalysisFilter];
-      return Array.isArray(value)
-        ? value.length !== 0
-        : value !== undefined && value !== "";
+      return Array.isArray(value) ? value.length !== 0 : value !== undefined && value !== "";
     })?.length;
 
     setFiltersLength(validKeysCount);
