@@ -1,6 +1,7 @@
 import TableWrapper from '../TableWrapper'
 import Table from "@/components/Base/Table";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+import linkedinIcon from "../../assets/images/zmh-images/linkedinIcon.png";
 import { useEffect, useState } from 'react';
 
 interface ChildProps {
@@ -117,8 +118,11 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
 
                                             </Table.Td>
                                             <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                                <div className="text-right font-semibold hover:text-blue-900 hover:underline cursor-pointer text-blue-800 whitespace-nowrap" onClick={() => window.open(contact?.linkedin, '_blank')} >
+                                                <div className=" flex text-right font-semibold hover:text-blue-900 hover:underline cursor-pointer text-blue-800 whitespace-nowrap" onClick={() => window.open(contact?.linkedin, '_blank')} >
                                                     linkedin
+                                                    <div className=" w-5 h-5 ml-1 overflow-hidden  image-fit border-[3px] border-slate-200/70">
+                                                   <img src={linkedinIcon}/>
+                                                   </div>
                                                 </div>
                                             </Table.Td>
 

@@ -122,7 +122,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                                             </Table.Td>
                                             <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                                 <div className="text-center font-semibold hover:text-blue-900 hover:underline cursor-pointer text-blue-800 whitespace-nowrap"
-                                                 onClick={() => /* handleDownload(document?.link) */ window.open(document?.link, '_blank')} >
+                                                 onClick={() => handleDownload(document?.link) /* window.open(document?.link, '_blank') */} >
                                                 Download
                                                 </div>
                                             </Table.Td>
