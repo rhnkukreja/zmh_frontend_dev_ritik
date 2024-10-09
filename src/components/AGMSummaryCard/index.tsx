@@ -20,7 +20,9 @@ import LoadingIcon from '../Base/LoadingIcon';
 
 
 const index = () => {
-
+    const { companyGlobalSearchTicker } = useAppSelector((state) => state.authentiction);
+    // console.log("tickkk", companyGlobalSearchTicker)
+    
     const location = useLocation();
     const locationPathName = location?.pathname;
     const dispatch: AppDispatch = useAppDispatch();
@@ -81,7 +83,7 @@ const index = () => {
 
     const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault();
-        window.open(`vds-details/?ticker=${ticker}`, '_blank');
+        window.open(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, '_blank');
     };
 
     return (
