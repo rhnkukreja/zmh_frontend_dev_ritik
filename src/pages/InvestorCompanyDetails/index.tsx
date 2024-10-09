@@ -38,21 +38,21 @@ const index = () => {
                     <TopBar logoUrl={investorProfileDetails?.institution_logo_url} companyName={investorProfileDetails?.institution_name} />
 
                     <div className='flex justify-between '>
-                        <div className='w-[300px] '>
+                        {/* <div className='w-[300px] '>
                             <DocumentationMenu menu={investorProfileDetails}/>
-                        </div>
-                        <div className='w-[1000px]'>
-                            <div className='flex justify-between w-[1000px] '>
-                                <div className='w-[495px] '>
+                        </div> */}
+                        <div className=''>
+                            <div className='flex justify-between items-center xs:flex-col lg:flex-row'>
+                                <div className='w-[652px] mr-4'>
                                     <ContactCard contacts={investorProfileDetails?.contacts} />
                                 </div>
 
-                                <div className='w-[495px]'>
+                                <div className='w-[652px]'>
                                     <PDFCard pdfDocuments={investorProfileDetails?.documents} />
                                 </div>
                             </div>
 
-                            {
+                            {/* {
                                 investorProfileDetails?.companies_engaged?.length > 0 &&
                                 <div className='w-[1000px]'>
                                     <MasterCardGrid gridHeaders={companies_engaged_gridHeaders} gridRecords={investorProfileDetails?.companies_engaged} gridTitle="Companies Engaged" />
@@ -71,7 +71,7 @@ const index = () => {
                                 <div className='w-[1000px]'>
                                     <MasterCardGrid gridHeaders={engagement_questions_gridHeaders} gridRecords={investorProfileDetails?.engagement_questions} gridTitle="Engagement Questions" />
                                 </div>
-                            }
+                            } */}
 
                         </div>
 

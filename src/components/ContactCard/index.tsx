@@ -117,7 +117,7 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
 
                                             </Table.Td>
                                             <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                                <div className="text-right cursor-pointer text-blue-800 whitespace-nowrap" onClick={() => window.open(contact?.linkedin, '_blank')} >
+                                                <div className="text-right font-semibold hover:text-blue-900 hover:underline cursor-pointer text-blue-800 whitespace-nowrap" onClick={() => window.open(contact?.linkedin, '_blank')} >
                                                     linkedin
                                                 </div>
                                             </Table.Td>

@@ -10,7 +10,7 @@ const index: React.FC<ChildProps> = ({ logoUrl, companyName }) => {
         <div className="bg-gradient-to-b rounded-2xl to-[#000000CC] from-[#9F1239] background text-white p-10 ">
             <div className='flex items-center justify-between'>
                 <div className="flex items-center flex-row justify-center">
-                    <div className="w-32 bg-white p-2 rounded-xl mb-3">
+                    <div className=" w-28 bg-white p-2 rounded-xl mb-3">
                         <img src={logoUrl} />
                     </div>
                     <div className="ml-5">
