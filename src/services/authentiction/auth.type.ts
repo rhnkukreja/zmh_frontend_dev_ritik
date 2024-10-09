@@ -14,6 +14,7 @@ export class SignUpRequestDTO {
     public email: string,
     public password: string,
     public username: string,
-    public user_type: string
+    public user_type: string,
+    public company: number | null
   ) {}
 }

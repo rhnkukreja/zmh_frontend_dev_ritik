@@ -18,6 +18,7 @@ import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 import { Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+import { setDashboardGlobalSearch } from "@/stores/authenticationSlice";
 
 interface LoginFormInputs {
   email: string;
@@ -27,7 +28,7 @@ interface LoginFormInputs {
 const Main: React.FC = () => {
   const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
-  const [showPassword, setShowPassword]= useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
 
   const {
@@ -48,17 +49,25 @@ const Main: React.FC = () => {
       if (response.token) {
         localStorage.setItem("User", JSON.stringify(response));
         localStorage.setItem("token", response.token);
-        toast.success("Logged In Successfully!");
-        navigate("/");
       }
+      if (response?.company_id && response.company_name) {
+        dispatch(
+          setDashboardGlobalSearch({
+            id: response?.company_id,
+            ticker: response?.company_ticker!,
+            name: response?.company_name,
+          })
+        );
+      }
+      toast.success("Logged In Successfully!");
+      navigate("/");
     } catch (error) {}
   };
 
   return (
     <>
-       <Helmet>
+      <Helmet>
         <title>ZMH Analytics - ZMH Advisors</title>
-        
       </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
@@ -97,8 +106,7 @@ const Main: React.FC = () => {
                     <p className="text-red-500">{errors.email.message}</p>
                   )}
                   <FormLabel className="mt-4">Password*</FormLabel>
-                 <div className="relative">
-                  
+                  <div className="relative">
                     <FormInput
                       type={showPassword ? "text" : "password"}
                       className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
@@ -108,8 +116,20 @@ const Main: React.FC = () => {
                       })}
                     />
                     <span className="absolute top-[28%] right-[5%] cursor-pointer">
-                      {showPassword && <Eye onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
-                      {!showPassword && <EyeOff onClick={() => setShowPassword(!showPassword)} strokeWidth={0.75} size={20} />}
+                      {showPassword && (
+                        <Eye
+                          onClick={() => setShowPassword(!showPassword)}
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
+                      {!showPassword && (
+                        <EyeOff
+                          onClick={() => setShowPassword(!showPassword)}
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
                     </span>
                   </div>
 

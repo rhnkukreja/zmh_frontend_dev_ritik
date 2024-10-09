@@ -15,12 +15,12 @@ const index = () => {
 
     const pageNumber = 1;
     const { caseStudyDetails, caseStudyLoading, page, totalPages } = useAppSelector((state) => state.dashboard);
-    const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+    const { companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
 
     useEffect(() => {
         if (ticker) {
             dispatch(fetchCaseStudyDashboard(
-                createDynamicURL(`https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q=${company_Global_Search}&dateRestrict=y1&start=${pageNumber}`)
+                createDynamicURL(`https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q=${companyGlobalSearchName}&dateRestrict=y1&start=${pageNumber}`)
             )
             );
         }
