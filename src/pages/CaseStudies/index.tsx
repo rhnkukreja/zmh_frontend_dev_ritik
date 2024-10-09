@@ -32,7 +32,7 @@ function CaseStudies() {
     sector: string[];
     year: string[];
     institution_name?: string[];
-    company?: string[];
+    global_search?: string[];
     themes: string[];
     proposal_type: string[];
     vote: string[];
@@ -56,7 +56,7 @@ function CaseStudies() {
       proposal_type: prev?.proposal_type || [],
       vote: prev?.vote || [],
       institution_name: prev?.proponent || [],
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
     }));
   }, [companyGlobalSearchName]);
 
@@ -113,6 +113,7 @@ function CaseStudies() {
   }, []);
 
   useEffect(() => {
+    if(!applyFilters?.global_search) return
     dispatch(
       fetchCaseStudies(
         createDynamicURL(
@@ -160,7 +161,7 @@ function CaseStudies() {
       keyword: "",
       market: [],
       sector: [],
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
       year: [],
       themes: [],
       proposal_type: [],
@@ -186,7 +187,7 @@ function CaseStudies() {
     setApplyFilters({
       ...caseStudyFilters,
       institution_name: searchTerms,
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
     });
     const validKeysCount = Object.keys(caseStudyFilters).filter((key) => {
       const value = caseStudyFilters[key];
@@ -215,7 +216,7 @@ function CaseStudies() {
         themes: savedSearch.themes || [],
         proposal_type: savedSearch.proposal_type || [],
         vote: savedSearch.vote || [],
-        company: savedSearch.company,
+        global_search: savedSearch.global_search,
       });
       setIsFilterCollapse(true);
     }
@@ -232,7 +233,7 @@ function CaseStudies() {
       vote: watch("vote") || [],
       year: watch("year") || [],
       keyword: watch("keyword") || "",
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
     });
     if (res?.Success) {
       dispatch(
@@ -247,7 +248,7 @@ function CaseStudies() {
             vote: watch("vote") || [],
             year: watch("year") || [],
             keyword: watch("keyword") || "",
-            company: [companyGlobalSearchName],
+            global_search: [companyGlobalSearchName],
           },
         })
       );

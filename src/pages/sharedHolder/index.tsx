@@ -3,25 +3,23 @@ import { Menu, Popover, Tab } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect,  useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import Table from "@/components/Base/Table";
 import {
   Controller,
-  FieldErrors,
-  SubmitErrorHandler,
+ 
   useForm,
 } from "react-hook-form";
 import {
@@ -36,7 +34,7 @@ import clsx from "clsx";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
-import { ShareholderProposalPayload } from "@/types/common";
+
 
 function ShareHolderProposal() {
   interface ShareHolderFilter {
@@ -44,7 +42,7 @@ function ShareHolderProposal() {
     proponent: string[];
     category: string[];
     sub_category: string[];
-    company: string[];
+    global_search: string[];
     year: string[];
     keyword: string;
     [key: string]: any;
@@ -97,6 +95,7 @@ function ShareHolderProposal() {
   };
 
   useEffect(() => {
+    if(!applyFilters?.global_search) return
     if (tab === "proposal") {
       dispatch(
         fetchShareHolderProposal(
@@ -187,7 +186,7 @@ function ShareHolderProposal() {
     setApplyFilters({
       keyword: "",
       category: [],
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
       sub_category: [],
       year: [],
       status: [],
@@ -209,7 +208,7 @@ function ShareHolderProposal() {
     setApplyFilters({
       ...shareHolderFilters,
       proponent_name: searchTerms,
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
     });
     const validKeysCount = Object.keys(shareHolderFilters).filter((key) => {
       const value = shareHolderFilters[key];
@@ -221,7 +220,7 @@ function ShareHolderProposal() {
 
   useEffect(() => {
     setApplyFilters((prev) => ({
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
       status: prev?.status || [],
       proponent: prev?.proponent || [],
       category: prev?.category || [],
@@ -248,7 +247,7 @@ function ShareHolderProposal() {
         sub_category: savedSearch.sub_category || [],
         year: savedSearch.year || [],
         status: savedSearch.status || [],
-        company: savedSearch?.company,
+        global_search: savedSearch?.global_search,
       });
       setIsFilterCollapse(true);
     }
@@ -263,7 +262,7 @@ function ShareHolderProposal() {
       year: applyFilters?.year || [],
       status: applyFilters?.status || [],
       keyword: applyFilters?.keyword || "",
-      company: [companyGlobalSearchName],
+      global_search: [companyGlobalSearchName],
     });
     if (res?.Success) {
       dispatch(
@@ -276,7 +275,7 @@ function ShareHolderProposal() {
             year: watch("year") || [],
             status: watch("status") || [],
             keyword: watch("keyword") || "",
-            company: [companyGlobalSearchName],
+            global_search: [companyGlobalSearchName],
           },
         })
       );

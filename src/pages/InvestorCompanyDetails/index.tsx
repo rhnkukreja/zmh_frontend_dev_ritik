@@ -19,17 +19,17 @@ const index = () => {
 
     const dispatch: AppDispatch = useAppDispatch();
     const { investorProfileLoading, investorProfileDetails } = useAppSelector((state) => state.dashboard);
-    const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+    const { companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
     const { id } = useParams();
     useEffect(() => {
-        if (id && company_Global_Search) {
+        if (id && companyGlobalSearchName) {
             dispatch(fetchInvestorProfileDetails(
-                createDynamicURL(`${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}&global_search=${company_Global_Search}`)
+                createDynamicURL(`${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}&global_search=${companyGlobalSearchName}`)
             )
             );
         }
 
-    }, [id, company_Global_Search]);
+    }, [id, companyGlobalSearchName]);
 
     return (
         <>

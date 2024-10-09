@@ -21,8 +21,8 @@ import { CompanyData } from "@/types/company";
 import { useNavigate } from "react-router-dom";
 
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, SaveAll } from "lucide-react";
-import MultiSearchBar from "@/components/MultiSearch";
+import {  SaveAll } from "lucide-react";
+
 import _ from "lodash";
 import { commonService } from "@/services/common";
 import { toast } from "react-toastify";
@@ -36,6 +36,7 @@ function CompanyList() {
     (state) => state.company
   );
 
+
   const [addNewCompanyVisible, setAddNewCompanyVisible] =
     useState<boolean>(false);
   const [selectedCompany] = useState<CompanyData | null>(null);
@@ -47,23 +48,18 @@ function CompanyList() {
   useEffect(() => {
     dispatch(
       setFilter({
-        key: "company",
+        key: "global_search",
         value: [companyGlobalSearchName],
       })
     );
   }, [companyGlobalSearchName]);
 
   useEffect(() => {
-    if (filters) {
-      dispatch(
-        fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters))
-      );
-    } else {
-      dispatch(
-        fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, page))
-      );
-    }
-  }, [page, filters]);
+    if(!filters.global_search) return
+    dispatch(
+      fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, undefined , page))
+    );
+  }, [page, filters.global_search , filters]);
 
   useEffect(() => {
     return () => {
@@ -88,16 +84,16 @@ function CompanyList() {
     dispatch(setPage(newPage));
   };
 
-  const handleApplyFilter = () => {
-    dispatch(
-      fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, page))
-    );
-  };
+  // const handleApplyFilter = () => {
+  //   dispatch(
+  //     fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, undefined, page))
+  //   );
+  // };
 
   const onFilterClear = () => {
     dispatch(resetFilter());
     dispatch(
-      fetchCompanies(createDynamicURL(`${baseURL}/company/`, undefined, page))
+      fetchCompanies(createDynamicURL(`${baseURL}/company/`, undefined, undefined , page))
     );
   };
 
@@ -105,8 +101,8 @@ function CompanyList() {
     setSearchTerms([...user?.saved_search["Company"]?.company]);
     dispatch(
       setFilter({
-        key: "company",
-        value: user?.saved_search["Company"]?.company,
+        key: "global_search",
+        value: user?.saved_search["global_search"]?.global_search,
       })
     );
   };
@@ -114,14 +110,14 @@ function CompanyList() {
   const saveSearch = async () => {
     const res = await commonService.saveSearches({
       module: "Company",
-      company: filters["company"],
+      global_search: filters["global_search"],
     });
     if (res?.Success) {
       dispatch(
         setSavedSearch({
           key: "Company",
           value: {
-            company: filters["company"],
+            global_search: filters["global_search"],
           },
         })
       );

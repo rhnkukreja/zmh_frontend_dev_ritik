@@ -71,7 +71,7 @@ function PeerAnalysis() {
   useEffect(() => {
     dispatch(
       setFilter({
-        key: "company",
+        key: "global_search",
         value: [companyGlobalSearchName],
       })
     );
@@ -96,7 +96,7 @@ function PeerAnalysis() {
         )
       );
     }
-  }, [page, filters]);
+  }, [page, filters , filters?.global_search]);
 
   useEffect(() => {
     return () => {
@@ -157,7 +157,7 @@ function PeerAnalysis() {
     setSearchTerms([]);
     dispatch(
       setFilter({
-        key: "company",
+        key: "global_search",
         value: [companyGlobalSearchName],
       })
     );
@@ -214,15 +214,15 @@ function PeerAnalysis() {
 
   useEffect(() => {
     handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length, filters?.company, applyFilters]);
+  }, [searchTerms, searchTerms?.length, filters?.global_search, applyFilters]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
 
     dispatch(
       setFilter({
-        key: "company",
-        value: user?.saved_search["Peer Analysis"]?.company,
+        key: "global_search",
+        value: user?.saved_search["Peer Analysis"]?.global_search,
       })
     );
   };
@@ -231,7 +231,7 @@ function PeerAnalysis() {
     const res = await commonService.saveSearches({
       module: "Peer Analysis",
       institution: searchTerms,
-      company: filters["company"],
+      global_search: filters["global_search"],
     });
     if (res?.Success) {
       dispatch(
@@ -239,7 +239,7 @@ function PeerAnalysis() {
           key: "Peer Analysis",
           value: {
             institution: searchTerms,
-            company: filters["company"],
+            global_search: filters["global_search"],
           },
         })
       );

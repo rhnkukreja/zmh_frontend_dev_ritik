@@ -21,7 +21,7 @@ const index = () => {
     );
     const [searchParams] = useSearchParams();
     const ticker = searchParams.get("ticker") ?? "AAPL";
-    const { company_Global_Search } = useAppSelector((state) => state.dashboard);
+    
     
 
     useEffect(() => {
