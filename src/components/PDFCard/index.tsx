@@ -3,6 +3,7 @@ import Table from "@/components/Base/Table";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Button from '../Base/Button';
 
 interface ChildProps {
     pdfDocuments: any;
@@ -68,6 +69,14 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
         <div className='p-5 mt-3.5 box '>
             <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
                 <h1 className='text-lg font-bold'>Documents</h1>
+
+                <Button
+                    onClick={() => window.open(`/investor-profile/investor/${id}`, '_blank')}
+                    variant="primary"
+                    className="bg-theme-2 border-bg-theme-2"
+                >
+                    Investor Profile
+                </Button>
             </div>
 
             <div className='w-full h-[250px] pr-6 overflow-y-scroll'>
@@ -82,11 +91,12 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                                     <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                         {/* Year */}
                                     </Table.Td>
-                                    <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px] text-center  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                        Download
-                                    </Table.Td>
+                                    
                                     <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px] text-center  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                         
+                                    </Table.Td>
+                                    <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px] text-center  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                        Download
                                     </Table.Td>
 
                                 </Table.Tr>
@@ -106,33 +116,34 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                                                     />
                                                 </div>
 
-
-
                                             </Table.Td>
                                             <Table.Td className="px-0 py-3 border-b dark:border-darkmode-300 w-[300px]">
 
 
-                                                <div className='flex justify-between items-center '>
+                                                <div className='flex justify-between items-center ' >
                                                     <div >
-                                                        <h1 className='font-semibold '>{document?.name}</h1>
+                                                        <h1 onClick={() => /* handleDownload(document?.link) */ window.open(document?.link, '_blank')} className='font-semibold cursor-pointer hover:underline'>{document?.name}</h1>
                                                     </div>
                                                 </div>
 
 
                                             </Table.Td>
                                             <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                               
+                                            </Table.Td>
+                                            <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                                 <div className="text-center font-semibold hover:text-blue-900 hover:underline cursor-pointer text-blue-800 whitespace-nowrap"
-                                                 onClick={() => handleDownload(document?.link) /* window.open(document?.link, '_blank') */} >
+                                                 onClick={() => /* handleDownload(document?.link) */ window.open(document?.link, '_blank')} >
                                                 Download
                                                 </div>
                                             </Table.Td>
 
-                                            <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                            {/* <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                                 <div className="text-center font-semibold  cursor-pointer whitespace-nowrap"
-                                                 onClick={() => /* handleDownload(document?.link) */ window.open(`/investor-profile/investor/${id}`, '_blank')/* navigate(`/investor-profile/investor/${id}`) */} >
+                                                  >
                                                 View Details
                                                 </div>
-                                            </Table.Td>
+                                            </Table.Td> */}
 
                                         </Table.Tr>
                                         ))

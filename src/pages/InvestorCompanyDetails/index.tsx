@@ -19,10 +19,10 @@ const index = () => {
 
     const dispatch: AppDispatch = useAppDispatch();
     const { investorProfileLoading, investorProfileDetails } = useAppSelector((state) => state.dashboard);
-    const { companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
+    const { companyGlobalSearchName, companyGlobalSearchTicker} = useAppSelector((state) => state.authentiction);
     const { id } = useParams();
     useEffect(() => {
-        if (id && companyGlobalSearchName) {
+        if (id && companyGlobalSearchTicker) {
             dispatch(fetchInvestorProfileDetails(
                 createDynamicURL(`${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}&global_search=${companyGlobalSearchName}`)
             )
