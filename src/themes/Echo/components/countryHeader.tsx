@@ -1,3 +1,4 @@
+import Tippy from "@/components/Base/Tippy";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import ReactCountryFlag from "react-country-flag";
@@ -11,19 +12,30 @@ const CountryInfoHeader = () => {
   return (
     <div className="bg-white shadow-sm rounded-lg p-6 mb-6 ">
       <div className="flex flex-row items-center gap-6">
-        <div className="p-y-4 mb-1 font-semibold text-xl ">
-          {companyGlobalSearchName}
+        <div className="p-y-4 mb-1 font-semibold text-xl flex gap-2">
+        {user?.finnhub?.logo&&  <div className="w-6 h-6 image-fit zoom-in object-contain">
+            <Tippy
+              as="img"
+              alt={user?.finnhub?.name}
+              className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+              src={user?.finnhub?.logo}
+              content={user?.finnhub?.name || ""}
+            />
+          </div>}
+          {user?.finnhub?.name}
         </div>
         <span className="text-gray-600 text-sx">
-        {user?.finnhub?.country &&  <ReactCountryFlag
-            className="emojiFlag mr-2"
-            countryCode={user?.finnhub?.country}
-            style={{
-              fontSize: "1.5em",
-              lineHeight: "1.5em",
-            }}
-            svg
-          />}
+          {user?.finnhub?.country && (
+            <ReactCountryFlag
+              className="emojiFlag mr-2"
+              countryCode={user?.finnhub?.country}
+              style={{
+                fontSize: "1.5em",
+                lineHeight: "1.5em",
+              }}
+              svg
+            />
+          )}
           {user?.finnhub?.exchange}
         </span>
       </div>
@@ -45,23 +57,21 @@ const CountryInfoHeader = () => {
 
         {/* Next Earnings Date */}
         <div className="flex flex-col items-start space-y-1">
-          <p className="text-gray-600 text-sm">Thu Oct 31st 2024</p>
-          <p className="text-gray-400 text-xs">
-            Next Earnings Date (During-Market)
-          </p>
+          <p className="text-gray-600 text-sm">Contact</p>
+          <p className="text-gray-400 text-xs">{user?.finnhub?.phone}</p>
         </div>
 
         {/* Sectors */}
-        <div className="flex flex-col items-start space-y-1">
+        {/* <div className="flex flex-col items-start space-y-1">
           <p className="text-gray-600 text-sm">Information Technology</p>
           <p className="text-gray-400 text-xs">Sector</p>
-        </div>
+        </div> */}
 
         <div className="flex flex-col items-start space-y-1">
           <p className="text-gray-600 text-sm">
-            Technology Hardware, Storage And Peripherals
+            Industry
           </p>
-          <p className="text-gray-400 text-xs">Sector</p>
+          <p className="text-gray-400 text-xs">{user?.finnhub?.finnhub_industry}</p>
         </div>
       </div>
     </div>

@@ -54,6 +54,7 @@ function Main(props: MainProps) {
     company: CompanyData
   ) => {
     event.preventDefault();
+    console.log({company})
     navigate(`/?ticker=${company?.symbol}`);
     dispatch(
       setDashboardGlobalSearch({

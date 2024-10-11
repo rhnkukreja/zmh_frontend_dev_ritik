@@ -23,6 +23,8 @@ import { baseURL } from "@/constant";
 import Tippy from "../Base/Tippy";
 import clsx from "clsx";
 import LoadingIcon from "../Base/LoadingIcon";
+import Button from "../Base/Button";
+import { ChevronLeft } from "lucide-react";
 
 const index = () => {
   const location = useLocation();
@@ -41,6 +43,7 @@ const index = () => {
 
 
   const navigate = useNavigate();
+
 
   useEffect(() => {
     if (companyGlobalSearchTicker) {
@@ -105,9 +108,22 @@ const index = () => {
 
   return (
     <>
-      <div className="p-y-5 mb-1 font-semibold text-xl ">
-        {companyGlobalSearchName}
-      </div>
+      {location.pathname !== "/" && (
+        <Button
+          onClick={() => {
+            navigate("/");
+          }}
+          variant="primary"
+          className="bg-theme-2 border-bg-theme-2 mb-4"
+        >
+          <ChevronLeft
+            className="group-[.mode--light]:text-white text-white"
+            size={18}
+            strokeWidth={1.5}
+          />
+          Back
+        </Button>
+      )}
       {dashboardDataList?.length !== 0 && (
         <>
           <div className="p-5 mt-3.5 box">
@@ -120,7 +136,7 @@ const index = () => {
                   <div className="flex justify-between items-center gap-2">
                     <img alt="flag-icon" src={flagIcon} />
                     <h4 className="font-semibold">
-                      History of Schedule 13D Filing
+                      -header 13D Filing
                     </h4>
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>

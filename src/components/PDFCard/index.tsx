@@ -66,6 +66,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
 
 
     return (
+        
         <div className='p-5 mt-3.5 box '>
             <div className='flex justify-between items-center xs:flex-col sm:flex-row py-3'>
                 <h1 className='text-lg font-bold'>Documents</h1>

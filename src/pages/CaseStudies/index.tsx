@@ -113,7 +113,7 @@ function CaseStudies() {
   }, []);
 
   useEffect(() => {
-    if(!applyFilters?.global_search) return
+    if (!applyFilters?.global_search) return;
     dispatch(
       fetchCaseStudies(
         createDynamicURL(
@@ -261,9 +261,7 @@ function CaseStudies() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">
-              Case Studies
-            </div>
+            <div className="font-semibold text-xl ">Case Studies</div>
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
@@ -799,13 +797,16 @@ function CaseStudies() {
                             Company
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Theme
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Industry
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Available Case Studies
+                            Actions
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
@@ -842,14 +843,17 @@ function CaseStudies() {
                                     ></a>
                                   </div>
                                 )}
-                                <div className="ml-4">
-                                  <p className="font-medium whitespace-nowrap">
+                                <div className="ml-4 max-w-[150px]">
+                                  <p className="font-medium whitespace-normal line-clamp-2">
                                     {item?.institution_name}
                                   </p>
                                 </div>
                               </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
                                 {item?.company_name}
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                {item?.esg_themes}
                               </Table.Td>
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.year}
