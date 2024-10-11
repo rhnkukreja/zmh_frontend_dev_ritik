@@ -30,25 +30,27 @@ const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
-  const ticker = searchParams.get("ticker") ?? "AAPL";
   const { dashboardDataList, investorCardLoading, page, totalPages } =
-    useAppSelector((state) => state.dashboard);
+  useAppSelector((state) => state.dashboard);
+  
+  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+      (state: RootState) => state.authentiction
+    );
+    
+//  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
 
-  const { companyGlobalSearchName } = useAppSelector(
-    (state: RootState) => state.authentiction
-  );
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (ticker) {
+    if (companyGlobalSearchTicker) {
       dispatch(
         fetchCompanyDashboard(
-          createDynamicURL(`${baseURL}/company-dashboard/?ticker=${ticker}`)
+          createDynamicURL(`${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`)
         )
       );
     }
-  }, [ticker]);
+  }, [companyGlobalSearchTicker]);
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {

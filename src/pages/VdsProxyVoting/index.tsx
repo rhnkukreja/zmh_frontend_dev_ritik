@@ -20,19 +20,20 @@ const index = () => {
         (state) => state.dashboard
     );
     const [searchParams] = useSearchParams();
-    const ticker = searchParams.get("ticker") ?? "AAPL";
-    const { companyGlobalSearchName } = useAppSelector(
+    
+    const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
         (state: RootState) => state.authentiction
     );
 
+    // const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
 
 
     useEffect(() => {
         dispatch(fetchVdsProxyDashboard(
-            createDynamicURL(`${baseURL}/vds_proxy_voting/?ticker=${ticker}`, undefined, undefined)
+            createDynamicURL(`${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`, undefined, undefined)
         )
         );
-    }, [ticker]);
+    }, [companyGlobalSearchTicker]);
 
     return (
         <>

@@ -30,7 +30,7 @@ const index = () => {
         (state) => state.dashboard
     );
     const [searchParams] = useSearchParams();
-    const ticker = searchParams.get("ticker") ?? "AAPL";
+    // const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
    
     const navigate = useNavigate();
 
@@ -76,10 +76,10 @@ const index = () => {
 
     useEffect(() => {
         dispatch(fetchAGMSummaryDashboard(
-            createDynamicURL(`${baseURL}/voting_report_8k/?ticker=${ticker}`, undefined, undefined)
+            createDynamicURL(`${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}`, undefined, undefined)
         )
         );
-    }, [ticker]);
+    }, [companyGlobalSearchTicker]);
 
     const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault();
@@ -178,7 +178,7 @@ const index = () => {
                                                                     >
                                                                         <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
                                                                         headerIndex === agmSummaryDetails?.nominees_headers?.length - 1 &&
-                                                                        parseFloat(nominee[nomineeHeader?.field]) < 0.85 && 'text-red-700 font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
+                                                                        parseFloat(nominee[nomineeHeader?.field]) < 85 && 'text-red-700 font-semibold'])}>{nominee[nomineeHeader?.field]}</h1>
 
                                                                     </Table.Td>
                                                                 ))}
@@ -218,7 +218,7 @@ const index = () => {
                                                                     >
                                                                         <h1 className={clsx([headerIndex === 0 && 'font-semibold w-[180px]',
                                                                         headerIndex === agmSummaryDetails?.proposals_headers?.length - 1 &&
-                                                                        parseFloat(proposal[proposalHeader?.field]) < 0.85 && 'text-red-700 font-semibold'])}>
+                                                                        parseFloat(proposal[proposalHeader?.field]) < 85 && 'text-red-700 font-semibold'])}>
                                                                             {proposal[proposalHeader?.field]}</h1>
 
                                                                     </Table.Td>

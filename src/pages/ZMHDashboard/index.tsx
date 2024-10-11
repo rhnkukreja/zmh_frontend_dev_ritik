@@ -20,19 +20,24 @@ function Main() {
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
-  const ticker = searchParams.get("ticker") ?? "";
+  // const ticker = searchParams.get("ticker") ?? "";
   const { dashboardDataList, loading, investorCardLoader, page, totalPages, } = useAppSelector(
     (state) => state.dashboard
   );
 
+  const { companyGlobalSearchTicker } = useAppSelector(
+    (state) => state.authentiction
+  );
+
+
   useEffect(() => {
-    if(ticker){
+    if(companyGlobalSearchTicker){
       dispatch(fetchCompanyDashboard(
-        createDynamicURL(`${baseURL}/company-dashboard/?ticker=${ticker}&`, undefined,undefined, page)
+        createDynamicURL(`${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}&`, undefined,undefined, page)
       )
       );
     }
-  }, [ticker, page]);
+  }, [companyGlobalSearchTicker, page]);
 
 
   const handleNextPage = () => {

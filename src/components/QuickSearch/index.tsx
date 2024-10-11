@@ -58,7 +58,7 @@ function Main(props: MainProps) {
     dispatch(
       setDashboardGlobalSearch({
         id: company?.id,
-        ticker: company?.exchng_ticker,
+        ticker: company?.symbol,
         name: company?.name,
       })
     );
