@@ -127,7 +127,6 @@ const caseStudies = createSlice({
         state.error = null;
       })
       .addCase(getSingleSingleCaseStudy.fulfilled, (state, action) => {
-        debugger;
         state.loading = false;
         state.error = null;
         state.singleCaseStudy = action.payload.result;
