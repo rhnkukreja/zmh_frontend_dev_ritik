@@ -585,21 +585,21 @@ function Main() {
                         <Menu.Divider />
                       </>
                     )}
-                    <Menu.Item
+                    {/* <Menu.Item
                       onClick={() => {
                         navigate("settings?page=security");
                       }}
                     >
-                      {/* <Lucide icon="Lock" className="w-4 h-4 mr-2" />
+                      <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
-                    </Menu.Item>
+                    </Menu.Item> */}
                     <Menu.Item
                       onClick={() => {
                         navigate("login");
                         dispatch(logout());
                         persistor.purge();
                       }}
-                    > */}
+                    >
                       <Lucide icon="Power" className="w-4 h-4 mr-2" />
                       Logout
                     </Menu.Item>
