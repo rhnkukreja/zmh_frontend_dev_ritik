@@ -24,12 +24,12 @@ type InstitutionPayload = BasePayload<"Institution", string[]> & {
 
 type CompanyPayload = {
   module: "Company";
-  company: string[];
+  global_search: string[];
 };
 
 export type ShareholderProposalPayload = {
   module: "Shareholder Proposal";
-  company?: string[];
+  global_search?: string[];
   proponent: string[];
   category: string[];
   sub_category: string[];
@@ -40,7 +40,7 @@ export type ShareholderProposalPayload = {
 
 type CaseStudiesPayload = {
   module: "Case Studies";
-  company: string[];
+  global_search: string[];
   institution: string[];
   market: string[];
   sector: string[];
@@ -53,11 +53,17 @@ type CaseStudiesPayload = {
 
 type PeerAnalysisPayload = {
   module: "Peer Analysis";
-  company: string[];
+  global_search: string[];
   institution: string[];
+};
+type GlobalSearchPayload = {
+  module: "Global Search";
+  id: number;
+  company: string;
 };
 
 export type PayloadModule =
+  | GlobalSearchPayload
   | EngagementQuestionsPayload
   | InvestorProfilePayload
   | VotingGuidelinesPayload

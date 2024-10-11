@@ -1,5 +1,5 @@
 import Button from "@/components/Base/Button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -18,7 +18,7 @@ import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+
 import AddNewInvesterProfile from "../InvestorProfiles/components/AddNewInvester";
 import Table from "@/components/Base/Table";
 import { TypesPeerAnalysis } from "@/types/peerAnalysis";
@@ -26,49 +26,72 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
+import { Popover } from "@/components/Base/Headless";
+import { FormCheck, FormInput } from "@/components/Base/Form";
+import { Controller, useForm } from "react-hook-form";
+import TomSelect from "@/components/Base/TomSelect";
+TomSelect;
 
+interface PeerAnalysisFilter {
+  category: string[];
+
+  year: string[];
+}
 function PeerAnalysis() {
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<PeerAnalysisFilter>();
+
   const dispatch: AppDispatch = useAppDispatch();
 
+  const [applyFilters, setApplyFilters] = useState<
+    PeerAnalysisFilter | undefined
+  >(undefined);
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [filtersLength, setFiltersLength] = useState<number>(0);
+
+  const [apiDropdownOptions] = useState<PeerAnalysisFilter>({
+    category: ["Social", "Governance", "Environment"],
+    year: ["2023", "2024"],
+  });
+
   const { loading, peerAnalysisData, page, totalPages, filters } =
     useAppSelector((state) => state.peerAnalysis);
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
 
   useEffect(() => {
-    if (filters.institution_name.length > 0) {
+    if (companyGlobalSearchName) {
       dispatch(
-        fetchPeerAnalysis(
-          createDynamicURL(`${baseURL}/peer_analysis/`, filters)
-        )
-      );
-    } else {
-      dispatch(
-        fetchPeerAnalysis(
-          createDynamicURL(
-            `${baseURL}/peer_analysis/`,
-            filters,
-            undefined,
-            page
-          )
-        )
+        setFilter({ key: "global_search", value: [companyGlobalSearchName] })
       );
     }
-  }, [page, filters.institution_name]);
+  }, [companyGlobalSearchName]);
 
   useEffect(() => {
+    if (!filters?.global_search) return;
+    
+    dispatch(
+      fetchPeerAnalysis(
+        createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)
+      )
+    );
+
     return () => {
-      dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "institution_name",
-          value: [],
-        })
-      );
+      dispatch(resetPage()); 
     };
-  }, []);
+
+  }, [page ,  filters?.global_search]);
+
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -86,21 +109,26 @@ function PeerAnalysis() {
     dispatch(setPage(newPage));
   };
 
-  function handleApplyFilter() {
+  const handleApplyFilter = () => {
     dispatch(
       fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, filters, page)
+        createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)
       )
     );
-
     dispatch(resetPage());
-  }
+  };
 
   const onFilterClear = () => {
+    reset();
     dispatch(resetFilter());
     dispatch(
       fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, undefined, page)
+        createDynamicURL(
+          `${baseURL}/peer_analysis/`,
+          { ...applyFilters },
+          undefined,
+          1
+        )
       )
     );
   };
@@ -109,80 +137,41 @@ function PeerAnalysis() {
     dispatch(resetFilter());
     setSearchTerms([]);
     dispatch(
-      setFilter({
-        key: "institution_name",
-        value: [],
-      })
+      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
     );
-
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, undefined, page)
-      )
-    );
-
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, undefined, page)
-      )
-    );
-
     dispatch(resetPage());
   };
 
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
-
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  };
-
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+  const handleSearch = useCallback(
+    (searchTerms: string[]) => {
+      dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+      const updatedFilters = { ...filters, institution_name: searchTerms };
+      dispatch(
+        fetchPeerAnalysis(
+          createDynamicURL(
+            `${baseURL}/peer_analysis/`,
+            updatedFilters,
+            undefined,
+            1
+          )
+        )
+      );
+    },
+    [dispatch, filters]
+  );
 
   useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const profile of peerAnalysisData || []) {
-        const isValid = await checkImageUrl(profile?.image);
-        tempValidImages[profile?.name] = isValid
-          ? profile?.image
-          : userLinkedinImage;
-      }
-
-      setValidImages(tempValidImages);
-    };
-
-    validateImages();
-  }, [peerAnalysisData]);
-
-  const handleSearch = (searchTerms: string[]) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-    const tempFilter = { institution_name: searchTerms };
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, tempFilter, undefined, 1)
-      )
-    );
-  };
-  useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
+    if (searchTerms?.length || filters?.global_search?.length || applyFilters) {
+      handleSearch(searchTerms);
+    }
+  }, [searchTerms, filters?.global_search, applyFilters, handleSearch]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
-
     dispatch(
       setFilter({
-        key: "company",
-        value: user?.saved_search["Peer Analysis"]?.company,
+        key: "global_search",
+        value: user?.saved_search["Peer Analysis"]?.global_search,
       })
     );
   };
@@ -191,31 +180,41 @@ function PeerAnalysis() {
     const res = await commonService.saveSearches({
       module: "Peer Analysis",
       institution: searchTerms,
-      company: filters["company"],
+      global_search: filters["global_search"],
     });
+
     if (res?.Success) {
       dispatch(
         setSavedSearch({
           key: "Peer Analysis",
           value: {
             institution: searchTerms,
-            category: filters["company"],
+            global_search: filters["global_search"],
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success(res?.Success || "Search saved successfully");
     }
   };
 
-    return (
-        <>
-            <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-                <div className="col-span-12">
-                    <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-                        <div className="font-semibold text-xl ">
-                            Peer Analysis
-                        </div>
-                        {/* {user?.user_type === "Admin" && (
+  const onSubmit = async (peerAnalysisFilters: PeerAnalysisFilter) => {
+    setApplyFilters({ ...peerAnalysisFilters });
+    const validKeysCount = Object.keys(peerAnalysisFilters).filter((key) => {
+      const value = peerAnalysisFilters[key as keyof PeerAnalysisFilter];
+      return Array.isArray(value)
+        ? value.length !== 0
+        : value !== undefined && value !== "";
+    })?.length;
+
+    setFiltersLength(validKeysCount);
+  };
+  return (
+    <>
+      <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+        <div className="col-span-12">
+          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
+            <div className="font-semibold text-xl ">Peer Analysis</div>
+            {/* {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
                   onClick={() => {
@@ -285,6 +284,186 @@ function PeerAnalysis() {
                       </Button>
                     </div>
                   )}
+                  <Popover className="inline-block">
+                    {({ close }) => (
+                      <>
+                        <Popover.Button
+                          as={Button}
+                          variant="outline-secondary"
+                          className="w-full sm:w-auto"
+                          // onClick={handleCollapseFilter}
+                        >
+                          <Lucide
+                            icon="ArrowDownWideNarrow"
+                            className="stroke-[1.3] w-4 h-4 mr-2"
+                          />
+                          Filter
+                          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                            {filtersLength}
+                          </div>
+                        </Popover.Button>
+                        <Popover.Panel placement="bottom-end">
+                          <form onSubmit={handleSubmit(onSubmit)}>
+                            <div className="p-2">
+                              <div className="mt-3">
+                                <div className="w-full  my-2">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    Year
+                                    {apiDropdownOptions?.year?.length > 0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`year`}
+                                            checked={
+                                              apiDropdownOptions?.year
+                                                ?.length ===
+                                              watch("year")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "year",
+                                                  apiDropdownOptions?.year
+                                                );
+                                              } else {
+                                                setValue("year", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="year"
+                                    control={control}
+                                    defaultValue={[]}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select Year",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        <>
+                                          {apiDropdownOptions?.year?.map(
+                                            (year: string) => {
+                                              return (
+                                                <option value={year}>
+                                                  {year}
+                                                </option>
+                                              );
+                                            }
+                                          )}
+                                        </>
+                                      </TomSelect>
+                                    )}
+                                  />
+                                </div>
+
+                                <div className="w-full  my-2">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    Category
+                                    {apiDropdownOptions?.category?.length >
+                                      0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`category`}
+                                            checked={
+                                              apiDropdownOptions.category
+                                                .length ===
+                                              watch("category")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "category",
+                                                  apiDropdownOptions.category
+                                                );
+                                              } else {
+                                                setValue("category", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="category"
+                                    control={control}
+                                    defaultValue={[]}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select Category",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        <>
+                                          {apiDropdownOptions?.category.length >
+                                            0 &&
+                                            apiDropdownOptions?.category?.map(
+                                              (category: string) => {
+                                                return (
+                                                  <option value={category}>
+                                                    {category}
+                                                  </option>
+                                                );
+                                              }
+                                            )}
+                                        </>
+                                      </TomSelect>
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center mt-4">
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    close();
+                                    onFilterClear();
+                                  }}
+                                  className="w-32 ml-auto"
+                                >
+                                  Clear
+                                </Button>
+                                <Button
+                                  onClick={handleApplyFilter}
+                                  variant="primary"
+                                  className="w-32 ml-2"
+                                >
+                                  Apply
+                                </Button>
+                              </div>
+                            </div>
+                          </form>
+                        </Popover.Panel>
+                      </>
+                    )}
+                  </Popover>
                 </div>
               </div>
 
@@ -304,9 +483,9 @@ function PeerAnalysis() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Company
-                          </Table.Td>
+                          </Table.Td> */}
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Country
                           </Table.Td>
@@ -367,9 +546,9 @@ function PeerAnalysis() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.year}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.company_name}
-                              </Table.Td>
+                              </Table.Td> */}
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.caspio_company_country}
                               </Table.Td>

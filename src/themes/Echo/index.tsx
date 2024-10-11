@@ -4,7 +4,10 @@ import { Transition } from "react-transition-group";
 import { useState, useEffect, createRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
-import { selectCompactMenu, setCompactMenu as setCompactMenuStore } from "@/stores/compactMenuSlice";
+import {
+  selectCompactMenu,
+  setCompactMenu as setCompactMenuStore,
+} from "@/stores/compactMenuSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import Lucide from "@/components/Base/Lucide";
@@ -21,12 +24,13 @@ import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
 import { FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
-import { setDashboardGlobalSearch } from "@/stores/dashboardSlice";
-import LoadingIcon from "@/components/Base/LoadingIcon";
-import aiIcon from '@/assets/images/zmh-images/ai-Icon.png';
-import sideBarIcon from '@/assets/images/zmh-images/Group 1597887028.png';
-import Tippy from "@/components/Base/Tippy";
 
+import LoadingIcon from "@/components/Base/LoadingIcon";
+import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
+import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
+import Tippy from "@/components/Base/Tippy";
+import CountryInfoHeader from "./components/countryHeader";
+import { no_header_company } from "@/constant";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -62,7 +66,9 @@ function Main() {
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
   };
-  const { company_Global_Search } = useAppSelector((state: RootState) => state.dashboard);
+  const { companyGlobalSearchName } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
 
   const compactLayout = () => {
     if (window.innerWidth <= 1600) {
@@ -102,7 +108,7 @@ function Main() {
   const handleToggleMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
-  }
+  };
 
   const handleLoad = () => {
     setTimeout(() => {
@@ -122,7 +128,10 @@ function Main() {
     setBasicModalPreview(false);
     setIsFrameLoading(true);
     setIsError(false);
-  }
+  };
+
+  const shouldHideHeader = no_header_company.some(route => location.pathname.includes(route));
+
 
   return (
     <div
@@ -130,7 +139,8 @@ function Main() {
         "echo group bg-[#0000000D]  h-full",
         "before:content-[''] before:h-[370px] before:w-screen bg-[#0000000D] h-7 [&.background--hidden]:before:opacity-0 before:transition-[opacity,height] before:ease-in-out before:duration-300 before:top-0 before:fixed",
         "after:content-[''] after:h-[370px] after:w-screen [&.background--hidden]:after:opacity-0 after:transition-[opacity,height] after:ease-in-out after:duration-300 after:top-0 after:fixed after:bg-texture-white after:bg-contain after:bg-fixed after:bg-[center_-13rem] after:bg-no-repeat",
-        topBarActive && "background--hidden", 'bg-[#0000000D]'
+        topBarActive && "background--hidden",
+        "bg-[#0000000D]",
       ])}
     >
       <div
@@ -141,13 +151,15 @@ function Main() {
           { "side-menu--on-hover": compactMenuOnHover },
           { "ml-0 after:block": activeMobileMenu },
           { "-ml-[280px] after:hidden": !activeMobileMenu },
-        ])}>
+        ])}
+      >
         <div
           className={clsx([
             "fixed ml-[280px] w-10 h-10 items-center justify-center xl:hidden z-50",
             { flex: activeMobileMenu },
             { hidden: !activeMobileMenu },
-          ])}>
+          ])}
+        >
           <a
             href=""
             onClick={(event) => {
@@ -170,56 +182,59 @@ function Main() {
           // onMouseLeave={(event) => {
           //   event.preventDefault();
           //   setCompactMenu(true);
-          //   // toggleCompactMenu(event);  
+          //   // toggleCompactMenu(event);
           //   // setCompactMenuOnHover(false);
           // }}
         >
-          <div className={clsx([
+          <div
+            className={clsx([
               "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
-            ])} >
-            {
-              compactMenu && <a href=""
+            ])}
+          >
+            {compactMenu && (
+              <a
+                href=""
                 className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
               >
                 <div onClick={handleToggleMenu}>
-                  <img className=" w-8" src={sideBarIcon}/>
+                  <img className=" w-8" src={sideBarIcon} />
                   {/* <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3] text-white" /> */}
                 </div>
               </a>
-            }
-            {
-             !compactMenu && <a
-              href=""
-              onClick={handleToggleMenu}
-              className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center  ml-auto "
-            >
-                                <img className=" w-8 rotate-180" src={sideBarIcon}/>
-              {/* <Lucide icon="X" className="w-5 h-5 stroke-[1.3] text-white" /> */}
-            </a>
-            }
+            )}
+            {!compactMenu && (
+              <a
+                href=""
+                onClick={handleToggleMenu}
+                className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center  ml-auto "
+              >
+                <img className=" w-8 rotate-180" src={sideBarIcon} />
+                {/* <Lucide icon="X" className="w-5 h-5 stroke-[1.3] text-white" /> */}
+              </a>
+            )}
           </div>
 
           <a
-              href=""
-              className="mt-5 flex items-center justify-center transition-[margin] duration-700"
-            >
-              <div className="flex items-center justify-center w-auto h-[80px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
-                <div className="w-full h-full overflow-hidden transition-transform duration-700 ease-in">
-                  <img
-                    alt="Logo"
-                    src={logo}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+            href=""
+            className="mt-5 flex items-center justify-center transition-[margin] duration-700"
+          >
+            <div className="flex items-center justify-center w-auto h-[80px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
+              <div className="w-full h-full overflow-hidden transition-transform duration-700 ease-in">
+                <img
+                  alt="Logo"
+                  src={logo}
+                  className="w-full h-full object-cover"
+                />
               </div>
+            </div>
 
-              {/* <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
+            {/* <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
                 ZMH
               </div> */}
-            </a>
-            {/* <hr /> */}
+          </a>
+          {/* <hr /> */}
 
-            {/* <div className=" border-t text-white"></div> */}
+          {/* <div className=" border-t text-white"></div> */}
 
           <div
             ref={scrollableRef}
@@ -249,31 +264,43 @@ function Main() {
                       ])}
                       onClick={(event: React.MouseEvent) => {
                         event.preventDefault();
-                        menu.title !== 'Notes' &&
-                        linkTo(menu, navigate);
+                        menu.title !== "Notes" && linkTo(menu, navigate);
                         setFormattedMenu([...formattedMenu]);
                       }}
                     >
-                        <Tippy
-                          content={menu.title}
-                          options={{ theme: "light" }}
-                        >
-                          {menu.title !== 'Shareholder Proposals' && <Lucide
+                      <Tippy content={menu.title} options={{ theme: "light" }}>
+                        {menu.title !== "Shareholder Proposals" && (
+                          <Lucide
                             icon={menu?.icon}
                             className="side-menu__link__icon side-menu__link--active"
-                          />}
+                          />
+                        )}
 
-                          {
-                            menu.title === 'Shareholder Proposals' &&
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                              className="lucide lucide-hand-helping side-menu__link__icon side-menu__link--active">
-                              <path d="M11 12h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14" />
-                              <path d="m7 18 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9" /><path d="m2 13 6 6" /></svg>
-                          }
-                        </Tippy>
-                       
-                      <div className="side-menu__link__title link_color">{menu.title}</div>
+                        {menu.title === "Shareholder Proposals" && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            className="lucide lucide-files side-menu__link__icon side-menu__link--active"
+                          >
+                            <path d="M20 7h-3a2 2 0 0 1-2-2V2"/>
+                            <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/>
+                            <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>
+
+
+                          </svg>
+                        )}
+                      </Tippy>
+
+                      <div className="side-menu__link__title link_color">
+                        {menu.title}
+                      </div>
                       {menu.badge && (
                         <div className="side-menu__link__badge">
                           {menu.badge}
@@ -450,20 +477,30 @@ function Main() {
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
                 </a>
               </div>
-              
+
               <div
                 className="relative justify-center hidden xl:flex"
                 onClick={() => setQuickSearch(true)}
               >
-                <div className={clsx([
-                  'bg-[#D9D9D926] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100',
-                  company_Global_Search !== '' ? 'text-[#545454]' : 'text-[#545454]'])}>
+                <div
+                  className={clsx([
+                    "bg-[#D9D9D926] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
+                    companyGlobalSearchName !== ""
+                      ? "text-[#545454]"
+                      : "text-[#545454]",
+                  ])}
+                >
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">{company_Global_Search !== '' ? company_Global_Search : 'Quick search...'}</div>
+                  <div className="ml-2.5 mr-auto">
+                    {/* {companyGlobalSearchName !== ""
+                      ? companyGlobalSearchName
+                      : "Quick search..."} */}
+                      {"Search by company name, ticker, or symbol"}
+                  </div>
                   {/* <div>⌘K</div> */}
                 </div>
               </div>
-              
+
               <QuickSearch
                 quickSearch={quickSearch}
                 setQuickSearch={setQuickSearch}
@@ -483,8 +520,10 @@ function Main() {
                     }}
                   >
                     <div className="flex items-center justify-center">
-                    <img src={aiIcon} alt='ai icon'/>
-                    <span className="ml-3 font-semibold hidden xl:flex">AI Assistant</span>
+                      <img src={aiIcon} alt="ai icon" />
+                      <span className="ml-3 font-semibold hidden xl:flex">
+                        AI Assistant
+                      </span>
                     </div>
                   </a>
                   <a
@@ -498,19 +537,21 @@ function Main() {
                     <Lucide icon="Expand" className="w-[18px] h-[18px]" />
                   </a>
                 </div>
-                <h1 className="ml-3 mr-3 text-[#000000] font-bold">Hi, {user?.first_name}</h1>
+                <h1 className="ml-3 mr-3 text-[#000000] font-bold">
+                  Hi, {user?.first_name}
+                </h1>
                 <Menu className="">
                   <Menu.Button
                     className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
                     style={{
-                      backgroundColor: '#800000'
+                      backgroundColor: "#800000",
                     }}
                   >
                     <h4 className="text-white md:text-xl ">
                       {user?.user_name?.[0].toUpperCase() || ""}
                     </h4>
                   </Menu.Button>
-                  
+
                   <Menu.Items className="w-auto mt-1">
                     {/* <Menu.Item
                       onClick={() => {
@@ -536,29 +577,29 @@ function Main() {
                     >
                       <Lucide icon="Inbox" className="w-4 h-4 mr-2" />
                       Email Settings
-                    </Menu.Item> */} 
-                    {user?.email && 
-                    <>
-                    <Menu.Item >
-                      <Mail strokeWidth={1} className="w-4 h-4 mr-2" />
-                      <h2 className="text-[14px]">{user?.email}</h2>
-                    </Menu.Item>
-                    <Menu.Divider />
-                    </>
-                    } 
-                    <Menu.Item
+                    </Menu.Item> */}
+                    {user?.email && (
+                      <>
+                        <Menu.Item>
+                          <Mail strokeWidth={1} className="w-4 h-4 mr-2" />
+                          <h2 className="text-[14px]">{user?.email}</h2>
+                        </Menu.Item>
+                        <Menu.Divider />
+                      </>
+                    )}
+                    {/* <Menu.Item
                       onClick={() => {
                         navigate("settings?page=security");
                       }}
                     >
                       <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
-                    </Menu.Item>
+                    </Menu.Item> */}
                     <Menu.Item
                       onClick={() => {
-                          navigate("login");
-                          dispatch(logout());
-                          persistor.purge();
+                        navigate("login");
+                        dispatch(logout());
+                        persistor.purge();
                       }}
                     >
                       <Lucide icon="Power" className="w-4 h-4 mr-2" />
@@ -566,7 +607,6 @@ function Main() {
                     </Menu.Item>
                   </Menu.Items>
                 </Menu>
-
               </div>
               <ActivitiesPanel
                 activitiesPanel={activitiesPanel}
@@ -585,6 +625,7 @@ function Main() {
           </div>
         </div>
       </div>
+
       <div
         className={clsx([
           "transition-[margin,width] duration-100 xl:pl-3.5 pt-[54px] pb-16 relative z-10 group mode",
@@ -593,32 +634,43 @@ function Main() {
           { "mode--light": !topBarActive },
         ])}
       >
-        <div className="px-5 mt-16">
+        <div className="px-5 mt-10 ">
+         
+          
+
           <div className="container">
+          {!shouldHideHeader && <CountryInfoHeader />}
             <Outlet />
           </div>
         </div>
       </div>
 
-      <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}
-      >
+      <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}>
         <Dialog.Panel className="p-10 text-center h-full">
           <div className="relative w-full h-full">
             {isFrameLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-white">
-                <LoadingIcon color="#800000" icon="three-dots" className="w-16 h-16" /> 
+                <LoadingIcon
+                  color="#800000"
+                  icon="three-dots"
+                  className="w-16 h-16"
+                />
               </div>
             )}
 
             {isError && !isFrameLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
-                <p>Failed to load the embedded content. Please try again later.</p>
+                <p>
+                  Failed to load the embedded content. Please try again later.
+                </p>
               </div>
             )}
 
             <iframe
-              className={`w-full h-full ${isFrameLoading || isError ? 'hidden' : ''}`}
-              src="https://app.korra.ai/zmhdashboard/investorprofiles"
+              className={`w-full h-full ${
+                isFrameLoading || isError ? "hidden" : ""
+              }`}
+              src="https://app.korra.ai/zmhdashboard/globalsearchengine"
               title="Embedded Dashboard"
               onLoad={handleLoad}
               onError={handleError}

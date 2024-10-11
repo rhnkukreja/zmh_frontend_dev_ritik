@@ -19,6 +19,7 @@ interface CompanySliceState {
   filters: {
     sector: string;
     institution_name: string[];
+    global_search: string[];
   };
 }
 
@@ -36,6 +37,7 @@ const initialState: CompanySliceState = {
   filters: {
     sector: "",
     institution_name: [],
+    global_search: [],
   },
 };
 
@@ -93,6 +95,7 @@ const companySlice = createSlice({
       state.filters = {
         sector: "",
         institution_name: [],
+        global_search: [],
       };
     },
   },

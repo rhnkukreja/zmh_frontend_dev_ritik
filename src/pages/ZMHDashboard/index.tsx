@@ -16,41 +16,6 @@ import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
 
 function Main() {
-  const location = useLocation();
-  const dispatch: AppDispatch = useAppDispatch();
-
-  const [searchParams] = useSearchParams();
-  const ticker = searchParams.get("ticker") ?? "";
-  const { dashboardDataList, loading, investorCardLoader, page, totalPages, } = useAppSelector(
-    (state) => state.dashboard
-  );
-
-  useEffect(() => {
-    if(ticker){
-      dispatch(fetchCompanyDashboard(
-        createDynamicURL(`${baseURL}/company-dashboard/?ticker=${ticker}&`, undefined,undefined, page)
-      )
-      );
-    }
-  }, [ticker, page]);
-
-
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      dispatch(setPage(page + 1));
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      dispatch(setPage(page - 1));
-    }
-  };
-
-  const handlePageChange = (newPage: number) => {
-    dispatch(setPage(newPage));
-  };
-
   return (
     <>
       <Helmet>

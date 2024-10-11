@@ -458,32 +458,31 @@ function Main() {
             </div>
             <div className="overflow-auto xl:overflow-scroll px-5">
               <TableWrapper isLoading={loading}>
-              <div className="overflow-auto max-h-[400px]">
-                <Table>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Institution Name
-                      </Table.Td>
+                <div className="overflow-auto max-h-[400px]">
+                  <Table>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Institution Name
+                        </Table.Td>
 
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Category
-                      </Table.Td>
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Engagement Questions
-                      </Table.Td>
-                      <Table.Td className="text-wrap py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Engagement Date
-                      </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Category
+                        </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Engagement Questions
+                        </Table.Td>
+                        <Table.Td className="text-wrap py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Engagement Date
+                        </Table.Td>
 
-                      <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                        Actions
-                      </Table.Td>
-                    </Table.Tr>
-                  </Table.Thead>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Actions
+                        </Table.Td>
+                      </Table.Tr>
+                    </Table.Thead>
 
                     <Table.Tbody className="!max-h-400px overflow-auto">
-                
                       <>
                         {groupedQuestions ? (
                           Object.entries(groupedQuestions).map(
@@ -547,16 +546,16 @@ function Main() {
                                       </Table.Td>
 
                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                        <Tippy
+                                        {/* <Tippy
                                           content={
                                             question?.engagement_question
                                           }
                                           options={{ theme: "light" }}
-                                        >
-                                          <div className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
+                                        > */}
+                                          <div className="whitespace-normal capitalize max-w-[300px] overflow-hidden text-ellipsis line-clamp-2">
                                             {question?.engagement_question}
                                           </div>
-                                        </Tippy>
+                                        {/* </Tippy> */}
                                       </Table.Td>
 
                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
@@ -614,9 +613,8 @@ function Main() {
                           </Table.Tr>
                         )}
                       </>
-                  
                     </Table.Tbody>
-                </Table>
+                  </Table>
                 </div>
               </TableWrapper>
             </div>

@@ -3,11 +3,16 @@ import { FormInput } from "@/components/Base/Form";
 import { Dialog as HeadlessDialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect, useCallback } from "react";
 import _ from "lodash";
-import { fetchCompanyByName, setDashboardGlobalSearch } from "@/stores/dashboardSlice";
+import {
+  fetchCompanyByName,
+  
+} from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { useNavigate } from "react-router-dom";
 import { CompanyData } from "@/types/company";
+import { setDashboardGlobalSearch, setFinhub, setSavedSearch } from "@/stores/authenticationSlice";
+import { commonService } from "@/services/common";
 
 interface MainProps {
   quickSearch: boolean;
@@ -17,7 +22,7 @@ interface MainProps {
 function Main(props: MainProps) {
   const dispatch: AppDispatch = useAppDispatch();
   const [search, setSearch] = useState("");
-  const { companyDataList, loading } = useAppSelector(
+  const { companyDataList } = useAppSelector(
     (state) => state.dashboard
   );
   const navigate = useNavigate();
@@ -45,13 +50,42 @@ function Main(props: MainProps) {
     []
   );
 
-  const handleCompanyClick = (
+
+  const saveSearch = async (id : number, company : string) => {
+    const res = await commonService.saveSearches({
+      module: "Global Search",
+      id: id,
+      company: company,
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Global Search",
+          value: {
+            id: id,
+            company: company,
+          },
+        })
+      );
+    }
+    return res
+  };
+
+  const handleCompanyClick =  async (
     event: React.MouseEvent<HTMLAnchorElement>,
     company: CompanyData
   ) => {
     event.preventDefault();
     navigate(`/?ticker=${company?.symbol}`);
-    dispatch(setDashboardGlobalSearch(company?.name));
+    const saveSearchResponse = await saveSearch(company?.id , company?.name)
+    dispatch(setFinhub(saveSearchResponse?.finnhub))
+    dispatch(
+      setDashboardGlobalSearch({
+        id: company?.id,
+        ticker: company?.symbol,
+        name: company?.name,
+      })
+    );
   };
 
   return (
@@ -136,14 +170,12 @@ function Main(props: MainProps) {
                               Search companies here...
                             </div>
                           </div>
-                         
                         </div>
                         <div className="px-5 py-4 border-t border-dashed">
                           <div className="flex items-center">
                             <div className="text-xs uppercase text-slate-500">
                               Company
                             </div>
-                           
                           </div>
                           <div className="flex flex-col gap-1 mt-3.5">
                             {companyDataList?.map(
@@ -172,7 +204,6 @@ function Main(props: MainProps) {
                             )}
                           </div>
                         </div>
-                       
                       </div>
                     )}
                   </div>

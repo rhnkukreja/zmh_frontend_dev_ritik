@@ -14,7 +14,7 @@ export interface PeerAnalysis {
   totalPages: number;
   page: number;
   filters: {
-    company: string[];
+    global_search: string[];
     institution_name: string[];
   };
 }
@@ -28,7 +28,7 @@ const initialState: PeerAnalysis = {
   totalPages: 1,
   page: 1,
   filters: {
-    company: [],
+    global_search: [],
     institution_name: [],
   },
 };
@@ -62,7 +62,7 @@ const peerAnalysisSlice = createSlice({
     resetFilter(state) {
       state.filters = {
         institution_name: [],
-        company: [],
+        global_search: [],
       };
     },
   },

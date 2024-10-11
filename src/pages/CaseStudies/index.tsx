@@ -32,6 +32,7 @@ function CaseStudies() {
     sector: string[];
     year: string[];
     institution_name?: string[];
+    global_search?: string[];
     themes: string[];
     proposal_type: string[];
     vote: string[];
@@ -41,12 +42,28 @@ function CaseStudies() {
 
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
+
+  useEffect(() => {
+    setApplyFilters((prev) => ({
+      keyword: prev?.keyword || "",
+      market: prev?.market || [],
+      sector: prev?.sector || [],
+      year: prev?.year || [],
+      themes: prev?.themes || [],
+      proposal_type: prev?.proposal_type || [],
+      vote: prev?.vote || [],
+      institution_name: prev?.proponent || [],
+      global_search: [companyGlobalSearchName],
+    }));
+  }, [companyGlobalSearchName]);
 
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] = useState<FlterDropdown>({
-    company: [],
+    // company: [],
     institution: [],
     market: [],
     proposal_type: [],
@@ -96,6 +113,7 @@ function CaseStudies() {
   }, []);
 
   useEffect(() => {
+    if (!applyFilters?.global_search) return;
     dispatch(
       fetchCaseStudies(
         createDynamicURL(
@@ -143,6 +161,7 @@ function CaseStudies() {
       keyword: "",
       market: [],
       sector: [],
+      global_search: [companyGlobalSearchName],
       year: [],
       themes: [],
       proposal_type: [],
@@ -165,7 +184,11 @@ function CaseStudies() {
   };
 
   const onSubmit = async (caseStudyFilters: CaseStudyFilter) => {
-    setApplyFilters({ ...caseStudyFilters, institution_name: searchTerms });
+    setApplyFilters({
+      ...caseStudyFilters,
+      institution_name: searchTerms,
+      global_search: [companyGlobalSearchName],
+    });
     const validKeysCount = Object.keys(caseStudyFilters).filter((key) => {
       const value = caseStudyFilters[key];
       return value !== undefined && value !== "" && value.length !== 0;
@@ -193,6 +216,7 @@ function CaseStudies() {
         themes: savedSearch.themes || [],
         proposal_type: savedSearch.proposal_type || [],
         vote: savedSearch.vote || [],
+        global_search: savedSearch.global_search,
       });
       setIsFilterCollapse(true);
     }
@@ -209,7 +233,7 @@ function CaseStudies() {
       vote: watch("vote") || [],
       year: watch("year") || [],
       keyword: watch("keyword") || "",
-      company: [],
+      global_search: [companyGlobalSearchName],
     });
     if (res?.Success) {
       dispatch(
@@ -224,7 +248,7 @@ function CaseStudies() {
             vote: watch("vote") || [],
             year: watch("year") || [],
             keyword: watch("keyword") || "",
-            company: [],
+            global_search: [companyGlobalSearchName],
           },
         })
       );
@@ -237,9 +261,7 @@ function CaseStudies() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">
-              Case Studies
-            </div>
+            <div className="font-semibold text-xl ">Case Studies</div>
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
@@ -765,15 +787,17 @@ function CaseStudies() {
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
                   <div className="overflow-auto max-h-[400px]">
-                    
                     <Table>
                       <Table.Thead>
-                        <Table.Tr >
+                        <Table.Tr>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Institution Name
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Company
+                          </Table.Td> */}
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Theme
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
@@ -782,7 +806,7 @@ function CaseStudies() {
                             Industry
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Available Case Studies
+                            Actions
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
@@ -819,14 +843,17 @@ function CaseStudies() {
                                     ></a>
                                   </div>
                                 )}
-                                <div className="ml-4">
-                                  <p className="font-medium whitespace-nowrap">
+                                <div className="ml-4 max-w-[150px]">
+                                  <p className="font-medium whitespace-normal line-clamp-2">
                                     {item?.institution_name}
                                   </p>
                                 </div>
                               </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              {/* <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
                                 {item?.company_name}
+                              </Table.Td> */}
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                {item?.esg_themes}
                               </Table.Td>
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.year}

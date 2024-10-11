@@ -2,9 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
 import { Filer } from "@/types/dashboard";
 import { CompanyData } from "@/types/company";
-import { getPageNumbers } from "@/utils/helper";
-import { AGMSummary } from "@/types/AGMSummary";
-
 const name = "dashboard";
 
 export type CompanyDashboard = {
@@ -40,7 +37,6 @@ interface CompanySliceState {
   page: number;
   totalPages: number;
   totalCompanyDashboard: number;
-  company_Global_Search: string;
   agmSummaryDetails: any;
   caseStudyDetails: any;
   caseStudyLoading: boolean;
@@ -61,7 +57,6 @@ const initialState: CompanySliceState = {
   page: 1,
   totalPages: 1,
   totalCompanyDashboard: 0,
-  company_Global_Search: "Apple Inc.",
   agmSummaryDetails: "",
   investorCardLoading: true,
   caseStudyDetails: "",
@@ -80,7 +75,7 @@ const initialState: CompanySliceState = {
 };
 
 export const fetchCompanyByName = createAsyncThunk<
-  { count: number; results: CompanyData[] },
+  { results: CompanyData[] },
   string
 >(`${name}/fetchCompanyByName`, async (companyName: string) => {
   return await dashboardService.fetchCompanyByName(companyName);
@@ -131,9 +126,6 @@ const companySlice = createSlice({
     resetPage(state) {
       state.page = 1;
     },
-    setDashboardGlobalSearch(state, action: PayloadAction<string>) {
-      state.company_Global_Search = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -144,10 +136,7 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchCompanyByName.fulfilled,
-        (
-          state,
-          action: PayloadAction<{ count: number; results: CompanyData[] }>
-        ) => {
+        (state, action: PayloadAction<{ results: CompanyData[] }>) => {
           state.loading = false;
           state.companyDataList = action.payload.results;
         }
@@ -208,6 +197,7 @@ const companySlice = createSlice({
         state.caseStudyLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
+          state.caseStudyDetails = [];
       })
 
       .addCase(fetchVdsProxyDashboard.pending, (state) => {
@@ -249,5 +239,4 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage, setDashboardGlobalSearch } =
-  companySlice.actions;
+export const { setPage, resetPage } = companySlice.actions;

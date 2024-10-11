@@ -270,7 +270,7 @@ function Main() {
             Back
           </Button>
 
-          <Button
+          {/* <Button
             variant="primary"
             className="bg-theme-2 border-bg-theme-2"
             onClick={handleExportToPDF}
@@ -290,7 +290,7 @@ function Main() {
             )}
 
             <div className=" group-[.mode--light]:text-white">Download PDF</div>
-          </Button>
+          </Button> */}
         </div>
 
         <div ref={contentRef}>
@@ -306,7 +306,7 @@ function Main() {
                 <div className="text-[12px] text-slate-500">
                   <span className="font-bold mr-2">Last updated:</span>
                   {dayjs(singleInvesterProfile?.date_updated).format(
-                    "MMMM , YYYY"
+                    "MMMM YYYY"
                   )}
                 </div>
               </div>

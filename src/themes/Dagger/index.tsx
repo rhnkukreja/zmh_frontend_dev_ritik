@@ -252,7 +252,7 @@ function Main() {
                         navigate("settings?page=security");
                       }}
                     >
-                      <Lucide icon="Lock" className="w-4 h-4 mr-2" />
+                      {/* <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
                     </Menu.Item>
                     <Menu.Divider />
@@ -260,7 +260,7 @@ function Main() {
                       onClick={() => {
                         navigate("settings");
                       }}
-                    >
+                    > */}
                       <Lucide icon="Users" className="w-4 h-4 mr-2" />
                       Profile Info
                     </Menu.Item>

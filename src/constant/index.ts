@@ -54,3 +54,5 @@ export const investorProfileEditableSectionsEquity = {
   },
   other: { value: "Other", type: "equity" },
 };
+
+export const no_header_company = ["investor-profile", "engagement-question", "proxy-voting-guideline"]

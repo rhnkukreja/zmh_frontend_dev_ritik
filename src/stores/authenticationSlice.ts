@@ -10,16 +10,35 @@ import { persistor } from "./store";
 
 const name = "authentication";
 
+export interface Finhub {
+  name: string;
+  ticker: string;
+  country: string;
+  exchange: string;
+  finnhub_industry: string;
+  share_outstanding: number;
+  phone: string;
+  logo: string;
+}
+
 interface AuthState {
   user: Login | null;
   loading: boolean;
   error: string | null;
+  companyGlobalSearchName: string;
+  companyGlobalSearchId: number | undefined;
+  companyGlobalSearchTicker: string | undefined;
+  finhub: Finhub | null;
 }
 
 const initialState: AuthState = {
   user: null,
   loading: false,
+  companyGlobalSearchName: "",
+  companyGlobalSearchId: undefined,
+  companyGlobalSearchTicker: undefined,
   error: null,
+  finhub: null,
 };
 
 export const signUp = createAsyncThunk<Register, SignUpRequestDTO>(
@@ -40,6 +59,21 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    setDashboardGlobalSearch(
+      state,
+      action: PayloadAction<{
+        name: string;
+        id: number;
+        ticker: string;
+      }>
+    ) {
+      state.companyGlobalSearchName = action.payload.name;
+      state.companyGlobalSearchId = action.payload.id;
+      state.companyGlobalSearchTicker = action.payload.ticker;
+    },
+    setFinhub(state, action: PayloadAction<Finhub>) {
+      state.finhub = action.payload;
+    },
     logout(state) {
       state.user = null;
       state.loading = false;
@@ -89,6 +123,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, setSavedSearch } = authSlice.actions;
+export const { logout, setSavedSearch, setDashboardGlobalSearch, setFinhub } =
+  authSlice.actions;
 
 export default authSlice;
