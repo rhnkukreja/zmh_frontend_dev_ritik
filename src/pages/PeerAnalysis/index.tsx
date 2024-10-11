@@ -483,9 +483,9 @@ function PeerAnalysis() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Company
-                          </Table.Td>
+                          </Table.Td> */}
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Country
                           </Table.Td>
@@ -546,9 +546,9 @@ function PeerAnalysis() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.year}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.company_name}
-                              </Table.Td>
+                              </Table.Td> */}
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.caspio_company_country}
                               </Table.Td>

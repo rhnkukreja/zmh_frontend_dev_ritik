@@ -16,7 +16,7 @@ const index = () => {
     const pageNumber = 1;
     const { caseStudyDetails, caseStudyLoading, page, totalPages } = useAppSelector((state) => state.dashboard);
     const { companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
-
+    
     useEffect(() => {
         if (ticker) {
             dispatch(fetchCaseStudyDashboard(

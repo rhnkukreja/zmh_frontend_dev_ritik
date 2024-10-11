@@ -30,6 +30,7 @@ import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
+import { no_header_company } from "@/constant";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -128,6 +129,9 @@ function Main() {
     setIsFrameLoading(true);
     setIsError(false);
   };
+
+  const shouldHideHeader = no_header_company.some(route => location.pathname.includes(route));
+
 
   return (
     <div
@@ -486,9 +490,10 @@ function Main() {
                 >
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
                   <div className="ml-2.5 mr-auto">
-                    {companyGlobalSearchName !== ""
+                    {/* {companyGlobalSearchName !== ""
                       ? companyGlobalSearchName
-                      : "Quick search..."}
+                      : "Quick search..."} */}
+                      {"Search by company name, ticker, or symbol"}
                   </div>
                   {/* <div>⌘K</div> */}
                 </div>
@@ -629,9 +634,10 @@ function Main() {
       >
         <div className="px-5 mt-10 ">
          
-          <CountryInfoHeader />
+          
 
           <div className="container">
+          {!shouldHideHeader && <CountryInfoHeader />}
             <Outlet />
           </div>
         </div>
@@ -662,7 +668,7 @@ function Main() {
               className={`w-full h-full ${
                 isFrameLoading || isError ? "hidden" : ""
               }`}
-              src="https://app.korra.ai/zmhdashboard/investorprofiles"
+              src="https://app.korra.ai/zmhdashboard/globalsearchengine"
               title="Embedded Dashboard"
               onLoad={handleLoad}
               onError={handleError}

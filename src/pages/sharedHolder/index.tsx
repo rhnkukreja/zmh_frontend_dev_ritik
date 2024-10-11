@@ -812,9 +812,9 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Company
-                                </Table.Td>
+                                </Table.Td> */}
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
@@ -843,14 +843,14 @@ function ShareHolderProposal() {
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
-                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
+                                    {/* <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                       <Tippy
                                         content={noAction?.company_name}
                                         options={{ theme: "light" }}
                                       >
                                         {noAction?.company_name}
                                       </Tippy>
-                                    </Table.Td>
+                                    </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                       <Tippy
                                         content={noAction?.proponent_name}
@@ -941,9 +941,9 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Company
-                                </Table.Td>
+                                </Table.Td> */}
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Category
                                 </Table.Td>
@@ -972,14 +972,14 @@ function ShareHolderProposal() {
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
-                                    <Table.Td className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
+                                    {/* <Table.Td className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                       <Tippy
                                         content={noAction?.company_name}
                                         options={{ theme: "light" }}
                                       >
                                         {noAction?.company_name}
                                       </Tippy>
-                                    </Table.Td>
+                                    </Table.Td> */}
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.category}
                                     </Table.Td>
@@ -1041,9 +1041,9 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Company
-                                </Table.Td>
+                                </Table.Td> */}
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
@@ -1066,14 +1066,14 @@ function ShareHolderProposal() {
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
-                                    <Table.Td className="whitespace-nowrap capitalize max-w-[200px] overflow-hidden text-ellipsis">
+                                    {/* <Table.Td className="whitespace-nowrap capitalize max-w-[200px] overflow-hidden text-ellipsis">
                                       <Tippy
                                         content={noAction?.company_name}
                                         options={{ theme: "light" }}
                                       >
                                         {noAction?.company_name}
                                       </Tippy>
-                                    </Table.Td>
+                                    </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
                                       <Tippy
                                         content={noAction?.proponent_name}

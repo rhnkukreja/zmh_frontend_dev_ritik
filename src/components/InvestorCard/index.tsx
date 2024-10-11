@@ -136,7 +136,7 @@ const index = () => {
                   <div className="flex justify-between items-center gap-2">
                     <img alt="flag-icon" src={flagIcon} />
                     <h4 className="font-semibold">
-                      -header 13D Filing
+                      History of Schedule 13D Filing
                     </h4>
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
