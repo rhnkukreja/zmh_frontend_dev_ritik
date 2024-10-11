@@ -17,14 +17,15 @@ const CPagination: React.FC<CPaginationProps> = ({
   handlePreviousPage,
   handleNextPage,
 }) => {
+  const startPages = 3;
+  const endPages = 3;
+  const middlePages = 3; // Declare middlePages here
+
   const renderPageNumbers = () => {
     const pages = [];
-    const startPages = 3;
-    const endPages = 3;
-    const middlePages = 3;
 
-    for (let i = 1; i <= startPages; i++) {
-      if (i > totalPages) break;
+    // Add first pages
+    for (let i = 1; i <= Math.min(startPages, totalPages); i++) {
       pages.push(
         <Pagination.Link key={i} active={i === page}>
           <span onClick={() => handlePageChange(i)}>{i}</span>
@@ -32,38 +33,40 @@ const CPagination: React.FC<CPaginationProps> = ({
       );
     }
 
-    
-    if (page > startPages) {
+    // Add ellipsis if needed
+    if (page > startPages + 1) {
       pages.push(
-        <Pagination.Link key="dots1" >
+        <Pagination.Link key="dots1">
           <span>...</span>
         </Pagination.Link>
       );
     }
 
-  
-    const startMiddle = Math.max(page - 1, startPages + 1);
-    const endMiddle = Math.min(page + middlePages - 1, totalPages - endPages);
+    // Add middle pages
+    const startMiddle = Math.max(page - middlePages, startPages + 1);
+    const endMiddle = Math.min(page + middlePages, totalPages - endPages);
+    
     for (let i = startMiddle; i <= endMiddle; i++) {
-      pages.push(
-        <Pagination.Link key={i} active={i === page}>
-          <span onClick={() => handlePageChange(i)}>{i}</span>
-        </Pagination.Link>
-      );
+      if (i > startPages) { // Avoid duplicates
+        pages.push(
+          <Pagination.Link key={i} active={i === page}>
+            <span onClick={() => handlePageChange(i)}>{i}</span>
+          </Pagination.Link>
+        );
+      }
     }
 
-    
+    // Add ellipsis if needed
     if (page + middlePages < totalPages - endPages) {
       pages.push(
-        <Pagination.Link key="dots2" >
+        <Pagination.Link key="dots2">
           <span>...</span>
         </Pagination.Link>
       );
     }
 
-   
-    for (let i = totalPages - endPages + 1; i <= totalPages; i++) {
-      if (i <= startPages + middlePages) continue;
+    // Add last pages
+    for (let i = Math.max(totalPages - endPages + 1, startMiddle); i <= totalPages; i++) {
       pages.push(
         <Pagination.Link key={i} active={i === page}>
           <span onClick={() => handlePageChange(i)}>{i}</span>
