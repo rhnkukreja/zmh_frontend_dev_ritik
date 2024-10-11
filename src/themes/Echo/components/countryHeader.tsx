@@ -4,31 +4,31 @@ import { RootState } from "@/stores/store";
 import ReactCountryFlag from "react-country-flag";
 
 const CountryInfoHeader = () => {
-  const { companyGlobalSearchName, user } = useAppSelector(
+  const { finhub } = useAppSelector(
     (state: RootState) => state.authentiction
   );
-  console.log({ user });
+  console.log({ finhub});
 
   return (
     <div className="bg-white shadow-sm rounded-lg p-6 mb-6 ">
       <div className="flex flex-row items-center gap-6">
         <div className="p-y-4 mb-1 font-semibold text-xl flex gap-2">
-        {user?.finnhub?.logo&&  <div className="w-6 h-6 image-fit zoom-in object-contain">
+        {finhub?.logo&&  <div className="w-6 h-6 image-fit zoom-in object-contain">
             <Tippy
               as="img"
-              alt={user?.finnhub?.name}
+              alt={finhub?.name}
               className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-              src={user?.finnhub?.logo}
-              content={user?.finnhub?.name || ""}
+              src={finhub?.logo}
+              content={finhub?.name || ""}
             />
           </div>}
-          {user?.finnhub?.name}
+          {finhub?.name}
         </div>
         <span className="text-gray-600 text-sx">
-          {user?.finnhub?.country && (
+          {finhub?.country && (
             <ReactCountryFlag
               className="emojiFlag mr-2"
-              countryCode={user?.finnhub?.country}
+              countryCode={finhub?.country}
               style={{
                 fontSize: "1.5em",
                 lineHeight: "1.5em",
@@ -36,7 +36,7 @@ const CountryInfoHeader = () => {
               svg
             />
           )}
-          {user?.finnhub?.exchange}
+          {finhub?.exchange}
         </span>
       </div>
 
@@ -44,9 +44,9 @@ const CountryInfoHeader = () => {
         {/* Stock Information */}
         <div className="flex flex-col items-start space-y-1 ">
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-lg">{user?.finnhub?.ticker}</span>
+            <span className="font-bold text-lg">{finhub?.ticker}</span>
             <span className="text-gray-600 text-sm">
-              ${user?.finnhub?.share_outstanding}
+              ${finhub?.share_outstanding}
             </span>
             {/* <span className="text-red-500 text-sm">-2.51 (-1.10%)</span> */}
           </div>
@@ -58,7 +58,7 @@ const CountryInfoHeader = () => {
         {/* Next Earnings Date */}
         <div className="flex flex-col items-start space-y-1">
           <p className="text-gray-600 text-sm">Contact</p>
-          <p className="text-gray-400 text-xs">{user?.finnhub?.phone}</p>
+          <p className="text-gray-400 text-xs">{finhub?.phone}</p>
         </div>
 
         {/* Sectors */}
@@ -71,7 +71,7 @@ const CountryInfoHeader = () => {
           <p className="text-gray-600 text-sm">
             Industry
           </p>
-          <p className="text-gray-400 text-xs">{user?.finnhub?.finnhub_industry}</p>
+          <p className="text-gray-400 text-xs">{finhub?.finnhub_industry}</p>
         </div>
       </div>
     </div>

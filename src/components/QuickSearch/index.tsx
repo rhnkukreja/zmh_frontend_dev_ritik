@@ -11,7 +11,8 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { useNavigate } from "react-router-dom";
 import { CompanyData } from "@/types/company";
-import { setDashboardGlobalSearch } from "@/stores/authenticationSlice";
+import { setDashboardGlobalSearch, setFinhub, setSavedSearch } from "@/stores/authenticationSlice";
+import { commonService } from "@/services/common";
 
 interface MainProps {
   quickSearch: boolean;
@@ -21,7 +22,7 @@ interface MainProps {
 function Main(props: MainProps) {
   const dispatch: AppDispatch = useAppDispatch();
   const [search, setSearch] = useState("");
-  const { companyDataList, loading } = useAppSelector(
+  const { companyDataList } = useAppSelector(
     (state) => state.dashboard
   );
   const navigate = useNavigate();
@@ -49,13 +50,35 @@ function Main(props: MainProps) {
     []
   );
 
-  const handleCompanyClick = (
+
+  const saveSearch = async (id : number, company : string) => {
+    const res = await commonService.saveSearches({
+      module: "Global Search",
+      id: id,
+      company: company,
+    });
+    if (res?.Success) {
+      dispatch(
+        setSavedSearch({
+          key: "Global Search",
+          value: {
+            id: id,
+            company: company,
+          },
+        })
+      );
+    }
+    return res
+  };
+
+  const handleCompanyClick =  async (
     event: React.MouseEvent<HTMLAnchorElement>,
     company: CompanyData
   ) => {
     event.preventDefault();
-    console.log({company})
     navigate(`/?ticker=${company?.symbol}`);
+    const saveSearchResponse = await saveSearch(company?.id , company?.name)
+    dispatch(setFinhub(saveSearchResponse?.finnhub))
     dispatch(
       setDashboardGlobalSearch({
         id: company?.id,

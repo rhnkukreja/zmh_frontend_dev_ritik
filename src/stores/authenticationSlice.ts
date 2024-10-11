@@ -10,6 +10,17 @@ import { persistor } from "./store";
 
 const name = "authentication";
 
+export interface Finhub {
+  name: string;
+  ticker: string;
+  country: string;
+  exchange: string;
+  finnhub_industry: string;
+  share_outstanding: number;
+  phone: string;
+  logo: string;
+}
+
 interface AuthState {
   user: Login | null;
   loading: boolean;
@@ -17,6 +28,7 @@ interface AuthState {
   companyGlobalSearchName: string;
   companyGlobalSearchId: number | undefined;
   companyGlobalSearchTicker: string | undefined;
+  finhub: Finhub | null;
 }
 
 const initialState: AuthState = {
@@ -26,6 +38,7 @@ const initialState: AuthState = {
   companyGlobalSearchId: undefined,
   companyGlobalSearchTicker: undefined,
   error: null,
+  finhub: null,
 };
 
 export const signUp = createAsyncThunk<Register, SignUpRequestDTO>(
@@ -57,6 +70,9 @@ const authSlice = createSlice({
       state.companyGlobalSearchName = action.payload.name;
       state.companyGlobalSearchId = action.payload.id;
       state.companyGlobalSearchTicker = action.payload.ticker;
+    },
+    setFinhub(state, action: PayloadAction<Finhub>) {
+      state.finhub = action.payload;
     },
     logout(state) {
       state.user = null;
@@ -107,7 +123,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, setSavedSearch, setDashboardGlobalSearch } =
+export const { logout, setSavedSearch, setDashboardGlobalSearch, setFinhub } =
   authSlice.actions;
 
 export default authSlice;

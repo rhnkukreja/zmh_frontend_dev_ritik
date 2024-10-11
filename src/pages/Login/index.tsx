@@ -18,7 +18,7 @@ import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 import { Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { setDashboardGlobalSearch } from "@/stores/authenticationSlice";
+import { setDashboardGlobalSearch , setFinhub} from "@/stores/authenticationSlice";
 
 interface LoginFormInputs {
   email: string;
@@ -58,7 +58,12 @@ const Main: React.FC = () => {
             name: response?.company_name,
           })
         );
+       
       }
+      if(response?.finnhub){
+        dispatch(setFinhub(response?.finnhub))
+      }
+      console.log({response})
       toast.success("Logged In Successfully!");
       navigate("/");
     } catch (error) {}

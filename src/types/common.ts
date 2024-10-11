@@ -56,8 +56,14 @@ type PeerAnalysisPayload = {
   global_search: string[];
   institution: string[];
 };
+type GlobalSearchPayload = {
+  module: "Global Search";
+  id: number;
+  company: string;
+};
 
 export type PayloadModule =
+  | GlobalSearchPayload
   | EngagementQuestionsPayload
   | InvestorProfilePayload
   | VotingGuidelinesPayload

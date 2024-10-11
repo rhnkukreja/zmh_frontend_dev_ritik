@@ -1,3 +1,5 @@
+import { Finhub } from "@/stores/authenticationSlice";
+
 export type Login = {
   token: string;
   user_id: number;
@@ -7,6 +9,7 @@ export type Login = {
   company_id?: number;
   company_name?: string;
   company_ticker?: string;
+  finnhub?: Finhub;
 };
 
 export type Register = {
