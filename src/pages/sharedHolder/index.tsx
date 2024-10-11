@@ -852,12 +852,8 @@ function ShareHolderProposal() {
                                       </Tippy>
                                     </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                      <Tippy
-                                        content={noAction?.proponent_name}
-                                        options={{ theme: "light" }}
-                                      >
+                                     
                                         {noAction?.proponent_name}
-                                      </Tippy>
                                     </Table.Td>
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                       {noAction?.proposal_num}
@@ -987,20 +983,12 @@ function ShareHolderProposal() {
                                       {noAction?.sub_category}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                      <Tippy
-                                        content={noAction?.proponent_name}
-                                        options={{ theme: "light" }}
-                                      >
+                                    
                                         {noAction?.proponent_name}
-                                      </Tippy>
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                      <Tippy
-                                        content={noAction?.staff_response}
-                                        options={{ theme: "light" }}
-                                      >
+                                     
                                         {noAction?.staff_response}
-                                      </Tippy>
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex">
@@ -1075,20 +1063,12 @@ function ShareHolderProposal() {
                                       </Tippy>
                                     </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
-                                      <Tippy
-                                        content={noAction?.proponent_name}
-                                        options={{ theme: "light" }}
-                                      >
+                                   
                                         {noAction?.proponent_name}
-                                      </Tippy>
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                      <Tippy
-                                        content={noAction?.status}
-                                        options={{ theme: "light" }}
-                                      >
+                                     
                                         {noAction?.status}
-                                      </Tippy>
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex">

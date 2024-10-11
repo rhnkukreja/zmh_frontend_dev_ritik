@@ -197,6 +197,7 @@ const companySlice = createSlice({
         state.caseStudyLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
+          state.caseStudyDetails = [];
       })
 
       .addCase(fetchVdsProxyDashboard.pending, (state) => {

@@ -18,14 +18,14 @@ const index = () => {
     const { companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
     
     useEffect(() => {
-        if (ticker) {
+        if (companyGlobalSearchName) {
             dispatch(fetchCaseStudyDashboard(
                 createDynamicURL(`https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q=${companyGlobalSearchName}&dateRestrict=y1&start=${pageNumber}`)
             )
             );
         }
 
-    }, [ticker]);
+    }, [companyGlobalSearchName]);
 
 
 
