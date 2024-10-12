@@ -31,8 +31,10 @@ const index = () => {
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
-  // const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
-
+  const companyDetails = agmSummaryDetails?.company ? agmSummaryDetails?.company[0] : '';
+  const companyName = Object.keys(companyDetails)[0];
+  const meetingDetails = companyDetails[companyName];
+  const meetingDate = meetingDetails?.split(" - ").pop();
   const navigate = useNavigate();
 
   const convertDivTableToCSV = () => {
@@ -116,30 +118,23 @@ const index = () => {
             <>
               <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                  <h1 className="text-lg font-bold">
+                 <span>
+                 <h1 className="text-lg font-bold">
                     Previous AGM Summary {agmSummaryDetails?.Year}
                   </h1>
-                  {/* <div className=''>
-                            <FormSelect
-                                defaultValue={"Select Year"}
-                                className="flex-1 xs:w-[240px] md:w-auto">
-                                <option >
-                                    2024
-                                </option>
-                                <option >
-                                    2023
-                                </option>
-                            </FormSelect>
-                        </div>
-                        */}
-                  <div
-                    onClick={(event: any) => handleViewMore(event)}
-                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
+                  <p className=" italic"> Meeting Date: {meetingDate}</p>
+                 </span>
+                  {
+                    agmSummaryDetails?.Year !== "2023" &&
+                    <div
+                      onClick={(event: any) => handleViewMore(event)}
+                      className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                  >
-                    View More
-                  </div>
+                    >
+                      View More
+                    </div>
+                  }  
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -206,20 +201,12 @@ const index = () => {
                                     ) => (
                                       <Table.Td
                                         key={headerIndex}
-                                        className="cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left"
+                                        className={clsx(["cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left" ,])}
                                       >
                                         <h1
                                           className={clsx([
-                                            headerIndex === 0 &&
-                                              "font-semibold w-[180px]",
-                                            headerIndex ===
-                                              agmSummaryDetails
-                                                ?.nominees_headers?.length -
-                                                1 &&
-                                              parseFloat(
-                                                nominee[nomineeHeader?.field]
-                                              ) < 85 &&
-                                              "text-red-700 font-semibold",
+                                            headerIndex === 0 && "font-semibold w-[180px]",
+                                            headerIndex === agmSummaryDetails?.nominees_headers?.length - 1 && parseFloat(nominee[nomineeHeader?.field]) < 85 && "text-red-700 font-semibold",
                                           ])}
                                         >
                                           {nominee[nomineeHeader?.field]}

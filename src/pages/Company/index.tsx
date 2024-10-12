@@ -234,7 +234,7 @@ function CompanyList() {
                                   <Lucide
                                     onClick={() => {
                                       navigate(
-                                        `/company-detail/${company?.id}`
+                                        `/company/${company?.id}`
                                       );
                                     }}
                                     icon="Eye"

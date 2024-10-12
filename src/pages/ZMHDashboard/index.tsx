@@ -18,9 +18,9 @@ import AGMSummaryCard from "@/components/AGMSummaryCard";
 function Main() {
   return (
     <>
-      <Helmet>
+      {/* <Helmet>
         <title>Investor Dashboard - ZMH Analytics</title>
-      </Helmet>
+      </Helmet> */}
 
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 xl:col-span-12">

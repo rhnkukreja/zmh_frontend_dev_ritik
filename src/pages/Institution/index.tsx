@@ -498,7 +498,7 @@ function Main() {
                                 <Lucide
                                   onClick={() => {
                                     navigate(
-                                      `/institution-detail/${institution?.id}`
+                                      `/institution/${institution?.id}`
                                     );
                                   }}
                                   icon="Eye"
