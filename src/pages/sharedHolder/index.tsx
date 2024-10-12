@@ -3,14 +3,14 @@ import { Menu, Popover, Tab } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
-import { useEffect,  useState } from "react";
+import { useEffect, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
@@ -19,12 +19,14 @@ import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import {
   Controller,
- 
+
   useForm,
 } from "react-hook-form";
 import {
   fetchShareHolderProposal,
+  setApplyFilters,
   setPage,
+  setTabs,
 } from "@/stores/shareholderProposalSlice";
 import { resetPage } from "@/stores/shareholderProposalSlice";
 import TomSelect from "@/components/Base/TomSelect";
@@ -34,28 +36,18 @@ import clsx from "clsx";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
+import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 
 
 function ShareHolderProposal() {
-  interface ShareHolderFilter {
-    status: string[];
-    proponent: string[];
-    category: string[];
-    sub_category: string[];
-    global_search: string[];
-    year: string[];
-    keyword: string;
-    [key: string]: any;
-  }
+
 
   const dispatch: AppDispatch = useAppDispatch();
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
 
-  const [tab, setTab] = useState<"proposal" | "no-action" | "withdrawn">(
-    "proposal"
-  );
+  // const [tab, setTab] = useState<"proposal" | "no-action" | "withdrawn">("proposal");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [applyFilters, setApplyFilters] = useState<
     ShareHolderFilter | undefined
@@ -73,7 +65,7 @@ function ShareHolderProposal() {
       category: [],
       sub_category: [],
       year: [],
-  });
+    });
 
   const {
     handleSubmit,
@@ -85,7 +77,7 @@ function ShareHolderProposal() {
   } = useForm<ShareHolderFilter>();
   const navigate = useNavigate();
 
-  const { loading, shareHolderProposal, page, totalPages } = useAppSelector(
+  const { loading, shareHolderProposal, page, totalPages, tab } = useAppSelector(
     (state) => state.sharedHolderNoAction
   );
 
@@ -95,7 +87,7 @@ function ShareHolderProposal() {
   };
 
   useEffect(() => {
-    if(!applyFilters?.global_search) return
+    if (!applyFilters?.global_search) return;
     if (tab === "proposal") {
       dispatch(
         fetchShareHolderProposal(
@@ -193,6 +185,7 @@ function ShareHolderProposal() {
       proponent: [],
       institution: [],
     });
+    setFiltersLength(0);
   };
 
   const handleSearch = (searchTerms: string[]) => {
@@ -201,7 +194,7 @@ function ShareHolderProposal() {
         ...prev,
         proponent_name: searchTerms.length > 0 ? searchTerms : undefined,
       } as ShareHolderFilter;
-    });
+    })
   };
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
@@ -215,8 +208,16 @@ function ShareHolderProposal() {
       return value !== undefined && value !== "" && value.length !== 0;
     })?.length;
 
+    dispatch(setPage(1));
+    setIsFilterCollapse(!isFilterCollapse);
     setFiltersLength(validKeysCount);
   };
+
+
+  const getSelectedTabIndex = () => {
+    const tabIndex = tab === 'proposal' ? 0 : tab === 'no-action' ? 1 : tab === 'withdrawn' ? 2 : -1;
+    return tabIndex;
+  }
 
   useEffect(() => {
     setApplyFilters((prev) => ({
@@ -283,8 +284,6 @@ function ShareHolderProposal() {
     }
   };
 
-  console.log({ user });
-
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -342,12 +341,12 @@ function ShareHolderProposal() {
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
-                  )}
+                      <div className="hover:bg-slate-50 ml-2">
+                        <Button onClick={getSavedSearches}>
+                          Previous Search
+                        </Button>
+                      </div>
+                    )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -741,7 +740,7 @@ function ShareHolderProposal() {
                       <Button
                         variant="secondary"
                         onClick={() => {
-                          onFilterClear();
+                          handleClearAllFilter();
                         }}
                         className="w-32 mx-2"
                       >
@@ -760,14 +759,14 @@ function ShareHolderProposal() {
               )}
 
               <div className="overflow-auto xl:overflow-visible px-5">
-                <Tab.Group>
-                  <Tab.List variant="link-tabs">
+                <Tab.Group selectedIndex={getSelectedTabIndex()}>
+                  <Tab.List variant="link-tabs" >
                     <Tab>
                       <Tab.Button
                         className="w-full py-2"
                         as="button"
                         onClick={() => {
-                          setTab("proposal");
+                          dispatch(setTabs("proposal"));
                           dispatch(resetPage());
                         }}
                       >
@@ -780,7 +779,7 @@ function ShareHolderProposal() {
                         className="w-full py-2"
                         as="button"
                         onClick={() => {
-                          setTab("no-action");
+                          dispatch(setTabs("no-action"));
                           dispatch(resetPage());
                         }}
                       >
@@ -793,7 +792,7 @@ function ShareHolderProposal() {
                         className="w-full py-2"
                         as="button"
                         onClick={() => {
-                          setTab("withdrawn");
+                          dispatch(setTabs("withdrawn"));
                           dispatch(resetPage());
                         }}
                       >
@@ -852,8 +851,8 @@ function ShareHolderProposal() {
                                       </Tippy>
                                     </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                     
-                                        {noAction?.proponent_name}
+
+                                      {noAction?.proponent_name}
                                     </Table.Td>
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                       {noAction?.proposal_num}
@@ -880,15 +879,15 @@ function ShareHolderProposal() {
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                         noAction?.nl_exist &&
-                                          "text-blue-600 underline cursor-pointer",
+                                        "text-blue-600 underline cursor-pointer",
                                       ])}
                                       onClick={() => {
                                         const id =
                                           noAction?.nl_exist === true
                                             ? noAction?.no_action_link
-                                                ?.split("/")
-                                                .filter(Boolean)
-                                                .pop()
+                                              ?.split("/")
+                                              .filter(Boolean)
+                                              .pop()
                                             : 0;
                                         noAction?.nl_exist === true &&
                                           navigate(
@@ -983,12 +982,12 @@ function ShareHolderProposal() {
                                       {noAction?.sub_category}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                    
-                                        {noAction?.proponent_name}
+
+                                      {noAction?.proponent_name}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                     
-                                        {noAction?.staff_response}
+
+                                      {noAction?.staff_response}
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex">
@@ -1063,12 +1062,12 @@ function ShareHolderProposal() {
                                       </Tippy>
                                     </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
-                                   
-                                        {noAction?.proponent_name}
+
+                                      {noAction?.proponent_name}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                     
-                                        {noAction?.status}
+
+                                      {noAction?.status}
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex">

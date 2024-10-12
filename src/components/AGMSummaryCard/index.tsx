@@ -19,7 +19,7 @@ import { AppDispatch } from "@/stores/store";
 import LoadingIcon from "../Base/LoadingIcon";
 
 const index = () => {
-  const { companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
   // console.log("tickkk", companyGlobalSearchTicker)
@@ -51,7 +51,14 @@ const index = () => {
 
       // Iterate over each cell and get the text content
       cells.forEach((cell) => {
-        rowData.push(cell.textContent);
+          let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+
+          // Check if the cell contains a comma, wrap it in double quotes
+          if (cellText?.includes(",")) {
+              cellText = `"${cellText}"`;
+          }
+
+          rowData.push(cellText);
       });
 
       // Join cells with commas to form a CSV row
@@ -64,14 +71,21 @@ const index = () => {
 
       // Iterate over each cell and get the text content
       cells.forEach((cell) => {
-        rowData.push(cell.textContent);
+        let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+
+        // Check if the cell contains a comma, wrap it in double quotes
+        if (cellText?.includes(",")) {
+            cellText = `"${cellText}"`;
+        }
+
+        rowData.push(cellText);
       });
 
       // Join cells with commas to form a CSV row
       csvContentProposal += rowData.join(",") + "\n";
     });
     let concatContent = csvContent + csvContentProposal;
-    downloadCSV(concatContent, "Agm-Summary");
+    downloadCSV(concatContent, `Agm-Summary-${companyGlobalSearchName}`);
   };
 
   useEffect(() => {

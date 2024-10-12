@@ -83,28 +83,40 @@ const index = () => {
     validateImages();
   }, [dashboardDataList]);
 
-  const convertDivTableToCSV = () => {
-    // Get the table element
-    const table = document.querySelector(".table");
-    const rows = table?.querySelectorAll(".row");
-    let csvContent = "";
+    const convertDivTableToCSV = () => {
+        // Get the table element
+        const table = document.querySelector(".table");
+        const rows = table?.querySelectorAll(".row");
+        let csvContent = "";
 
-    // Iterate over each row
-    rows?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell");
-      let rowData: any = [];
+        // Iterate over each row
+        rows?.forEach((row) => {
+            const cells = row.querySelectorAll(".cell");
+            let rowData: any = [];
 
-      // Iterate over each cell and get the text content
-      cells.forEach((cell) => {
-        rowData.push(cell.textContent);
-      });
+            // Iterate over each cell and get the text content
+            cells.forEach((cell) => {
+                let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+                console.log(cellText);
+                // Check if the cell contains a comma, wrap it in double quotes
+                if (cellText?.includes(",")) {
+                    cellText = `"${cellText}"`;
+                }
 
-      // Join cells with commas to form a CSV row
-      csvContent += rowData.join(",") + "\n";
-    });
+                if (cellText?.includes("✔")) {
+                    cellText = `"Yes"`;
+                }
 
-    downloadCSV(csvContent, "Investor");
-  };
+                rowData.push(cellText);
+            });
+
+            // Join cells with commas to form a CSV row
+            csvContent += rowData.join(",") + "\n";
+        });
+
+
+        downloadCSV(csvContent, `Investor-${companyGlobalSearchName}`);
+    };
 
   return (
     <>
@@ -238,11 +250,7 @@ const index = () => {
                                                   "cursor-pointer underline",
                                               ])}
                                             >
-                                              {dashboard?.institution_name
-                                                ?.toLowerCase()
-                                                .replace(/\b\w/g, (s) =>
-                                                  s.toUpperCase()
-                                                )}
+                                              {dashboard?.institution_name}
                                             </h1>
                                             {dashboard?.flag_13d === true && (
                                               <img
@@ -285,7 +293,7 @@ const index = () => {
                                             true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                ✔
+                                              &#10004;
                                               </div>
                                             </div>
                                           )}
@@ -297,7 +305,7 @@ const index = () => {
                                           true && (
                                           <div className="whitespace-nowrap flex items-center justify-center">
                                             <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              ✔
+                                            &#10004;
                                             </div>
                                           </div>
                                         )}
@@ -331,7 +339,7 @@ const index = () => {
                                           true && (
                                           <div className="whitespace-nowrap flex items-center justify-center">
                                             <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              ✔
+                                            &#10004;
                                             </div>
                                           </div>
                                         )}
