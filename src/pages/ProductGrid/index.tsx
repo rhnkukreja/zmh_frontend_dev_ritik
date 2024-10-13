@@ -138,7 +138,7 @@ function Main() {
                   >
                     <div className="overflow-hidden rounded-lg h-52 image-fit before:block before:absolute before:w-full before:h-full before:top-0 before:left-0 before:z-10 before:bg-gradient-to-t before:from-slate-900/90 before:to-black/20">
                       <img
-                        alt="Tailwise - Admin Dashboard Template"
+                        alt="ZMH Analytics"
                         className="rounded-md"
                         src={faker.images[0].path}
                       />
@@ -214,7 +214,7 @@ function Main() {
                               <div className="w-6 h-6 image-fit zoom-in">
                                 <Tippy
                                   as="img"
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   className="border-2 border-white rounded-full"
                                   src={reviews.fakeReviews()[0].user.photo}
                                   content={`${
@@ -225,7 +225,7 @@ function Main() {
                               <div className="w-6 h-6 -ml-2 image-fit zoom-in">
                                 <Tippy
                                   as="img"
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   className="border-2 border-white rounded-full"
                                   src={reviews.fakeReviews()[0].user.photo}
                                   content={`${
@@ -236,7 +236,7 @@ function Main() {
                               <div className="w-6 h-6 -ml-2 image-fit zoom-in">
                                 <Tippy
                                   as="img"
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   className="border-2 border-white rounded-full"
                                   src={reviews.fakeReviews()[0].user.photo}
                                   content={`${
@@ -247,7 +247,7 @@ function Main() {
                               <div className="w-6 h-6 -ml-2 image-fit zoom-in">
                                 <Tippy
                                   as="img"
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   className="border-2 border-white rounded-full"
                                   src={reviews.fakeReviews()[0].user.photo}
                                   content={`${

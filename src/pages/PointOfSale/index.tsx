@@ -122,7 +122,7 @@ function Main() {
                   <div className="flex items-center ml-5 sm:ml-7">
                     <div className="mx-auto w-[54px] h-[54px] image-fit hidden sm:block flex-none">
                       <img
-                        alt="Tailwise - Admin Dashboard Template"
+                        alt="ZMH Analytics"
                         className="rounded-full"
                         src={products.fakeProducts()[0].images[0].path}
                       />
@@ -161,7 +161,7 @@ function Main() {
                       >
                         <div className="w-20 h-20 mx-auto image-fit">
                           <img
-                            alt="Tailwise - Admin Dashboard Template"
+                            alt="ZMH Analytics"
                             className="rounded-md"
                             src={faker.images[0].path}
                           />
@@ -194,7 +194,7 @@ function Main() {
                         >
                           <div className="flex-none w-14 h-14 image-fit">
                             <img
-                              alt="Tailwise - Admin Dashboard Template"
+                              alt="ZMH Analytics"
                               className="rounded-md"
                               src={faker.images[0].path}
                             />

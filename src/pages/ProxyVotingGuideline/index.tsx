@@ -1,7 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
-import {  Popover } from "@/components/Base/Headless";
+import { Popover } from "@/components/Base/Headless";
 
-import {  FormSelect } from "@/components/Base/Form";
+import { FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -34,7 +34,6 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
- 
 
   const {
     loading,
@@ -247,9 +246,7 @@ function ProxyGuideline() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">
-              Voting Guidelines
-            </div>
+            <div className="font-semibold text-xl ">Voting Guidelines</div>
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -402,94 +399,89 @@ function ProxyGuideline() {
               </div>
               <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={loading}>
-                <div className="overflow-auto max-h-[400px]">
-
-                  <Table>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Institution Name
-                        </Table.Td>
-                        <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Year
-                        </Table.Td>
-                        {user?.user_type === "Admin" && (
+                  <div className="overflow-auto max-h-[400px]">
+                    <Table>
+                      <Table.Thead>
+                        <Table.Tr>
                           <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Category
+                            Institution Name
                           </Table.Td>
-                        )}
-                        {user?.user_type === "Admin" && (
                           <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Sub Category
+                            Year
                           </Table.Td>
-                        )}
-                        {user?.user_type === "Admin" && (
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Section
-                          </Table.Td>
-                        )}
-                        {user?.user_type === "Admin" && (
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Policy Guideline
-                          </Table.Td>
-                        )}
-                        {/* <Table.Td className="py-2 font-medium bg-slate-50   text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          {user?.user_type === "Admin" && (
+                            <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Category
+                            </Table.Td>
+                          )}
+                          {user?.user_type === "Admin" && (
+                            <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Sub Category
+                            </Table.Td>
+                          )}
+                          {user?.user_type === "Admin" && (
+                            <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Section
+                            </Table.Td>
+                          )}
+                          {user?.user_type === "Admin" && (
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Policy Guideline
+                            </Table.Td>
+                          )}
+                          {/* <Table.Td className="py-2 font-medium bg-slate-50   text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
                           Active
                         </Table.Td> */}
 
-                        <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Actions
-                        </Table.Td>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {proxyVotingGuidelines?.length > 0 &&
-                        proxyVotingGuidelines?.map(
-                          (guideline: ProxyVotingGuideline) => (
-                            <Table.Tr
-                              key={guideline?.id}
-                              className="[&_td]:last:border-b-0"
-                            >
-                              <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                {guideline?.institution_logo_url ? (
-                                  <>
-                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
-                                      <Tippy
-                                        as="img"
-                                        alt="Tailwise - Admin Dashboard Template"
-                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                        src={guideline?.institution_logo_url}
-                                        content={
-                                          guideline?.institution_name || ""
-                                        }
+                          <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Actions
+                          </Table.Td>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {proxyVotingGuidelines?.length > 0 &&
+                          proxyVotingGuidelines?.map(
+                            (guideline: ProxyVotingGuideline) => (
+                              <Table.Tr
+                                key={guideline?.id}
+                                className="[&_td]:last:border-b-0"
+                              >
+                                <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                  {guideline?.institution_logo_url ? (
+                                    <>
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                        <img
+                                          alt="ZMH Analytics"
+                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                          src={guideline?.institution_logo_url}
+                                        />
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                      <Lucide
+                                        icon="User"
+                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
                                       />
+                                      <a
+                                        href=""
+                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                      ></a>
                                     </div>
-                                  </>
-                                ) : (
-                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                    <Lucide
-                                      icon="User"
-                                      className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
-                                    />
-                                    <a
-                                      href=""
-                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
-                                    ></a>
-                                  </div>
-                                )}
+                                  )}
 
-                                <div className="ml-4">
-                                  <p className="font-medium whitespace-nowrap">
-                                    {guideline?.institution_name}
-                                  </p>
-                                </div>
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.year}
-                              </Table.Td>
-                              {guideline?.category && (
+                                  <div className="ml-4">
+                                    <p className="font-medium whitespace-nowrap">
+                                      {guideline?.institution_name}
+                                    </p>
+                                  </div>
+                                </Table.Td>
                                 <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {/* <Tippy
+                                  {guideline?.year}
+                                </Table.Td>
+                                {guideline?.category && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {/* <Tippy
                                     content={guideline?.category}
                                     options={{
                                       theme: "light",
@@ -498,25 +490,25 @@ function ProxyGuideline() {
                                     <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                       {guideline?.category}
                                     </div>
-                                  {/* </Tippy> */}
-                                </Table.Td>
-                              )}
-                              {guideline?.sub_category && (
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.sub_category}
-                                </Table.Td>
-                              )}
-                              {guideline?.section && (
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.section}
-                                </Table.Td>
-                              )}
-                              {guideline?.policy_guidelines && (
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.policy_guidelines}
-                                </Table.Td>
-                              )}
-                              {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {/* </Tippy> */}
+                                  </Table.Td>
+                                )}
+                                {guideline?.sub_category && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {guideline?.sub_category}
+                                  </Table.Td>
+                                )}
+                                {guideline?.section && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {guideline?.section}
+                                  </Table.Td>
+                                )}
+                                {guideline?.policy_guidelines && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {guideline?.policy_guidelines}
+                                  </Table.Td>
+                                )}
+                                {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {guideline?.active === true ? (
                                   <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
                                     <span className="-mt-px">Active</span>
@@ -528,73 +520,73 @@ function ProxyGuideline() {
                                 )}
                               </Table.Td> */}
 
-                              <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                <div className="flex gap-3 ">
-                                  <Tippy
-                                    content="View"
-                                    options={{
-                                      theme: "dark",
-                                    }}
-                                  >
-                                    <Lucide
-                                      onClick={() => {
-                                        gotoDetailPage(
-                                          guideline?.voting_guidelines_pdf_url!
-                                        );
-
-                                        setPdfVisible(true);
-                                      }}
-                                      icon="Eye"
-                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                    />
-                                  </Tippy>
-
-                                  {user?.user_type === "Admin" && (
+                                <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                  <div className="flex gap-3 ">
                                     <Tippy
-                                      content="Edit"
+                                      content="View"
                                       options={{
                                         theme: "dark",
                                       }}
                                     >
                                       <Lucide
                                         onClick={() => {
-                                          onEditClickHandler(guideline);
+                                          gotoDetailPage(
+                                            guideline?.voting_guidelines_pdf_url!
+                                          );
+
+                                          setPdfVisible(true);
                                         }}
-                                        icon="PenLine"
+                                        icon="Eye"
                                         className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                       />
                                     </Tippy>
-                                  )}
 
-                                  <Tippy
-                                    content="Download"
-                                    options={{
-                                      theme: "dark",
-                                    }}
-                                  >
-                                    <a
-                                      href={
-                                        guideline?.voting_guidelines_pdf_url ||
-                                        ""
-                                      }
-                                      download
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                    {user?.user_type === "Admin" && (
+                                      <Tippy
+                                        content="Edit"
+                                        options={{
+                                          theme: "dark",
+                                        }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            onEditClickHandler(guideline);
+                                          }}
+                                          icon="PenLine"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </Tippy>
+                                    )}
+
+                                    <Tippy
+                                      content="Download"
+                                      options={{
+                                        theme: "dark",
+                                      }}
                                     >
-                                      <Lucide
-                                        icon="Download"
-                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                      />
-                                    </a>
-                                  </Tippy>
-                                </div>
-                              </Table.Td>
-                            </Table.Tr>
-                          )
-                        )}
-                    </Table.Tbody>
-                  </Table>
-                </div>
+                                      <a
+                                        href={
+                                          guideline?.voting_guidelines_pdf_url ||
+                                          ""
+                                        }
+                                        download
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <Lucide
+                                          icon="Download"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </a>
+                                    </Tippy>
+                                  </div>
+                                </Table.Td>
+                              </Table.Tr>
+                            )
+                          )}
+                      </Table.Tbody>
+                    </Table>
+                  </div>
                 </TableWrapper>
               </div>
               {totalPages > 1 && (

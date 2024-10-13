@@ -13,7 +13,7 @@ import {
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -31,13 +31,13 @@ import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
-TomSelect;
+import { FilterObject } from "@/types/common";
 
 interface PeerAnalysisFilter {
   category: string[];
-
   year: string[];
 }
+
 function PeerAnalysis() {
   const {
     handleSubmit,
@@ -79,7 +79,7 @@ function PeerAnalysis() {
 
   useEffect(() => {
     if (!filters?.global_search) return;
-    
+
     dispatch(
       fetchPeerAnalysis(
         createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)
@@ -87,11 +87,9 @@ function PeerAnalysis() {
     );
 
     return () => {
-      dispatch(resetPage()); 
+      dispatch(resetPage());
     };
-
-  }, [page ,  filters?.global_search]);
-
+  }, [page, filters?.global_search]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -199,13 +197,9 @@ function PeerAnalysis() {
 
   const onSubmit = async (peerAnalysisFilters: PeerAnalysisFilter) => {
     setApplyFilters({ ...peerAnalysisFilters });
-    const validKeysCount = Object.keys(peerAnalysisFilters).filter((key) => {
-      const value = peerAnalysisFilters[key as keyof PeerAnalysisFilter];
-      return Array.isArray(value)
-        ? value.length !== 0
-        : value !== undefined && value !== "";
-    })?.length;
-
+    const validKeysCount = countValidFilters(
+      peerAnalysisFilters as unknown as FilterObject
+    );
     setFiltersLength(validKeysCount);
   };
   return (
@@ -514,12 +508,10 @@ function PeerAnalysis() {
                                   {peer?.institution_logo_url ? (
                                     <>
                                       <div className="w-8 h-8 image-fit zoom-in object-contain">
-                                        <Tippy
-                                          as="img"
-                                          alt="Tailwise - Admin Dashboard Template"
+                                        <img
+                                          alt="ZMH Analytics"
                                           className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                           src={peer?.institution_logo_url}
-                                          content={peer?.institution_name || ""}
                                         />
                                       </div>
                                     </>

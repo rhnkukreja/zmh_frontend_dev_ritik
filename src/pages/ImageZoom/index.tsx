@@ -105,7 +105,7 @@ function Main() {
                               </p>
                               <div className="w-full h-64 my-5 image-fit">
                                 <ImageZoom
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={
                                     products.fakeProducts()[0].images[0].path
                                   }
@@ -163,7 +163,7 @@ function Main() {
                               </p>
                               <div className="float-left w-3/5 h-64 mr-6 image-fit">
                                 <ImageZoom
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={
                                     products.fakeProducts()[0].images[0].path
                                   }
@@ -253,7 +253,7 @@ function Main() {
                 </p>
                 <div className="w-full h-64 my-5 image-fit">
                   <img
-                    alt="Tailwise - Admin Dashboard Template"
+                    alt="ZMH Analytics"
                     src={products.fakeProducts()[0].images[0].path}
                     className="w-full rounded-md"
                   />
@@ -299,7 +299,7 @@ function Main() {
                 </p>
                 <div className="float-left w-3/5 h-64 mr-6 image-fit">
                   <img
-                    alt="Tailwise - Admin Dashboard Template"
+                    alt="ZMH Analytics"
                     src={products.fakeProducts()[0].images[0].path}
                     className="w-full rounded-md"
                   />

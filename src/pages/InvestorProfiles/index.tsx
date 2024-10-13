@@ -250,9 +250,7 @@ function Main() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">
-              Investor Profile
-            </div>
+            <div className="font-semibold text-xl ">Investor Profile</div>
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -420,12 +418,10 @@ function Main() {
                             {profile?.institution_logo_url ? (
                               <>
                                 <div className="w-8 h-8 image-fit zoom-in object-contain">
-                                  <Tippy
-                                    as="img"
-                                    alt="Tailwise - Admin Dashboard Template"
+                                  <img
+                                    alt="ZMH Analytics"
                                     className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                     src={profile?.institution_logo_url}
-                                    content={profile?.institution_name || ""}
                                   />
                                 </div>
                               </>
@@ -441,7 +437,7 @@ function Main() {
                                 ></a>
                               </div>
                             )}
-{/* 
+                            {/* 
                             <Tippy
                               content={profile?.institution_name || ""}
                               options={{
@@ -515,7 +511,7 @@ function Main() {
                                       <div className="w-8 h-8 image-fit zoom-in object-contain">
                                         <Tippy
                                           as="img"
-                                          alt="Tailwise - Admin Dashboard Template"
+                                          alt="ZMH Analytics"
                                           className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                           src={profile?.institution_logo_url}
                                           content={

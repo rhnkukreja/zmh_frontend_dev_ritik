@@ -17,15 +17,13 @@ interface EngagementQuestionsState {
   page: number;
   error: string | null;
   engagementQuestionFilterOptions: {
-    typeOfEngagement: string[];
-    source: string[];
     category: string[];
+    year: string[];
   };
   filters: {
-    category: string;
-    source: string;
-    typeOfEngagement: string;
     institution_name: string[];
+    category: string[];
+    year: string[];
   };
 }
 
@@ -38,15 +36,13 @@ const initialState: EngagementQuestionsState = {
   page: 1,
   error: null,
   engagementQuestionFilterOptions: {
-    typeOfEngagement: ["ESG", "Proxy"],
-    source: ["Investor Engagement", "Letter Campaign"],
     category: ["Environmental", "Governance", "Social"],
+    year: ["2022", "2023", "2024"],
   },
   filters: {
-    category: "",
-    source: "",
-    typeOfEngagement: "",
     institution_name: [],
+    category: [],
+    year: [],
   },
 };
 
@@ -105,10 +101,9 @@ const engagementQuestionsSlice = createSlice({
 
     resetFilter(state) {
       state.filters = {
-        category: "",
-        source: "",
-        typeOfEngagement: "",
         institution_name: [],
+        category: [],
+        year: [],
       };
     },
   },

@@ -3,15 +3,16 @@ import { FormInput } from "@/components/Base/Form";
 import { Dialog as HeadlessDialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect, useCallback } from "react";
 import _ from "lodash";
-import {
-  fetchCompanyByName,
-  
-} from "@/stores/dashboardSlice";
+import { fetchCompanyByName } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { useNavigate } from "react-router-dom";
 import { CompanyData } from "@/types/company";
-import { setDashboardGlobalSearch, setFinhub, setSavedSearch } from "@/stores/authenticationSlice";
+import {
+  setDashboardGlobalSearch,
+  setFinhub,
+  setSavedSearch,
+} from "@/stores/authenticationSlice";
 import { commonService } from "@/services/common";
 
 interface MainProps {
@@ -22,9 +23,7 @@ interface MainProps {
 function Main(props: MainProps) {
   const dispatch: AppDispatch = useAppDispatch();
   const [search, setSearch] = useState("");
-  const { companyDataList } = useAppSelector(
-    (state) => state.dashboard
-  );
+  const { companyDataList } = useAppSelector((state) => state.dashboard);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,8 +49,7 @@ function Main(props: MainProps) {
     []
   );
 
-
-  const saveSearch = async (id : number, company : string) => {
+  const saveSearch = async (id: number, company: string) => {
     const res = await commonService.saveSearches({
       module: "Global Search",
       id: id,
@@ -68,17 +66,19 @@ function Main(props: MainProps) {
         })
       );
     }
-    return res
+    return res;
   };
 
-  const handleCompanyClick =  async (
+  const handleCompanyClick = async (
     event: React.MouseEvent<HTMLAnchorElement>,
     company: CompanyData
   ) => {
     event.preventDefault();
     navigate(`/?ticker=${company?.symbol}`);
-    const saveSearchResponse = await saveSearch(company?.id , company?.name)
-    dispatch(setFinhub(saveSearchResponse?.finnhub))
+    const saveSearchResponse = await saveSearch(company?.id, company?.name);
+    if (saveSearchResponse?.finnhub) {
+      dispatch(setFinhub(saveSearchResponse?.finnhub));
+    }
     dispatch(
       setDashboardGlobalSearch({
         id: company?.id,
@@ -189,7 +189,7 @@ function Main(props: MainProps) {
                                 >
                                   {/* <div className="w-6 h-6 overflow-hidden border-2 rounded-full image-fit zoom-in border-slate-200/70 box">
                                     <img
-                                      alt="Tailwise - Admin Dashboard Template"
+                                      alt="ZMH Analytics"
                                       src={item.photo}
                                     />
                                   </div> */}

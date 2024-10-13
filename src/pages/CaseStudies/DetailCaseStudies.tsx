@@ -74,107 +74,129 @@ const DetailCaseStudies = () => {
           <LoadingWrapper height={200} />
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 border-b-2  pb-6">
-              <div>
-                <h3 className="font-semibold">Institution Name</h3>
-                <p>{singleCaseStudy?.institution_name}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Theme</h3>
-                <p>{singleCaseStudy?.esg_themes}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Industry</h3>
-                <p>{singleCaseStudy?.industry}</p>
-              </div>
-             
+            <div className="grid grid-cols-3 gap-4 border-b-2 pb-6">
+              {singleCaseStudy?.institution_name && (
+                <div>
+                  <h3 className="font-semibold">Institution Name</h3>
+                  <p>{singleCaseStudy.institution_name}</p>
+                </div>
+              )}
+              {singleCaseStudy?.esg_themes && (
+                <div>
+                  <h3 className="font-semibold">Theme</h3>
+                  <p>{singleCaseStudy.esg_themes}</p>
+                </div>
+              )}
+              {singleCaseStudy?.industry && (
+                <div>
+                  <h3 className="font-semibold">Industry</h3>
+                  <p>{singleCaseStudy.industry}</p>
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-4 border-b-2  pb-6">
-              <div>
-                <h3 className="font-semibold">Company</h3>
-                <p>{singleCaseStudy?.company_name}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Company Ticker</h3>
-                <p>{singleCaseStudy?.company_ticker}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Company Sector</h3>
-                <p>{singleCaseStudy?.company_sector}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Year</h3>
-                <p>{singleCaseStudy?.year}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Market</h3>
-                <p>{singleCaseStudy?.market}</p>
-              </div>
+
+            <div className="grid grid-cols-3 gap-4 border-b-2 pb-6">
+              {singleCaseStudy?.company_name && (
+                <div>
+                  <h3 className="font-semibold">Company</h3>
+                  <p>{singleCaseStudy.company_name}</p>
+                </div>
+              )}
+              {singleCaseStudy?.company_ticker && (
+                <div>
+                  <h3 className="font-semibold">Company Ticker</h3>
+                  <p>{singleCaseStudy.company_ticker}</p>
+                </div>
+              )}
+              {singleCaseStudy?.company_sector && (
+                <div>
+                  <h3 className="font-semibold">Company Sector</h3>
+                  <p>{singleCaseStudy.company_sector}</p>
+                </div>
+              )}
+              {singleCaseStudy?.year && (
+                <div>
+                  <h3 className="font-semibold">Year</h3>
+                  <p>{singleCaseStudy.year}</p>
+                </div>
+              )}
+              {singleCaseStudy?.market && (
+                <div>
+                  <h3 className="font-semibold">Market</h3>
+                  <p>{singleCaseStudy.market}</p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold ">Engagement/Voting Details</h3>
-                <p className="mb-4">{singleCaseStudy?.engagement_details}</p>
-              </div>
+              {singleCaseStudy?.engagement_details && (
+                <div>
+                  <h3 className="font-semibold">Engagement/Voting Details</h3>
+                  <p className="mb-4">{singleCaseStudy.engagement_details}</p>
+                </div>
+              )}
 
               <div className="flex flex-col">
-
-                <div className="mt-2 flex gap-4 ">
-                  <p className="font-semibold min-w-[100px]">Proponent</p>
-                  <p>{singleCaseStudy?.proposal_type}</p>
-                </div>
-
-                <div className="mt-2 flex  gap-4">
-                  <p className="font-semibold min-w-[100px]">Resolution</p>
-                  <p className="text-muted-foreground">
-                    {singleCaseStudy?.resolution_engagement_topic}
-                  </p>
-                </div>
-
-                <div className="mt-2 flex  gap-4">
-                  <p className="font-semibold min-w-[100px]">Vote</p>
-                  <p className="text-destructive">{singleCaseStudy?.vote}</p>
-                </div>
-
-                <div className="mt-2 flex  gap-4">
-                  <p className="font-semibold min-w-[100px]">Rationale</p>
-                  <p className="text-muted-foreground">
-                    {singleCaseStudy?.voting_rationale}
-                  </p>
-                </div>
-
-                <div className="mt-2 flex  gap-4 ">
-                  <p className="font-semibold min-w-[100px]">Details</p>
-                  <p className="text-muted-foreground">{singleCaseStudy?.voting_details}</p>
-                </div>
+                {singleCaseStudy?.proposal_type && (
+                  <div className="mt-2 flex gap-4">
+                    <p className="font-semibold min-w-[100px]">Proponent</p>
+                    <p>{singleCaseStudy.proposal_type}</p>
+                  </div>
+                )}
+                {singleCaseStudy?.resolution_engagement_topic && (
+                  <div className="mt-2 flex gap-4">
+                    <p className="font-semibold min-w-[100px]">Resolution</p>
+                    <p className="text-muted-foreground">
+                      {singleCaseStudy.resolution_engagement_topic}
+                    </p>
+                  </div>
+                )}
+                {singleCaseStudy?.vote && (
+                  <div className="mt-2 flex gap-4">
+                    <p className="font-semibold min-w-[100px]">Vote</p>
+                    <p className="text-destructive">{singleCaseStudy.vote}</p>
+                  </div>
+                )}
+                {singleCaseStudy?.voting_rationale && (
+                  <div className="mt-2 flex gap-4">
+                    <p className="font-semibold min-w-[100px]">Rationale</p>
+                    <p className="text-muted-foreground">
+                      {singleCaseStudy.voting_rationale}
+                    </p>
+                  </div>
+                )}
+                {singleCaseStudy?.voting_details && (
+                  <div className="mt-2 flex gap-4">
+                    <p className="font-semibold min-w-[100px]">Details</p>
+                    <p className="text-muted-foreground">
+                      {singleCaseStudy.voting_details}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-               
-                <div>
-                  <h3 className="font-semibold">Proxy Statement</h3>
-                  <p className="mb-4">
-                    {singleCaseStudy?.urls_def14 ? (
+                {singleCaseStudy?.urls_def14 && (
+                  <div>
+                    <h3 className="font-semibold">Proxy Statement</h3>
+                    <p className="mb-4">
                       <a
-                        href={singleCaseStudy?.urls_def14}
+                        href={singleCaseStudy.urls_def14}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-500 underline"
                       >
                         {singleCaseStudy.urls_def14}
                       </a>
-                    ) : (
-                      null
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Vote Report</h3>
-                  <p className="mb-4">
-                    {singleCaseStudy?.urls_8k ? (
+                    </p>
+                  </div>
+                )}
+                {singleCaseStudy?.urls_8k && (
+                  <div>
+                    <h3 className="font-semibold">Vote Report</h3>
+                    <p className="mb-4">
                       <a
                         href={singleCaseStudy.urls_8k}
                         target="_blank"
@@ -183,11 +205,9 @@ const DetailCaseStudies = () => {
                       >
                         {singleCaseStudy.urls_8k}
                       </a>
-                    ) : (
-                      null
-                    )}
-                  </p>
-                </div>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
