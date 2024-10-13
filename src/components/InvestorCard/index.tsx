@@ -39,13 +39,14 @@ const index = () => {
       (state: RootState) => state.authentiction
     );
     
-//  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
-
-
   const navigate = useNavigate();
 
-
+  const ticker = searchParams.get("ticker");
+  
   useEffect(() => {
+    if(ticker !== companyGlobalSearchTicker){
+      return;
+    }
     if (companyGlobalSearchTicker) {
       dispatch(
         fetchCompanyDashboard(

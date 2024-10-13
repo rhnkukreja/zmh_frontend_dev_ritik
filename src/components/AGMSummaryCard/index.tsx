@@ -8,7 +8,7 @@ import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import FormSelect from "../Base/Form/FormSelect";
 import Tippy from "../Base/Tippy";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import summary from "@/assets/json/brhc10049413_8k.json";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
@@ -22,7 +22,6 @@ const index = () => {
   const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
-  // console.log("tickkk", companyGlobalSearchTicker)
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -90,7 +89,12 @@ const index = () => {
     downloadCSV(concatContent, `Agm-Summary-${companyGlobalSearchName}`);
   };
 
+   const ticker = searchParams.get("ticker");
+  
   useEffect(() => {
+    if(ticker !== companyGlobalSearchTicker){
+      return;
+    }
     dispatch(
       fetchAGMSummaryDashboard(
         createDynamicURL(
@@ -175,7 +179,10 @@ const index = () => {
                               (nomineeHeader: any, headerIndex: number) => (
                                 <Table.Td
                                   key={headerIndex}
-                                  className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-left"
+                                  // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
+                                  className={clsx(["cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                    headerIndex === 0 && "text-left"
+                                  ])}
                                 >
                                   {nomineeHeader.header}
                                 </Table.Td>
@@ -201,11 +208,11 @@ const index = () => {
                                     ) => (
                                       <Table.Td
                                         key={headerIndex}
-                                        className={clsx(["cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left" ,])}
+                                        className={clsx(["cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right" ,  headerIndex === 0 && "text-left "])}
                                       >
                                         <h1
                                           className={clsx([
-                                            headerIndex === 0 && "font-semibold w-[180px]",
+                                            headerIndex === 0 && "font-semibold ",
                                             headerIndex === agmSummaryDetails?.nominees_headers?.length - 1 && parseFloat(nominee[nomineeHeader?.field]) < 85 && "text-red-700 font-semibold",
                                           ])}
                                         >
@@ -238,7 +245,9 @@ const index = () => {
                             (proposalHeader: any, headerIndex: number) => (
                               <Table.Td
                                 key={headerIndex}
-                                className="cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-left"
+                                className={clsx(["cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                  headerIndex === 0 && "text-left"
+                                ])}
                               >
                                 {proposalHeader?.header}
                               </Table.Td>
@@ -264,12 +273,14 @@ const index = () => {
                                     ) => (
                                       <Table.Td
                                         key={headerIndex}
-                                        className="cell_3 py-2 border-dashed dark:bg-darkmode-600  text-left"
+                                        className={clsx(["cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
+                                          headerIndex === 0 && "text-left",
+                                        ])}
                                       >
                                         <h1
                                           className={clsx([
                                             headerIndex === 0 &&
-                                              "font-semibold w-[180px]",
+                                              "font-semibold ",
                                             headerIndex ===
                                               agmSummaryDetails
                                                 ?.proposals_headers?.length -
