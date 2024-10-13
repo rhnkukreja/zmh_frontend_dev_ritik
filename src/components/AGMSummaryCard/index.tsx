@@ -89,7 +89,8 @@ const index = () => {
     downloadCSV(concatContent, `Agm-Summary-${companyGlobalSearchName}`);
   };
 
-   const ticker = searchParams.get("ticker");
+  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+
   
   useEffect(() => {
     if(ticker !== companyGlobalSearchTicker){

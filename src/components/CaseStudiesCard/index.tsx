@@ -16,7 +16,7 @@ const index = () => {
     const { caseStudyDetails, caseStudyLoading, page, totalPages } = useAppSelector((state) => state.dashboard);
     const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector((state) => state.authentiction);
     
-    const ticker = searchParams.get("ticker");
+    const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   
     useEffect(() => {
       if(ticker !== companyGlobalSearchTicker){

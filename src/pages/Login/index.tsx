@@ -65,7 +65,9 @@ const Main: React.FC = () => {
       }
       console.log({response})
       toast.success("Logged In Successfully!");
-      navigate("/");
+      // navigate("/");
+      navigate(`/?ticker=${response?.company_ticker}`);
+
     } catch (error) {}
   };
 

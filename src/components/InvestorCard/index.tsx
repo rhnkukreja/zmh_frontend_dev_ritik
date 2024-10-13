@@ -41,7 +41,7 @@ const index = () => {
     
   const navigate = useNavigate();
 
-  const ticker = searchParams.get("ticker");
+  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   
   useEffect(() => {
     if(ticker !== companyGlobalSearchTicker){
