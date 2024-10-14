@@ -17,6 +17,10 @@ export interface PeerAnalysis {
     global_search: string[];
     institution_name: string[];
   };
+  filterOptions: {
+    category: string[];
+    year: string[];
+  };
 }
 
 const initialState: PeerAnalysis = {
@@ -30,6 +34,10 @@ const initialState: PeerAnalysis = {
   filters: {
     global_search: [],
     institution_name: [],
+  },
+  filterOptions: {
+    category: ["Social", "Governance", "Environment"],
+    year: ["2023", "2024"],
   },
 };
 

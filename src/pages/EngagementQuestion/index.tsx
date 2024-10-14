@@ -1,7 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover } from "@/components/Base/Headless";
 // import TomSelect from "@/components/Base/TomSelect";
-import { FormInput, FormSelect } from "@/components/Base/Form";
+import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -20,7 +20,7 @@ import {
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { AddEditEngagementQuestion } from "./components/AddEditEngagementQuestion";
@@ -32,7 +32,14 @@ import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { commonService } from "@/services/common";
 import { toast } from "react-toastify";
 import { setSavedSearch } from "@/stores/authenticationSlice";
+import { Controller, useForm } from "react-hook-form";
+import TomSelect from "@/components/Base/TomSelect";
+import { FilterObject } from "@/types/common";
 
+interface EngagementQuestionFilter {
+  category: string[];
+  year: string[];
+}
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -46,6 +53,14 @@ function Main() {
     filters,
   } = useAppSelector((state) => state.engagementQuestions);
 
+  const { handleSubmit, control, reset, setValue, watch } =
+    useForm<EngagementQuestionFilter>({
+      defaultValues: {
+        category: [...filters.category],
+        year: [...filters.year],
+      },
+    });
+
   const { user } = useAppSelector((state) => state.authentiction);
 
   const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
@@ -54,6 +69,7 @@ function Main() {
   const [groupedQuestions, setGroupedQuestions] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+  const [filtersLength, setFiltersLength] = useState<number>(0);
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -96,18 +112,18 @@ function Main() {
     );
   }, [page]);
 
+  // useEffect(() => {
+
+  //   return () => {
+  //     dispatch(resetPage());
+  //     dispatch(resetFilter());
+  //   };
+  // }, []);
+
   useEffect(() => {
-    return () => {
-      console.log("destory the component engagement");
-      dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "institution_name",
-          value: "",
-        })
-      );
-    };
-  }, []);
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters({ ...restFilters }));
+  }, [filters]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -166,37 +182,43 @@ function Main() {
     dispatch(resetPage());
   }
 
-  const handleClearAllFilter = () => {
-    dispatch(resetFilter());
-    setSearchTerms([]);
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: [],
-      })
-    );
+  const handleClearAllFilter = (type = "all") => {
+    if (type === "all") {
+      reset();
+      dispatch(resetFilter());
+      setSearchTerms([]);
+    } else {
+      reset();
+      dispatch(
+        setFilter({
+          key: "category",
+          value: [],
+        })
+      );
+      dispatch(
+        setFilter({
+          key: "year",
+          value: [],
+        })
+      );
+    }
 
     dispatch(
       fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, undefined, page)
+        createDynamicURL(
+          `${baseURL}/engagement_questions/`,
+          filters,
+          undefined,
+          page
+        )
       )
     );
-
-    dispatch(resetPage());
   };
 
-  const getFilterCount = useMemo(() => {
-    const { institution_name, ...allFilters } = filters;
-    return Object.values(allFilters).filter((value) => value !== "").length;
-  }, [filters]);
-
-  const onFilterClear = () => {
-    dispatch(resetFilter());
-    dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(`${baseURL}/engagement_questions/`, undefined, page)
-      )
-    );
+  const onSubmit = async (engagementQuesFilter: EngagementQuestionFilter) => {
+    Object.entries(engagementQuesFilter).forEach(([key, value]) => {
+      dispatch(setFilter({ key: key as any, value }));
+    });
   };
 
   const onEditClickHandler = (question: EngagementQuestions) => {
@@ -258,22 +280,33 @@ function Main() {
   };
 
   const saveSearch = async () => {
+    const filtersToSave = Object.entries(filters).reduce(
+      (acc, [key, value]) => {
+        if (key !== "institution_name") {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {} as Partial<typeof filters>
+    );
+
     const res = await commonService.saveSearches({
       module: "Engagement Questions",
       institution: searchTerms,
-      category: filters["category"],
+      ...(filtersToSave as any),
     });
-    if (res?.Success) {
+
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Engagement Questions",
           value: {
             institution: searchTerms,
-            category: filters["category"],
+            ...filtersToSave,
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success(res?.user_id || "Search saved successfully");
     }
   };
 
@@ -281,9 +314,7 @@ function Main() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="font-semibold text-xl ">
-            Engagement Questions
-          </div>
+          <div className="font-semibold text-xl ">Engagement Questions</div>
           {user?.user_type === "Admin" && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
@@ -313,7 +344,11 @@ function Main() {
                 />
 
                 <div className="hover:bg-slate-50">
-                  <Button onClick={handleClearAllFilter}>
+                  <Button
+                    onClick={() => {
+                      handleClearAllFilter("all");
+                    }}
+                  >
                     <Tippy content="Clear Filters" options={{ theme: "light" }}>
                       <FilterX
                         size={17}
@@ -350,6 +385,7 @@ function Main() {
                         as={Button}
                         variant="outline-secondary"
                         className="w-full sm:w-auto"
+                        // onClick={handleCollapseFilter}
                       >
                         <Lucide
                           icon="ArrowDownWideNarrow"
@@ -357,99 +393,168 @@ function Main() {
                         />
                         Filter
                         <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                          {getFilterCount}
+                          {filtersLength}
                         </div>
                       </Popover.Button>
                       <Popover.Panel placement="bottom-end">
-                        <div className="p-2">
-                          {/* <div>
-                            <div className="text-left text-slate-500">
-                              Type of Engagement
+                        <form onSubmit={handleSubmit(onSubmit)}>
+                          <div className="p-2">
+                            <div className="mt-3">
+                              <div className="w-full  my-2">
+                                <div className="text-left text-slate-500 flex justify-between mb-1">
+                                  Year
+                                  {engagementQuestionFilterOptions?.year
+                                    ?.length > 0 && (
+                                    <div>
+                                      <FormCheck className="mr-2">
+                                        <FormCheck.Label>
+                                          Select All
+                                        </FormCheck.Label>
+                                        <FormCheck.Input
+                                          className="ml-1"
+                                          id={`year`}
+                                          checked={
+                                            engagementQuestionFilterOptions
+                                              ?.year?.length ===
+                                            watch("year")?.length
+                                          }
+                                          type="checkbox"
+                                          onChange={(e) => {
+                                            if (e.target.checked === true) {
+                                              setValue(
+                                                "year",
+                                                engagementQuestionFilterOptions?.year
+                                              );
+                                            } else {
+                                              setValue("year", []);
+                                            }
+                                          }}
+                                        />
+                                      </FormCheck>
+                                    </div>
+                                  )}
+                                </div>
+                                <Controller
+                                  name="year"
+                                  control={control}
+                                  defaultValue={[]}
+                                  render={({ field }) => (
+                                    <TomSelect
+                                      value={field.value || []}
+                                      onChange={(value) => {
+                                        field.onChange(value);
+                                      }}
+                                      options={{
+                                        placeholder: "Select Year",
+                                      }}
+                                      className="w-full"
+                                      multiple
+                                    >
+                                      <>
+                                        {engagementQuestionFilterOptions?.year?.map(
+                                          (year: string) => {
+                                            return (
+                                              <option value={year}>
+                                                {year}
+                                              </option>
+                                            );
+                                          }
+                                        )}
+                                      </>
+                                    </TomSelect>
+                                  )}
+                                />
+                              </div>
+
+                              <div className="w-full  my-2">
+                                <div className="text-left text-slate-500 flex justify-between mb-1">
+                                  Category
+                                  {engagementQuestionFilterOptions?.category
+                                    ?.length > 0 && (
+                                    <div>
+                                      <FormCheck className="mr-2">
+                                        <FormCheck.Label>
+                                          Select All
+                                        </FormCheck.Label>
+                                        <FormCheck.Input
+                                          className="ml-1"
+                                          id={`category`}
+                                          checked={
+                                            engagementQuestionFilterOptions
+                                              .category.length ===
+                                            watch("category")?.length
+                                          }
+                                          type="checkbox"
+                                          onChange={(e) => {
+                                            if (e.target.checked === true) {
+                                              setValue(
+                                                "category",
+                                                engagementQuestionFilterOptions.category
+                                              );
+                                            } else {
+                                              setValue("category", []);
+                                            }
+                                          }}
+                                        />
+                                      </FormCheck>
+                                    </div>
+                                  )}
+                                </div>
+                                <Controller
+                                  name="category"
+                                  control={control}
+                                  defaultValue={[]}
+                                  render={({ field }) => (
+                                    <TomSelect
+                                      value={field.value || []}
+                                      onChange={(value) => {
+                                        field.onChange(value);
+                                      }}
+                                      options={{
+                                        placeholder: "Select Category",
+                                      }}
+                                      className="w-full"
+                                      multiple
+                                    >
+                                      <>
+                                        {engagementQuestionFilterOptions
+                                          ?.category.length > 0 &&
+                                          engagementQuestionFilterOptions?.category?.map(
+                                            (category: string) => {
+                                              return (
+                                                <option value={category}>
+                                                  {category}
+                                                </option>
+                                              );
+                                            }
+                                          )}
+                                      </>
+                                    </TomSelect>
+                                  )}
+                                />
+                              </div>
                             </div>
-                            <FormSelect className="flex-1 mt-2">
-                              {engagementQuestionFilterOptions.typeOfEngagement.map(
-                                (type: string, index: number) => {
-                                  return (
-                                    <option key={index} value={type}>
-                                      {type}
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </FormSelect>
-                          </div> */}
-                          {/* <div className="mt-3">
-                            <div className="text-left text-slate-500">
-                              Source
+                            <div className="flex items-center mt-4">
+                              <Button
+                                variant="secondary"
+                                onClick={() => {
+                                  handleClearAllFilter("filter");
+                                  close();
+                                }}
+                                className="w-32 ml-auto"
+                              >
+                                Clear
+                              </Button>
+                              <Button
+                                onClick={handleApplyFilter}
+                                variant="primary"
+                                className="w-32 ml-2"
+                              >
+                                Apply
+                              </Button>
                             </div>
-                            <FormSelect className="flex-1 mt-2">
-                              {engagementQuestionFilterOptions.source.map(
-                                (source: string, index: number) => {
-                                  return (
-                                    <option key={index} value={source}>
-                                      {source}
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </FormSelect>
-                          </div> */}
-                          <div className="mt-3">
-                            <div className="text-left text-slate-500">
-                              Category
-                            </div>
-                            <FormSelect
-                              defaultValue={
-                                filters.category.length > 0
-                                  ? filters.category
-                                  : "Select Category"
-                              }
-                              className="flex-1 mt-2"
-                              onChange={(
-                                e: React.ChangeEvent<HTMLSelectElement>
-                              ) => {
-                                dispatch(
-                                  setFilter({
-                                    key: "category",
-                                    value: e.target.value,
-                                  })
-                                );
-                              }}
-                            >
-                              <option disabled selected>
-                                Select Category
-                              </option>
-                              {engagementQuestionFilterOptions.category.map(
-                                (category: string, index: number) => {
-                                  return (
-                                    <option key={index} value={category}>
-                                      {category}
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </FormSelect>
                           </div>
-                          <div className="flex items-center mt-4">
-                            <Button
-                              variant="secondary"
-                              onClick={() => {
-                                close();
-                                onFilterClear();
-                              }}
-                              className="w-32 ml-auto"
-                            >
-                              Clear
-                            </Button>
-                            <Button
-                              onClick={handleApplyFilter}
-                              variant="primary"
-                              className="w-32 ml-2"
-                            >
-                              Apply
-                            </Button>
-                          </div>
-                        </div>
+                        </form>
                       </Popover.Panel>
                     </>
                   )}
@@ -503,7 +608,7 @@ function Main() {
                                       <div className="w-10 h-10 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                         {
                                           <img
-                                            alt="Tailwise - Admin Dashboard Template"
+                                            alt="ZMH Analytics"
                                             src={
                                               validImages[institutionName] ||
                                               userLinkedinImage
@@ -552,9 +657,9 @@ function Main() {
                                           }
                                           options={{ theme: "light" }}
                                         > */}
-                                          <div className="whitespace-normal capitalize max-w-[300px] overflow-hidden text-ellipsis line-clamp-2">
-                                            {question?.engagement_question}
-                                          </div>
+                                        <div className="whitespace-normal capitalize max-w-[300px] overflow-hidden text-ellipsis line-clamp-2">
+                                          {question?.engagement_question}
+                                        </div>
                                         {/* </Tippy> */}
                                       </Table.Td>
 

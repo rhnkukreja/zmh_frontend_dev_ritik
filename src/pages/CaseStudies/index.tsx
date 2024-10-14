@@ -235,7 +235,7 @@ function CaseStudies() {
       keyword: watch("keyword") || "",
       global_search: [companyGlobalSearchName],
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Case Studies",
@@ -252,7 +252,7 @@ function CaseStudies() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success("Searched saved successfully");
     }
   };
 
@@ -822,8 +822,7 @@ function CaseStudies() {
                                 {item?.institution_logo_url ? (
                                   <>
                                     <div className="w-8 h-8 image-fit zoom-in object-contain">
-                                      <Tippy
-                                        as="img"
+                                      <img
                                         alt="Institution Logo"
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                         src={item?.institution_logo_url}

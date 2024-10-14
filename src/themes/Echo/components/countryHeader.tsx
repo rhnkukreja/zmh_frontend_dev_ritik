@@ -3,9 +3,7 @@ import { RootState } from "@/stores/store";
 import ReactCountryFlag from "react-country-flag";
 
 const CountryInfoHeader = () => {
-  const { finhub } = useAppSelector(
-    (state: RootState) => state.authentiction
-  );
+  const { finhub } = useAppSelector((state: RootState) => state.authentiction);
 
   return (
     <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex items-center justify-between">
@@ -20,8 +18,7 @@ const CountryInfoHeader = () => {
             />
           </div>
         )}
-        
-        {/* Company Name with Ticker in parentheses */}
+
         <div className="flex items-center">
           <span className="font-semibold text-lg">
             {finhub?.name} {finhub?.ticker && `(${finhub?.ticker})`}
@@ -29,7 +26,6 @@ const CountryInfoHeader = () => {
         </div>
       </div>
 
-      {/* Middle Section: Country Flag and Exchange */}
       <div className="flex items-center justify-center">
         {finhub?.country && (
           <ReactCountryFlag
@@ -46,13 +42,14 @@ const CountryInfoHeader = () => {
         )}
       </div>
 
-      {/* Right Section: Industry */}
-      <div className="flex items-center">
-        <div className="flex flex-col items-start">
-          <p className="text-gray-600 font-medium text-sm">Industry</p>
-          <p className="text-gray-500 text-sm">{finhub?.finnhub_industry}</p>
+      {finhub?.finnhub_industry && (
+        <div className="flex items-center">
+          <div className="flex flex-col items-start">
+            <p className="text-gray-600 font-medium text-sm">Industry</p>
+            <p className="text-gray-500 text-sm">{finhub?.finnhub_industry}</p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

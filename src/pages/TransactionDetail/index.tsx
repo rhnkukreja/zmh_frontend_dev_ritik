@@ -306,7 +306,7 @@ function Main() {
                                 <div className="w-11 h-11 image-fit zoom-in">
                                   <Tippy
                                     as="img"
-                                    alt="Tailwise - Admin Dashboard Template"
+                                    alt="ZMH Analytics"
                                     className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                     src={faker.images[0].path}
                                     content={faker.images[0].uploadDate}
@@ -416,7 +416,7 @@ function Main() {
                           <div className="grid grid-cols-1 md:grid-cols-3 overflow-hidden rounded-[0.6rem]">
                             <div className="h-20 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
                               <ImageZoom
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 src={
                                   transactions.fakeTransactions()[0].products[0]
                                     .images[0].path
@@ -425,7 +425,7 @@ function Main() {
                             </div>
                             <div className="h-20 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
                               <ImageZoom
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 src={
                                   transactions.fakeTransactions()[0].products[0]
                                     .images[1].path
@@ -434,7 +434,7 @@ function Main() {
                             </div>
                             <div className="h-20 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
                               <ImageZoom
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 src={
                                   transactions.fakeTransactions()[0].products[0]
                                     .images[2].path

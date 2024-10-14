@@ -27,7 +27,7 @@ const initialState: any = {
     // },
     {
       // icon: CompanyIcon,
-      icon: 'Building2',
+      icon: "Building2",
       pathname: "/",
       title: "Company Search",
     },
@@ -68,37 +68,36 @@ const initialState: any = {
     // },
     // "APPS",
     {
-      icon: 'Landmark',
+      icon: "Landmark",
       pathname: "/investor-profile",
       title: "Investor Profile",
     },
     {
-      icon: 'FileSearch2',
+      icon: "FileSearch2",
       pathname: "/case-studies",
       title: "Case Studies",
     },
     {
-      icon: 'MessageCircle',
+      icon: "MessageCircle",
       pathname: "/engagement-question",
       title: "Engagement Question",
     },
     {
-      icon: 'Network',
+      icon: "Network",
       pathname: "/peer-analysis",
       title: "Peer Analysis",
     },
     {
-      icon: 'FileText',
+      icon: "FileText",
       pathname: "/proxy-voting-guideline",
       title: "Voting Guidelines",
     },
     {
-      icon: 'Hand',
+      icon: "Hand",
       pathname: "/share-holder-proposal",
       title: "Shareholder Proposals",
     },
-    
-    
+
     // {
     //   icon: "PanelTopClose",
     //   pathname: "/point-of-sale",
@@ -116,20 +115,20 @@ const initialState: any = {
     // },
     // "Additional",
     {
-      icon: 'School',
+      icon: "School",
       pathname: "/institution",
       title: "Institutions",
       isAdmin: true,
     },
     {
-      icon: 'Building',
+      icon: "Building",
       pathname: "/company",
       title: "Company",
       isAdmin: true,
     },
     "Coming Soon",
     {
-      icon: 'Briefcase',
+      icon: "Briefcase",
       pathname: "#",
       title: "Notes",
     },

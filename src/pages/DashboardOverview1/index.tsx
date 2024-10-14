@@ -384,21 +384,21 @@ function Main() {
                     <div className="flex ml-auto">
                       <div className="w-8 h-8 image-fit zoom-in">
                         <img
-                          alt="Tailwise - Admin Dashboard Template"
+                          alt="ZMH Analytics"
                           className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                           src={faker.images[0].path}
                         />
                       </div>
                       <div className="w-8 h-8 -ml-3 image-fit zoom-in">
                         <img
-                          alt="Tailwise - Admin Dashboard Template"
+                          alt="ZMH Analytics"
                           className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                           src={faker.images[1].path}
                         />
                       </div>
                       <div className="w-8 h-8 -ml-3 image-fit zoom-in">
                         <img
-                          alt="Tailwise - Admin Dashboard Template"
+                          alt="ZMH Analytics"
                           className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                           src={faker.images[2].path}
                         />
@@ -513,7 +513,7 @@ function Main() {
                         <div className="w-5 h-5 image-fit zoom-in">
                           <Tippy
                             as="img"
-                            alt="Tailwise - Admin Dashboard Template"
+                            alt="ZMH Analytics"
                             className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                             src={faker.products[0].images[0].path}
                             content={faker.products[0].name}
@@ -522,7 +522,7 @@ function Main() {
                         <div className="w-5 h-5 -ml-1.5 image-fit zoom-in">
                           <Tippy
                             as="img"
-                            alt="Tailwise - Admin Dashboard Template"
+                            alt="ZMH Analytics"
                             className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                             src={faker.products[1].images[0].path}
                             content={faker.products[1].name}
@@ -531,7 +531,7 @@ function Main() {
                         <div className="w-5 h-5 -ml-1.5 image-fit zoom-in">
                           <Tippy
                             as="img"
-                            alt="Tailwise - Admin Dashboard Template"
+                            alt="ZMH Analytics"
                             className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                             src={faker.products[2].images[0].path}
                             content={faker.products[2].name}
