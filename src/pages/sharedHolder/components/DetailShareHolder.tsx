@@ -2,7 +2,7 @@ import Button from "@/components/Base/Button";
 import LoadingWrapper from "@/components/LoadingWrapper";
 import { getSingleEngagementQuestions } from "@/stores/engagementQuestionSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { getSingleShareHolderData } from "@/stores/shareholderProposalSlice";
+import { getSingleShareHolderData, setPage, setTabs } from "@/stores/shareholderProposalSlice";
 import { AppDispatch } from "@/stores/store";
 import dayjs from "dayjs";
 import { ChevronLeft } from "lucide-react";
@@ -14,18 +14,24 @@ const DetailShareHolder = () => {
   const params = useParams();
   const navigate = useNavigate();
 
-  const { getSingleShareHolder, loading } = useAppSelector((state) => state.sharedHolderNoAction);
+  const { getSingleShareHolder, loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const url = searchParams.get('url');
   const headingTitle = url?.includes('withdrawn') ? 'Withdrawn Proposal Details'
     : url?.includes('def14a') ? 'Shareholder Proposal Details' : url?.includes('no_action') ? 'No Action Letter Details' : ''
-  useEffect(() => {
+  
+  const selectedTab = url?.includes('withdrawn') ? 'withdrawn'
+    : url?.includes('def14a') ? 'proposal' : url?.includes('no_action') ? 'no-action' : '';
+  
+    useEffect(() => {
     dispatch(getSingleShareHolderData({ url: url!, id: Number(params.id!) }));
   }, [params.id]);
 
   const backToPreviousPage = () => {
+    dispatch(setPage(page));
+    dispatch(setTabs(selectedTab));
     navigate(`/share-holder-proposal`);
   }
 

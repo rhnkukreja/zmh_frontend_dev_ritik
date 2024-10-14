@@ -10,14 +10,18 @@ import LoadingIcon from "../Base/LoadingIcon";
 
 const index = () => {
     const [searchParams] = useSearchParams();
-    const ticker = searchParams.get("ticker") ?? "AAPL";
     const dispatch: AppDispatch = useAppDispatch();
 
     const pageNumber = 1;
     const { caseStudyDetails, caseStudyLoading, page, totalPages } = useAppSelector((state) => state.dashboard);
-    const { companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
+    const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector((state) => state.authentiction);
     
+    const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+  
     useEffect(() => {
+      if(ticker !== companyGlobalSearchTicker){
+        return;
+      }
         if (companyGlobalSearchName) {
             dispatch(fetchCaseStudyDashboard(
                 createDynamicURL(`https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q=${companyGlobalSearchName}&dateRestrict=y1&start=${pageNumber}`)

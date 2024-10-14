@@ -437,7 +437,7 @@ function Main() {
                           <div className="flex items-center flex-none w-40 ml-8 mr-5">
                             <div className="relative flex-none w-5 h-5 image-fit">
                               <img
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="rounded-full"
                                 src={faker.sender.photo}
                               />

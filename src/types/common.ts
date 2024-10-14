@@ -7,7 +7,9 @@ type EngagementQuestionsPayload = BasePayload<
   "Engagement Questions",
   string[]
 > & {
+  institution: string[];
   category: string[];
+  year: string[];
 };
 
 type InvestorProfilePayload = BasePayload<"Investor Profile", string[]> & {
@@ -72,3 +74,7 @@ export type PayloadModule =
   | ShareholderProposalPayload
   | CaseStudiesPayload
   | PeerAnalysisPayload;
+
+export interface FilterObject {
+  [key: string]: string | string[] | undefined;
+}

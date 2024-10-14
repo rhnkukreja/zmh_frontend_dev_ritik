@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { ShareHolderData } from "@/types/shareHolder";
+import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 
 const name = "shareholder_proposal";
 
@@ -13,6 +14,8 @@ export interface SharedHolderPrposal {
   error: string | null;
   totalPages: number;
   page: number;
+  tab: "proposal" | "no-action" | "withdrawn" | "";
+  applyFilters: ShareHolderFilter | undefined;
   filters: {
     proponent_name: string;
     year: number[];
@@ -34,6 +37,8 @@ const initialState: SharedHolderPrposal = {
   error: null,
   totalPages: 1,
   page: 1,
+  applyFilters: undefined,
+  tab: "proposal",
   filters: {
     proponent_name: "",
     year: [],
@@ -75,6 +80,14 @@ const shareHolderProposal = createSlice({
     },
     resetPage(state) {
       state.page = 1;
+    },
+    setTabs(state, action: PayloadAction<"proposal" | "no-action" | "withdrawn" | "">) {
+      state.tab = action.payload;
+    },
+    setApplyFilters(state, action: PayloadAction<ShareHolderFilter | undefined>) {
+      if (action.payload) {
+        state.applyFilters = {...state.applyFilters, ...action.payload };
+      }
     },
     //
 
@@ -148,4 +161,6 @@ export default shareHolderProposal;
 export const {
   setPage,
   resetPage, //resetFilter
+  setTabs,
+  setApplyFilters,
 } = shareHolderProposal.actions;

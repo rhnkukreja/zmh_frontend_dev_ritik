@@ -599,7 +599,7 @@ function Main() {
                               >
                                 <div className="flex-none w-10 h-10 overflow-hidden rounded-full image-fit">
                                   <img
-                                    alt="Tailwise - Admin Dashboard Template"
+                                    alt="ZMH Analytics"
                                     src={users.fakeUsers()[0].photo}
                                   />
                                 </div>
@@ -646,7 +646,7 @@ function Main() {
                 >
                   <div className="flex-none w-10 h-10 overflow-hidden rounded-full image-fit">
                     <img
-                      alt="Tailwise - Admin Dashboard Template"
+                      alt="ZMH Analytics"
                       src={users.fakeUsers()[0].photo}
                     />
                   </div>

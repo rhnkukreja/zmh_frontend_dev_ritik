@@ -21,7 +21,7 @@ import { CompanyData } from "@/types/company";
 import { useNavigate } from "react-router-dom";
 
 import Tippy from "@/components/Base/Tippy";
-import {  SaveAll } from "lucide-react";
+import { SaveAll } from "lucide-react";
 
 import _ from "lodash";
 import { commonService } from "@/services/common";
@@ -35,7 +35,6 @@ function CompanyList() {
   const { loading, companies, page, totalPages, filters } = useAppSelector(
     (state) => state.company
   );
-
 
   const [addNewCompanyVisible, setAddNewCompanyVisible] =
     useState<boolean>(false);
@@ -55,11 +54,13 @@ function CompanyList() {
   }, [companyGlobalSearchName]);
 
   useEffect(() => {
-    if(!filters.global_search) return
+    if (!filters.global_search) return;
     dispatch(
-      fetchCompanies(createDynamicURL(`${baseURL}/company/`, filters, undefined , page))
+      fetchCompanies(
+        createDynamicURL(`${baseURL}/company/`, filters, undefined, page)
+      )
     );
-  }, [page, filters.global_search , filters]);
+  }, [page, filters.global_search, filters]);
 
   useEffect(() => {
     return () => {
@@ -93,7 +94,9 @@ function CompanyList() {
   const onFilterClear = () => {
     dispatch(resetFilter());
     dispatch(
-      fetchCompanies(createDynamicURL(`${baseURL}/company/`, undefined, undefined , page))
+      fetchCompanies(
+        createDynamicURL(`${baseURL}/company/`, undefined, undefined, page)
+      )
     );
   };
 
@@ -112,7 +115,7 @@ function CompanyList() {
       module: "Company",
       global_search: filters["global_search"],
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Company",
@@ -121,7 +124,7 @@ function CompanyList() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success("Searched saved successfully");
     }
   };
 
@@ -129,9 +132,7 @@ function CompanyList() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="font-semibold text-xl ">
-            Company
-          </div>
+          <div className="font-semibold text-xl ">Company</div>
           {user?.user_type === "Admin" && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
@@ -233,9 +234,7 @@ function CompanyList() {
                                 >
                                   <Lucide
                                     onClick={() => {
-                                      navigate(
-                                        `/company-detail/${company?.id}`
-                                      );
+                                      navigate(`/company/${company?.id}`);
                                     }}
                                     icon="Eye"
                                     className="w-4 h-4 mr-1.5 stroke-[1.3]"

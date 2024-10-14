@@ -33,23 +33,26 @@ const index = () => {
 
   const [searchParams] = useSearchParams();
   const { dashboardDataList, investorCardLoading, page, totalPages } =
-  useAppSelector((state) => state.dashboard);
-  
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
-      (state: RootState) => state.authentiction
-    );
-    
-//  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+    useAppSelector((state) => state.dashboard);
 
+  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
 
   const navigate = useNavigate();
 
+  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
 
   useEffect(() => {
+    if (ticker !== companyGlobalSearchTicker) {
+      return;
+    }
     if (companyGlobalSearchTicker) {
       dispatch(
         fetchCompanyDashboard(
-          createDynamicURL(`${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`)
+          createDynamicURL(
+            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+          )
         )
       );
     }
@@ -96,14 +99,25 @@ const index = () => {
 
       // Iterate over each cell and get the text content
       cells.forEach((cell) => {
-        rowData.push(cell.textContent);
+        let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+        console.log(cellText);
+        // Check if the cell contains a comma, wrap it in double quotes
+        if (cellText?.includes(",")) {
+          cellText = `"${cellText}"`;
+        }
+
+        if (cellText?.includes("✔")) {
+          cellText = `"Yes"`;
+        }
+
+        rowData.push(cellText);
       });
 
       // Join cells with commas to form a CSV row
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, "Investor");
+    downloadCSV(csvContent, `Investor-${companyGlobalSearchName}`);
   };
 
   return (
@@ -211,7 +225,7 @@ const index = () => {
                                       <Table.Td className="flex items-center">
                                         <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                           <img
-                                            alt="Tailwise - Admin Dashboard Template"
+                                            alt="ZMH Analytics"
                                             src={
                                               validImages[
                                                 dashboard.institution_name
@@ -238,11 +252,7 @@ const index = () => {
                                                   "cursor-pointer underline",
                                               ])}
                                             >
-                                              {dashboard?.institution_name
-                                                ?.toLowerCase()
-                                                .replace(/\b\w/g, (s) =>
-                                                  s.toUpperCase()
-                                                )}
+                                              {dashboard?.institution_name}
                                             </h1>
                                             {dashboard?.flag_13d === true && (
                                               <img
@@ -285,7 +295,7 @@ const index = () => {
                                             true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                ✔
+                                                &#10004;
                                               </div>
                                             </div>
                                           )}
@@ -297,7 +307,7 @@ const index = () => {
                                           true && (
                                           <div className="whitespace-nowrap flex items-center justify-center">
                                             <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              ✔
+                                              &#10004;
                                             </div>
                                           </div>
                                         )}
@@ -331,7 +341,7 @@ const index = () => {
                                           true && (
                                           <div className="whitespace-nowrap flex items-center justify-center">
                                             <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              ✔
+                                              &#10004;
                                             </div>
                                           </div>
                                         )}

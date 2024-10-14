@@ -48,7 +48,7 @@ const withAuth = (WrappedComponent:ComponentType) => {
         localStorage.removeItem('token');
         localStorage.clear();
         navigate('/login');
-        toast.warning("Your session has been expired.");
+        // toast.warning("Your session has been expired.");
       };
 
       resetTimeout();

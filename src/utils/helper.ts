@@ -1,6 +1,7 @@
 import { characterColors, PAGE_SIZE } from "@/constant";
 import { Menu } from "@/stores/sideMenuSlice";
 import { FormattedMenu } from "@/themes/Echo/side-menu";
+import { FilterObject } from "@/types/common";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { parseColor } from "tailwindcss/lib/util/color";
@@ -319,6 +320,15 @@ const downloadCSV = (csvContent: any, name: string) => {
   document.body.removeChild(a);
 };
 
+function countValidFilters(filters: FilterObject): number {
+  return Object.keys(filters).filter((key) => {
+    const value = filters[key];
+    return Array.isArray(value)
+      ? value.length !== 0
+      : value !== undefined && value !== "";
+  }).length;
+}
+
 export {
   cutText,
   formatDate,
@@ -342,4 +352,5 @@ export {
   formatedDate,
   filterMenu,
   downloadCSV,
+  countValidFilters,
 };
