@@ -1,8 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
-import { ShareHolderData } from "@/types/shareHolder";
+import { AddShareholderType, ShareHolderData } from "@/types/shareHolder";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
+import { InvestersProfile } from "@/types/investerProfiles";
 
 const name = "shareholder_proposal";
 
@@ -16,6 +17,9 @@ export interface SharedHolderPrposal {
   page: number;
   tab: "proposal" | "no-action" | "withdrawn" | "";
   applyFilters: ShareHolderFilter | undefined;
+  proposalCount: number;
+  withdrawnCount: number;
+  noActionCount: number;
   filters: {
     proponent_name: string;
     year: number[];
@@ -47,6 +51,9 @@ const initialState: SharedHolderPrposal = {
     keyword: "",
     active: "",
   },
+  proposalCount: 0,
+  withdrawnCount: 0,
+  noActionCount: 0,
   shareHolderFilterOption: {
     category: [
       "Corporate Governance",
@@ -58,7 +65,7 @@ const initialState: SharedHolderPrposal = {
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<
-  { count: number; results: any[] },
+  { count: number; results: any[], proposalCount: number,withdrawnCount: number, noActionCount: number},
   string
 >(`${name}`, async (url: string) => {
   return await shareHolderProposalService.getShareHolderProposal(url);
@@ -69,6 +76,13 @@ export const getSingleShareHolderData = createAsyncThunk<
   { url: string; id: number }
 >(`${name}/getSingleShareHolder`, async ({ url, id }) => {
   return await shareHolderProposalService.getSingleShareHolder(url, id);
+});
+
+export const addNewShareHolder = createAsyncThunk<
+  { results: AddShareholderType }, AddShareholderType
+>(`${name}/addNewShareHolder`, async (data: AddShareholderType) => {
+  const response = await shareHolderProposalService.AddNewShareHolder(data);
+  return response;
 });
 
 const shareHolderProposal = createSlice({
@@ -112,6 +126,7 @@ const shareHolderProposal = createSlice({
       .addCase(fetchShareHolderProposal.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.totalShareHolderNoAction = 0;
       })
       .addCase(
         fetchShareHolderProposal.fulfilled,
@@ -120,18 +135,25 @@ const shareHolderProposal = createSlice({
           action: PayloadAction<{
             count: number;
             results: any[];
+            proposalCount: number;
+            withdrawnCount: number;
+            noActionCount: number;
           }>
         ) => {
           state.loading = false;
           state.shareHolderProposal = action.payload.results;
           state.totalShareHolderNoAction = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
+          state.proposalCount = action?.payload?.proposalCount  ?? 0;
+          state.withdrawnCount = action?.payload?.withdrawnCount ?? 0;
+          state.noActionCount = action?.payload?.noActionCount ?? 0;
         }
       )
       .addCase(fetchShareHolderProposal.rejected, (state, action) => {
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch voting guidelines";
+        state.totalShareHolderNoAction = 0;
       })
       .addCase(getSingleShareHolderData.pending, (state) => {
         state.loading = true;
@@ -153,6 +175,18 @@ const shareHolderProposal = createSlice({
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch engagement questions";
+      })
+      .addCase(addNewShareHolder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addNewShareHolder.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(addNewShareHolder.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch investers profile";
       });
   },
 });

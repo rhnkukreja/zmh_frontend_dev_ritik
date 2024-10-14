@@ -27,3 +27,17 @@ export type ShareHolderData = {
   outcome_percentage?: string;
   no_action_link?: string;
 };
+
+
+export type AddShareholderType = {
+  id: number;
+  engagement_priorities: string;
+  voting_guidelines_summary: string;
+  voting_guidelines_link: string;
+  reporting_expectations: string;
+  esg_integration_process: string;
+  references: string;
+  active: string;
+  key_contacts?: any;
+  institution?: string;
+};

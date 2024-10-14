@@ -33,6 +33,7 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
+import AddNewShareholder from "./components/AddNewShareholder";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -60,6 +61,9 @@ function ShareHolderProposal() {
       year: [],
     });
 
+  const [addNewShareholderModalVisible, setAddNewShareholderModalVisible] =
+    useState<boolean>(false);
+
   const {
     handleSubmit,
     control,
@@ -70,7 +74,7 @@ function ShareHolderProposal() {
   } = useForm<ShareHolderFilter>();
   const navigate = useNavigate();
 
-  const { loading, shareHolderProposal, page, totalPages, tab } =
+  const { loading, shareHolderProposal, page, totalPages, tab, totalShareHolderNoAction, proposalCount, withdrawnCount, noActionCount } =
     useAppSelector((state) => state.sharedHolderNoAction);
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -210,10 +214,10 @@ function ShareHolderProposal() {
       tab === "proposal"
         ? 0
         : tab === "no-action"
-        ? 1
-        : tab === "withdrawn"
-        ? 2
-        : -1;
+          ? 1
+          : tab === "withdrawn"
+            ? 2
+            : -1;
     return tabIndex;
   };
 
@@ -286,9 +290,30 @@ function ShareHolderProposal() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
+          {/* <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
+            <div className="font-semibold text-xl ">Shareholder Proposals</div>
+          </div> */}
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="font-semibold text-xl ">Shareholder Proposals</div>
+            {user?.user_type === "Admin" && (
+              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
+                <Button
+                  onClick={() => {
+                    setAddNewShareholderModalVisible(true);
+                  }}
+                  variant="primary"
+                  className="bg-theme-2 border-bg-theme-2 "
+                >
+                  <Lucide
+                    icon="PenLine"
+                    className="stroke-[1.3] w-4 h-4 mr-2"
+                  />
+                  Add New Shareholder
+                </Button>
+              </div>
+            )}
           </div>
+
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
@@ -339,12 +364,12 @@ function ShareHolderProposal() {
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
-                  )}
+                      <div className="hover:bg-slate-50 ml-2">
+                        <Button onClick={getSavedSearches}>
+                          Previous Search
+                        </Button>
+                      </div>
+                    )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -768,7 +793,12 @@ function ShareHolderProposal() {
                           dispatch(resetPage());
                         }}
                       >
-                        Shareholder Proposals
+                        <div className="flex items-center justify-center ">
+                          Shareholder Proposals
+                          <span className="bg-[#ab123d] h-5 w-5 p-3 
+                          rounded-full font-semibold text-white text-xs ml-2
+                           flex items-center justify-center ">{proposalCount}</span>
+                        </div>
                       </Tab.Button>
                     </Tab>
 
@@ -781,7 +811,12 @@ function ShareHolderProposal() {
                           dispatch(resetPage());
                         }}
                       >
-                        No Action Letter
+                        <div className="flex items-center justify-center ">
+                          No Action Letter
+                          <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full 
+                          font-semibold text-white text-xs ml-2 
+                          flex items-center justify-center ">{noActionCount}</span>
+                        </div>
                       </Tab.Button>
                     </Tab>
 
@@ -794,7 +829,12 @@ function ShareHolderProposal() {
                           dispatch(resetPage());
                         }}
                       >
-                        Withdrawn
+                        <div className="flex items-center justify-center ">
+                          Withdrawn
+                          <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full
+                           font-semibold text-white text-xs ml-2
+                           flex items-center justify-center ">{withdrawnCount}</span>
+                        </div>
                       </Tab.Button>
                     </Tab>
                   </Tab.List>
@@ -876,15 +916,15 @@ function ShareHolderProposal() {
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                         noAction?.nl_exist &&
-                                          "text-blue-600 underline cursor-pointer",
+                                        "text-blue-600 underline cursor-pointer",
                                       ])}
                                       onClick={() => {
                                         const id =
                                           noAction?.nl_exist === true
                                             ? noAction?.no_action_link
-                                                ?.split("/")
-                                                .filter(Boolean)
-                                                .pop()
+                                              ?.split("/")
+                                              .filter(Boolean)
+                                              .pop()
                                             : 0;
                                         noAction?.nl_exist === true &&
                                           navigate(
@@ -1103,6 +1143,12 @@ function ShareHolderProposal() {
               </div>
             </div>
           </div>
+          {addNewShareholderModalVisible && (
+            <AddNewShareholder
+              addNewShareholderModalVisible={addNewShareholderModalVisible}
+              setAddNewShareholderModalVisible={setAddNewShareholderModalVisible}
+            />
+          )}
         </div>
       </div>
     </>

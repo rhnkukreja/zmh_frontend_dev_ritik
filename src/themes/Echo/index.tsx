@@ -639,7 +639,9 @@ function Main() {
           
 
           <div className="container">
-          {!shouldHideHeader && <CountryInfoHeader />}
+            <div className="sticky top-20 z-10 ">
+              {!shouldHideHeader && <CountryInfoHeader />}
+            </div>
             <Outlet />
           </div>
         </div>
