@@ -235,7 +235,7 @@ function CaseStudies() {
       keyword: watch("keyword") || "",
       global_search: [companyGlobalSearchName],
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Case Studies",
@@ -252,7 +252,7 @@ function CaseStudies() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success("Searched saved successfully");
     }
   };
 

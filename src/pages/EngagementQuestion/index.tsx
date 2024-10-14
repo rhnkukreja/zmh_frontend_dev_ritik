@@ -296,7 +296,7 @@ function Main() {
       ...(filtersToSave as any),
     });
 
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Engagement Questions",
@@ -306,7 +306,7 @@ function Main() {
           },
         })
       );
-      toast.success(res?.Success || "Search saved successfully");
+      toast.success(res?.user_id || "Search saved successfully");
     }
   };
 

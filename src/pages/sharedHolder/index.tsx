@@ -17,11 +17,7 @@ import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
-import {
-  Controller,
-
-  useForm,
-} from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
   fetchShareHolderProposal,
   setApplyFilters,
@@ -38,10 +34,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 
-
 function ShareHolderProposal() {
-
-
   const dispatch: AppDispatch = useAppDispatch();
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -77,9 +70,8 @@ function ShareHolderProposal() {
   } = useForm<ShareHolderFilter>();
   const navigate = useNavigate();
 
-  const { loading, shareHolderProposal, page, totalPages, tab } = useAppSelector(
-    (state) => state.sharedHolderNoAction
-  );
+  const { loading, shareHolderProposal, page, totalPages, tab } =
+    useAppSelector((state) => state.sharedHolderNoAction);
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -194,7 +186,7 @@ function ShareHolderProposal() {
         ...prev,
         proponent_name: searchTerms.length > 0 ? searchTerms : undefined,
       } as ShareHolderFilter;
-    })
+    });
   };
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
@@ -213,11 +205,17 @@ function ShareHolderProposal() {
     setFiltersLength(validKeysCount);
   };
 
-
   const getSelectedTabIndex = () => {
-    const tabIndex = tab === 'proposal' ? 0 : tab === 'no-action' ? 1 : tab === 'withdrawn' ? 2 : -1;
+    const tabIndex =
+      tab === "proposal"
+        ? 0
+        : tab === "no-action"
+        ? 1
+        : tab === "withdrawn"
+        ? 2
+        : -1;
     return tabIndex;
-  }
+  };
 
   useEffect(() => {
     setApplyFilters((prev) => ({
@@ -265,7 +263,7 @@ function ShareHolderProposal() {
       keyword: applyFilters?.keyword || "",
       global_search: [companyGlobalSearchName],
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Shareholder Proposal",
@@ -280,7 +278,7 @@ function ShareHolderProposal() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success("Searched saved successfully");
     }
   };
 
@@ -341,12 +339,12 @@ function ShareHolderProposal() {
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                      <div className="hover:bg-slate-50 ml-2">
-                        <Button onClick={getSavedSearches}>
-                          Previous Search
-                        </Button>
-                      </div>
-                    )}
+                    <div className="hover:bg-slate-50 ml-2">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -760,7 +758,7 @@ function ShareHolderProposal() {
 
               <div className="overflow-auto xl:overflow-visible px-5">
                 <Tab.Group selectedIndex={getSelectedTabIndex()}>
-                  <Tab.List variant="link-tabs" >
+                  <Tab.List variant="link-tabs">
                     <Tab>
                       <Tab.Button
                         className="w-full py-2"
@@ -851,7 +849,6 @@ function ShareHolderProposal() {
                                       </Tippy>
                                     </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-
                                       {noAction?.proponent_name}
                                     </Table.Td>
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
@@ -879,15 +876,15 @@ function ShareHolderProposal() {
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                         noAction?.nl_exist &&
-                                        "text-blue-600 underline cursor-pointer",
+                                          "text-blue-600 underline cursor-pointer",
                                       ])}
                                       onClick={() => {
                                         const id =
                                           noAction?.nl_exist === true
                                             ? noAction?.no_action_link
-                                              ?.split("/")
-                                              .filter(Boolean)
-                                              .pop()
+                                                ?.split("/")
+                                                .filter(Boolean)
+                                                .pop()
                                             : 0;
                                         noAction?.nl_exist === true &&
                                           navigate(
@@ -982,11 +979,9 @@ function ShareHolderProposal() {
                                       {noAction?.sub_category}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-
                                       {noAction?.proponent_name}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-
                                       {noAction?.staff_response}
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
@@ -1062,11 +1057,9 @@ function ShareHolderProposal() {
                                       </Tippy>
                                     </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
-
                                       {noAction?.proponent_name}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-
                                       {noAction?.status}
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">

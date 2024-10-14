@@ -183,34 +183,6 @@ function ProxyGuideline() {
     setAddNewProxyVotingGuidelineVisible(true);
   };
 
-  // const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
-
-  // const checkImageUrl = async (url: string): Promise<boolean> => {
-  //   return new Promise((resolve) => {
-  //     const img = new Image();
-  //     img.src = url;
-
-  //     img.onload = () => resolve(true);
-  //     img.onerror = () => resolve(false);
-  //   });
-  // };
-
-  // useEffect(() => {
-  //   const validateImages = async () => {
-  //     const tempValidImages: { [key: string]: string } = {};
-  //     for (const votingGuidline of proxyVotingGuidelines || []) {
-  //       const isValid = await checkImageUrl(votingGuidline?.image);
-  //       tempValidImages[votingGuidline?.name] = isValid
-  //         ? votingGuidline?.image
-  //         : userLinkedinImage;
-  //     }
-
-  //     setValidImages(tempValidImages);
-  //   };
-
-  //   validateImages();
-  // }, [proxyVotingGuidelines]);
-
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
     dispatch(
@@ -227,7 +199,7 @@ function ProxyGuideline() {
       institution: searchTerms,
       year: filters["year"],
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Voting Guidelines",
@@ -237,7 +209,7 @@ function ProxyGuideline() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success("Searched saved successfully");
     }
   };
 

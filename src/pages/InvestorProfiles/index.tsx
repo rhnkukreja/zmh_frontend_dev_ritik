@@ -1,6 +1,6 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover, Tab } from "@/components/Base/Headless";
-import { FormSelect } from "@/components/Base/Form";
+import { FormCheck, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
 import { useEffect, useMemo, useState } from "react";
@@ -20,7 +20,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
 import { useNavigate } from "react-router-dom";
 import { setFilter } from "@/stores/investersProfileSlice";
-import { createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
@@ -30,7 +30,12 @@ import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
+import { Controller, useForm } from "react-hook-form";
+import TomSelect from "@/components/Base/TomSelect";
 
+interface InvestorProfileFilter {
+  region: string[];
+}
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -38,6 +43,7 @@ function Main() {
     useState<boolean>(false);
   const [tab, setTab] = useState<"investor" | "equity">("investor");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [filtersLength, setFiltersLength] = useState<number>(0);
 
   const {
     loading,
@@ -48,6 +54,13 @@ function Main() {
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
   const { user } = useAppSelector((state) => state.authentiction);
+
+  const { handleSubmit, control, reset, setValue, watch } =
+    useForm<InvestorProfileFilter>({
+      defaultValues: {
+        region: [...filters.region],
+      },
+    });
 
   useEffect(() => {
     if (filters.institution_name.length > 0) {
@@ -129,15 +142,20 @@ function Main() {
     );
   };
 
-  const handleClearAllFilter = () => {
-    dispatch(resetFilter());
-    setSearchTerms([]);
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: [],
-      })
-    );
+  const handleClearAllFilter = (type: "all" | "filter") => {
+    if (type === "all") {
+      reset();
+      dispatch(resetFilter());
+      setSearchTerms([]);
+    } else {
+      reset();
+      dispatch(
+        setFilter({
+          key: "region",
+          value: [],
+        })
+      );
+    }
 
     dispatch(
       fetchInvestersProfiles(
@@ -158,39 +176,6 @@ function Main() {
 
     dispatch(resetPage());
   };
-
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
-
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  };
-
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
-
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const profile of investersProfile || []) {
-        const isValid = await checkImageUrl(profile?.image);
-        tempValidImages[profile?.name] = isValid
-          ? profile?.image
-          : userLinkedinImage;
-      }
-
-      setValidImages(tempValidImages);
-    };
-
-    validateImages();
-  }, [investersProfile]);
-
-  const getFilterCount = useMemo(() => {
-    const { institution_name, ...allFilters } = filters;
-    return Object.values(allFilters).filter((value) => value !== "").length;
-  }, [filters]);
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(
@@ -231,7 +216,7 @@ function Main() {
       institution: searchTerms,
       region: filters["region"],
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Investor Profile",
@@ -241,10 +226,20 @@ function Main() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success("Searched saved successfully");
     }
   };
 
+  const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
+    Object.entries(investorProfileFilter).forEach(([key, value]) => {
+      dispatch(setFilter({ key: key as any, value }));
+    });
+  };
+
+  useEffect(() => {
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters({ ...restFilters }));
+  }, [filters]);
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -283,7 +278,11 @@ function Main() {
                   />
 
                   <div className="hover:bg-slate-50">
-                    <Button onClick={handleClearAllFilter}>
+                    <Button
+                      onClick={() => {
+                        handleClearAllFilter("all");
+                      }}
+                    >
                       <Tippy
                         content="Clear Filters"
                         options={{ theme: "light" }}
@@ -336,67 +335,102 @@ function Main() {
                           />
                           Filter
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {getFilterCount}
+                            {filtersLength}
                           </div>
                         </Popover.Button>
                         <Popover.Panel placement="bottom-end">
-                          <div className="p-2">
-                            <div className="mt-3">
-                              <div className="text-left text-slate-500">
-                                Region
+                          <form onSubmit={handleSubmit(onSubmit)}>
+                            <div className="p-2">
+                              <div className="mt-3">
+                                <div className="w-full  my-2">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    region
+                                    {investerProfileFilterOption?.region
+                                      ?.length > 0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`region`}
+                                            checked={
+                                              investerProfileFilterOption.region
+                                                .length ===
+                                              watch("region")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "region",
+                                                  investerProfileFilterOption.region
+                                                );
+                                              } else {
+                                                setValue("region", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="region"
+                                    control={control}
+                                    defaultValue={[]}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select region",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        <>
+                                          {investerProfileFilterOption?.region
+                                            .length > 0 &&
+                                            investerProfileFilterOption?.region?.map(
+                                              (region: string) => {
+                                                return (
+                                                  <option value={region}>
+                                                    {region}
+                                                  </option>
+                                                );
+                                              }
+                                            )}
+                                        </>
+                                      </TomSelect>
+                                    )}
+                                  />
+                                </div>
                               </div>
-                              <FormSelect
-                                defaultValue={
-                                  filters.region.length > 0
-                                    ? filters.region
-                                    : "Select Region"
-                                }
-                                className="flex-1 mt-2"
-                                onChange={(
-                                  e: React.ChangeEvent<HTMLSelectElement>
-                                ) => {
-                                  dispatch(
-                                    setFilter({
-                                      key: "region",
-                                      value: e.target.value,
-                                    })
-                                  );
-                                }}
-                              >
-                                <option disabled selected>
-                                  Select Region
-                                </option>
-                                {investerProfileFilterOption.region.map(
-                                  (region: string, index: number) => {
-                                    return (
-                                      <option key={index} value={region}>
-                                        {region}
-                                      </option>
-                                    );
-                                  }
-                                )}
-                              </FormSelect>
+                              <div className="flex items-center mt-4">
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    handleClearAllFilter("filter");
+                                    close();
+                                  }}
+                                  className="w-32 ml-auto"
+                                >
+                                  Clear
+                                </Button>
+                                <Button
+                                  onClick={handleApplyFilter}
+                                  variant="primary"
+                                  className="w-32 ml-2"
+                                >
+                                  Apply
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center mt-4">
-                              <Button
-                                variant="secondary"
-                                onClick={() => {
-                                  close();
-                                  onFilterClear();
-                                }}
-                                className="w-32 ml-auto"
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                onClick={handleApplyFilter}
-                                variant="primary"
-                                className="w-32 ml-2"
-                              >
-                                Apply
-                              </Button>
-                            </div>
-                          </div>
+                          </form>
                         </Popover.Panel>
                       </>
                     )}

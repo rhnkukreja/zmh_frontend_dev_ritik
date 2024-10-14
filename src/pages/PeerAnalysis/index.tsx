@@ -181,7 +181,7 @@ function PeerAnalysis() {
       global_search: filters["global_search"],
     });
 
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Peer Analysis",
@@ -191,7 +191,7 @@ function PeerAnalysis() {
           },
         })
       );
-      toast.success(res?.Success || "Search saved successfully");
+      toast.success(res?.user_id || "Search saved successfully");
     }
   };
 

@@ -176,7 +176,7 @@ function Main() {
       institution: searchTerms,
       region: filters["region"],
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Institution",
@@ -186,7 +186,7 @@ function Main() {
           },
         })
       );
-      toast.success(res?.Success || "Searched saved successfully");
+      toast.success("Searched saved successfully");
     }
   };
 

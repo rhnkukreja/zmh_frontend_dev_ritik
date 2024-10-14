@@ -55,7 +55,7 @@ function Main(props: MainProps) {
       id: id,
       company: company,
     });
-    if (res?.Success) {
+    if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Global Search",

@@ -23,7 +23,7 @@ interface nvestersProfileSlice {
     region: string[];
   };
   filters: {
-    region: string;
+    region: string[];
     institution_name: string[];
   };
 }
@@ -40,7 +40,7 @@ const initialState: nvestersProfileSlice = {
     region: ["NAM", "EMEA", "APAC"],
   },
   filters: {
-    region: "",
+    region: [],
     institution_name: [],
   },
 };
@@ -104,7 +104,7 @@ const investersProfileSlice = createSlice({
 
     resetFilter(state) {
       state.filters = {
-        region: "",
+        region: [],
         institution_name: state.filters.institution_name
           ? state.filters.institution_name
           : [],
