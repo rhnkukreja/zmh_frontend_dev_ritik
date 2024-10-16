@@ -726,9 +726,9 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           Shareholder Proposals
-                          <span className="bg-[#ab123d] h-5 w-5 p-3 
+                          {/* <span className="bg-[#ab123d] h-5 w-5 p-3 
                           rounded-full font-semibold text-white text-xs ml-2
-                           flex items-center justify-center ">{proposalCount}</span>
+                           flex items-center justify-center ">{proposalCount}</span> */}
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -744,9 +744,9 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           No Action Letter
-                          <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full 
+                          {/* <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full 
                           font-semibold text-white text-xs ml-2 
-                          flex items-center justify-center ">{noActionCount}</span>
+                          flex items-center justify-center ">{noActionCount}</span> */}
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -762,9 +762,9 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           Withdrawn
-                          <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full
+                          {/* <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full
                            font-semibold text-white text-xs ml-2
-                           flex items-center justify-center ">{withdrawnCount}</span>
+                           flex items-center justify-center ">{withdrawnCount}</span> */}
                         </div>
                       </Tab.Button>
                     </Tab>
