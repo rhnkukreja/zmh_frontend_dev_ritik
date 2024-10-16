@@ -408,7 +408,7 @@ TitleManager();
         {
           path: "peer-analysis",
           element: <PeerAnalysis />,
-          data: {titleName: 'Peer Analysis - ZMH Analytics'}
+          data: {titleName: 'Engagement Details - ZMH Analytics'}
 
         },
         {

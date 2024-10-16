@@ -189,6 +189,9 @@ const index = () => {
                       <Table className="table">
                         <Table.Thead>
                           <Table.Tr className="row">
+                          <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              No.
+                            </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Shareholder
                             </Table.Td>
@@ -215,13 +218,18 @@ const index = () => {
                         <Table.Tbody>
                           {dashboardDataList?.length > 0 &&
                             dashboardDataList.map(
-                              (dashboard: CompanyDashboard) => (
+                              (dashboard: CompanyDashboard, index: number) => (
                                 <Table.Tr
                                   key={dashboard.filer_id}
                                   className="row [&_td]:last:border-b-0"
                                 >
                                   {dashboard?.institution_name && (
                                     <>
+                                     <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div className="whitespace-nowrap ">
+                                          {index + 1}
+                                        </div>
+                                      </Table.Td>
                                       <Table.Td className="flex items-center">
                                         <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                           <img
