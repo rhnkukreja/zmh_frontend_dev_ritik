@@ -85,7 +85,7 @@ const initialState: any = {
     {
       icon: "Network",
       pathname: "/peer-analysis",
-      title: "Peer Analysis",
+      title: "Engagement Details",
     },
     {
       icon: "FileText",
