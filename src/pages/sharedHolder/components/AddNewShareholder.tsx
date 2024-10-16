@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 
 import { AppDispatch } from "@/stores/store";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
-
+import TomSelect from "@/components/Base/TomSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Controller,
@@ -18,13 +18,14 @@ import {
   useForm,
 } from "react-hook-form";
 import { toast } from "react-toastify";
-import TomSelect from "@/components/Base/TomSelect/ServerComponent";
+// import TomSelect from "@/components/Base/TomSelect/ServerComponent";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
 import { AddNewInvesterType } from "@/types/investerProfiles";
-import { addNewShareHolder } from "@/stores/shareholderProposalSlice";
-import { AddShareholderType } from "@/types/shareHolder";
+import { addNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
 
 interface AddNewShareholderProps {
   addNewShareholderModalVisible: boolean;
@@ -36,7 +37,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   setAddNewShareholderModalVisible,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
-  const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
   const {
     handleSubmit,
@@ -44,64 +44,52 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     formState: { errors },
   } = useForm<AddShareholderType>();
 
-  const [keyContactsFile, setKeyContactsFile] = useState<any>(null);
+  const [apiDropdownOptions, setApiDropdownOptions] =
+    useState<ShareHolderDropdown>({
+      company: [],
+      status: [],
+      proponent: [],
+      category: [],
+      sub_category: [],
+      year: [],
+    });
   const [showRequiredStateErrors, setShowRequiredStateErrors] =
     useState<boolean>(false);
 
-  useEffect(() => {
-    const elDropzoneSingleRef = dropzoneSingleRef.current;
-
-    if (elDropzoneSingleRef) {
-      const dropzoneInstance = elDropzoneSingleRef.dropzone;
-
-      const handleComplete = (file: any) => {
-        if (file?.status === "added") {
-          const fileType = file?.name?.split(".")?.pop();
-
-          console.log("file: ", file);
-          if (fileType && !["xlsx"].includes(fileType)) {
-            toast.error("Only excel file are allowed!");
-          } else {
-            setKeyContactsFile(file);
-          }
-          dropzoneInstance.removeFile(file);
-        }
-        if (file?.status === "error") {
-          const fileType = file?.name?.split(".")?.pop();
-
-          if (fileType && !["xlsx"].includes(fileType)) {
-            toast.error("Only excel file are allowed!");
-          } else {
-            toast.error("Something went wrong!");
-          }
-        }
-      };
-
-      dropzoneInstance.on("addedfile", handleComplete);
-      return () => {
-        dropzoneInstance.off("addedfile", handleComplete);
-      };
+  const getAllCaseStudyDropdowns = async () => {
+    try {
+      const res =
+        await shareHolderProposalService.getShareHolderDropdownValues();
+      if (res.result) {
+        setApiDropdownOptions({ ...res.result });
+      }
+    } catch (error) {
+      return error;
     }
-  }, [dropzoneSingleRef.current, keyContactsFile, addNewShareholderModalVisible]);
+  };
+  useEffect(() => {
+    getAllCaseStudyDropdowns();
+  }, []);
 
   const onSubmit = async (data: AddShareholderType) => {
     const transformedData = {
       ...data,
-      institution: data.institution ? Number(data.institution) : null,
+      // institution: data.institution ? Number(data.institution) : null,
     };
-    if (!keyContactsFile) {
-      return;
-    } else {
+    // if (!keyContactsFile) {
+    //   return;
+    // } 
+    // else {
       setShowRequiredStateErrors(false);
-    }
+    // }
     const formData = new FormData();
 
     for (const [key, value] of Object.entries(transformedData)) {
-      formData.append(key, value ?? "");
+      formData.append(key, value);
     }
-    if (keyContactsFile) {
-      formData.append("file", keyContactsFile);
-    }
+    // if (keyContactsFile) {
+    //   formData.append("file", keyContactsFile);
+    // }
 
     try {
       const response = await dispatch(addNewShareHolder(formData as unknown as any)).unwrap();
@@ -111,8 +99,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         setAddNewShareholderModalVisible(false);
 
         dispatch(
-          fetchInvestersProfiles(
-            createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
+          fetchShareHolderProposal(
+            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`, undefined, page)
           )
         );
       }
@@ -122,9 +110,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   };
 
   const onError: SubmitErrorHandler<any> = () => {
-    if (!keyContactsFile) {
+    // if (!keyContactsFile) {
       setShowRequiredStateErrors(true);
-    }
+    // }
   };
   return (
     <Dialog
@@ -160,75 +148,300 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="institution"
                       control={control}
-                      defaultValue=""
-                      rules={{ required: "Institution Name is required" }}
-                      render={({ field }) => (
-                        <TomSelect
-                          url="/institute/"
-                          valueKey="id"
-                          labelKey="institution"
-                          value={field.value?.toString() || ""}
-                          onChange={(value) => field.onChange(value)}
-                          options={{ placeholder: "Select Institute" }}
-                          className="w-full"
-                        />
+                      rules={{ required: "institution is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Institution",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.proponent?.map(
+                              (proponent: string) => {
+                                return (
+                                  <option value={proponent}>{proponent}</option>
+                                );
+                              }
+                            )}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
                       )}
                     />
                   </div>
 
-                  {errors.institution && (
+                  {errors.proponent && (
                     <Error className="max-w-[100%] ">
-                      {errors?.institution.message}
+                      {errors?.proponent.message}
                     </Error>
                   )}
                 </div>
 
-                <div className="flex-1 w-full">
+                {/* <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Company Name
                   </FormCheck.Label>
 
                   <div className="mt-2">
                     <Controller
-                      name="institution"
+                      name="company"
                       control={control}
-                      defaultValue=""
-                      rules={{ required: "Institution Name is required" }}
-                      render={({ field }) => (
-                        <TomSelect
-                          url="/institute/"
-                          valueKey="id"
-                          labelKey="institution"
-                          value={field.value?.toString() || ""}
-                          onChange={(value) => field.onChange(value)}
-                          options={{ placeholder: "Select Institute" }}
-                          className="w-full"
-                        />
+                      rules={{ required: "Company is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Company",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.company?.map(
+                              (company: string) => {
+                                return (
+                                  <option value={company}>{company}</option>
+                                );
+                              }
+                            )}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
                       )}
                     />
                   </div>
 
-                  {errors.institution && (
+                  {errors.company && (
                     <Error className="max-w-[100%] ">
-                      {errors?.institution.message}
+                      {errors?.company.message}
+                    </Error>
+                  )}
+                </div> */}
+                
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                    Category Name
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="category"
+                      control={control}
+                      rules={{ required: "Category is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Category",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.category?.map(
+                              (category: string) => {
+                                return (
+                                  <option value={category}>{category}</option>
+                                );
+                              }
+                            )}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+
+                  {errors.category && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.category.message}
                     </Error>
                   )}
                 </div>
+
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                    Sub Category
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="sub_category"
+                      control={control}
+                      rules={{ required: "Sub Category is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Sub Category",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.sub_category?.map(
+                              (sub_category: string) => {
+                                return (
+                                  <option value={sub_category}>{sub_category}</option>
+                                );
+                              }
+                            )}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+
+                  {errors.sub_category && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.sub_category.message}
+                    </Error>
+                  )}
+                </div>
+                
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                    Status
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="status"
+                      control={control}
+                      rules={{ required: "Status is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Status",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.status?.map(
+                              (status: string) => {
+                                return (
+                                  <option value={status}>{status}</option>
+                                );
+                              }
+                            )}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+
+                  {errors.status && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.status.message}
+                    </Error>
+                  )}
+                </div>
+
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                    Year
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="year"
+                      control={control}
+                      rules={{ required: "Year is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Year",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.year?.map(
+                              (year: string) => {
+                                return (
+                                  <option value={year}>{year}</option>
+                                );
+                              }
+                            )}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+
+                  {errors.year && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.year.message}
+                    </Error>
+                  )}
+                </div>
+                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Institution Name
+                    Proposal Name
                   </FormCheck.Label>
                   <Controller
-                    name="institution"
+                    name="proposal_name"
                     control={control}
-                    rules={{ required: "Institution Name is required" }}
+                    rules={{ required: "Proposal Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
-                          placeholder="Enter Institution Name"
+                          placeholder="Enter Proposal Name"
                           {...field}
                         />
                         {error && (
@@ -241,16 +454,16 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Institution Name
+                    Proposal Number
                   </FormCheck.Label>
                   <Controller
-                    name="institution"
+                    name="proposal_num"
                     control={control}
-                    rules={{ required: "Institution Name is required" }}
+                    rules={{ required: "Proposal Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
-                          placeholder="Enter Institution Name"
+                          placeholder="Enter Proposal Name"
                           {...field}
                         />
                         {error && (
@@ -266,10 +479,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Institution Name
+                    Link to Filing
                   </FormCheck.Label>
                   <Controller
-                    name="institution"
+                    name="vote_outcome_formula"
                     control={control}
                     rules={{ required: "Institution Name is required" }}
                     render={({ field, fieldState: { error } }) => (
@@ -286,7 +499,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   />
                 </div>
 
-                <div className="w-full flex-1">
+                {/* <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Institution Name
                   </FormCheck.Label>
@@ -306,32 +519,28 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       </>
                     )}
                   />
-                </div>
+                </div> */}
 
               </div>
 
-            
-              
-
-             
               <div>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Engagement Priorities
+                  Proposal Text
                 </FormCheck.Label>
                 <Controller
-                  name="engagement_priorities"
+                  name="proposal_text"
                   control={control}
                   rules={{ required: true }}
                   render={({ field }) => (
                     <ClassicEditor
-                      value={field.value}
+                      value={field?.value ?? ''}
                       onChange={(event) => {
                         field.onChange(event);
                       }}
                     />
                   )}
                 />
-                {errors.engagement_priorities && (
+                {errors.proposal_text && (
                   <Error className="lg:max-w-[50%] ">
                     Engagement Priorities are required
                   </Error>

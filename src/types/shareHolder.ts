@@ -1,10 +1,11 @@
 export type ShareHolderDropdown = {
-  institution: string[];
+  institution?: string[];
   year: string[];
   proponent: string[];
   category: string[];
   sub_category: string[];
   status: string[];
+  company?: string[];
 };
 
 export type ShareHolderData = {
@@ -30,14 +31,17 @@ export type ShareHolderData = {
 
 
 export type AddShareholderType = {
-  id: number;
-  engagement_priorities: string;
-  voting_guidelines_summary: string;
-  voting_guidelines_link: string;
-  reporting_expectations: string;
-  esg_integration_process: string;
-  references: string;
-  active: string;
-  key_contacts?: any;
-  institution?: string;
+  id: string;
+  proponent: string;
+  category: string;
+  sub_category: string;
+  year:string;
+  company: string;
+  status: string;
+  proposal_text: string;
+  proposal_name: string;
+  nl_exist: string;
+  proposal_num: string;
+  vote_outcome_formula: string;
+  institution: string;
 };

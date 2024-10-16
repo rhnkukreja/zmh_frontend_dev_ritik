@@ -74,7 +74,8 @@ function ShareHolderProposal() {
   } = useForm<ShareHolderFilter>();
   const navigate = useNavigate();
 
-  const { loading, shareHolderProposal, page, totalPages, tab, totalShareHolderNoAction, proposalCount, withdrawnCount, noActionCount } =
+  const { loading, shareHolderProposal, page, totalPages, tab,
+    totalShareHolderNoAction, proposalCount, withdrawnCount, noActionCount } =
     useAppSelector((state) => state.sharedHolderNoAction);
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -290,12 +291,9 @@ function ShareHolderProposal() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          {/* <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Shareholder Proposals</div>
-          </div> */}
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="font-semibold text-xl ">Shareholder Proposals</div>
-            {user?.user_type === "Admin" && (
+            {/* {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
                   onClick={() => {
@@ -311,7 +309,7 @@ function ShareHolderProposal() {
                   Add New Shareholder
                 </Button>
               </div>
-            )}
+            )} */}
           </div>
 
           <div className="mt-3.5">
@@ -342,7 +340,6 @@ function ShareHolderProposal() {
                           className="text-slate-500 cursor-pointer	"
                         />
                       </Tippy>
-                      {/* <span className="text-slate-500">Clear Filters</span> */}
                     </Button>
                   </div>
 
@@ -552,72 +549,6 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
-
-                      {/* <div className=" w-full mx-2">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Proponent
-                          {apiDropdownOptions?.proponent?.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id={`proponent`}
-                                  checked={
-                                    apiDropdownOptions.proponent.length ===
-                                    watch("proponent")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "proponent",
-                                        apiDropdownOptions.proponent
-                                      );
-                                    } else {
-                                      setValue("proponent", []);
-                                    }
-                                  }}
-                                />
-                              </FormCheck>
-                            </div>
-                          )}
-                        </div>
-                        <Controller
-                          name="proponent"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Proponent",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.proponent?.map(
-                                    (proponent: any) => (
-                                      <option key={proponent} value={proponent}>
-                                        {proponent}
-                                      </option>
-                                    )
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
-                          )}
-                        />
-                      </div> */}
                     </div>
 
                     <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
@@ -841,6 +772,23 @@ function ShareHolderProposal() {
 
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
+                      {user?.user_type === "Admin" && (
+                        <div className="flex justify-end my-3">
+                          <Button
+                            onClick={() => {
+                              setAddNewShareholderModalVisible(true);
+                            }}
+                            variant="primary"
+                            className="bg-theme-2 border-bg-theme-2 "
+                          >
+                            <Lucide
+                              icon="PenLine"
+                              className="stroke-[1.3] w-4 h-4 mr-2"
+                            />
+                            Add New Shareholder
+                          </Button>
+                        </div>
+                      )}
                       <TableWrapper isLoading={loading}>
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
@@ -849,9 +797,6 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                                {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Company
-                                </Table.Td> */}
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
@@ -880,14 +825,6 @@ function ShareHolderProposal() {
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
-                                    {/* <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                      <Tippy
-                                        content={noAction?.company_name}
-                                        options={{ theme: "light" }}
-                                      >
-                                        {noAction?.company_name}
-                                      </Tippy>
-                                    </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                       {noAction?.proponent_name}
                                     </Table.Td>
@@ -965,6 +902,23 @@ function ShareHolderProposal() {
 
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
+                      {user?.user_type === "Admin" && (
+                        <div className="flex justify-end my-3">
+                          <Button
+                            onClick={() => {
+                              setAddNewShareholderModalVisible(true);
+                            }}
+                            variant="primary"
+                            className="bg-theme-2 border-bg-theme-2 "
+                          >
+                            <Lucide
+                              icon="PenLine"
+                              className="stroke-[1.3] w-4 h-4 mr-2"
+                            />
+                            Add New Shareholder
+                          </Button>
+                        </div>
+                      )}
                       <TableWrapper isLoading={loading}>
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
@@ -973,9 +927,6 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                                {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Company
-                                </Table.Td> */}
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Category
                                 </Table.Td>
@@ -1004,14 +955,6 @@ function ShareHolderProposal() {
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
-                                    {/* <Table.Td className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                      <Tippy
-                                        content={noAction?.company_name}
-                                        options={{ theme: "light" }}
-                                      >
-                                        {noAction?.company_name}
-                                      </Tippy>
-                                    </Table.Td> */}
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.category}
                                     </Table.Td>
@@ -1055,6 +998,23 @@ function ShareHolderProposal() {
 
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
+                      {user?.user_type === "Admin" && (
+                        <div className="flex justify-end my-3">
+                          <Button
+                            onClick={() => {
+                              setAddNewShareholderModalVisible(true);
+                            }}
+                            variant="primary"
+                            className="bg-theme-2 border-bg-theme-2 "
+                          >
+                            <Lucide
+                              icon="PenLine"
+                              className="stroke-[1.3] w-4 h-4 mr-2"
+                            />
+                            Add New Shareholder
+                          </Button>
+                        </div>
+                      )}
                       <TableWrapper isLoading={loading}>
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
@@ -1063,9 +1023,6 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                                {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Company
-                                </Table.Td> */}
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
@@ -1088,14 +1045,6 @@ function ShareHolderProposal() {
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
-                                    {/* <Table.Td className="whitespace-nowrap capitalize max-w-[200px] overflow-hidden text-ellipsis">
-                                      <Tippy
-                                        content={noAction?.company_name}
-                                        options={{ theme: "light" }}
-                                      >
-                                        {noAction?.company_name}
-                                      </Tippy>
-                                    </Table.Td> */}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
                                       {noAction?.proponent_name}
                                     </Table.Td>

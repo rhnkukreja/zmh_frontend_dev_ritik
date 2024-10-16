@@ -49,7 +49,7 @@ class ShareHolderProposalService {
   public async AddNewShareHolder(data: Partial<AddShareholderType>): Promise<{
     results: AddShareholderType;
   }> {
-    const response = await axiosInstance.post(`/investor_profile/`, data);
+    const response = await axiosInstance.post(`/shareholder_proposal/def14a/`, data);
     const results = response.data;
     return {
       results,

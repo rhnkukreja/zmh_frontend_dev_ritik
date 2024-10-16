@@ -648,38 +648,49 @@ function Main() {
       </div>
 
       <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}>
+        
         <Dialog.Panel className="p-10 text-center h-full">
-          <div className="relative w-full h-full">
-            {isFrameLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white">
-                <LoadingIcon
-                  color="#800000"
-                  icon="three-dots"
-                  className="w-16 h-16"
-                />
-              </div>
-            )}
-
-            {isError && !isFrameLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
-                <p>
-                  Failed to load the embedded content. Please try again later.
-                </p>
-              </div>
-            )}
-
-            <iframe
-              className={`w-full h-full ${
-                isFrameLoading || isError ? "hidden" : ""
-              }`}
-              src="https://app.korra.ai/zmhdashboard/globalsearchengine"
-              title="Embedded Dashboard"
-              onLoad={handleLoad}
-              onError={handleError}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+        <Dialog.Title>
+          {/* <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2> */}
+          <div
+            onClick={handleCloseModal}
+            className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
+          >
+            <Lucide icon="X" className="w-8 h-8 text-slate-400" />
           </div>
+        </Dialog.Title>
+          {/* <Dialog.Description > */}
+            <div className="relative w-full h-full">
+              {isFrameLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white">
+                  <LoadingIcon
+                    color="#800000"
+                    icon="three-dots"
+                    className="w-16 h-16"
+                  />
+                </div>
+              )}
+
+              {isError && !isFrameLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
+                  <p>
+                    Failed to load the embedded content. Please try again later.
+                  </p>
+                </div>
+              )}
+
+              <iframe
+                className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
+                  }`}
+                src="https://app.korra.ai/zmhdashboard/globalsearchengine"
+                title="Embedded Dashboard"
+                onLoad={handleLoad}
+                onError={handleError}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          {/* </Dialog.Description> */}
         </Dialog.Panel>
       </Dialog>
 
