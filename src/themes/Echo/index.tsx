@@ -634,10 +634,7 @@ function Main() {
           { "mode--light": !topBarActive },
         ])}
       >
-        <div className="px-5 mt-10 ">
-         
-          
-
+        <div className={clsx([!shouldHideHeader && 'mt-4', shouldHideHeader && 'mt-10' , 'px-5'])}>
           <div className="container">
             <div className="sticky top-20 z-10 ">
               {!shouldHideHeader && <CountryInfoHeader />}
