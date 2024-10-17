@@ -226,7 +226,7 @@ const index = () => {
                                   {dashboard?.institution_name && (
                                     <>
                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        <div className="whitespace-nowrap ">
+                                        <div className="flex items-center font-semibold ">
                                           {index + 1}
                                         </div>
                                       </Table.Td>
