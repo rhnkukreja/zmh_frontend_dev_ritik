@@ -138,7 +138,8 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                         <div className="flex justify-center items-center h-full">
                           <Tippy
-                            content="Download"
+                        //   Download
+                            content="View"
                             options={{
                               theme: "dark",
                             }}
@@ -150,7 +151,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                               rel="noopener noreferrer"
                             >
                               <Lucide
-                                icon="Download"
+                                icon="Eye"
                                 className="w-4 h-4 mr-1.5 stroke-[1.3]"
                               />
                             </a>

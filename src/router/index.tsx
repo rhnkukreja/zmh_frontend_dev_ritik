@@ -408,7 +408,7 @@ TitleManager();
         {
           path: "peer-analysis",
           element: <PeerAnalysis />,
-          data: {titleName: 'Peer Analysis - ZMH Analytics'}
+          data: {titleName: 'Engagement Details - ZMH Analytics'}
 
         },
         {
@@ -438,13 +438,13 @@ TitleManager();
         {
           path: "vds-details",
           element: <VdsProxyVoting/> ,
-          data: {titleName: 'VDS Proxy Voting - ZMH Analytics'}
+          data: {titleName: 'Proxy Voting - ZMH Analytics'}
 
         },
         {
           path: "investor-company-details/:id",
           element: <InvestorCompanyDetails/> ,
-          data: {titleName: 'Investor Company Detail - ZMH Analytics'}
+          data: {titleName: 'Investor Document Detail - ZMH Analytics'}
 
         },
       ],

@@ -1,19 +1,25 @@
-import { ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
+import { AddShareholderType, ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
 import { axiosInstance } from "../index";
 
 class ShareHolderProposalService {
   public async getShareHolderProposal(url: string): Promise<{
     count: number;
     results: any[];
+    proposalCount: number;
+    withdrawnCount: number;
+    noActionCount: number;
   }> {
     const response = await axiosInstance.get(url);
-    const { count, results } = response.data;
+    const { count, results, proposalCount, withdrawnCount, noActionCount } =
+      response.data;
     return {
       count,
       results,
+      proposalCount,
+      withdrawnCount,
+      noActionCount,
     };
   }
-
 
   public async getShareHolderDropdownValues(): Promise<{
     result: ShareHolderDropdown;
@@ -27,8 +33,10 @@ class ShareHolderProposalService {
     };
   }
 
-
-  public async getSingleShareHolder(url: string ,id: number): Promise<{
+  public async getSingleShareHolder(
+    url: string,
+    id: number
+  ): Promise<{
     results: ShareHolderData;
   }> {
     const response = await axiosInstance.get(`/${url}/${id}`);
@@ -38,6 +46,15 @@ class ShareHolderProposalService {
     };
   }
 
+  public async AddNewShareHolder(data: Partial<AddShareholderType>): Promise<{
+    results: AddShareholderType;
+  }> {
+    const response = await axiosInstance.post(`/shareholder_proposal/def14a/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
 }
 
 export const shareHolderProposalService = new ShareHolderProposalService();

@@ -1,7 +1,7 @@
 const CompanyAdvertisement = () => {
   return (
     <div className=" text-white">
-      <h1 className="text-3xl font-bold mb-4">Investor Engagement Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-4">Shareholder Engagement Dashboard</h1>
       <p className="italic mb-4">
         “ZMH’s Engagement Dashboard offers everything you need to{" "}
         <span className="font-semibold">prepare for investor engagements.</span>
