@@ -207,7 +207,7 @@ function PeerAnalysis() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Peer Analysis</div>
+            <div className="font-semibold text-xl ">Engagement Details</div>
             {/* {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -234,7 +234,7 @@ function PeerAnalysis() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/investor_profile/?type=profiles"
+                    url="/peer_analysis/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                   />

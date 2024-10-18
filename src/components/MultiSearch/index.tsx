@@ -43,7 +43,11 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                 `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
               )
             )
-          : [axiosInstance.get(`${url}&${getOptionKey}=${query}`)]
+          : [
+              axiosInstance.get(
+                `${url}${url.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
+              ),
+            ]
       );
       return responses.flatMap(
         (response) =>
