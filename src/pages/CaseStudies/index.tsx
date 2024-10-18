@@ -271,7 +271,7 @@ function CaseStudies() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/investor_profile/?type=profiles"
+                    url="/case_studies/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                   />

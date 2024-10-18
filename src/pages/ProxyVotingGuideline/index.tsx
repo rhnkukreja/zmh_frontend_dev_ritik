@@ -245,7 +245,7 @@ function ProxyGuideline() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/investor_profile/?type=profiles"
+                    url="/proxy_voting_guidelines/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                   />
