@@ -338,7 +338,7 @@ function Main() {
                   onSearch={handleSearch}
                   searchTerms={searchTerms}
                   setSearchTerms={setSearchTerms}
-                  url="/investor_profile/?type=profiles"
+                  url="/engagement_questions/"
                   getOptionKey="institution_name"
                   placeHolder="Search Institution"
                 />

@@ -234,7 +234,7 @@ function PeerAnalysis() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/investor_profile/?type=profiles"
+                    url="/peer_analysis/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                   />
