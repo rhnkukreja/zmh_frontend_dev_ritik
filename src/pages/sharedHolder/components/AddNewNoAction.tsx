@@ -1,11 +1,15 @@
 import Button from "@/components/Base/Button";
 import { ClassicEditor } from "@/components/Base/Ckeditor";
+import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { FormCheck, FormInput } from "@/components/Base/Form";
+
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import Litepicker from "@/components/Base/Litepicker";
 import { AppDispatch } from "@/stores/store";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
+import TomSelect from "@/components/Base/TomSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Controller,
@@ -19,22 +23,21 @@ import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
 import { AddNewInvesterType } from "@/types/investerProfiles";
-import { addNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
-import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
+import { addNewNoAction, addNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
-import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 
-interface AddNewShareholderProps {
-  addNewShareholderModalVisible: boolean;
-  setAddNewShareholderModalVisible: (visible: boolean) => void;
+interface AddNoActionProps {
+  addNewNoActionModalVisible: boolean;
+  setAddNewNoActionModalVisible: (visible: boolean) => void;
 }
 
-const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
-  addNewShareholderModalVisible,
-  setAddNewShareholderModalVisible,
+const AddNewNoAction: React.FC<AddNoActionProps> = ({
+  addNewNoActionModalVisible,
+  setAddNewNoActionModalVisible,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
@@ -42,10 +45,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<AddShareholderType>();
-  const { user, companyGlobalSearchName } = useAppSelector(
-    (state) => state.authentiction
-  );
+  } = useForm<AddNoActionType>();
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -56,6 +56,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       sub_category: [],
       year: [],
     });
+  const [showRequiredStateErrors, setShowRequiredStateErrors] =
+    useState<boolean>(false);
+
+    const { user, companyGlobalSearchName } = useAppSelector(
+      (state) => state.authentiction
+    );
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -72,35 +78,37 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     getAllCaseStudyDropdowns();
   }, []);
 
-  const onSubmit = async (data: AddShareholderType) => {
+  const onSubmit = async (data: AddNoActionType) => {
     const transformedData = {
       ...data,
-      // ...applyFilters,
-      // ...applyCompanyFilters
     };
     // if (!keyContactsFile) {
     //   return;
     // } 
     // else {
+    setShowRequiredStateErrors(false);
     // }
     // const formData = new FormData();
 
     // for (const [key, value] of Object.entries(transformedData)) {
     //   formData.append(key, value);
     // }
+    // if (keyContactsFile) {
+    //   formData.append("file", keyContactsFile);
+    // }
 
     try {
-      const response = await dispatch(addNewShareHolder(transformedData)).unwrap();
+      const response = await dispatch(addNewNoAction(transformedData)).unwrap();
 
       if (response.results?.id) {
-        toast.success("New Shareholder Proposal Added");
-        setAddNewShareholderModalVisible(false);
+        toast.success("New Shareholder No Action Added");
+        setAddNewNoActionModalVisible(false);
 
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,{global_search: companyGlobalSearchName}, undefined, page)
+            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`, {global_search: companyGlobalSearchName}, undefined, page)
           )
-        );  
+        );
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -108,23 +116,25 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   };
 
   const onError: SubmitErrorHandler<any> = () => {
-      // setShowRequiredStateErrors(true);
+    // if (!keyContactsFile) {
+    setShowRequiredStateErrors(true);
+    // }
   };
-    return (
+  return (
     <Dialog
       size="xl"
-      open={addNewShareholderModalVisible}
+      open={addNewNoActionModalVisible}
       onClose={() => {
-        setAddNewShareholderModalVisible(false);
+        setAddNewNoActionModalVisible(false);
       }}
     >
       <Dialog.Panel className="text-center">
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder Proposal</h2>
+            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2>
             <div
               onClick={() => {
-                setAddNewShareholderModalVisible(false);
+                setAddNewNoActionModalVisible(false);
               }}
               className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
             >
@@ -133,7 +143,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="flex flex-col gap-7">
-              {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
@@ -145,12 +154,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       name="proponent"
                       control={control}
                       rules={{ required: "Proponent Name is required" }}
-                      render={({ field ,fieldState: { error } }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?investor_type=Proponent&all=true"
+                            url="/shareholder_proposal/no_action/?all=true"
                             valueKey="id"
-                            labelKey="institution"
+                            labelKey="proponent_name"
                             value={field?.value?.toString() || ""}
                             onChange={(value) => field.onChange(value)}
                             options={{ placeholder: "Select proponent" }}
@@ -163,7 +172,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           )}
                         </>
                       )}
-                      
+
                     />
                   </div>
                 </div>
@@ -178,12 +187,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       name="company"
                       control={control}
                       rules={{ required: "Company Name is required" }}
-                      render={({ field ,fieldState: { error } }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/company/"
+                            url="/institute/"
                             valueKey="id"
-                            labelKey="name"
+                            labelKey="institution"
                             value={field?.value?.toString() || ""}
                             onChange={(value) => field.onChange(value)}
                             options={{ placeholder: "Select Company" }}
@@ -196,58 +205,105 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           )}
                         </>
                       )}
-                      
+
                     />
                   </div>
                 </div>
-                
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proposal Name
+                  <FormCheck.Label
+                    htmlFor="engagement_date"
+                    className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
+                  >
+                    Initial Date for Submission
                   </FormCheck.Label>
-                  <Controller
-                    name="proposal_name"
-                    control={control}
-                    rules={{ required: "Proposal Name is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Proposal Name"
-                          {...field}
+
+                  <div className="relative">
+                    <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                      <Lucide icon="Calendar" className="w-4 h-4" />
+                    </div>
+
+                    <Controller
+                      name="link_to_initial_submission"
+                      control={control}
+                      defaultValue=""
+                      rules={{ required: "Initial Date for Submission is required" }}
+                      render={({ field }) => (
+                        <Litepicker
+                          placeholder="Select Initial Date for Submission"
+                          value={field.value}
+                          onChange={(date) => field.onChange(date)}
+                          options={{
+                            autoApply: false,
+                            showWeekNumbers: true,
+                            dropdowns: {
+                              minYear: 1990,
+                              maxYear: null,
+                              months: true,
+                              years: true,
+                            },
+                          }}
+                          className="pl-12"
                         />
-                        {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
-                        )}
-                      </>
-                    )}
-                  />
+                      )}
+                    />
+                  </div>
+
+                  {errors.nl_exist && (
+                    <Error className="max-w-[100%] ">
+                      {errors.nl_exist.message}
+                    </Error>
+                  )}
                 </div>
 
                 <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proposal Number
+                  <FormCheck.Label
+                    htmlFor="engagement_date"
+                    className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
+                  >
+                    Staff Response Date
                   </FormCheck.Label>
-                  <Controller
-                    name="proposal_num"
-                    control={control}
-                    rules={{ required: "Proposal Number is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Proposal Number"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
 
+                  <div className="relative">
+                    <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                      <Lucide icon="Calendar" className="w-4 h-4" />
+                    </div>
+
+                    <Controller
+                      name="staff_response"
+                      control={control}
+                      defaultValue=""
+                      rules={{ required: "Staff Response Date is required" }}
+                      render={({ field }) => (
+                        <Litepicker
+                          placeholder="Select Staff Response Date"
+                          value={field.value}
+                          onChange={(date) => field.onChange(date)}
+                          options={{
+                            autoApply: false,
+                            showWeekNumbers: true,
+                            dropdowns: {
+                              minYear: 1990,
+                              maxYear: null,
+                              months: true,
+                              years: true,
+                            },
+                          }}
+                          className="pl-12"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {errors.nl_exist && (
+                    <Error className="max-w-[100%] ">
+                      {errors.nl_exist.message}
+                    </Error>
+                  )}
+                </div>
               </div>
 
 
@@ -282,15 +338,17 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               }
                             )}
                           </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
+
                         </>
                       )}
                     />
                   </div>
+
+                  {errors.category && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.category.message}
+                    </Error>
+                  )}
                 </div>
 
                 <div className="flex-1 w-full">
@@ -323,60 +381,22 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               }
                             )}
                           </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
                         </>
                       )}
                     />
                   </div>
+
+                  {errors.sub_category && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.sub_category.message}
+                    </Error>
+                  )}
                 </div>
-                
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                    Status
-                  </FormCheck.Label>
 
-                  <div className="mt-2">
-                    <Controller
-                      name="status"
-                      control={control}
-                      rules={{ required: "Status is required" }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
-                          <TomSelect
-                            value={field.value ?? ''}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                            }}
-                            options={{
-                              placeholder: "Select Status",
-                            }}
-                            className="w-full text-left"
-                          >
-                            {apiDropdownOptions?.status?.map(
-                              (status: string) => {
-                                return (
-                                  <option value={status}>{status}</option>
-                                );
-                              }
-                            )}
-                          </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
-                    />
-                  </div>
-                </div>
 
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
@@ -408,33 +428,30 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               }
                             )}
                           </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
                         </>
                       )}
                     />
                   </div>
-                </div>
-                
-              </div>
 
-           
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                  {errors.year && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.year.message}
+                    </Error>
+                  )}
+                </div>
+
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Link to Filing
+                    Bases Asserted for Exclution
                   </FormCheck.Label>
                   <Controller
-                    name="vote_outcome_formula"
+                    name="bases_asserted_for_exclusion"
                     control={control}
-                    rules={{ required: "Link to Filing is required" }}
+                    rules={{ required: "Bases Asserted for Exclutione is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
-                          placeholder="Enter Link to Filing"
+                          placeholder="Enter Bases Asserted for Exclution"
                           {...field}
                         />
                         {error && (
@@ -444,7 +461,38 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     )}
                   />
                 </div>
+
               </div>
+
+            
+
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Link to Staff Response
+                  </FormCheck.Label>
+                  <Controller
+                    name="vote_outcome_formula"
+                    control={control}
+                    rules={{ required: "Link to Staff Response is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Link to Staff Response"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+                
+              </div>
+
 
               <div>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
@@ -469,17 +517,15 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </Error>
                 )}
               </div>
-             
+
             </div>
           </Dialog.Description>
-
-
           <Dialog.Footer className="flex justify-end">
             <Button
               variant="outline-secondary"
               className="mr-3"
               onClick={() => {
-                setAddNewShareholderModalVisible(false);
+                setAddNewNoActionModalVisible(false);
               }}
             >
               Cancel
@@ -488,9 +534,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               {loading && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                    loading ? "animate-spin" : ""
-                  }`}
+                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                    }`}
                 />
               )}
               Save
@@ -502,4 +547,4 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   );
 };
 
-export default AddNewShareholder;
+export default AddNewNoAction;

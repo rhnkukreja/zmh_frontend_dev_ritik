@@ -34,6 +34,8 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import AddNewShareholder from "./components/AddNewShareholder";
+import AddNewWithdrawn from "./components/AddNewWithdrawn";
+import AddNewNoAction from "./components/AddNewNoAction";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -41,7 +43,6 @@ function ShareHolderProposal() {
     (state) => state.authentiction
   );
 
-  // const [tab, setTab] = useState<"proposal" | "no-action" | "withdrawn">("proposal");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [applyFilters, setApplyFilters] = useState<
     ShareHolderFilter | undefined
@@ -63,6 +64,15 @@ function ShareHolderProposal() {
 
   const [addNewShareholderModalVisible, setAddNewShareholderModalVisible] =
     useState<boolean>(false);
+    const [addNewWithdrawnModalVisible, setAddNewWithdrawnModalVisible] =
+    useState<boolean>(false);
+    const [addNewNoActionModalVisible, setAddNewNoActionModalVisible] =
+    useState<boolean>(false);
+
+    const [proposalCount, setProposalCount] = useState<number>(0);
+    const [withdrawnCount, setWithdrawnCount] = useState<number>(0);
+    const [noActionCount, setNoActionCount] = useState<number>(0);
+
 
   const {
     handleSubmit,
@@ -74,9 +84,7 @@ function ShareHolderProposal() {
   } = useForm<ShareHolderFilter>();
   const navigate = useNavigate();
 
-  const { loading, shareHolderProposal, page, totalPages, tab,
-    totalShareHolderNoAction, proposalCount, withdrawnCount, noActionCount } =
-    useAppSelector((state) => state.sharedHolderNoAction);
+  const { loading, shareHolderProposal, page, totalPages, tab} = useAppSelector((state) => state.sharedHolderNoAction);
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -123,6 +131,36 @@ function ShareHolderProposal() {
     }
   }, [page, tab, applyFilters]);
 
+
+  useEffect(() => {
+    if (!applyFilters?.global_search) return;
+    getAllShareholderAPI();
+  }, [applyFilters]);
+
+  const getAllShareholderAPI = async () => {
+    try {
+      const proposalResponse = await shareHolderProposalService.getAllShareholderAPI(
+        createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,applyFilters,undefined,page));
+      if (proposalResponse?.result) {
+        setProposalCount(proposalResponse?.result?.count);
+      }
+
+      const noActionResponse = await shareHolderProposalService.getAllShareholderAPI(
+        createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`,applyFilters,undefined,page));
+      if (noActionResponse?.result) {
+        setNoActionCount(noActionResponse?.result?.count);
+      }
+
+
+      const withdrawnResponse = await shareHolderProposalService.getAllShareholderAPI(
+        createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/`,applyFilters,undefined,page));
+      if (withdrawnResponse?.result) {
+        setWithdrawnCount(withdrawnResponse?.result?.count);
+      }
+    } catch (error) {
+      return error;
+    }
+  };
   const getAllCaseStudyDropdowns = async () => {
     try {
       setGetDropdownLoader(true);
@@ -139,6 +177,8 @@ function ShareHolderProposal() {
   };
   useEffect(() => {
     getAllCaseStudyDropdowns();
+    // if (!applyFilters?.global_search) return;
+    
   }, []);
 
   const handleNextPage = () => {
@@ -726,9 +766,9 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           Shareholder Proposals
-                          <span className="bg-[#ab123d] h-5 w-5 p-3 
-                          rounded-full font-semibold text-white text-xs ml-2
-                           flex items-center justify-center ">{proposalCount}</span>
+                          <span className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                          font-semibold text-white text-[11px] ml-2
+                           flex items-center justify-center">{proposalCount}</span>
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -744,9 +784,9 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           No Action Letter
-                          <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full 
-                          font-semibold text-white text-xs ml-2 
-                          flex items-center justify-center ">{noActionCount}</span>
+                          <span className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                          font-semibold text-white text-[11px] ml-2
+                           flex items-center justify-center">{noActionCount}</span>
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -762,9 +802,9 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           Withdrawn
-                          <span className="bg-[#ab123d] h-5 w-5 p-3 rounded-full
-                           font-semibold text-white text-xs ml-2
-                           flex items-center justify-center ">{withdrawnCount}</span>
+                          <span className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                          font-semibold text-white text-[11px] ml-2
+                           flex items-center justify-center">{withdrawnCount}</span>
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -906,7 +946,7 @@ function ShareHolderProposal() {
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
-                              setAddNewShareholderModalVisible(true);
+                              setAddNewNoActionModalVisible(true);
                             }}
                             variant="primary"
                             className="bg-theme-2 border-bg-theme-2 "
@@ -915,7 +955,7 @@ function ShareHolderProposal() {
                               icon="PenLine"
                               className="stroke-[1.3] w-4 h-4 mr-2"
                             />
-                            Add New Shareholder
+                            Add New No Action
                           </Button>
                         </div>
                       )}
@@ -1002,7 +1042,7 @@ function ShareHolderProposal() {
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
-                              setAddNewShareholderModalVisible(true);
+                              setAddNewWithdrawnModalVisible(true);
                             }}
                             variant="primary"
                             className="bg-theme-2 border-bg-theme-2 "
@@ -1011,7 +1051,7 @@ function ShareHolderProposal() {
                               icon="PenLine"
                               className="stroke-[1.3] w-4 h-4 mr-2"
                             />
-                            Add New Shareholder
+                            Add New Withdrawn
                           </Button>
                         </div>
                       )}
@@ -1098,6 +1138,21 @@ function ShareHolderProposal() {
               setAddNewShareholderModalVisible={setAddNewShareholderModalVisible}
             />
           )}
+
+          {addNewNoActionModalVisible && (
+            <AddNewNoAction
+            addNewNoActionModalVisible={addNewNoActionModalVisible}
+              setAddNewNoActionModalVisible={setAddNewNoActionModalVisible}
+            />
+          )}
+
+          {addNewWithdrawnModalVisible && (
+            <AddNewWithdrawn
+            addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
+              setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
+            />
+          )}
+
         </div>
       </div>
     </>

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
-import { AddShareholderType, ShareHolderData } from "@/types/shareHolder";
+import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderData } from "@/types/shareHolder";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import { InvestersProfile } from "@/types/investerProfiles";
 
@@ -65,7 +65,7 @@ const initialState: SharedHolderPrposal = {
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<
-  { count: number; results: any[], proposalCount: number,withdrawnCount: number, noActionCount: number},
+  { count: number; results: any[], proposalCount: number, withdrawnCount: number, noActionCount: number},
   string
 >(`${name}`, async (url: string) => {
   return await shareHolderProposalService.getShareHolderProposal(url);
@@ -79,9 +79,24 @@ export const getSingleShareHolderData = createAsyncThunk<
 });
 
 export const addNewShareHolder = createAsyncThunk<
-  { results: AddShareholderType }, AddShareholderType
+  { results: AddShareholderType }, any
 >(`${name}/addNewShareHolder`, async (data: AddShareholderType) => {
   const response = await shareHolderProposalService.AddNewShareHolder(data);
+  return response;
+});
+
+
+export const addNewWithdrawn = createAsyncThunk<
+  { results: AddWithdrawnType }, any
+>(`${name}/addNewWithdrawn`, async (data: AddWithdrawnType) => {
+  const response = await shareHolderProposalService.AddNewWithdrawn(data);
+  return response;
+});
+
+export const addNewNoAction = createAsyncThunk<
+  { results: AddNoActionType }, any
+>(`${name}/addNewNoAction`, async (data: AddNoActionType) => {
+  const response = await shareHolderProposalService.AddNewNoAction(data);
   return response;
 });
 
@@ -144,9 +159,9 @@ const shareHolderProposal = createSlice({
           state.shareHolderProposal = action.payload.results;
           state.totalShareHolderNoAction = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
-          state.proposalCount = action?.payload?.proposalCount  ?? 0;
-          state.withdrawnCount = action?.payload?.withdrawnCount ?? 0;
-          state.noActionCount = action?.payload?.noActionCount ?? 0;
+          // state.proposalCount = action?.payload?.proposalCount  ?? 0;
+          // state.withdrawnCount = action?.payload?.withdrawnCount ?? 0;
+          // state.noActionCount = action?.payload?.noActionCount ?? 0;
         }
       )
       .addCase(fetchShareHolderProposal.rejected, (state, action) => {

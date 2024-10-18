@@ -1,4 +1,4 @@
-import { AddShareholderType, ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
+import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
 import { axiosInstance } from "../index";
 
 class ShareHolderProposalService {
@@ -53,6 +53,36 @@ class ShareHolderProposalService {
     const results = response.data;
     return {
       results,
+    };
+  }
+
+  public async AddNewWithdrawn(data: Partial<AddWithdrawnType>): Promise<{
+    results: AddWithdrawnType;
+  }> {
+    const response = await axiosInstance.post(`/shareholder_proposal/withdrawn/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async AddNewNoAction(data: Partial<AddNoActionType>): Promise<{
+    results: AddNoActionType;
+  }> {
+    const response = await axiosInstance.post(`/shareholder_proposal/no_action/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async getAllShareholderAPI(url: string): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(url);
+    const result = response.data;
+    return {
+      result: result,
     };
   }
 }

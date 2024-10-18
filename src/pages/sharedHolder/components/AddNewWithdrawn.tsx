@@ -1,11 +1,15 @@
 import Button from "@/components/Base/Button";
 import { ClassicEditor } from "@/components/Base/Ckeditor";
+import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { FormCheck, FormInput } from "@/components/Base/Form";
+
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+
 import { AppDispatch } from "@/stores/store";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
+import TomSelect from "@/components/Base/TomSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Controller,
@@ -19,22 +23,20 @@ import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
 import { AddNewInvesterType } from "@/types/investerProfiles";
-import { addNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
-import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
+import { addNewShareHolder, addNewWithdrawn, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import { AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
-import MultiSearchBar from "@/components/MultiSearch";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
-import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 
-interface AddNewShareholderProps {
-  addNewShareholderModalVisible: boolean;
-  setAddNewShareholderModalVisible: (visible: boolean) => void;
+interface AddWithdrawnProps {
+  addNewWithdrawnModalVisible: boolean;
+  setAddNewWithdrawnModalVisible: (visible: boolean) => void;
 }
 
-const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
-  addNewShareholderModalVisible,
-  setAddNewShareholderModalVisible,
+const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
+  addNewWithdrawnModalVisible,
+  setAddNewWithdrawnModalVisible,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
@@ -42,10 +44,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<AddShareholderType>();
-  const { user, companyGlobalSearchName } = useAppSelector(
-    (state) => state.authentiction
-  );
+  } = useForm<AddWithdrawnType>();
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -56,7 +55,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       sub_category: [],
       year: [],
     });
+  const [showRequiredStateErrors, setShowRequiredStateErrors] =
+    useState<boolean>(false);
 
+    const { user, companyGlobalSearchName } = useAppSelector(
+      (state) => state.authentiction
+    );
   const getAllCaseStudyDropdowns = async () => {
     try {
       const res =
@@ -72,35 +76,38 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     getAllCaseStudyDropdowns();
   }, []);
 
-  const onSubmit = async (data: AddShareholderType) => {
+  const onSubmit = async (data: AddWithdrawnType) => {
     const transformedData = {
       ...data,
-      // ...applyFilters,
-      // ...applyCompanyFilters
+      // institution: data.institution ? Number(data.institution) : null,
     };
     // if (!keyContactsFile) {
     //   return;
     // } 
     // else {
+    setShowRequiredStateErrors(false);
     // }
     // const formData = new FormData();
 
     // for (const [key, value] of Object.entries(transformedData)) {
     //   formData.append(key, value);
     // }
+    // if (keyContactsFile) {
+    //   formData.append("file", keyContactsFile);
+    // }
 
     try {
-      const response = await dispatch(addNewShareHolder(transformedData)).unwrap();
+      const response = await dispatch(addNewWithdrawn(transformedData)).unwrap();
 
       if (response.results?.id) {
-        toast.success("New Shareholder Proposal Added");
-        setAddNewShareholderModalVisible(false);
+        toast.success("New Shareholder Withdrawn Added");
+        setAddNewWithdrawnModalVisible(false);
 
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,{global_search: companyGlobalSearchName}, undefined, page)
+            createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/?global_search=${companyGlobalSearchName}`, undefined, page)
           )
-        );  
+        );
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -108,23 +115,25 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   };
 
   const onError: SubmitErrorHandler<any> = () => {
-      // setShowRequiredStateErrors(true);
+    // if (!keyContactsFile) {
+    setShowRequiredStateErrors(true);
+    // }
   };
-    return (
+  return (
     <Dialog
       size="xl"
-      open={addNewShareholderModalVisible}
+      open={addNewWithdrawnModalVisible}
       onClose={() => {
-        setAddNewShareholderModalVisible(false);
+        setAddNewWithdrawnModalVisible(false);
       }}
     >
       <Dialog.Panel className="text-center">
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder Proposal</h2>
+            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder Withdrawn</h2>
             <div
               onClick={() => {
-                setAddNewShareholderModalVisible(false);
+                setAddNewWithdrawnModalVisible(false);
               }}
               className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
             >
@@ -145,12 +154,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       name="proponent"
                       control={control}
                       rules={{ required: "Proponent Name is required" }}
-                      render={({ field ,fieldState: { error } }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?investor_type=Proponent&all=true"
+                            url="/shareholder_proposal/no_action/?all=true"
                             valueKey="id"
-                            labelKey="institution"
+                            labelKey="proponent_name"
                             value={field?.value?.toString() || ""}
                             onChange={(value) => field.onChange(value)}
                             options={{ placeholder: "Select proponent" }}
@@ -163,7 +172,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           )}
                         </>
                       )}
-                      
+
                     />
                   </div>
                 </div>
@@ -178,12 +187,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       name="company"
                       control={control}
                       rules={{ required: "Company Name is required" }}
-                      render={({ field ,fieldState: { error } }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/company/"
+                            url="/institute/"
                             valueKey="id"
-                            labelKey="name"
+                            labelKey="institution"
                             value={field?.value?.toString() || ""}
                             onChange={(value) => field.onChange(value)}
                             options={{ placeholder: "Select Company" }}
@@ -196,48 +205,26 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           )}
                         </>
                       )}
-                      
+
                     />
                   </div>
                 </div>
-                
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="w-full flex-1">
+              <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proposal Name
+                    Initiative
                   </FormCheck.Label>
                   <Controller
-                    name="proposal_name"
+                    name="initiative"
                     control={control}
-                    rules={{ required: "Proposal Name is required" }}
+                    rules={{ required: "Initiative is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
-                          placeholder="Enter Proposal Name"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
-
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proposal Number
-                  </FormCheck.Label>
-                  <Controller
-                    name="proposal_num"
-                    control={control}
-                    rules={{ required: "Proposal Number is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Proposal Number"
+                          placeholder="Enter Initiative Number"
                           {...field}
                         />
                         {error && (
@@ -249,93 +236,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </div>
 
               </div>
-
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                    Category Name
-                  </FormCheck.Label>
-
-                  <div className="mt-2">
-                    <Controller
-                      name="category"
-                      control={control}
-                      rules={{ required: "Category is required" }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
-                          <TomSelect
-                            value={field.value ?? ''}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                            }}
-                            options={{
-                              placeholder: "Select Category",
-                            }}
-                            className="w-full text-left"
-                          >
-                            {apiDropdownOptions?.category?.map(
-                              (category: string) => {
-                                return (
-                                  <option value={category}>{category}</option>
-                                );
-                              }
-                            )}
-                          </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                    Sub Category
-                  </FormCheck.Label>
-
-                  <div className="mt-2">
-                    <Controller
-                      name="sub_category"
-                      control={control}
-                      rules={{ required: "Sub Category is required" }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
-                          <TomSelect
-                            value={field.value ?? ''}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                            }}
-                            options={{
-                              placeholder: "Select Sub Category",
-                            }}
-                            className="w-full text-left"
-                          >
-                            {apiDropdownOptions?.sub_category?.map(
-                              (sub_category: string) => {
-                                return (
-                                  <option value={sub_category}>{sub_category}</option>
-                                );
-                              }
-                            )}
-                          </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
-                    />
-                  </div>
-                </div>
-                
-              </div>
-
+           
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
@@ -367,15 +268,21 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               }
                             )}
                           </TomSelect>
-                          {error && (
+                          {/* {error && (
                             <Error className="text-red-600 mt-2">
                               {error.message}
                             </Error>
-                          )}
+                          )} */}
                         </>
                       )}
                     />
                   </div>
+
+                  {errors.status && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.status.message}
+                    </Error>
+                  )}
                 </div>
 
                 <div className="flex-1 w-full">
@@ -408,68 +315,29 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               }
                             )}
                           </TomSelect>
-                          {error && (
+                          {/* {error && (
                             <Error className="text-red-600 mt-2">
                               {error.message}
                             </Error>
-                          )}
+                          )} */}
                         </>
                       )}
                     />
                   </div>
-                </div>
-                
-              </div>
 
-           
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Link to Filing
-                  </FormCheck.Label>
-                  <Controller
-                    name="vote_outcome_formula"
-                    control={control}
-                    rules={{ required: "Link to Filing is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Link to Filing"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Proposal Text
-                </FormCheck.Label>
-                <Controller
-                  name="proposal_text"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ''}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
-                    />
+                  {errors.year && (
+                    <Error className="max-w-[100%] ">
+                      {errors?.year.message}
+                    </Error>
                   )}
-                />
-                {errors.proposal_text && (
-                  <Error className="lg:max-w-[50%] ">
-                    Proposal Text are required
-                  </Error>
-                )}
+                </div>
+
               </div>
+
              
+
+              
+
             </div>
           </Dialog.Description>
 
@@ -479,7 +347,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               variant="outline-secondary"
               className="mr-3"
               onClick={() => {
-                setAddNewShareholderModalVisible(false);
+                setAddNewWithdrawnModalVisible(false);
               }}
             >
               Cancel
@@ -488,9 +356,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               {loading && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                    loading ? "animate-spin" : ""
-                  }`}
+                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                    }`}
                 />
               )}
               Save
@@ -502,4 +369,4 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   );
 };
 
-export default AddNewShareholder;
+export default AddNewWithdrawn;
