@@ -1,7 +1,7 @@
 export type ShareHolderDropdown = {
   institution?: string[];
   year: string[];
-  proponent: string[];
+  proponent?: string[];
   category: string[];
   sub_category: string[];
   status: string[];
@@ -32,11 +32,11 @@ export type ShareHolderData = {
 
 export type AddShareholderType = {
   id: string;
-  proponent: string[];
+  proponent: string;
   category: string;
   sub_category: string;
   year:string;
-  company: string[];
+  company: string;
   status: string;
   proposal_text: string;
   proposal_name: string;
@@ -51,17 +51,10 @@ export type AddWithdrawnType = {
   id: string;
   initiative: string;
   proponent: string;
-  category: string;
-  sub_category: string;
   year:string;
   company: string;
   status: string;
-  proposal_text: string;
-  proposal_name: string;
   nl_exist: string;
-  proposal_num: string;
-  vote_outcome_formula: string;
-  institution: string;
 };
 
 
@@ -78,9 +71,7 @@ export type AddNoActionType = {
   company: string;
   status: string;
   proposal_text: string;
-  proposal_name: string;
   nl_exist: string;
   proposal_num: string;
   vote_outcome_formula: string;
-  institution: string;
 };

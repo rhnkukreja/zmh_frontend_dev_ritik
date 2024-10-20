@@ -14,20 +14,14 @@ import {
   useForm,
 } from "react-hook-form";
 import { toast } from "react-toastify";
-// import TomSelect from "@/components/Base/TomSelect/ServerComponent";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
-import { AddNewInvesterType } from "@/types/investerProfiles";
 import { addEditNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
 import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
-import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
-import QuickSearch from "@/components/QuickSearch";
-
 
 interface AddNewShareholderProps {
   addNewShareholderModalVisible: boolean;
@@ -35,11 +29,14 @@ interface AddNewShareholderProps {
   selectedShareholderProposal: AddShareholderType | null;
 }
 
+
+
 const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   addNewShareholderModalVisible,
   setAddNewShareholderModalVisible,
   selectedShareholderProposal
 }) => {
+
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
   const {
@@ -47,7 +44,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     control,
     formState: { errors },
   } = useForm<AddShareholderType>({
-    defaultValues: 
+    defaultValues:
     {
       proponent: selectedShareholderProposal?.proponent,
       category: selectedShareholderProposal?.category,
@@ -56,23 +53,24 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proposal_name: selectedShareholderProposal?.proposal_name,
       vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula,
       status: selectedShareholderProposal?.status,
-      proposal_num:selectedShareholderProposal?.proposal_num,
-      sub_category:selectedShareholderProposal?.sub_category,
-      year:selectedShareholderProposal?.year,
+      proposal_num: selectedShareholderProposal?.proposal_num,
+      sub_category: selectedShareholderProposal?.sub_category,
+      year: selectedShareholderProposal?.year,
     },
   });
 
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
-  const [quickSearch, setQuickSearch] = useState(true);
-  const [isSaveForm, setIsSaveForm] = useState(true);
+
+  const [isSaveForm, setIsSaveForm] = useState(false);
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
+
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
-      company: [],
       status: [],
-      proponent: [],
       category: [],
       sub_category: [],
       year: [],
@@ -94,14 +92,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   }, []);
 
   const onSubmit = async (data: AddShareholderType) => {
-    const transformedData:any = {
+    const transformedData: any = {
       ...data,
       proponent: data.proponent ? Number(data.proponent) : 0,
       company: companyFilter?.length > 0 ? companyFilter[0] : 0
     };
-    setIsSaveForm(true);
 
-    if(isSaveForm && companyFilter?.length === 0) {
+    if (companyFilter?.length === 0) {
+      setIsSaveForm(true);
       return;
     }
     try {
@@ -110,7 +108,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         response = await dispatch(addEditNewShareHolder({ id: selectedShareholderProposal?.id!, data: transformedData })).unwrap();
       }
       else {
-        response = await dispatch(addEditNewShareHolder({data: transformedData})).unwrap();
+        response = await dispatch(addEditNewShareHolder({ data: transformedData })).unwrap();
       }
 
       if (response.results?.id) {
@@ -119,9 +117,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         setIsSaveForm(false);
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,{global_search: companyGlobalSearchName}, undefined, page)
+            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`, { global_search: companyGlobalSearchName }, undefined, page)
           )
-        );  
+        );
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -132,14 +130,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const handleSearch = (searchTerms: string[]) => {
     setCompanyFilter(searchTerms);
   };
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
 
   const onError: SubmitErrorHandler<any> = () => {
-      // setShowRequiredStateErrors(true);
+    // setShowRequiredStateErrors(true);
   };
 
-    return (
+  return (
     <Dialog
       size="xl"
       open={addNewShareholderModalVisible}
@@ -174,7 +170,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       name="proponent"
                       control={control}
                       rules={{ required: "Proponent Name is required" }}
-                      render={({ field ,fieldState: { error } }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
                             url="/institute/?type=Proponent"
@@ -192,7 +188,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           )}
                         </>
                       )}
-                      
+
                     />
                   </div>
                 </div>
@@ -208,33 +204,33 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       control={control}
                       // rules={{ required: "Company Name is required" }}
                       render={({ field ,fieldState: { error } }) => ( */}
-                        <>
-                         <div className="flex items-center ">
-                          <MultiSearchBar
-                            isRadioInput={true}
-                            onSearch={handleSearch}
-                            searchTerms={searchTerms}
-                            setSearchTerms={setSearchTerms}
-                            url="/company/"
-                            getValueKey="id"
-                            urlQueryKey="company_name"
-                            getOptionKey="name"
-                            placeHolder="Search Company"
-                          />
-                          </div>
-                          
-                          {isSaveForm && searchTerms?.length === 0 && (
-                            <Error className="text-red-600 mt-2">
-                              Company is Required
-                            </Error>
-                          )}
-                        </>
-                      {/* )} */}
-                      
+                    <>
+                      <div className="flex items-center ">
+                        <MultiSearchBar
+                          isRadioInput={true}
+                          onSearch={handleSearch}
+                          searchTerms={searchTerms}
+                          setSearchTerms={setSearchTerms}
+                          url="/company/"
+                          getValueKey="id"
+                          urlQueryKey="company_name"
+                          getOptionKey="name"
+                          placeHolder="Search Company"
+                        />
+                      </div>
+
+                      {isSaveForm && searchTerms?.length === 0 && (
+                        <Error className="text-red-600 mt-2">
+                          Company is Required
+                        </Error>
+                      )}
+                    </>
+                    {/* )} */}
+
                     {/* /> */}
                   </div>
                 </div>
-                
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -367,7 +363,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     />
                   </div>
                 </div>
-                
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -452,10 +448,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     />
                   </div>
                 </div>
-                
+
               </div>
 
-           
+
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
@@ -471,7 +467,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                         message: "The link must start with 'https://'",
                       },
                     }}
-                    
+
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -510,7 +506,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </Error>
                 )}
               </div>
-             
+
             </div>
           </Dialog.Description>
 
@@ -529,9 +525,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               {loading && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                    loading ? "animate-spin" : ""
-                  }`}
+                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                    }`}
                 />
               )}
               Save

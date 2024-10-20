@@ -23,18 +23,20 @@ import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
-
 interface AddNoActionProps {
   addNewNoActionModalVisible: boolean;
   setAddNewNoActionModalVisible: (visible: boolean) => void;
   selectedShareholderNoAction: AddNoActionType | null;
 }
 
+
+
 const AddNewNoAction: React.FC<AddNoActionProps> = ({
   addNewNoActionModalVisible,
   setAddNewNoActionModalVisible,
   selectedShareholderNoAction
 }) => {
+
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
   const {
@@ -43,38 +45,37 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     formState: { errors },
   } = useForm<AddNoActionType>(
     {
-      defaultValues: 
+      defaultValues:
       {
         proponent: selectedShareholderNoAction?.proponent,
-        category: selectedShareholderNoAction?.category,
         company: selectedShareholderNoAction?.company,
+        category: selectedShareholderNoAction?.category,
         proposal_text: selectedShareholderNoAction?.proposal_text,
-        proposal_name: selectedShareholderNoAction?.proposal_name,
-        vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
         status: selectedShareholderNoAction?.status,
-        proposal_num:selectedShareholderNoAction?.proposal_num,
-        sub_category:selectedShareholderNoAction?.sub_category,
-        year:selectedShareholderNoAction?.year,
+        sub_category: selectedShareholderNoAction?.sub_category,
+        year: selectedShareholderNoAction?.year,
+        link_to_initial_submission: selectedShareholderNoAction?.link_to_initial_submission,
+        link_to_staff_response: selectedShareholderNoAction?.link_to_staff_response,
+        staff_response: selectedShareholderNoAction?.staff_response,
+        bases_asserted_for_exclusion: selectedShareholderNoAction?.bases_asserted_for_exclusion,
       },
     }
   );
-  const [isSaveForm, setIsSaveForm] = useState(true);
+  const [isSaveForm, setIsSaveForm] = useState(false);
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
-      company: [],
       status: [],
-      proponent: [],
       category: [],
       sub_category: [],
       year: [],
     });
-  const [showRequiredStateErrors, setShowRequiredStateErrors] =
-    useState<boolean>(false);
 
-    const { user, companyGlobalSearchName } = useAppSelector(
-      (state) => state.authentiction
-    );
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -87,10 +88,10 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       return error;
     }
   };
+
   useEffect(() => {
     getAllCaseStudyDropdowns();
   }, []);
-
 
 
   const onSubmit = async (data: AddNoActionType) => {
@@ -99,25 +100,11 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       proponent: data.proponent ? Number(data.proponent) : 0,
       company: companyFilter?.length > 0 ? companyFilter[0] : 0
     };
-    setIsSaveForm(true);
 
-    if (isSaveForm && companyFilter?.length === 0) {
+    if (companyFilter?.length === 0) {
+      setIsSaveForm(true);
       return;
     }
-    // if (!keyContactsFile) {
-    //   return;
-    // } 
-    // else {
-    setShowRequiredStateErrors(false);
-    // }
-    // const formData = new FormData();
-
-    // for (const [key, value] of Object.entries(transformedData)) {
-    //   formData.append(key, value);
-    // }
-    // if (keyContactsFile) {
-    //   formData.append("file", keyContactsFile);
-    // }
 
     try {
       let response;
@@ -125,7 +112,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
         response = await dispatch(addEditNewNoAction({ id: selectedShareholderNoAction?.id!, data: transformedData })).unwrap();
       }
       else {
-        response = await dispatch(addEditNewNoAction({data: transformedData})).unwrap();
+        response = await dispatch(addEditNewNoAction({ data: transformedData })).unwrap();
       }
 
       if (response.results?.id) {
@@ -134,7 +121,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
 
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`, {global_search: companyGlobalSearchName}, undefined, page)
+            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`, { global_search: companyGlobalSearchName }, undefined, page)
           )
         );
       }
@@ -146,14 +133,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   const handleSearch = (searchTerms: string[]) => {
     setCompanyFilter(searchTerms);
   };
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
 
-  const onError: SubmitErrorHandler<any> = () => {
-    // if (!keyContactsFile) {
-    setShowRequiredStateErrors(true);
-    // }
-  };
+  const onError: SubmitErrorHandler<any> = () => { };
+
   return (
     <Dialog
       size="xl"
@@ -177,7 +159,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="flex flex-col gap-7">
-            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Proponent Name
@@ -188,7 +170,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       name="proponent"
                       control={control}
                       rules={{ required: "Proponent Name is required" }}
-                      render={({ field ,fieldState: { error } }) => (
+                      render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
                             url="/institute/?type=Proponent"
@@ -206,7 +188,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                           )}
                         </>
                       )}
-                      
+
                     />
                   </div>
                 </div>
@@ -222,33 +204,33 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       control={control}
                       // rules={{ required: "Company Name is required" }}
                       render={({ field ,fieldState: { error } }) => ( */}
-                        <>
-                         <div className="flex items-center ">
-                          <MultiSearchBar
-                            isRadioInput={true}
-                            onSearch={handleSearch}
-                            searchTerms={searchTerms}
-                            setSearchTerms={setSearchTerms}
-                            url="/company/"
-                            getValueKey="id"
-                            urlQueryKey="company_name"
-                            getOptionKey="name"
-                            placeHolder="Search Company"
-                          />
-                          </div>
-                          
-                          {isSaveForm && searchTerms?.length === 0 && (
-                            <Error className="text-red-600 mt-2">
-                              Company is Required
-                            </Error>
-                          )}
-                        </>
-                      {/* )} */}
-                      
+                    <>
+                      <div className="flex items-center ">
+                        <MultiSearchBar
+                          isRadioInput={true}
+                          onSearch={handleSearch}
+                          searchTerms={searchTerms}
+                          setSearchTerms={setSearchTerms}
+                          url="/company/"
+                          getValueKey="id"
+                          urlQueryKey="company_name"
+                          getOptionKey="name"
+                          placeHolder="Search Company"
+                        />
+                      </div>
+
+                      {isSaveForm && searchTerms?.length === 0 && (
+                        <Error className="text-red-600 mt-2">
+                          Company is Required
+                        </Error>
+                      )}
+                    </>
+                    {/* )} */}
+
                     {/* /> */}
                   </div>
                 </div>
-                
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -503,7 +485,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
 
               </div>
 
-            
+
 
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -535,7 +517,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   />
                 </div>
 
-                
+
               </div>
 
 

@@ -1,14 +1,10 @@
 import Button from "@/components/Base/Button";
-import { ClassicEditor } from "@/components/Base/Ckeditor";
-import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { FormCheck, FormInput } from "@/components/Base/Form";
-
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-
 import { AppDispatch } from "@/stores/store";
-import { bytesToMB, createDynamicURL } from "@/utils/helper";
+import { createDynamicURL } from "@/utils/helper";
 import TomSelect from "@/components/Base/TomSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -18,15 +14,11 @@ import {
   useForm,
 } from "react-hook-form";
 import { toast } from "react-toastify";
-// import TomSelect from "@/components/Base/TomSelect/ServerComponent";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
-import { AddNewInvesterType } from "@/types/investerProfiles";
 import { addEditNewWithdrawn, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
-import { AddNoActionType, AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
+import { AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
-import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import MultiSearchBar from "@/components/MultiSearch";
 
@@ -52,14 +44,9 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       defaultValues: 
       {
         proponent: selectedShareholderWithdrawn?.proponent,
-        category: selectedShareholderWithdrawn?.category,
+        initiative: selectedShareholderWithdrawn?.initiative,
         company: selectedShareholderWithdrawn?.company,
-        proposal_text: selectedShareholderWithdrawn?.proposal_text,
-        proposal_name: selectedShareholderWithdrawn?.proposal_name,
-        vote_outcome_formula: selectedShareholderWithdrawn?.vote_outcome_formula,
         status: selectedShareholderWithdrawn?.status,
-        proposal_num:selectedShareholderWithdrawn?.proposal_num,
-        sub_category:selectedShareholderWithdrawn?.sub_category,
         year:selectedShareholderWithdrawn?.year,
       },
     }
@@ -67,16 +54,15 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
-      company: [],
       status: [],
-      proponent: [],
       category: [],
       sub_category: [],
       year: [],
     });
-  const [showRequiredStateErrors, setShowRequiredStateErrors] =
-    useState<boolean>(false);
-  const [isSaveForm, setIsSaveForm] = useState(true);
+
+  const [isSaveForm, setIsSaveForm] = useState(false);
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
 
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -92,6 +78,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       return error;
     }
   };
+  
   useEffect(() => {
     getAllCaseStudyDropdowns();
   }, []);
@@ -102,25 +89,11 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       proponent: data.proponent ? Number(data.proponent) : 0,
       company: companyFilter?.length > 0 ? companyFilter[0] : 0
     };
-    setIsSaveForm(true);
 
-    if (isSaveForm && companyFilter?.length === 0) {
+    if(companyFilter?.length === 0) {
+      setIsSaveForm(true);
       return;
     }
-    // if (!keyContactsFile) {
-    //   return;
-    // } 
-    // else {
-    setShowRequiredStateErrors(false);
-    // }
-    // const formData = new FormData();
-
-    // for (const [key, value] of Object.entries(transformedData)) {
-    //   formData.append(key, value);
-    // }
-    // if (keyContactsFile) {
-    //   formData.append("file", keyContactsFile);
-    // }
 
     try {
       let response;
@@ -149,14 +122,11 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
   const handleSearch = (searchTerms: string[]) => {
     setCompanyFilter(searchTerms);
   };
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
+
 
   const onError: SubmitErrorHandler<any> = () => {
-    // if (!keyContactsFile) {
-    setShowRequiredStateErrors(true);
-    // }
   };
+
   return (
     <Dialog
       size="xl"
