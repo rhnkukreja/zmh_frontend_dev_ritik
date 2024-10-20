@@ -46,10 +46,20 @@ class ShareHolderProposalService {
     };
   }
 
-  public async AddNewShareHolder(data: Partial<AddShareholderType>): Promise<{
+  public async addNewShareHolder(data: Partial<AddShareholderType>): Promise<{
     results: AddShareholderType;
   }> {
     const response = await axiosInstance.post(`/shareholder_proposal/def14a/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async updateNewShareHolder(id: string, data: Partial<AddShareholderType>): Promise<{
+    results: AddShareholderType;
+  }> {
+    const response = await axiosInstance.put(`/shareholder_proposal/def14a/${id}/`, data);
     const results = response.data;
     return {
       results,
@@ -66,10 +76,31 @@ class ShareHolderProposalService {
     };
   }
 
+  public async updateNewWithdrawn(id: string, data: Partial<AddWithdrawnType>): Promise<{
+    results: AddWithdrawnType;
+  }> {
+    const response = await axiosInstance.put(`/shareholder_proposal/withdrawn/${id}/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
   public async AddNewNoAction(data: Partial<AddNoActionType>): Promise<{
     results: AddNoActionType;
   }> {
     const response = await axiosInstance.post(`/shareholder_proposal/no_action/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+
+  public async updateNoAction(id: string, data: Partial<AddNoActionType>): Promise<{
+    results: AddNoActionType;
+  }> {
+    const response = await axiosInstance.put(`/shareholder_proposal/no_action/${id}/`, data);
     const results = response.data;
     return {
       results,

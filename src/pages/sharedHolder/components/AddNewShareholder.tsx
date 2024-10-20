@@ -19,22 +19,26 @@ import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
 import { AddNewInvesterType } from "@/types/investerProfiles";
-import { addNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import { addEditNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
 import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
+import QuickSearch from "@/components/QuickSearch";
+
 
 interface AddNewShareholderProps {
   addNewShareholderModalVisible: boolean;
   setAddNewShareholderModalVisible: (visible: boolean) => void;
+  selectedShareholderProposal: AddShareholderType | null;
 }
 
 const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   addNewShareholderModalVisible,
   setAddNewShareholderModalVisible,
+  selectedShareholderProposal
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
@@ -42,10 +46,27 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<AddShareholderType>();
+  } = useForm<AddShareholderType>({
+    defaultValues: 
+    {
+      proponent: selectedShareholderProposal?.proponent,
+      category: selectedShareholderProposal?.category,
+      company: selectedShareholderProposal?.company,
+      proposal_text: selectedShareholderProposal?.proposal_text,
+      proposal_name: selectedShareholderProposal?.proposal_name,
+      vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula,
+      status: selectedShareholderProposal?.status,
+      proposal_num:selectedShareholderProposal?.proposal_num,
+      sub_category:selectedShareholderProposal?.sub_category,
+      year:selectedShareholderProposal?.year,
+    },
+  });
+
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
+  const [quickSearch, setQuickSearch] = useState(true);
+  const [isSaveForm, setIsSaveForm] = useState(true);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -73,29 +94,29 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   }, []);
 
   const onSubmit = async (data: AddShareholderType) => {
-    const transformedData = {
+    const transformedData:any = {
       ...data,
-      // ...applyFilters,
-      // ...applyCompanyFilters
+      proponent: data.proponent ? Number(data.proponent) : 0,
+      company: companyFilter?.length > 0 ? companyFilter[0] : 0
     };
-    // if (!keyContactsFile) {
-    //   return;
-    // } 
-    // else {
-    // }
-    // const formData = new FormData();
+    setIsSaveForm(true);
 
-    // for (const [key, value] of Object.entries(transformedData)) {
-    //   formData.append(key, value);
-    // }
-
+    if(isSaveForm && companyFilter?.length === 0) {
+      return;
+    }
     try {
-      const response = await dispatch(addNewShareHolder(transformedData)).unwrap();
+      let response;
+      if (selectedShareholderProposal) {
+        response = await dispatch(addEditNewShareHolder({ id: selectedShareholderProposal?.id!, data: transformedData })).unwrap();
+      }
+      else {
+        response = await dispatch(addEditNewShareHolder({data: transformedData})).unwrap();
+      }
 
       if (response.results?.id) {
         toast.success("New Shareholder Proposal Added");
         setAddNewShareholderModalVisible(false);
-
+        setIsSaveForm(false);
         dispatch(
           fetchShareHolderProposal(
             createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,{global_search: companyGlobalSearchName}, undefined, page)
@@ -107,9 +128,17 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     }
   };
 
+
+  const handleSearch = (searchTerms: string[]) => {
+    setCompanyFilter(searchTerms);
+  };
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
+
   const onError: SubmitErrorHandler<any> = () => {
       // setShowRequiredStateErrors(true);
   };
+
     return (
     <Dialog
       size="xl"
@@ -148,7 +177,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field ,fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?investor_type=Proponent&all=true"
+                            url="/institute/?type=Proponent"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}
@@ -174,30 +203,35 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </FormCheck.Label>
 
                   <div className="mt-2">
-                    <Controller
+                    {/* <Controller
                       name="company"
                       control={control}
-                      rules={{ required: "Company Name is required" }}
-                      render={({ field ,fieldState: { error } }) => (
+                      // rules={{ required: "Company Name is required" }}
+                      render={({ field ,fieldState: { error } }) => ( */}
                         <>
-                          <TomSelectServer
+                         <div className="flex items-center ">
+                          <MultiSearchBar
+                            isRadioInput={true}
+                            onSearch={handleSearch}
+                            searchTerms={searchTerms}
+                            setSearchTerms={setSearchTerms}
                             url="/company/"
-                            valueKey="id"
-                            labelKey="name"
-                            value={field?.value?.toString() || ""}
-                            onChange={(value) => field.onChange(value)}
-                            options={{ placeholder: "Select Company" }}
-                            className="w-full"
+                            getValueKey="id"
+                            urlQueryKey="company_name"
+                            getOptionKey="name"
+                            placeHolder="Search Company"
                           />
-                          {error && (
+                          </div>
+                          
+                          {isSaveForm && searchTerms?.length === 0 && (
                             <Error className="text-red-600 mt-2">
-                              {error.message}
+                              Company is Required
                             </Error>
                           )}
                         </>
-                      )}
+                      {/* )} */}
                       
-                    />
+                    {/* /> */}
                   </div>
                 </div>
                 
@@ -430,7 +464,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   <Controller
                     name="vote_outcome_formula"
                     control={control}
-                    rules={{ required: "Link to Filing is required" }}
+                    rules={{
+                      required: "Link to Filing is required",
+                      pattern: {
+                        value: /^https:\/\/.+$/i,
+                        message: "The link must start with 'https://'",
+                      },
+                    }}
+                    
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput

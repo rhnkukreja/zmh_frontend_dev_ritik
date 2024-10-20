@@ -78,25 +78,40 @@ export const getSingleShareHolderData = createAsyncThunk<
   return await shareHolderProposalService.getSingleShareHolder(url, id);
 });
 
-export const addNewShareHolder = createAsyncThunk<
-  { results: AddShareholderType }, any
->(`${name}/addNewShareHolder`, async (data: AddShareholderType) => {
-  const response = await shareHolderProposalService.AddNewShareHolder(data);
+export const addEditNewShareHolder = createAsyncThunk<
+{ results: AddShareholderType }, any>
+(`${name}/addEditNewShareHolder`, async ({ id, data }) => {
+  let response;
+  if (id) {
+    response = await shareHolderProposalService.updateNewShareHolder(id, data);
+  } else {
+    response = await shareHolderProposalService.addNewShareHolder(data);
+  }
   return response;
 });
 
 
-export const addNewWithdrawn = createAsyncThunk<
+export const addEditNewWithdrawn = createAsyncThunk<
   { results: AddWithdrawnType }, any
->(`${name}/addNewWithdrawn`, async (data: AddWithdrawnType) => {
-  const response = await shareHolderProposalService.AddNewWithdrawn(data);
+>(`${name}/addEditNewWithdrawn`, async ({ id, data }) => {
+  let response;
+  if (id) {
+    response = await shareHolderProposalService.updateNewWithdrawn(id, data);
+  } else {
+    response = await shareHolderProposalService.AddNewWithdrawn(data);
+  }
   return response;
 });
 
-export const addNewNoAction = createAsyncThunk<
+export const addEditNewNoAction = createAsyncThunk<
   { results: AddNoActionType }, any
->(`${name}/addNewNoAction`, async (data: AddNoActionType) => {
-  const response = await shareHolderProposalService.AddNewNoAction(data);
+>(`${name}/addEditNewNoAction`, async ({ id, data }) => {
+  let response;
+  if (id) {
+    response = await shareHolderProposalService.updateNoAction(id, data);
+  } else {
+    response = await shareHolderProposalService.AddNewNoAction(data);
+  }
   return response;
 });
 
@@ -191,18 +206,18 @@ const shareHolderProposal = createSlice({
         state.error =
           action.error.message || "Failed to fetch engagement questions";
       })
-      .addCase(addNewShareHolder.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(addNewShareHolder.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(addNewShareHolder.rejected, (state, action) => {
-        state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch investers profile";
-      });
+      // .addCase(addNewShareHolder.pending, (state) => {
+      //   state.loading = true;
+      //   state.error = null;
+      // })
+      // .addCase(addNewShareHolder.fulfilled, (state) => {
+      //   state.loading = false;
+      // })
+      // .addCase(addNewShareHolder.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error =
+      //     action.error.message || "Failed to fetch investers profile";
+      // });
   },
 });
 

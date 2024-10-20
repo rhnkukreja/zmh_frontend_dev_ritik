@@ -27,7 +27,7 @@ import {
 import { resetPage } from "@/stores/shareholderProposalSlice";
 import TomSelect from "@/components/Base/TomSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
-import { ShareHolderDropdown } from "@/types/shareHolder";
+import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
 import clsx from "clsx";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
@@ -38,6 +38,7 @@ import AddNewWithdrawn from "./components/AddNewWithdrawn";
 import AddNewNoAction from "./components/AddNewNoAction";
 
 function ShareHolderProposal() {
+
   const dispatch: AppDispatch = useAppDispatch();
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -53,14 +54,14 @@ function ShareHolderProposal() {
 
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
-    useState<ShareHolderDropdown>({
+  useState<ShareHolderDropdown>({
       institution: [],
       status: [],
       proponent: [],
       category: [],
       sub_category: [],
       year: [],
-    });
+  });
 
   const [addNewShareholderModalVisible, setAddNewShareholderModalVisible] =
     useState<boolean>(false);
@@ -73,6 +74,10 @@ function ShareHolderProposal() {
     const [withdrawnCount, setWithdrawnCount] = useState<number>(0);
     const [noActionCount, setNoActionCount] = useState<number>(0);
 
+    const [selectedShareholderProposal, setSelectedShareholderProposal] = useState<AddShareholderType | null>(null);
+    const [selectedShareholderWithdrawn, setSelectedShareholderWithdrawn] = useState<AddWithdrawnType | null>(null);
+    const [selectedShareholderNoAction, setSelectedShareholderNoAction] = useState<AddNoActionType | null>(null);
+
 
   const {
     handleSubmit,
@@ -82,6 +87,7 @@ function ShareHolderProposal() {
     setValue,
     watch,
   } = useForm<ShareHolderFilter>();
+
   const navigate = useNavigate();
 
   const { loading, shareHolderProposal, page, totalPages, tab} = useAppSelector((state) => state.sharedHolderNoAction);
@@ -89,6 +95,21 @@ function ShareHolderProposal() {
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
     setIsFilterCollapse(!isFilterCollapse);
+  };
+
+  const onEditProposalClickHandler = (proposal: AddShareholderType) => {
+    setSelectedShareholderProposal(proposal);
+    setAddNewShareholderModalVisible(true);
+  };
+
+  const onEditWithdrawnClickHandler = (withdrawn: AddWithdrawnType) => {
+    setSelectedShareholderWithdrawn(withdrawn);
+    setAddNewWithdrawnModalVisible(true);
+  };
+
+  const onEditNoActionClickHandler = (noAction: AddNoActionType) => {
+    setSelectedShareholderNoAction(noAction);
+    setAddNewNoActionModalVisible(true);
   };
 
   useEffect(() => {
@@ -175,10 +196,9 @@ function ShareHolderProposal() {
       setGetDropdownLoader(false);
     }
   };
+
   useEffect(() => {
-    getAllCaseStudyDropdowns();
-    // if (!applyFilters?.global_search) return;
-    
+    getAllCaseStudyDropdowns();    
   }, []);
 
   const handleNextPage = () => {
@@ -233,6 +253,18 @@ function ShareHolderProposal() {
       } as ShareHolderFilter;
     });
   };
+
+  useEffect(() => {
+    if (addNewShareholderModalVisible === false) {
+      setSelectedShareholderProposal(null);
+    }
+    if (addNewNoActionModalVisible === false) {
+      setSelectedShareholderNoAction(null);
+    }
+    if (addNewWithdrawnModalVisible === false) {
+      setSelectedShareholderWithdrawn(null);
+    }
+  }, [addNewNoActionModalVisible, addNewNoActionModalVisible, addNewWithdrawnModalVisible]);
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
     setApplyFilters({
@@ -333,23 +365,6 @@ function ShareHolderProposal() {
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
             <div className="font-semibold text-xl ">Shareholder Proposals</div>
-            {/* {user?.user_type === "Admin" && (
-              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-                <Button
-                  onClick={() => {
-                    setAddNewShareholderModalVisible(true);
-                  }}
-                  variant="primary"
-                  className="bg-theme-2 border-bg-theme-2 "
-                >
-                  <Lucide
-                    icon="PenLine"
-                    className="stroke-[1.3] w-4 h-4 mr-2"
-                  />
-                  Add New Shareholder
-                </Button>
-              </div>
-            )} */}
           </div>
 
           <div className="mt-3.5">
@@ -912,7 +927,7 @@ function ShareHolderProposal() {
                                       {noAction?.nl_exist === true ? "Yes" : ""}
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex">
+                                      <div className="flex gap-3 justify-center">
                                         <Tippy
                                           content=" See Details"
                                           options={{
@@ -929,6 +944,20 @@ function ShareHolderProposal() {
                                             className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                           />
                                         </Tippy>
+                                        {user?.user_type === "Admin" && (
+                                          <Tippy
+                                            content="Edit"
+                                            options={{ theme: "light" }}
+                                          >
+                                            <Lucide
+                                              onClick={() =>
+                                                onEditProposalClickHandler(noAction)
+                                              }
+                                              icon="PenLine"
+                                              className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                            />
+                                          </Tippy>
+                                        )}
                                       </div>
                                     </Table.Td>
                                   </Table.Tr>
@@ -1008,7 +1037,7 @@ function ShareHolderProposal() {
                                       {noAction?.staff_response}
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex">
+                                      <div className="flex gap-3 justify-center">
                                         <Tippy
                                           content=" See Details"
                                           options={{
@@ -1025,6 +1054,20 @@ function ShareHolderProposal() {
                                             className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                           />
                                         </Tippy>
+                                        {user?.user_type === "Admin" && (
+                                          <Tippy
+                                            content="Edit"
+                                            options={{ theme: "light" }}
+                                          >
+                                            <Lucide
+                                              onClick={() =>
+                                                onEditNoActionClickHandler(noAction)
+                                              }
+                                              icon="PenLine"
+                                              className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                            />
+                                          </Tippy>
+                                        )}
                                       </div>
                                     </Table.Td>
                                   </Table.Tr>
@@ -1092,7 +1135,7 @@ function ShareHolderProposal() {
                                       {noAction?.status}
                                     </Table.Td>
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex">
+                                      <div className="flex gap-3 justify-center">
                                         <Tippy
                                           content=" See Details"
                                           options={{
@@ -1109,6 +1152,20 @@ function ShareHolderProposal() {
                                             className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                           />
                                         </Tippy>
+                                        {user?.user_type === "Admin" && (
+                                          <Tippy
+                                            content="Edit"
+                                            options={{ theme: "light" }}
+                                          >
+                                            <Lucide
+                                              onClick={() =>
+                                                onEditWithdrawnClickHandler(noAction)
+                                              }
+                                              icon="PenLine"
+                                              className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                            />
+                                          </Tippy>
+                                        )}
                                       </div>
                                     </Table.Td>
                                   </Table.Tr>
@@ -1136,6 +1193,7 @@ function ShareHolderProposal() {
             <AddNewShareholder
               addNewShareholderModalVisible={addNewShareholderModalVisible}
               setAddNewShareholderModalVisible={setAddNewShareholderModalVisible}
+              selectedShareholderProposal={selectedShareholderProposal}
             />
           )}
 
@@ -1143,6 +1201,7 @@ function ShareHolderProposal() {
             <AddNewNoAction
             addNewNoActionModalVisible={addNewNoActionModalVisible}
               setAddNewNoActionModalVisible={setAddNewNoActionModalVisible}
+              selectedShareholderNoAction={selectedShareholderNoAction}
             />
           )}
 
@@ -1150,6 +1209,7 @@ function ShareHolderProposal() {
             <AddNewWithdrawn
             addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
               setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
+              selectedShareholderWithdrawn={selectedShareholderWithdrawn}
             />
           )}
 

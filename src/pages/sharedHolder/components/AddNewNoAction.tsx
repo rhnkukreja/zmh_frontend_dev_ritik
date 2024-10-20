@@ -1,8 +1,6 @@
 import Button from "@/components/Base/Button";
 import { ClassicEditor } from "@/components/Base/Ckeditor";
-import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { FormCheck, FormInput } from "@/components/Base/Form";
-
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -18,26 +16,24 @@ import {
   useForm,
 } from "react-hook-form";
 import { toast } from "react-toastify";
-// import TomSelect from "@/components/Base/TomSelect/ServerComponent";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
-import { AddNewInvesterType } from "@/types/investerProfiles";
-import { addNewNoAction, addNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import { addEditNewNoAction, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
 import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
-import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 
 interface AddNoActionProps {
   addNewNoActionModalVisible: boolean;
   setAddNewNoActionModalVisible: (visible: boolean) => void;
+  selectedShareholderNoAction: AddNoActionType | null;
 }
 
 const AddNewNoAction: React.FC<AddNoActionProps> = ({
   addNewNoActionModalVisible,
   setAddNewNoActionModalVisible,
+  selectedShareholderNoAction
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
@@ -45,7 +41,24 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<AddNoActionType>();
+  } = useForm<AddNoActionType>(
+    {
+      defaultValues: 
+      {
+        proponent: selectedShareholderNoAction?.proponent,
+        category: selectedShareholderNoAction?.category,
+        company: selectedShareholderNoAction?.company,
+        proposal_text: selectedShareholderNoAction?.proposal_text,
+        proposal_name: selectedShareholderNoAction?.proposal_name,
+        vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
+        status: selectedShareholderNoAction?.status,
+        proposal_num:selectedShareholderNoAction?.proposal_num,
+        sub_category:selectedShareholderNoAction?.sub_category,
+        year:selectedShareholderNoAction?.year,
+      },
+    }
+  );
+  const [isSaveForm, setIsSaveForm] = useState(true);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -78,10 +91,19 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     getAllCaseStudyDropdowns();
   }, []);
 
+
+
   const onSubmit = async (data: AddNoActionType) => {
     const transformedData = {
       ...data,
+      proponent: data.proponent ? Number(data.proponent) : 0,
+      company: companyFilter?.length > 0 ? companyFilter[0] : 0
     };
+    setIsSaveForm(true);
+
+    if (isSaveForm && companyFilter?.length === 0) {
+      return;
+    }
     // if (!keyContactsFile) {
     //   return;
     // } 
@@ -98,7 +120,13 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     // }
 
     try {
-      const response = await dispatch(addNewNoAction(transformedData)).unwrap();
+      let response;
+      if (selectedShareholderNoAction) {
+        response = await dispatch(addEditNewNoAction({ id: selectedShareholderNoAction?.id!, data: transformedData })).unwrap();
+      }
+      else {
+        response = await dispatch(addEditNewNoAction({data: transformedData})).unwrap();
+      }
 
       if (response.results?.id) {
         toast.success("New Shareholder No Action Added");
@@ -114,6 +142,12 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       console.error("Error submitting form:", error);
     }
   };
+
+  const handleSearch = (searchTerms: string[]) => {
+    setCompanyFilter(searchTerms);
+  };
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
 
   const onError: SubmitErrorHandler<any> = () => {
     // if (!keyContactsFile) {
@@ -143,7 +177,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="flex flex-col gap-7">
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Proponent Name
@@ -154,12 +188,12 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       name="proponent"
                       control={control}
                       rules={{ required: "Proponent Name is required" }}
-                      render={({ field, fieldState: { error } }) => (
+                      render={({ field ,fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/shareholder_proposal/no_action/?all=true"
+                            url="/institute/?type=Proponent"
                             valueKey="id"
-                            labelKey="proponent_name"
+                            labelKey="institution"
                             value={field?.value?.toString() || ""}
                             onChange={(value) => field.onChange(value)}
                             options={{ placeholder: "Select proponent" }}
@@ -172,7 +206,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                           )}
                         </>
                       )}
-
+                      
                     />
                   </div>
                 </div>
@@ -183,33 +217,38 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   </FormCheck.Label>
 
                   <div className="mt-2">
-                    <Controller
+                    {/* <Controller
                       name="company"
                       control={control}
-                      rules={{ required: "Company Name is required" }}
-                      render={({ field, fieldState: { error } }) => (
+                      // rules={{ required: "Company Name is required" }}
+                      render={({ field ,fieldState: { error } }) => ( */}
                         <>
-                          <TomSelectServer
-                            url="/institute/"
-                            valueKey="id"
-                            labelKey="institution"
-                            value={field?.value?.toString() || ""}
-                            onChange={(value) => field.onChange(value)}
-                            options={{ placeholder: "Select Company" }}
-                            className="w-full"
+                         <div className="flex items-center ">
+                          <MultiSearchBar
+                            isRadioInput={true}
+                            onSearch={handleSearch}
+                            searchTerms={searchTerms}
+                            setSearchTerms={setSearchTerms}
+                            url="/company/"
+                            getValueKey="id"
+                            urlQueryKey="company_name"
+                            getOptionKey="name"
+                            placeHolder="Search Company"
                           />
-                          {error && (
+                          </div>
+                          
+                          {isSaveForm && searchTerms?.length === 0 && (
                             <Error className="text-red-600 mt-2">
-                              {error.message}
+                              Company is Required
                             </Error>
                           )}
                         </>
-                      )}
-
-                    />
+                      {/* )} */}
+                      
+                    {/* /> */}
                   </div>
                 </div>
-
+                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -475,7 +514,13 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   <Controller
                     name="vote_outcome_formula"
                     control={control}
-                    rules={{ required: "Link to Staff Response is required" }}
+                    rules={{
+                      required: "Link to Staff Response is required",
+                      pattern: {
+                        value: /^https:\/\/.+$/i,
+                        message: "The link must start with 'https://'",
+                      },
+                    }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
