@@ -44,6 +44,7 @@ export type AddShareholderType = {
   proposal_num: string;
   vote_outcome_formula: string;
   institution: string;
+  company_name?:string;
 };
 
 
@@ -55,6 +56,7 @@ export type AddWithdrawnType = {
   company: string;
   status: string;
   nl_exist: string;
+  company_name?:string;
 };
 
 
@@ -74,4 +76,5 @@ export type AddNoActionType = {
   nl_exist: string;
   proposal_num: string;
   vote_outcome_formula: string;
+  company_name?:string;
 };

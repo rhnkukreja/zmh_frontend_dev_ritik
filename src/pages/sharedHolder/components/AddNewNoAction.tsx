@@ -116,7 +116,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       }
 
       if (response.results?.id) {
-        toast.success("New Shareholder No Action Added");
+        toast.success(selectedShareholderNoAction ? 'Shareholder No Action Updated' : "New Shareholder No Action Added");
         setAddNewNoActionModalVisible(false);
 
         dispatch(
@@ -134,6 +134,14 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     setCompanyFilter(searchTerms);
   };
 
+  useEffect(() => {
+    if(selectedShareholderNoAction){
+      setSearchTerms(selectedShareholderNoAction?.company_name ? [selectedShareholderNoAction?.company_name] : ['']);
+      setCompanyFilter(selectedShareholderNoAction?.company ? [selectedShareholderNoAction?.company] : ['']);
+
+    }
+  }, [selectedShareholderNoAction])
+
   const onError: SubmitErrorHandler<any> = () => { };
 
   return (
@@ -147,7 +155,11 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       <Dialog.Panel className="text-center">
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2>
+            <h2 className="mr-auto text-xl font-semibold">
+            {selectedShareholderNoAction
+                ? "Edit Shareholder No Action"
+                : "Add New Shareholder No Action"}
+              </h2>
             <div
               onClick={() => {
                 setAddNewNoActionModalVisible(false);

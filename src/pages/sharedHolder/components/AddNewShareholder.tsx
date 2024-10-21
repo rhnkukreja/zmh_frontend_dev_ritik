@@ -49,6 +49,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proponent: selectedShareholderProposal?.proponent,
       category: selectedShareholderProposal?.category,
       company: selectedShareholderProposal?.company,
+      company_name: selectedShareholderProposal?.company_name,
       proposal_text: selectedShareholderProposal?.proposal_text,
       proposal_name: selectedShareholderProposal?.proposal_name,
       vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula,
@@ -112,7 +113,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       }
 
       if (response.results?.id) {
-        toast.success("New Shareholder Proposal Added");
+        toast.success(selectedShareholderProposal ? 'Shareholder Proposal Updated' : "New Shareholder Proposal Added");
         setAddNewShareholderModalVisible(false);
         setIsSaveForm(false);
         dispatch(
@@ -131,6 +132,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     setCompanyFilter(searchTerms);
   };
 
+  useEffect(() => {
+    if(selectedShareholderProposal){
+      setSearchTerms(selectedShareholderProposal?.company_name ? [selectedShareholderProposal?.company_name] : ['']);
+      setCompanyFilter(selectedShareholderProposal?.company ? [selectedShareholderProposal?.company] : ['']);
+    }
+  }, [selectedShareholderProposal])
+  
+
   const onError: SubmitErrorHandler<any> = () => {
     // setShowRequiredStateErrors(true);
   };
@@ -146,7 +155,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       <Dialog.Panel className="text-center">
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder Proposal</h2>
+            <h2 className="mr-auto text-xl font-semibold">
+              {selectedShareholderProposal
+                ? "Edit Shareholder Proposal"
+                : "Add New Shareholder Proposal"}
+              </h2>
             <div
               onClick={() => {
                 setAddNewShareholderModalVisible(false);
@@ -219,7 +232,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                         />
                       </div>
 
-                      {isSaveForm && searchTerms?.length === 0 && (
+                      {isSaveForm && companyFilter?.length === 0 && (
                         <Error className="text-red-600 mt-2">
                           Company is Required
                         </Error>

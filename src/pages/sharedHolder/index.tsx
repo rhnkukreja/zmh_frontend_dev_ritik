@@ -831,6 +831,7 @@ function ShareHolderProposal() {
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
+                              setSelectedShareholderProposal(null);
                               setAddNewShareholderModalVisible(true);
                             }}
                             variant="primary"
@@ -864,7 +865,7 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Actions
                                 </Table.Td>
                               </Table.Tr>
@@ -975,6 +976,7 @@ function ShareHolderProposal() {
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
+                              setSelectedShareholderNoAction(null);
                               setAddNewNoActionModalVisible(true);
                             }}
                             variant="primary"
@@ -1008,7 +1010,7 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 flex items-center justify-center  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Actions
                                 </Table.Td>
                               </Table.Tr>
@@ -1085,6 +1087,7 @@ function ShareHolderProposal() {
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
+                              setSelectedShareholderWithdrawn(null);
                               setAddNewWithdrawnModalVisible(true);
                             }}
                             variant="primary"
@@ -1112,7 +1115,7 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 flex items-center justify-center  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Actions
                                 </Table.Td>
                               </Table.Tr>

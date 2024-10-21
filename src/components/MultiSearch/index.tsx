@@ -35,7 +35,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   urlQueryKey
 }) => {
   const [searchValue, setSearchValue] = useState("");
-  const [options, setOptions] = useState<string[]>([]);
+  const [options, setOptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -110,7 +110,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
     } else {
       // setOptions((prev) => prev.filter((option) => option !== item));
       if (isRadioInput) {
-        onSearch([item]);
+        const data = options?.find((x:any)=> x?.name === item )?.id;
+        onSearch([data]);
         setSearchTerms([item]);
         setSearchValue("");
       }
@@ -141,14 +142,14 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
           type="text"
           placeholder={placeHolder ?? "Search Institution Name"}
           className="pl-9 w-full sm:w-96 rounded-[0.5rem] relative"
-          value={searchValue}
+          value={!isOpen && isRadioInput && searchTerms ? searchTerms[0] : searchValue}
           onChange={handleChange}
         />
         {isOpen && (
           <>
             <div className="search-terms-box bg-white mt-2 p-2 border rounded absolute z-50 left-0 right-0">
               {
-                !isRadioInput && <div className="flex flex-nowrap gap-2 py-2 pb-4 overflow-hidden overflow-x-auto  scrollbar-hide">
+                <div className="flex flex-nowrap gap-2 py-2 pb-4 overflow-hidden overflow-x-auto  scrollbar-hide">
                 {searchTerms.map((term, index) => (
                   <div
                     key={index}
@@ -249,9 +250,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                       id={`radio-switch`}
                                       type="radio"
                                       name="id"
-                                      checked={searchTerms.includes(item[getValueKey as string])}
+                                      checked={searchTerms.includes(item[getOptionKey as string])}
                                       onChange={(e) => {
-                                        handleSearch(item[getValueKey as string], e.target.checked);
+                                        handleSearch(item[getOptionKey as string], e.target.checked);
                                       }}
                                     />
                                     <label

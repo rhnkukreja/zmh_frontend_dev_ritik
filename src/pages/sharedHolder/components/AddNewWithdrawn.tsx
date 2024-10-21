@@ -105,7 +105,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       }
 
       if (response.results?.id) {
-        toast.success("New Shareholder Withdrawn Added");
+        toast.success(selectedShareholderWithdrawn ? 'Shareholder Withdrawn Updated' : "New Shareholder Withdrawn Added");
         setAddNewWithdrawnModalVisible(false);
 
         dispatch(
@@ -123,6 +123,13 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
     setCompanyFilter(searchTerms);
   };
 
+  useEffect(() => {
+    if(selectedShareholderWithdrawn){
+      setSearchTerms(selectedShareholderWithdrawn?.company_name ? [selectedShareholderWithdrawn?.company_name] : ['']);
+      setCompanyFilter(selectedShareholderWithdrawn?.company ? [selectedShareholderWithdrawn?.company] : ['']);
+
+    }
+  }, [selectedShareholderWithdrawn])
 
   const onError: SubmitErrorHandler<any> = () => {
   };
@@ -138,7 +145,11 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       <Dialog.Panel className="text-center">
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder Withdrawn</h2>
+            <h2 className="mr-auto text-xl font-semibold">
+              {selectedShareholderWithdrawn
+                ? "Edit Shareholder Withdrawn"
+                : "Add New Shareholder Withdrawn"}
+              </h2>
             <div
               onClick={() => {
                 setAddNewWithdrawnModalVisible(false);
