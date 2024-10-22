@@ -816,7 +816,7 @@ function ShareHolderProposal() {
                         }}
                       >
                         <div className="flex items-center justify-center ">
-                          Withdrawn
+                          Withdrawn (Proponent Disclosure)
                           <span className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
                           font-semibold text-white text-[11px] ml-2
                            flex items-center justify-center">{withdrawnCount}</span>
