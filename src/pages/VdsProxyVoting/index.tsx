@@ -168,23 +168,24 @@ const index = () => {
                                          
 
                                           {isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes !== null ?
-                                            <Tippy
-                                              content={isObject(vdsProxy[vdsHeader?.field]) && (vdsProxy[vdsHeader?.field]?.notes)} options={{ theme: "light" }}>
-
+                                           
                                               <h1 className={clsx([
                                                 vdsProxy[vdsHeader?.field]?.vote?.includes("Against") &&
                                                 "text-red-700 font-semibold", 'flex items-center'
                                               ])}>
-                                                <span>
-                                                <Lucide
-                                                  icon="Info"
-                                                  className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                                />
+                                              <Tippy
+                                                content={isObject(vdsProxy[vdsHeader?.field]) && (vdsProxy[vdsHeader?.field]?.notes)} options={{ theme: "light" }}>
+
+                                                <span >
+                                                  <Lucide
+                                                    icon="Info"
+                                                    className="w-4 h-4 mr-1.5 stroke-[1.3] text-blue-800"
+                                                  />
                                                 </span>
+                                              </Tippy>
                                                
                                                 {/* <span className={clsx([vdsProxy[vdsHeader?.field]?.notes !== null && 'flex flex-col w-2 h-2 bg-red-700 rounded-2xl mr-2'])}></span> */}
                                                 {vdsProxy[vdsHeader?.field]?.vote}</h1>
-                                            </Tippy>
 
                                             
                                             :
