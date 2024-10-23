@@ -154,7 +154,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                         name="type_of_information"
                         control={control}
                         defaultValue={[]}
-                        rules={{ required: "Type of information is required" }}
+                        rules={{ required: "Required Information is required" }}
                         render={({ field }) => (
                           <>
                             <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
