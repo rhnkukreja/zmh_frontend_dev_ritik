@@ -74,16 +74,31 @@ const DetailShareHolder = () => {
                         {key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}
                       </h2>
                       <p className="text-gray-500 break-words overflow-hidden">
-                        {
-                          item && typeof item === 'string' && item.startsWith('http') ? 
-                          (<a href={item} target="_blank" rel="noopener noreferrer"
-                          className="text-blue-500 break-words inline-block max-w-full overflow-hidden">
-                          {item}
-                          </a>)
-                          :
-                          (item)
-                        }
+                        {item && typeof item === 'string' && item.startsWith('http') ? (
+                          <a
+                            href={item}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 break-words inline-block max-w-full overflow-hidden"
+                          >
+                            {item}
+                          </a>
+                        ) : Array.isArray(item) && typeof item[0] === 'object' ? (
+                          item?.map((obj: any, index: number) => (
+                            <div key={index}>
+                              {Object.keys(obj).map((key) => (
+                                <div key={key}>
+                                  <span className="font-semibold italic">{key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}: </span>
+                                  <span>{obj[key]}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ))
+                        ) : (
+                          item
+                        )}
                       </p>
+
                     </div>
                   </div>
                 );
