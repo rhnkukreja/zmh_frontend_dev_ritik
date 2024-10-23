@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, Tab } from "../Base/Headless";
 import Button from "../Base/Button";
 import { FormCheck, FormInput, FormTextarea } from "../Base/Form";
@@ -56,13 +56,17 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      setIsLoading(true);
+      setIsLoading(false);
     } finally {
-      setIsLoading(true);
+      setIsLoading(false);
       setHelpFormVisible(false);
       reset();
     }
   };
+
+  useEffect(() => {
+    return () => setIsLoading(false);
+  }, []);
 
   return (
     <Dialog
@@ -239,7 +243,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                       <Controller
                         name="issue"
                         control={control}
-                        rules={{ required: "This field is required" }}
+                        rules={{ required: "Write your issue" }}
                         render={({ field }) => (
                           <FormTextarea
                             rows={5}
@@ -249,6 +253,12 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                           />
                         )}
                       />
+
+                      {errors && "issue" in errors && errors.issue && (
+                        <Error className="max-w-[100%] ">
+                          {errors?.issue.message}
+                        </Error>
+                      )}
                     </div>
                   </div>
                 </Tab.Panel>
