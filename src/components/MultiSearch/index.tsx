@@ -13,6 +13,9 @@ interface MultiSearchBarProps {
   placeHolder?: string;
   url: string | string[];
   getOptionKey: string | string[];
+  isRadioInput?: boolean;
+  getValueKey?: string | string[];
+  urlQueryKey?: string;
 }
 
 // type FetchedOptionType = {
@@ -27,9 +30,12 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   placeHolder,
   url,
   getOptionKey,
+  isRadioInput,
+  getValueKey,
+  urlQueryKey
 }) => {
   const [searchValue, setSearchValue] = useState("");
-  const [options, setOptions] = useState<string[]>([]);
+  const [options, setOptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -39,21 +45,37 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       const responses = await Promise.all(
         Array.isArray(url)
           ? url?.map((u) =>
-              axiosInstance.get(
-                `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
-              )
-            )
-          : [
+          (axiosInstance.get(
+            `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
+          ))
+          )
+          :
+          isRadioInput ?
+            [axiosInstance.get(
+              `${url}${url.includes("?") ? "&" : "?"}${urlQueryKey}=${query}&all=true`
+            )]
+            :
+            [
               axiosInstance.get(
                 `${url}${url.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
               ),
             ]
+
       );
       return responses.flatMap(
         (response) =>
-          response.data.results?.map(
-            (item: any) => item?.[getOptionKey as string]
-          ) || []
+        {
+          if(isRadioInput){
+          return response.data.map(
+              (item: any) => item
+            ) || []
+          }
+          else {
+         return  response.data.results?.map(
+              (item: any) => item[getOptionKey as string]
+            ) || []
+          }
+        }
       );
     } catch (error) {
       console.error("Error fetching options:", error);
@@ -82,14 +104,22 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
     setSearchTerms(newTerms);
   };
 
-  const handleSearch = (item: string, isChecked: boolean) => {
+  const handleSearch = (item: string, isChecked: boolean, itemId?: string) => {
     if (isChecked === false) {
       removeTerm(item);
     } else {
       // setOptions((prev) => prev.filter((option) => option !== item));
-      onSearch([...searchTerms, item]);
-      setSearchTerms([...new Set([...searchTerms, item])]);
-      setSearchValue("");
+      if (isRadioInput) {
+        const data = options?.find((x:any)=> x?.name === item )?.id;
+        onSearch([data]);
+        setSearchTerms([item]);
+        setSearchValue("");
+      }
+      else {
+        onSearch([...searchTerms, item]);
+        setSearchTerms([...new Set([...searchTerms, item])]);
+        setSearchValue("");
+      }
     }
   };
   useEffect(() => {
@@ -111,14 +141,15 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         <FormInput
           type="text"
           placeholder={placeHolder ?? "Search Institution Name"}
-          className="pl-9 w-full sm:w-80 rounded-[0.5rem] relative"
-          value={searchValue}
+          className="pl-9 w-full sm:w-96 rounded-[0.5rem] relative"
+          value={!isOpen && isRadioInput && searchTerms ? searchTerms[0] : searchValue}
           onChange={handleChange}
         />
         {isOpen && (
           <>
             <div className="search-terms-box bg-white mt-2 p-2 border rounded absolute z-50 left-0 right-0">
-              <div className="flex flex-nowrap gap-2 py-2 pb-4 overflow-hidden overflow-x-auto  scrollbar-hide">
+              {
+                <div className="flex flex-nowrap gap-2 py-2 pb-4 overflow-hidden overflow-x-auto  scrollbar-hide">
                 {searchTerms.map((term, index) => (
                   <div
                     key={index}
@@ -134,6 +165,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                   </div>
                 ))}
               </div>
+              }
 
               <div className=" text-md font-medium">
                 {searchValue.length > 0 && isLoading && (
@@ -142,9 +174,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                     {isLoading && (
                       <Lucide
                         icon="Loader"
-                        className={`ml-2 w-4 h-4 mr-1.5 stroke-[1.3] ${
-                          isLoading ? "animate-spin" : ""
-                        }`}
+                        className={`ml-2 w-4 h-4 mr-1.5 stroke-[1.3] ${isLoading ? "animate-spin" : ""
+                          }`}
                       />
                     )}
                   </span>
@@ -182,29 +213,56 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                   <div>
                     <div className="  border-t border-dashed">
                       <div className="flex flex-col gap-1 mt-3.5 max-h-[200px] overflow-y-auto">
+                        
                         {options?.length > 0 &&
-                          options?.map((item: string, key: number) => {
+                          options?.map((item: any, key: number) => {
                             return (
+                              
                               <div
                                 key={key}
                                 className="flex items-center cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-md"
                               >
-                                <FormCheck className="mr-2">
-                                  <FormCheck.Input
-                                    id={`checkbox-switch-${key}`}
-                                    type="checkbox"
-                                    checked={searchTerms.includes(item)}
-                                    onChange={(e) => {
-                                      handleSearch(item, e.target.checked);
-                                    }}
-                                  />
-                                  <label
-                                    htmlFor={`checkbox-switch-${key}`}
-                                    className="cursor-pointer pl-2"
-                                  >
-                                    <span>{item}</span>
-                                  </label>
-                                </FormCheck>
+                                {
+                                  !isRadioInput &&
+                                  <FormCheck className="mr-2">
+                                    <FormCheck.Input
+                                      id={`checkbox-switch-${key}`}
+                                      type="checkbox"
+                                      checked={searchTerms.includes(item)}
+                                      onChange={(e) => {
+                                        handleSearch(item, e.target.checked);
+                                      }}
+                                    />
+                                    <label
+                                      htmlFor={`checkbox-switch-${key}`}
+                                      className="cursor-pointer pl-2"
+                                    >
+                                      <span>{item}</span>
+                                    </label>
+                                  </FormCheck>
+
+                                }
+
+                                {
+                                  isRadioInput &&
+                                  <FormCheck className="mr-2">
+                                    <FormCheck.Input
+                                      id={`radio-switch`}
+                                      type="radio"
+                                      name="id"
+                                      checked={searchTerms.includes(item[getOptionKey as string])}
+                                      onChange={(e) => {
+                                        handleSearch(item[getOptionKey as string], e.target.checked);
+                                      }}
+                                    />
+                                    <label
+                                      htmlFor={`radio-switch`}
+                                      className="cursor-pointer pl-2"
+                                    >
+                                      <span>{item[getOptionKey as string]}</span>
+                                    </label>
+                                  </FormCheck>
+                                }
                               </div>
                             );
                           })}

@@ -1,4 +1,4 @@
-import { AddShareholderType, ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
+import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
 import { axiosInstance } from "../index";
 
 class ShareHolderProposalService {
@@ -46,13 +46,74 @@ class ShareHolderProposalService {
     };
   }
 
-  public async AddNewShareHolder(data: Partial<AddShareholderType>): Promise<{
+  public async addNewShareHolder(data: Partial<AddShareholderType>): Promise<{
     results: AddShareholderType;
   }> {
     const response = await axiosInstance.post(`/shareholder_proposal/def14a/`, data);
     const results = response.data;
     return {
       results,
+    };
+  }
+
+  public async updateNewShareHolder(id: string, data: Partial<AddShareholderType>): Promise<{
+    results: AddShareholderType;
+  }> {
+    const response = await axiosInstance.put(`/shareholder_proposal/def14a/${id}/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async AddNewWithdrawn(data: Partial<AddWithdrawnType>): Promise<{
+    results: AddWithdrawnType;
+  }> {
+    const response = await axiosInstance.post(`/shareholder_proposal/withdrawn/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async updateNewWithdrawn(id: string, data: Partial<AddWithdrawnType>): Promise<{
+    results: AddWithdrawnType;
+  }> {
+    const response = await axiosInstance.put(`/shareholder_proposal/withdrawn/${id}/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async AddNewNoAction(data: Partial<AddNoActionType>): Promise<{
+    results: AddNoActionType;
+  }> {
+    const response = await axiosInstance.post(`/shareholder_proposal/no_action/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+
+  public async updateNoAction(id: string, data: Partial<AddNoActionType>): Promise<{
+    results: AddNoActionType;
+  }> {
+    const response = await axiosInstance.put(`/shareholder_proposal/no_action/${id}/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async getAllShareholderAPI(url: string): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(url);
+    const result = response.data;
+    return {
+      result: result,
     };
   }
 }

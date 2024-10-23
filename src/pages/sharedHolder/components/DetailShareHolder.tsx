@@ -21,11 +21,11 @@ const DetailShareHolder = () => {
   const url = searchParams.get('url');
   const headingTitle = url?.includes('withdrawn') ? 'Withdrawn Proposal Details'
     : url?.includes('def14a') ? 'Shareholder Proposal Details' : url?.includes('no_action') ? 'No Action Letter Details' : ''
-  
+
   const selectedTab = url?.includes('withdrawn') ? 'withdrawn'
     : url?.includes('def14a') ? 'proposal' : url?.includes('no_action') ? 'no-action' : '';
-  
-    useEffect(() => {
+
+  useEffect(() => {
     dispatch(getSingleShareHolderData({ url: url!, id: Number(params.id!) }));
   }, [params.id]);
 
@@ -74,13 +74,15 @@ const DetailShareHolder = () => {
                         {key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}
                       </h2>
                       <p className="text-gray-500 break-words overflow-hidden">
-                        {item && typeof item === 'string' && item.startsWith('http') ? (
-                          <a href={item} target="_blank" rel="noopener noreferrer" className="text-blue-500 break-words inline-block max-w-full overflow-hidden">
-                            {item}
-                          </a>
-                        ) : (
-                          item
-                        )}
+                        {
+                          item && typeof item === 'string' && item.startsWith('http') ? 
+                          (<a href={item} target="_blank" rel="noopener noreferrer"
+                          className="text-blue-500 break-words inline-block max-w-full overflow-hidden">
+                          {item}
+                          </a>)
+                          :
+                          (item)
+                        }
                       </p>
                     </div>
                   </div>
