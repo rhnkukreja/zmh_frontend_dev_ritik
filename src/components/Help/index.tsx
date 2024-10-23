@@ -131,7 +131,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                               htmlFor="investmentName"
                               className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
                             >
-                              Enter Invester OR Company Name
+                              Enter Investor OR Company Name
                             </FormCheck.Label>
                             <FormInput
                               id="investmentName"
@@ -154,7 +154,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                         name="type_of_information"
                         control={control}
                         defaultValue={[]}
-                        rules={{ required: "Required Information is required" }}
+                        rules={{ required: "Information is required" }}
                         render={({ field }) => (
                           <>
                             <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
@@ -239,6 +239,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                       <Controller
                         name="issue"
                         control={control}
+                        rules={{ required: "This field is required" }}
                         render={({ field }) => (
                           <FormTextarea
                             rows={5}

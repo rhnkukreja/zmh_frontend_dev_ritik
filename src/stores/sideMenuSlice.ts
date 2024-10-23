@@ -424,11 +424,11 @@ const initialState: any = {
     //   pathname: "/loading-icon",
     //   title: "Loading Icon",
     // },
-    {
-      icon: "GalleryHorizontalEnd",
-      pathname: "/regular-form",
-      title: "Regular Form",
-    },
+    // {
+    //   icon: "GalleryHorizontalEnd",
+    //   pathname: "/regular-form",
+    //   title: "Regular Form",
+    // },
     // {
     //   icon: "Microwave",
     //   pathname: "/datepicker",
