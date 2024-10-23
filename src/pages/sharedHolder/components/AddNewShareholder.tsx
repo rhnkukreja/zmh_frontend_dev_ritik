@@ -21,9 +21,15 @@ import { toast } from "react-toastify";
 // import TomSelect from "@/components/Base/TomSelect/ServerComponent";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addNewInvestersProfile, fetchInvestersProfiles } from "@/stores/investersProfileSlice";
+import {
+  addNewInvestersProfile,
+  fetchInvestersProfiles,
+} from "@/stores/investersProfileSlice";
 import { AddNewInvesterType } from "@/types/investerProfiles";
-import { addNewShareHolder, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import {
+  addNewShareHolder,
+  fetchShareHolderProposal,
+} from "@/stores/shareholderProposalSlice";
 import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 
@@ -37,7 +43,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   setAddNewShareholderModalVisible,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
+  const { loading, page } = useAppSelector(
+    (state) => state.sharedHolderNoAction
+  );
   const {
     handleSubmit,
     control,
@@ -78,9 +86,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     };
     // if (!keyContactsFile) {
     //   return;
-    // } 
+    // }
     // else {
-      setShowRequiredStateErrors(false);
+    setShowRequiredStateErrors(false);
     // }
     const formData = new FormData();
 
@@ -92,7 +100,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     // }
 
     try {
-      const response = await dispatch(addNewShareHolder(formData as unknown as any)).unwrap();
+      const response = await dispatch(
+        addNewShareHolder(formData as unknown as any)
+      ).unwrap();
 
       if (response.results?.id) {
         toast.success("New Shareholder Added");
@@ -100,7 +110,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`, undefined, page)
+            createDynamicURL(
+              `${baseURL}/shareholder_proposal/def14a/`,
+              undefined,
+              page
+            )
           )
         );
       }
@@ -111,7 +125,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
   const onError: SubmitErrorHandler<any> = () => {
     // if (!keyContactsFile) {
-      setShowRequiredStateErrors(true);
+    setShowRequiredStateErrors(true);
     // }
   };
   return (
@@ -125,7 +139,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       <Dialog.Panel className="text-center">
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Add New Shareholder</h2>
+            <h2 className="mr-auto text-xl font-semibold">
+              Add New Shareholder
+            </h2>
             <div
               onClick={() => {
                 setAddNewShareholderModalVisible(false);
@@ -152,7 +168,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -232,7 +248,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     </Error>
                   )}
                 </div> */}
-                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -249,7 +264,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -296,7 +311,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -308,7 +323,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             {apiDropdownOptions?.sub_category?.map(
                               (sub_category: string) => {
                                 return (
-                                  <option value={sub_category}>{sub_category}</option>
+                                  <option value={sub_category}>
+                                    {sub_category}
+                                  </option>
                                 );
                               }
                             )}
@@ -329,7 +346,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     </Error>
                   )}
                 </div>
-                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -346,7 +362,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -357,9 +373,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           >
                             {apiDropdownOptions?.status?.map(
                               (status: string) => {
-                                return (
-                                  <option value={status}>{status}</option>
-                                );
+                                return <option value={status}>{status}</option>;
                               }
                             )}
                           </TomSelect>
@@ -393,7 +407,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -402,13 +416,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             }}
                             className="w-full text-left"
                           >
-                            {apiDropdownOptions?.year?.map(
-                              (year: string) => {
-                                return (
-                                  <option value={year}>{year}</option>
-                                );
-                              }
-                            )}
+                            {apiDropdownOptions?.year?.map((year: string) => {
+                              return <option value={year}>{year}</option>;
+                            })}
                           </TomSelect>
                           {error && (
                             <Error className="text-red-600 mt-2">
@@ -426,7 +436,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     </Error>
                   )}
                 </div>
-                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -445,7 +454,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           {...field}
                         />
                         {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
                         )}
                       </>
                     )}
@@ -467,13 +478,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           {...field}
                         />
                         {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
                         )}
                       </>
                     )}
                   />
                 </div>
-
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -492,7 +504,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           {...field}
                         />
                         {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
                         )}
                       </>
                     )}
@@ -520,7 +534,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     )}
                   />
                 </div> */}
-
               </div>
 
               <div>
@@ -533,7 +546,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   rules={{ required: true }}
                   render={({ field }) => (
                     <ClassicEditor
-                      value={field?.value ?? ''}
+                      value={field?.value ?? ""}
                       onChange={(event) => {
                         field.onChange(event);
                       }}
@@ -546,10 +559,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </Error>
                 )}
               </div>
-             
             </div>
           </Dialog.Description>
-
 
           <Dialog.Footer className="flex justify-end">
             <Button

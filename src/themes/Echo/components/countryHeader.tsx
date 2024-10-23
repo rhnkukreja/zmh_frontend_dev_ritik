@@ -44,8 +44,9 @@ const CountryInfoHeader = () => {
 
       {finhub?.finnhub_industry && (
         <div className="flex items-center">
-          <div className="flex flex-col items-start">
-            <p className="text-gray-600 font-medium text-sm">Industry</p>
+          <div className="flex flex-row items-start gap-2">
+            <p className="text-gray-600 font-medium text-sm">Industry:</p>
+
             <p className="text-gray-500 text-sm">{finhub?.finnhub_industry}</p>
           </div>
         </div>

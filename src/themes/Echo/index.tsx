@@ -31,6 +31,7 @@ import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
 import { no_header_company } from "@/constant";
+import GetHelp from "@/components/Help";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -60,6 +61,7 @@ function Main() {
   const [basicModalPreview, setBasicModalPreview] = useState(false);
   const [isFrameLoading, setIsFrameLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
 
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -130,8 +132,9 @@ function Main() {
     setIsError(false);
   };
 
-  const shouldHideHeader = no_header_company.some(route => location.pathname.includes(route));
-
+  const shouldHideHeader = no_header_company.some((route) =>
+    location.pathname.includes(route)
+  );
 
   return (
     <div
@@ -264,7 +267,11 @@ function Main() {
                       ])}
                       onClick={(event: React.MouseEvent) => {
                         event.preventDefault();
-                        menu.title !== "Notes" && linkTo(menu, navigate);
+                        if (menu.title === "Help") {
+                          setHelpFormVisible(true);
+                        } else if (menu.title !== "Notes") {
+                          linkTo(menu, navigate);
+                        }
                         setFormattedMenu([...formattedMenu]);
                       }}
                     >
@@ -289,18 +296,22 @@ function Main() {
                             stroke-linejoin="round"
                             className="lucide lucide-files side-menu__link__icon side-menu__link--active"
                           >
-                            <path d="M20 7h-3a2 2 0 0 1-2-2V2"/>
-                            <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/>
-                            <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>
-
-
+                            <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                            <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+                            <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
                           </svg>
                         )}
                       </Tippy>
 
-                      <div className="side-menu__link__title link_color">
-                        {menu.title}
-                      </div>
+                      {menu?.title !== "Help" ? (
+                        <div className="side-menu__link__title link_color">
+                          {menu?.title}
+                        </div>
+                      ) : (
+                        <div className="side-menu__link__title link_color">
+                          {menu?.title}
+                        </div>
+                      )}
                       {menu.badge && (
                         <div className="side-menu__link__badge">
                           {menu.badge}
@@ -440,6 +451,10 @@ function Main() {
               {/* END: First Child */}
             </ul>
           </div>
+          <GetHelp
+            helpFormVisible={helpFormVisible}
+            setHelpFormVisible={setHelpFormVisible}
+          />
         </div>
         <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] bg-white inset-x-0 top-0">
           <div
@@ -495,7 +510,7 @@ function Main() {
                     {/* {companyGlobalSearchName !== ""
                       ? companyGlobalSearchName
                       : "Quick search..."} */}
-                      {"Search by company name, ticker, or symbol"}
+                    {"Search by company name, ticker, or symbol"}
                   </div>
                   {/* <div>⌘K</div> */}
                 </div>
@@ -638,7 +653,7 @@ function Main() {
         <div className="px-5 mt-10 ">
           <div className="container">
             {/* <div className="sticky top-20 z-10 "> */}
-            <div className="sticky z-10 " style={{top: "4rem"}}>
+            <div className="sticky z-10 " style={{ top: "4rem" }}>
               {!shouldHideHeader && <CountryInfoHeader />}
             </div>
             <Outlet />
@@ -647,48 +662,48 @@ function Main() {
       </div>
 
       <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}>
-        
         <Dialog.Panel className="p-10 text-center h-full">
-        <Dialog.Title>
-          {/* <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2> */}
-          <div
-            onClick={handleCloseModal}
-            className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
-          >
-            <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-          </div>
-        </Dialog.Title>
-          {/* <Dialog.Description > */}
-            <div className="relative w-full h-full">
-              {isFrameLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white">
-                  <LoadingIcon
-                    color="#800000"
-                    icon="three-dots"
-                    className="w-16 h-16"
-                  />
-                </div>
-              )}
-
-              {isError && !isFrameLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
-                  <p>
-                    Failed to load the embedded content. Please try again later.
-                  </p>
-                </div>
-              )}
-
-              <iframe
-                className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
-                  }`}
-                src="https://app.korra.ai/zmhdashboard/globalsearchengine"
-                title="Embedded Dashboard"
-                onLoad={handleLoad}
-                onError={handleError}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+          <Dialog.Title>
+            {/* <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2> */}
+            <div
+              onClick={handleCloseModal}
+              className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
             </div>
+          </Dialog.Title>
+          {/* <Dialog.Description > */}
+          <div className="relative w-full h-full">
+            {isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white">
+                <LoadingIcon
+                  color="#800000"
+                  icon="three-dots"
+                  className="w-16 h-16"
+                />
+              </div>
+            )}
+
+            {isError && !isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
+                <p>
+                  Failed to load the embedded content. Please try again later.
+                </p>
+              </div>
+            )}
+
+            <iframe
+              className={`w-full h-full ${
+                isFrameLoading || isError ? "hidden" : ""
+              }`}
+              src="https://app.korra.ai/zmhdashboard/globalsearchengine"
+              title="Embedded Dashboard"
+              onLoad={handleLoad}
+              onError={handleError}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
           {/* </Dialog.Description> */}
         </Dialog.Panel>
       </Dialog>

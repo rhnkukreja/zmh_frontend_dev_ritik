@@ -126,6 +126,12 @@ const initialState: any = {
       title: "Company",
       isAdmin: true,
     },
+    "Additional",
+    {
+      icon: "HelpCircle",
+      pathname: "#",
+      title: "Help",
+    },
     "Coming Soon",
     {
       icon: "Briefcase",
@@ -418,11 +424,11 @@ const initialState: any = {
     //   pathname: "/loading-icon",
     //   title: "Loading Icon",
     // },
-    // {
-    //   icon: "GalleryHorizontalEnd",
-    //   pathname: "/regular-form",
-    //   title: "Regular Form",
-    // },
+    {
+      icon: "GalleryHorizontalEnd",
+      pathname: "/regular-form",
+      title: "Regular Form",
+    },
     // {
     //   icon: "Microwave",
     //   pathname: "/datepicker",

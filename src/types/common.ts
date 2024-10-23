@@ -78,3 +78,28 @@ export type PayloadModule =
 export interface FilterObject {
   [key: string]: string | string[] | undefined;
 }
+
+export type InformationType =
+  | "Investor Profile"
+  | "Voting Guidelines"
+  | "Voting Data";
+
+export interface RequestAdditionalDataForm {
+  name: string;
+  type_of_information: InformationType[];
+  comments: string;
+}
+
+export interface ContactUsForm {
+  issue: string;
+}
+
+export type HelpFormData = RequestAdditionalDataForm | ContactUsForm;
+
+export interface RequestAdditionalData extends RequestAdditionalDataForm {
+  created_by: string | null;
+}
+
+export interface ContactUsAdditionalData extends ContactUsForm {
+  created_by: string | null;
+}
