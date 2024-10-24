@@ -46,7 +46,9 @@ table {
   border-collapse: collapse;
   width: 100%;
 }
-
+body{
+  background-color: #0000000D;
+}
 .sticky-table {
   position: sticky;
 

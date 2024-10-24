@@ -86,7 +86,7 @@ const index = () => {
               <div className="mt-5">
                 <div>
                   <TableWrapper>
-                    <div className="overflow-x-auto max-h-[300px] overflow-y-scroll">
+                    <div className="overflow-x-auto max-h-[300px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll">
                       <Table className="table_2 w-full">
                         <Table.Thead className="sticky top-0 z-10"> {/* Make entire header sticky */}
                           <Table.Tr className="row_2">
