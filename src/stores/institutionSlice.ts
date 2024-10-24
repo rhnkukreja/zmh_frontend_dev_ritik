@@ -32,7 +32,7 @@ const initialState: InstitutionsState = {
   page: 1,
   error: null,
   institutionFilterOptions: {
-    region: ["NAM", "EMEA", "APAC"],
+    region: ["North America", "EMEA", "APAC"],
   },
   filters: {
     institution_name: [],

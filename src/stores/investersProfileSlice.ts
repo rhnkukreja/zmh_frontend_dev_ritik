@@ -37,7 +37,7 @@ const initialState: nvestersProfileSlice = {
   totalPages: 1,
   page: 1,
   investerProfileFilterOption: {
-    region: ["NAM", "EMEA", "APAC"],
+    region: ["North America", "EMEA", "APAC"],
   },
   filters: {
     region: [],

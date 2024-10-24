@@ -88,7 +88,7 @@ const DetailShareHolder = () => {
                             <div key={index}>
                               {Object.keys(obj).map((key) => (
                                 <div key={key}>
-                                  <span className="font-semibold italic">{key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}: </span>
+                                  <span className="font-semibold">{key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}: </span>
                                   <span>{obj[key]}</span>
                                 </div>
                               ))}

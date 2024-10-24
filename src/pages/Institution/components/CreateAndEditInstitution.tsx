@@ -58,7 +58,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       institution: selectedInstitution?.institution,
       // active: selectedInstitution?.active ,
       // uploaded_time: selectedInstitution?.uploaded_time,
-      region: selectedInstitution?.region || "NAM",
+      region: selectedInstitution?.region || "North America",
       investor_type: selectedInstitution?.investor_type || "Investor",
       // contact: selectedInstitution?.contact!,
       // email: selectedInstitution?.email!,
@@ -208,7 +208,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 <Controller
                   name="region"
                   control={control}
-                  defaultValue="NAM"
+                  defaultValue="North America"
                   rules={{ required: "Region is required" }}
                   render={({ field, fieldState: { error } }) => (
                     <>
@@ -222,7 +222,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                         }}
                         className="w-full text-left"
                       >
-                        <option value="NAM">NAM</option>
+                        <option value="North America">North America</option>
                         <option value="EMEA">EMEA</option>
                         <option value="APAC">APAC</option>
                       </TomSelect>
