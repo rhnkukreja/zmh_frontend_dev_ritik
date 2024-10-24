@@ -1,7 +1,6 @@
 import { NavigateFunction } from "react-router-dom";
 import { Menu } from "@/stores/sideMenuSlice";
 import { slideUp, slideDown } from "@/utils/helper";
-import { adminRoutes } from "@/constant";
 
 interface Location {
   pathname: string;
@@ -80,7 +79,7 @@ const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {
-    if (menu.pathname !== undefined && menu.pathname !== 'Notes') {
+    if (menu.pathname !== undefined && menu.pathname !== "Notes") {
       navigate(menu.pathname);
     }
   }

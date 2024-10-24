@@ -126,6 +126,12 @@ const initialState: any = {
       title: "Company",
       isAdmin: true,
     },
+    "Additional",
+    {
+      icon: "HelpCircle",
+      pathname: "#",
+      title: "Help",
+    },
     "Coming Soon",
     {
       icon: "Briefcase",
