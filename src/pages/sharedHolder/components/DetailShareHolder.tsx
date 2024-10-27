@@ -82,6 +82,7 @@ const DetailShareHolder = () => {
                             className="text-blue-500 break-words inline-block max-w-full overflow-hidden"
                           >
                             {item}
+                            
                           </a>
                         ) : Array.isArray(item) && typeof item[0] === 'object' ? (
                           item?.map((obj: any, index: number) => (

@@ -196,7 +196,7 @@ function CompanyList() {
                         Company V1
                       </Table.Td> */}
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Actions
+                          Details
                         </Table.Td>
                       </Table.Tr>
                     </Table.Thead>

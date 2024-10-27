@@ -37,57 +37,55 @@ const index = () => {
   const navigate = useNavigate();
 
   const convertDivTableToCSV = () => {
-    // Get the table element
     const table = document.querySelector(".table_2");
     const rows = table?.querySelectorAll(".row_2");
     const tableProposal = document.querySelector(".table_3");
     const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-    let csvContent = "";
-    let csvContentProposal = "";
+    let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
 
-    // Iterate over each row
+    // Iterate over each row in the first table
     rows?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_2");
-      let rowData: any = [];
+        const cells = row.querySelectorAll(".cell_2");
+        let rowData:any = [];
 
-      // Iterate over each cell and get the text content
-      cells.forEach((cell) => {
-          let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+        // Iterate over each cell and get the text content
+        cells.forEach((cell) => {
+            let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
 
-          // Check if the cell contains a comma, wrap it in double quotes
-          if (cellText?.includes(",")) {
-              cellText = `"${cellText}"`;
-          }
+            // Check if the cell contains a comma, wrap it in double quotes
+            if (cellText?.includes(",")) {
+                cellText = `"${cellText}"`;
+            }
 
-          rowData.push(cellText);
-      });
+            rowData.push(cellText);
+        });
 
-      // Join cells with commas to form a CSV row
-      csvContent += rowData.join(",") + "\n";
+        // Join cells with commas to form a CSV row
+        csvContent += rowData.join(",") + "\n";
     });
 
+    // Iterate over each row in the second table
     rowsProposal?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_3");
-      let rowData: any = [];
+        const cells = row.querySelectorAll(".cell_3");
+        let rowData:any = [];
 
-      // Iterate over each cell and get the text content
-      cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+        // Iterate over each cell and get the text content
+        cells.forEach((cell) => {
+            let cellText = cell.textContent?.trim();
 
-        // Check if the cell contains a comma, wrap it in double quotes
-        if (cellText?.includes(",")) {
-            cellText = `"${cellText}"`;
-        }
+            // Check if the cell contains a comma, wrap it in double quotes
+            if (cellText?.includes(",")) {
+                cellText = `"${cellText}"`;
+            }
 
-        rowData.push(cellText);
-      });
+            rowData.push(cellText);
+        });
 
-      // Join cells with commas to form a CSV row
-      csvContentProposal += rowData.join(",") + "\n";
+        csvContent += rowData.join(",") + "\n";
     });
-    let concatContent = csvContent + csvContentProposal;
-    downloadCSV(concatContent, `Agm-Summary-${companyGlobalSearchName}`);
-  };
+
+    downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchName}`);
+};
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
 

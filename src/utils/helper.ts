@@ -309,15 +309,27 @@ const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   return filteredMenuItems;
 };
 
+// const downloadCSV = (csvContent: any, name: string) => {
+//   const blob = new Blob([csvContent], { type: "text/csv" });
+//   const url = window.URL.createObjectURL(blob);
+//   const a = document.createElement("a");
+//   a.setAttribute("href", url);
+//   a.setAttribute("download", `${name}.csv`);
+//   document.body.appendChild(a);
+//   a.click();
+//   document.body.removeChild(a);
+// };
+
 const downloadCSV = (csvContent: any, name: string) => {
-  const blob = new Blob([csvContent], { type: "text/csv" });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("download", `${name}.csv`);
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${name}.csv`);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 function countValidFilters(filters: FilterObject): number {
