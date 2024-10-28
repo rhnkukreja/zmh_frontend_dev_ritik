@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, Grid2x2, SaveAll } from "lucide-react";
+import { FilterX, Fullscreen, Grid2x2, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -877,7 +877,7 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -923,9 +923,12 @@ function ShareHolderProposal() {
                                           content="View Vote Details"
                                           options={{ theme: "dark" }}
                                         >
-                                          <Grid2x2 onClick={() =>
+                                          <Fullscreen strokeWidth={1.25}  onClick={() =>
                                             onVisibleDetail(noAction)
-                                          } />
+                                          }/>
+                                          {/* <Grid2x2 onClick={() =>
+                                            onVisibleDetail(noAction)
+                                          } /> */}
                                         </Tippy>
                                       }
                                     </Table.Td>

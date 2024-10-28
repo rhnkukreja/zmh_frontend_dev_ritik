@@ -442,6 +442,12 @@ TitleManager();
 
         },
         {
+          path: "vds-proxy-details",
+          element: <VdsProxyVoting/> ,
+          data: {titleName: 'Proxy Voting - ZMH Analytics'}
+
+        },
+        {
           path: "investor-company-details/:id",
           element: <InvestorCompanyDetails/> ,
           data: {titleName: 'Investor Document Detail - ZMH Analytics'}

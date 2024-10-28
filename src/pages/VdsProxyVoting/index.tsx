@@ -16,6 +16,8 @@ import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 
 const index = () => {
   const location = useLocation();
@@ -43,6 +45,7 @@ const index = () => {
         )
       )
     );
+    console.log(locationPathName);
   }, [companyGlobalSearchTicker]);
 
   const isObject = (item: any) => {
@@ -53,6 +56,58 @@ const index = () => {
       false
     }
   }
+
+  const convertDivTableToCSV = () => {
+    const table = document.querySelector(".table_2");
+    const rows = table?.querySelectorAll(".row_2");
+    const tableProposal = document.querySelector(".table_3");
+    const rowsProposal = tableProposal?.querySelectorAll(".row_3");
+    let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
+
+    // Iterate over each row in the first table
+    rows?.forEach((row) => {
+      const cells = row.querySelectorAll(".cell_2");
+      let rowData: any = [];
+
+      // Iterate over each cell and get the text content
+      cells.forEach((cell) => {
+        let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+
+        // Check if the cell contains a comma, wrap it in double quotes
+        if (cellText?.includes(",")) {
+          cellText = `"${cellText}"`;
+        }
+
+        rowData.push(cellText);
+      });
+
+      // Join cells with commas to form a CSV row
+      csvContent += rowData.join(",") + "\n";
+    });
+
+    // Iterate over each row in the second table
+    rowsProposal?.forEach((row) => {
+      const cells = row.querySelectorAll(".cell_3");
+      let rowData: any = [];
+
+      // Iterate over each cell and get the text content
+      cells.forEach((cell) => {
+        let cellText = cell.textContent?.trim();
+
+        // Check if the cell contains a comma, wrap it in double quotes
+        if (cellText?.includes(",")) {
+          cellText = `"${cellText}"`;
+        }
+
+        rowData.push(cellText);
+      });
+
+      csvContent += rowData.join(",") + "\n";
+    });
+
+    downloadCSV(csvContent, `Proxy-voting-${companyGlobalSearchName}`);
+  };
+
 
   return (
     <>
@@ -66,7 +121,7 @@ const index = () => {
             navigate("/");
           }}
           variant="primary"
-          className="bg-theme-2 border-bg-theme-2 mb-4"
+          className="bg-theme-2 border-bg-theme-2 mb-1"
         >
           <ChevronLeft
             className="group-[.mode--light]:text-white text-white"
@@ -77,16 +132,47 @@ const index = () => {
         </Button>
       )}
       {vdsProxyDetails?.vds_report?.length > 0 && (
-        <div className="p-5 mt-3.5 box ">
+        <div className="p-5 mt-1 box ">
           <div className="w-full">
-            <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
-              <h1 className="text-lg font-bold">Proxy Voting</h1>
+            <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                <span>
+                  <h1 className="text-lg font-bold">
+                    Proxy Voting
+                  </h1>
+                </span>
+
+              </div>
+              <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
+                <Tippy content="Download Excel" options={{ theme: "light" }}>
+                  <div
+                    className="box p-[5px] cursor-pointer"
+                    onClick={convertDivTableToCSV}
+                  >
+                    <img alt="download-icon" src={downloadIcon} />
+                  </div>
+                </Tippy>
+                {locationPathName === "/vds-details/" && (
+                  <Tippy content="Expand" options={{ theme: "light" }}>
+                    <div
+                      className="box p-2 cursor-pointer"
+                      onClick={() => window.open("/vds-proxy-details", "_blank")}
+                    >
+                      <img alt="tab-icon" src={tabIcon} />
+                    </div>
+                  </Tippy>
+                 )}
+              </div>
             </div>
             <>
-              <div className="mt-5">
+              <div className="">
                 <div>
                   <TableWrapper>
-                    <div className="overflow-x-auto max-h-[300px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll">
+                  {/* overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll */}
+                    <div className={clsx([locationPathName === "/vds-details/"
+                       && 'overflow-x-auto max-h-[350px] 2xl:max-h-[500px] 3xl:max-h-[550px] overflow-y-scroll',
+                        locationPathName === "/vds-proxy-details " && 
+                       'overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll'])}>
                       <Table className="table_2 w-full">
                         <Table.Thead className="sticky top-0 z-10"> {/* Make entire header sticky */}
                           <Table.Tr className="row_2">
@@ -165,21 +251,21 @@ const index = () => {
                                                 : vdsProxy[vdsHeader?.field]}
 
                                           </div> */}
-                                         
+
 
                                           {isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes !== null ?
-                                           
-                                              <h1 className={clsx([
-                                                vdsProxy[vdsHeader?.field]?.vote?.includes("Against") &&
-                                                "text-red-700 font-semibold", 'flex items-center'
-                                              ])}>
-                                              
-                                               
-                                                {/* <span className={clsx([vdsProxy[vdsHeader?.field]?.notes !== null && 'flex flex-col w-2 h-2 bg-red-700 rounded-2xl mr-2'])}></span> */}
-                                                {vdsProxy[vdsHeader?.field]?.vote}
-                                                
-                                                
-                                                <Tippy
+
+                                            <h1 className={clsx([
+                                              vdsProxy[vdsHeader?.field]?.vote?.includes("Against") &&
+                                              "text-red-700 font-semibold", 'flex items-center'
+                                            ])}>
+
+
+                                              {/* <span className={clsx([vdsProxy[vdsHeader?.field]?.notes !== null && 'flex flex-col w-2 h-2 bg-red-700 rounded-2xl mr-2'])}></span> */}
+                                              {vdsProxy[vdsHeader?.field]?.vote}
+
+
+                                              <Tippy
                                                 content={isObject(vdsProxy[vdsHeader?.field]) && (vdsProxy[vdsHeader?.field]?.notes)} options={{ theme: "light" }}>
 
                                                 <span >
@@ -189,16 +275,16 @@ const index = () => {
                                                   />
                                                 </span>
                                               </Tippy>
-                                                </h1>
+                                            </h1>
 
-                                            
+
                                             :
 
 
                                             isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null ?
                                               <h1 className={clsx([
                                                 vdsProxy[vdsHeader?.field]?.vote?.includes("Against") &&
-                                                "text-red-700 font-semibold ", 
+                                                "text-red-700 font-semibold ",
                                               ])}> {vdsProxy[vdsHeader?.field]?.vote}</h1>
                                               :
                                               <h1> {vdsProxy[vdsHeader?.field]}</h1>
