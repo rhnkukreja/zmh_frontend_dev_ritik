@@ -5,6 +5,15 @@ import { TypesPeerAnalysis } from "@/types/peerAnalysis";
 
 const name = "peer_analysis";
 
+export interface PeerAnalysisFilter {
+  year: string[];
+  institution_name?: string[];
+  global_search?: any[];
+
+  category?: string[];
+  [key: string]: any;
+}
+
 export interface PeerAnalysis {
   peerAnalysisData: TypesPeerAnalysis[];
   getSinglePeerAnalysis: TypesPeerAnalysis | null;
@@ -12,11 +21,9 @@ export interface PeerAnalysis {
   loading: boolean;
   error: string | null;
   totalPages: number;
+  isAllCompanySelected: boolean;
   page: number;
-  filters: {
-    global_search: string[];
-    institution_name: string[];
-  };
+  filters: PeerAnalysisFilter;
   filterOptions: {
     category: string[];
     year: string[];
@@ -26,14 +33,18 @@ export interface PeerAnalysis {
 const initialState: PeerAnalysis = {
   peerAnalysisData: [],
   getSinglePeerAnalysis: null,
+
   totalPeerAnalysisNoAction: 0,
   loading: false,
   error: null,
   totalPages: 1,
   page: 1,
+  isAllCompanySelected: false,
   filters: {
     global_search: [],
     institution_name: [],
+    year: [],
+    category: [],
   },
   filterOptions: {
     category: ["Social", "Governance", "Environment"],
@@ -67,11 +78,16 @@ const peerAnalysisSlice = createSlice({
     ) {
       state.filters[action.payload.key] = action.payload.value as any;
     },
+
+    setAllFilters(state, action: PayloadAction<Partial<PeerAnalysisFilter>>) {
+      state.filters = { ...state.filters, ...action.payload };
+    },
+
     resetFilter(state) {
-      state.filters = {
-        institution_name: [],
-        global_search: [],
-      };
+      state.filters = initialState.filters;
+    },
+    selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
+      state.isAllCompanySelected = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -104,5 +120,11 @@ const peerAnalysisSlice = createSlice({
 });
 
 export default peerAnalysisSlice;
-export const { setPage, resetPage, resetFilter, setFilter } =
-  peerAnalysisSlice.actions;
+export const {
+  setPage,
+  resetPage,
+  resetFilter,
+  setFilter,
+  setAllFilters,
+  selectUnSelectAllCompany,
+} = peerAnalysisSlice.actions;

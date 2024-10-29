@@ -3,12 +3,13 @@ import { axiosInstance } from "../index";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
 
 class DashboardService {
-  public async fetchCompanyByName(companyName: string): Promise<{
+  public async fetchCompanyByName(companyName?: string): Promise<{
     results: CompanyData[];
   }> {
-    const response = await axiosInstance.get(
-      `/company/?company_name=${companyName}&all=true`
-    );
+    const url = `/company/?${
+      companyName ? `company_name=${companyName}&` : ""
+    }all=true`;
+    const response = await axiosInstance.get(url);
     console.log({ response });
     const results = response.data;
 
@@ -35,25 +36,24 @@ class DashboardService {
     return { results };
   }
 
-  public async fetchCaseStudyDashboard(url: string): Promise<{results:any;
-  }>  {
+  public async fetchCaseStudyDashboard(url: string): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
-    return {results};
+    return { results };
   }
 
-  public async fetchVdsProxyDashboard(url: string): Promise<{results:any;
-  }>  {
+  public async fetchVdsProxyDashboard(url: string): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
-    return {results};
+    return { results };
   }
 
-  public async fetchInvestorProfileDetails(url: string): Promise<{results:any;
-  }>  {
+  public async fetchInvestorProfileDetails(
+    url: string
+  ): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
-    return {results};
+    return { results };
   }
 }
 

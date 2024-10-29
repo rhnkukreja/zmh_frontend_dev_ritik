@@ -52,6 +52,7 @@ function TomSelect<T extends string | string[]>({
   onChange = () => {},
   getRef = () => {},
   children,
+
   ...computedProps
 }: TomSelectProps<T>) {
   const props = {
@@ -80,7 +81,7 @@ function TomSelect<T extends string | string[]>({
         persist: false,
         create: true,
         onDelete: function (values: string[]) {
-          return true
+          return true;
         },
         ...options,
         plugins: {

@@ -48,7 +48,7 @@ function Main() {
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     const { passwordConfirmation, ...restData } = data;
-    
+
     try {
       const response = await dispatch(
         signUp({
@@ -56,7 +56,7 @@ function Main() {
           user_type: "Admin",
           phone: "",
           username: restData?.email,
-          company : restData?.company?.value || null 
+          company: restData?.company?.value || null,
         })
       ).unwrap();
 
@@ -148,11 +148,12 @@ function Main() {
                   <Controller
                     name="company"
                     control={control}
-                
                     render={({ field }) => (
                       <CompanySelect
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
                       />
                     )}
                   />

@@ -1,6 +1,6 @@
 import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
-import { FormCheck, FormInput } from "@/components/Base/Form";
+import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
 import { useEffect, useState } from "react";
@@ -9,7 +9,7 @@ import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -17,13 +17,22 @@ import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
-import { fetchCaseStudies, setPage } from "@/stores/caseStudySlice";
+import {
+  fetchCaseStudies,
+  setFilters,
+  setPage,
+  resetFilters,
+  setAllFilters,
+  selectUnSelectAllCompany,
+  resetPage,
+} from "@/stores/caseStudySlice";
 import { useNavigate } from "react-router-dom";
 import { caseStudiesService } from "@/services/caseStudies";
 import { FlterDropdown } from "@/types/casestudy";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
+import CompanySelect from "@/components/ReactSelectAsync";
 
 function CaseStudies() {
   interface CaseStudyFilter {
@@ -46,24 +55,9 @@ function CaseStudies() {
     (state) => state.authentiction
   );
 
-  useEffect(() => {
-    setApplyFilters((prev) => ({
-      keyword: prev?.keyword || "",
-      market: prev?.market || [],
-      sector: prev?.sector || [],
-      year: prev?.year || [],
-      themes: prev?.themes || [],
-      proposal_type: prev?.proposal_type || [],
-      vote: prev?.vote || [],
-      institution_name: prev?.proponent || [],
-      global_search: [companyGlobalSearchName],
-    }));
-  }, [companyGlobalSearchName]);
-
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] = useState<FlterDropdown>({
-    // company: [],
     institution: [],
     market: [],
     proposal_type: [],
@@ -74,9 +68,18 @@ function CaseStudies() {
   });
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
-  const [applyFilters, setApplyFilters] = useState<CaseStudyFilter | undefined>(
-    undefined
-  );
+
+  const [filtersLength, setFiltersLength] = useState<number>(0);
+
+  const {
+    loading,
+    caseStudies,
+    page,
+    totalPages,
+    filters,
+    isAllCompanySelected,
+  } = useAppSelector((state) => state.caseStudies);
+
   const {
     handleSubmit,
     control,
@@ -86,14 +89,21 @@ function CaseStudies() {
     formState: { errors },
   } = useForm<CaseStudyFilter>({
     defaultValues: {
-      themes: [],
+      themes: filters?.themes,
+      keyword: filters?.keyword,
+      market: filters?.market,
+      sector: filters?.sector,
+      year: filters?.year,
+      institution_name: filters?.institution_name,
+      global_search:
+        filters?.global_search?.map((item: string) => ({
+          value: item,
+          label: item,
+        })) || [],
+      proposal_type: filters?.proposal_type,
+      vote: filters?.vote,
     },
   });
-  const [filtersLength, setFiltersLength] = useState<number>(0);
-
-  const { loading, caseStudies, page, totalPages } = useAppSelector(
-    (state) => state.caseStudies
-  );
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -108,23 +118,31 @@ function CaseStudies() {
       setGetDropdownLoader(false);
     }
   };
+
+  useEffect(() => {
+    dispatch(
+      setFilters({
+        key: "global_search",
+        value: isAllCompanySelected
+          ? [...filters?.global_search]
+          : [companyGlobalSearchName],
+      })
+    );
+  }, [companyGlobalSearchName, isAllCompanySelected]);
+
   useEffect(() => {
     getAllCaseStudyDropdowns();
   }, []);
 
   useEffect(() => {
-    if (!applyFilters?.global_search) return;
+    if (!filters?.global_search) return;
     dispatch(
       fetchCaseStudies(
-        createDynamicURL(
-          `${baseURL}/case_studies/`,
-          applyFilters,
-          undefined,
-          page
-        )
+        createDynamicURL(`${baseURL}/case_studies/`, filters, undefined, page)
       )
     );
-  }, [page, applyFilters]);
+    setFiltersLength(countValidFilters(filters));
+  }, [page, filters]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -144,38 +162,24 @@ function CaseStudies() {
 
   const onFilterClear = () => {
     reset();
-    setApplyFilters(undefined);
+    dispatch(resetFilters());
+    dispatch(
+      setFilters({ key: "global_search", value: [companyGlobalSearchName] })
+    );
   };
 
   const handleClearAllFilter = () => {
     setSearchTerms([]);
-    setValue("keyword", "");
-    setValue("market", []);
-    setValue("sector", []);
-    setValue("year", []);
-    setValue("themes", []);
-    setValue("proposal_type", []);
-    setValue("vote", []);
-
-    setApplyFilters({
-      keyword: "",
-      market: [],
-      sector: [],
-      global_search: [companyGlobalSearchName],
-      year: [],
-      themes: [],
-      proposal_type: [],
-      vote: [],
-    });
+    reset();
+    dispatch(resetFilters());
+    dispatch(resetPage());
+    dispatch(
+      setFilters({ key: "global_search", value: [companyGlobalSearchName] })
+    );
   };
 
   const handleSearch = (searchTerms: string[]) => {
-    setApplyFilters((prev) => {
-      return {
-        ...prev,
-        institution_name: searchTerms.length > 0 ? searchTerms : undefined,
-      } as CaseStudyFilter;
-    });
+    dispatch(setFilters({ key: "institution_name", value: searchTerms }));
   };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -184,41 +188,42 @@ function CaseStudies() {
   };
 
   const onSubmit = async (caseStudyFilters: CaseStudyFilter) => {
-    setApplyFilters({
-      ...caseStudyFilters,
-      institution_name: searchTerms,
-      global_search: [companyGlobalSearchName],
-    });
-    const validKeysCount = Object.keys(caseStudyFilters).filter((key) => {
-      const value = caseStudyFilters[key];
-      return value !== undefined && value !== "" && value.length !== 0;
-    })?.length;
-
-    setFiltersLength(validKeysCount);
+    dispatch(
+      setAllFilters({
+        ...caseStudyFilters,
+        institution_name: searchTerms,
+        global_search: isAllCompanySelected
+          ? Array.isArray(caseStudyFilters?.global_search)
+            ? caseStudyFilters?.global_search.map((item: any) => item.label)
+            : []
+          : [companyGlobalSearchName],
+      })
+    );
+    setFiltersLength(countValidFilters(filters));
   };
 
   const getSavedSearches = () => {
     if (user?.saved_search["Case Studies"]) {
       const savedSearch = user.saved_search["Case Studies"];
-      setSearchTerms([...savedSearch.institution]);
-      setValue("keyword", savedSearch.keyword || "");
-      setValue("market", savedSearch.market || []);
-      setValue("sector", savedSearch.sector || []);
-      setValue("year", savedSearch.year || []);
+
+      setSearchTerms([...savedSearch?.institution]);
+      setValue("keyword", savedSearch?.keyword || "");
+      setValue("market", savedSearch?.market || []);
+      setValue("sector", savedSearch?.sector || []);
+      setValue("year", savedSearch?.year || []);
       setValue("themes", savedSearch.themes || []);
-      setValue("proposal_type", savedSearch.proposal_type || []);
-      setValue("vote", savedSearch.vote || []);
-      setApplyFilters({
-        keyword: savedSearch.keyword || "",
-        market: savedSearch.market || [],
-        sector: savedSearch.sector || [],
-        year: savedSearch.year || [],
-        themes: savedSearch.themes || [],
-        proposal_type: savedSearch.proposal_type || [],
-        vote: savedSearch.vote || [],
-        global_search: savedSearch.global_search,
+      setValue("proposal_type", savedSearch?.proposal_type || []);
+      setValue("vote", savedSearch?.vote || []);
+      setAllFilters({
+        keyword: savedSearch?.keyword || "",
+        market: savedSearch?.market || [],
+        sector: savedSearch?.sector || [],
+        year: savedSearch?.year || [],
+        themes: savedSearch?.themes || [],
+        proposal_type: savedSearch?.proposal_type || [],
+        vote: savedSearch?.vote || [],
+        global_search: savedSearch?.global_search,
       });
-      setIsFilterCollapse(true);
     }
   };
 
@@ -260,8 +265,35 @@ function CaseStudies() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Case Studies</div>
+          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
+            <div className="font-semibold text-xl">Case Studies</div>
+
+            <div className="flex items-center">
+              <Tippy
+                content="All Companies"
+                options={{
+                  theme: "light",
+                }}
+              >
+                <div className="mt-2">
+                  <FormSwitch>
+                    <FormSwitch.Input
+                      id="checkbox-switch-7"
+                      type="checkbox"
+                      checked={isAllCompanySelected}
+                      onChange={async (e) => {
+                        try {
+                          dispatch(
+                            selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                        } catch (error) {}
+                      }}
+                    />
+                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
+                  </FormSwitch>
+                </div>
+              </Tippy>
+            </div>
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
@@ -309,7 +341,7 @@ function CaseStudies() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Case Studies"] !== undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
+                    <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
                         Previous Search
                       </Button>
@@ -362,138 +394,148 @@ function CaseStudies() {
                         />
                       </div>
 
-                      <div className=" w-full mx-2">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          {" "}
-                          Market
-                          {apiDropdownOptions?.market?.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id={`market`}
-                                  checked={
-                                    apiDropdownOptions.market.length ===
-                                    watch("market")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "market",
-                                        apiDropdownOptions.market
-                                      );
-                                    } else {
-                                      setValue("market", []);
-                                    }
-                                  }}
-                                />
-                              </FormCheck>
-                            </div>
-                          )}
-                        </div>
-                        <Controller
-                          name="market"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Market",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.market?.map(
-                                    (market: string) => {
-                                      return (
-                                        <option value={market} key={market}>
-                                          {market}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
+                      {isAllCompanySelected === true && (
+                        <>
+                          <div className=" w-full mx-2">
+                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                              {" "}
+                              Market
+                              {apiDropdownOptions?.market?.length > 0 && (
+                                <div>
+                                  <FormCheck className="mr-2">
+                                    <FormCheck.Label>
+                                      Select All
+                                    </FormCheck.Label>
+                                    <FormCheck.Input
+                                      className="ml-1"
+                                      id={`market`}
+                                      checked={
+                                        apiDropdownOptions.market.length ===
+                                        watch("market")?.length
+                                      }
+                                      type="checkbox"
+                                      onChange={(e) => {
+                                        if (e.target.checked === true) {
+                                          setValue(
+                                            "market",
+                                            apiDropdownOptions.market
+                                          );
+                                        } else {
+                                          setValue("market", []);
+                                        }
+                                      }}
+                                    />
+                                  </FormCheck>
+                                </div>
                               )}
-                            </TomSelect>
-                          )}
-                        />
-                      </div>
-
-                      <div className=" w-full mx-2">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Sector
-                          {apiDropdownOptions?.sector?.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id={`sector`}
-                                  checked={
-                                    apiDropdownOptions.sector.length ===
-                                    watch("sector")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "sector",
-                                        apiDropdownOptions.sector
-                                      );
-                                    } else {
-                                      setValue("sector", []);
-                                    }
-                                  }}
-                                />
-                              </FormCheck>
                             </div>
-                          )}
-                        </div>
-                        <Controller
-                          name="sector"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Sector",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.sector?.map((sector) => (
-                                    <option key={sector} value={sector}>
-                                      {sector}
+                            <Controller
+                              name="market"
+                              control={control}
+                              defaultValue={[]}
+                              render={({ field }) => (
+                                <TomSelect
+                                  value={field.value || []}
+                                  onChange={(value) => {
+                                    field.onChange(value);
+                                  }}
+                                  options={{
+                                    placeholder: "Select Market",
+                                  }}
+                                  className="w-full"
+                                  multiple
+                                >
+                                  {getDropdownLoader === true ? (
+                                    <option value="--" disabled>
+                                      Loading...
                                     </option>
-                                  ))}
-                                </>
+                                  ) : (
+                                    <>
+                                      {apiDropdownOptions?.market?.map(
+                                        (market: string) => {
+                                          return (
+                                            <option value={market} key={market}>
+                                              {market}
+                                            </option>
+                                          );
+                                        }
+                                      )}
+                                    </>
+                                  )}
+                                </TomSelect>
                               )}
-                            </TomSelect>
-                          )}
-                        />
-                      </div>
+                            />
+                          </div>
+
+                          <div className=" w-full mx-2">
+                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                              Sector
+                              {apiDropdownOptions?.sector?.length > 0 && (
+                                <div>
+                                  <FormCheck className="mr-2">
+                                    <FormCheck.Label>
+                                      Select All
+                                    </FormCheck.Label>
+                                    <FormCheck.Input
+                                      className="ml-1"
+                                      id={`sector`}
+                                      checked={
+                                        apiDropdownOptions.sector.length ===
+                                        watch("sector")?.length
+                                      }
+                                      type="checkbox"
+                                      onChange={(e) => {
+                                        if (e.target.checked === true) {
+                                          setValue(
+                                            "sector",
+                                            apiDropdownOptions.sector
+                                          );
+                                        } else {
+                                          setValue("sector", []);
+                                        }
+                                      }}
+                                    />
+                                  </FormCheck>
+                                </div>
+                              )}
+                            </div>
+                            <Controller
+                              name="sector"
+                              control={control}
+                              defaultValue={[]}
+                              render={({ field }) => (
+                                <TomSelect
+                                  value={field.value || []}
+                                  onChange={(value) => {
+                                    field.onChange(value);
+                                  }}
+                                  options={{
+                                    placeholder: "Select Sector",
+                                  }}
+                                  className="w-full"
+                                  multiple
+                                >
+                                  {getDropdownLoader === true ? (
+                                    <option value="--" disabled>
+                                      Loading...
+                                    </option>
+                                  ) : (
+                                    <>
+                                      {apiDropdownOptions?.sector?.map(
+                                        (sector) => (
+                                          <option key={sector} value={sector}>
+                                            {sector}
+                                          </option>
+                                        )
+                                      )}
+                                    </>
+                                  )}
+                                </TomSelect>
+                              )}
+                            />
+                          </div>
+                        </>
+                      )}
 
                       <div className="w-full mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
@@ -559,7 +601,32 @@ function CaseStudies() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
+                    <div className="flex items-center justify-between mt-3 xs:flex-col sm:flex-col md:flex-row">
+                      {isAllCompanySelected === true && (
+                        <div className="w-full mx-2">
+                          <div className="w-full mt-1">
+                            <div className="text-left text-slate-500 ">
+                              Select Comapnies
+                            </div>
+                            <div className=" mt-2">
+                              <Controller
+                                name="global_search"
+                                control={control}
+                                render={({ field }) => (
+                                  <CompanySelect
+                                    value={field.value}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                    isMulti={true}
+                                    className="any"
+                                  />
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div className="w-full mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Themes
@@ -821,7 +888,7 @@ function CaseStudies() {
                               <Table.Td className="flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
                                 {item?.institution_logo_url ? (
                                   <>
-                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                    <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                       <img
                                         alt="Institution Logo"
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"

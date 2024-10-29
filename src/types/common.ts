@@ -57,6 +57,8 @@ type PeerAnalysisPayload = {
   module: "Peer Analysis";
   global_search: string[];
   institution: string[];
+  year: string[];
+  category: string[];
 };
 type GlobalSearchPayload = {
   module: "Global Search";

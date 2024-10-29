@@ -153,7 +153,7 @@ function CompanyList() {
             <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                 {user?.saved_search?.["Company"] !== undefined && (
-                  <div className="hover:bg-slate-50 ml-2">
+                  <div className="hover:bg-slate-50 ">
                     <Button onClick={getSavedSearches}>Previous Search</Button>
                   </div>
                 )}

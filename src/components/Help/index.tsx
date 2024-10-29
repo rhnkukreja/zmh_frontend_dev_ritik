@@ -131,12 +131,12 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                         rules={{ required: "Name is required" }}
                         render={({ field }) => (
                           <>
-                            <FormCheck.Label
+                            <label
                               htmlFor="investmentName"
                               className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
                             >
                               Enter Investor OR Company Name
-                            </FormCheck.Label>
+                            </label>
                             <FormInput
                               id="investmentName"
                               type="text"
@@ -161,9 +161,9 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                         rules={{ required: "Information is required" }}
                         render={({ field }) => (
                           <>
-                            <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                            <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                               Select Information Required
-                            </FormCheck.Label>
+                            </label>
                             {[
                               "Investor Profile",
                               "Voting Guidelines",
@@ -190,11 +190,9 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                                     field.onChange(updatedValue);
                                   }}
                                 />
-                                <FormCheck.Label
-                                  htmlFor={`checkbox-switch-${index + 1}`}
-                                >
+                                <label htmlFor={`checkbox-switch-${index + 1}`}>
                                   {InfoType}
-                                </FormCheck.Label>
+                                </label>
                               </FormCheck>
                             ))}
                           </>
@@ -211,12 +209,12 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                     </div>
 
                     <div className="w-full">
-                      <FormCheck.Label
+                      <label
                         htmlFor="oadditional_comments"
                         className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
                       >
                         Additional Comments
-                      </FormCheck.Label>
+                      </label>
                       <Controller
                         name="comments"
                         control={control}
@@ -234,12 +232,12 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                 <Tab.Panel>
                   <div className="grid grid-cols-1  gap-4">
                     <div className="w-full">
-                      <FormCheck.Label
+                      <label
                         htmlFor="oadditional_comments"
                         className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
                       >
                         What would you like to discuss?
-                      </FormCheck.Label>
+                      </label>
                       <Controller
                         name="issue"
                         control={control}

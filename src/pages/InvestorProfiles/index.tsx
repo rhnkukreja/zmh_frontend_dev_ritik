@@ -10,23 +10,22 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   fetchInvestersProfiles,
   resetFilter,
-  resetInvestorProfiles,
   resetPage,
   setPage,
+  setFilter,
 } from "@/stores/investersProfileSlice";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
 import { useNavigate } from "react-router-dom";
-import { setFilter } from "@/stores/investersProfileSlice";
+
 import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
@@ -63,39 +62,60 @@ function Main() {
     });
 
   useEffect(() => {
-    if (filters.institution_name.length > 0) {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters, {
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(`${baseURL}/investor_profile/`, filters, {
             type: tab,
           })
-        )
-      );
-    } else {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(
+        : createDynamicURL(
             `${baseURL}/investor_profile/`,
             filters,
             { type: tab },
             page
-          )
-        )
-      );
-    }
-  }, [page, filters.institution_name, tab]);
+          );
+    dispatch(fetchInvestersProfiles(dynamicURL));
+  }, [page, filters, tab]);
 
   useEffect(() => {
     return () => {
       dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "institution_name",
-          value: [],
-        })
-      );
+      dispatch(setFilter({ key: "institution_name", value: [] }));
     };
   }, []);
+
+  const handleClearAllFilter = (type: "all" | "filter") => {
+    reset();
+
+    if (type === "all") {
+      dispatch(resetFilter());
+      setSearchTerms([]);
+    } else {
+      dispatch(setFilter({ key: "region", value: [] }));
+    }
+
+    dispatch(resetPage());
+
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/investor_profile/`,
+      undefined,
+      { type: tab },
+      1
+    );
+    dispatch(fetchInvestersProfiles(dynamicURL));
+  };
+
+  const handleSearch = (searchTerms: string[]) => {
+    dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+  };
+
+  const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
+    Object.entries(investorProfileFilter).forEach(([key, value]) => {
+      dispatch(setFilter({ key: key as any, value }));
+    });
+
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
+  };
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -117,88 +137,6 @@ function Main() {
     const data = { currentPage: page };
     navigate(`/investor-profile/${tab}/${id}`, { state: data });
   };
-
-  function handleApplyFilter() {
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-      )
-    );
-
-    dispatch(resetPage());
-  }
-
-  const onFilterClear = () => {
-    dispatch(resetFilter());
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(
-          `${baseURL}/investor_profile/`,
-          undefined,
-          { type: tab },
-          page
-        )
-      )
-    );
-  };
-
-  const handleClearAllFilter = (type: "all" | "filter") => {
-    if (type === "all") {
-      reset();
-      dispatch(resetFilter());
-      setSearchTerms([]);
-    } else {
-      reset();
-      dispatch(
-        setFilter({
-          key: "region",
-          value: [],
-        })
-      );
-    }
-
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(
-          `${baseURL}/investor_profile/`,
-          undefined,
-          { type: tab },
-          page
-        )
-      )
-    );
-
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
-      )
-    );
-
-    dispatch(resetPage());
-  };
-
-  const handleSearch = (searchTerms: string[]) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-    const tempFilter = { institution_name: searchTerms };
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(
-          `${baseURL}/investor_profile/`,
-          tempFilter,
-          { type: tab },
-          1
-        )
-      )
-    );
-  };
-  useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Investor Profile"]?.institution]);
@@ -230,16 +168,6 @@ function Main() {
     }
   };
 
-  const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
-    Object.entries(investorProfileFilter).forEach(([key, value]) => {
-      dispatch(setFilter({ key: key as any, value }));
-    });
-  };
-
-  useEffect(() => {
-    const { institution_name, ...restFilters } = filters;
-    setFiltersLength(countValidFilters({ ...restFilters }));
-  }, [filters]);
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -314,7 +242,7 @@ function Main() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Investor Profile"] !== undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
+                    <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
                         Previous Search
                       </Button>
@@ -379,7 +307,6 @@ function Main() {
                                   <Controller
                                     name="region"
                                     control={control}
-                                    defaultValue={[]}
                                     render={({ field }) => (
                                       <TomSelect
                                         value={field.value || []}
@@ -422,7 +349,7 @@ function Main() {
                                   Clear
                                 </Button>
                                 <Button
-                                  onClick={handleApplyFilter}
+                                  type="submit"
                                   variant="primary"
                                   className="w-32 ml-2"
                                 >
@@ -451,7 +378,7 @@ function Main() {
 
                             {profile?.institution_logo_url ? (
                               <>
-                                <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                   <img
                                     alt="ZMH Analytics"
                                     className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
@@ -478,8 +405,12 @@ function Main() {
                                 theme: "light",
                               }}
                             > */}
-                            <span>
-                              <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4">
+                            <span
+                              onClick={() => {
+                                gotoDetailPage(profile.id);
+                              }}
+                            >
+                              <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4 cursor-pointer">
                                 {profile?.institution_name}
                               </div>
                             </span>
@@ -542,7 +473,7 @@ function Main() {
                                 <div className="ml-5 flex items-center">
                                   {profile?.institution_logo_url ? (
                                     <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                         <Tippy
                                           as="img"
                                           alt="ZMH Analytics"

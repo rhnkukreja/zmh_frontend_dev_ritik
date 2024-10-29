@@ -74,7 +74,8 @@ function Main(props: MainProps) {
     company: CompanyData
   ) => {
     event.preventDefault();
-    navigate(`/?ticker=${company?.symbol}`);
+    window.history.pushState({}, "", `/?ticker=${company?.symbol}`);
+    props.setQuickSearch(false);
     const saveSearchResponse = await saveSearch(company?.id, company?.name);
     if (saveSearchResponse?.finnhub) {
       dispatch(setFinhub(saveSearchResponse?.finnhub));

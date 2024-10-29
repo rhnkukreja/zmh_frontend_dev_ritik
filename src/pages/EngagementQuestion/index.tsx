@@ -5,7 +5,7 @@ import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -14,6 +14,7 @@ import {
   fetchEngagementQuestions,
   resetFilter,
   resetPage,
+  setAllFilters,
   setFilter,
   setPage,
 } from "@/stores/engagementQuestionSlice";
@@ -110,20 +111,8 @@ function Main() {
         )
       )
     );
-  }, [page]);
-
-  // useEffect(() => {
-
-  //   return () => {
-  //     dispatch(resetPage());
-  //     dispatch(resetFilter());
-  //   };
-  // }, []);
-
-  useEffect(() => {
-    const { institution_name, ...restFilters } = filters;
-    setFiltersLength(countValidFilters({ ...restFilters }));
-  }, [filters]);
+    setFiltersLength(countValidFilters(filters));
+  }, [page, filters]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -149,76 +138,22 @@ function Main() {
       })
     );
 
-    const tempFilter = { institution_name: searchTerms };
-
-    dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(
-          `${baseURL}/engagement_questions/`,
-          tempFilter,
-          undefined,
-          1
-        )
-      )
-    );
-    dispatch(setPage(1));
-  }
-
-  useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
-
-  function handleApplyFilter() {
-    dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(
-          `${baseURL}/engagement_questions/`,
-          filters,
-          undefined,
-          page
-        )
-      )
-    );
     dispatch(resetPage());
   }
 
-  const handleClearAllFilter = (type = "all") => {
-    if (type === "all") {
-      reset();
-      dispatch(resetFilter());
-      setSearchTerms([]);
-    } else {
-      reset();
-      dispatch(
-        setFilter({
-          key: "category",
-          value: [],
-        })
-      );
-      dispatch(
-        setFilter({
-          key: "year",
-          value: [],
-        })
-      );
-    }
+  const handleClearAllFilter = () => {
+    dispatch(resetFilter());
+    setSearchTerms([]);
 
-    dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(
-          `${baseURL}/engagement_questions/`,
-          filters,
-          undefined,
-          page
-        )
-      )
-    );
+    dispatch(resetPage());
   };
 
   const onSubmit = async (engagementQuesFilter: EngagementQuestionFilter) => {
-    Object.entries(engagementQuesFilter).forEach(([key, value]) => {
-      dispatch(setFilter({ key: key as any, value }));
-    });
+    dispatch(
+      setAllFilters({ ...engagementQuesFilter, institution_name: searchTerms })
+    );
+
+    setFiltersLength(countValidFilters(filters));
   };
 
   const onEditClickHandler = (question: EngagementQuestions) => {
@@ -271,10 +206,12 @@ function Main() {
     setSearchTerms([
       ...user?.saved_search["Engagement Questions"]?.institution,
     ]);
+    setValue("year", user?.saved_search?.year || []);
+    setValue("category", user?.saved_search?.category || []);
     dispatch(
-      setFilter({
-        key: "category",
-        value: user?.saved_search["Engagement Questions"]?.category,
+      setAllFilters({
+        year: user?.saved_search?.year || [],
+        category: user?.saved_search?.category || [],
       })
     );
   };
@@ -346,7 +283,7 @@ function Main() {
                 <div className="hover:bg-slate-50">
                   <Button
                     onClick={() => {
-                      handleClearAllFilter("all");
+                      handleClearAllFilter();
                     }}
                   >
                     <Tippy content="Clear Filters" options={{ theme: "light" }}>
@@ -374,7 +311,7 @@ function Main() {
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                 {user?.saved_search?.["Engagement Questions"] !== undefined && (
-                  <div className="hover:bg-slate-50 ml-2">
+                  <div className="hover:bg-slate-50 ">
                     <Button onClick={getSavedSearches}>Previous Search</Button>
                   </div>
                 )}
@@ -538,15 +475,14 @@ function Main() {
                               <Button
                                 variant="secondary"
                                 onClick={() => {
-                                  handleClearAllFilter("filter");
-                                  close();
+                                  reset();
                                 }}
                                 className="w-32 ml-auto"
                               >
                                 Clear
                               </Button>
                               <Button
-                                onClick={handleApplyFilter}
+                                type="submit"
                                 variant="primary"
                                 className="w-32 ml-2"
                               >

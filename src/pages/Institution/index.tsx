@@ -250,7 +250,7 @@ function Main() {
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                 {user?.saved_search?.["Institution"] !== undefined && (
-                  <div className="hover:bg-slate-50 ml-2">
+                  <div className="hover:bg-slate-50 ">
                     <Button onClick={getSavedSearches}>Previous Search</Button>
                   </div>
                 )}
@@ -413,7 +413,7 @@ function Main() {
                               <div className="flex items-center">
                                 {institution?.logo_url ? (
                                   <>
-                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                    <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                       <img
                                         alt="ZMH Analytics"
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"

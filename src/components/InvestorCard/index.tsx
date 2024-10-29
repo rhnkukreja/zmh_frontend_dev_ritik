@@ -189,7 +189,7 @@ const index = () => {
                       <Table className="table">
                         <Table.Thead>
                           <Table.Tr className="row">
-                          <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               No.
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -225,7 +225,7 @@ const index = () => {
                                 >
                                   {dashboard?.institution_name && (
                                     <>
-                                     <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="flex items-center font-semibold ">
                                           {index + 1}
                                         </div>
