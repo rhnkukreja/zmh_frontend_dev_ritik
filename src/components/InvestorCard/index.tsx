@@ -42,12 +42,13 @@ const index = () => {
   const navigate = useNavigate();
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+  const searchTicker = searchParams.get("ticker");
 
   useEffect(() => {
     if (ticker !== companyGlobalSearchTicker) {
       return;
     }
-    if (companyGlobalSearchTicker) {
+    else if (searchTicker) {
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -56,7 +57,16 @@ const index = () => {
         )
       );
     }
-  }, [companyGlobalSearchTicker]);
+    else if (companyGlobalSearchTicker && dashboardDataList.length === 0) {
+      dispatch(
+        fetchCompanyDashboard(
+          createDynamicURL(
+            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+    }
+  }, [companyGlobalSearchTicker, searchTicker])
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {

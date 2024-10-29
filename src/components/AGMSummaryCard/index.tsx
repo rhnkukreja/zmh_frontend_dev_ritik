@@ -107,10 +107,15 @@ const index = () => {
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    window.open(
-      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
-      "_blank"
-    );
+    navigate(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
+      state: {
+        globeSearch: companyGlobalSearchTicker,
+      },
+})
+    // window.open(
+    //   `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+    //   "_blank"
+    // );
   };
 
   return (
@@ -152,7 +157,9 @@ const index = () => {
                     <Tippy content="Expand" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
+                        // onClick={() => window.open("summary-details", "_blank")}
                         onClick={() => window.open("summary-details", "_blank")}
+
                       >
                         <img alt="tab-icon" src={tabIcon} />
                       </div>

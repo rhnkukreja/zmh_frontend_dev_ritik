@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   fetchAGMSummaryDashboard,
   fetchVdsProxyDashboard,
+  setTempSearch,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
 import LoadingIcon from "../../components/Base/LoadingIcon";
@@ -24,7 +25,7 @@ const index = () => {
   const navigate = useNavigate()
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const { vdsProxyDetails, vdsProxyLoading, page } = useAppSelector(
+  const { vdsProxyDetails, vdsProxyLoading, tempSearch } = useAppSelector(
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
@@ -33,20 +34,53 @@ const index = () => {
     (state: RootState) => state.authentiction
   );
 
-  // const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+  const searchTicker = searchParams.get("ticker");
+
+  const { globeSearch } = location.state || {};
+
+  // const [searchState, setSearchState] = useState('');
+
+  // useEffect(() => {
+  //   dispatch(
+  //     fetchVdsProxyDashboard(
+  //       createDynamicURL(
+  //         `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`,
+  //       undefined,
+  //         undefined
+  //       )
+  //     )
+  //   );
+  // }, []);
+
 
   useEffect(() => {
-    dispatch(
-      fetchVdsProxyDashboard(
-        createDynamicURL(
-          `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`,
-          undefined,
-          undefined
+   
+    
+    if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
+      dispatch(
+        fetchVdsProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+          )
         )
-      )
-    );
-    console.log(locationPathName);
-  }, [companyGlobalSearchTicker]);
+      );
+      dispatch(
+      setTempSearch(companyGlobalSearchTicker))
+    }
+
+    else if (globeSearch !== tempSearch) {
+      dispatch(
+        fetchVdsProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+      dispatch(
+        setTempSearch(companyGlobalSearchTicker))
+    }
+  }, [companyGlobalSearchTicker, searchTicker])
 
   const isObject = (item: any) => {
     if (typeof item === "object") {

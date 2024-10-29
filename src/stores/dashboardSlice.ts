@@ -45,6 +45,7 @@ interface CompanySliceState {
   vdsProxyLoading: boolean;
   investorProfileDetails: any;
   investorProfileLoading: boolean;
+  tempSearch: string | null;
 }
 
 const initialState: CompanySliceState = {
@@ -65,6 +66,7 @@ const initialState: CompanySliceState = {
   vdsProxyLoading: true,
   investorProfileDetails: "",
   investorProfileLoading: true,
+  tempSearch: null
 
   // {
   //   nominees: [],
@@ -125,6 +127,9 @@ const companySlice = createSlice({
     },
     resetPage(state) {
       state.page = 1;
+    },
+    setTempSearch(state, action: PayloadAction<string>) {
+      state.tempSearch = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -239,4 +244,4 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage } = companySlice.actions;
+export const { setPage, resetPage, setTempSearch } = companySlice.actions;
