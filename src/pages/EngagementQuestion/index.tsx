@@ -144,8 +144,8 @@ function Main() {
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchTerms([]);
-
     dispatch(resetPage());
+    reset();
   };
 
   const onSubmit = async (engagementQuesFilter: EngagementQuestionFilter) => {

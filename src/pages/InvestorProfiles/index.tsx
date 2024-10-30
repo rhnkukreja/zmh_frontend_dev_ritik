@@ -76,32 +76,17 @@ function Main() {
     dispatch(fetchInvestersProfiles(dynamicURL));
   }, [page, filters, tab]);
 
-  useEffect(() => {
-    return () => {
-      dispatch(resetPage());
-      dispatch(setFilter({ key: "institution_name", value: [] }));
-    };
-  }, []);
-
-  const handleClearAllFilter = (type: "all" | "filter") => {
+  const onFilterClear = () => {
     reset();
-
-    if (type === "all") {
-      dispatch(resetFilter());
-      setSearchTerms([]);
-    } else {
-      dispatch(setFilter({ key: "region", value: [] }));
-    }
-
+    dispatch(resetFilter());
     dispatch(resetPage());
+  };
 
-    const dynamicURL = createDynamicURL(
-      `${baseURL}/investor_profile/`,
-      undefined,
-      { type: tab },
-      1
-    );
-    dispatch(fetchInvestersProfiles(dynamicURL));
+  const handleClearAllFilter = () => {
+    setSearchTerms([]);
+    reset();
+    dispatch(resetFilter());
+    dispatch(resetPage());
   };
 
   const handleSearch = (searchTerms: string[]) => {
@@ -206,11 +191,7 @@ function Main() {
                   />
 
                   <div className="hover:bg-slate-50">
-                    <Button
-                      onClick={() => {
-                        handleClearAllFilter("all");
-                      }}
-                    >
+                    <Button onClick={handleClearAllFilter}>
                       <Tippy
                         content="Clear Filters"
                         options={{ theme: "light" }}
@@ -341,7 +322,7 @@ function Main() {
                                 <Button
                                   variant="secondary"
                                   onClick={() => {
-                                    handleClearAllFilter("filter");
+                                    onFilterClear();
                                     close();
                                   }}
                                   className="w-32 ml-auto"

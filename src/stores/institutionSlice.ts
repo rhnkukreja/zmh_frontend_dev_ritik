@@ -5,6 +5,11 @@ import { getPageNumbers } from "@/utils/helper";
 
 const name = "institutions";
 
+interface InstitutionType {
+  institution_name: string[];
+  region: string[];
+}
+
 interface InstitutionsState {
   institutions: Institutions[];
   singleInstitution: Institutions | null;
@@ -16,11 +21,7 @@ interface InstitutionsState {
   institutionFilterOptions: {
     region: string[];
   };
-  filters: {
-    institution_name: string[];
-    region: string;
-    investor_type: string;
-  };
+  filters: InstitutionType;
 }
 
 const initialState: InstitutionsState = {
@@ -36,8 +37,7 @@ const initialState: InstitutionsState = {
   },
   filters: {
     institution_name: [],
-    region: "",
-    investor_type: "",
+    region: [],
   },
 };
 
@@ -90,12 +90,13 @@ const institutionsSlice = createSlice({
     ) {
       state.filters[action.payload.key] = action.payload.value as any;
     },
+
     resetFilter(state) {
-      state.filters = {
-        institution_name: [],
-        region: "",
-        investor_type: "",
-      };
+      state.filters = initialState.filters;
+    },
+
+    setAllFilters(state, action: PayloadAction<Partial<InstitutionType>>) {
+      state.filters = { ...state.filters, ...action.payload };
     },
   },
   extraReducers: (builder) => {
@@ -110,7 +111,6 @@ const institutionsSlice = createSlice({
           state,
           action: PayloadAction<{ count: number; results: Institutions[] }>
         ) => {
-          console.log("results: ", action.payload.results);
           state.loading = false;
           state.institutions = action.payload.results;
           state.totalInstitutions = action.payload.count;
@@ -163,5 +163,5 @@ const institutionsSlice = createSlice({
 });
 
 export default institutionsSlice;
-export const { setPage, resetPage, setFilter, resetFilter } =
+export const { setPage, resetPage, setFilter, resetFilter, setAllFilters } =
   institutionsSlice.actions;

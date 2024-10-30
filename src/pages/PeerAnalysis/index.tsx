@@ -28,9 +28,9 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
-import { shareHolderProposalService } from "@/services/shareholderProposal";
+
 import { Popover } from "@/components/Base/Headless";
-import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
+import { FormCheck, FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import CompanySelect from "@/components/ReactSelectAsync";
