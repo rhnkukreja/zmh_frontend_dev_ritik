@@ -84,6 +84,7 @@ import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
 import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
+import UserDetails from "@/pages/UserDetails";
 
 
 function Router() {
@@ -451,6 +452,12 @@ TitleManager();
           path: "investor-company-details/:id",
           element: <InvestorCompanyDetails/> ,
           data: {titleName: 'Investor Document Detail - ZMH Analytics'}
+
+        },
+        {
+          path: "user-details",
+          element: <UserDetails/> ,
+          data: {titleName: 'User Detail - ZMH Analytics'}
 
         },
       ],

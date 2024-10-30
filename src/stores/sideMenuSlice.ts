@@ -115,6 +115,7 @@ const initialState: any = {
     //   title: "Calendar",
     // },
     // "Additional",
+    "Admin",
     {
       icon: "School",
       pathname: "/institution",
@@ -125,6 +126,12 @@ const initialState: any = {
       icon: "Building",
       pathname: "/company",
       title: "Company",
+      isAdmin: true,
+    },
+    {
+      icon: "Building",
+      pathname: "/user-details",
+      title: "User Detail",
       isAdmin: true,
     },
     "Additional",

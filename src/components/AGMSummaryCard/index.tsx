@@ -26,7 +26,7 @@ const index = () => {
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const { agmSummaryDetails, loading, page } = useAppSelector(
+  const { agmSummaryDetails, loading, dashboardDataList } = useAppSelector(
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
@@ -89,9 +89,9 @@ const index = () => {
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
 
-  
+
   useEffect(() => {
-    if(ticker !== companyGlobalSearchTicker){
+    if (ticker !== companyGlobalSearchTicker) {
       return;
     }
     dispatch(
@@ -107,15 +107,15 @@ const index = () => {
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    navigate(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
-      state: {
-        globeSearch: companyGlobalSearchTicker,
-      },
-})
-    // window.open(
-    //   `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
-    //   "_blank"
-    // );
+    //     navigate(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
+    //       state: {
+    //         globeSearch: companyGlobalSearchTicker,
+    //       },
+    // })
+    window.open(
+      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+      "_blank"
+    );
   };
 
   return (
@@ -126,23 +126,24 @@ const index = () => {
             <>
               <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                 <span>
-                 <h1 className="text-lg font-bold">
-                    Previous AGM Summary {agmSummaryDetails?.Year}
-                  </h1>
-                  <p className=" italic"> Meeting Date: {meetingDate}</p>
-                 </span>
+                  <span>
+                    <h1 className="text-lg font-bold">
+                      Previous AGM Summary {agmSummaryDetails?.Year}
+                    </h1>
+                    <p className=" italic"> Meeting Date: {meetingDate}</p>
+                  </span>
                   {
                     agmSummaryDetails?.Year !== "2023" &&
-                    <div
+                    <button
+                      disabled={dashboardDataList?.length === 0 ? true : false}
                       onClick={(event: any) => handleViewMore(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                     >
                       View More
-                    </div>
-                  }  
+                    </button>
+                  }
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -169,12 +170,12 @@ const index = () => {
               </div>
 
               <div className="mt-5">
-               
-                  <TableWrapper isLoading={loading}>
+
+                <TableWrapper isLoading={loading}>
                   <div
                     className={clsx([
                       locationPathName === "/" &&
-                        " max-h-[400px] overflow-y-scroll",
+                      " max-h-[400px] overflow-y-scroll",
                     ])}
                   >
                     <Table className="table_2 w-full">
@@ -214,7 +215,7 @@ const index = () => {
                                     ) => (
                                       <Table.Td
                                         key={headerIndex}
-                                        className={clsx(["cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right" ,  headerIndex === 0 && "text-left "])}
+                                        className={clsx(["cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right", headerIndex === 0 && "text-left "])}
                                       >
                                         <h1
                                           className={clsx([
@@ -232,15 +233,15 @@ const index = () => {
                           )}
                       </Table.Tbody>
                     </Table>
-                    </div>
-                  </TableWrapper>
+                  </div>
+                </TableWrapper>
 
-                  <br />
-                  <TableWrapper isLoading={loading}>
+                <br />
+                <TableWrapper isLoading={loading}>
                   <div
                     className={clsx([
                       locationPathName === "/" &&
-                        " max-h-[400px] overflow-y-scroll",
+                      " max-h-[400px] overflow-y-scroll",
                     ])}
                   >
 
@@ -286,15 +287,15 @@ const index = () => {
                                         <h1
                                           className={clsx([
                                             headerIndex === 0 &&
-                                              "font-semibold ",
+                                            "font-semibold ",
                                             headerIndex ===
-                                              agmSummaryDetails
-                                                ?.proposals_headers?.length -
-                                                1 &&
-                                              parseFloat(
-                                                proposal[proposalHeader?.field]
-                                              ) < 85 &&
-                                              "text-red-700 font-semibold",
+                                            agmSummaryDetails
+                                              ?.proposals_headers?.length -
+                                            1 &&
+                                            parseFloat(
+                                              proposal[proposalHeader?.field]
+                                            ) < 85 &&
+                                            "text-red-700 font-semibold",
                                           ])}
                                         >
                                           {proposal[proposalHeader?.field]}
@@ -308,9 +309,9 @@ const index = () => {
                       </Table.Tbody>
                     </Table>
                   </div>
-                  </TableWrapper>
-                </div>
-              
+                </TableWrapper>
+              </div>
+
             </>
           </div>
         </div>

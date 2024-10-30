@@ -166,18 +166,19 @@ const index = () => {
         </Button>
       )}
       {vdsProxyDetails?.vds_report?.length > 0 && (
-        <div className="p-5 mt-1 box ">
+        <div className="p-5 mt-1 box">
           <div className="w-full">
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                 <span>
                   <h1 className="text-lg font-bold">
-                    Proxy Voting
+                    Proxy Voting Investor 
                   </h1>
                 </span>
 
               </div>
               <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
+                <h1 className="text-md font-bold">(Aggregate Ownership {vdsProxyDetails?.total_percent_ownership})</h1>
                 <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <div
                     className="box p-[5px] cursor-pointer"
@@ -186,7 +187,7 @@ const index = () => {
                     <img alt="download-icon" src={downloadIcon} />
                   </div>
                 </Tippy>
-                {locationPathName === "/vds-details/" && (
+                {/* {locationPathName === "/vds-details/" && (
                   <Tippy content="Expand" options={{ theme: "light" }}>
                     <div
                       className="box p-2 cursor-pointer"
@@ -195,7 +196,7 @@ const index = () => {
                       <img alt="tab-icon" src={tabIcon} />
                     </div>
                   </Tippy>
-                 )}
+                 )} */}
               </div>
             </div>
             <>
@@ -203,12 +204,14 @@ const index = () => {
                 <div>
                   <TableWrapper>
                   {/* overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll */}
-                    <div className={clsx([locationPathName === "/vds-details/"
+
+                  {/* className={clsx([locationPathName === "/vds-details/"
                        && 'overflow-x-auto max-h-[350px] 2xl:max-h-[500px] 3xl:max-h-[550px] overflow-y-scroll',
                         locationPathName === "/vds-proxy-details " && 
-                       'overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll'])}>
+                       'overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll'])} */}
+                    <div className="overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll">
                       <Table className="table_2 w-full">
-                        <Table.Thead className="sticky top-0 z-10"> {/* Make entire header sticky */}
+                        <Table.Thead className="sticky top-50 z-10"> {/* Make entire header sticky */}
                           <Table.Tr className="row_2">
                             {vdsProxyDetails?.vds_report_headers?.length > 0 &&
                               vdsProxyDetails?.vds_report_headers?.map(

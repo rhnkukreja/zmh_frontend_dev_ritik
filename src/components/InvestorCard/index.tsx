@@ -32,7 +32,7 @@ const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
-  const { dashboardDataList, investorCardLoading, page, totalPages } =
+  const { dashboardDataList, investorCardLoading, page, totalPages, percent } =
     useAppSelector((state) => state.dashboard);
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
@@ -154,7 +154,7 @@ const index = () => {
             <div className="w-full">
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
                 <h1 className="text-lg font-bold">
-                  Top {dashboardDataList?.length || 20} Investor
+                  Top {dashboardDataList?.length || 20} Investor ({percent} of Shares Outstanding)
                 </h1>
                 <div className="flex justify-between items-center gap-4 sm:flex-row">
                   <div className="flex justify-between items-center gap-2">
