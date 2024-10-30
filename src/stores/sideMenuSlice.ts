@@ -129,7 +129,7 @@ const initialState: any = {
       isAdmin: true,
     },
     {
-      icon: "Building",
+      icon: "User",
       pathname: "/user-details",
       title: "User Detail",
       isAdmin: true,

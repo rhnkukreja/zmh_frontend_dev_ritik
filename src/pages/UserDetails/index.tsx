@@ -7,16 +7,11 @@ import TableWrapper from "@/components/TableWrapper";
 import { useNavigate } from "react-router-dom";
 import Tippy from "@/components/Base/Tippy";
 import Table from "@/components/Base/Table";
-import {
-    fetchShareHolderProposal,
-    setApplyFilters,
-    setPage,
-    setTabs,
-} from "@/stores/shareholderProposalSlice";
 import { useEffect } from "react";
 import { fetchEngagementQuestions } from "@/stores/engagementQuestionSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import { fetchUserDetail, setPage } from "@/stores/userDetailSlice";
 
 function UserDetail() {
 
@@ -44,7 +39,7 @@ function UserDetail() {
 
     useEffect(() => {
         dispatch(
-            fetchEngagementQuestions(
+            fetchUserDetail(
                 createDynamicURL(
                     `${baseURL}/user/user_info`,
                     {},
@@ -499,7 +494,7 @@ function UserDetail() {
                                                             className="[&_td]:last:border-b-0"
                                                         >
                                                             <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                                                {user?.first_name} + {user?.last_name}
+                                                                {user?.first_name} {user?.last_name}
                                                             </Table.Td>
                                                             <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                                                 {user?.email}
@@ -511,7 +506,7 @@ function UserDetail() {
                                                                 {user?.login_count}
                                                             </Table.Td>
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                {user?.date_created}
+                                                            {user?.signup_time} {user?.signup_date} 
                                                             </Table.Td>
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                                 {/* {user?.date_created} */}
