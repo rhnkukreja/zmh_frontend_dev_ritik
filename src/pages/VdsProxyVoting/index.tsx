@@ -52,11 +52,11 @@ const index = () => {
   //     )
   //   );
   // }, []);
-
+  // const vdsProxyDetails:any = {vds_report: []};
 
   useEffect(() => {
-   
-    
+
+
     if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
       dispatch(
         fetchVdsProxyDashboard(
@@ -66,7 +66,7 @@ const index = () => {
         )
       );
       dispatch(
-      setTempSearch(companyGlobalSearchTicker))
+        setTempSearch(companyGlobalSearchTicker))
     }
 
     else if (globeSearch !== tempSearch) {
@@ -149,7 +149,7 @@ const index = () => {
         {companyGlobalSearchName}
       </div> */}
 
-      {location.pathname !== "/" && (
+      {vdsProxyDetails?.vds_report?.length === 0 && !vdsProxyLoading && location.pathname !== "/" && (
         <Button
           onClick={() => {
             navigate("/");
@@ -165,20 +165,39 @@ const index = () => {
           Back
         </Button>
       )}
+
+
       {vdsProxyDetails?.vds_report?.length > 0 && (
         <div className="p-5 mt-1 box">
+
+          {location.pathname !== "/" && (
+            <Button
+              onClick={() => {
+                navigate("/");
+              }}
+              variant="primary"
+              className="bg-theme-2 border-bg-theme-2 mb-1"
+            >
+              <ChevronLeft
+                className="group-[.mode--light]:text-white text-white"
+                size={18}
+                strokeWidth={1.5}
+              />
+              Back
+            </Button>
+          )}
           <div className="w-full">
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                 <span>
                   <h1 className="text-lg font-bold">
-                    Proxy Voting Investor 
+                    Proxy Voting
                   </h1>
                 </span>
 
               </div>
               <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                <h1 className="text-md font-bold">(Aggregate Ownership {vdsProxyDetails?.total_percent_ownership})</h1>
+                <h1 className="text-md font-bold">Aggregate Ownership: {vdsProxyDetails?.total_percent_ownership}</h1>
                 <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <div
                     className="box p-[5px] cursor-pointer"
@@ -203,9 +222,9 @@ const index = () => {
               <div className="">
                 <div>
                   <TableWrapper>
-                  {/* overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll */}
+                    {/* overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll */}
 
-                  {/* className={clsx([locationPathName === "/vds-details/"
+                    {/* className={clsx([locationPathName === "/vds-details/"
                        && 'overflow-x-auto max-h-[350px] 2xl:max-h-[500px] 3xl:max-h-[550px] overflow-y-scroll',
                         locationPathName === "/vds-proxy-details " && 
                        'overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll'])} */}
@@ -355,7 +374,9 @@ const index = () => {
       )}
 
       {vdsProxyDetails?.vds_report?.length === 0 && !vdsProxyLoading && (
+
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+
           <h1 className="font-semibold"> Proxy Records Not Found..</h1>
         </div>
       )}
