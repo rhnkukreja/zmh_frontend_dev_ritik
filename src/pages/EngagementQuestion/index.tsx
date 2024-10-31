@@ -1,5 +1,5 @@
 import Lucide from "@/components/Base/Lucide";
-import { Menu, Popover } from "@/components/Base/Headless";
+import { Popover } from "@/components/Base/Headless";
 // import TomSelect from "@/components/Base/TomSelect";
 import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
@@ -35,7 +35,6 @@ import { toast } from "react-toastify";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
-import { FilterObject } from "@/types/common";
 
 interface EngagementQuestionFilter {
   category: string[];
@@ -57,10 +56,15 @@ function Main() {
   const { handleSubmit, control, reset, setValue, watch } =
     useForm<EngagementQuestionFilter>({
       defaultValues: {
-        category: [...filters.category],
-        year: [...filters.year],
+        category: filters.category,
+        year: filters.year,
       },
     });
+
+  const resetForm = () => {
+    setValue("category", []);
+    setValue("year", []);
+  };
 
   const { user } = useAppSelector((state) => state.authentiction);
 
@@ -101,17 +105,23 @@ function Main() {
   ] = useState<boolean>(false);
 
   useEffect(() => {
-    dispatch(
-      fetchEngagementQuestions(
-        createDynamicURL(
-          `${baseURL}/engagement_questions/`,
-          filters,
-          undefined,
-          page
-        )
-      )
-    );
-    setFiltersLength(countValidFilters(filters));
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(
+            `${baseURL}/engagement_questions/`,
+            filters,
+            undefined
+          )
+        : createDynamicURL(
+            `${baseURL}/engagement_questions/`,
+            filters,
+            undefined,
+            page
+          );
+    dispatch(fetchEngagementQuestions(dynamicURL));
+
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
   }, [page, filters]);
 
   const handleNextPage = () => {
@@ -145,7 +155,7 @@ function Main() {
     dispatch(resetFilter());
     setSearchTerms([]);
     dispatch(resetPage());
-    reset();
+    resetForm();
   };
 
   const onSubmit = async (engagementQuesFilter: EngagementQuestionFilter) => {
@@ -153,7 +163,7 @@ function Main() {
       setAllFilters({ ...engagementQuesFilter, institution_name: searchTerms })
     );
 
-    setFiltersLength(countValidFilters(filters));
+    dispatch(resetPage());
   };
 
   const onEditClickHandler = (question: EngagementQuestions) => {
@@ -475,7 +485,9 @@ function Main() {
                               <Button
                                 variant="secondary"
                                 onClick={() => {
-                                  reset();
+                                  dispatch(resetFilter());
+                                  dispatch(resetPage());
+                                  resetForm();
                                 }}
                                 className="w-32 ml-auto"
                               >

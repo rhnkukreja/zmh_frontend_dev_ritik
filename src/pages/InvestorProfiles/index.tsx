@@ -61,6 +61,10 @@ function Main() {
       },
     });
 
+  const resetFormValues = () => {
+    setValue("region", []);
+  };
+
   useEffect(() => {
     const dynamicURL =
       filters?.institution_name?.length > 0
@@ -74,6 +78,8 @@ function Main() {
             page
           );
     dispatch(fetchInvestersProfiles(dynamicURL));
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
   }, [page, filters, tab]);
 
   const onFilterClear = () => {
@@ -85,7 +91,8 @@ function Main() {
   const handleClearAllFilter = () => {
     setSearchTerms([]);
     reset();
-    dispatch(resetFilter());
+    resetFormValues();
+    // dispatch(resetFilter());
     dispatch(resetPage());
   };
 
@@ -98,8 +105,8 @@ function Main() {
       dispatch(setFilter({ key: key as any, value }));
     });
 
-    const { institution_name, ...restFilters } = filters;
-    setFiltersLength(countValidFilters(restFilters));
+    dispatch(resetPage());
+    resetFormValues();
   };
 
   const handleNextPage = () => {

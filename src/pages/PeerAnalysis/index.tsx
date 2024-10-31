@@ -87,6 +87,12 @@ function PeerAnalysis() {
     },
   });
 
+  const resetFormValues = () => {
+    setValue("year", []);
+    setValue("category", []);
+    setValue("global_search", []);
+  };
+
   useEffect(() => {
     dispatch(
       setFilter({
@@ -98,12 +104,25 @@ function PeerAnalysis() {
 
   useEffect(() => {
     if (!filters?.global_search) return;
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)
+
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined)
+        : createDynamicURL(
+            `${baseURL}/peer_analysis/`,
+            filters,
+            undefined,
+            page
+          );
+    dispatch(fetchPeerAnalysis(dynamicURL));
+    const { institution_name, global_search, ...restFilters } = filters;
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
       )
     );
-    setFiltersLength(countValidFilters(filters));
   }, [page, filters]);
 
   const handleNextPage = () => {
@@ -124,14 +143,18 @@ function PeerAnalysis() {
 
   const onFilterClear = () => {
     reset();
+    resetFormValues();
     dispatch(resetFilter());
     dispatch(
       setFilter({ key: "global_search", value: [companyGlobalSearchName] })
     );
+    dispatch(resetPage());
   };
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
+    resetFormValues();
+    reset();
     setSearchTerms([]);
     dispatch(
       setFilter({ key: "global_search", value: [companyGlobalSearchName] })
@@ -194,7 +217,7 @@ function PeerAnalysis() {
           : [companyGlobalSearchName],
       })
     );
-    setFiltersLength(countValidFilters(filters));
+    dispatch(resetPage());
   };
   return (
     <>

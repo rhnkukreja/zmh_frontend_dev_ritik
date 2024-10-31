@@ -57,6 +57,10 @@ function Main() {
       },
     });
 
+  const resetFormValues = () => {
+    setValue("region", []);
+  };
+
   const { user } = useAppSelector((state) => state.authentiction);
 
   const [selectedInstitution, setSelectedInstitution] =
@@ -67,13 +71,8 @@ function Main() {
   useEffect(() => {
     const dynamicURL =
       filters?.institution_name?.length > 0
-        ? createDynamicURL(`${baseURL}/investor_profile/`, filters, undefined)
-        : createDynamicURL(
-            `${baseURL}/investor_profile/`,
-            filters,
-            undefined,
-            page
-          );
+        ? createDynamicURL(`${baseURL}/institute/`, filters, undefined)
+        : createDynamicURL(`${baseURL}/institute/`, filters, undefined, page);
     dispatch(fetchInstitutions(dynamicURL));
 
     const { institution_name, ...restFilters } = filters;
@@ -103,12 +102,15 @@ function Main() {
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchTerms([]);
+    resetFormValues();
     dispatch(resetPage());
     reset();
   };
 
   const onFilterClear = () => {
     reset();
+    resetFormValues();
+    // dispatch(resetFilter());
     dispatch(resetPage());
   };
 
@@ -157,6 +159,8 @@ function Main() {
     Object.entries(institutionFilters).forEach(([key, value]) => {
       dispatch(setFilter({ key: key as any, value }));
     });
+
+    dispatch(resetPage());
   };
 
   return (

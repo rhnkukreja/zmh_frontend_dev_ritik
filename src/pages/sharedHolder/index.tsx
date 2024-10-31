@@ -67,8 +67,6 @@ function ShareHolderProposal() {
     isAllCompanySelected,
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
-  console.log({ isAllCompanySelected });
-
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
@@ -125,6 +123,15 @@ function ShareHolderProposal() {
     },
   });
 
+  const resetFormValues = () => {
+    setValue("category", []);
+    setValue("keyword", "");
+    setValue("sub_category", []);
+    setValue("status", []);
+    setValue("year", []);
+    setValue("global_search", []);
+  };
+
   const navigate = useNavigate();
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -156,46 +163,29 @@ function ShareHolderProposal() {
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);
 
+  const tabUrls: { [key: string]: string } = {
+    proposal: `${baseURL}/shareholder_proposal/def14a/`,
+    "no-action": `${baseURL}/shareholder_proposal/no_action/`,
+    withdrawn: `${baseURL}/shareholder_proposal/withdrawn/`,
+  };
+
   useEffect(() => {
     if (!filters?.global_search) return;
-    if (tab === "proposal") {
-      dispatch(
-        fetchShareHolderProposal(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/def14a/`,
-            {
-              ...filters,
-            },
-            undefined,
-            page
-          )
-        )
-      );
-    } else if (tab === "no-action") {
-      dispatch(
-        fetchShareHolderProposal(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/no_action/`,
-            filters,
-            undefined,
-            page
-          )
-        )
-      );
-    } else if (tab === "withdrawn") {
-      dispatch(
-        fetchShareHolderProposal(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/withdrawn/`,
-            filters,
-            undefined,
-            page
-          )
-        )
-      );
-    }
 
-    setFiltersLength(countValidFilters(filters));
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(tabUrls[tab], filters, undefined)
+        : createDynamicURL(tabUrls[tab], filters, undefined, page);
+    dispatch(fetchShareHolderProposal(dynamicURL));
+
+    const { institution_name, global_search, ...restFilters } = filters;
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
+      )
+    );
   }, [page, tab, filters]);
 
   useEffect(() => {
@@ -284,7 +274,8 @@ function ShareHolderProposal() {
 
   const onFilterClear = () => {
     reset();
-
+    resetFormValues();
+    dispatch(resetFilter());
     dispatch(resetPage());
     dispatch(
       setFilter({ key: "global_search", value: [companyGlobalSearchName] })
@@ -293,6 +284,7 @@ function ShareHolderProposal() {
   const handleClearAllFilter = () => {
     setSearchTerms([]);
     reset();
+    resetFormValues();
     dispatch(resetFilter());
     dispatch(resetPage());
     dispatch(

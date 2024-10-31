@@ -1,5 +1,5 @@
 import Lucide from "@/components/Base/Lucide";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -62,10 +62,9 @@ function CompanyList() {
   const {
     handleSubmit,
     control,
+    setValue,
     reset,
     formState: { errors },
-
-    watch,
   } = useForm<CompanyFilterTypes>({
     defaultValues: {
       global_search:
@@ -75,6 +74,10 @@ function CompanyList() {
         })) || [],
     },
   });
+
+  const resetFormValues = () => {
+    setValue("global_search", []);
+  };
 
   useEffect(() => {
     dispatch(
@@ -93,15 +96,24 @@ function CompanyList() {
         createDynamicURL(`${baseURL}/company/`, filters, undefined, page)
       )
     );
+
+    const { global_search, ...restFilters } = filters;
+
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
+      )
+    );
   }, [page, filters.global_search, filters]);
 
   const onFilterClear = () => {
     reset();
+
+    if (isAllCompanySelected) resetFormValues();
     dispatch(resetPage());
-    dispatch(resetFilter());
-    dispatch(
-      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
-    );
+    // dispatch(resetFilter());
   };
 
   const handleNextPage = () => {
@@ -159,7 +171,8 @@ function CompanyList() {
           : [companyGlobalSearchName],
       })
     );
-    setFiltersLength(countValidFilters(filters));
+
+    dispatch(resetPage());
   };
 
   return (

@@ -83,7 +83,7 @@ function CaseStudies() {
   const {
     handleSubmit,
     control,
-    reset,
+
     setValue,
     watch,
     formState: { errors },
@@ -104,6 +104,17 @@ function CaseStudies() {
       vote: filters?.vote,
     },
   });
+
+  const resetFormValues = () => {
+    setValue("themes", []);
+    setValue("keyword", "");
+    setValue("market", []);
+    setValue("sector", []);
+    setValue("year", []);
+    setValue("global_search", []);
+    setValue("proposal_type", []);
+    setValue("vote", []);
+  };
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -134,12 +145,26 @@ function CaseStudies() {
 
   useEffect(() => {
     if (!filters?.global_search) return;
-    dispatch(
-      fetchCaseStudies(
-        createDynamicURL(`${baseURL}/case_studies/`, filters, undefined, page)
+
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(`${baseURL}/case_studies/`, filters, undefined)
+        : createDynamicURL(
+            `${baseURL}/case_studies/`,
+            filters,
+            undefined,
+            page
+          );
+    dispatch(fetchCaseStudies(dynamicURL));
+
+    const { institution_name, global_search, ...restFilters } = filters;
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
       )
     );
-    setFiltersLength(countValidFilters(filters));
   }, [page, filters]);
 
   const handleNextPage = () => {
@@ -159,8 +184,9 @@ function CaseStudies() {
   };
 
   const onFilterClear = () => {
-    reset();
-    dispatch(resetFilters());
+    resetFormValues();
+    // dispatch(resetFilters());
+    dispatch(resetPage());
     dispatch(
       setFilters({ key: "global_search", value: [companyGlobalSearchName] })
     );
@@ -168,7 +194,7 @@ function CaseStudies() {
 
   const handleClearAllFilter = () => {
     setSearchTerms([]);
-    reset();
+    resetFormValues();
     dispatch(resetFilters());
     dispatch(resetPage());
     dispatch(
@@ -197,7 +223,8 @@ function CaseStudies() {
           : [companyGlobalSearchName],
       })
     );
-    setFiltersLength(countValidFilters(filters));
+    setIsFilterCollapse(!isFilterCollapse);
+    dispatch(resetPage());
   };
 
   const getSavedSearches = () => {
@@ -232,13 +259,13 @@ function CaseStudies() {
     const res = await commonService.saveSearches({
       module: "Case Studies",
       institution: searchTerms,
-      market: watch("market") || [],
-      sector: watch("sector") || [],
-      themes: watch("themes") || [],
-      proposal_type: watch("proposal_type") || [],
-      vote: watch("vote") || [],
-      year: watch("year") || [],
-      keyword: watch("keyword") || "",
+      market: filters.market || [],
+      sector: filters.sector || [],
+      themes: filters.themes || [],
+      proposal_type: filters.proposal_type || [],
+      vote: filters.vote || [],
+      year: filters.year || [],
+      keyword: filters.keyword || "",
       global_search: [companyGlobalSearchName],
     });
     if (res?.user_id) {
@@ -247,13 +274,13 @@ function CaseStudies() {
           key: "Case Studies",
           value: {
             institution: searchTerms,
-            market: watch("market") || [],
-            sector: watch("sector") || [],
-            themes: watch("themes") || [],
-            proposal_type: watch("proposal_type") || [],
-            vote: watch("vote") || [],
-            year: watch("year") || [],
-            keyword: watch("keyword") || "",
+            market: filters.market || [],
+            sector: filters.sector || [],
+            themes: filters.themes || [],
+            proposal_type: filters.proposal_type || [],
+            vote: filters.vote || [],
+            year: filters.year || [],
+            keyword: filters.keyword || "",
             global_search: [companyGlobalSearchName],
           },
         })

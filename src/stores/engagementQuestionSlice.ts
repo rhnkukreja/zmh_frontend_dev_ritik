@@ -109,11 +109,7 @@ const engagementQuestionsSlice = createSlice({
     },
 
     resetFilter(state) {
-      state.filters = {
-        institution_name: [],
-        category: [],
-        year: [],
-      };
+      state.filters = initialState.filters;
     },
   },
   extraReducers: (builder) => {

@@ -58,6 +58,10 @@ function ProxyGuideline() {
       },
     });
 
+  const resetFormValues = () => {
+    setValue("year", []);
+  };
+
   const [
     addNewProxyVotingGuidelineVisible,
     setAddNewProxyVotingGuidelineVisible,
@@ -71,12 +75,23 @@ function ProxyGuideline() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
   useEffect(() => {
-    dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, page)
-      )
-    );
-    setFiltersLength(countValidFilters(filters));
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(
+            `${baseURL}/proxy_voting_guidelines/`,
+            filters,
+            undefined
+          )
+        : createDynamicURL(
+            `${baseURL}/proxy_voting_guidelines/`,
+            filters,
+            undefined,
+            page
+          );
+    dispatch(fetchProxyVotingGuidelines(dynamicURL));
+
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
   }, [page, filters]);
 
   const handleNextPage = () => {
@@ -111,13 +126,15 @@ function ProxyGuideline() {
   };
 
   const onFilterClear = () => {
-    reset();
+    resetFormValues();
+    dispatch(resetFilter());
+    dispatch(resetPage());
   };
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchTerms([]);
-
+    resetFormValues();
     dispatch(resetPage());
   };
 
@@ -167,6 +184,8 @@ function ProxyGuideline() {
     dispatch(
       setAllFilters({ ...ProxyGuideline, institution_name: searchTerms })
     );
+
+    dispatch(resetPage());
   };
   return (
     <>

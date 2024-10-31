@@ -103,12 +103,7 @@ const investersProfileSlice = createSlice({
     },
 
     resetFilter(state) {
-      state.filters = {
-        region: [],
-        institution_name: state.filters.institution_name
-          ? state.filters.institution_name
-          : [],
-      };
+      state.filters = initialState.filters;
     },
     resetInvestorProfiles(state) {
       state.investersProfile = [];
