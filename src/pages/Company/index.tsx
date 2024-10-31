@@ -80,10 +80,10 @@ function CompanyList() {
     dispatch(
       setFilter({
         key: "global_search",
-        value: [companyGlobalSearchName],
+        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
       })
     );
-  }, [companyGlobalSearchName]);
+  }, [companyGlobalSearchName, isAllCompanySelected]);
 
   useEffect(() => {
     if (!filters.global_search) return;

@@ -1,6 +1,11 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover, Tab } from "@/components/Base/Headless";
-import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
+import {
+  FormCheck,
+  FormInput,
+  FormSelect,
+  FormSwitch,
+} from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
 import { useEffect, useState } from "react";
@@ -11,7 +16,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { useNavigate } from "react-router-dom";
-import { createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -20,9 +25,12 @@ import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
 import {
   fetchShareHolderProposal,
-  setApplyFilters,
+  setAllFilters,
+  setFilter,
+  resetFilter,
   setPage,
   setTabs,
+  selectUnSelectAllCompany,
 } from "@/stores/shareholderProposalSlice";
 import { resetPage } from "@/stores/shareholderProposalSlice";
 import TomSelect from "@/components/Base/TomSelect";
@@ -41,6 +49,7 @@ import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import AddNewShareholder from "./components/AddNewShareholder";
 import AddNewWithdrawn from "./components/AddNewWithdrawn";
 import AddNewNoAction from "./components/AddNewNoAction";
+import CompanySelect from "@/components/ReactSelectAsync";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -48,10 +57,19 @@ function ShareHolderProposal() {
     (state) => state.authentiction
   );
 
+  const {
+    loading,
+    shareHolderProposal,
+    page,
+    totalPages,
+    tab,
+    filters,
+    isAllCompanySelected,
+  } = useAppSelector((state) => state.sharedHolderNoAction);
+
+  console.log({ isAllCompanySelected });
+
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [applyFilters, setApplyFilters] = useState<
-    ShareHolderFilter | undefined
-  >(undefined);
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -92,12 +110,22 @@ function ShareHolderProposal() {
     formState: { errors },
     setValue,
     watch,
-  } = useForm<ShareHolderFilter>();
+  } = useForm<ShareHolderFilter>({
+    defaultValues: {
+      category: filters.category,
+      sub_category: filters.sub_category,
+      status: filters.status,
+      keyword: filters.keyword,
+      year: filters.year,
+      global_search:
+        filters?.global_search?.map((item: string) => ({
+          value: item,
+          label: item,
+        })) || [],
+    },
+  });
 
   const navigate = useNavigate();
-
-  const { loading, shareHolderProposal, page, totalPages, tab } =
-    useAppSelector((state) => state.sharedHolderNoAction);
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -120,14 +148,23 @@ function ShareHolderProposal() {
   };
 
   useEffect(() => {
-    if (!applyFilters?.global_search) return;
+    dispatch(
+      setFilter({
+        key: "global_search",
+        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
+      })
+    );
+  }, [companyGlobalSearchName, isAllCompanySelected]);
+
+  useEffect(() => {
+    if (!filters?.global_search) return;
     if (tab === "proposal") {
       dispatch(
         fetchShareHolderProposal(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/def14a/`,
             {
-              ...applyFilters,
+              ...filters,
             },
             undefined,
             page
@@ -139,7 +176,7 @@ function ShareHolderProposal() {
         fetchShareHolderProposal(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/no_action/`,
-            applyFilters,
+            filters,
             undefined,
             page
           )
@@ -150,19 +187,21 @@ function ShareHolderProposal() {
         fetchShareHolderProposal(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/withdrawn/`,
-            applyFilters,
+            filters,
             undefined,
             page
           )
         )
       );
     }
-  }, [page, tab, applyFilters]);
+
+    setFiltersLength(countValidFilters(filters));
+  }, [page, tab, filters]);
 
   useEffect(() => {
-    if (!applyFilters?.global_search) return;
+    if (!filters?.global_search) return;
     getAllShareholderAPI();
-  }, [applyFilters]);
+  }, [filters]);
 
   const getAllShareholderAPI = async () => {
     try {
@@ -170,7 +209,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/def14a/`,
-            applyFilters,
+            filters,
             undefined,
             page
           )
@@ -183,7 +222,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/no_action/`,
-            applyFilters,
+            filters,
             undefined,
             page
           )
@@ -196,7 +235,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/withdrawn/`,
-            applyFilters,
+            filters,
             undefined,
             page
           )
@@ -245,39 +284,24 @@ function ShareHolderProposal() {
 
   const onFilterClear = () => {
     reset();
-    setApplyFilters(undefined);
-  };
 
+    dispatch(resetPage());
+    dispatch(
+      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
+    );
+  };
   const handleClearAllFilter = () => {
     setSearchTerms([]);
-    setValue("keyword", "");
-    setValue("category", []);
-    setValue("sub_category", []);
-    setValue("year", []);
-    setValue("status", []);
-    setValue("proponent", []);
-    setValue("institution", []);
-
-    setApplyFilters({
-      keyword: "",
-      category: [],
-      global_search: [companyGlobalSearchName],
-      sub_category: [],
-      year: [],
-      status: [],
-      proponent: [],
-      institution: [],
-    });
-    setFiltersLength(0);
+    reset();
+    dispatch(resetFilter());
+    dispatch(resetPage());
+    dispatch(
+      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
+    );
   };
 
   const handleSearch = (searchTerms: string[]) => {
-    setApplyFilters((prev) => {
-      return {
-        ...prev,
-        proponent_name: searchTerms.length > 0 ? searchTerms : undefined,
-      } as ShareHolderFilter;
-    });
+    dispatch(setFilter({ key: "proponent", value: searchTerms }));
   };
 
   useEffect(() => {
@@ -297,19 +321,20 @@ function ShareHolderProposal() {
   ]);
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
-    setApplyFilters({
-      ...shareHolderFilters,
-      proponent_name: searchTerms,
-      global_search: [companyGlobalSearchName],
-    });
-    const validKeysCount = Object.keys(shareHolderFilters).filter((key) => {
-      const value = shareHolderFilters[key];
-      return value !== undefined && value !== "" && value.length !== 0;
-    })?.length;
-
-    dispatch(setPage(1));
+    dispatch(
+      setAllFilters({
+        ...shareHolderFilters,
+        proponent: searchTerms,
+        global_search: isAllCompanySelected
+          ? Array.isArray(shareHolderFilters?.global_search)
+            ? shareHolderFilters?.global_search.map((item: any) => item.label)
+            : []
+          : [companyGlobalSearchName],
+      })
+    );
     setIsFilterCollapse(!isFilterCollapse);
-    setFiltersLength(validKeysCount);
+
+    dispatch(resetPage());
   };
 
   const getSelectedTabIndex = () => {
@@ -324,18 +349,6 @@ function ShareHolderProposal() {
     return tabIndex;
   };
 
-  useEffect(() => {
-    setApplyFilters((prev) => ({
-      global_search: [companyGlobalSearchName],
-      status: prev?.status || [],
-      proponent: prev?.proponent || [],
-      category: prev?.category || [],
-      sub_category: prev?.sub_category || [],
-      year: prev?.year || [],
-      keyword: prev?.keyword || "",
-    }));
-  }, [companyGlobalSearchName]);
-
   const getSavedSearches = () => {
     if (user?.saved_search["Shareholder Proposal"]) {
       const savedSearch = user.saved_search["Shareholder Proposal"];
@@ -346,15 +359,17 @@ function ShareHolderProposal() {
       setValue("sub_category", savedSearch.sub_category || []);
       setValue("year", savedSearch.year || []);
       setValue("status", savedSearch.status || []);
-      setApplyFilters({
-        proponent: savedSearch.proponent || [],
-        keyword: savedSearch.keyword || "",
-        category: savedSearch.category || [],
-        sub_category: savedSearch.sub_category || [],
-        year: savedSearch.year || [],
-        status: savedSearch.status || [],
-        global_search: savedSearch?.global_search,
-      });
+      dispatch(
+        setAllFilters({
+          proponent: savedSearch.proponent || [],
+          keyword: savedSearch.keyword || "",
+          category: savedSearch.category || [],
+          sub_category: savedSearch.sub_category || [],
+          year: savedSearch.year || [],
+          status: savedSearch.status || [],
+          global_search: savedSearch?.global_search,
+        })
+      );
       setIsFilterCollapse(true);
     }
   };
@@ -363,12 +378,12 @@ function ShareHolderProposal() {
     const res = await commonService.saveSearches({
       module: "Shareholder Proposal",
       proponent: searchTerms,
-      category: applyFilters?.category || [],
-      sub_category: applyFilters?.sub_category || [],
-      year: applyFilters?.year || [],
-      status: applyFilters?.status || [],
-      keyword: applyFilters?.keyword || "",
-      global_search: [companyGlobalSearchName],
+      category: filters?.category || [],
+      sub_category: filters?.sub_category || [],
+      year: filters?.year || [],
+      status: filters?.status || [],
+      keyword: filters?.keyword || "",
+      global_search: filters?.global_search,
     });
     if (res?.user_id) {
       dispatch(
@@ -376,12 +391,12 @@ function ShareHolderProposal() {
           key: "Shareholder Proposal",
           value: {
             proponent: searchTerms,
-            category: watch("category") || [],
-            sub_category: watch("sub_category") || [],
-            year: watch("year") || [],
-            status: watch("status") || [],
-            keyword: watch("keyword") || "",
-            global_search: [companyGlobalSearchName],
+            category: filters?.category || [],
+            sub_category: filters?.sub_category || [],
+            year: filters?.year || [],
+            status: filters?.status || [],
+            keyword: filters?.keyword || "",
+            global_search: filters?.global_search,
           },
         })
       );
@@ -393,8 +408,35 @@ function ShareHolderProposal() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Shareholder Proposals</div>
+          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
+            <div className="font-semibold text-xl">Shareholder Proposals</div>
+
+            <div className="flex items-center">
+              <Tippy
+                content="All Companies"
+                options={{
+                  theme: "light",
+                }}
+              >
+                <div className="mt-2">
+                  <FormSwitch>
+                    <FormSwitch.Input
+                      id="checkbox-switch-7"
+                      type="checkbox"
+                      checked={isAllCompanySelected}
+                      onChange={async (e) => {
+                        try {
+                          dispatch(
+                            selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                        } catch (error) {}
+                      }}
+                    />
+                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
+                  </FormSwitch>
+                </div>
+              </Tippy>
+            </div>
           </div>
 
           <div className="mt-3.5">
@@ -480,6 +522,32 @@ function ShareHolderProposal() {
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
                     <div className="flex items-center justify-between xs:flex-col md:flex-row">
+                      {isAllCompanySelected === true && (
+                        <div className="w-full mx-2">
+                          <div className="w-full mt-1">
+                            <div className="text-left text-slate-500 ">
+                              Select Comapnies
+                            </div>
+                            <div className=" mt-2">
+                              <Controller
+                                name="global_search"
+                                control={control}
+                                render={({ field }) => (
+                                  <CompanySelect
+                                    value={field.value}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                    isMulti={true}
+                                    className="any"
+                                  />
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="w-full mx-2">
                         <div className="text-left text-slate-500 ">
                           Keyword{" "}
@@ -566,7 +634,9 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
+                    </div>
 
+                    <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
                       <div className=" w-full mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Status
@@ -634,9 +704,7 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
                       <div className="w-full mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Category
@@ -779,7 +847,8 @@ function ShareHolderProposal() {
                       <Button
                         variant="secondary"
                         onClick={() => {
-                          handleClearAllFilter();
+                          onFilterClear();
+                          close();
                         }}
                         className="w-32 mx-2"
                       >

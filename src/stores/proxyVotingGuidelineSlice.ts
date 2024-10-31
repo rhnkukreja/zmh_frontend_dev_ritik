@@ -87,10 +87,7 @@ const proxyVotingGuidelineSlice = createSlice({
       state.filters[action.payload.key] = action.payload.value as any;
     },
     resetFilter(state) {
-      state.filters = {
-        year: [],
-        institution_name: [],
-      };
+      state.filters = initialState.filters;
     },
 
     setAllFilters(

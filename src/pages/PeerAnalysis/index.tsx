@@ -91,9 +91,7 @@ function PeerAnalysis() {
     dispatch(
       setFilter({
         key: "global_search",
-        value: isAllCompanySelected
-          ? [...filters?.global_search]
-          : [companyGlobalSearchName],
+        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
       })
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);

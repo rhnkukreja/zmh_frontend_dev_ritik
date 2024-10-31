@@ -75,6 +75,9 @@ function Main() {
             page
           );
     dispatch(fetchInstitutions(dynamicURL));
+
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
   }, [page, filters]);
 
   const handleNextPage = () => {
@@ -106,7 +109,6 @@ function Main() {
 
   const onFilterClear = () => {
     reset();
-    dispatch(resetFilter());
     dispatch(resetPage());
   };
 
@@ -155,9 +157,6 @@ function Main() {
     Object.entries(institutionFilters).forEach(([key, value]) => {
       dispatch(setFilter({ key: key as any, value }));
     });
-
-    const { institution_name, ...restFilters } = filters;
-    setFiltersLength(countValidFilters(restFilters));
   };
 
   return (

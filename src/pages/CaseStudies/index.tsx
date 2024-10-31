@@ -123,9 +123,7 @@ function CaseStudies() {
     dispatch(
       setFilters({
         key: "global_search",
-        value: isAllCompanySelected
-          ? [...filters?.global_search]
-          : [companyGlobalSearchName],
+        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
       })
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);
@@ -214,16 +212,19 @@ function CaseStudies() {
       setValue("themes", savedSearch.themes || []);
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
-      setAllFilters({
-        keyword: savedSearch?.keyword || "",
-        market: savedSearch?.market || [],
-        sector: savedSearch?.sector || [],
-        year: savedSearch?.year || [],
-        themes: savedSearch?.themes || [],
-        proposal_type: savedSearch?.proposal_type || [],
-        vote: savedSearch?.vote || [],
-        global_search: savedSearch?.global_search,
-      });
+      dispatch(
+        setAllFilters({
+          keyword: savedSearch?.keyword || "",
+          market: savedSearch?.market || [],
+          sector: savedSearch?.sector || [],
+          year: savedSearch?.year || [],
+          themes: savedSearch?.themes || [],
+          proposal_type: savedSearch?.proposal_type || [],
+          vote: savedSearch?.vote || [],
+          global_search: savedSearch?.global_search,
+        })
+      );
+      setIsFilterCollapse(true);
     }
   };
 
