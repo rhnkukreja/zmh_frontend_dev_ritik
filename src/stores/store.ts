@@ -21,6 +21,8 @@ import dashboardReducer from "./dashboardSlice";
 import shareholderNoActionReducer from "./shareholderProposalSlice";
 import caseStudiesReducer from "./caseStudySlice";
 import peerAnalysisReducer from "./peerAnalysisSlice";
+import userDetailReducer from "./userDetailSlice";
+
 
 import { PersistPartial } from "redux-persist/es/persistReducer";
 import storage from "redux-persist/lib/storage";
@@ -53,6 +55,7 @@ const slices = {
   sharedHolderNoAction: shareholderNoActionReducer,
   caseStudies: caseStudiesReducer,
   peerAnalysis: peerAnalysisReducer,
+  userDetail: userDetailReducer
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(

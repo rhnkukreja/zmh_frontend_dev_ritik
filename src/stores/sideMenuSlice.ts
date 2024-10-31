@@ -86,6 +86,7 @@ const initialState: any = {
       icon: "Network",
       pathname: "/peer-analysis",
       title: "Engagement Details",
+
     },
     {
       icon: "FileText",
@@ -114,6 +115,7 @@ const initialState: any = {
     //   title: "Calendar",
     // },
     // "Additional",
+    "Admin",
     {
       icon: "School",
       pathname: "/institution",
@@ -124,6 +126,12 @@ const initialState: any = {
       icon: "Building",
       pathname: "/company",
       title: "Company",
+      isAdmin: true,
+    },
+    {
+      icon: "User",
+      pathname: "/user-details",
+      title: "User Detail",
       isAdmin: true,
     },
     "Additional",

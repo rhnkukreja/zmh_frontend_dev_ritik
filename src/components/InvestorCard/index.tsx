@@ -32,7 +32,7 @@ const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
-  const { dashboardDataList, investorCardLoading, page, totalPages } =
+  const { dashboardDataList, investorCardLoading, page, totalPages, percent } =
     useAppSelector((state) => state.dashboard);
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
@@ -42,12 +42,13 @@ const index = () => {
   const navigate = useNavigate();
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+  const searchTicker = searchParams.get("ticker");
 
   useEffect(() => {
     if (ticker !== companyGlobalSearchTicker) {
       return;
     }
-    if (companyGlobalSearchTicker) {
+    else if (searchTicker) {
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -56,7 +57,16 @@ const index = () => {
         )
       );
     }
-  }, [companyGlobalSearchTicker]);
+    else if (companyGlobalSearchTicker && dashboardDataList.length === 0) {
+      dispatch(
+        fetchCompanyDashboard(
+          createDynamicURL(
+            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+    }
+  }, [companyGlobalSearchTicker, searchTicker])
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -144,7 +154,8 @@ const index = () => {
             <div className="w-full">
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
                 <h1 className="text-lg font-bold">
-                  Top {dashboardDataList?.length || 20} Investor
+                  Top {dashboardDataList?.length || 20} Investor{" "}
+                  <span className="text-base font-bold">({percent} of shares outstanding)</span>
                 </h1>
                 <div className="flex justify-between items-center gap-4 sm:flex-row">
                   <div className="flex justify-between items-center gap-2">
@@ -183,13 +194,13 @@ const index = () => {
                     <div
                       className={clsx([
                         locationPathName === "/" &&
-                          "overflow-auto max-h-[400px]",
+                        "overflow-auto max-h-[400px]",
                       ])}
                     >
                       <Table className="table">
                         <Table.Thead>
                           <Table.Tr className="row">
-                          <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               No.
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -225,7 +236,7 @@ const index = () => {
                                 >
                                   {dashboard?.institution_name && (
                                     <>
-                                     <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="flex items-center font-semibold ">
                                           {index + 1}
                                         </div>
@@ -236,11 +247,11 @@ const index = () => {
                                             alt="ZMH Analytics"
                                             src={
                                               validImages[
-                                                dashboard.institution_name
+                                              dashboard.institution_name
                                               ] || userLinkedinImage
                                             }
 
-                                            // {dashboard?.institution_logo_url ?? userLinkedinImage}
+                                          // {dashboard?.institution_logo_url ?? userLinkedinImage}
                                           />
                                         </div>
 
@@ -257,7 +268,7 @@ const index = () => {
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize max-w-[150px] text-wrap",
                                                 dashboard?.investor_profile_id &&
-                                                  "cursor-pointer underline",
+                                                "cursor-pointer underline",
                                               ])}
                                             >
                                               {dashboard?.institution_name}
@@ -301,24 +312,24 @@ const index = () => {
                                         <div className="whitespace-nowrap ">
                                           {dashboard?.esg_integration ===
                                             true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                &#10004;
+                                              <div className="whitespace-nowrap flex items-center justify-center">
+                                                <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                  &#10004;
+                                                </div>
                                               </div>
-                                            </div>
-                                          )}
+                                            )}
                                         </div>
                                       </Table.Td>
 
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.company_engaged ===
                                           true && (
-                                          <div className="whitespace-nowrap flex items-center justify-center">
-                                            <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              &#10004;
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                &#10004;
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="whitespace-nowrap flex items-center justify-center">
@@ -330,11 +341,11 @@ const index = () => {
                                                   key={index}
                                                   className={clsx([
                                                     char.toLowerCase() ===
-                                                      "s" && "bg-[#F5A623]",
+                                                    "s" && "bg-[#F5A623]",
                                                     char.toLowerCase() ===
-                                                      "e" && "bg-[#05703E]",
+                                                    "e" && "bg-[#05703E]",
                                                     char.toLowerCase() ===
-                                                      "g" && "bg-[#115096]",
+                                                    "g" && "bg-[#115096]",
                                                     "font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white",
                                                   ])}
                                                 >
@@ -347,12 +358,12 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_directors ===
                                           true && (
-                                          <div className="whitespace-nowrap flex items-center justify-center">
-                                            <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              &#10004;
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                &#10004;
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
                                       </Table.Td>
                                     </>
                                   )}

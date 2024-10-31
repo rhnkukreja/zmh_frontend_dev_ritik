@@ -26,7 +26,7 @@ const index = () => {
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const { agmSummaryDetails, loading, page } = useAppSelector(
+  const { agmSummaryDetails, loading, dashboardDataList } = useAppSelector(
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
@@ -37,37 +37,15 @@ const index = () => {
   const navigate = useNavigate();
 
   const convertDivTableToCSV = () => {
-    // Get the table element
     const table = document.querySelector(".table_2");
     const rows = table?.querySelectorAll(".row_2");
     const tableProposal = document.querySelector(".table_3");
     const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-    let csvContent = "";
-    let csvContentProposal = "";
+    let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
 
-    // Iterate over each row
+    // Iterate over each row in the first table
     rows?.forEach((row) => {
       const cells = row.querySelectorAll(".cell_2");
-      let rowData: any = [];
-
-      // Iterate over each cell and get the text content
-      cells.forEach((cell) => {
-          let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
-
-          // Check if the cell contains a comma, wrap it in double quotes
-          if (cellText?.includes(",")) {
-              cellText = `"${cellText}"`;
-          }
-
-          rowData.push(cellText);
-      });
-
-      // Join cells with commas to form a CSV row
-      csvContent += rowData.join(",") + "\n";
-    });
-
-    rowsProposal?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_3");
       let rowData: any = [];
 
       // Iterate over each cell and get the text content
@@ -76,24 +54,44 @@ const index = () => {
 
         // Check if the cell contains a comma, wrap it in double quotes
         if (cellText?.includes(",")) {
-            cellText = `"${cellText}"`;
+          cellText = `"${cellText}"`;
         }
 
         rowData.push(cellText);
       });
 
       // Join cells with commas to form a CSV row
-      csvContentProposal += rowData.join(",") + "\n";
+      csvContent += rowData.join(",") + "\n";
     });
-    let concatContent = csvContent + csvContentProposal;
-    downloadCSV(concatContent, `Agm-Summary-${companyGlobalSearchName}`);
+
+    // Iterate over each row in the second table
+    rowsProposal?.forEach((row) => {
+      const cells = row.querySelectorAll(".cell_3");
+      let rowData: any = [];
+
+      // Iterate over each cell and get the text content
+      cells.forEach((cell) => {
+        let cellText = cell.textContent?.trim();
+
+        // Check if the cell contains a comma, wrap it in double quotes
+        if (cellText?.includes(",")) {
+          cellText = `"${cellText}"`;
+        }
+
+        rowData.push(cellText);
+      });
+
+      csvContent += rowData.join(",") + "\n";
+    });
+
+    downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchName}`);
   };
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
 
-  
+
   useEffect(() => {
-    if(ticker !== companyGlobalSearchTicker){
+    if (ticker !== companyGlobalSearchTicker) {
       return;
     }
     dispatch(
@@ -109,6 +107,11 @@ const index = () => {
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
+    //     navigate(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
+    //       state: {
+    //         globeSearch: companyGlobalSearchTicker,
+    //       },
+    // })
     window.open(
       `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
       "_blank"
@@ -123,23 +126,24 @@ const index = () => {
             <>
               <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                 <span>
-                 <h1 className="text-lg font-bold">
-                    Previous AGM Summary {agmSummaryDetails?.Year}
-                  </h1>
-                  <p className=" italic"> Meeting Date: {meetingDate}</p>
-                 </span>
+                  <span>
+                    <h1 className="text-lg font-bold">
+                      Previous AGM Summary {agmSummaryDetails?.Year}
+                    </h1>
+                    <p className=" italic"> Meeting Date: {meetingDate}</p>
+                  </span>
                   {
                     agmSummaryDetails?.Year !== "2023" &&
-                    <div
+                    <button
+                      disabled={dashboardDataList?.length === 0 ? true : false}
                       onClick={(event: any) => handleViewMore(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                     >
                       View More
-                    </div>
-                  }  
+                    </button>
+                  }
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -154,7 +158,9 @@ const index = () => {
                     <Tippy content="Expand" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
+                        // onClick={() => window.open("summary-details", "_blank")}
                         onClick={() => window.open("summary-details", "_blank")}
+
                       >
                         <img alt="tab-icon" src={tabIcon} />
                       </div>
@@ -164,12 +170,12 @@ const index = () => {
               </div>
 
               <div className="mt-5">
-               
-                  <TableWrapper isLoading={loading}>
+
+                <TableWrapper isLoading={loading}>
                   <div
                     className={clsx([
                       locationPathName === "/" &&
-                        " max-h-[400px] overflow-y-scroll",
+                      " max-h-[400px] overflow-y-scroll",
                     ])}
                   >
                     <Table className="table_2 w-full">
@@ -209,7 +215,7 @@ const index = () => {
                                     ) => (
                                       <Table.Td
                                         key={headerIndex}
-                                        className={clsx(["cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right" ,  headerIndex === 0 && "text-left "])}
+                                        className={clsx(["cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right", headerIndex === 0 && "text-left "])}
                                       >
                                         <h1
                                           className={clsx([
@@ -227,15 +233,15 @@ const index = () => {
                           )}
                       </Table.Tbody>
                     </Table>
-                    </div>
-                  </TableWrapper>
+                  </div>
+                </TableWrapper>
 
-                  <br />
-                  <TableWrapper isLoading={loading}>
+                <br />
+                <TableWrapper isLoading={loading}>
                   <div
                     className={clsx([
                       locationPathName === "/" &&
-                        " max-h-[400px] overflow-y-scroll",
+                      " max-h-[400px] overflow-y-scroll",
                     ])}
                   >
 
@@ -281,15 +287,15 @@ const index = () => {
                                         <h1
                                           className={clsx([
                                             headerIndex === 0 &&
-                                              "font-semibold ",
+                                            "font-semibold ",
                                             headerIndex ===
-                                              agmSummaryDetails
-                                                ?.proposals_headers?.length -
-                                                1 &&
-                                              parseFloat(
-                                                proposal[proposalHeader?.field]
-                                              ) < 85 &&
-                                              "text-red-700 font-semibold",
+                                            agmSummaryDetails
+                                              ?.proposals_headers?.length -
+                                            1 &&
+                                            parseFloat(
+                                              proposal[proposalHeader?.field]
+                                            ) < 85 &&
+                                            "text-red-700 font-semibold",
                                           ])}
                                         >
                                           {proposal[proposalHeader?.field]}
@@ -303,9 +309,9 @@ const index = () => {
                       </Table.Tbody>
                     </Table>
                   </div>
-                  </TableWrapper>
-                </div>
-              
+                </TableWrapper>
+              </div>
+
             </>
           </div>
         </div>
