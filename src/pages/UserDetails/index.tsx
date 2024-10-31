@@ -471,17 +471,17 @@ function UserDetail() {
                                                     <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Email
                                                     </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[50px] w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                        User Type
-                                                    </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                        Login Count
-                                                    </Table.Td>
                                                     <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Sign Up Date
                                                     </Table.Td>
                                                     <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Sign Up Time
+                                                    </Table.Td>
+                                                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                        Login Count
+                                                    </Table.Td>
+                                                    <Table.Td className="py-2 font-semibold h-[50px] w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                        User Type
                                                     </Table.Td>
                                                     {/* <Table.Td className="py-2 pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Details
@@ -503,16 +503,16 @@ function UserDetail() {
                                                                 {user?.email}
                                                             </Table.Td>
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                {user?.user_type}
+                                                                {user?.signup_date}
+                                                            </Table.Td>
+                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                {user?.signup_time}
                                                             </Table.Td>
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                                 {user?.login_count}
                                                             </Table.Td>
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                {user?.signup_date}
-                                                            </Table.Td>
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                {user?.signup_time}
+                                                                {user?.user_type}
                                                             </Table.Td>
                                                             {/* <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                             </Table.Td> */}
