@@ -361,7 +361,7 @@ function Main() {
                       key as keyof typeof investorProfileEditableSectionsInvestors;
                     // Check if the value exists before rendering
                     const value = singleInvesterProfile?.[key];
-                    return value ? ( // Only render if value is truthy
+                    return (
                       <EditableSection
                         key={index}
                         fetchloading={loading}
@@ -378,7 +378,7 @@ function Main() {
                         }
                         field={key as keyof InvestersProfile}
                       />
-                    ) : null; // Render nothing if value is falsy
+                    ); // Render nothing if value is falsy
                   }
                 )}
 
