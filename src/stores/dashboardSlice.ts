@@ -45,6 +45,8 @@ interface CompanySliceState {
   vdsProxyLoading: boolean;
   investorProfileDetails: any;
   investorProfileLoading: boolean;
+  tempSearch: string | null;
+  percent: string;
 }
 
 const initialState: CompanySliceState = {
@@ -65,6 +67,8 @@ const initialState: CompanySliceState = {
   vdsProxyLoading: true,
   investorProfileDetails: "",
   investorProfileLoading: true,
+  tempSearch: null,
+  percent: ''
 
   // {
   //   nominees: [],
@@ -82,7 +86,7 @@ export const fetchCompanyByName = createAsyncThunk<
 });
 
 export const fetchCompanyDashboard = createAsyncThunk<
-  { results: CompanyDashboard[] },
+  { results: CompanyDashboard[], percent: string },
   string
 >(`${name}/fetchCompanyDashboard`, async (url: string) => {
   return await dashboardService.fetchCompanyDashboard(url);
@@ -126,6 +130,9 @@ const companySlice = createSlice({
     resetPage(state) {
       state.page = 1;
     },
+    setTempSearch(state, action: PayloadAction<string>) {
+      state.tempSearch = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -153,8 +160,9 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchCompanyDashboard.fulfilled,
-        (state, action: PayloadAction<{ results: CompanyDashboard[] }>) => {
+        (state, action: PayloadAction<{ results: CompanyDashboard[], percent: string }>) => {
           state.dashboardDataList = action.payload.results;
+          state.percent = action.payload.percent;
           state.investorCardLoading = false;
         }
       )
@@ -239,4 +247,4 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage } = companySlice.actions;
+export const { setPage, resetPage, setTempSearch } = companySlice.actions;

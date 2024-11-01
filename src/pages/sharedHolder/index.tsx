@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, SaveAll } from "lucide-react";
+import { FilterX, Fullscreen, Grid2x2, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -50,6 +50,7 @@ import AddNewShareholder from "./components/AddNewShareholder";
 import AddNewWithdrawn from "./components/AddNewWithdrawn";
 import AddNewNoAction from "./components/AddNewNoAction";
 import CompanySelect from "@/components/ReactSelectAsync";
+import DetailDialog from "./components/DetailDialog";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -89,10 +90,16 @@ function ShareHolderProposal() {
     useState<boolean>(false);
   const [addNewNoActionModalVisible, setAddNewNoActionModalVisible] =
     useState<boolean>(false);
+  const [shareholderDetailModalVisible, setShareholderDetailModalVisible] =
+    useState<boolean>(false);
 
   const [proposalCount, setProposalCount] = useState<number>(0);
   const [withdrawnCount, setWithdrawnCount] = useState<number>(0);
   const [noActionCount, setNoActionCount] = useState<number>(0);
+
+  const [selectedShareholderDetail, setselectedShareholderDetail] = useState<
+    any | null
+  >(null);
 
   const [selectedShareholderProposal, setSelectedShareholderProposal] =
     useState<AddShareholderType | null>(null);
@@ -394,6 +401,11 @@ function ShareHolderProposal() {
       );
       toast.success("Searched saved successfully");
     }
+  };
+
+  const onVisibleDetail = (detail: any) => {
+    setselectedShareholderDetail(detail);
+    setShareholderDetailModalVisible(true);
   };
 
   return (
@@ -965,11 +977,14 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome/Percentage for
                                 </Table.Td>
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Vote Details
+                                </Table.Td>
                                 <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Actions
+                                <Table.Td className="py-2 pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Details
                                 </Table.Td>
                               </Table.Tr>
                             </Table.Thead>
@@ -1008,6 +1023,24 @@ function ShareHolderProposal() {
                                         ? noAction?.outcome_percentage
                                         : "Meeting not held or Results not available"}
                                     </Table.Td>
+                                    <Table.Td className="py-2 flex items-center justify-center border-dashed dark:bg-darkmode-600">
+                                      {noAction?.vote_details?.length > 0 && (
+                                        <Tippy
+                                          content="View Vote Details"
+                                          options={{ theme: "dark" }}
+                                        >
+                                          <Fullscreen
+                                            strokeWidth={1.25}
+                                            onClick={() =>
+                                              onVisibleDetail(noAction)
+                                            }
+                                          />
+                                          {/* <Grid2x2 onClick={() =>
+                                            onVisibleDetail(noAction)
+                                          } /> */}
+                                        </Tippy>
+                                      )}
+                                    </Table.Td>
                                     <Table.Td
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
@@ -1030,6 +1063,7 @@ function ShareHolderProposal() {
                                     >
                                       {noAction?.nl_exist === true ? "Yes" : ""}
                                     </Table.Td>
+
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex gap-3 justify-center">
                                         <Tippy
@@ -1051,7 +1085,7 @@ function ShareHolderProposal() {
                                         {user?.user_type === "Admin" && (
                                           <Tippy
                                             content="Edit"
-                                            options={{ theme: "light" }}
+                                            options={{ theme: "dark" }}
                                           >
                                             <Lucide
                                               onClick={() =>
@@ -1069,6 +1103,11 @@ function ShareHolderProposal() {
                                   </Table.Tr>
                                 ))}
                             </Table.Tbody>
+                            {shareHolderProposal?.length === 0 && (
+                              <div className="w-full">
+                                <h1 className="mt-3">No Records Found..</h1>
+                              </div>
+                            )}
                           </Table>
                         </div>
                       </TableWrapper>
@@ -1116,7 +1155,7 @@ function ShareHolderProposal() {
                                   Outcome
                                 </Table.Td>
                                 <Table.Td className="py-2 flex items-center justify-center  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Actions
+                                  Details
                                 </Table.Td>
                               </Table.Tr>
                             </Table.Thead>
@@ -1182,6 +1221,11 @@ function ShareHolderProposal() {
                                   </Table.Tr>
                                 ))}
                             </Table.Tbody>
+                            {shareHolderProposal?.length === 0 && (
+                              <div className="w-full">
+                                <h1 className="mt-3">No Records Found..</h1>
+                              </div>
+                            )}
                           </Table>
                         </div>
                       </TableWrapper>
@@ -1223,7 +1267,7 @@ function ShareHolderProposal() {
                                   Outcome
                                 </Table.Td>
                                 <Table.Td className="py-2 flex items-center justify-center  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Actions
+                                  Details
                                 </Table.Td>
                               </Table.Tr>
                             </Table.Thead>
@@ -1283,6 +1327,11 @@ function ShareHolderProposal() {
                                   </Table.Tr>
                                 ))}
                             </Table.Tbody>
+                            {shareHolderProposal?.length === 0 && (
+                              <div className="w-full">
+                                <h1 className="mt-3">No Records Found..</h1>
+                              </div>
+                            )}
                           </Table>
                         </div>
                       </TableWrapper>
@@ -1324,6 +1373,16 @@ function ShareHolderProposal() {
               addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
               setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
               selectedShareholderWithdrawn={selectedShareholderWithdrawn}
+            />
+          )}
+
+          {shareholderDetailModalVisible && (
+            <DetailDialog
+              shareholderDetailModalVisible={shareholderDetailModalVisible}
+              setShareholderDetailModalVisible={
+                setShareholderDetailModalVisible
+              }
+              selectedShareholderDetail={selectedShareholderDetail}
             />
           )}
         </div>

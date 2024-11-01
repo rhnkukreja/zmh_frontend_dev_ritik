@@ -207,6 +207,7 @@ function Main() {
           { "side-menu--on-hover": compactMenuOnHover },
           { "ml-0 after:block": activeMobileMenu },
           { "-ml-[280px] after:hidden": !activeMobileMenu },
+
         ])}
       >
         <div
@@ -270,9 +271,7 @@ function Main() {
             )}
           </div>
 
-          <a
-            href=""
-            className="mt-5 flex items-center justify-center transition-[margin] duration-700"
+          <a className="mt-5 flex items-center justify-center transition-[margin] duration-700"
           >
             <div className="flex items-center justify-center w-auto h-[80px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
               <div className="w-full h-full overflow-hidden transition-transform duration-700 ease-in">
