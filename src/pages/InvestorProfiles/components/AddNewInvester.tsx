@@ -285,7 +285,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
               {/* Voting Guidelines Link */}
               <div>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Voting Guidelines Summary & Link
+                  Voting Guidelines Summary And Link
                 </FormCheck.Label>
                 <Controller
                   name="voting_guidelines"
