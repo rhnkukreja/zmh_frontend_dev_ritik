@@ -106,7 +106,6 @@ function Main() {
     });
 
     dispatch(resetPage());
-    resetFormValues();
   };
 
   const handleNextPage = () => {
