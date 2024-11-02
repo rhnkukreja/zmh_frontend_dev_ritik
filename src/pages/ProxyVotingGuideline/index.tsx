@@ -75,19 +75,12 @@ function ProxyGuideline() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
   useEffect(() => {
-    const dynamicURL =
-      filters?.institution_name?.length > 0
-        ? createDynamicURL(
-            `${baseURL}/proxy_voting_guidelines/`,
-            filters,
-            undefined
-          )
-        : createDynamicURL(
-            `${baseURL}/proxy_voting_guidelines/`,
-            filters,
-            undefined,
-            page
-          );
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/proxy_voting_guidelines/`,
+      filters,
+      undefined,
+      page
+    );
     dispatch(fetchProxyVotingGuidelines(dynamicURL));
 
     const { institution_name, ...restFilters } = filters;
@@ -129,6 +122,7 @@ function ProxyGuideline() {
     resetFormValues();
     dispatch(resetFilter());
     dispatch(resetPage());
+    reset();
   };
 
   const handleClearAllFilter = () => {
@@ -136,6 +130,7 @@ function ProxyGuideline() {
     setSearchTerms([]);
     resetFormValues();
     dispatch(resetPage());
+    reset();
   };
 
   useEffect(() => {
@@ -222,6 +217,7 @@ function ProxyGuideline() {
                     url="/proxy_voting_guidelines/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
+                    onSearchChange={resetPage}
                   />
 
                   <div className="hover:bg-slate-50">
@@ -566,9 +562,11 @@ function ProxyGuideline() {
                             )
                           )}
                       </Table.Tbody>
-                      {proxyVotingGuidelines?.length === 0 &&
-                              <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1></div>}
+                      {proxyVotingGuidelines?.length === 0 && (
+                        <div className="w-full">
+                          <h1 className="mt-3">No Records Found..</h1>
+                        </div>
+                      )}
                     </Table>
                   </div>
                 </TableWrapper>

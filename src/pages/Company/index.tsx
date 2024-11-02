@@ -89,7 +89,9 @@ function CompanyList() {
   }, [companyGlobalSearchName, isAllCompanySelected]);
 
   useEffect(() => {
-    if (!filters.global_search) return;
+    if (isAllCompanySelected === false && filters.global_search.length === 0) {
+      return;
+    }
 
     dispatch(
       fetchCompanies(
@@ -401,9 +403,11 @@ function CompanyList() {
                           </Table.Tr>
                         ))}
                     </Table.Tbody>
-                    {companies?.length === 0 &&
+                    {companies?.length === 0 && (
                       <div className="w-full">
-                        <h1 className="mt-3">No Records Found..</h1></div>}
+                        <h1 className="mt-3">No Records Found..</h1>
+                      </div>
+                    )}
                   </Table>
                 </div>
               </TableWrapper>

@@ -66,17 +66,13 @@ function Main() {
   };
 
   useEffect(() => {
-    const dynamicURL =
-      filters?.institution_name?.length > 0
-        ? createDynamicURL(`${baseURL}/investor_profile/`, filters, {
-            type: tab,
-          })
-        : createDynamicURL(
-            `${baseURL}/investor_profile/`,
-            filters,
-            { type: tab },
-            page
-          );
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/investor_profile/`,
+      filters,
+      { type: tab },
+      page
+    );
+
     dispatch(fetchInvestersProfiles(dynamicURL));
     const { institution_name, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
@@ -98,6 +94,7 @@ function Main() {
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+    dispatch(resetPage());
   };
 
   const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
@@ -194,6 +191,7 @@ function Main() {
                     url="/investor_profile/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
+                    onSearchChange={resetPage}
                   />
 
                   <div className="hover:bg-slate-50">

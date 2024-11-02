@@ -12,7 +12,7 @@ import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 const name = "shareholder_proposal";
 
 type SharedHolderFiltersType = {
-  proponent: string[];
+  proponent_name: string[];
   year: string[];
   category: string[];
   sub_category: string[];
@@ -54,7 +54,7 @@ const initialState: SharedHolderPrposal = {
   tab: "proposal",
   isAllCompanySelected: false,
   filters: {
-    proponent: [],
+    proponent_name: [],
     year: [],
     category: [],
     sub_category: [],
