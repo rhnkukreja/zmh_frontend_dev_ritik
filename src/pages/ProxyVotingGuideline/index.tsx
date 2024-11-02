@@ -1,7 +1,6 @@
 import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 
-import { FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -15,22 +14,29 @@ import {
   resetPage,
   setPage,
   setFilter,
+  setAllFilters,
 } from "@/stores/proxyVotingGuidelineSlice";
+import TomSelect from "@/components/Base/TomSelect";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { ProxyVotingGuideline } from "@/types/proxyVotingGuideline";
-import { useNavigate } from "react-router-dom";
-import { createDynamicURL } from "@/utils/helper";
+
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { AddEditPolicyGuideline } from "./components/AddEditProxyVotingGuideline";
 import PdfViewer from "@/components/PdfView";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { commonService } from "@/services/common";
 import { toast } from "react-toastify";
 import { setSavedSearch } from "@/stores/authenticationSlice";
+import { Controller, useForm } from "react-hook-form";
+import { FormCheck } from "@/components/Base/Form";
+
+interface ProxyGuidelineFilter {
+  year: string[];
+}
 
 function ProxyGuideline() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -45,6 +51,17 @@ function ProxyGuideline() {
   } = useAppSelector((state) => state.proxyVotingGuideline);
   const { user } = useAppSelector((state) => state.authentiction);
 
+  const { handleSubmit, reset, setValue, watch, control } =
+    useForm<ProxyGuidelineFilter>({
+      defaultValues: {
+        year: [...filters.year],
+      },
+    });
+
+  const resetFormValues = () => {
+    setValue("year", []);
+  };
+
   const [
     addNewProxyVotingGuidelineVisible,
     setAddNewProxyVotingGuidelineVisible,
@@ -55,27 +72,27 @@ function ProxyGuideline() {
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
   const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [filtersLength, setFiltersLength] = useState<number>(0);
 
   useEffect(() => {
-    dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, page)
-      )
-    );
-  }, [page]);
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(
+            `${baseURL}/proxy_voting_guidelines/`,
+            filters,
+            undefined
+          )
+        : createDynamicURL(
+            `${baseURL}/proxy_voting_guidelines/`,
+            filters,
+            undefined,
+            page
+          );
+    dispatch(fetchProxyVotingGuidelines(dynamicURL));
 
-  useEffect(() => {
-    return () => {
-      console.log("destory the component proxy");
-      dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "year",
-          value: "",
-        })
-      );
-    };
-  }, []);
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
+  }, [page, filters]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -105,72 +122,21 @@ function ProxyGuideline() {
       })
     );
 
-    const tempFilter = { institution_name: searchTerms };
-
-    dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(
-          `${baseURL}/proxy_voting_guidelines/`,
-          tempFilter,
-          undefined,
-          1
-        )
-      )
-    );
+    dispatch(resetPage());
   };
 
-  useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
-
-  function handleApplyFilter() {
-    dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, page)
-      )
-    );
-
-    dispatch(resetPage());
-  }
-
   const onFilterClear = () => {
+    resetFormValues();
     dispatch(resetFilter());
-    dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
-      )
-    );
+    dispatch(resetPage());
   };
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchTerms([]);
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: "",
-      })
-    );
-
-    dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
-      )
-    );
-
-    dispatch(
-      fetchProxyVotingGuidelines(
-        createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, undefined, page)
-      )
-    );
-
+    resetFormValues();
     dispatch(resetPage());
   };
-
-  const getFilterCount = useMemo(() => {
-    const { ...allFilters } = filters;
-    return Object.values(allFilters).filter((value) => value !== "").length;
-  }, [filters]);
 
   useEffect(() => {
     if (!addNewProxyVotingGuidelineVisible) {
@@ -185,6 +151,7 @@ function ProxyGuideline() {
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
+    setValue("year", user?.saved_search?.year || []);
     dispatch(
       setFilter({
         key: "year",
@@ -213,6 +180,13 @@ function ProxyGuideline() {
     }
   };
 
+  const onSubmit = async (ProxyGuideline: ProxyGuidelineFilter) => {
+    dispatch(
+      setAllFilters({ ...ProxyGuideline, institution_name: searchTerms })
+    );
+
+    dispatch(resetPage());
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -283,7 +257,7 @@ function ProxyGuideline() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Voting Guidelines"] !== undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
+                    <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
                         Previous Search
                       </Button>
@@ -304,65 +278,100 @@ function ProxyGuideline() {
                           />
                           Filter
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {getFilterCount}
+                            {filtersLength}
                           </div>
                         </Popover.Button>
                         <Popover.Panel placement="bottom-end">
-                          <div className="p-2">
-                            <div className="mt-3">
-                              <div className="text-left text-slate-500">
-                                Year
+                          <form onSubmit={handleSubmit(onSubmit)}>
+                            <div className="p-2">
+                              <div className="mt-3">
+                                <div className="w-full  my-2">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    Year
+                                    {guidelineFilterOptions?.year?.length >
+                                      0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`year`}
+                                            checked={
+                                              guidelineFilterOptions?.year
+                                                ?.length ===
+                                              watch("year")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "year",
+                                                  guidelineFilterOptions?.year
+                                                );
+                                              } else {
+                                                setValue("year", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="year"
+                                    control={control}
+                                    defaultValue={[]}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select Year",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        <>
+                                          {guidelineFilterOptions?.year?.map(
+                                            (year: string) => {
+                                              return (
+                                                <option value={year}>
+                                                  {year}
+                                                </option>
+                                              );
+                                            }
+                                          )}
+                                        </>
+                                      </TomSelect>
+                                    )}
+                                  />
+                                </div>
                               </div>
-                              <FormSelect
-                                defaultValue={
-                                  filters?.year?.length > 0
-                                    ? filters?.year
-                                    : "Select Year"
-                                }
-                                className="flex-1 mt-2"
-                                onChange={(
-                                  e: React.ChangeEvent<HTMLSelectElement>
-                                ) => {
-                                  dispatch(
-                                    setFilter({
-                                      key: "year",
-                                      value: e.target.value,
-                                    })
-                                  );
-                                }}
-                              >
-                                <option disabled selected>
-                                  Select Year
-                                </option>
-                                {guidelineFilterOptions?.year?.map(
-                                  (category: string, index: number) => (
-                                    <option key={index} value={category}>
-                                      {category}
-                                    </option>
-                                  )
-                                )}
-                              </FormSelect>
+                              <div className="flex items-center mt-4">
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    close();
+                                    onFilterClear();
+                                  }}
+                                  className="w-32 ml-auto"
+                                >
+                                  Clear
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  variant="primary"
+                                  className="w-32 ml-2"
+                                >
+                                  Apply
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center mt-4">
-                              <Button
-                                variant="secondary"
-                                onClick={() => {
-                                  close();
-                                  onFilterClear();
-                                }}
-                                className="w-32 ml-auto"
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                onClick={handleApplyFilter}
-                                variant="primary"
-                                className="w-32 ml-2"
-                              >
-                                Apply
-                              </Button>
-                            </div>
-                          </div>
+                          </form>
                         </Popover.Panel>
                       </>
                     )}
@@ -421,7 +430,7 @@ function ProxyGuideline() {
                                 <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
                                   {guideline?.institution_logo_url ? (
                                     <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                         <img
                                           alt="ZMH Analytics"
                                           className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"

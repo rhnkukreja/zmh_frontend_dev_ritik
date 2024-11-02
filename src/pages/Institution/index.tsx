@@ -1,10 +1,10 @@
 import Lucide from "@/components/Base/Lucide";
-import { Menu, Popover } from "@/components/Base/Headless";
-import { FormInput, FormSelect } from "@/components/Base/Form";
+import { Popover } from "@/components/Base/Headless";
+import { FormCheck, FormSelect } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
@@ -17,22 +17,29 @@ import {
 } from "@/stores/institutionSlice";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { Institutions } from "@/types/institutions";
 import { AddEditInstitution } from "./components/CreateAndEditInstitution";
-
+import TomSelect from "@/components/Base/TomSelect";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import { commonService } from "@/services/common";
 import { toast } from "react-toastify";
 import { setSavedSearch } from "@/stores/authenticationSlice";
+import { Controller, useForm } from "react-hook-form";
+
+interface InstituteFilter {
+  region: string[];
+}
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
+
+  const [filtersLength, setFiltersLength] = useState<number>(0);
 
   const {
     institutions,
@@ -43,6 +50,17 @@ function Main() {
     filters,
   } = useAppSelector((state) => state.institutions);
 
+  const { handleSubmit, control, reset, setValue, watch } =
+    useForm<InstituteFilter>({
+      defaultValues: {
+        region: [...filters.region],
+      },
+    });
+
+  const resetFormValues = () => {
+    setValue("region", []);
+  };
+
   const { user } = useAppSelector((state) => state.authentiction);
 
   const [selectedInstitution, setSelectedInstitution] =
@@ -51,24 +69,15 @@ function Main() {
     useState<boolean>(false);
 
   useEffect(() => {
-    dispatch(
-      fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, filters, undefined, page)
-      )
-    );
-  }, [page]);
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(`${baseURL}/institute/`, filters, undefined)
+        : createDynamicURL(`${baseURL}/institute/`, filters, undefined, page);
+    dispatch(fetchInstitutions(dynamicURL));
 
-  useEffect(() => {
-    return () => {
-      dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "institution_name",
-          value: [],
-        })
-      );
-    };
-  }, []);
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
+  }, [page, filters]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -87,61 +96,21 @@ function Main() {
   };
 
   const handleSearch = (searchTerms: string[]) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-
-    const tempFilter = { institution_name: searchTerms };
-
-    dispatch(
-      fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, tempFilter, undefined, 1)
-      )
-    );
-  };
-
-  function handleApplyFilter() {
-    dispatch(
-      fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, filters, page)
-      )
-    );
-    dispatch(resetPage());
-  }
-
-  const getFilterCount = useMemo(() => {
-    const { institution_name, ...allFilters } = filters;
-    return Object.values(allFilters).filter((value) => value !== "").length;
-  }, [filters]);
-
-  const onFilterClear = () => {
-    dispatch(resetFilter());
-    dispatch(
-      fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, undefined, page)
-      )
-    );
+    dispatch(setFilter({ key: "institution_name", value: searchTerms }));
   };
 
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
     setSearchTerms([]);
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: "",
-      })
-    );
+    resetFormValues();
+    dispatch(resetPage());
+    reset();
+  };
 
-    dispatch(
-      fetchInstitutions(
-        createDynamicURL(`${baseURL}/institute/`, undefined, page)
-      )
-    );
-
+  const onFilterClear = () => {
+    reset();
+    resetFormValues();
+    // dispatch(resetFilter());
     dispatch(resetPage());
   };
 
@@ -155,10 +124,6 @@ function Main() {
     setSelectedInstitution(institution);
     setAddEditInstitutionVisible(true);
   }
-
-  useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Institution"]?.institution]);
@@ -188,6 +153,14 @@ function Main() {
       );
       toast.success("Searched saved successfully");
     }
+  };
+
+  const onSubmit = async (institutionFilters: InstituteFilter) => {
+    Object.entries(institutionFilters).forEach(([key, value]) => {
+      dispatch(setFilter({ key: key as any, value }));
+    });
+
+    dispatch(resetPage());
   };
 
   return (
@@ -250,7 +223,7 @@ function Main() {
               </div>
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                 {user?.saved_search?.["Institution"] !== undefined && (
-                  <div className="hover:bg-slate-50 ml-2">
+                  <div className="hover:bg-slate-50 ">
                     <Button onClick={getSavedSearches}>Previous Search</Button>
                   </div>
                 )}
@@ -269,103 +242,101 @@ function Main() {
                         />
                         Filter
                         <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                          {getFilterCount}
+                          {filtersLength}
                         </div>
                       </Popover.Button>
                       <Popover.Panel placement="bottom-end">
-                        <div className="p-2">
-                          <div className="mt-3">
-                            <div className="text-left text-slate-500">
-                              Region
+                        <form onSubmit={handleSubmit(onSubmit)}>
+                          <div className="p-2">
+                            <div className="mt-3">
+                              <div className="w-full  my-2">
+                                <div className="text-left text-slate-500 flex justify-between mb-1">
+                                  region
+                                  {institutionFilterOptions?.region?.length >
+                                    0 && (
+                                    <div>
+                                      <FormCheck className="mr-2">
+                                        <FormCheck.Label>
+                                          Select All
+                                        </FormCheck.Label>
+                                        <FormCheck.Input
+                                          className="ml-1"
+                                          id={`region`}
+                                          checked={
+                                            institutionFilterOptions.region
+                                              .length ===
+                                            watch("region")?.length
+                                          }
+                                          type="checkbox"
+                                          onChange={(e) => {
+                                            if (e.target.checked === true) {
+                                              setValue(
+                                                "region",
+                                                institutionFilterOptions.region
+                                              );
+                                            } else {
+                                              setValue("region", []);
+                                            }
+                                          }}
+                                        />
+                                      </FormCheck>
+                                    </div>
+                                  )}
+                                </div>
+                                <Controller
+                                  name="region"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <TomSelect
+                                      value={field.value || []}
+                                      onChange={(value) => {
+                                        field.onChange(value);
+                                      }}
+                                      options={{
+                                        placeholder: "Select region",
+                                      }}
+                                      className="w-full"
+                                      multiple
+                                    >
+                                      <>
+                                        {institutionFilterOptions?.region
+                                          .length > 0 &&
+                                          institutionFilterOptions?.region?.map(
+                                            (region: string) => {
+                                              return (
+                                                <option value={region}>
+                                                  {region}
+                                                </option>
+                                              );
+                                            }
+                                          )}
+                                      </>
+                                    </TomSelect>
+                                  )}
+                                />
+                              </div>
                             </div>
-                            <FormSelect
-                              defaultValue={
-                                filters.region.length > 0
-                                  ? filters.region
-                                  : "Select Region"
-                              }
-                              className="flex-1 mt-2"
-                              onChange={(
-                                e: React.ChangeEvent<HTMLSelectElement>
-                              ) => {
-                                dispatch(
-                                  setFilter({
-                                    key: "region",
-                                    value: e.target.value,
-                                  })
-                                );
-                              }}
-                            >
-                              <option disabled selected>
-                                Select Region
-                              </option>
-                              {institutionFilterOptions.region.map(
-                                (region: string, index: number) => {
-                                  return (
-                                    <option key={index} value={region}>
-                                      {region}
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </FormSelect>
-                          </div>
-                          {/* <div className="mt-3">
-                            <div className="text-left text-slate-500">
-                              Investor Type
+                            <div className="flex items-center mt-4">
+                              <Button
+                                variant="secondary"
+                                onClick={() => {
+                                  onFilterClear();
+                                  close();
+                                }}
+                                className="w-32 ml-auto"
+                              >
+                                Clear
+                              </Button>
+                              <Button
+                                type="submit"
+                                variant="primary"
+                                className="w-32 ml-2"
+                              >
+                                Apply
+                              </Button>
                             </div>
-                            <FormSelect
-                              defaultValue={
-                                filters.investor_type.length > 0
-                                  ? filters.investor_type
-                                  : "Select Investor Type"
-                              }
-                              className="flex-1 mt-2"
-                              onChange={(
-                                e: React.ChangeEvent<HTMLSelectElement>
-                              ) => {
-                                dispatch(
-                                  setFilter({
-                                    key: "investor_type",
-                                    value: e.target.value,
-                                  })
-                                );
-                              }}
-                            >
-                              <option disabled selected>
-                                Select Investor Type
-                              </option>
-                              {institutionFilterOptions.investor_type.map(
-                                (type: string, index: number) => {
-                                  return (
-                                    <option key={index} value={type}>
-                                      {type}
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </FormSelect>
-                          </div> */}
-                          <div className="flex items-center mt-4">
-                            <Button
-                              variant="secondary"
-                              onClick={() => {
-                                close();
-                                onFilterClear();
-                              }}
-                              className="w-32 ml-auto"
-                            >
-                              Clear
-                            </Button>
-                            <Button
-                              onClick={handleApplyFilter}
-                              variant="primary"
-                              className="w-32 ml-2"
-                            >
-                              Apply
-                            </Button>
                           </div>
-                        </div>
+                        </form>
                       </Popover.Panel>
                     </>
                   )}
@@ -413,7 +384,7 @@ function Main() {
                               <div className="flex items-center">
                                 {institution?.logo_url ? (
                                   <>
-                                    <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                    <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                       <img
                                         alt="ZMH Analytics"
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"

@@ -8,6 +8,12 @@ import { getPageNumbers } from "@/utils/helper";
 
 const name = "engagementQuestions";
 
+interface EngagementQuestionsFilters {
+  institution_name: string[];
+  category: string[];
+  year: string[];
+}
+
 interface EngagementQuestionsState {
   questions: EngagementQuestions[];
   getSingleQuestion: EngagementQuestions | null;
@@ -20,11 +26,7 @@ interface EngagementQuestionsState {
     category: string[];
     year: string[];
   };
-  filters: {
-    institution_name: string[];
-    category: string[];
-    year: string[];
-  };
+  filters: EngagementQuestionsFilters;
 }
 
 const initialState: EngagementQuestionsState = {
@@ -99,12 +101,15 @@ const engagementQuestionsSlice = createSlice({
       state.filters[action.payload.key] = action.payload.value as any;
     },
 
+    setAllFilters(
+      state,
+      action: PayloadAction<Partial<EngagementQuestionsFilters>>
+    ) {
+      state.filters = { ...state.filters, ...action.payload };
+    },
+
     resetFilter(state) {
-      state.filters = {
-        institution_name: [],
-        category: [],
-        year: [],
-      };
+      state.filters = initialState.filters;
     },
   },
   extraReducers: (builder) => {
@@ -182,5 +187,5 @@ const engagementQuestionsSlice = createSlice({
 });
 
 export default engagementQuestionsSlice;
-export const { setPage, resetPage, setFilter, resetFilter } =
+export const { setPage, resetPage, setFilter, resetFilter, setAllFilters } =
   engagementQuestionsSlice.actions;

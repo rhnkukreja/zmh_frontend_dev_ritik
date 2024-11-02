@@ -32,6 +32,26 @@ import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
 import { no_header_company } from "@/constant";
 import GetHelp from "@/components/Help";
+import { resetFilter as resetInvestorFilters } from "@/stores/investersProfileSlice";
+import {
+  resetFilter as resetCompanyFilters,
+  selectUnSelectAllCompany as unCheckAllCompanyForCompany,
+} from "@/stores/companySlice";
+import { resetFilter as resetInstitutionFilters } from "@/stores/institutionSlice";
+import {
+  resetFilter as resetShareHolderFilters,
+  selectUnSelectAllCompany as unCheckAllCompanyForShareHolder,
+} from "@/stores/shareholderProposalSlice";
+import { resetFilter as resetproxyVotingGuidelineFilters } from "@/stores/proxyVotingGuidelineSlice";
+import { resetFilter as resetEngagementQuestionFilters } from "@/stores/engagementQuestionSlice";
+import {
+  resetFilter as resetPeerAnalysisFilter,
+  selectUnSelectAllCompany as unCheckAllCompanyForPeerAnalysis,
+} from "@/stores/peerAnalysisSlice";
+import {
+  resetFilters as resetCaseStudiesFilter,
+  selectUnSelectAllCompany as unCheckAllCompanyForCaseStudies,
+} from "@/stores/caseStudySlice";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -135,6 +155,39 @@ function Main() {
   const shouldHideHeader = no_header_company.some((route) =>
     location.pathname.includes(route)
   );
+
+  useEffect(() => {
+    if (!location.pathname.includes("/case-studies")) {
+      dispatch(resetCaseStudiesFilter());
+      dispatch(unCheckAllCompanyForCaseStudies(false));
+    }
+    if (!location.pathname.includes("/engagement-question")) {
+      dispatch(resetEngagementQuestionFilters());
+    }
+    if (!location.pathname.includes("/peer-analysis")) {
+      dispatch(resetShareHolderFilters());
+      dispatch(unCheckAllCompanyForPeerAnalysis(false));
+    }
+    if (!location.pathname.includes("/proxy-voting-guideline")) {
+      dispatch(resetproxyVotingGuidelineFilters());
+    }
+    if (!location.pathname.includes("/share-holder-proposal")) {
+      dispatch(resetShareHolderFilters());
+      dispatch(unCheckAllCompanyForShareHolder(false));
+    }
+    if (!location.pathname.includes("/institution")) {
+      dispatch(resetInstitutionFilters());
+    }
+    if (!location.pathname.includes("/company")) {
+      dispatch(resetCompanyFilters());
+      dispatch(unCheckAllCompanyForCompany(false));
+    }
+    if (!location.pathname.includes("/investor-profile")) {
+      dispatch(resetInvestorFilters());
+    }
+
+    console.log(location.pathname);
+  }, [location.pathname]);
 
   return (
     <div

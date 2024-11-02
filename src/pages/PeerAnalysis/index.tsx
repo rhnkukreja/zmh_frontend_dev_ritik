@@ -7,6 +7,8 @@ import {
   fetchPeerAnalysis,
   resetFilter,
   resetPage,
+  selectUnSelectAllCompany,
+  setAllFilters,
   setFilter,
   setPage,
 } from "@/stores/peerAnalysisSlice";
@@ -26,33 +28,23 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
-import { shareHolderProposalService } from "@/services/shareholderProposal";
+
 import { Popover } from "@/components/Base/Headless";
-import { FormCheck, FormInput } from "@/components/Base/Form";
+import { FormCheck, FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
-import { FilterObject } from "@/types/common";
+import CompanySelect from "@/components/ReactSelectAsync";
 
 interface PeerAnalysisFilter {
   category: string[];
   year: string[];
+  institution_name?: string[];
+  global_search?: string[];
 }
 
 function PeerAnalysis() {
-  const {
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<PeerAnalysisFilter>();
-
   const dispatch: AppDispatch = useAppDispatch();
 
-  const [applyFilters, setApplyFilters] = useState<
-    PeerAnalysisFilter | undefined
-  >(undefined);
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
@@ -63,33 +55,75 @@ function PeerAnalysis() {
     year: ["2023", "2024"],
   });
 
-  const { loading, peerAnalysisData, page, totalPages, filters } =
-    useAppSelector((state) => state.peerAnalysis);
+  const {
+    loading,
+    peerAnalysisData,
+    page,
+    totalPages,
+    filters,
+    isAllCompanySelected,
+  } = useAppSelector((state) => state.peerAnalysis);
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
 
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<PeerAnalysisFilter>({
+    defaultValues: {
+      year: filters?.year,
+      institution_name: filters?.institution_name,
+      global_search:
+        filters?.global_search?.map((item: string) => ({
+          value: item,
+          label: item,
+        })) || [],
+      category: filters.category,
+    },
+  });
+
+  const resetFormValues = () => {
+    setValue("year", []);
+    setValue("category", []);
+    setValue("global_search", []);
+  };
+
   useEffect(() => {
-    if (companyGlobalSearchName) {
-      dispatch(
-        setFilter({ key: "global_search", value: [companyGlobalSearchName] })
-      );
-    }
-  }, [companyGlobalSearchName]);
+    dispatch(
+      setFilter({
+        key: "global_search",
+        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
+      })
+    );
+  }, [companyGlobalSearchName, isAllCompanySelected]);
 
   useEffect(() => {
     if (!filters?.global_search) return;
 
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)
+    const dynamicURL =
+      filters?.institution_name?.length > 0
+        ? createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined)
+        : createDynamicURL(
+            `${baseURL}/peer_analysis/`,
+            filters,
+            undefined,
+            page
+          );
+    dispatch(fetchPeerAnalysis(dynamicURL));
+    const { institution_name, global_search, ...restFilters } = filters;
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
       )
     );
-
-    return () => {
-      dispatch(resetPage());
-    };
-  }, [page, filters?.global_search]);
+  }, [page, filters]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -107,32 +141,20 @@ function PeerAnalysis() {
     dispatch(setPage(newPage));
   };
 
-  const handleApplyFilter = () => {
+  const onFilterClear = () => {
+    reset();
+    resetFormValues();
+    dispatch(resetFilter());
     dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined, page)
-      )
+      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
     );
     dispatch(resetPage());
   };
 
-  const onFilterClear = () => {
-    reset();
-    dispatch(resetFilter());
-    dispatch(
-      fetchPeerAnalysis(
-        createDynamicURL(
-          `${baseURL}/peer_analysis/`,
-          { ...applyFilters },
-          undefined,
-          1
-        )
-      )
-    );
-  };
-
   const handleClearAllFilter = () => {
     dispatch(resetFilter());
+    resetFormValues();
+    reset();
     setSearchTerms([]);
     dispatch(
       setFilter({ key: "global_search", value: [companyGlobalSearchName] })
@@ -140,36 +162,20 @@ function PeerAnalysis() {
     dispatch(resetPage());
   };
 
-  const handleSearch = useCallback(
-    (searchTerms: string[]) => {
-      dispatch(setFilter({ key: "institution_name", value: searchTerms }));
-      const updatedFilters = { ...filters, institution_name: searchTerms };
-      dispatch(
-        fetchPeerAnalysis(
-          createDynamicURL(
-            `${baseURL}/peer_analysis/`,
-            updatedFilters,
-            undefined,
-            1
-          )
-        )
-      );
-    },
-    [dispatch, filters]
-  );
-
-  useEffect(() => {
-    if (searchTerms?.length || filters?.global_search?.length || applyFilters) {
-      handleSearch(searchTerms);
-    }
-  }, [searchTerms, filters?.global_search, applyFilters, handleSearch]);
+  const handleSearch = (searchTerms: string[]) => {
+    dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+    dispatch(resetPage());
+  };
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
+    setValue("year", user?.saved_search?.year || []);
+    setValue("category", user?.saved_search?.category || []);
     dispatch(
-      setFilter({
-        key: "global_search",
-        value: user?.saved_search["Peer Analysis"]?.global_search,
+      setAllFilters({
+        year: user?.saved_search?.year || [],
+        category: user?.saved_search?.category || [],
+        global_search: user?.saved_search?.global_search,
       })
     );
   };
@@ -179,6 +185,8 @@ function PeerAnalysis() {
       module: "Peer Analysis",
       institution: searchTerms,
       global_search: filters["global_search"],
+      year: watch("year") || [],
+      category: watch("category") || [],
     });
 
     if (res?.user_id) {
@@ -188,6 +196,8 @@ function PeerAnalysis() {
           value: {
             institution: searchTerms,
             global_search: filters["global_search"],
+            year: watch("year") || [],
+            category: watch("category") || [],
           },
         })
       );
@@ -196,35 +206,52 @@ function PeerAnalysis() {
   };
 
   const onSubmit = async (peerAnalysisFilters: PeerAnalysisFilter) => {
-    setApplyFilters({ ...peerAnalysisFilters });
-    const validKeysCount = countValidFilters(
-      peerAnalysisFilters as unknown as FilterObject
+    dispatch(
+      setAllFilters({
+        ...peerAnalysisFilters,
+        institution_name: searchTerms,
+        global_search: isAllCompanySelected
+          ? Array.isArray(peerAnalysisFilters?.global_search)
+            ? peerAnalysisFilters?.global_search.map((item: any) => item.label)
+            : []
+          : [companyGlobalSearchName],
+      })
     );
-    setFiltersLength(validKeysCount);
+    dispatch(resetPage());
   };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Engagement Details</div>
-            {/* {user?.user_type === "Admin" && (
-              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-                <Button
-                  onClick={() => {
-                    setAddNewInvesterModalVisible(true);
-                  }}
-                  variant="primary"
-                  className="bg-theme-2 border-bg-theme-2 group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
-                >
-                  <Lucide
-                    icon="PenLine"
-                    className="stroke-[1.3] w-4 h-4 mr-2"
-                  />
-                  Add New Investor
-                </Button>
-              </div>
-            )} */}
+          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
+            <div className="font-semibold text-xl">Engagement Detail</div>
+
+            <div className="flex items-center">
+              <Tippy
+                content="All Companies"
+                options={{
+                  theme: "light",
+                }}
+              >
+                <div className="mt-2">
+                  <FormSwitch>
+                    <FormSwitch.Input
+                      id="checkbox-switch-7"
+                      type="checkbox"
+                      checked={isAllCompanySelected}
+                      onChange={async (e) => {
+                        try {
+                          dispatch(
+                            selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                        } catch (error) {}
+                      }}
+                    />
+                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
+                  </FormSwitch>
+                </div>
+              </Tippy>
+            </div>
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
@@ -272,7 +299,7 @@ function PeerAnalysis() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Peer Analysis"] !== undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
+                    <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
                         Previous Search
                       </Button>
@@ -432,6 +459,34 @@ function PeerAnalysis() {
                                     )}
                                   />
                                 </div>
+
+                                <div className="w-full  my-2">
+                                  {isAllCompanySelected === true && (
+                                    <div className="w-full ">
+                                      <div className="w-full mt-1">
+                                        <div className="text-left text-slate-500 ">
+                                          Select Comapnies
+                                        </div>
+                                        <div className=" mt-2">
+                                          <Controller
+                                            name="global_search"
+                                            control={control}
+                                            render={({ field }) => (
+                                              <CompanySelect
+                                                value={field.value}
+                                                onChange={(value: any) => {
+                                                  field.onChange(value);
+                                                }}
+                                                isMulti={true}
+                                                className="any"
+                                              />
+                                            )}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex items-center mt-4">
                                 <Button
@@ -445,9 +500,9 @@ function PeerAnalysis() {
                                   Clear
                                 </Button>
                                 <Button
-                                  onClick={handleApplyFilter}
                                   variant="primary"
                                   className="w-32 ml-2"
+                                  type="submit"
                                 >
                                   Apply
                                 </Button>
@@ -507,7 +562,7 @@ function PeerAnalysis() {
                                 <div className=" flex flex-row justify-start items-center ">
                                   {peer?.institution_logo_url ? (
                                     <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                         <img
                                           alt="ZMH Analytics"
                                           className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"

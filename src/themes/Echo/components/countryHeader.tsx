@@ -6,9 +6,8 @@ const CountryInfoHeader = () => {
   const { finhub } = useAppSelector((state: RootState) => state.authentiction);
 
   return (
-    <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex items-center justify-between">
-      {/* Left Section: Logo, Name, Ticker */}
-      <div className="flex items-center gap-4">
+    <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
+      <div className="flex items-center gap-4 mb-2 md:mb-0">
         {finhub?.logo && (
           <div className="w-6 h-6 image-fit object-contain">
             <img
@@ -26,7 +25,7 @@ const CountryInfoHeader = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center mb-2 md:mb-0">
         {finhub?.country && (
           <ReactCountryFlag
             countryCode={finhub?.country}
