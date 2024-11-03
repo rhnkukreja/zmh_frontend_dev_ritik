@@ -83,7 +83,7 @@ const NotificationAlertDialog: React.FC<NotificationAlertProps> = ({
                                 notificationDetails.map((alert: any, index: number) => (
                                     <div key={index} className='border border-gray-300 rounded-lg p-4 mt-3'>
                                         <div className='flex items-center justify-between'>
-                                            <h1 className='font-bold text-lg'>{alert?.heading}</h1>
+                                            <h1  onClick={() => navigate(alert?.link)} className='font-bold text-lg cursor-pointer'>{alert?.heading}</h1>
                                             <h6 className='text-[12px]'>{alert?.date}</h6>
                                         </div>
 
