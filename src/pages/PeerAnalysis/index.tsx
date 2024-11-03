@@ -103,17 +103,16 @@ function PeerAnalysis() {
   }, [companyGlobalSearchName, isAllCompanySelected]);
 
   useEffect(() => {
-    if (!filters?.global_search) return;
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
 
-    const dynamicURL =
-      filters?.institution_name?.length > 0
-        ? createDynamicURL(`${baseURL}/peer_analysis/`, filters, undefined)
-        : createDynamicURL(
-            `${baseURL}/peer_analysis/`,
-            filters,
-            undefined,
-            page
-          );
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/peer_analysis/`,
+      filters,
+      undefined,
+      page
+    );
     dispatch(fetchPeerAnalysis(dynamicURL));
     const { institution_name, global_search, ...restFilters } = filters;
     setFiltersLength(
@@ -264,6 +263,7 @@ function PeerAnalysis() {
                     url="/peer_analysis/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
+                    onSearchChange={resetPage}
                   />
 
                   <div className="hover:bg-slate-50">

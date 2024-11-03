@@ -69,10 +69,12 @@ function Main() {
     useState<boolean>(false);
 
   useEffect(() => {
-    const dynamicURL =
-      filters?.institution_name?.length > 0
-        ? createDynamicURL(`${baseURL}/institute/`, filters, undefined)
-        : createDynamicURL(`${baseURL}/institute/`, filters, undefined, page);
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/institute/`,
+      filters,
+      undefined,
+      page
+    );
     dispatch(fetchInstitutions(dynamicURL));
 
     const { institution_name, ...restFilters } = filters;
@@ -194,6 +196,7 @@ function Main() {
                   url="/investor_profile/?type=profiles"
                   getOptionKey="institution_name"
                   placeHolder="Search Institution"
+                  onSearchChange={resetPage}
                 />
 
                 <div className="hover:bg-slate-50">
@@ -502,9 +505,11 @@ function Main() {
                         </Table.Tr>
                       )}
                     </Table.Tbody>
-                    {institutions?.length === 0 &&
-                              <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1></div>}
+                    {institutions?.length === 0 && (
+                      <div className="w-full">
+                        <h1 className="mt-3">No Records Found..</h1>
+                      </div>
+                    )}
                   </Table>
                 </div>
               </TableWrapper>

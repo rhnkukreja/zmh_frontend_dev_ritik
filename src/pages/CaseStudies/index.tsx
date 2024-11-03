@@ -144,17 +144,16 @@ function CaseStudies() {
   }, []);
 
   useEffect(() => {
-    if (!filters?.global_search) return;
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
 
-    const dynamicURL =
-      filters?.institution_name?.length > 0
-        ? createDynamicURL(`${baseURL}/case_studies/`, filters, undefined)
-        : createDynamicURL(
-            `${baseURL}/case_studies/`,
-            filters,
-            undefined,
-            page
-          );
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/case_studies/`,
+      filters,
+      undefined,
+      page
+    );
     dispatch(fetchCaseStudies(dynamicURL));
 
     const { institution_name, global_search, ...restFilters } = filters;
@@ -204,6 +203,7 @@ function CaseStudies() {
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilters({ key: "institution_name", value: searchTerms }));
+    dispatch(resetPage());
   };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -334,6 +334,7 @@ function CaseStudies() {
                     url="/case_studies/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
+                    onSearchChange={resetPage}
                   />
 
                   <div className="hover:bg-slate-50">
@@ -974,9 +975,11 @@ function CaseStudies() {
                             </Table.Tr>
                           ))}
                       </Table.Tbody>
-                      {caseStudies?.length === 0 &&
+                      {caseStudies?.length === 0 && (
                         <div className="w-full">
-                          <h1 className="mt-3">No Records Found..</h1></div>}
+                          <h1 className="mt-3">No Records Found..</h1>
+                        </div>
+                      )}
                     </Table>
                   </div>
                 </TableWrapper>

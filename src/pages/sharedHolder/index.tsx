@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, Fullscreen, Grid2x2, SaveAll } from "lucide-react";
+import { FilterX, Fullscreen, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -76,7 +76,6 @@ function ShareHolderProposal() {
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
-      institution: [],
       status: [],
       proponent: [],
       category: [],
@@ -130,7 +129,7 @@ function ShareHolderProposal() {
     },
   });
 
-  const resetFormValues = () => {
+  const resetFormValues: any = () => {
     setValue("category", []);
     setValue("keyword", "");
     setValue("sub_category", []);
@@ -177,12 +176,11 @@ function ShareHolderProposal() {
   };
 
   useEffect(() => {
-    if (!filters?.global_search) return;
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
 
-    const dynamicURL =
-      filters?.institution_name?.length > 0
-        ? createDynamicURL(tabUrls[tab], filters, undefined)
-        : createDynamicURL(tabUrls[tab], filters, undefined, page);
+    const dynamicURL = createDynamicURL(tabUrls[tab], filters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
 
     const { institution_name, global_search, ...restFilters } = filters;
@@ -196,7 +194,9 @@ function ShareHolderProposal() {
   }, [page, tab, filters]);
 
   useEffect(() => {
-    if (!filters?.global_search) return;
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
     getAllShareholderAPI();
   }, [filters]);
 
@@ -300,7 +300,7 @@ function ShareHolderProposal() {
   };
 
   const handleSearch = (searchTerms: string[]) => {
-    dispatch(setFilter({ key: "proponent", value: searchTerms }));
+    dispatch(setFilter({ key: "proponent_name", value: searchTerms }));
   };
 
   useEffect(() => {
@@ -323,7 +323,7 @@ function ShareHolderProposal() {
     dispatch(
       setAllFilters({
         ...shareHolderFilters,
-        proponent: searchTerms,
+        proponent_name: searchTerms,
         global_search: isAllCompanySelected
           ? Array.isArray(shareHolderFilters?.global_search)
             ? shareHolderFilters?.global_search.map((item: any) => item.label)
@@ -351,16 +351,16 @@ function ShareHolderProposal() {
   const getSavedSearches = () => {
     if (user?.saved_search["Shareholder Proposal"]) {
       const savedSearch = user.saved_search["Shareholder Proposal"];
-      setSearchTerms([...savedSearch.proponent]);
+      setSearchTerms([...savedSearch.proponent_name]);
       setValue("keyword", savedSearch.keyword || "");
-      setValue("proponent", savedSearch.proponent || []);
+      setValue("proponent_name", savedSearch.proponent_name || []);
       setValue("category", savedSearch.category || []);
       setValue("sub_category", savedSearch.sub_category || []);
       setValue("year", savedSearch.year || []);
       setValue("status", savedSearch.status || []);
       dispatch(
         setAllFilters({
-          proponent: savedSearch.proponent || [],
+          proponent_name: savedSearch.proponent_name || [],
           keyword: savedSearch.keyword || "",
           category: savedSearch.category || [],
           sub_category: savedSearch.sub_category || [],
@@ -376,7 +376,7 @@ function ShareHolderProposal() {
   const saveSearch = async () => {
     const res = await commonService.saveSearches({
       module: "Shareholder Proposal",
-      proponent: searchTerms,
+      proponent_name: searchTerms,
       category: filters?.category || [],
       sub_category: filters?.sub_category || [],
       year: filters?.year || [],
@@ -389,7 +389,7 @@ function ShareHolderProposal() {
         setSavedSearch({
           key: "Shareholder Proposal",
           value: {
-            proponent: searchTerms,
+            proponent_name: searchTerms,
             category: filters?.category || [],
             sub_category: filters?.sub_category || [],
             year: filters?.year || [],
@@ -458,6 +458,7 @@ function ShareHolderProposal() {
                     ]}
                     getOptionKey="proponent_name"
                     placeHolder="Search Proponent"
+                    onSearchChange={resetPage}
                   />
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>

@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
 
-import { investersProfileService } from "@/services/investersProfile";
 import _ from "lodash";
 import { axiosInstance } from "@/services";
+import { useAppDispatch } from "@/stores/hooks";
 
 interface MultiSearchBarProps {
   onSearch: (terms: string[]) => void;
@@ -16,6 +16,7 @@ interface MultiSearchBarProps {
   isRadioInput?: boolean;
   getValueKey?: string | string[];
   urlQueryKey?: string;
+  onSearchChange?: any;
 }
 
 // type FetchedOptionType = {
@@ -32,8 +33,10 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   getOptionKey,
   isRadioInput,
   getValueKey,
+  onSearchChange,
   urlQueryKey,
 }) => {
+  const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
   const [options, setOptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +96,10 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
     debouncedFetchResults(e.target.value);
+
+    if (onSearchChange) {
+      dispatch(onSearchChange());
+    }
   };
 
   const removeTerm = (term: string) => {

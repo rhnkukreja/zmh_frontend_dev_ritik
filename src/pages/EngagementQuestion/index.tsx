@@ -1,7 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 // import TomSelect from "@/components/Base/TomSelect";
-import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
+import { FormCheck } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -105,19 +105,12 @@ function Main() {
   ] = useState<boolean>(false);
 
   useEffect(() => {
-    const dynamicURL =
-      filters?.institution_name?.length > 0
-        ? createDynamicURL(
-            `${baseURL}/engagement_questions/`,
-            filters,
-            undefined
-          )
-        : createDynamicURL(
-            `${baseURL}/engagement_questions/`,
-            filters,
-            undefined,
-            page
-          );
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/engagement_questions/`,
+      filters,
+      undefined,
+      page
+    );
     dispatch(fetchEngagementQuestions(dynamicURL));
 
     const { institution_name, ...restFilters } = filters;
@@ -288,6 +281,7 @@ function Main() {
                   url="/engagement_questions/"
                   getOptionKey="institution_name"
                   placeHolder="Search Institution"
+                  onSearchChange={resetPage}
                 />
 
                 <div className="hover:bg-slate-50">
@@ -667,9 +661,11 @@ function Main() {
                         )}
                       </>
                     </Table.Tbody>
-                    {groupedQuestions?.length === 0 &&
+                    {groupedQuestions?.length === 0 && (
                       <div className="w-full">
-                        <h1 className="mt-3">No Records Found..</h1></div>}
+                        <h1 className="mt-3">No Records Found..</h1>
+                      </div>
+                    )}
                   </Table>
                 </div>
               </TableWrapper>

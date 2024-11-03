@@ -103,7 +103,6 @@ const investersProfileSlice = createSlice({
     },
 
     resetFilter(state) {
-      debugger;
       state.filters = initialState.filters;
     },
     resetInvestorProfiles(state) {
