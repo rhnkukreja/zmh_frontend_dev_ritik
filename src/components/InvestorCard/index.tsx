@@ -381,7 +381,7 @@ const index = () => {
         </>
       )}
 
-      {dashboardDataList.length === 0 && investorCardLoading && (
+      {dashboardDataList?.length === 0 && investorCardLoading && (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <LoadingIcon
             color="#800000"
