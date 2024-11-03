@@ -56,6 +56,12 @@ class DashboardService {
     const results = response.data;
     return { results };
   }
+
+  public async fetchWhatNewNotification(url: string): Promise<{ results: any, count: number }> {
+    const response = await axiosInstance.get(url);
+    const {results, count} = response.data;
+    return { results, count };
+  }
 }
 
 export const dashboardService = new DashboardService();

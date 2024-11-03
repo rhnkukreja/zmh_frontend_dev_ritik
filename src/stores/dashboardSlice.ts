@@ -47,6 +47,10 @@ interface CompanySliceState {
   investorProfileLoading: boolean;
   tempSearch: string | null;
   percent: string;
+  notificationDetails: any | null;
+  notificationLoading: boolean;
+  totalNotification: number,
+
 }
 
 const initialState: CompanySliceState = {
@@ -68,7 +72,10 @@ const initialState: CompanySliceState = {
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
-  percent: ''
+  percent: '',
+  notificationDetails: [],
+  notificationLoading: true,
+  totalNotification: 0,
 
   // {
   //   nominees: [],
@@ -118,6 +125,13 @@ export const fetchInvestorProfileDetails = createAsyncThunk<
   string
 >(`${name}/fetchInvestorProfileDetails`, async (url: string) => {
   return await dashboardService.fetchInvestorProfileDetails(url);
+});
+
+export const fetchWhatNewNotification = createAsyncThunk<
+  { results: any, count: number },
+  string
+>(`${name}/fetchWhatNewNotification`, async (url: string) => {
+  return await dashboardService.fetchWhatNewNotification(url);
 });
 
 const companySlice = createSlice({
@@ -239,6 +253,25 @@ const companySlice = createSlice({
         }
       )
       .addCase(fetchInvestorProfileDetails.rejected, (state, action) => {
+        state.investorProfileLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+      .addCase(fetchWhatNewNotification.pending, (state) => {
+        state.notificationDetails = "";
+        state.notificationLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchWhatNewNotification.fulfilled,
+        (state, action: PayloadAction<{ results: any, count: number }>) => {
+          state.investorProfileLoading = false;
+          state.notificationDetails = action.payload.results;
+          state.totalNotification = action.payload.count;
+
+        }
+      )
+      .addCase(fetchWhatNewNotification.rejected, (state, action) => {
         state.investorProfileLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";

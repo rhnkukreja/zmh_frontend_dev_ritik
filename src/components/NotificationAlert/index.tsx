@@ -4,6 +4,12 @@ import Table from '@/components/Base/Table';
 import TableWrapper from '@/components/TableWrapper';
 import React, { useEffect, useState } from 'react'
 import whatsNewIcon from "@/assets/images/zmh-images/what_new_icon.png";
+import { AppDispatch } from '@/stores/store';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
+import { fetchWhatNewNotification } from '@/stores/dashboardSlice';
+import { createDynamicURL } from '@/utils/helper';
+import { baseURL } from '@/constant';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -20,10 +26,31 @@ const NotificationAlertDialog: React.FC<NotificationAlertProps> = ({
     // selectedShareholderDetail,
 }) => {
 
+    const { notificationLoading, totalNotification, notificationDetails } = useAppSelector((state) => state.dashboard);
+    const navigate = useNavigate();
+    const dispatch: AppDispatch = useAppDispatch();
+
     useEffect(() => {
+        dispatch(
+            fetchWhatNewNotification(
+                createDynamicURL(
+                    `${baseURL}/whatsnew`
+                )
+            )
+
+        );
     }, [])
 
 
+    const [expandedNotifications, setExpandedNotifications] = useState<{ [key: number]: boolean }>({});
+
+
+    const handleToggleDescription = (index: number) => {
+        setExpandedNotifications((prev: any) => ({
+            ...prev,
+            [index]: !prev[index],
+        }));
+    };
     return (
         <>
             <Dialog size="lg" open={notificationModalVisible}
@@ -52,70 +79,35 @@ const NotificationAlertDialog: React.FC<NotificationAlertProps> = ({
                         </div>
 
                         <div className='p-5 h-[360px] overflow-y-scroll'>
-                            <div className=' border border-gray-300 rounded-lg p-4 mt-3' >
-                                <div className='flex items-center justify-between'>
-                                    <h1 className='font-bold text-lg text-wrap'>New Recent Investor Mentions</h1>
-                                    <h6 className='text-[12px]'>Oct 29, 2024</h6>
-                                </div>
+                            {notificationDetails?.length > 0 &&
+                                notificationDetails.map((alert: any, index: number) => (
+                                    <div key={index} className='border border-gray-300 rounded-lg p-4 mt-3'>
+                                        <div className='flex items-center justify-between'>
+                                            <h1 className='font-bold text-lg'>{alert?.heading}</h1>
+                                            <h6 className='text-[12px]'>{alert?.date}</h6>
+                                        </div>
 
-                                <div className='flex items-end justify-between mt-4'>
-                                    <div className="flex flex-col items-start">
-                                        <h1 className='text-[14px] font-semibold  underline text-wrap'>ETF Industry Perspective Q2 2024 | Vanguard</h1>
-                                        <h6 className='text-[11px] text-wrap mt-1'>corporate.vanguard.com - 2024_q2_etf_perspectives_brochure</h6>
+                                        <div className='flex items-end justify-between mt-4'>
+                                            <div className="flex flex-col items-start w-80">
+                                                <h1
+                                                    onClick={() => navigate(alert?.link)}
+                                                    className='text-[14px] text-left font-semibold underline cursor-pointer'
+                                                >
+                                                    {expandedNotifications[index]
+                                                        ? alert?.description
+                                                        : `${alert?.description.substring(0, 15)}...`}
+                                                </h1>
+                                            </div>
+
+                                            <h4
+                                                onClick={() => handleToggleDescription(index)}
+                                                className='text-[14px] font-semibold text-red-800 underline cursor-pointer'
+                                            >
+                                                {expandedNotifications[index] ? 'Show Less' : 'Read More'}
+                                            </h4>
+                                        </div>
                                     </div>
-
-                                    <h4 className='text-[14px] font-semibold text-red-800 underline'>Read more</h4>
-                                </div>
-                            </div>
-
-                            <div className=' border border-gray-300 rounded-lg p-4 mt-3' >
-                                <div className='flex items-center justify-between'>
-                                    <h1 className='font-bold text-lg text-wrap'>New Recent Investor Mentions</h1>
-                                    <h6 className='text-[12px]'>Oct 29, 2024</h6>
-                                </div>
-
-                                <div className='flex items-end justify-between mt-4'>
-                                    <div className="flex flex-col items-start">
-                                        <h1 className='text-[14px] font-semibold  underline text-wrap'>ETF Industry Perspective Q2 2024 | Vanguard</h1>
-                                        <h6 className='text-[11px] text-wrap mt-1'>corporate.vanguard.com - 2024_q2_etf_perspectives_brochure</h6>
-                                    </div>
-
-                                    <h4 className='text-[14px] font-semibold text-red-800 underline'>Read more</h4>
-                                </div>
-                            </div>
-
-                            <div className=' border border-gray-300 rounded-lg p-4 mt-3' >
-                                <div className='flex items-center justify-between'>
-                                    <h1 className='font-bold text-lg text-wrap'>New Recent Investor Mentions</h1>
-                                    <h6 className='text-[12px]'>Oct 29, 2024</h6>
-                                </div>
-
-                                <div className='flex items-end justify-between mt-4'>
-                                    <div className="flex flex-col items-start">
-                                        <h1 className='text-[14px] font-semibold  underline text-wrap'>ETF Industry Perspective Q2 2024 | Vanguard</h1>
-                                        <h6 className='text-[11px] text-wrap mt-1'>corporate.vanguard.com - 2024_q2_etf_perspectives_brochure</h6>
-                                    </div>
-
-                                    <h4 className='text-[14px] font-semibold text-red-800 underline'>Read more</h4>
-                                </div>
-                            </div>
-
-                            <div className=' border border-gray-300 rounded-lg p-4 mt-3' >
-                                <div className='flex items-center justify-between'>
-                                    <h1 className='font-bold text-lg text-wrap'>New Recent Investor Mentions</h1>
-                                    <h6 className='text-[12px]'>Oct 29, 2024</h6>
-                                </div>
-
-                                <div className='flex items-end justify-between mt-4'>
-                                    <div className="flex flex-col items-start">
-                                        <h1 className='text-[14px] font-semibold  underline text-wrap'>ETF Industry Perspective Q2 2024 | Vanguard</h1>
-                                        <h6 className='text-[11px] text-wrap mt-1'>corporate.vanguard.com - 2024_q2_etf_perspectives_brochure</h6>
-                                    </div>
-
-                                    <h4 className='text-[14px] font-semibold text-red-800 underline'>Read more</h4>
-                                </div>
-                            </div>
-
+                                ))}
                         </div>
                     </div>
                     {/* </Dialog.Description> */}
