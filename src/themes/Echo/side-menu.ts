@@ -46,6 +46,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         subMenu: item.subMenu,
         ignore: item.ignore,
         isAdmin: item.isAdmin,
+        selectPathName: item?.selectPathName
       };
 
       menuItem.active =
@@ -75,10 +76,15 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   return formattedMenu;
 };
 
+
 const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {
+
+    if(menu.pathname !== undefined && menu.title === "Company Search"){
+      navigate(menu.selectPathName);
+    }
     if (menu.pathname !== undefined && menu.pathname !== "Notes") {
       navigate(menu.pathname);
     }

@@ -19,9 +19,9 @@ const index = () => {
     const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   
     useEffect(() => {
-      if(ticker !== companyGlobalSearchTicker){
-        return;
-      }
+    //   if(ticker !== companyGlobalSearchTicker){
+    //     return;
+    //   }
         if (companyGlobalSearchName) {
             dispatch(fetchCaseStudyDashboard(
                 createDynamicURL(`https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q=${companyGlobalSearchName}&dateRestrict=y1&start=${pageNumber}`)

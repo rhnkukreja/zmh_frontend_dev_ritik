@@ -170,7 +170,7 @@ const index = () => {
       {vdsProxyDetails?.vds_report?.length > 0 && (
         <div className="p-5 mt-1 box">
 
-          {location.pathname !== "/" && (
+          {/* {location.pathname !== "/" && (
             <Button
               onClick={() => {
                 navigate("/");
@@ -185,7 +185,7 @@ const index = () => {
               />
               Back
             </Button>
-          )}
+          )} */}
           <div className="w-full">
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">

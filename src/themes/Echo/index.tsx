@@ -88,7 +88,7 @@ function Main() {
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
   };
-  const { companyGlobalSearchName } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -155,6 +155,7 @@ function Main() {
   const shouldHideHeader = no_header_company.some((route) =>
     location.pathname.includes(route)
   );
+
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
@@ -319,7 +320,14 @@ function Main() {
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        } else if (menu.title !== "Notes") {
+                        } 
+                        
+                        else if (menu.title === "Company Search") {
+                          // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
+                          menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`
+                          linkTo(menu, navigate);
+                        }
+                        else if (menu.title !== "Notes") {
                           linkTo(menu, navigate);
                         }
                         setFormattedMenu([...formattedMenu]);
