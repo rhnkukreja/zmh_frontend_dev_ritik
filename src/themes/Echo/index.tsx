@@ -632,7 +632,7 @@ function Main() {
                     <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
                       <img src={notificationIcon} alt="ai icon" />
                       <span className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[11px]  
-                          font-semibold text-white top-0 flex items-center justify-center left-[25px]">{3}</span>
+                          font-semibold text-white top-0 flex items-center justify-center left-[25px]">{2}</span>
                     </div>
                   </a>
                   {/* <a
