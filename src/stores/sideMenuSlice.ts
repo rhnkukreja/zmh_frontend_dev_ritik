@@ -10,7 +10,7 @@ export interface Menu {
   subMenu?: Menu[];
   ignore?: boolean;
   isAdmin?: boolean;
-  selectPathName: string;
+  selectPathName?: string;
 }
 
 export interface SideMenuState {

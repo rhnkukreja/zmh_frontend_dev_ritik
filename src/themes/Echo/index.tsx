@@ -307,7 +307,25 @@ function Main() {
               {formattedMenu.map((menu, menuKey) =>
                 typeof menu == "string" ? (
                   <li className="side-menu__divider" key={menuKey}>
-                    {menu}
+                    {
+                      (user.user_type === "Admin") ? (
+                        <>
+                          {menu}
+                        </>
+                      )
+                        :
+                        (user.user_type !== "Admin" && menu === 'Admin') ? (
+                          <>
+                            { }
+                          </>
+                        )
+                          : (
+                            <>
+                              {menu}
+                            </>
+                          )
+                    }
+                    
                   </li>
                 ) : (
                   <li key={menuKey}>
@@ -325,8 +343,8 @@ function Main() {
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        } 
-                        
+                        }
+
                         else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`
