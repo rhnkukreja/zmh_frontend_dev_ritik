@@ -135,7 +135,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                               htmlFor="investmentName"
                               className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
                             >
-                              Enter Investor OR Company Name
+                              Enter Investor or Company Name
                             </label>
                             <FormInput
                               id="investmentName"

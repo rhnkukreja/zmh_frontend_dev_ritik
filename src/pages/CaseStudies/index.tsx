@@ -889,15 +889,16 @@ function CaseStudies() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Institution Name
                           </Table.Td>
-                          {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Company
-                          </Table.Td> */}
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Theme
-                          </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
                           </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Company
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Theme
+                          </Table.Td>
+                          
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Industry
                           </Table.Td>
@@ -944,15 +945,16 @@ function CaseStudies() {
                                   </p>
                                 </div>
                               </Table.Td>
-                              {/* <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
-                                {item?.company_name}
-                              </Table.Td> */}
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                {item?.esg_themes}
-                              </Table.Td>
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.year}
                               </Table.Td>
+                              <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                {item?.company_name}
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                {item?.esg_themes}
+                              </Table.Td>
+                             
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.industry}
                               </Table.Td>
