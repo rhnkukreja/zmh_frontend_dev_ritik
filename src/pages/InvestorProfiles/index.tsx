@@ -31,6 +31,7 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 interface InvestorProfileFilter {
   region: string[];
@@ -260,34 +261,34 @@ function Main() {
                                     region
                                     {investerProfileFilterOption?.region
                                       ?.length > 0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`region`}
-                                            checked={
-                                              investerProfileFilterOption.region
-                                                .length ===
-                                              watch("region")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "region",
-                                                  investerProfileFilterOption.region
-                                                );
-                                              } else {
-                                                setValue("region", []);
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`region`}
+                                              checked={
+                                                investerProfileFilterOption.region
+                                                  .length ===
+                                                watch("region")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "region",
+                                                    investerProfileFilterOption.region
+                                                  );
+                                                } else {
+                                                  setValue("region", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
                                   </div>
                                   <Controller
                                     name="region"
@@ -361,7 +362,7 @@ function Main() {
                                       {(page - 1) * 10 + index + 1}
                                     </div> */}
 
-                            {profile?.institution_logo_url ? (
+                            {profile?.institution_logo_url && profile.institution_logo_url !== "null" ? (
                               <>
                                 <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                   <img
@@ -372,15 +373,12 @@ function Main() {
                                 </div>
                               </>
                             ) : (
-                              <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                <Lucide
-                                  icon="User"
-                                  className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                              <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                <img
+                                  src={investorIcon}
+                                  alt="Investor Icon"
+                                  className="w-[65%] h-[65%] object-contain"
                                 />
-                                <a
-                                  href=""
-                                  className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
-                                ></a>
                               </div>
                             )}
                             {/* 
