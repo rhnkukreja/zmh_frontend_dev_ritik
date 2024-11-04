@@ -1,11 +1,26 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
-import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderData } from "@/types/shareHolder";
+import {
+  AddNoActionType,
+  AddShareholderType,
+  AddWithdrawnType,
+  ShareHolderData,
+} from "@/types/shareHolder";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
-import { InvestersProfile } from "@/types/investerProfiles";
 
 const name = "shareholder_proposal";
+
+type SharedHolderFiltersType = {
+  proponent_name: string[];
+  year: string[];
+  category: string[];
+  sub_category: string[];
+  keyword: string;
+  status: string[];
+
+  global_search: string[];
+};
 
 export interface SharedHolderPrposal {
   shareHolderProposal: any[];
@@ -16,18 +31,12 @@ export interface SharedHolderPrposal {
   totalPages: number;
   page: number;
   tab: "proposal" | "no-action" | "withdrawn" | "";
-  applyFilters: ShareHolderFilter | undefined;
+
   proposalCount: number;
   withdrawnCount: number;
   noActionCount: number;
-  filters: {
-    proponent_name: string;
-    year: number[];
-    category: string;
-    sub_category: string;
-    keyword: string;
-    active: string;
-  };
+  filters: SharedHolderFiltersType;
+  isAllCompanySelected: boolean;
   shareHolderFilterOption: {
     category: string[];
   };
@@ -41,15 +50,18 @@ const initialState: SharedHolderPrposal = {
   error: null,
   totalPages: 1,
   page: 1,
-  applyFilters: undefined,
+
   tab: "proposal",
+  isAllCompanySelected: false,
   filters: {
-    proponent_name: "",
+    proponent_name: [],
     year: [],
-    category: "",
-    sub_category: "",
+    category: [],
+    sub_category: [],
     keyword: "",
-    active: "",
+    status: [],
+
+    global_search: [],
   },
   proposalCount: 0,
   withdrawnCount: 0,
@@ -65,7 +77,13 @@ const initialState: SharedHolderPrposal = {
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<
-  { count: number; results: any[], proposalCount: number, withdrawnCount: number, noActionCount: number},
+  {
+    count: number;
+    results: any[];
+    proposalCount: number;
+    withdrawnCount: number;
+    noActionCount: number;
+  },
   string
 >(`${name}`, async (url: string) => {
   return await shareHolderProposalService.getShareHolderProposal(url);
@@ -79,8 +97,9 @@ export const getSingleShareHolderData = createAsyncThunk<
 });
 
 export const addEditNewShareHolder = createAsyncThunk<
-{ results: AddShareholderType }, any>
-(`${name}/addEditNewShareHolder`, async ({ id, data }) => {
+  { results: AddShareholderType },
+  any
+>(`${name}/addEditNewShareHolder`, async ({ id, data }) => {
   let response;
   if (id) {
     response = await shareHolderProposalService.updateNewShareHolder(id, data);
@@ -90,9 +109,9 @@ export const addEditNewShareHolder = createAsyncThunk<
   return response;
 });
 
-
 export const addEditNewWithdrawn = createAsyncThunk<
-  { results: AddWithdrawnType }, any
+  { results: AddWithdrawnType },
+  any
 >(`${name}/addEditNewWithdrawn`, async ({ id, data }) => {
   let response;
   if (id) {
@@ -104,7 +123,8 @@ export const addEditNewWithdrawn = createAsyncThunk<
 });
 
 export const addEditNewNoAction = createAsyncThunk<
-  { results: AddNoActionType }, any
+  { results: AddNoActionType },
+  any
 >(`${name}/addEditNewNoAction`, async ({ id, data }) => {
   let response;
   if (id) {
@@ -125,31 +145,36 @@ const shareHolderProposal = createSlice({
     resetPage(state) {
       state.page = 1;
     },
-    setTabs(state, action: PayloadAction<"proposal" | "no-action" | "withdrawn" | "">) {
+    setTabs(
+      state,
+      action: PayloadAction<"proposal" | "no-action" | "withdrawn" | "">
+    ) {
       state.tab = action.payload;
     },
-    setApplyFilters(state, action: PayloadAction<ShareHolderFilter | undefined>) {
-      if (action.payload) {
-        state.applyFilters = {...state.applyFilters, ...action.payload };
-      }
+    setFilter(
+      state,
+      action: PayloadAction<{
+        key: keyof typeof initialState.filters;
+        value: string | string[];
+      }>
+    ) {
+      state.filters[action.payload.key] = action.payload.value as any;
     },
-    //
 
-    // setFilter(
-    //   state,
-    //   action: PayloadAction<{
-    //     key: keyof typeof initialState.filters;
-    //     value: string | string[];
-    //   }>
-    // ) {
-    //   state.filters[action.payload.key] = action.payload.value as any;
-    // },
-    // resetFilter(state) {
-    //   state.filters = {
-    //     year: "",
-    //     institution_name: [],
-    //   };
-    // },
+    resetFilter(state) {
+      state.filters = initialState.filters;
+    },
+
+    selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
+      state.isAllCompanySelected = action.payload;
+    },
+
+    setAllFilters(
+      state,
+      action: PayloadAction<Partial<SharedHolderFiltersType>>
+    ) {
+      state.filters = { ...state.filters, ...action.payload };
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -205,19 +230,19 @@ const shareHolderProposal = createSlice({
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch engagement questions";
-      })
-      // .addCase(addNewShareHolder.pending, (state) => {
-      //   state.loading = true;
-      //   state.error = null;
-      // })
-      // .addCase(addNewShareHolder.fulfilled, (state) => {
-      //   state.loading = false;
-      // })
-      // .addCase(addNewShareHolder.rejected, (state, action) => {
-      //   state.loading = false;
-      //   state.error =
-      //     action.error.message || "Failed to fetch investers profile";
-      // });
+      });
+    // .addCase(addNewShareHolder.pending, (state) => {
+    //   state.loading = true;
+    //   state.error = null;
+    // })
+    // .addCase(addNewShareHolder.fulfilled, (state) => {
+    //   state.loading = false;
+    // })
+    // .addCase(addNewShareHolder.rejected, (state, action) => {
+    //   state.loading = false;
+    //   state.error =
+    //     action.error.message || "Failed to fetch investers profile";
+    // });
   },
 });
 
@@ -226,5 +251,8 @@ export const {
   setPage,
   resetPage, //resetFilter
   setTabs,
-  setApplyFilters,
+  setAllFilters,
+  setFilter,
+  selectUnSelectAllCompany,
+  resetFilter,
 } = shareHolderProposal.actions;

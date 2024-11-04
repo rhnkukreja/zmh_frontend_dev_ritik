@@ -46,8 +46,8 @@ table {
   border-collapse: collapse;
   width: 100%;
 }
-body{
-  background-color: #0000000D;
+body {
+  background-color: #0000000d;
 }
 .sticky-table {
   position: sticky;
@@ -106,8 +106,7 @@ body{
 .css-t3ipsp-control,
 .css-t3ipsp-control:hover,
 .css-t3ipsp-control:focus {
-  padding-block: 5px !important;
-  border-radius: 10px !important;
+  border-radius: 5px !important;
   border-color: #d5dde7 !important;
   box-shadow: #d5dde7 !important;
 }
@@ -138,7 +137,7 @@ body{
 }
 .filter-section {
   background: #6767670d;
-  border: 2px solid #0000000D;
+  border: 2px solid #0000000d;
   border-radius: 15px;
   margin: 10px;
   padding: 10px;

@@ -9,6 +9,7 @@ import {
   CompanyDashboard,
   fetchCompanyDashboard,
   setPage,
+  setTempSearch,
 } from "@/stores/dashboardSlice";
 import { AppDispatch, RootState } from "@/stores/store";
 import {
@@ -32,7 +33,7 @@ const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
-  const { dashboardDataList, investorCardLoading, page, totalPages, percent } =
+  const { dashboardDataList, investorCardLoading, page, tempSearch, percent } =
     useAppSelector((state) => state.dashboard);
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
@@ -44,11 +45,24 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
 
+
   useEffect(() => {
-    if (ticker !== companyGlobalSearchTicker) {
-      return;
+
+
+    if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
+      dispatch(
+        fetchCompanyDashboard(
+          createDynamicURL(
+            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+
+      );
+      dispatch(
+        setTempSearch(companyGlobalSearchTicker))
     }
-    else if (searchTicker) {
+
+    else if (companyGlobalSearchTicker !== tempSearch) {
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -56,17 +70,11 @@ const index = () => {
           )
         )
       );
-    }
-    else if (companyGlobalSearchTicker && dashboardDataList.length === 0) {
       dispatch(
-        fetchCompanyDashboard(
-          createDynamicURL(
-            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
-          )
-        )
-      );
+        setTempSearch(companyGlobalSearchTicker))
     }
   }, [companyGlobalSearchTicker, searchTicker])
+
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -381,7 +389,7 @@ const index = () => {
         </>
       )}
 
-      {dashboardDataList.length === 0 && investorCardLoading && (
+      {dashboardDataList?.length === 0 && investorCardLoading && (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <LoadingIcon
             color="#800000"

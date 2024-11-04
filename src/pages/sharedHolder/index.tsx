@@ -1,6 +1,11 @@
 import Lucide from "@/components/Base/Lucide";
 import { Menu, Popover, Tab } from "@/components/Base/Headless";
-import { FormCheck, FormInput, FormSelect } from "@/components/Base/Form";
+import {
+  FormCheck,
+  FormInput,
+  FormSelect,
+  FormSwitch,
+} from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
 import { useEffect, useState } from "react";
@@ -11,23 +16,31 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { useNavigate } from "react-router-dom";
-import { createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, Fullscreen, Grid2x2, SaveAll } from "lucide-react";
+import { FilterX, Fullscreen, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
 import {
   fetchShareHolderProposal,
-  setApplyFilters,
+  setAllFilters,
+  setFilter,
+  resetFilter,
   setPage,
   setTabs,
+  selectUnSelectAllCompany,
 } from "@/stores/shareholderProposalSlice";
 import { resetPage } from "@/stores/shareholderProposalSlice";
 import TomSelect from "@/components/Base/TomSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
-import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
+import {
+  AddNoActionType,
+  AddShareholderType,
+  AddWithdrawnType,
+  ShareHolderDropdown,
+} from "@/types/shareHolder";
 import clsx from "clsx";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
@@ -36,52 +49,63 @@ import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import AddNewShareholder from "./components/AddNewShareholder";
 import AddNewWithdrawn from "./components/AddNewWithdrawn";
 import AddNewNoAction from "./components/AddNewNoAction";
+import CompanySelect from "@/components/ReactSelectAsync";
 import DetailDialog from "./components/DetailDialog";
 
 function ShareHolderProposal() {
-
   const dispatch: AppDispatch = useAppDispatch();
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
 
+  const {
+    loading,
+    shareHolderProposal,
+    page,
+    totalPages,
+    tab,
+    filters,
+    isAllCompanySelected,
+  } = useAppSelector((state) => state.sharedHolderNoAction);
+
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [applyFilters, setApplyFilters] = useState<
-    ShareHolderFilter | undefined
-  >(undefined);
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
-  useState<ShareHolderDropdown>({
-      institution: [],
+    useState<ShareHolderDropdown>({
       status: [],
       proponent: [],
       category: [],
       sub_category: [],
       year: [],
-  });
+    });
 
   const [addNewShareholderModalVisible, setAddNewShareholderModalVisible] =
     useState<boolean>(false);
-    const [addNewWithdrawnModalVisible, setAddNewWithdrawnModalVisible] =
+  const [addNewWithdrawnModalVisible, setAddNewWithdrawnModalVisible] =
     useState<boolean>(false);
-    const [addNewNoActionModalVisible, setAddNewNoActionModalVisible] =
+  const [addNewNoActionModalVisible, setAddNewNoActionModalVisible] =
     useState<boolean>(false);
-    const [shareholderDetailModalVisible, setShareholderDetailModalVisible] =
+  const [shareholderDetailModalVisible, setShareholderDetailModalVisible] =
     useState<boolean>(false);
 
-    const [proposalCount, setProposalCount] = useState<number>(0);
-    const [withdrawnCount, setWithdrawnCount] = useState<number>(0);
-    const [noActionCount, setNoActionCount] = useState<number>(0);
+  const [proposalCount, setProposalCount] = useState<number>(0);
+  const [withdrawnCount, setWithdrawnCount] = useState<number>(0);
+  const [noActionCount, setNoActionCount] = useState<number>(0);
 
-    const [selectedShareholderProposal, setSelectedShareholderProposal] = useState<AddShareholderType | null>(null);
-    const [selectedShareholderWithdrawn, setSelectedShareholderWithdrawn] = useState<AddWithdrawnType | null>(null);
-    const [selectedShareholderNoAction, setSelectedShareholderNoAction] = useState<AddNoActionType | null>(null);
-    const [selectedShareholderDetail, setselectedShareholderDetail] = useState<any | null>(null);
+  const [selectedShareholderDetail, setselectedShareholderDetail] = useState<
+    any | null
+  >(null);
 
+  const [selectedShareholderProposal, setSelectedShareholderProposal] =
+    useState<AddShareholderType | null>(null);
+  const [selectedShareholderWithdrawn, setSelectedShareholderWithdrawn] =
+    useState<AddWithdrawnType | null>(null);
+  const [selectedShareholderNoAction, setSelectedShareholderNoAction] =
+    useState<AddNoActionType | null>(null);
 
   const {
     handleSubmit,
@@ -90,11 +114,31 @@ function ShareHolderProposal() {
     formState: { errors },
     setValue,
     watch,
-  } = useForm<ShareHolderFilter>();
+  } = useForm<ShareHolderFilter>({
+    defaultValues: {
+      category: filters.category,
+      sub_category: filters.sub_category,
+      status: filters.status,
+      keyword: filters.keyword,
+      year: filters.year,
+      global_search:
+        filters?.global_search?.map((item: string) => ({
+          value: item,
+          label: item,
+        })) || [],
+    },
+  });
+
+  const resetFormValues: any = () => {
+    setValue("category", []);
+    setValue("keyword", "");
+    setValue("sub_category", []);
+    setValue("status", []);
+    setValue("year", []);
+    setValue("global_search", []);
+  };
 
   const navigate = useNavigate();
-
-  const { loading, shareHolderProposal, page, totalPages, tab} = useAppSelector((state) => state.sharedHolderNoAction);
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -117,68 +161,82 @@ function ShareHolderProposal() {
   };
 
   useEffect(() => {
-    if (!applyFilters?.global_search) return;
-    if (tab === "proposal") {
-      dispatch(
-        fetchShareHolderProposal(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/def14a/`,
-            {
-              ...applyFilters,
-            },
-            undefined,
-            page
-          )
-        )
-      );
-    } else if (tab === "no-action") {
-      dispatch(
-        fetchShareHolderProposal(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/no_action/`,
-            applyFilters,
-            undefined,
-            page
-          )
-        )
-      );
-    } else if (tab === "withdrawn") {
-      dispatch(
-        fetchShareHolderProposal(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/withdrawn/`,
-            applyFilters,
-            undefined,
-            page
-          )
-        )
-      );
-    }
-  }, [page, tab, applyFilters]);
+    dispatch(
+      setFilter({
+        key: "global_search",
+        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
+      })
+    );
+  }, [companyGlobalSearchName, isAllCompanySelected]);
 
+  const tabUrls: { [key: string]: string } = {
+    proposal: `${baseURL}/shareholder_proposal/def14a/`,
+    "no-action": `${baseURL}/shareholder_proposal/no_action/`,
+    withdrawn: `${baseURL}/shareholder_proposal/withdrawn/`,
+  };
 
   useEffect(() => {
-    if (!applyFilters?.global_search) return;
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
+
+    const dynamicURL = createDynamicURL(tabUrls[tab], filters, undefined, page);
+    dispatch(fetchShareHolderProposal(dynamicURL));
+
+    const { institution_name, global_search, ...restFilters } = filters;
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
+      )
+    );
+  }, [page, tab, filters]);
+
+  useEffect(() => {
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
     getAllShareholderAPI();
-  }, [applyFilters]);
+  }, [filters]);
 
   const getAllShareholderAPI = async () => {
     try {
-      const proposalResponse = await shareHolderProposalService.getAllShareholderAPI(
-        createDynamicURL(`${baseURL}/shareholder_proposal/def14a/`,applyFilters,undefined,page));
+      const proposalResponse =
+        await shareHolderProposalService.getAllShareholderAPI(
+          createDynamicURL(
+            `${baseURL}/shareholder_proposal/def14a/`,
+            filters,
+            undefined,
+            page
+          )
+        );
       if (proposalResponse?.result) {
         setProposalCount(proposalResponse?.result?.count);
       }
 
-      const noActionResponse = await shareHolderProposalService.getAllShareholderAPI(
-        createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`,applyFilters,undefined,page));
+      const noActionResponse =
+        await shareHolderProposalService.getAllShareholderAPI(
+          createDynamicURL(
+            `${baseURL}/shareholder_proposal/no_action/`,
+            filters,
+            undefined,
+            page
+          )
+        );
       if (noActionResponse?.result) {
         setNoActionCount(noActionResponse?.result?.count);
       }
 
-
-      const withdrawnResponse = await shareHolderProposalService.getAllShareholderAPI(
-        createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/`,applyFilters,undefined,page));
+      const withdrawnResponse =
+        await shareHolderProposalService.getAllShareholderAPI(
+          createDynamicURL(
+            `${baseURL}/shareholder_proposal/withdrawn/`,
+            filters,
+            undefined,
+            page
+          )
+        );
       if (withdrawnResponse?.result) {
         setWithdrawnCount(withdrawnResponse?.result?.count);
       }
@@ -202,7 +260,7 @@ function ShareHolderProposal() {
   };
 
   useEffect(() => {
-    getAllCaseStudyDropdowns();    
+    getAllCaseStudyDropdowns();
   }, []);
 
   const handleNextPage = () => {
@@ -223,39 +281,26 @@ function ShareHolderProposal() {
 
   const onFilterClear = () => {
     reset();
-    setApplyFilters(undefined);
+    resetFormValues();
+    dispatch(resetFilter());
+    dispatch(resetPage());
+    dispatch(
+      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
+    );
   };
-
   const handleClearAllFilter = () => {
     setSearchTerms([]);
-    setValue("keyword", "");
-    setValue("category", []);
-    setValue("sub_category", []);
-    setValue("year", []);
-    setValue("status", []);
-    setValue("proponent", []);
-    setValue("institution", []);
-
-    setApplyFilters({
-      keyword: "",
-      category: [],
-      global_search: [companyGlobalSearchName],
-      sub_category: [],
-      year: [],
-      status: [],
-      proponent: [],
-      institution: [],
-    });
-    setFiltersLength(0);
+    reset();
+    resetFormValues();
+    dispatch(resetFilter());
+    dispatch(resetPage());
+    dispatch(
+      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
+    );
   };
 
   const handleSearch = (searchTerms: string[]) => {
-    setApplyFilters((prev) => {
-      return {
-        ...prev,
-        proponent_name: searchTerms.length > 0 ? searchTerms : undefined,
-      } as ShareHolderFilter;
-    });
+    dispatch(setFilter({ key: "proponent_name", value: searchTerms }));
   };
 
   useEffect(() => {
@@ -268,22 +313,27 @@ function ShareHolderProposal() {
     if (addNewWithdrawnModalVisible === false) {
       setSelectedShareholderWithdrawn(null);
     }
-  }, [addNewNoActionModalVisible, addNewNoActionModalVisible, addNewWithdrawnModalVisible]);
+  }, [
+    addNewNoActionModalVisible,
+    addNewNoActionModalVisible,
+    addNewWithdrawnModalVisible,
+  ]);
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
-    setApplyFilters({
-      ...shareHolderFilters,
-      proponent_name: searchTerms,
-      global_search: [companyGlobalSearchName],
-    });
-    const validKeysCount = Object.keys(shareHolderFilters).filter((key) => {
-      const value = shareHolderFilters[key];
-      return value !== undefined && value !== "" && value.length !== 0;
-    })?.length;
-
-    dispatch(setPage(1));
+    dispatch(
+      setAllFilters({
+        ...shareHolderFilters,
+        proponent_name: searchTerms,
+        global_search: isAllCompanySelected
+          ? Array.isArray(shareHolderFilters?.global_search)
+            ? shareHolderFilters?.global_search.map((item: any) => item.label)
+            : []
+          : [companyGlobalSearchName],
+      })
+    );
     setIsFilterCollapse(!isFilterCollapse);
-    setFiltersLength(validKeysCount);
+
+    dispatch(resetPage());
   };
 
   const getSelectedTabIndex = () => {
@@ -291,44 +341,34 @@ function ShareHolderProposal() {
       tab === "proposal"
         ? 0
         : tab === "no-action"
-          ? 1
-          : tab === "withdrawn"
-            ? 2
-            : -1;
+        ? 1
+        : tab === "withdrawn"
+        ? 2
+        : -1;
     return tabIndex;
   };
-
-  useEffect(() => {
-    setApplyFilters((prev) => ({
-      global_search: [companyGlobalSearchName],
-      status: prev?.status || [],
-      proponent: prev?.proponent || [],
-      category: prev?.category || [],
-      sub_category: prev?.sub_category || [],
-      year: prev?.year || [],
-      keyword: prev?.keyword || "",
-    }));
-  }, [companyGlobalSearchName]);
 
   const getSavedSearches = () => {
     if (user?.saved_search["Shareholder Proposal"]) {
       const savedSearch = user.saved_search["Shareholder Proposal"];
-      setSearchTerms([...savedSearch.proponent]);
+      setSearchTerms([...savedSearch.proponent_name]);
       setValue("keyword", savedSearch.keyword || "");
-      setValue("proponent", savedSearch.proponent || []);
+      setValue("proponent_name", savedSearch.proponent_name || []);
       setValue("category", savedSearch.category || []);
       setValue("sub_category", savedSearch.sub_category || []);
       setValue("year", savedSearch.year || []);
       setValue("status", savedSearch.status || []);
-      setApplyFilters({
-        proponent: savedSearch.proponent || [],
-        keyword: savedSearch.keyword || "",
-        category: savedSearch.category || [],
-        sub_category: savedSearch.sub_category || [],
-        year: savedSearch.year || [],
-        status: savedSearch.status || [],
-        global_search: savedSearch?.global_search,
-      });
+      dispatch(
+        setAllFilters({
+          proponent_name: savedSearch.proponent_name || [],
+          keyword: savedSearch.keyword || "",
+          category: savedSearch.category || [],
+          sub_category: savedSearch.sub_category || [],
+          year: savedSearch.year || [],
+          status: savedSearch.status || [],
+          global_search: savedSearch?.global_search,
+        })
+      );
       setIsFilterCollapse(true);
     }
   };
@@ -336,26 +376,26 @@ function ShareHolderProposal() {
   const saveSearch = async () => {
     const res = await commonService.saveSearches({
       module: "Shareholder Proposal",
-      proponent: searchTerms,
-      category: applyFilters?.category || [],
-      sub_category: applyFilters?.sub_category || [],
-      year: applyFilters?.year || [],
-      status: applyFilters?.status || [],
-      keyword: applyFilters?.keyword || "",
-      global_search: [companyGlobalSearchName],
+      proponent_name: searchTerms,
+      category: filters?.category || [],
+      sub_category: filters?.sub_category || [],
+      year: filters?.year || [],
+      status: filters?.status || [],
+      keyword: filters?.keyword || "",
+      global_search: filters?.global_search,
     });
     if (res?.user_id) {
       dispatch(
         setSavedSearch({
           key: "Shareholder Proposal",
           value: {
-            proponent: searchTerms,
-            category: watch("category") || [],
-            sub_category: watch("sub_category") || [],
-            year: watch("year") || [],
-            status: watch("status") || [],
-            keyword: watch("keyword") || "",
-            global_search: [companyGlobalSearchName],
+            proponent_name: searchTerms,
+            category: filters?.category || [],
+            sub_category: filters?.sub_category || [],
+            year: filters?.year || [],
+            status: filters?.status || [],
+            keyword: filters?.keyword || "",
+            global_search: filters?.global_search,
           },
         })
       );
@@ -366,14 +406,41 @@ function ShareHolderProposal() {
   const onVisibleDetail = (detail: any) => {
     setselectedShareholderDetail(detail);
     setShareholderDetailModalVisible(true);
-  }
+  };
 
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Shareholder Proposals</div>
+          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
+            <div className="font-semibold text-xl">Shareholder Proposals</div>
+
+            <div className="flex items-center">
+              <Tippy
+                content="All Companies"
+                options={{
+                  theme: "light",
+                }}
+              >
+                <div className="mt-2">
+                  <FormSwitch>
+                    <FormSwitch.Input
+                      id="checkbox-switch-7"
+                      type="checkbox"
+                      checked={isAllCompanySelected}
+                      onChange={async (e) => {
+                        try {
+                          dispatch(
+                            selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                        } catch (error) {}
+                      }}
+                    />
+                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
+                  </FormSwitch>
+                </div>
+              </Tippy>
+            </div>
           </div>
 
           <div className="mt-3.5">
@@ -391,6 +458,7 @@ function ShareHolderProposal() {
                     ]}
                     getOptionKey="proponent_name"
                     placeHolder="Search Proponent"
+                    onSearchChange={resetPage}
                   />
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
@@ -425,12 +493,12 @@ function ShareHolderProposal() {
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                      <div className="hover:bg-slate-50 ml-2">
-                        <Button onClick={getSavedSearches}>
-                          Previous Search
-                        </Button>
-                      </div>
-                    )}
+                    <div className="hover:bg-slate-50 ">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -459,6 +527,32 @@ function ShareHolderProposal() {
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
                     <div className="flex items-center justify-between xs:flex-col md:flex-row">
+                      {isAllCompanySelected === true && (
+                        <div className="w-full mx-2">
+                          <div className="w-full mt-1">
+                            <div className="text-left text-slate-500 ">
+                              Select Comapnies
+                            </div>
+                            <div className=" mt-2">
+                              <Controller
+                                name="global_search"
+                                control={control}
+                                render={({ field }) => (
+                                  <CompanySelect
+                                    value={field.value}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                    isMulti={true}
+                                    className="any"
+                                  />
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="w-full mx-2">
                         <div className="text-left text-slate-500 ">
                           Keyword{" "}
@@ -545,7 +639,9 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
+                    </div>
 
+                    <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
                       <div className=" w-full mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Status
@@ -613,9 +709,7 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
                       <div className="w-full mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Category
@@ -758,7 +852,8 @@ function ShareHolderProposal() {
                       <Button
                         variant="secondary"
                         onClick={() => {
-                          handleClearAllFilter();
+                          onFilterClear();
+                          close();
                         }}
                         className="w-32 mx-2"
                       >
@@ -790,9 +885,13 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           Shareholder Proposals
-                          <span className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                          <span
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
                           font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center">{proposalCount}</span>
+                           flex items-center justify-center"
+                          >
+                            {proposalCount}
+                          </span>
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -808,9 +907,13 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           No Action Letter
-                          <span className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                          <span
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
                           font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center">{noActionCount}</span>
+                           flex items-center justify-center"
+                          >
+                            {noActionCount}
+                          </span>
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -826,9 +929,13 @@ function ShareHolderProposal() {
                       >
                         <div className="flex items-center justify-center ">
                           Withdrawn (Proponent Disclosure)
-                          <span className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                          <span
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
                           font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center">{withdrawnCount}</span>
+                           flex items-center justify-center"
+                          >
+                            {withdrawnCount}
+                          </span>
                         </div>
                       </Tab.Button>
                     </Tab>
@@ -918,33 +1025,36 @@ function ShareHolderProposal() {
                                         : "Meeting not held or Results not available"}
                                     </Table.Td>
                                     <Table.Td className="py-2 flex items-center justify-center border-dashed dark:bg-darkmode-600">
-                                      {noAction?.vote_details?.length > 0 &&
+                                      {noAction?.vote_details?.length > 0 && (
                                         <Tippy
                                           content="View Vote Details"
                                           options={{ theme: "dark" }}
                                         >
-                                          <Fullscreen strokeWidth={1.25}  onClick={() =>
-                                            onVisibleDetail(noAction)
-                                          }/>
+                                          <Fullscreen
+                                            strokeWidth={1.25}
+                                            onClick={() =>
+                                              onVisibleDetail(noAction)
+                                            }
+                                          />
                                           {/* <Grid2x2 onClick={() =>
                                             onVisibleDetail(noAction)
                                           } /> */}
                                         </Tippy>
-                                      }
+                                      )}
                                     </Table.Td>
                                     <Table.Td
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                         noAction?.nl_exist &&
-                                        "text-blue-600 underline cursor-pointer",
+                                          "text-blue-600 underline cursor-pointer",
                                       ])}
                                       onClick={() => {
                                         const id =
                                           noAction?.nl_exist === true
                                             ? noAction?.no_action_link
-                                              ?.split("/")
-                                              .filter(Boolean)
-                                              .pop()
+                                                ?.split("/")
+                                                .filter(Boolean)
+                                                .pop()
                                             : 0;
                                         noAction?.nl_exist === true &&
                                           navigate(
@@ -954,7 +1064,7 @@ function ShareHolderProposal() {
                                     >
                                       {noAction?.nl_exist === true ? "Yes" : ""}
                                     </Table.Td>
-                                    
+
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex gap-3 justify-center">
                                         <Tippy
@@ -980,7 +1090,9 @@ function ShareHolderProposal() {
                                           >
                                             <Lucide
                                               onClick={() =>
-                                                onEditProposalClickHandler(noAction)
+                                                onEditProposalClickHandler(
+                                                  noAction
+                                                )
                                               }
                                               icon="PenLine"
                                               className="w-4 h-4 mr-1.5 stroke-[1.3]"
@@ -992,9 +1104,11 @@ function ShareHolderProposal() {
                                   </Table.Tr>
                                 ))}
                             </Table.Tbody>
-                            {shareHolderProposal?.length === 0 &&
+                            {shareHolderProposal?.length === 0 && (
                               <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1></div>}
+                                <h1 className="mt-3">No Records Found..</h1>
+                              </div>
+                            )}
                           </Table>
                         </div>
                       </TableWrapper>
@@ -1094,7 +1208,9 @@ function ShareHolderProposal() {
                                           >
                                             <Lucide
                                               onClick={() =>
-                                                onEditNoActionClickHandler(noAction)
+                                                onEditNoActionClickHandler(
+                                                  noAction
+                                                )
                                               }
                                               icon="PenLine"
                                               className="w-4 h-4 mr-1.5 stroke-[1.3]"
@@ -1106,9 +1222,11 @@ function ShareHolderProposal() {
                                   </Table.Tr>
                                 ))}
                             </Table.Tbody>
-                            {shareHolderProposal?.length === 0 &&
+                            {shareHolderProposal?.length === 0 && (
                               <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1></div>}
+                                <h1 className="mt-3">No Records Found..</h1>
+                              </div>
+                            )}
                           </Table>
                         </div>
                       </TableWrapper>
@@ -1196,7 +1314,9 @@ function ShareHolderProposal() {
                                           >
                                             <Lucide
                                               onClick={() =>
-                                                onEditWithdrawnClickHandler(noAction)
+                                                onEditWithdrawnClickHandler(
+                                                  noAction
+                                                )
                                               }
                                               icon="PenLine"
                                               className="w-4 h-4 mr-1.5 stroke-[1.3]"
@@ -1207,11 +1327,12 @@ function ShareHolderProposal() {
                                     </Table.Td>
                                   </Table.Tr>
                                 ))}
-                             
                             </Table.Tbody>
-                            {shareHolderProposal?.length === 0 &&
+                            {shareHolderProposal?.length === 0 && (
                               <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1></div>}
+                                <h1 className="mt-3">No Records Found..</h1>
+                              </div>
+                            )}
                           </Table>
                         </div>
                       </TableWrapper>
@@ -1233,14 +1354,16 @@ function ShareHolderProposal() {
           {addNewShareholderModalVisible && (
             <AddNewShareholder
               addNewShareholderModalVisible={addNewShareholderModalVisible}
-              setAddNewShareholderModalVisible={setAddNewShareholderModalVisible}
+              setAddNewShareholderModalVisible={
+                setAddNewShareholderModalVisible
+              }
               selectedShareholderProposal={selectedShareholderProposal}
             />
           )}
 
           {addNewNoActionModalVisible && (
             <AddNewNoAction
-            addNewNoActionModalVisible={addNewNoActionModalVisible}
+              addNewNoActionModalVisible={addNewNoActionModalVisible}
               setAddNewNoActionModalVisible={setAddNewNoActionModalVisible}
               selectedShareholderNoAction={selectedShareholderNoAction}
             />
@@ -1248,21 +1371,21 @@ function ShareHolderProposal() {
 
           {addNewWithdrawnModalVisible && (
             <AddNewWithdrawn
-            addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
+              addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
               setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
               selectedShareholderWithdrawn={selectedShareholderWithdrawn}
             />
           )}
 
-
           {shareholderDetailModalVisible && (
             <DetailDialog
               shareholderDetailModalVisible={shareholderDetailModalVisible}
-              setShareholderDetailModalVisible={setShareholderDetailModalVisible}
+              setShareholderDetailModalVisible={
+                setShareholderDetailModalVisible
+              }
               selectedShareholderDetail={selectedShareholderDetail}
             />
           )}
-
         </div>
       </div>
     </>

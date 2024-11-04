@@ -13,7 +13,7 @@ import summary from "@/assets/json/brhc10049413_8k.json";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { fetchAGMSummaryDashboard } from "@/stores/dashboardSlice";
+import { fetchAGMSummaryDashboard, setTempSearch } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
 import { AppDispatch } from "@/stores/store";
 import LoadingIcon from "../Base/LoadingIcon";
@@ -26,7 +26,7 @@ const index = () => {
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const { agmSummaryDetails, loading, dashboardDataList } = useAppSelector(
+  const { agmSummaryDetails, loading, dashboardDataList, tempSearch } = useAppSelector(
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
@@ -88,22 +88,37 @@ const index = () => {
   };
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
+  const searchTicker = searchParams.get("ticker");
 
 
   useEffect(() => {
-    if (ticker !== companyGlobalSearchTicker) {
-      return;
-    }
-    dispatch(
-      fetchAGMSummaryDashboard(
-        createDynamicURL(
-          `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}`,
-          undefined,
-          undefined
+
+
+    if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
+      dispatch(
+        fetchAGMSummaryDashboard(
+          createDynamicURL(
+            `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}`
+          )
         )
-      )
-    );
-  }, [companyGlobalSearchTicker]);
+
+      );
+      dispatch(
+        setTempSearch(companyGlobalSearchTicker))
+    }
+
+    else if (companyGlobalSearchTicker !== tempSearch) {
+      dispatch(
+        fetchAGMSummaryDashboard(
+          createDynamicURL(
+            `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+      dispatch(
+        setTempSearch(companyGlobalSearchTicker))
+    }
+  }, [companyGlobalSearchTicker, searchTicker])
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();

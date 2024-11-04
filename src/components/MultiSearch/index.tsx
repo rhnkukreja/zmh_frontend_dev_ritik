@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
 
-import { investersProfileService } from "@/services/investersProfile";
 import _ from "lodash";
 import { axiosInstance } from "@/services";
+import { useAppDispatch } from "@/stores/hooks";
 
 interface MultiSearchBarProps {
   onSearch: (terms: string[]) => void;
@@ -16,6 +16,7 @@ interface MultiSearchBarProps {
   isRadioInput?: boolean;
   getValueKey?: string | string[];
   urlQueryKey?: string;
+  onSearchChange?: any;
 }
 
 // type FetchedOptionType = {
@@ -32,8 +33,10 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   getOptionKey,
   isRadioInput,
   getValueKey,
-  urlQueryKey
+  onSearchChange,
+  urlQueryKey,
 }) => {
+  const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
   const [options, setOptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,38 +48,35 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       const responses = await Promise.all(
         Array.isArray(url)
           ? url?.map((u) =>
-          (axiosInstance.get(
-            `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
-          ))
-          )
-          :
-          isRadioInput ?
-            [axiosInstance.get(
-              `${url}${url.includes("?") ? "&" : "?"}${urlQueryKey}=${query}&all=true`
-            )]
-            :
-            [
+              axiosInstance.get(
+                `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
+              )
+            )
+          : isRadioInput
+          ? [
+              axiosInstance.get(
+                `${url}${
+                  url.includes("?") ? "&" : "?"
+                }${urlQueryKey}=${query}&all=true`
+              ),
+            ]
+          : [
               axiosInstance.get(
                 `${url}${url.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
               ),
             ]
-
       );
-      return responses.flatMap(
-        (response) =>
-        {
-          if(isRadioInput){
-          return response.data.map(
-              (item: any) => item
-            ) || []
-          }
-          else {
-         return  response.data.results?.map(
+      return responses.flatMap((response) => {
+        if (isRadioInput) {
+          return response.data.map((item: any) => item) || [];
+        } else {
+          return (
+            response.data.results?.map(
               (item: any) => item[getOptionKey as string]
             ) || []
-          }
+          );
         }
-      );
+      });
     } catch (error) {
       console.error("Error fetching options:", error);
       return [];
@@ -96,6 +96,10 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
     debouncedFetchResults(e.target.value);
+
+    if (onSearchChange) {
+      dispatch(onSearchChange());
+    }
   };
 
   const removeTerm = (term: string) => {
@@ -104,24 +108,25 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
     setSearchTerms(newTerms);
   };
 
-  const handleSearch = (item: string, isChecked: boolean, itemId?: string) => {
+  const handleSearch = (item: string, isChecked: boolean) => {
     if (isChecked === false) {
-      removeTerm(item);
+      return removeTerm(item);
     } else {
-      // setOptions((prev) => prev.filter((option) => option !== item));
       if (isRadioInput) {
-        const data = options?.find((x:any)=> x?.name === item )?.id;
-        onSearch([data]);
-        setSearchTerms([item]);
+        const data = options?.find((x: any) => x?.name === item)?.id;
+        setSearchTerms([data]);
         setSearchValue("");
-      }
-      else {
-        onSearch([...searchTerms, item]);
+      } else {
         setSearchTerms([...new Set([...searchTerms, item])]);
         setSearchValue("");
       }
     }
   };
+
+  useEffect(() => {
+    onSearch([...searchTerms]);
+  }, [searchTerms]);
+
   useEffect(() => {
     if (searchValue.length > 0) {
       setIsOpen(true);
@@ -142,7 +147,11 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
           type="text"
           placeholder={placeHolder ?? "Search Institution Name"}
           className="pl-9 w-full sm:w-96 rounded-[0.5rem] relative"
-          value={!isOpen && isRadioInput && searchTerms ? searchTerms[0] : searchValue}
+          value={
+            !isOpen && isRadioInput && searchTerms
+              ? searchTerms[0]
+              : searchValue
+          }
           onChange={handleChange}
         />
         {isOpen && (
@@ -150,21 +159,23 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             <div className="search-terms-box bg-white mt-2 p-2 border rounded absolute z-50 left-0 right-0">
               {
                 <div className="flex flex-nowrap gap-2 py-2 pb-4 overflow-hidden overflow-x-auto  scrollbar-hide">
-                {searchTerms.map((term, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-100 px-4 py-1 rounded-full flex items-center shadow-lg "
-                  >
-                    <span className="term-text mr-2 text-nowrap ">{term}</span>
-                    <button
-                      className="remove-btn text-red-500 font-bold"
-                      onClick={() => removeTerm(term)}
+                  {searchTerms.map((term, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-100 px-4 py-1 rounded-full flex items-center shadow-lg "
                     >
-                      <Lucide icon="X" className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <span className="term-text mr-2 text-nowrap ">
+                        {term}
+                      </span>
+                      <button
+                        className="remove-btn text-red-500 font-bold"
+                        onClick={() => handleSearch(term, false)}
+                      >
+                        <Lucide icon="X" className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               }
 
               <div className=" text-md font-medium">
@@ -174,8 +185,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                     {isLoading && (
                       <Lucide
                         icon="Loader"
-                        className={`ml-2 w-4 h-4 mr-1.5 stroke-[1.3] ${isLoading ? "animate-spin" : ""
-                          }`}
+                        className={`ml-2 w-4 h-4 mr-1.5 stroke-[1.3] ${
+                          isLoading ? "animate-spin" : ""
+                        }`}
                       />
                     )}
                   </span>
@@ -213,17 +225,14 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                   <div>
                     <div className="  border-t border-dashed">
                       <div className="flex flex-col gap-1 mt-3.5 max-h-[200px] overflow-y-auto">
-                        
                         {options?.length > 0 &&
                           options?.map((item: any, key: number) => {
                             return (
-                              
                               <div
                                 key={key}
                                 className="flex items-center cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-md"
                               >
-                                {
-                                  !isRadioInput &&
+                                {!isRadioInput && (
                                   <FormCheck className="mr-2">
                                     <FormCheck.Input
                                       id={`checkbox-switch-${key}`}
@@ -240,29 +249,34 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                       <span>{item}</span>
                                     </label>
                                   </FormCheck>
+                                )}
 
-                                }
-
-                                {
-                                  isRadioInput &&
+                                {isRadioInput && (
                                   <FormCheck className="mr-2">
                                     <FormCheck.Input
                                       id={`radio-switch`}
                                       type="radio"
                                       name="id"
-                                      checked={searchTerms.includes(item[getOptionKey as string])}
+                                      checked={searchTerms.includes(
+                                        item[getOptionKey as string]
+                                      )}
                                       onChange={(e) => {
-                                        handleSearch(item[getOptionKey as string], e.target.checked);
+                                        handleSearch(
+                                          item[getOptionKey as string],
+                                          e.target.checked
+                                        );
                                       }}
                                     />
                                     <label
                                       htmlFor={`radio-switch`}
                                       className="cursor-pointer pl-2"
                                     >
-                                      <span>{item[getOptionKey as string]}</span>
+                                      <span>
+                                        {item[getOptionKey as string]}
+                                      </span>
                                     </label>
                                   </FormCheck>
-                                }
+                                )}
                               </div>
                             );
                           })}

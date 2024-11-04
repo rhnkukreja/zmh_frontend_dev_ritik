@@ -39,7 +39,8 @@ export interface InvestersProfile {
   active: boolean;
   engagement_priorities: string | null;
   voting_guidelines_summary: string | null;
-  voting_guidelines_link: string | null;
+  // voting_guidelines_link: string | null;
+  voting_guidelines: string | null;
   reporting_expectations: string | null;
   esg_integration_process: string | null;
   references: string | null;
@@ -59,8 +60,7 @@ export interface InvestersProfile {
 
 export type AddNewInvesterType = {
   engagement_priorities: string;
-  voting_guidelines_summary: string;
-  voting_guidelines_link: string;
+  voting_guidelines: string;
   reporting_expectations: string;
   esg_integration_process: string;
   references: string;

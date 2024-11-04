@@ -10,28 +10,28 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   fetchInvestersProfiles,
   resetFilter,
-  resetInvestorProfiles,
   resetPage,
   setPage,
+  setFilter,
 } from "@/stores/investersProfileSlice";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
 import { useNavigate } from "react-router-dom";
-import { setFilter } from "@/stores/investersProfileSlice";
+
 import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 interface InvestorProfileFilter {
   region: string[];
@@ -62,40 +62,49 @@ function Main() {
       },
     });
 
-  useEffect(() => {
-    if (filters.institution_name.length > 0) {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(`${baseURL}/investor_profile/`, filters, {
-            type: tab,
-          })
-        )
-      );
-    } else {
-      dispatch(
-        fetchInvestersProfiles(
-          createDynamicURL(
-            `${baseURL}/investor_profile/`,
-            filters,
-            { type: tab },
-            page
-          )
-        )
-      );
-    }
-  }, [page, filters.institution_name, tab]);
+  const resetFormValues = () => {
+    setValue("region", []);
+  };
 
   useEffect(() => {
-    return () => {
-      dispatch(resetPage());
-      dispatch(
-        setFilter({
-          key: "institution_name",
-          value: [],
-        })
-      );
-    };
-  }, []);
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/investor_profile/`,
+      filters,
+      { type: tab },
+      page
+    );
+
+    dispatch(fetchInvestersProfiles(dynamicURL));
+    const { institution_name, ...restFilters } = filters;
+    setFiltersLength(countValidFilters(restFilters));
+  }, [page, filters, tab]);
+
+  const onFilterClear = () => {
+    reset();
+    dispatch(resetFilter());
+    dispatch(resetPage());
+  };
+
+  const handleClearAllFilter = () => {
+    setSearchTerms([]);
+    reset();
+    resetFormValues();
+    // dispatch(resetFilter());
+    dispatch(resetPage());
+  };
+
+  const handleSearch = (searchTerms: string[]) => {
+    dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+    dispatch(resetPage());
+  };
+
+  const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
+    Object.entries(investorProfileFilter).forEach(([key, value]) => {
+      dispatch(setFilter({ key: key as any, value }));
+    });
+
+    dispatch(resetPage());
+  };
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -117,88 +126,6 @@ function Main() {
     const data = { currentPage: page };
     navigate(`/investor-profile/${tab}/${id}`, { state: data });
   };
-
-  function handleApplyFilter() {
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, filters, page)
-      )
-    );
-
-    dispatch(resetPage());
-  }
-
-  const onFilterClear = () => {
-    dispatch(resetFilter());
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(
-          `${baseURL}/investor_profile/`,
-          undefined,
-          { type: tab },
-          page
-        )
-      )
-    );
-  };
-
-  const handleClearAllFilter = (type: "all" | "filter") => {
-    if (type === "all") {
-      reset();
-      dispatch(resetFilter());
-      setSearchTerms([]);
-    } else {
-      reset();
-      dispatch(
-        setFilter({
-          key: "region",
-          value: [],
-        })
-      );
-    }
-
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(
-          `${baseURL}/investor_profile/`,
-          undefined,
-          { type: tab },
-          page
-        )
-      )
-    );
-
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(`${baseURL}/investor_profile/`, undefined, page)
-      )
-    );
-
-    dispatch(resetPage());
-  };
-
-  const handleSearch = (searchTerms: string[]) => {
-    dispatch(
-      setFilter({
-        key: "institution_name",
-        value: searchTerms,
-      })
-    );
-    const tempFilter = { institution_name: searchTerms };
-    dispatch(
-      fetchInvestersProfiles(
-        createDynamicURL(
-          `${baseURL}/investor_profile/`,
-          tempFilter,
-          { type: tab },
-          1
-        )
-      )
-    );
-  };
-  useEffect(() => {
-    handleSearch(searchTerms);
-  }, [searchTerms, searchTerms?.length]);
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Investor Profile"]?.institution]);
@@ -230,16 +157,6 @@ function Main() {
     }
   };
 
-  const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
-    Object.entries(investorProfileFilter).forEach(([key, value]) => {
-      dispatch(setFilter({ key: key as any, value }));
-    });
-  };
-
-  useEffect(() => {
-    const { institution_name, ...restFilters } = filters;
-    setFiltersLength(countValidFilters({ ...restFilters }));
-  }, [filters]);
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -275,14 +192,11 @@ function Main() {
                     url="/investor_profile/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
+                    onSearchChange={resetPage}
                   />
 
                   <div className="hover:bg-slate-50">
-                    <Button
-                      onClick={() => {
-                        handleClearAllFilter("all");
-                      }}
-                    >
+                    <Button onClick={handleClearAllFilter}>
                       <Tippy
                         content="Clear Filters"
                         options={{ theme: "light" }}
@@ -314,7 +228,7 @@ function Main() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Investor Profile"] !== undefined && (
-                    <div className="hover:bg-slate-50 ml-2">
+                    <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
                         Previous Search
                       </Button>
@@ -347,39 +261,38 @@ function Main() {
                                     region
                                     {investerProfileFilterOption?.region
                                       ?.length > 0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`region`}
-                                            checked={
-                                              investerProfileFilterOption.region
-                                                .length ===
-                                              watch("region")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "region",
-                                                  investerProfileFilterOption.region
-                                                );
-                                              } else {
-                                                setValue("region", []);
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`region`}
+                                              checked={
+                                                investerProfileFilterOption.region
+                                                  .length ===
+                                                watch("region")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "region",
+                                                    investerProfileFilterOption.region
+                                                  );
+                                                } else {
+                                                  setValue("region", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
                                   </div>
                                   <Controller
                                     name="region"
                                     control={control}
-                                    defaultValue={[]}
                                     render={({ field }) => (
                                       <TomSelect
                                         value={field.value || []}
@@ -414,7 +327,7 @@ function Main() {
                                 <Button
                                   variant="secondary"
                                   onClick={() => {
-                                    handleClearAllFilter("filter");
+                                    onFilterClear();
                                     close();
                                   }}
                                   className="w-32 ml-auto"
@@ -422,7 +335,7 @@ function Main() {
                                   Clear
                                 </Button>
                                 <Button
-                                  onClick={handleApplyFilter}
+                                  type="submit"
                                   variant="primary"
                                   className="w-32 ml-2"
                                 >
@@ -449,9 +362,9 @@ function Main() {
                                       {(page - 1) * 10 + index + 1}
                                     </div> */}
 
-                            {profile?.institution_logo_url ? (
+                            {profile?.institution_logo_url && profile.institution_logo_url !== "null" ? (
                               <>
-                                <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                   <img
                                     alt="ZMH Analytics"
                                     className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
@@ -460,15 +373,12 @@ function Main() {
                                 </div>
                               </>
                             ) : (
-                              <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                <Lucide
-                                  icon="User"
-                                  className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                              <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                <img
+                                  src={investorIcon}
+                                  alt="Investor Icon"
+                                  className="w-[65%] h-[65%] object-contain"
                                 />
-                                <a
-                                  href=""
-                                  className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
-                                ></a>
                               </div>
                             )}
                             {/* 
@@ -478,8 +388,12 @@ function Main() {
                                 theme: "light",
                               }}
                             > */}
-                            <span>
-                              <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4">
+                            <span
+                              onClick={() => {
+                                gotoDetailPage(profile.id);
+                              }}
+                            >
+                              <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4 cursor-pointer">
                                 {profile?.institution_name}
                               </div>
                             </span>
@@ -542,7 +456,7 @@ function Main() {
                                 <div className="ml-5 flex items-center">
                                   {profile?.institution_logo_url ? (
                                     <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain">
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                         <Tippy
                                           as="img"
                                           alt="ZMH Analytics"

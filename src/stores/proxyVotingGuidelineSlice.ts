@@ -5,6 +5,11 @@ import { getPageNumbers } from "@/utils/helper";
 
 const name = "proxyVotingGuideline";
 
+interface ProxyVotingGuidelineFilters {
+  institution_name: string[];
+  year: string[];
+}
+
 interface ProxyVotingGuidelineSlice {
   proxyVotingGuidelines: ProxyVotingGuideline[];
   totalProxyVotingGuidelines: number;
@@ -15,10 +20,7 @@ interface ProxyVotingGuidelineSlice {
   guidelineFilterOptions: {
     year: string[];
   };
-  filters: {
-    year: string;
-    institution_name: string[];
-  };
+  filters: ProxyVotingGuidelineFilters;
 }
 
 const initialState: ProxyVotingGuidelineSlice = {
@@ -29,10 +31,10 @@ const initialState: ProxyVotingGuidelineSlice = {
   totalPages: 1,
   page: 1,
   guidelineFilterOptions: {
-    year: ["ALL", "2023", "2024"],
+    year: ["2023", "2024"],
   },
   filters: {
-    year: "",
+    year: [],
     institution_name: [],
   },
 };
@@ -85,10 +87,14 @@ const proxyVotingGuidelineSlice = createSlice({
       state.filters[action.payload.key] = action.payload.value as any;
     },
     resetFilter(state) {
-      state.filters = {
-        year: "",
-        institution_name: [],
-      };
+      state.filters = initialState.filters;
+    },
+
+    setAllFilters(
+      state,
+      action: PayloadAction<Partial<ProxyVotingGuidelineFilters>>
+    ) {
+      state.filters = { ...state.filters, ...action.payload };
     },
   },
   extraReducers: (builder) => {
@@ -149,5 +155,5 @@ const proxyVotingGuidelineSlice = createSlice({
 });
 
 export default proxyVotingGuidelineSlice;
-export const { setPage, resetPage, setFilter, resetFilter } =
+export const { setPage, resetPage, setFilter, resetFilter, setAllFilters } =
   proxyVotingGuidelineSlice.actions;

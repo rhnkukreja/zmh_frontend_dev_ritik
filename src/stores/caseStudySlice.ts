@@ -4,6 +4,20 @@ import { caseStudiesService } from "@/services/caseStudies";
 
 const name = "shareholder_proposal";
 
+export interface CaseStudyFilter {
+  keyword: string;
+  market: string[];
+  sector: string[];
+  year: string[];
+  institution_name?: string[];
+  global_search?: any[];
+  themes: string[];
+  proposal_type: string[];
+  vote: string[];
+  company_name?: string[];
+  [key: string]: any;
+}
+
 export interface CaseStudies {
   caseStudies: any[];
   singleCaseStudy: any;
@@ -12,17 +26,8 @@ export interface CaseStudies {
   error: string | null;
   totalPages: number;
   page: number;
-  filters: {
-    keyword: string;
-    market: string[];
-    sector: string[];
-    year: string[];
-    institution_name: string[];
-    themes: string[];
-    proposal_type: string[];
-    vote: string[];
-    company_name?: string[];
-  };
+  isAllCompanySelected: boolean;
+  filters: CaseStudyFilter;
 }
 
 const initialState: CaseStudies = {
@@ -33,16 +38,17 @@ const initialState: CaseStudies = {
   error: null,
   totalPages: 1,
   page: 1,
+  isAllCompanySelected: false,
   filters: {
-    market: [],
-    year: [],
-    sector: [],
-    institution_name: [],
     keyword: "",
+    market: [],
+    sector: [],
+    year: [],
     themes: [],
     proposal_type: [],
     vote: [],
-    company_name: [],
+    institution_name: [],
+    global_search: [],
   },
 };
 
@@ -70,9 +76,8 @@ const caseStudies = createSlice({
     resetPage(state) {
       state.page = 1;
     },
-    //
 
-    setFilter(
+    setFilters(
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
@@ -81,18 +86,17 @@ const caseStudies = createSlice({
     ) {
       state.filters[action.payload.key] = action.payload.value as any;
     },
-    resetFilter(state) {
-      state.filters = {
-        keyword: "",
-        market: [],
-        proposal_type: [],
-        sector: [],
-        themes: [],
-        vote: [],
-        year: [],
-        company_name: [],
-        institution_name: [],
-      };
+
+    setAllFilters(state, action: PayloadAction<Partial<CaseStudyFilter>>) {
+      state.filters = { ...state.filters, ...action.payload };
+    },
+
+    resetFilters(state) {
+      state.filters = initialState.filters;
+    },
+
+    selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
+      state.isAllCompanySelected = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -141,5 +145,9 @@ const caseStudies = createSlice({
 export default caseStudies;
 export const {
   setPage,
-  resetPage, //resetFilter
+  resetPage,
+  setFilters,
+  resetFilters,
+  setAllFilters,
+  selectUnSelectAllCompany,
 } = caseStudies.actions;

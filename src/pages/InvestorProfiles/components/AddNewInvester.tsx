@@ -264,7 +264,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
               </div>
 
               {/* Voting Guidelines Summary */}
-              <div>
+              {/* <div>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Voting Guidelines Summary
                 </FormCheck.Label>
@@ -280,15 +280,15 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                     />
                   )}
                 />
-              </div>
+              </div> */}
 
               {/* Voting Guidelines Link */}
               <div>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Voting Guidelines Link
+                  Voting Guidelines Summary & Link
                 </FormCheck.Label>
                 <Controller
-                  name="voting_guidelines_link"
+                  name="voting_guidelines"
                   control={control}
                   render={({ field }) => (
                     <ClassicEditor

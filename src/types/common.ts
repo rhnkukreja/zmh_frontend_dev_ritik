@@ -32,7 +32,7 @@ type CompanyPayload = {
 export type ShareholderProposalPayload = {
   module: "Shareholder Proposal";
   global_search?: string[];
-  proponent: string[];
+  proponent_name: string[];
   category: string[];
   sub_category: string[];
   year: string[];
@@ -57,6 +57,8 @@ type PeerAnalysisPayload = {
   module: "Peer Analysis";
   global_search: string[];
   institution: string[];
+  year: string[];
+  category: string[];
 };
 type GlobalSearchPayload = {
   module: "Global Search";

@@ -4,6 +4,9 @@ import { CompanyData } from "@/types/company";
 import { getPageNumbers } from "@/utils/helper";
 
 const name = "company";
+interface CompanyFilters {
+  global_search: string[];
+}
 
 interface CompanySliceState {
   companies: CompanyData[];
@@ -13,14 +16,9 @@ interface CompanySliceState {
   error: string | null;
   totalPages: number;
   page: number;
-  companyFilterOptions: {
-    sector: string[];
-  };
-  filters: {
-    sector: string;
-    institution_name: string[];
-    global_search: string[];
-  };
+  isAllCompanySelected: boolean;
+
+  filters: CompanyFilters;
 }
 
 const initialState: CompanySliceState = {
@@ -31,12 +29,8 @@ const initialState: CompanySliceState = {
   error: null,
   totalPages: 1,
   page: 1,
-  companyFilterOptions: {
-    sector: ["ALL", "Technology", "Healthcare", "Finance"],
-  },
+  isAllCompanySelected: false,
   filters: {
-    sector: "",
-    institution_name: [],
     global_search: [],
   },
 };
@@ -92,11 +86,13 @@ const companySlice = createSlice({
       state.filters[action.payload.key] = action.payload.value as any;
     },
     resetFilter(state) {
-      state.filters = {
-        sector: "",
-        institution_name: [],
-        global_search: [],
-      };
+      state.filters = initialState.filters;
+    },
+    setAllFilters(state, action: PayloadAction<Partial<CompanyFilters>>) {
+      state.filters = { ...state.filters, ...action.payload };
+    },
+    selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
+      state.isAllCompanySelected = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -171,5 +167,11 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage, setFilter, resetFilter } =
-  companySlice.actions;
+export const {
+  setPage,
+  resetPage,
+  setFilter,
+  resetFilter,
+  setAllFilters,
+  selectUnSelectAllCompany,
+} = companySlice.actions;
