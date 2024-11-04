@@ -13,6 +13,8 @@ interface UserDetailSlice {
   error: string | null;
   totalPages: number;
   page: number;
+  loginHistoryDetails: any[];
+  totalLoginHistoryPages: number;
   //   guidelineFilterOptions: {
   //     year: string[];
   //   };
@@ -29,6 +31,8 @@ const initialState: UserDetailSlice = {
   error: null,
   totalPages: 1,
   page: 1,
+  loginHistoryDetails: [],
+  totalLoginHistoryPages: 0,
   //   guidelineFilterOptions: {
   //     year: ["ALL", "2023", "2024"],
   //   },
@@ -43,6 +47,13 @@ export const fetchUserDetail = createAsyncThunk<
   string
 >(`${name}/fetchUserDetail`, async (url: string) => {
   return await userDetailService.getUserDetail(url);
+});
+
+export const fetchUserLoginHistory = createAsyncThunk<
+  { count: number; results: any[] },
+  string
+>(`${name}/fetchUserLoginHistory`, async (url: string) => {
+  return await userDetailService.getUserLoginHistory(url);
 });
 
 const UserDetailSlice = createSlice({
@@ -95,7 +106,31 @@ const UserDetailSlice = createSlice({
       .addCase(fetchUserDetail.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch user detail";
-      });
+      })
+      .addCase(fetchUserLoginHistory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchUserLoginHistory.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            count: number;
+            results: any[];
+          }>
+        ) => {
+          state.loading = false;
+          state.loginHistoryDetails = action.payload.results;
+          // state.totalLoginHistory = action.payload.count;
+          state.totalLoginHistoryPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchUserLoginHistory.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch engagement questions";
+      })
   },
 });
 

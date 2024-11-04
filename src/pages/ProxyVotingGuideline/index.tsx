@@ -362,6 +362,9 @@ function ProxyGuideline() {
                                   type="submit"
                                   variant="primary"
                                   className="w-32 ml-2"
+                                  onClick={() => {
+                                    close();
+                                  }}
                                 >
                                   Apply
                                 </Button>

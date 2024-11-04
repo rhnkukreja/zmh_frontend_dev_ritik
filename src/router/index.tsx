@@ -85,6 +85,7 @@ import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
 import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
 import UserDetails from "@/pages/UserDetails";
+import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 
 
 function Router() {
@@ -457,6 +458,12 @@ TitleManager();
         {
           path: "user-details",
           element: <UserDetails/> ,
+          data: {titleName: 'User Detail - ZMH Analytics'}
+
+        },
+        {
+          path: "user-details/login-history/:id",
+          element: <UserLoginHistory/> ,
           data: {titleName: 'User Detail - ZMH Analytics'}
 
         },
