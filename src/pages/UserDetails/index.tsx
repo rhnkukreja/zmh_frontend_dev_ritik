@@ -483,9 +483,9 @@ function UserDetail() {
                                                     <Table.Td className="py-2 font-semibold h-[50px] w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         User Type
                                                     </Table.Td>
-                                                    {/* <Table.Td className="py-2 pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                    <Table.Td className="py-2 pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Details
-                                                    </Table.Td> */}
+                                                    </Table.Td>
                                                 </Table.Tr>
                                             </Table.Thead>
 
@@ -514,8 +514,27 @@ function UserDetail() {
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                                 {user?.user_type}
                                                             </Table.Td>
-                                                            {/* <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                            </Table.Td> */}
+                                                        <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                                          <div className="flex gap-3 justify-center">
+                                                            <Tippy
+                                                              content=" See Details"
+                                                              options={{
+                                                                theme: "dark",
+                                                              }}
+                                                            >
+                                                              <Lucide
+                                                                onClick={() =>
+                                                                  navigate(
+                                                                    `/user-details/login-history/${user?.id}`
+                                                                  )
+                                                                }
+                                                                icon="Eye"
+                                                                className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                                              />
+                                                            </Tippy>
+                                                           
+                                                          </div>
+                                                        </Table.Td>
                                                         </Table.Tr>
                                                     ))}
                                             </Table.Tbody>
