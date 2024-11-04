@@ -81,15 +81,17 @@ const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {
-
-    if(menu.pathname !== undefined && menu.title === "Company Search"){
+    // Check if selectPathName is defined and title is "Company Search"
+    if (menu.pathname !== undefined && menu.title === "Company Search" && menu.selectPathName) {
       navigate(menu.selectPathName);
-    }
-    if (menu.pathname !== undefined && menu.pathname !== "Notes") {
+    } 
+    // Navigate to pathname if it's defined and not "Notes"
+    else if (menu.pathname !== undefined && menu.pathname !== "Notes") {
       navigate(menu.pathname);
     }
   }
 };
+
 
 const enter = (el: HTMLElement) => {
   slideDown(el, 300);
