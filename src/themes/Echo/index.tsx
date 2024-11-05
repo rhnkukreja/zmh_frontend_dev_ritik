@@ -32,7 +32,6 @@ import notificationIcon from "@/assets/images/zmh-images/notification_icon.png";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
-import { no_header_company } from "@/constant";
 import GetHelp from "@/components/Help";
 import { resetFilter as resetInvestorFilters } from "@/stores/investersProfileSlice";
 import {
@@ -55,10 +54,13 @@ import {
   selectUnSelectAllCompany as unCheckAllCompanyForCaseStudies,
 } from "@/stores/caseStudySlice";
 import NotificationAlert from "@/components/NotificationAlert";
+import { resetRouter } from "@/stores/themeSlice";
 
 function Main() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.authentiction);
+  const { noCompanyHeaderRoutes } = useAppSelector((state) => state.theme);
+
   const compactMenu = useAppSelector(selectCompactMenu);
   const setCompactMenu = (val: boolean) => {
     localStorage.setItem("compactMenu", val.toString());
@@ -82,8 +84,9 @@ function Main() {
   const [topBarActive, setTopBarActive] = useState(false);
 
   const [basicModalPreview, setBasicModalPreview] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
-  
+  const [notificationModalVisible, setNotificationModalVisible] =
+    useState(false);
+
   const [isFrameLoading, setIsFrameLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
@@ -157,15 +160,15 @@ function Main() {
     setIsError(false);
   };
 
-  const shouldHideHeader = no_header_company.some((route) =>
+  const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
     location.pathname.includes(route)
   );
-
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
       dispatch(resetCaseStudiesFilter());
       dispatch(unCheckAllCompanyForCaseStudies(false));
+      dispatch(resetRouter());
     }
     if (!location.pathname.includes("/engagement-question")) {
       dispatch(resetEngagementQuestionFilters());
@@ -173,6 +176,7 @@ function Main() {
     if (!location.pathname.includes("/peer-analysis")) {
       dispatch(resetPeerAnalysisFilter());
       dispatch(unCheckAllCompanyForPeerAnalysis(false));
+      dispatch(resetRouter());
     }
     if (!location.pathname.includes("/proxy-voting-guideline")) {
       dispatch(resetproxyVotingGuidelineFilters());
@@ -180,6 +184,7 @@ function Main() {
     if (!location.pathname.includes("/share-holder-proposal")) {
       dispatch(resetShareHolderFilters());
       dispatch(unCheckAllCompanyForShareHolder(false));
+      dispatch(resetRouter());
     }
     if (!location.pathname.includes("/institution")) {
       dispatch(resetInstitutionFilters());
@@ -187,12 +192,11 @@ function Main() {
     if (!location.pathname.includes("/company")) {
       dispatch(resetCompanyFilters());
       dispatch(unCheckAllCompanyForCompany(false));
+      dispatch(resetRouter());
     }
     if (!location.pathname.includes("/investor-profile")) {
       dispatch(resetInvestorFilters());
     }
-
-    console.log(location.pathname);
   }, [location.pathname]);
 
   return (
@@ -307,25 +311,13 @@ function Main() {
               {formattedMenu.map((menu, menuKey) =>
                 typeof menu == "string" ? (
                   <li className="side-menu__divider" key={menuKey}>
-                    {
-                      (user.user_type === "Admin") ? (
-                        <>
-                          {menu}
-                        </>
-                      )
-                        :
-                        (user.user_type !== "Admin" && menu === 'Admin') ? (
-                          <>
-                            { }
-                          </>
-                        )
-                          : (
-                            <>
-                              {menu}
-                            </>
-                          )
-                    }
-                    
+                    {user.user_type === "Admin" ? (
+                      <>{menu}</>
+                    ) : user.user_type !== "Admin" && menu === "Admin" ? (
+                      <>{}</>
+                    ) : (
+                      <>{menu}</>
+                    )}
                   </li>
                 ) : (
                   <li key={menuKey}>
@@ -343,14 +335,11 @@ function Main() {
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        }
-
-                        else if (menu.title === "Company Search") {
+                        } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
-                          menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`
+                          menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
                           linkTo(menu, navigate);
-                        }
-                        else if (menu.title !== "Notes") {
+                        } else if (menu.title !== "Notes") {
                           linkTo(menu, navigate);
                         }
                         setFormattedMenu([...formattedMenu]);
@@ -631,8 +620,12 @@ function Main() {
                   >
                     <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
                       <img src={notificationIcon} alt="ai icon" />
-                      <span className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[11px]  
-                          font-semibold text-white top-0 flex items-center justify-center left-[25px]">{2}</span>
+                      <span
+                        className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[11px]  
+                          font-semibold text-white top-0 flex items-center justify-center left-[25px]"
+                      >
+                        {2}
+                      </span>
                     </div>
                   </a>
                   {/* <a
@@ -646,7 +639,7 @@ function Main() {
                     <Lucide icon="Expand" className="w-[18px] h-[18px]" />
                   </a> */}
                 </div>
-                
+
                 <h1 className="ml-3 mr-3 text-[#000000] font-bold">
                   Hi, {user?.first_name}
                 </h1>

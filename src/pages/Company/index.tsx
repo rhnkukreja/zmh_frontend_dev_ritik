@@ -33,6 +33,7 @@ import { Popover } from "@/components/Base/Headless";
 import { Controller, useForm } from "react-hook-form";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { FormSwitch } from "@/components/Base/Form";
+import { modifyRoute } from "@/stores/themeSlice";
 
 interface CompanyFilterTypes {
   global_search?: string[];
@@ -201,6 +202,12 @@ function CompanyList() {
                         try {
                           dispatch(
                             selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                          dispatch(
+                            modifyRoute({
+                              route: "company",
+                              type: e.target.checked,
+                            })
                           );
                         } catch (error) {}
                       }}

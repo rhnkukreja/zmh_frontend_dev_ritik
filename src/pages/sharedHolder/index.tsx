@@ -51,6 +51,7 @@ import AddNewWithdrawn from "./components/AddNewWithdrawn";
 import AddNewNoAction from "./components/AddNewNoAction";
 import CompanySelect from "@/components/ReactSelectAsync";
 import DetailDialog from "./components/DetailDialog";
+import { modifyRoute } from "@/stores/themeSlice";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -408,6 +409,8 @@ function ShareHolderProposal() {
     setShareholderDetailModalVisible(true);
   };
 
+  console.log({ isAllCompanySelected });
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -432,6 +435,12 @@ function ShareHolderProposal() {
                         try {
                           dispatch(
                             selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                          dispatch(
+                            modifyRoute({
+                              route: "share-holder-proposal",
+                              type: e.target.checked,
+                            })
                           );
                         } catch (error) {}
                       }}

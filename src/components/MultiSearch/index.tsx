@@ -106,6 +106,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
     const newTerms = searchTerms.filter((institute) => institute !== term);
     setOptions((prev) => [...new Set([...prev, term])]);
     setSearchTerms(newTerms);
+
+    setIsOpen(false);
   };
 
   const handleSearch = (item: string, isChecked: boolean) => {
@@ -121,6 +123,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         setSearchValue("");
       }
     }
+
+    setIsOpen(false);
   };
 
   useEffect(() => {

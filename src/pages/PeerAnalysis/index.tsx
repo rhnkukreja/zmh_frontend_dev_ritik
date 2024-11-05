@@ -34,6 +34,7 @@ import { FormCheck, FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { modifyRoute } from "@/stores/themeSlice";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -242,6 +243,12 @@ function PeerAnalysis() {
                         try {
                           dispatch(
                             selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                          dispatch(
+                            modifyRoute({
+                              route: "peer-analysis",
+                              type: e.target.checked,
+                            })
                           );
                         } catch (error) {}
                       }}

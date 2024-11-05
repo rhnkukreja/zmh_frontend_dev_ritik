@@ -33,6 +33,7 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { modifyRoute } from "@/stores/themeSlice";
 
 function CaseStudies() {
   interface CaseStudyFilter {
@@ -313,6 +314,12 @@ function CaseStudies() {
                         try {
                           dispatch(
                             selectUnSelectAllCompany(!isAllCompanySelected)
+                          );
+                          dispatch(
+                            modifyRoute({
+                              route: "case-studies",
+                              type: e.target.checked,
+                            })
                           );
                         } catch (error) {}
                       }}
@@ -898,7 +905,7 @@ function CaseStudies() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Theme
                           </Table.Td>
-                          
+
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Industry
                           </Table.Td>
@@ -954,7 +961,7 @@ function CaseStudies() {
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.esg_themes}
                               </Table.Td>
-                             
+
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.industry}
                               </Table.Td>
