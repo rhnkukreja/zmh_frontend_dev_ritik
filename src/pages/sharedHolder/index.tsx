@@ -168,6 +168,13 @@ function ShareHolderProposal() {
         value: isAllCompanySelected ? [] : [companyGlobalSearchName],
       })
     );
+
+    dispatch(
+      modifyRoute({
+        route: "share-holder-proposal",
+        type: isAllCompanySelected === true ? true : false,
+      })
+    );
   }, [companyGlobalSearchName, isAllCompanySelected]);
 
   const tabUrls: { [key: string]: string } = {
@@ -468,6 +475,7 @@ function ShareHolderProposal() {
                     getOptionKey="proponent_name"
                     placeHolder="Search Proponent"
                     onSearchChange={resetPage}
+                    isSingle={true}
                   />
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>

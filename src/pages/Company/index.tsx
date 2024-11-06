@@ -87,6 +87,13 @@ function CompanyList() {
         value: isAllCompanySelected ? [] : [companyGlobalSearchName],
       })
     );
+
+    dispatch(
+      modifyRoute({
+        route: "company",
+        type: isAllCompanySelected === true ? true : false,
+      })
+    );
   }, [companyGlobalSearchName, isAllCompanySelected]);
 
   useEffect(() => {
@@ -202,12 +209,6 @@ function CompanyList() {
                         try {
                           dispatch(
                             selectUnSelectAllCompany(!isAllCompanySelected)
-                          );
-                          dispatch(
-                            modifyRoute({
-                              route: "company",
-                              type: e.target.checked,
-                            })
                           );
                         } catch (error) {}
                       }}

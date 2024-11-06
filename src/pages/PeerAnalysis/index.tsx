@@ -101,6 +101,13 @@ function PeerAnalysis() {
         value: isAllCompanySelected ? [] : [companyGlobalSearchName],
       })
     );
+
+    dispatch(
+      modifyRoute({
+        route: "peer-analysis",
+        type: isAllCompanySelected === true ? true : false,
+      })
+    );
   }, [companyGlobalSearchName, isAllCompanySelected]);
 
   useEffect(() => {
@@ -243,12 +250,6 @@ function PeerAnalysis() {
                         try {
                           dispatch(
                             selectUnSelectAllCompany(!isAllCompanySelected)
-                          );
-                          dispatch(
-                            modifyRoute({
-                              route: "peer-analysis",
-                              type: e.target.checked,
-                            })
                           );
                         } catch (error) {}
                       }}

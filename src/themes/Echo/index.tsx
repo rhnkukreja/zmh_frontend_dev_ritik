@@ -54,7 +54,7 @@ import {
   selectUnSelectAllCompany as unCheckAllCompanyForCaseStudies,
 } from "@/stores/caseStudySlice";
 import NotificationAlert from "@/components/NotificationAlert";
-import { resetRouter } from "@/stores/themeSlice";
+import { modifyRoute, resetRouter } from "@/stores/themeSlice";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -167,8 +167,7 @@ function Main() {
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
       dispatch(resetCaseStudiesFilter());
-      dispatch(unCheckAllCompanyForCaseStudies(false));
-      dispatch(resetRouter());
+      // dispatch(unCheckAllCompanyForCaseStudies(false));
     }
     if (!location.pathname.includes("/engagement-question")) {
       dispatch(resetEngagementQuestionFilters());
@@ -176,7 +175,6 @@ function Main() {
     if (!location.pathname.includes("/peer-analysis")) {
       dispatch(resetPeerAnalysisFilter());
       dispatch(unCheckAllCompanyForPeerAnalysis(false));
-      dispatch(resetRouter());
     }
     if (!location.pathname.includes("/proxy-voting-guideline")) {
       dispatch(resetproxyVotingGuidelineFilters());
@@ -184,7 +182,6 @@ function Main() {
     if (!location.pathname.includes("/share-holder-proposal")) {
       dispatch(resetShareHolderFilters());
       dispatch(unCheckAllCompanyForShareHolder(false));
-      dispatch(resetRouter());
     }
     if (!location.pathname.includes("/institution")) {
       dispatch(resetInstitutionFilters());
@@ -192,7 +189,6 @@ function Main() {
     if (!location.pathname.includes("/company")) {
       dispatch(resetCompanyFilters());
       dispatch(unCheckAllCompanyForCompany(false));
-      dispatch(resetRouter());
     }
     if (!location.pathname.includes("/investor-profile")) {
       dispatch(resetInvestorFilters());

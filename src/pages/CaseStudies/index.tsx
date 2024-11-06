@@ -138,6 +138,13 @@ function CaseStudies() {
         value: isAllCompanySelected ? [] : [companyGlobalSearchName],
       })
     );
+
+    dispatch(
+      modifyRoute({
+        route: "case-studies",
+        type: isAllCompanySelected === true ? true : false,
+      })
+    );
   }, [companyGlobalSearchName, isAllCompanySelected]);
 
   useEffect(() => {
@@ -315,12 +322,6 @@ function CaseStudies() {
                           dispatch(
                             selectUnSelectAllCompany(!isAllCompanySelected)
                           );
-                          dispatch(
-                            modifyRoute({
-                              route: "case-studies",
-                              type: e.target.checked,
-                            })
-                          );
                         } catch (error) {}
                       }}
                     />
@@ -342,6 +343,7 @@ function CaseStudies() {
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
+                    isSingle={true}
                   />
 
                   <div className="hover:bg-slate-50">

@@ -17,6 +17,7 @@ interface MultiSearchBarProps {
   getValueKey?: string | string[];
   urlQueryKey?: string;
   onSearchChange?: any;
+  isSingle?: boolean;
 }
 
 // type FetchedOptionType = {
@@ -30,6 +31,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   setSearchTerms,
   placeHolder,
   url,
+  isSingle,
   getOptionKey,
   isRadioInput,
   getValueKey,
@@ -119,7 +121,12 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         setSearchTerms([data]);
         setSearchValue("");
       } else {
-        setSearchTerms([...new Set([...searchTerms, item])]);
+        if (isSingle) {
+          setSearchTerms([item]);
+        } else {
+          setSearchTerms([...new Set([...searchTerms, item])]);
+        }
+
         setSearchValue("");
       }
     }
