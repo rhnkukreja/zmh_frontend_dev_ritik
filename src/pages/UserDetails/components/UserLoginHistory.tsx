@@ -380,7 +380,7 @@ const loginHistoryLoginHistory = () => {
                                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                     Email
                                                 </Table.Td>
-                                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                <Table.Td className="py-2 flex justify-center items-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                     Count
                                                 </Table.Td>
                                                 <Table.Td className="text-wrap py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -401,13 +401,14 @@ const loginHistoryLoginHistory = () => {
                                                             string,
                                                             any
                                                         ]) => (
+                                                          
                                                             <>
                                                                 <Table.Tr
                                                                     className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer"
                                                                     onClick={() => toggleGroup(userName)}
                                                                 >
                                                                     <Table.Td
-                                                                        colSpan={5}
+                                                                        colSpan={1}
                                                                         className="font-semibold py-2"
                                                                     >
                                                                         <div className="flex flex-row justify-start items-center">
@@ -427,6 +428,28 @@ const loginHistoryLoginHistory = () => {
                                                                             </button>
                                                                         </div>
                                                                     </Table.Td>
+                                                                    <Table.Td
+                                                                        colSpan={1}
+                                                                        className="font-semibold py-2"
+                                                                    >
+                                                                        <div className="flex flex-row justify-start items-center">
+                                                                            {groupedUserLogin[userName][0]?.email}
+                                                                        </div>
+                                                                    </Table.Td>
+
+                                                                    <Table.Td
+                                                                        colSpan={1}
+                                                                        className="font-semibold py-2"
+                                                                    >
+                                                                        <div className="flex justify-center items-center">
+                                                                            {groupedUserLogin[userName][0]?.count}
+                                                                        </div>
+                                                                    </Table.Td>
+                                                                    <Table.Td
+                                                                        colSpan={2}
+                                                                        className="font-semibold py-2"
+                                                                    >
+                                                                    </Table.Td>
                                                                 </Table.Tr>
 
                                                                 {openGroups[userName] &&
@@ -437,8 +460,11 @@ const loginHistoryLoginHistory = () => {
                                                                             className="[&_td]:last:border-b-0"
                                                                         >
                                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600"></Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600"></Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600"></Table.Td>
 
-                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+
+                                                                            {/* <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                                                 <div className="whitespace-nowrap ">
                                                                                     {login?.email}
                                                                                 </div>
@@ -450,7 +476,7 @@ const loginHistoryLoginHistory = () => {
                                                                                     {login?.count}
                                                                                 </div>
 
-                                                                            </Table.Td>
+                                                                            </Table.Td> */}
 
                                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                                                 <div className="whitespace-nowrap ">
