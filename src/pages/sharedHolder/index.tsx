@@ -995,7 +995,7 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome/Percentage for
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Vote Details
                                 </Table.Td>
                                 <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -1041,18 +1041,20 @@ function ShareHolderProposal() {
                                         ? noAction?.outcome_percentage
                                         : "Meeting not held or Results not available"}
                                     </Table.Td>
-                                    <Table.Td className="py-2 flex items-center justify-center border-dashed dark:bg-darkmode-600">
+                                    <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       {noAction?.vote_details?.length > 0 && (
                                         <Tippy
                                           content="View Vote Details"
                                           options={{ theme: "dark" }}
                                         >
-                                          <Fullscreen
+                                         <div className="flex items-center justify-center">
+                                         <Fullscreen
                                             strokeWidth={1.25}
                                             onClick={() =>
                                               onVisibleDetail(noAction)
                                             }
                                           />
+                                         </div>
                                           {/* <Grid2x2 onClick={() =>
                                             onVisibleDetail(noAction)
                                           } /> */}

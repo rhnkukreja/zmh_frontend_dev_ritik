@@ -117,8 +117,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       return removeTerm(item);
     } else {
       if (isRadioInput) {
-        const data = options?.find((x: any) => x?.name === item)?.id;
-        setSearchTerms([data]);
+        const data = options?.find((x:any)=> x?.name === item )?.id;
+        onSearch([data]);
+        // setSearchTerms([item]);
         setSearchValue("");
       } else {
         if (isSingle) {
@@ -268,14 +269,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                       id={`radio-switch`}
                                       type="radio"
                                       name="id"
-                                      checked={searchTerms.includes(
-                                        item[getOptionKey as string]
-                                      )}
+                                      checked={searchTerms.includes(item[getOptionKey as string])}
                                       onChange={(e) => {
-                                        handleSearch(
-                                          item[getOptionKey as string],
-                                          e.target.checked
-                                        );
+                                        handleSearch(item[getOptionKey as string], e.target.checked);
                                       }}
                                     />
                                     <label

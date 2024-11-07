@@ -66,6 +66,18 @@ export const getSingleSingleCaseStudy = createAsyncThunk<
   return await caseStudiesService.getSingleSingleCaseStudy(id);
 });
 
+export const addEditNewCaseStudies = createAsyncThunk<
+  { results: any },
+  any
+>(`${name}/addEditNewCaseStudies`, async ({ id, data }) => {
+  let response;
+  if (id) {
+    response = await caseStudiesService.updateCaseStudies(id, data);
+  } else {
+    response = await caseStudiesService.addNewCaseStudies(data);
+  }
+  return response;
+});
 const caseStudies = createSlice({
   name,
   initialState,
