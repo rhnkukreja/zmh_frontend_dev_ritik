@@ -33,6 +33,7 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
+import AddNewCaseStudies from "./Components/AddEditCaseStudies";
 
 function CaseStudies() {
   interface CaseStudyFilter {
@@ -70,6 +71,8 @@ function CaseStudies() {
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
 
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [addNewCaseStudyModalVisible, setAddNewCaseStudyModalVisible] =
+  useState<boolean>(false);
 
   const {
     loading,
@@ -289,6 +292,15 @@ function CaseStudies() {
     }
   };
 
+  const [selectedCaseStudies, setSelectedCaseStudies] =
+  useState<any | null>(null);
+
+  const onEditCaseStudiesClickHandler = (caseStudy: any) => {
+    setSelectedCaseStudies(caseStudy);
+    setAddNewCaseStudyModalVisible(true);
+  };
+
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -321,6 +333,25 @@ function CaseStudies() {
                   </FormSwitch>
                 </div>
               </Tippy>
+
+              {user?.user_type === "Admin" && (
+                <div className="flex justify-end my-3">
+                  <Button
+                    onClick={() => {
+                      setSelectedCaseStudies(null);
+                      setAddNewCaseStudyModalVisible(true);
+                    }}
+                    variant="primary"
+                    className="bg-theme-2 border-bg-theme-2 "
+                  >
+                    <Lucide
+                      icon="PenLine"
+                      className="stroke-[1.3] w-4 h-4 mr-2"
+                    />
+                    Add New Case Studies
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-3.5">
@@ -972,6 +1003,23 @@ function CaseStudies() {
                                       className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                     />
                                   </Tippy>
+
+                                  {user?.user_type === "Admin" && (
+                                    <Tippy
+                                      content="Edit"
+                                      options={{ theme: "dark" }}
+                                    >
+                                      <Lucide
+                                        onClick={() =>
+                                          onEditCaseStudiesClickHandler(
+                                            item
+                                          )
+                                        }
+                                        icon="PenLine"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                      />
+                                    </Tippy>
+                                  )}
                                 </div>
                               </Table.Td>
                             </Table.Tr>
@@ -995,12 +1043,15 @@ function CaseStudies() {
                   handlePreviousPage={handlePreviousPage}
                 />
 
-                {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
-                <option>10</option>
-                <option>25</option>
-                <option>35</option>
-                <option>50</option>
-              </FormSelect> */}
+                {addNewCaseStudyModalVisible && (
+                  <AddNewCaseStudies
+                  addNewCaseStudyModalVisible={addNewCaseStudyModalVisible}
+                  setAddNewCaseStudyModalVisible={
+                      setAddNewCaseStudyModalVisible
+                    }
+                    selectedCaseStudies={selectedCaseStudies}
+                  />
+                )}
               </div>
             </div>
           </div>
