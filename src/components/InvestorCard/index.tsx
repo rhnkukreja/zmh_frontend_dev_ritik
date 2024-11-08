@@ -25,7 +25,7 @@ import Tippy from "../Base/Tippy";
 import clsx from "clsx";
 import LoadingIcon from "../Base/LoadingIcon";
 import Button from "../Base/Button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, FileText } from "lucide-react";
 
 const index = () => {
   const location = useLocation();
@@ -193,6 +193,7 @@ const index = () => {
                     </Tippy>
                   )}
                 </div>
+
               </div>
               {/* } */}
 
@@ -224,7 +225,7 @@ const index = () => {
                               ESG Integration
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Engaged with Company
+                              Engaged with Company *
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Engagement Topic
@@ -291,17 +292,22 @@ const index = () => {
                                           </div>
 
                                           {dashboard?.investor_profile_id && (
-                                            <div
-                                              onClick={() =>
-                                                window.open(
-                                                  `/investor-profile/investor/${dashboard?.investor_profile_id}`,
-                                                  "_blank"
-                                                )
-                                              }
-                                              className="bg-red-900 hover:bg-red-700 font-semibold flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] text-white "
-                                            >
-                                              P
-                                            </div>
+                                            <Tippy content="Investor Profile" options={{ theme: "light" }}>
+                                              <div
+                                                onClick={() =>
+                                                  window.open(
+                                                    `/investor-profile/investor/${dashboard?.investor_profile_id}`,
+                                                    "_blank"
+                                                  )
+                                                }
+                                                // bg-red-900 hover:bg-red-700 font-semibold
+                                                className="
+                                               flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] "
+                                              >
+                                                <FileText />
+                                                {/* P */}
+                                              </div>
+                                            </Tippy>
                                           )}
                                         </div>
                                       </Table.Td>
@@ -385,6 +391,8 @@ const index = () => {
                 </div>
               </div>
             </div>
+            <h1 className="text-red-700 font-bold mt-4">* As disclosed by the investor</h1>
+
           </div>
         </>
       )}

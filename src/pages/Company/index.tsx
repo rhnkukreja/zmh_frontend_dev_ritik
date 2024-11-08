@@ -185,6 +185,8 @@ function CompanyList() {
 
           <div className="flex items-center ">
             <div className="flex items-center">
+            <h3 className="text-md mr-3 font-semibold">View All</h3>
+
               <Tippy
                 content="All Companies"
                 options={{

@@ -226,6 +226,8 @@ function PeerAnalysis() {
             <div className="font-semibold text-xl">Engagement Detail</div>
 
             <div className="flex items-center">
+            <h3 className="text-md mr-3 font-semibold">View All</h3>
+
               <Tippy
                 content="All Companies"
                 options={{
