@@ -189,7 +189,11 @@ function CompanyList() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-          <div className="font-semibold text-xl ">Company</div>
+          {isAllCompanySelected === true ? (
+            <div className="font-semibold text-xl">All Companies</div>
+          ) : (
+            <div className="font-semibold text-xl">Company</div>
+          )}
 
           <div className="flex items-center ">
             <div className="flex items-center">
@@ -201,6 +205,7 @@ function CompanyList() {
               >
                 <div>
                   <FormSwitch>
+                    <label className="mr-2">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"

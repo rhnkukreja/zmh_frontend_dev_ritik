@@ -9,7 +9,7 @@ import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
 
 import clsx from "clsx";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
+
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
@@ -61,7 +61,6 @@ const Main: React.FC = () => {
             name: response?.company_name,
           })
         );
-        toast.success("Logged In Successfully!");
       }
       if (response?.finnhub) {
         dispatch(setFinhub(response?.finnhub));
@@ -106,7 +105,7 @@ const Main: React.FC = () => {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder={users.fakeUsers()[0].email}
+                    placeholder="Enter Email"
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (

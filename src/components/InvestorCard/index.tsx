@@ -26,6 +26,7 @@ import clsx from "clsx";
 import LoadingIcon from "../Base/LoadingIcon";
 import Button from "../Base/Button";
 import { ChevronLeft } from "lucide-react";
+import Lucide from "../Base/Lucide";
 
 const index = () => {
   const location = useLocation();
@@ -45,10 +46,7 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
 
-
   useEffect(() => {
-
-
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
       dispatch(
         fetchCompanyDashboard(
@@ -56,13 +54,9 @@ const index = () => {
             `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
           )
         )
-
       );
-      dispatch(
-        setTempSearch(companyGlobalSearchTicker))
-    }
-
-    else if (companyGlobalSearchTicker !== tempSearch) {
+      dispatch(setTempSearch(companyGlobalSearchTicker));
+    } else if (companyGlobalSearchTicker !== tempSearch) {
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -70,11 +64,9 @@ const index = () => {
           )
         )
       );
-      dispatch(
-        setTempSearch(companyGlobalSearchTicker))
+      dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }, [companyGlobalSearchTicker, searchTicker])
-
+  }, [companyGlobalSearchTicker, searchTicker]);
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -163,7 +155,9 @@ const index = () => {
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
                 <h1 className="text-lg font-bold">
                   Top {dashboardDataList?.length || 20} Investor{" "}
-                  <span className="text-base font-bold">({percent} of shares outstanding)</span>
+                  <span className="text-base font-bold">
+                    ({percent} of shares outstanding)
+                  </span>
                 </h1>
                 <div className="flex justify-between items-center gap-4 sm:flex-row">
                   <div className="flex justify-between items-center gap-2">
@@ -202,7 +196,7 @@ const index = () => {
                     <div
                       className={clsx([
                         locationPathName === "/" &&
-                        "overflow-auto max-h-[400px]",
+                          "overflow-auto max-h-[400px]",
                       ])}
                     >
                       <Table className="table">
@@ -223,8 +217,20 @@ const index = () => {
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               ESG Integration
                             </Table.Td>
-                            <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Engaged with Company
+                            <Table.Td className="cell py-2 font-semibold h-[50px] min-w-[130px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              Engaged with Company{" "}
+                              <span
+                                id="footnote-1"
+                                className="cursor-pointer"
+                                onClick={() => {
+                                  window.scrollBy({
+                                    top: 350,
+                                    behavior: "smooth",
+                                  });
+                                }}
+                              >
+                                *
+                              </span>
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Engagement Topic
@@ -255,11 +261,11 @@ const index = () => {
                                             alt="ZMH Analytics"
                                             src={
                                               validImages[
-                                              dashboard.institution_name
+                                                dashboard.institution_name
                                               ] || userLinkedinImage
                                             }
 
-                                          // {dashboard?.institution_logo_url ?? userLinkedinImage}
+                                            // {dashboard?.institution_logo_url ?? userLinkedinImage}
                                           />
                                         </div>
 
@@ -276,7 +282,7 @@ const index = () => {
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize max-w-[150px] text-wrap",
                                                 dashboard?.investor_profile_id &&
-                                                "cursor-pointer underline",
+                                                  "cursor-pointer underline",
                                               ])}
                                             >
                                               {dashboard?.institution_name}
@@ -291,17 +297,29 @@ const index = () => {
                                           </div>
 
                                           {dashboard?.investor_profile_id && (
-                                            <div
+                                            <Tippy
+                                              content="Investor Profile"
+                                              className=" w-5 h-5 -mt-2 -mr-2  "
                                               onClick={() =>
                                                 window.open(
                                                   `/investor-profile/investor/${dashboard?.investor_profile_id}`,
                                                   "_blank"
                                                 )
                                               }
-                                              className="bg-red-900 hover:bg-red-700 font-semibold flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] text-white "
                                             >
-                                              P
-                                            </div>
+                                              <div className="flex items-center justify-center w-full h-full  text-primary ">
+                                                <Lucide
+                                                  icon="FileText"
+                                                  className="w-4 h-4 stroke-[1.3]"
+                                                />
+                                              </div>
+                                            </Tippy>
+                                            // <div
+
+                                            //   className="bg-red-900 hover:bg-red-700 font-semibold flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] text-white "
+                                            // >
+                                            //   P
+                                            // </div>
                                           )}
                                         </div>
                                       </Table.Td>
@@ -320,24 +338,24 @@ const index = () => {
                                         <div className="whitespace-nowrap ">
                                           {dashboard?.esg_integration ===
                                             true && (
-                                              <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                  &#10004;
-                                                </div>
-                                              </div>
-                                            )}
-                                        </div>
-                                      </Table.Td>
-
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        {dashboard?.company_engaged ===
-                                          true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                 &#10004;
                                               </div>
                                             </div>
                                           )}
+                                        </div>
+                                      </Table.Td>
+
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        {dashboard?.company_engaged ===
+                                          true && (
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                              &#10004;
+                                            </div>
+                                          </div>
+                                        )}
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="whitespace-nowrap flex items-center justify-center">
@@ -349,11 +367,11 @@ const index = () => {
                                                   key={index}
                                                   className={clsx([
                                                     char.toLowerCase() ===
-                                                    "s" && "bg-[#F5A623]",
+                                                      "s" && "bg-[#F5A623]",
                                                     char.toLowerCase() ===
-                                                    "e" && "bg-[#05703E]",
+                                                      "e" && "bg-[#05703E]",
                                                     char.toLowerCase() ===
-                                                    "g" && "bg-[#115096]",
+                                                      "g" && "bg-[#115096]",
                                                     "font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white",
                                                   ])}
                                                 >
@@ -366,12 +384,12 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_directors ===
                                           true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                &#10004;
-                                              </div>
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                              &#10004;
                                             </div>
-                                          )}
+                                          </div>
+                                        )}
                                       </Table.Td>
                                     </>
                                   )}
@@ -385,6 +403,13 @@ const index = () => {
                 </div>
               </div>
             </div>
+
+            <footer className="!pt-3">
+              <p id="footnote ">
+                <sup className="bold-sup cursor-pointer">*</sup> As disclosed by
+                the investor.
+              </p>
+            </footer>
           </div>
         </>
       )}

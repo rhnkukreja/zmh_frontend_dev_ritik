@@ -135,7 +135,7 @@ function Main() {
                   <FormInput
                     type="email"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Email"
+                    placeholder="Enter Email"
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (

@@ -536,7 +536,7 @@ function Main() {
                 
               "
             >
-              <div className="flex items-center gap-1 xl:hidden">
+              <div className="flex items-center gap-1 lg:hidden md:hidden xl:hidden">
                 <a
                   href=""
                   onClick={(event) => {
@@ -547,6 +547,9 @@ function Main() {
                 >
                   <Lucide icon="AlignJustify" className="w-[18px] h-[18px]" />
                 </a>
+              </div>
+
+              <div className="xl:hidden flex items-center ml-2">
                 <a
                   href=""
                   className="p-2 text-[#545454] rounded-full bg-[#D9D9D926]"
@@ -560,7 +563,7 @@ function Main() {
               </div>
 
               <div
-                className="relative justify-center hidden xl:flex"
+                className="relative justify-center hidden lg:flex md:flex xl:flex "
                 onClick={() => setQuickSearch(true)}
               >
                 <div
