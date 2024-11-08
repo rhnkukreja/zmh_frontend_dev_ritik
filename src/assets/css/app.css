@@ -171,6 +171,10 @@ body {
 a.side-menu__link.side-menu__link--active svg {
   stroke: #ab123d;
 }
+.bold-sup {
+  font-weight: bold;
+  font-size: 14px;
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives

@@ -547,6 +547,9 @@ function Main() {
                 >
                   <Lucide icon="AlignJustify" className="w-[18px] h-[18px]" />
                 </a>
+              </div>
+
+              <div className="md:hidden flex items-center ml-2">
                 <a
                   href=""
                   className="p-2 lg:hidden text-[#545454] rounded-full bg-[#D9D9D926]"
@@ -560,7 +563,7 @@ function Main() {
               </div>
 
               <div
-                className="relative justify-center hidden lg:flex lg:ml-3"
+                className="relative justify-center hidden md:flex md:ml-2"
                 onClick={() => setQuickSearch(true)}
               >
                 <div

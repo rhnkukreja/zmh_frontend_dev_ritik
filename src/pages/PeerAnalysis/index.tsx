@@ -231,7 +231,13 @@ function PeerAnalysis() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            <div className="font-semibold text-xl">Engagement Detail</div>
+            {isAllCompanySelected === true ? (
+              <div className="font-semibold text-xl">
+                All Engagement Details
+              </div>
+            ) : (
+              <div className="font-semibold text-xl">Engagement Detail</div>
+            )}
 
             <div className="flex items-center">
             <h3 className="text-md mr-3 font-semibold">View All</h3>
@@ -244,6 +250,7 @@ function PeerAnalysis() {
               >
                 <div className="mt-2">
                   <FormSwitch>
+                    <label className="mr-2">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"

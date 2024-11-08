@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, Fullscreen, SaveAll } from "lucide-react";
+import { FilterX, Fullscreen, Grid3X3, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -423,7 +423,13 @@ function ShareHolderProposal() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            <div className="font-semibold text-xl">Shareholder Proposals</div>
+            {isAllCompanySelected === true ? (
+              <div className="font-semibold text-xl">
+                All Shareholder Proposals
+              </div>
+            ) : (
+              <div className="font-semibold text-xl">Shareholder Proposals</div>
+            )}
 
             <div className="flex items-center">
             <h3 className="text-md mr-3 font-semibold">View All</h3>
@@ -436,6 +442,7 @@ function ShareHolderProposal() {
               >
                 <div className="mt-2">
                   <FormSwitch>
+                    <label className="mr-2">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -545,55 +552,8 @@ function ShareHolderProposal() {
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
-                    <div className="flex items-center justify-between xs:flex-col md:flex-row">
-                      {isAllCompanySelected === true && (
-                        <div className="w-full mx-2">
-                          <div className="w-full mt-1">
-                            <div className="text-left text-slate-500 ">
-                              Select Comapnies
-                            </div>
-                            <div className=" mt-2">
-                              <Controller
-                                name="global_search"
-                                control={control}
-                                render={({ field }) => (
-                                  <CompanySelect
-                                    value={field.value}
-                                    onChange={(value) => {
-                                      field.onChange(value);
-                                    }}
-                                    isMulti={true}
-                                    className="any"
-                                  />
-                                )}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="w-full mx-2">
-                        <div className="text-left text-slate-500 ">
-                          Keyword{" "}
-                        </div>
-                        <Controller
-                          name="keyword"
-                          control={control}
-                          defaultValue=""
-                          render={({ field }) => (
-                            <FormInput
-                              value={field.value?.toString() || ""}
-                              onChange={(value) => field.onChange(value)}
-                              type="text"
-                              className="col-span-4 flex-1 mt-2"
-                              placeholder="Search Keyword"
-                              aria-label="default input inline 1"
-                            />
-                          )}
-                        />
-                      </div>
-
-                      <div className="w-full mx-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Year
                           {apiDropdownOptions?.year?.length > 0 && (
@@ -602,21 +562,19 @@ function ShareHolderProposal() {
                                 <FormCheck.Label>Select All</FormCheck.Label>
                                 <FormCheck.Input
                                   className="ml-1"
-                                  id={`year`}
+                                  id="year"
                                   checked={
-                                    apiDropdownOptions?.year?.length ===
+                                    apiDropdownOptions.year.length ===
                                     watch("year")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "year",
-                                        apiDropdownOptions?.year
-                                      );
-                                    } else {
-                                      setValue("year", []);
-                                    }
+                                    setValue(
+                                      "year",
+                                      e.target.checked
+                                        ? apiDropdownOptions.year
+                                        : []
+                                    );
                                   }}
                                 />
                               </FormCheck>
@@ -630,129 +588,67 @@ function ShareHolderProposal() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Year",
-                              }}
+                              onChange={field.onChange}
+                              options={{ placeholder: "Select Year" }}
                               className="w-full"
                               multiple
                             >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
+                              {getDropdownLoader ? (
+                                <option disabled>Loading...</option>
                               ) : (
-                                <>
-                                  {apiDropdownOptions?.year?.map(
-                                    (year: string) => {
-                                      return (
-                                        <option value={year}>{year}</option>
-                                      );
-                                    }
-                                  )}
-                                </>
+                                apiDropdownOptions.year?.map((year) => (
+                                  <option key={year} value={year}>
+                                    {year}
+                                  </option>
+                                ))
                               )}
                             </TomSelect>
                           )}
                         />
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between mt-3 xs:flex-col md:flex-row">
-                      <div className=" w-full mx-2">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Status
-                          {apiDropdownOptions?.status?.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id={`status`}
-                                  checked={
-                                    apiDropdownOptions.status.length ===
-                                    watch("status")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "status",
-                                        apiDropdownOptions.status
-                                      );
-                                    } else {
-                                      setValue("status", []);
-                                    }
-                                  }}
-                                />
-                              </FormCheck>
-                            </div>
-                          )}
+                      {isAllCompanySelected && (
+                        <div className="w-full">
+                          <div className="text-left text-slate-500">
+                            Companies
+                          </div>
+                          <Controller
+                            name="global_search"
+                            control={control}
+                            render={({ field }) => (
+                              <CompanySelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                isMulti
+                                className="mt-1"
+                              />
+                            )}
+                          />
                         </div>
-                        <Controller
-                          name="status"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Status",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.status?.map(
-                                    (status: string) => {
-                                      return (
-                                        <option value={status} key={status}>
-                                          {status}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
-                          )}
-                        />
-                      </div>
+                      )}
 
-                      <div className="w-full mx-2">
+                      <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Category
-                          {apiDropdownOptions?.category?.length > 0 && (
+                          {apiDropdownOptions.category?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
                                 <FormCheck.Input
                                   className="ml-1"
-                                  id={`category`}
+                                  id="category"
                                   checked={
                                     apiDropdownOptions.category.length ===
                                     watch("category")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "category",
-                                        apiDropdownOptions.category
-                                      );
-                                    } else {
-                                      setValue("category", []);
-                                    }
+                                    setValue(
+                                      "category",
+                                      e.target.checked
+                                        ? apiDropdownOptions.category
+                                        : []
+                                    );
                                   }}
                                 />
                               </FormCheck>
@@ -766,62 +662,47 @@ function ShareHolderProposal() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Category",
-                              }}
+                              onChange={field.onChange}
+                              options={{ placeholder: "Select Category" }}
                               className="w-full"
                               multiple
                             >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
+                              {getDropdownLoader ? (
+                                <option disabled>Loading...</option>
                               ) : (
-                                <>
-                                  {apiDropdownOptions?.category.length > 0 &&
-                                    apiDropdownOptions?.category?.map(
-                                      (category: string) => {
-                                        return (
-                                          <option value={category}>
-                                            {category}
-                                          </option>
-                                        );
-                                      }
-                                    )}
-                                </>
+                                apiDropdownOptions.category?.map((cat) => (
+                                  <option key={cat} value={cat}>
+                                    {cat}
+                                  </option>
+                                ))
                               )}
                             </TomSelect>
                           )}
                         />
                       </div>
 
-                      <div className="w-full mx-2">
+                      <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Sub Category
-                          {apiDropdownOptions?.sub_category?.length > 0 && (
+                          {apiDropdownOptions.sub_category?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
                                 <FormCheck.Input
                                   className="ml-1"
-                                  id={`sub_category`}
+                                  id="sub_category"
                                   checked={
-                                    apiDropdownOptions?.sub_category?.length ===
+                                    apiDropdownOptions.sub_category.length ===
                                     watch("sub_category")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "sub_category",
-                                        apiDropdownOptions.sub_category
-                                      );
-                                    } else {
-                                      setValue("sub_category", []);
-                                    }
+                                    setValue(
+                                      "sub_category",
+                                      e.target.checked
+                                        ? apiDropdownOptions.sub_category
+                                        : []
+                                    );
                                   }}
                                 />
                               </FormCheck>
@@ -835,33 +716,95 @@ function ShareHolderProposal() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Sub Category",
-                              }}
+                              onChange={field.onChange}
+                              options={{ placeholder: "Select Sub Category" }}
                               className="w-full"
                               multiple
                             >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
+                              {getDropdownLoader ? (
+                                <option disabled>Loading...</option>
                               ) : (
-                                <>
-                                  {apiDropdownOptions?.sub_category?.map(
-                                    (sub_category: string) => {
-                                      return (
-                                        <option value={sub_category}>
-                                          {sub_category}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
+                                apiDropdownOptions.sub_category?.map(
+                                  (subCat) => (
+                                    <option key={subCat} value={subCat}>
+                                      {subCat}
+                                    </option>
+                                  )
+                                )
                               )}
                             </TomSelect>
+                          )}
+                        />
+                      </div>
+
+                      <div className="w-full">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          Status
+                          {apiDropdownOptions.status?.length > 0 && (
+                            <div>
+                              <FormCheck className="mr-2">
+                                <FormCheck.Label>Select All</FormCheck.Label>
+                                <FormCheck.Input
+                                  className="ml-1"
+                                  id="status"
+                                  checked={
+                                    apiDropdownOptions.status.length ===
+                                    watch("status")?.length
+                                  }
+                                  type="checkbox"
+                                  onChange={(e) => {
+                                    setValue(
+                                      "status",
+                                      e.target.checked
+                                        ? apiDropdownOptions.status
+                                        : []
+                                    );
+                                  }}
+                                />
+                              </FormCheck>
+                            </div>
+                          )}
+                        </div>
+                        <Controller
+                          name="status"
+                          control={control}
+                          defaultValue={[]}
+                          render={({ field }) => (
+                            <TomSelect
+                              value={field.value || []}
+                              onChange={field.onChange}
+                              options={{ placeholder: "Select Status" }}
+                              className="w-full"
+                              multiple
+                            >
+                              {getDropdownLoader ? (
+                                <option disabled>Loading...</option>
+                              ) : (
+                                apiDropdownOptions.status?.map((status) => (
+                                  <option key={status} value={status}>
+                                    {status}
+                                  </option>
+                                ))
+                              )}
+                            </TomSelect>
+                          )}
+                        />
+                      </div>
+
+                      <div className="w-full">
+                        <div className="text-left text-slate-500">Keyword</div>
+                        <Controller
+                          name="keyword"
+                          control={control}
+                          defaultValue=""
+                          render={({ field }) => (
+                            <FormInput
+                              value={field.value?.toString() || ""}
+                              onChange={field.onChange}
+                              type="text"
+                              className="mt-1"
+                              placeholder="Search Keyword"
+                            />
                           )}
                         />
                       </div>
@@ -1049,14 +992,14 @@ function ShareHolderProposal() {
                                           content="View Vote Details"
                                           options={{ theme: "dark" }}
                                         >
-                                         <div className="flex items-center justify-center">
-                                         <Fullscreen
-                                            strokeWidth={1.25}
-                                            onClick={() =>
-                                              onVisibleDetail(noAction)
-                                            }
-                                          />
-                                         </div>
+                                          <div className="flex items-center justify-center">
+                                            <Grid3X3
+                                              strokeWidth={1.25}
+                                              onClick={() =>
+                                                onVisibleDetail(noAction)
+                                              }
+                                            />
+                                          </div>
                                           {/* <Grid2x2 onClick={() =>
                                             onVisibleDetail(noAction)
                                           } /> */}

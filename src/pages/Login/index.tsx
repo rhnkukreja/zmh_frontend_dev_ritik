@@ -9,11 +9,11 @@ import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
 
 import clsx from "clsx";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
+
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 import { Eye, EyeOff } from "lucide-react";
@@ -106,7 +106,7 @@ const Main: React.FC = () => {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter your email"
+                    placeholder="Enter Email"
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (
