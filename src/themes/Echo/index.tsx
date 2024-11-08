@@ -536,7 +536,7 @@ function Main() {
                 
               "
             >
-              <div className="flex items-center gap-1 lg:hidden md:hidden xl:hidden">
+              <div className="flex items-center gap-1 xl:hidden">
                 <a
                   href=""
                   onClick={(event) => {
@@ -549,7 +549,7 @@ function Main() {
                 </a>
               </div>
 
-              <div className="xl:hidden flex items-center ml-2">
+              <div className="md:hidden flex items-center ml-2">
                 <a
                   href=""
                   className="p-2 text-[#545454] rounded-full bg-[#D9D9D926]"
@@ -563,7 +563,7 @@ function Main() {
               </div>
 
               <div
-                className="relative justify-center hidden lg:flex md:flex xl:flex "
+                className="relative justify-center hidden md:flex ml-2 "
                 onClick={() => setQuickSearch(true)}
               >
                 <div
