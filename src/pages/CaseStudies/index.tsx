@@ -788,7 +788,7 @@ function CaseStudies() {
                                 {item?.year}
                               </Table.Td>
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                   {item?.company_name}
                                 </Table.Td>
                               )}

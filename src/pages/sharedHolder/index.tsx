@@ -968,7 +968,7 @@ function ShareHolderProposal() {
                                       {noAction?.year}
                                     </Table.Td>
                                     {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                   {noAction?.company_name}
                                 </Table.Td>
                               )}
