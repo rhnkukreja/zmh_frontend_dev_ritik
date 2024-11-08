@@ -219,7 +219,7 @@ const index = () => {
                               ESG Integration
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px] min-w-[130px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Engaged with Company{" "}
+                              Engaged with Company{""}
                               <span
                                 id="footnote-1"
                                 className="cursor-pointer"

@@ -476,7 +476,7 @@ function PeerAnalysis() {
                                   />
                                 </div>
 
-                                <div className="w-full  my-2">
+                                {/* <div className="w-full  my-2">
                                   {isAllCompanySelected === true && (
                                     <div className="w-full ">
                                       <div className="w-full mt-1">
@@ -502,7 +502,7 @@ function PeerAnalysis() {
                                       </div>
                                     </div>
                                   )}
-                                </div>
+                                </div> */}
                               </div>
                               <div className="flex items-center mt-4">
                                 <Button
@@ -612,7 +612,7 @@ function PeerAnalysis() {
                                 {peer?.year}
                               </Table.Td>
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                   {peer?.company_name}
                                 </Table.Td>
                               )}
