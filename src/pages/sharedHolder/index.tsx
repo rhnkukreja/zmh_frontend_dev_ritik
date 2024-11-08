@@ -432,7 +432,6 @@ function ShareHolderProposal() {
             )}
 
             <div className="flex items-center">
-            <h3 className="text-md mr-3 font-semibold">View All</h3>
 
               <Tippy
                 content="All Companies"
@@ -442,7 +441,7 @@ function ShareHolderProposal() {
               >
                 <div className="mt-2">
                   <FormSwitch>
-                    <label className="mr-2">View All</label>
+                    <label className="text-md mr-3 font-semibold">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -928,15 +927,18 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
+                              <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
+                                </Table.Td>
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Proponent
-                                </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Proposal No
-                                </Table.Td>
+                                {isAllCompanySelected && (
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Company
+                            </Table.Td>
+                          )}
+                                
                                 <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome/Percentage for
                                 </Table.Td>
@@ -959,15 +961,19 @@ function ShareHolderProposal() {
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
                                   >
-                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.year}
-                                    </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                       {noAction?.proponent_name}
                                     </Table.Td>
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      {noAction?.proposal_num}
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
                                     </Table.Td>
+                                    {isAllCompanySelected && (
+                                <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                  {noAction?.company_name}
+                                </Table.Td>
+                              )}
+                                    
+                                    
                                     <Table.Td
                                       className={clsx([
                                         "py-2  border-dashed dark:bg-darkmode-600 text-wrap",
@@ -990,7 +996,7 @@ function ShareHolderProposal() {
                                       {noAction?.vote_details?.length > 0 && (
                                         <Tippy
                                           content="View Vote Details"
-                                          options={{ theme: "dark" }}
+                                          options={{ theme: "light" }}
                                         >
                                           <div className="flex items-center justify-center">
                                             <Grid3X3

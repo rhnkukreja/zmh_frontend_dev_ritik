@@ -39,7 +39,7 @@ const initialState: EngagementQuestionsState = {
   error: null,
   engagementQuestionFilterOptions: {
     category: ["Environmental", "Governance", "Social"],
-    year: ["2022", "2023", "2024"],
+    year: ["2024", "2023", "2022"],
   },
   filters: {
     institution_name: [],

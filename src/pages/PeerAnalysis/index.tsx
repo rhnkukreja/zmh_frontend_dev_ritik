@@ -53,7 +53,7 @@ function PeerAnalysis() {
 
   const [apiDropdownOptions] = useState<PeerAnalysisFilter>({
     category: ["Social", "Governance", "Environment"],
-    year: ["2023", "2024"],
+    year: ["2024", "2023"],
   });
 
   const {
@@ -240,7 +240,6 @@ function PeerAnalysis() {
             )}
 
             <div className="flex items-center">
-            <h3 className="text-md mr-3 font-semibold">View All</h3>
 
               <Tippy
                 content="All Companies"
@@ -250,7 +249,7 @@ function PeerAnalysis() {
               >
                 <div className="mt-2">
                   <FormSwitch>
-                    <label className="mr-2">View All</label>
+                  <label className="text-md mr-3 font-semibold">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -549,9 +548,11 @@ function PeerAnalysis() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Company
-                          </Table.Td>
+                          {isAllCompanySelected && (
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Company
+                            </Table.Td>
+                          )}
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Country
                           </Table.Td>
@@ -610,9 +611,11 @@ function PeerAnalysis() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.year}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {peer?.company_name}
-                              </Table.Td>
+                              {isAllCompanySelected && (
+                                <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                  {peer?.company_name}
+                                </Table.Td>
+                              )}
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.caspio_company_country}
                               </Table.Td>

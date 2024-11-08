@@ -197,7 +197,6 @@ function CompanyList() {
 
           <div className="flex items-center ">
             <div className="flex items-center">
-            <h3 className="text-md mr-3 font-semibold">View All</h3>
 
               <Tippy
                 content="All Companies"
@@ -207,7 +206,7 @@ function CompanyList() {
               >
                 <div>
                   <FormSwitch>
-                    <label className="mr-2">View All</label>
+                  <label className="text-md mr-3 font-semibold">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"

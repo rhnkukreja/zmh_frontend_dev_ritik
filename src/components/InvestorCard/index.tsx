@@ -300,6 +300,7 @@ const index = () => {
                                           {dashboard?.investor_profile_id && (
                                             <Tippy
                                               content="Investor Profile"
+                                              options={{ theme: "light" }}
                                               className=" w-5 h-5 -mt-2 -mr-2  "
                                               onClick={() =>
                                                 window.open(
@@ -406,11 +407,11 @@ const index = () => {
             </div>
 
             <footer className="!pt-3">
-              <p id="footnote ">
-                <sup className="bold-sup cursor-pointer">*</sup> As disclosed by
-                the investor.
-              </p>
-            </footer>
+  <p id="footnote">
+    <sup className="bold-sup cursor-pointer" style={{ verticalAlign: 'text-bottom', fontSize: '0.8em' }}>*</sup> As disclosed by the investor.
+  </p>
+</footer>
+
           </div>
         </>
       )}
