@@ -17,6 +17,7 @@ interface MultiSearchBarProps {
   getValueKey?: string | string[];
   urlQueryKey?: string;
   onSearchChange?: any;
+  isSingle?: boolean;
 }
 
 // type FetchedOptionType = {
@@ -30,6 +31,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   setSearchTerms,
   placeHolder,
   url,
+  isSingle,
   getOptionKey,
   isRadioInput,
   getValueKey,
@@ -106,6 +108,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
     const newTerms = searchTerms.filter((institute) => institute !== term);
     setOptions((prev) => [...new Set([...prev, term])]);
     setSearchTerms(newTerms);
+
+    setIsOpen(false);
   };
 
   const handleSearch = (item: string, isChecked: boolean) => {
@@ -113,14 +117,22 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       return removeTerm(item);
     } else {
       if (isRadioInput) {
-        const data = options?.find((x: any) => x?.name === item)?.id;
-        setSearchTerms([data]);
+        const data = options?.find((x:any)=> x?.name === item )?.id;
+        onSearch([data]);
+        // setSearchTerms([item]);
         setSearchValue("");
       } else {
-        setSearchTerms([...new Set([...searchTerms, item])]);
+        if (isSingle) {
+          setSearchTerms([item]);
+        } else {
+          setSearchTerms([...new Set([...searchTerms, item])]);
+        }
+
         setSearchValue("");
       }
     }
+
+    setIsOpen(false);
   };
 
   useEffect(() => {
@@ -257,14 +269,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                       id={`radio-switch`}
                                       type="radio"
                                       name="id"
-                                      checked={searchTerms.includes(
-                                        item[getOptionKey as string]
-                                      )}
+                                      checked={searchTerms.includes(item[getOptionKey as string])}
                                       onChange={(e) => {
-                                        handleSearch(
-                                          item[getOptionKey as string],
-                                          e.target.checked
-                                        );
+                                        handleSearch(item[getOptionKey as string], e.target.checked);
                                       }}
                                     />
                                     <label

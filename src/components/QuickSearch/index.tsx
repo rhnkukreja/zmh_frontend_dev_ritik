@@ -130,7 +130,7 @@ function Main(props: MainProps) {
                     <FormInput
                       className="pl-12 pr-14 py-3.5 text-base rounded-lg focus:ring-0 border-0 shadow-lg"
                       type="text"
-                      placeholder="Quick search..."
+                      placeholder="Search by company name, ticker, or symbol"
                       value={search}
                       onChange={handleSearchChange}
                     />

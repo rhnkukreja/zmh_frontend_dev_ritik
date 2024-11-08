@@ -103,7 +103,7 @@ function Main() {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="First Name"
+                    placeholder="Enter First Name"
                     {...register("first_name", {
                       required: "First name is required",
                     })}
@@ -119,7 +119,7 @@ function Main() {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Last Name"
+                    placeholder="Enter Last Name"
                     {...register("last_name", {
                       required: "Last name is required",
                     })}
@@ -135,7 +135,7 @@ function Main() {
                   <FormInput
                     type="email"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Email"
+                    placeholder="Enter Email"
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (
@@ -163,7 +163,7 @@ function Main() {
                   <FormInput
                     type={showPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Password"
+                    placeholder="Enter Password"
                     {...register("password", {
                       required: "Password is required",
                     })}
@@ -196,7 +196,7 @@ function Main() {
                   <FormInput
                     type={showConfirmPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Confirm Password"
+                    placeholder="Enter Confirm Password"
                     {...register("passwordConfirmation", {
                       required: "Password confirmation is required",
                       validate: (value) =>

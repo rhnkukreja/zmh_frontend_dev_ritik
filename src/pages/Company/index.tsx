@@ -33,6 +33,7 @@ import { Popover } from "@/components/Base/Headless";
 import { Controller, useForm } from "react-hook-form";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { FormSwitch } from "@/components/Base/Form";
+import { modifyRoute } from "@/stores/themeSlice";
 
 interface CompanyFilterTypes {
   global_search?: string[];
@@ -84,6 +85,13 @@ function CompanyList() {
       setFilter({
         key: "global_search",
         value: isAllCompanySelected ? [] : [companyGlobalSearchName],
+      })
+    );
+
+    dispatch(
+      modifyRoute({
+        route: "company",
+        type: isAllCompanySelected === true ? true : false,
       })
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);
@@ -181,10 +189,15 @@ function CompanyList() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-          <div className="font-semibold text-xl ">Company</div>
+          {isAllCompanySelected === true ? (
+            <div className="font-semibold text-xl">All Companies</div>
+          ) : (
+            <div className="font-semibold text-xl">Company</div>
+          )}
 
           <div className="flex items-center ">
             <div className="flex items-center">
+
               <Tippy
                 content="All Companies"
                 options={{
@@ -193,6 +206,7 @@ function CompanyList() {
               >
                 <div>
                   <FormSwitch>
+                  <label className="text-md mr-3 font-semibold">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"

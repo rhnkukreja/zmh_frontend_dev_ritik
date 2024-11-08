@@ -34,6 +34,7 @@ import { FormCheck, FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { modifyRoute } from "@/stores/themeSlice";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -52,7 +53,7 @@ function PeerAnalysis() {
 
   const [apiDropdownOptions] = useState<PeerAnalysisFilter>({
     category: ["Social", "Governance", "Environment"],
-    year: ["2023", "2024"],
+    year: ["2024", "2023"],
   });
 
   const {
@@ -98,6 +99,13 @@ function PeerAnalysis() {
       setFilter({
         key: "global_search",
         value: isAllCompanySelected ? [] : [companyGlobalSearchName],
+      })
+    );
+
+    dispatch(
+      modifyRoute({
+        route: "peer-analysis",
+        type: isAllCompanySelected === true ? true : false,
       })
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);
@@ -223,9 +231,16 @@ function PeerAnalysis() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            <div className="font-semibold text-xl">Engagement Detail</div>
+            {isAllCompanySelected === true ? (
+              <div className="font-semibold text-xl">
+                All Engagement Details
+              </div>
+            ) : (
+              <div className="font-semibold text-xl">Engagement Detail</div>
+            )}
 
             <div className="flex items-center">
+
               <Tippy
                 content="All Companies"
                 options={{
@@ -234,6 +249,7 @@ function PeerAnalysis() {
               >
                 <div className="mt-2">
                   <FormSwitch>
+                  <label className="text-md mr-3 font-semibold">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -532,9 +548,11 @@ function PeerAnalysis() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Company
-                          </Table.Td>
+                          {isAllCompanySelected && (
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Company
+                            </Table.Td>
+                          )}
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Country
                           </Table.Td>
@@ -593,9 +611,11 @@ function PeerAnalysis() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.year}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {peer?.company_name}
-                              </Table.Td>
+                              {isAllCompanySelected && (
+                                <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                  {peer?.company_name}
+                                </Table.Td>
+                              )}
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.caspio_company_country}
                               </Table.Td>

@@ -31,7 +31,7 @@ const initialState: ProxyVotingGuidelineSlice = {
   totalPages: 1,
   page: 1,
   guidelineFilterOptions: {
-    year: ["2023", "2024"],
+    year: ["2024", "2023"],
   },
   filters: {
     year: [],

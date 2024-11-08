@@ -33,6 +33,8 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { modifyRoute } from "@/stores/themeSlice";
+import AddNewCaseStudies from "./Components/AddEditCaseStudies";
 
 function CaseStudies() {
   interface CaseStudyFilter {
@@ -70,6 +72,8 @@ function CaseStudies() {
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
 
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [addNewCaseStudyModalVisible, setAddNewCaseStudyModalVisible] =
+    useState<boolean>(false);
 
   const {
     loading,
@@ -135,6 +139,13 @@ function CaseStudies() {
       setFilters({
         key: "global_search",
         value: isAllCompanySelected ? [] : [companyGlobalSearchName],
+      })
+    );
+
+    dispatch(
+      modifyRoute({
+        route: "case-studies",
+        type: isAllCompanySelected === true ? true : false,
       })
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);
@@ -289,22 +300,36 @@ function CaseStudies() {
     }
   };
 
+  const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
+    null
+  );
+
+  const onEditCaseStudiesClickHandler = (caseStudy: any) => {
+    setSelectedCaseStudies(caseStudy);
+    setAddNewCaseStudyModalVisible(true);
+  };
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            <div className="font-semibold text-xl">Case Studies</div>
+            {isAllCompanySelected === true ? (
+              <div className="font-semibold text-xl">All Case Studies</div>
+            ) : (
+              <div className="font-semibold text-xl">Case Studies</div>
+            )}
 
-            <div className="flex items-center">
+            <div className="flex items-center justify-center">
               <Tippy
                 content="All Companies"
                 options={{
                   theme: "light",
                 }}
               >
-                <div className="mt-2">
+                <div className="">
                   <FormSwitch>
+                  <label className="text-md mr-3 font-semibold">View All</label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -321,6 +346,24 @@ function CaseStudies() {
                   </FormSwitch>
                 </div>
               </Tippy>
+              {user?.user_type === "Admin" && (
+                <div className="flex justify-end my-3">
+                  <Button
+                    onClick={() => {
+                      setSelectedCaseStudies(null);
+                      setAddNewCaseStudyModalVisible(true);
+                    }}
+                    variant="primary"
+                    className="bg-theme-2 border-bg-theme-2 "
+                  >
+                    <Lucide
+                      icon="PenLine"
+                      className="stroke-[1.3] w-4 h-4 mr-2"
+                    />
+                    Add New Case Studies
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-3.5">
@@ -335,6 +378,7 @@ function CaseStudies() {
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
+                    isSingle={true}
                   />
 
                   <div className="hover:bg-slate-50">
@@ -401,196 +445,34 @@ function CaseStudies() {
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
-                    <div className="flex items-center justify-between xs:flex-col md:flex-row">
-                      <div className="w-full mx-2">
-                        <div className="text-left text-slate-500 ">
-                          Keyword{" "}
-                        </div>
-                        <Controller
-                          name="keyword"
-                          control={control}
-                          defaultValue=""
-                          render={({ field }) => (
-                            <FormInput
-                              value={field.value?.toString() || ""}
-                              onChange={(value) => field.onChange(value)}
-                              type="text"
-                              className="col-span-4 flex-1 mt-2"
-                              placeholder="Search Keyword"
-                              aria-label="default input inline 1"
-                            />
-                          )}
-                        />
-                      </div>
-
-                      {isAllCompanySelected === true && (
-                        <>
-                          <div className=" w-full mx-2">
-                            <div className="text-left text-slate-500 flex justify-between mb-1">
-                              {" "}
-                              Market
-                              {apiDropdownOptions?.market?.length > 0 && (
-                                <div>
-                                  <FormCheck className="mr-2">
-                                    <FormCheck.Label>
-                                      Select All
-                                    </FormCheck.Label>
-                                    <FormCheck.Input
-                                      className="ml-1"
-                                      id={`market`}
-                                      checked={
-                                        apiDropdownOptions.market.length ===
-                                        watch("market")?.length
-                                      }
-                                      type="checkbox"
-                                      onChange={(e) => {
-                                        if (e.target.checked === true) {
-                                          setValue(
-                                            "market",
-                                            apiDropdownOptions.market
-                                          );
-                                        } else {
-                                          setValue("market", []);
-                                        }
-                                      }}
-                                    />
-                                  </FormCheck>
-                                </div>
-                              )}
-                            </div>
-                            <Controller
-                              name="market"
-                              control={control}
-                              defaultValue={[]}
-                              render={({ field }) => (
-                                <TomSelect
-                                  value={field.value || []}
-                                  onChange={(value) => {
-                                    field.onChange(value);
-                                  }}
-                                  options={{
-                                    placeholder: "Select Market",
-                                  }}
-                                  className="w-full"
-                                  multiple
-                                >
-                                  {getDropdownLoader === true ? (
-                                    <option value="--" disabled>
-                                      Loading...
-                                    </option>
-                                  ) : (
-                                    <>
-                                      {apiDropdownOptions?.market?.map(
-                                        (market: string) => {
-                                          return (
-                                            <option value={market} key={market}>
-                                              {market}
-                                            </option>
-                                          );
-                                        }
-                                      )}
-                                    </>
-                                  )}
-                                </TomSelect>
-                              )}
-                            />
-                          </div>
-
-                          <div className=" w-full mx-2">
-                            <div className="text-left text-slate-500 flex justify-between mb-1">
-                              Sector
-                              {apiDropdownOptions?.sector?.length > 0 && (
-                                <div>
-                                  <FormCheck className="mr-2">
-                                    <FormCheck.Label>
-                                      Select All
-                                    </FormCheck.Label>
-                                    <FormCheck.Input
-                                      className="ml-1"
-                                      id={`sector`}
-                                      checked={
-                                        apiDropdownOptions.sector.length ===
-                                        watch("sector")?.length
-                                      }
-                                      type="checkbox"
-                                      onChange={(e) => {
-                                        if (e.target.checked === true) {
-                                          setValue(
-                                            "sector",
-                                            apiDropdownOptions.sector
-                                          );
-                                        } else {
-                                          setValue("sector", []);
-                                        }
-                                      }}
-                                    />
-                                  </FormCheck>
-                                </div>
-                              )}
-                            </div>
-                            <Controller
-                              name="sector"
-                              control={control}
-                              defaultValue={[]}
-                              render={({ field }) => (
-                                <TomSelect
-                                  value={field.value || []}
-                                  onChange={(value) => {
-                                    field.onChange(value);
-                                  }}
-                                  options={{
-                                    placeholder: "Select Sector",
-                                  }}
-                                  className="w-full"
-                                  multiple
-                                >
-                                  {getDropdownLoader === true ? (
-                                    <option value="--" disabled>
-                                      Loading...
-                                    </option>
-                                  ) : (
-                                    <>
-                                      {apiDropdownOptions?.sector?.map(
-                                        (sector) => (
-                                          <option key={sector} value={sector}>
-                                            {sector}
-                                          </option>
-                                        )
-                                      )}
-                                    </>
-                                  )}
-                                </TomSelect>
-                              )}
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      <div className="w-full mx-2">
+                    <div
+                      className={`grid grid-cols-1 xs:grid-cols-1 gap-4 ${
+                        isAllCompanySelected
+                          ? "md:grid-cols-3"
+                          : " md:grid-cols-2"
+                      }`}
+                    >
+                      <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Year
                           {apiDropdownOptions.year.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id={`year`}
-                                  checked={
-                                    apiDropdownOptions.year.length ===
-                                    watch("year")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue("year", apiDropdownOptions.year);
-                                    } else {
-                                      setValue("year", []);
-                                    }
-                                  }}
-                                />
-                              </FormCheck>
-                            </div>
+                            <FormCheck className="mr-2">
+                              <FormCheck.Label>Select All</FormCheck.Label>
+                              <FormCheck.Input
+                                className="ml-1"
+                                id="year"
+                                checked={
+                                  apiDropdownOptions.year.length ===
+                                  watch("year")?.length
+                                }
+                                type="checkbox"
+                                onChange={(e) =>
+                                  e.target.checked
+                                    ? setValue("year", apiDropdownOptions.year)
+                                    : setValue("year", [])
+                                }
+                              />
+                            </FormCheck>
                           )}
                         </div>
                         <Controller
@@ -600,44 +482,34 @@ function CaseStudies() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Year",
-                              }}
+                              onChange={(value) => field.onChange(value)}
+                              options={{ placeholder: "Select Year" }}
                               className="w-full"
                               multiple
                             >
-                              {getDropdownLoader === true ? (
+                              {getDropdownLoader ? (
                                 <option value="--" disabled>
                                   Loading...
                                 </option>
                               ) : (
-                                <>
-                                  {apiDropdownOptions?.year?.map(
-                                    (year: string) => {
-                                      return (
-                                        <option value={year}>{year}</option>
-                                      );
-                                    }
-                                  )}
-                                </>
+                                apiDropdownOptions.year.map((year) => (
+                                  <option key={year} value={year}>
+                                    {year}
+                                  </option>
+                                ))
                               )}
                             </TomSelect>
                           )}
                         />
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between mt-3 xs:flex-col sm:flex-col md:flex-row">
                       {isAllCompanySelected === true && (
                         <div className="w-full mx-2">
-                          <div className="w-full mt-1">
+                          <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                              Select Comapnies
+                              Select Companies
                             </div>
-                            <div className=" mt-2">
+                            <div className=" mt-1">
                               <Controller
                                 name="global_search"
                                 control={control}
@@ -648,7 +520,6 @@ function CaseStudies() {
                                       field.onChange(value);
                                     }}
                                     isMulti={true}
-                                    className="any"
                                   />
                                 )}
                               />
@@ -656,34 +527,143 @@ function CaseStudies() {
                           </div>
                         </div>
                       )}
-                      <div className="w-full mx-2">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Themes
-                          {apiDropdownOptions?.themes?.length > 0 && (
-                            <div>
+
+                      {isAllCompanySelected && (
+                        <div className="mx-2">
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            Country
+                            {apiDropdownOptions.market.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
                                 <FormCheck.Input
                                   className="ml-1"
-                                  id={`themes`}
+                                  id="market"
                                   checked={
-                                    apiDropdownOptions.themes.length ===
-                                    watch("themes")?.length
+                                    apiDropdownOptions.market.length ===
+                                    watch("market")?.length
                                   }
                                   type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "themes",
-                                        apiDropdownOptions.themes
-                                      );
-                                    } else {
-                                      setValue("themes", []);
-                                    }
-                                  }}
+                                  onChange={(e) =>
+                                    e.target.checked
+                                      ? setValue(
+                                          "market",
+                                          apiDropdownOptions.market
+                                        )
+                                      : setValue("market", [])
+                                  }
                                 />
                               </FormCheck>
-                            </div>
+                            )}
+                          </div>
+                          <Controller
+                            name="market"
+                            control={control}
+                            defaultValue={[]}
+                            render={({ field }) => (
+                              <TomSelect
+                                value={field.value || []}
+                                onChange={(value) => field.onChange(value)}
+                                options={{ placeholder: "Select Country" }}
+                                className="w-full"
+                                multiple
+                              >
+                                {getDropdownLoader ? (
+                                  <option value="--" disabled>
+                                    Loading...
+                                  </option>
+                                ) : (
+                                  apiDropdownOptions.market.map((market) => (
+                                    <option key={market} value={market}>
+                                      {market}
+                                    </option>
+                                  ))
+                                )}
+                              </TomSelect>
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      {isAllCompanySelected === true && (
+                        <div className="mx-2">
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            Sector
+                            {apiDropdownOptions.sector.length > 0 && (
+                              <FormCheck className="mr-2">
+                                <FormCheck.Label>Select All</FormCheck.Label>
+                                <FormCheck.Input
+                                  className="ml-1"
+                                  id="sector"
+                                  checked={
+                                    apiDropdownOptions.sector.length ===
+                                    watch("sector")?.length
+                                  }
+                                  type="checkbox"
+                                  onChange={(e) =>
+                                    e.target.checked
+                                      ? setValue(
+                                          "sector",
+                                          apiDropdownOptions.sector
+                                        )
+                                      : setValue("sector", [])
+                                  }
+                                />
+                              </FormCheck>
+                            )}
+                          </div>
+                          <Controller
+                            name="sector"
+                            control={control}
+                            defaultValue={[]}
+                            render={({ field }) => (
+                              <TomSelect
+                                value={field.value || []}
+                                onChange={(value) => field.onChange(value)}
+                                options={{ placeholder: "Select Sector" }}
+                                className="w-full"
+                                multiple
+                              >
+                                {getDropdownLoader ? (
+                                  <option value="--" disabled>
+                                    Loading...
+                                  </option>
+                                ) : (
+                                  apiDropdownOptions.sector.map((sector) => (
+                                    <option key={sector} value={sector}>
+                                      {sector}
+                                    </option>
+                                  ))
+                                )}
+                              </TomSelect>
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      <div className="mx-2">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          Themes
+                          {apiDropdownOptions.themes.length > 0 && (
+                            <FormCheck className="mr-2">
+                              <FormCheck.Label>Select All</FormCheck.Label>
+                              <FormCheck.Input
+                                className="ml-1"
+                                id="themes"
+                                checked={
+                                  apiDropdownOptions.themes.length ===
+                                  watch("themes")?.length
+                                }
+                                type="checkbox"
+                                onChange={(e) =>
+                                  e.target.checked
+                                    ? setValue(
+                                        "themes",
+                                        apiDropdownOptions.themes
+                                      )
+                                    : setValue("themes", [])
+                                }
+                              />
+                            </FormCheck>
                           )}
                         </div>
                         <Controller
@@ -693,164 +673,21 @@ function CaseStudies() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Themes",
-                              }}
+                              onChange={(value) => field.onChange(value)}
+                              options={{ placeholder: "Select Themes" }}
                               className="w-full"
                               multiple
                             >
-                              {getDropdownLoader === true ? (
+                              {getDropdownLoader ? (
                                 <option value="--" disabled>
                                   Loading...
                                 </option>
                               ) : (
-                                <>
-                                  {apiDropdownOptions?.themes.length > 0 &&
-                                    apiDropdownOptions?.themes?.map(
-                                      (themes: string) => {
-                                        return (
-                                          <option value={themes}>
-                                            {themes}
-                                          </option>
-                                        );
-                                      }
-                                    )}
-                                </>
-                              )}
-                            </TomSelect>
-                          )}
-                        />
-                      </div>
-
-                      <div className="w-full mx-2">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Proposal Type
-                          {apiDropdownOptions?.proposal_type?.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id={`proposal_type`}
-                                  checked={
-                                    apiDropdownOptions?.proposal_type
-                                      ?.length ===
-                                    watch("proposal_type")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue(
-                                        "proposal_type",
-                                        apiDropdownOptions.proposal_type
-                                      );
-                                    } else {
-                                      setValue("proposal_type", []);
-                                    }
-                                  }}
-                                />
-                              </FormCheck>
-                            </div>
-                          )}
-                        </div>
-                        <Controller
-                          name="proposal_type"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Proposal Type",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.proposal_type?.map(
-                                    (proposal_type: string) => {
-                                      return (
-                                        <option value={proposal_type}>
-                                          {proposal_type}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
-                          )}
-                        />
-                      </div>
-
-                      <div className="w-full mx-2">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Vote
-                          {apiDropdownOptions?.vote?.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id={`vote`}
-                                  checked={
-                                    apiDropdownOptions?.vote?.length ===
-                                    watch("vote")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked === true) {
-                                      setValue("vote", apiDropdownOptions.vote);
-                                    } else {
-                                      setValue("vote", []);
-                                    }
-                                  }}
-                                />
-                              </FormCheck>
-                            </div>
-                          )}
-                        </div>
-                        <Controller
-                          name="vote"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Vote",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader === true ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.vote?.map(
-                                    (vote: string) => {
-                                      return (
-                                        <option value={vote}>{vote}</option>
-                                      );
-                                    }
-                                  )}
-                                </>
+                                apiDropdownOptions.themes.map((theme) => (
+                                  <option key={theme} value={theme}>
+                                    {theme}
+                                  </option>
+                                ))
                               )}
                             </TomSelect>
                           )}
@@ -892,13 +729,15 @@ function CaseStudies() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Year
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Company
-                          </Table.Td>
+                          {isAllCompanySelected && (
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              Company
+                            </Table.Td>
+                          )}
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Theme
                           </Table.Td>
-                          
+
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Industry
                           </Table.Td>
@@ -948,13 +787,15 @@ function CaseStudies() {
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.year}
                               </Table.Td>
-                              <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
-                                {item?.company_name}
-                              </Table.Td>
+                              {isAllCompanySelected && (
+                                <Table.Td className="py-2 border-dashed text-nowrap dark:bg-darkmode-600">
+                                  {item?.company_name}
+                                </Table.Td>
+                              )}
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.esg_themes}
                               </Table.Td>
-                             
+
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                 {item?.industry}
                               </Table.Td>
@@ -972,6 +813,21 @@ function CaseStudies() {
                                       className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                     />
                                   </Tippy>
+
+                                  {user?.user_type === "Admin" && (
+                                    <Tippy
+                                      content="Edit"
+                                      options={{ theme: "dark" }}
+                                    >
+                                      <Lucide
+                                        onClick={() =>
+                                          onEditCaseStudiesClickHandler(item)
+                                        }
+                                        icon="PenLine"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                      />
+                                    </Tippy>
+                                  )}
                                 </div>
                               </Table.Td>
                             </Table.Tr>
@@ -995,12 +851,15 @@ function CaseStudies() {
                   handlePreviousPage={handlePreviousPage}
                 />
 
-                {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
-                <option>10</option>
-                <option>25</option>
-                <option>35</option>
-                <option>50</option>
-              </FormSelect> */}
+                {addNewCaseStudyModalVisible && (
+                  <AddNewCaseStudies
+                    addNewCaseStudyModalVisible={addNewCaseStudyModalVisible}
+                    setAddNewCaseStudyModalVisible={
+                      setAddNewCaseStudyModalVisible
+                    }
+                    selectedCaseStudies={selectedCaseStudies}
+                  />
+                )}
               </div>
             </div>
           </div>

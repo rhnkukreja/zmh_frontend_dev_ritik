@@ -63,6 +63,7 @@ export type Themes = (typeof themes)[number];
 
 interface ThemeState {
   value: Themes["name"];
+  noCompanyHeaderRoutes: string[];
 }
 
 export const getTheme = (search?: Themes["name"]) => {
@@ -75,6 +76,11 @@ export const getTheme = (search?: Themes["name"]) => {
 const initialState: ThemeState = {
   value:
     localStorage.getItem("theme") === null ? themes[0].name : getTheme().name,
+  noCompanyHeaderRoutes: [
+    "investor-profile",
+    "engagement-question",
+    "proxy-voting-guideline",
+  ],
 };
 
 export const themeSlice = createSlice({
@@ -87,10 +93,34 @@ export const themeSlice = createSlice({
     ) => {
       state.value = action.payload;
     },
+
+    modifyRoute: (
+      state,
+      action: PayloadAction<{
+        route: string;
+        type: boolean;
+      }>
+    ) => {
+      const { route, type } = action.payload;
+
+      if (type === true) {
+        if (!state.noCompanyHeaderRoutes.includes(route)) {
+          state.noCompanyHeaderRoutes.push(route);
+        }
+      } else if (type === false) {
+        state.noCompanyHeaderRoutes = state.noCompanyHeaderRoutes.filter(
+          (existingRoute) => existingRoute !== route
+        );
+      }
+    },
+
+    resetRouter: (state) => {
+      state.noCompanyHeaderRoutes = initialState.noCompanyHeaderRoutes;
+    },
   },
 });
 
-export const { setTheme } = themeSlice.actions;
+export const { setTheme, modifyRoute, resetRouter } = themeSlice.actions;
 
 export const selectTheme = (state: RootState) => {
   if (localStorage.getItem("theme") === null) {

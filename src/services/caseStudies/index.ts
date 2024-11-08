@@ -33,6 +33,26 @@ class CaseStudiesService {
       result: result,
     };
   }
+
+  public async addNewCaseStudies(data: Partial<any>): Promise<{
+    results: any;
+  }> {
+    const response = await axiosInstance.post(`/case_studies/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async updateCaseStudies(id: string, data: Partial<any>): Promise<{
+    results: any;
+  }> {
+    const response = await axiosInstance.put(`/case_studies/${id}/`, data);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
 }
 
 export const caseStudiesService = new CaseStudiesService();

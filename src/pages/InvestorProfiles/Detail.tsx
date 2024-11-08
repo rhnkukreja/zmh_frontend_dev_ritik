@@ -359,8 +359,15 @@ function Main() {
                   (key, index) => {
                     const typedKey =
                       key as keyof typeof investorProfileEditableSectionsInvestors;
-                    // Check if the value exists before rendering
                     const value = singleInvesterProfile?.[key];
+                    const shouldRenderSection =
+                      value !== null ||
+                      (value === null && user?.user_type === "Admin");
+
+                    if (!shouldRenderSection) {
+                      return null;
+                    }
+
                     return (
                       <EditableSection
                         key={index}
@@ -378,7 +385,7 @@ function Main() {
                         }
                         field={key as keyof InvestersProfile}
                       />
-                    ); // Render nothing if value is falsy
+                    );
                   }
                 )}
 
