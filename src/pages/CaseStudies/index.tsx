@@ -316,14 +316,15 @@ function CaseStudies() {
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
             <div className="font-semibold text-xl">Case Studies</div>
 
-            <div className="flex items-center">
+            <div className="flex items-center justify-center">
+              <h3 className="text-md mr-3 font-semibold">View All</h3>
               <Tippy
                 content="All Companies"
                 options={{
                   theme: "light",
                 }}
               >
-                <div className="mt-2">
+                <div className="">
                   <FormSwitch>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
@@ -341,7 +342,6 @@ function CaseStudies() {
                   </FormSwitch>
                 </div>
               </Tippy>
-
               {user?.user_type === "Admin" && (
                 <div className="flex justify-end my-3">
                   <Button

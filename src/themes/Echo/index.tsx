@@ -549,7 +549,7 @@ function Main() {
                 </a>
                 <a
                   href=""
-                  className="p-2 text-[#545454] rounded-full bg-[#D9D9D926]"
+                  className="p-2 lg:hidden text-[#545454] rounded-full bg-[#D9D9D926]"
                   onClick={(e) => {
                     e.preventDefault();
                     setQuickSearch(true);
@@ -560,7 +560,7 @@ function Main() {
               </div>
 
               <div
-                className="relative justify-center hidden xl:flex"
+                className="relative justify-center hidden lg:flex lg:ml-3"
                 onClick={() => setQuickSearch(true)}
               >
                 <div
