@@ -19,7 +19,7 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
-import { filterMenu, getColorForCharacter } from "@/utils/helper";
+import { filterMenu } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout } from "@/stores/authenticationSlice";
 import { FilterX, Mail } from "lucide-react";
