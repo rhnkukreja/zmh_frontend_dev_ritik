@@ -183,8 +183,8 @@ function Main() {
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5 sm:items-center sm:flex-row gap-y-2">
-                <div className="flex items-center ">
+              <div className="flex flex-col p-5  sm:flex-row gap-y-2">
+                <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
@@ -261,34 +261,34 @@ function Main() {
                                     region
                                     {investerProfileFilterOption?.region
                                       ?.length > 0 && (
-                                        <div>
-                                          <FormCheck className="mr-2">
-                                            <FormCheck.Label>
-                                              Select All
-                                            </FormCheck.Label>
-                                            <FormCheck.Input
-                                              className="ml-1"
-                                              id={`region`}
-                                              checked={
-                                                investerProfileFilterOption.region
-                                                  .length ===
-                                                watch("region")?.length
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`region`}
+                                            checked={
+                                              investerProfileFilterOption.region
+                                                .length ===
+                                              watch("region")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "region",
+                                                  investerProfileFilterOption.region
+                                                );
+                                              } else {
+                                                setValue("region", []);
                                               }
-                                              type="checkbox"
-                                              onChange={(e) => {
-                                                if (e.target.checked === true) {
-                                                  setValue(
-                                                    "region",
-                                                    investerProfileFilterOption.region
-                                                  );
-                                                } else {
-                                                  setValue("region", []);
-                                                }
-                                              }}
-                                            />
-                                          </FormCheck>
-                                        </div>
-                                      )}
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
                                   </div>
                                   <Controller
                                     name="region"
@@ -365,7 +365,8 @@ function Main() {
                                       {(page - 1) * 10 + index + 1}
                                     </div> */}
 
-                            {profile?.institution_logo_url && profile.institution_logo_url !== "null" ? (
+                            {profile?.institution_logo_url &&
+                            profile.institution_logo_url !== "null" ? (
                               <>
                                 <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                   <img
