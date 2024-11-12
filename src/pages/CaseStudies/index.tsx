@@ -329,7 +329,9 @@ function CaseStudies() {
               >
                 <div className="">
                   <FormSwitch>
-                  <label className="text-md mr-3 font-semibold">View All</label>
+                    <label className="text-md mr-3 font-semibold">
+                      View All
+                    </label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -368,8 +370,8 @@ function CaseStudies() {
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-4 sm:items-center sm:flex-row gap-y-2">
-                <div className="flex items-center ">
+              <div className="flex flex-col p-4  sm:flex-row gap-y-2">
+                <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
                     searchTerms={searchTerms}

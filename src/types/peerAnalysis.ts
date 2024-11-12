@@ -16,3 +16,10 @@ export interface TypesPeerAnalysis {
   company: number;
   institution: number;
 }
+
+export type FlterDropdown = {
+  category: string[];
+  country: string[];
+  sector: string[];
+  year: string[];
+};

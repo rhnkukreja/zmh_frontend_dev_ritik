@@ -35,12 +35,15 @@ import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { modifyRoute } from "@/stores/themeSlice";
+import { peerAnalysisService } from "@/services/peerAnalysis";
 
 interface PeerAnalysisFilter {
   category: string[];
   year: string[];
   institution_name?: string[];
   global_search?: string[];
+  country: string[];
+  sector: string[];
 }
 
 function PeerAnalysis() {
@@ -50,11 +53,15 @@ function PeerAnalysis() {
     useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
 
-  const [apiDropdownOptions] = useState<PeerAnalysisFilter>({
-    category: ["Social", "Governance", "Environment"],
-    year: ["2024", "2023"],
-  });
+  const [apiDropdownOptions, setApiDropdownOptions] =
+    useState<PeerAnalysisFilter>({
+      category: ["Social", "Governance", "Environment"],
+      year: [],
+      country: [],
+      sector: [],
+    });
 
   const {
     loading,
@@ -78,6 +85,7 @@ function PeerAnalysis() {
   } = useForm<PeerAnalysisFilter>({
     defaultValues: {
       year: filters?.year,
+      sector: filters?.sector,
       institution_name: filters?.institution_name,
       global_search:
         filters?.global_search?.map((item: string) => ({
@@ -88,8 +96,26 @@ function PeerAnalysis() {
     },
   });
 
+  const getAllCaseStudyDropdowns = async () => {
+    try {
+      setGetDropdownLoader(true);
+      const res = await peerAnalysisService.getPeerAnalysisDropdownValues();
+      if (res.result) {
+        setApiDropdownOptions({ ...res.result });
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      setGetDropdownLoader(false);
+    }
+  };
+
+  useEffect(() => {
+    getAllCaseStudyDropdowns();
+  }, []);
   const resetFormValues = () => {
     setValue("year", []);
+    setValue("sector", []);
     setValue("category", []);
     setValue("global_search", []);
   };
@@ -178,6 +204,7 @@ function PeerAnalysis() {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
     setValue("year", user?.saved_search?.year || []);
     setValue("category", user?.saved_search?.category || []);
+    setValue("sector", user?.saved_search?.sector || []);
     dispatch(
       setAllFilters({
         year: user?.saved_search?.year || [],
@@ -193,6 +220,7 @@ function PeerAnalysis() {
       institution: searchTerms,
       global_search: filters["global_search"],
       year: watch("year") || [],
+      sector: watch("sector") || [],
       category: watch("category") || [],
     });
 
@@ -205,6 +233,7 @@ function PeerAnalysis() {
             global_search: filters["global_search"],
             year: watch("year") || [],
             category: watch("category") || [],
+            sector: watch("sector") || [],
           },
         })
       );
@@ -240,7 +269,6 @@ function PeerAnalysis() {
             )}
 
             <div className="flex items-center">
-
               <Tippy
                 content="All Companies"
                 options={{
@@ -249,7 +277,9 @@ function PeerAnalysis() {
               >
                 <div className="mt-2">
                   <FormSwitch>
-                  <label className="text-md mr-3 font-semibold">View All</label>
+                    <label className="text-md mr-3 font-semibold">
+                      View All
+                    </label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -270,8 +300,8 @@ function PeerAnalysis() {
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-4 sm:items-center sm:flex-row gap-y-2">
-                <div className="flex items-center ">
+              <div className="flex flex-col p-4  sm:flex-row gap-y-2">
+                <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
@@ -392,17 +422,23 @@ function PeerAnalysis() {
                                         className="w-full"
                                         multiple
                                       >
-                                        <>
-                                          {apiDropdownOptions?.year?.map(
-                                            (year: string) => {
-                                              return (
-                                                <option value={year}>
-                                                  {year}
-                                                </option>
-                                              );
-                                            }
-                                          )}
-                                        </>
+                                        {getDropdownLoader ? (
+                                          <option value="--" disabled>
+                                            Loading...
+                                          </option>
+                                        ) : (
+                                          <>
+                                            {apiDropdownOptions?.year?.map(
+                                              (year: string) => {
+                                                return (
+                                                  <option value={year}>
+                                                    {year}
+                                                  </option>
+                                                );
+                                              }
+                                            )}
+                                          </>
+                                        )}
                                       </TomSelect>
                                     )}
                                   />
@@ -422,8 +458,8 @@ function PeerAnalysis() {
                                             className="ml-1"
                                             id={`category`}
                                             checked={
-                                              apiDropdownOptions.category
-                                                .length ===
+                                              apiDropdownOptions?.category
+                                                ?.length ===
                                               watch("category")?.length
                                             }
                                             type="checkbox"
@@ -431,7 +467,7 @@ function PeerAnalysis() {
                                               if (e.target.checked === true) {
                                                 setValue(
                                                   "category",
-                                                  apiDropdownOptions.category
+                                                  apiDropdownOptions?.category
                                                 );
                                               } else {
                                                 setValue("category", []);
@@ -458,23 +494,105 @@ function PeerAnalysis() {
                                         className="w-full"
                                         multiple
                                       >
-                                        <>
-                                          {apiDropdownOptions?.category.length >
-                                            0 &&
-                                            apiDropdownOptions?.category?.map(
-                                              (category: string) => {
-                                                return (
-                                                  <option value={category}>
-                                                    {category}
-                                                  </option>
-                                                );
-                                              }
-                                            )}
-                                        </>
+                                        {getDropdownLoader ? (
+                                          <option value="--" disabled>
+                                            Loading...
+                                          </option>
+                                        ) : (
+                                          <>
+                                            {apiDropdownOptions?.category
+                                              ?.length > 0 &&
+                                              apiDropdownOptions?.category?.map(
+                                                (category: string) => {
+                                                  return (
+                                                    <option value={category}>
+                                                      {category}
+                                                    </option>
+                                                  );
+                                                }
+                                              )}
+                                          </>
+                                        )}
                                       </TomSelect>
                                     )}
                                   />
                                 </div>
+
+                                {isAllCompanySelected === true && (
+                                  <div className="w-full  my-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                      Sector
+                                      {apiDropdownOptions?.sector?.length >
+                                        0 && (
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`sector`}
+                                              checked={
+                                                apiDropdownOptions?.sector
+                                                  ?.length ===
+                                                watch("sector")?.length
+                                              }
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "sector",
+                                                    apiDropdownOptions?.sector
+                                                  );
+                                                } else {
+                                                  setValue("sector", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <Controller
+                                      name="sector"
+                                      control={control}
+                                      defaultValue={[]}
+                                      render={({ field }) => (
+                                        <TomSelect
+                                          value={field.value || []}
+                                          onChange={(value) => {
+                                            field.onChange(value);
+                                          }}
+                                          options={{
+                                            placeholder: "Select Sector",
+                                          }}
+                                          className="w-full"
+                                          multiple
+                                        >
+                                          {getDropdownLoader ? (
+                                            <option value="--" disabled>
+                                              Loading...
+                                            </option>
+                                          ) : (
+                                            <>
+                                              {apiDropdownOptions?.sector
+                                                ?.length > 0 &&
+                                                apiDropdownOptions?.sector?.map(
+                                                  (sector: string) => {
+                                                    return (
+                                                      <option value={sector}>
+                                                        {sector}
+                                                      </option>
+                                                    );
+                                                  }
+                                                )}
+                                            </>
+                                          )}
+                                        </TomSelect>
+                                      )}
+                                    />
+                                  </div>
+                                )}
 
                                 {/* <div className="w-full  my-2">
                                   {isAllCompanySelected === true && (
@@ -519,6 +637,9 @@ function PeerAnalysis() {
                                   variant="primary"
                                   className="w-32 ml-2"
                                   type="submit"
+                                  onClick={() => {
+                                    close();
+                                  }}
                                 >
                                   Apply
                                 </Button>

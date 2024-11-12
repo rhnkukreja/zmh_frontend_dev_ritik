@@ -1,4 +1,4 @@
-import { TypesPeerAnalysis } from "@/types/peerAnalysis";
+import { FlterDropdown, TypesPeerAnalysis } from "@/types/peerAnalysis";
 import { axiosInstance } from "../index";
 
 class PeerAnalysisService {
@@ -11,6 +11,18 @@ class PeerAnalysisService {
     return {
       count,
       results,
+    };
+  }
+
+  public async getPeerAnalysisDropdownValues(): Promise<{
+    result: FlterDropdown;
+  }> {
+    const response = await axiosInstance.get(
+      `/get_peer_analysis_dropdown_values/`
+    );
+    const result = response.data;
+    return {
+      result: result,
     };
   }
 }

@@ -7,6 +7,7 @@ const name = "peer_analysis";
 
 export interface PeerAnalysisFilter {
   year: string[];
+  sector: string[];
   institution_name?: string[];
   global_search?: any[];
 
@@ -45,6 +46,7 @@ const initialState: PeerAnalysis = {
     institution_name: [],
     year: [],
     category: [],
+    sector: [],
   },
   filterOptions: {
     category: ["Social", "Governance", "Environment"],

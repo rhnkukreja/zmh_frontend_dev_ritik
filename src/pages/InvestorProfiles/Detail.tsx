@@ -48,6 +48,7 @@ function Main() {
   const { singleInvesterProfile, loading } = useAppSelector(
     (state) => state.investersProfile
   );
+
   const { user } = useAppSelector((state) => state.authentiction);
   const params = useParams();
 
@@ -359,10 +360,9 @@ function Main() {
                   (key, index) => {
                     const typedKey =
                       key as keyof typeof investorProfileEditableSectionsInvestors;
-                    const value = singleInvesterProfile?.[key];
+                    const value = singleInvesterProfile?.[typedKey];
                     const shouldRenderSection =
-                      value !== null ||
-                      (value === null && user?.user_type === "Admin");
+                      !!value || (!value && user?.user_type === "Admin");
 
                     if (!shouldRenderSection) {
                       return null;
