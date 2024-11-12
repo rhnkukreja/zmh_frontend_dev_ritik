@@ -637,6 +637,9 @@ function PeerAnalysis() {
                                   variant="primary"
                                   className="w-32 ml-2"
                                   type="submit"
+                                  onClick={() => {
+                                    close();
+                                  }}
                                 >
                                   Apply
                                 </Button>

@@ -258,7 +258,7 @@ function Main() {
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    region
+                                    Region
                                     {investerProfileFilterOption?.region
                                       ?.length > 0 && (
                                       <div>
