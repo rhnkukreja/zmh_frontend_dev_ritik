@@ -742,7 +742,7 @@ function PeerAnalysis() {
                               </Table.Td>
 
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                {peer?.company_sector}
+                                {peer?.caspio_company_sector}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {peer?.gov_list}
