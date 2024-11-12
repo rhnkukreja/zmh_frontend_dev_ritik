@@ -518,78 +518,81 @@ function PeerAnalysis() {
                                   />
                                 </div>
 
-                                <div className="w-full  my-2">
-                                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    Sector
-                                    {apiDropdownOptions?.sector?.length > 0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`sector`}
-                                            checked={
-                                              apiDropdownOptions?.sector
-                                                ?.length ===
-                                              watch("sector")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "sector",
-                                                  apiDropdownOptions?.sector
-                                                );
-                                              } else {
-                                                setValue("sector", []);
+                                {isAllCompanySelected === true && (
+                                  <div className="w-full  my-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                      Sector
+                                      {apiDropdownOptions?.sector?.length >
+                                        0 && (
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`sector`}
+                                              checked={
+                                                apiDropdownOptions?.sector
+                                                  ?.length ===
+                                                watch("sector")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <Controller
-                                    name="sector"
-                                    control={control}
-                                    defaultValue={[]}
-                                    render={({ field }) => (
-                                      <TomSelect
-                                        value={field.value || []}
-                                        onChange={(value) => {
-                                          field.onChange(value);
-                                        }}
-                                        options={{
-                                          placeholder: "Select Sector",
-                                        }}
-                                        className="w-full"
-                                        multiple
-                                      >
-                                        {getDropdownLoader ? (
-                                          <option value="--" disabled>
-                                            Loading...
-                                          </option>
-                                        ) : (
-                                          <>
-                                            {apiDropdownOptions?.sector
-                                              ?.length > 0 &&
-                                              apiDropdownOptions?.sector?.map(
-                                                (sector: string) => {
-                                                  return (
-                                                    <option value={sector}>
-                                                      {sector}
-                                                    </option>
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "sector",
+                                                    apiDropdownOptions?.sector
                                                   );
+                                                } else {
+                                                  setValue("sector", []);
                                                 }
-                                              )}
-                                          </>
-                                        )}
-                                      </TomSelect>
-                                    )}
-                                  />
-                                </div>
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <Controller
+                                      name="sector"
+                                      control={control}
+                                      defaultValue={[]}
+                                      render={({ field }) => (
+                                        <TomSelect
+                                          value={field.value || []}
+                                          onChange={(value) => {
+                                            field.onChange(value);
+                                          }}
+                                          options={{
+                                            placeholder: "Select Sector",
+                                          }}
+                                          className="w-full"
+                                          multiple
+                                        >
+                                          {getDropdownLoader ? (
+                                            <option value="--" disabled>
+                                              Loading...
+                                            </option>
+                                          ) : (
+                                            <>
+                                              {apiDropdownOptions?.sector
+                                                ?.length > 0 &&
+                                                apiDropdownOptions?.sector?.map(
+                                                  (sector: string) => {
+                                                    return (
+                                                      <option value={sector}>
+                                                        {sector}
+                                                      </option>
+                                                    );
+                                                  }
+                                                )}
+                                            </>
+                                          )}
+                                        </TomSelect>
+                                      )}
+                                    />
+                                  </div>
+                                )}
 
                                 {/* <div className="w-full  my-2">
                                   {isAllCompanySelected === true && (
