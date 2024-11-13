@@ -9,32 +9,32 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { PersistGate } from "redux-persist/integration/react";
 import { HelmetProvider } from "react-helmet-async";
+import ScrollTop from "./components/ScrollTop";
 
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <BrowserRouter>
-  <HelmetProvider>
+    <HelmetProvider>
 
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
           />
 
-        <Router />
-      
-      </PersistGate>
-    </Provider>
-          </HelmetProvider>
-    <ScrollToTop />
+          <Router />
+        </PersistGate>
+      </Provider>
+    </HelmetProvider>
+    {/* <ScrollTop /> */}
   </BrowserRouter>
 );
