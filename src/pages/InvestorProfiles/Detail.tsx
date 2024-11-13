@@ -256,8 +256,7 @@ function Main() {
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 ">
-        <div className="relative mt-9 !mb-4">
-          <div className="flex flex-col justify-between md:mt-0 md:h-10 md:items-center md:flex-row fixed top-[70px] !py-6 z-10  right-[1.2%] left-[10%] ">
+        <div className="flex flex-col justify-between	md:mt-0 md:h-10 md:items-center md:flex-row mb-4">
             <Button
               onClick={backToPreviousPage}
               variant="primary"
@@ -270,7 +269,6 @@ function Main() {
               />
               Back
             </Button>
-          </div>
         </div>
 
         <div ref={contentRef}>
