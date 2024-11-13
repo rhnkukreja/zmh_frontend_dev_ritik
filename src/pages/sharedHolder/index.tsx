@@ -552,7 +552,26 @@ function ShareHolderProposal() {
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center justify-end mt-2 mb-3">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          onFilterClear();
+                          close();
+                        }}
+                        className="w-32 mx-2"
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="w-32 mx-2"
+                        type="submit"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Year
@@ -808,26 +827,6 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
-                    </div>
-
-                    <div className="flex items-center justify-end mt-4">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          onFilterClear();
-                          close();
-                        }}
-                        className="w-32 mx-2"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-32 mx-2"
-                        type="submit"
-                      >
-                        Apply
-                      </Button>
                     </div>
                   </div>
                 </form>
