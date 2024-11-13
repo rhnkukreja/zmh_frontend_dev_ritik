@@ -197,7 +197,6 @@ function CompanyList() {
 
           <div className="flex items-center ">
             <div className="flex items-center">
-
               <Tippy
                 content="All Companies"
                 options={{
@@ -206,7 +205,9 @@ function CompanyList() {
               >
                 <div>
                   <FormSwitch>
-                  <label className="text-md mr-3 font-semibold">View All</label>
+                    <label className="text-md mr-3 font-semibold">
+                      View All
+                    </label>
                     <FormSwitch.Input
                       id="checkbox-switch-7"
                       type="checkbox"
@@ -288,6 +289,25 @@ function CompanyList() {
                         <Popover.Panel placement="bottom-end">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="p-2">
+                              <div className="flex items-center mt-4">
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    close();
+                                    onFilterClear();
+                                  }}
+                                  className="w-32 ml-auto"
+                                >
+                                  Clear
+                                </Button>
+                                <Button
+                                  variant="primary"
+                                  className="w-32 ml-2"
+                                  type="submit"
+                                >
+                                  Apply
+                                </Button>
+                              </div>
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="w-full ">
@@ -314,25 +334,6 @@ function CompanyList() {
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="flex items-center mt-4">
-                                <Button
-                                  variant="secondary"
-                                  onClick={() => {
-                                    close();
-                                    onFilterClear();
-                                  }}
-                                  className="w-32 ml-auto"
-                                >
-                                  Clear
-                                </Button>
-                                <Button
-                                  variant="primary"
-                                  className="w-32 ml-2"
-                                  type="submit"
-                                >
-                                  Apply
-                                </Button>
                               </div>
                             </div>
                           </form>

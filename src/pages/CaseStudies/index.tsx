@@ -447,8 +447,26 @@ function CaseStudies() {
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
+                    <div className="flex items-center justify-end mt-2 mb-4">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          onFilterClear();
+                        }}
+                        className="w-32 mx-2"
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="w-32 mx-2"
+                        type="submit"
+                      >
+                        Apply
+                      </Button>
+                    </div>
                     <div
-                      className={`grid grid-cols-1 xs:grid-cols-1 gap-4 ${
+                      className={`grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ${
                         isAllCompanySelected
                           ? "md:grid-cols-3"
                           : " md:grid-cols-2"
@@ -695,25 +713,6 @@ function CaseStudies() {
                           )}
                         />
                       </div>
-                    </div>
-
-                    <div className="flex items-center justify-end mt-4">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          onFilterClear();
-                        }}
-                        className="w-32 mx-2"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-32 mx-2"
-                        type="submit"
-                      >
-                        Apply
-                      </Button>
                     </div>
                   </div>
                 </form>

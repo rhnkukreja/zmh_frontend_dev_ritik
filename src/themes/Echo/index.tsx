@@ -734,7 +734,7 @@ function Main() {
 
       <div
         className={clsx([
-          "transition-[margin,width] duration-100 xl:pl-3.5 pt-[54px] pb-16 relative z-10 group mode",
+          "transition-[margin,width] duration-100 xl:pl-3.5 pt-[54px] pb-8 relative z-10 group mode",
           { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },

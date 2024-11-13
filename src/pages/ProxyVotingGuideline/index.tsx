@@ -280,6 +280,28 @@ function ProxyGuideline() {
                         <Popover.Panel placement="bottom-end">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="p-2">
+                              <div className="flex items-center mt-4">
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => {
+                                    close();
+                                    onFilterClear();
+                                  }}
+                                  className="w-32 ml-auto"
+                                >
+                                  Clear
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  variant="primary"
+                                  className="w-32 ml-2"
+                                  onClick={() => {
+                                    close();
+                                  }}
+                                >
+                                  Apply
+                                </Button>
+                              </div>
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
@@ -346,28 +368,6 @@ function ProxyGuideline() {
                                     )}
                                   />
                                 </div>
-                              </div>
-                              <div className="flex items-center mt-4">
-                                <Button
-                                  variant="secondary"
-                                  onClick={() => {
-                                    close();
-                                    onFilterClear();
-                                  }}
-                                  className="w-32 ml-auto"
-                                >
-                                  Clear
-                                </Button>
-                                <Button
-                                  type="submit"
-                                  variant="primary"
-                                  className="w-32 ml-2"
-                                  onClick={() => {
-                                    close();
-                                  }}
-                                >
-                                  Apply
-                                </Button>
                               </div>
                             </div>
                           </form>
