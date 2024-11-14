@@ -237,9 +237,9 @@ const index = () => {
                                       "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] w-[150px] text-left",
                                       "sticky top-0", // Ensure the header remains sticky at the top
                                       headerIndex === 0 &&
-                                        "sticky left-0 bg-header z-50 ", // Fix first column
+                                      "sticky left-0 bg-header z-50 ", // Fix first column
                                       headerIndex === 1 &&
-                                        "sticky left-[50px] bg-header z-50 ", // Fix second column (adjust 'left' value according to width)
+                                      "sticky left-[50px] bg-header z-50 ", // Fix second column (adjust 'left' value according to width)
                                     ])}
                                   >
                                     {vdsHeader?.header}
@@ -266,9 +266,9 @@ const index = () => {
                                           className={clsx([
                                             "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left",
                                             headerIndex === 0 &&
-                                              "sticky left-0 bg-white  z-5", // Fix first column
+                                            "sticky left-0 bg-white  z-5", // Fix first column
                                             headerIndex === 1 &&
-                                              "sticky left-[50px] bg-white z-5", // Fix second column
+                                            "sticky left-[50px] bg-white z-5", // Fix second column
                                           ])}
                                         >
                                           {/* <Tippy
@@ -309,14 +309,12 @@ const index = () => {
                                           {isObject(
                                             vdsProxy[vdsHeader?.field]
                                           ) &&
-                                          vdsProxy[vdsHeader?.field]?.notes !==
+                                            vdsProxy[vdsHeader?.field]?.notes !==
                                             null ? (
                                             <h1
                                               className={clsx([
-                                                vdsProxy[
-                                                  vdsHeader?.field
-                                                ]?.vote?.includes("Against") &&
-                                                  "text-red-700 font-semibold",
+                                                (vdsProxy[vdsHeader?.field]?.vote?.includes("Against") || vdsProxy[vdsHeader?.field]?.vote?.includes("Withhold")) &&
+                                                "text-red-700 font-semibold",
                                                 "flex items-center",
                                               ])}
                                             >
@@ -342,18 +340,17 @@ const index = () => {
                                               </Tippy>
                                             </h1>
                                           ) : isObject(
-                                              vdsProxy[vdsHeader?.field]
-                                            ) &&
+                                            vdsProxy[vdsHeader?.field]
+                                          ) &&
                                             vdsProxy[vdsHeader?.field]
                                               ?.notes === null ? (
                                             <h1
                                               className={clsx([
-                                                vdsProxy[
-                                                  vdsHeader?.field
-                                                ]?.vote?.includes("Against") &&
-                                                  "text-red-700 font-semibold ",
+                                                (vdsProxy[vdsHeader?.field]?.vote?.includes("Against") || vdsProxy[vdsHeader?.field]?.vote?.includes("Withhold")) &&
+                                                "text-red-700 font-semibold",
                                               ])}
                                             >
+
                                               {" "}
                                               {vdsProxy[vdsHeader?.field]?.vote}
                                             </h1>
