@@ -16,6 +16,7 @@ import { Bot } from "lucide-react";
 import CModal from "../DashboardAIModal";
 import { Dialog } from "@/components/Base/Headless";
 import LoadingIcon from "../Base/LoadingIcon";
+import ScrollTop from "../ScrollTop";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -255,6 +256,15 @@ function Main() {
           <Bot className="w-5 h-5" />
           <span className="ml-3 font-bold">AI Assistant</span></div>
         </div> */}
+
+
+        {/* AI Bot Modal & Button */}
+        <div className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white
+           rounded-full shadow-lg cursor-pointer
+            bg-gradient-to-b to-[#000000CC] from-[#9F1239]"
+        >
+          <ScrollTop />
+        </div>
 
       {/* <CModal isModalOpen={basicModalPreview}></CModal> */}
 

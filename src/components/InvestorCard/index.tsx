@@ -296,6 +296,48 @@ const index = () => {
                                               />
                                             )}
                                           </div>
+                                          
+                                          {/* { dashboard?.caseStudies_id && (
+                                            <Tippy
+                                              content="View Case Studies"
+                                              options={{ theme: "light" }}
+                                              className=" w-5 h-5 -mt-2 -mr-2  "
+                                              onClick={() =>
+                                                window.open(
+                                                  `/case-studies`,
+                                                  "_blank"
+                                                )
+                                              }
+                                            >
+                                              <div className="flex items-center justify-center w-full h-full text-black ">
+                                                <Lucide
+                                                  icon="FileSearch2"
+                                                  className="w-4 h-4 stroke-[1.5]"
+                                                />
+                                              </div>
+                                            </Tippy>
+                                          )} */}
+
+                                          {dashboard?.caseStudies_id && (
+                                            <Tippy
+                                              content="View Case Studies"
+                                              options={{ theme: "light" }}
+                                              className=" w-5 h-5 -mt-2 -mr-2  "
+                                              onClick={() =>
+                                                window.open(
+                                                  `/case-studies/${dashboard?.caseStudies_id}`,
+                                                  "_blank"
+                                                )
+                                              }
+                                            >
+                                              <div className="flex items-center justify-center w-full h-full text-black ">
+                                                <Lucide
+                                                  icon="FileSearch2"
+                                                  className="w-4 h-4 stroke-[1.5]"
+                                                />
+                                              </div>
+                                            </Tippy>
+                                          )}
 
                                           {dashboard?.investor_profile_id && (
                                             <Tippy
@@ -316,12 +358,6 @@ const index = () => {
                                                 />
                                               </div>
                                             </Tippy>
-                                            // <div
-
-                                            //   className="bg-red-900 hover:bg-red-700 font-semibold flex items-center cursor-pointer justify-center rounded-full w-5 h-5 text-[10px] text-white "
-                                            // >
-                                            //   P
-                                            // </div>
                                           )}
                                         </div>
                                       </Table.Td>

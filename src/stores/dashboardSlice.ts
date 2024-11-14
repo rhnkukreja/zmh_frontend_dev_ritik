@@ -24,6 +24,7 @@ export type CompanyDashboard = {
   engagement_topic: string;
   voted_against_directors: boolean;
   investor_profile_id: number;
+  caseStudies_id: number;
   // percent_ownership: string;
 };
 

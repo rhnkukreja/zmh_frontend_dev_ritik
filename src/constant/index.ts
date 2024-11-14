@@ -36,6 +36,7 @@ export const characterColors: {
 export const adminRoutes = ["Company", "Institutions"];
 
 export const investorProfileEditableSectionsInvestors = {
+  summary: { value: "Summary", type: "investor" },
   engagement_priorities: { value: "Engagement Priorities", type: "investor" },
   reporting_expectations: { value: "Reporting Expectations", type: "investor" },
   esg_integration_process: {
