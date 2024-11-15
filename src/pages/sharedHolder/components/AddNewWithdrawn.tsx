@@ -48,6 +48,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
         company: selectedShareholderWithdrawn?.company,
         status: selectedShareholderWithdrawn?.status,
         year:selectedShareholderWithdrawn?.year,
+        withdrawal_reason:selectedShareholderWithdrawn?.withdrawal_reason,
       },
     }
   );
@@ -202,11 +203,6 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                   </FormCheck.Label>
 
                   <div className="mt-2">
-                    {/* <Controller
-                      name="company"
-                      control={control}
-                      // rules={{ required: "Company Name is required" }}
-                      render={({ field ,fieldState: { error } }) => ( */}
                     <>
                       <div className="flex items-center ">
                         <MultiSearchBar
@@ -239,6 +235,28 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Reason for Withdrawal
+                  </FormCheck.Label>
+                  <Controller
+                    name="withdrawal_reason"
+                    control={control}
+                    rules={{ required: "Reason for Withdrawal is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Reason for Withdrawal"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Initiative
                   </FormCheck.Label>
                   <Controller
@@ -248,7 +266,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
-                          placeholder="Enter Initiative Number"
+                          placeholder="Enter Initiative"
                           {...field}
                         />
                         {error && (
@@ -268,7 +286,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                   </FormCheck.Label>
 
                   <div className="mt-2">
-                    <Controller
+                    {/* <Controller
                       name="status"
                       control={control}
                       rules={{ required: "Status is required" }}
@@ -292,14 +310,27 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                               }
                             )}
                           </TomSelect>
-                          {/* {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )} */}
+                         
                         </>
                       )}
-                    />
+                    /> */}
+                    <Controller
+                    name="status"
+                    control={control}
+                    rules={{ required: "Status is required" }}
+                    defaultValue="Withdrawn"
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Status"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
                   </div>
 
                   {errors.status && (

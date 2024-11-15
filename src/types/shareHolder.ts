@@ -61,7 +61,7 @@ export type AddWithdrawnType = {
   status: string;
   nl_exist: string;
   company_name?:string;
-  
+  withdrawal_reason: string;
 };
 
 
