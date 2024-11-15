@@ -296,17 +296,24 @@ const index = () => {
                                                 "flex items-center",
                                               ])}
                                             >
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  vdsProxy[vdsHeader?.field]?.vote === 'Split Vote' ? getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) : ''
+                                                {
+                                                  vdsProxy[vdsHeader?.field]?.vote === 'Split Vote' ?
+                                                    <Tippy
+                                                      content={
+                                                        isObject(
+                                                          vdsProxy[vdsHeader?.field]
+                                                        ) &&
+                                                        getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts)
+                                                      }
+                                                      options={{ theme: "light" }}
+                                                    >
+                                                      {vdsProxy[vdsHeader?.field]?.vote}
+                                                    </Tippy>
+
+                                                    :
+                                                    vdsProxy[vdsHeader?.field]?.vote
                                                 }
-                                                options={{ theme: "light" }}
-                                              >
-                                              {vdsProxy[vdsHeader?.field]?.vote}
-                                              </Tippy>
+                                             
 
 
                                               <Tippy
@@ -314,7 +321,7 @@ const index = () => {
                                                   isObject(
                                                     vdsProxy[vdsHeader?.field]
                                                   ) &&
-                                                  vdsProxy[vdsHeader?.field]?.vote === 'Split Vote' ? getContent(vdsProxy[vdsHeader?.field]?.notes) : vdsProxy[vdsHeader?.field]?.notes
+                                                  /* vdsProxy[vdsHeader?.field]?.vote === 'Split Vote' ?  */getContent(vdsProxy[vdsHeader?.field]?.notes) /* : vdsProxy[vdsHeader?.field]?.notes */
                                                 }
                                                 options={{ theme: "light" }}
                                               >

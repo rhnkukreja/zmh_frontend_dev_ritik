@@ -36,7 +36,7 @@ export type AddShareholderType = {
   category: string;
   sub_category: string;
   year:string;
-  company: string;
+  company: any;
   status: boolean;
   proposal_text: string;
   proposal_name: string;
@@ -57,7 +57,7 @@ export type AddWithdrawnType = {
   initiative: string;
   proponent: string;
   year:string;
-  company: string;
+  company: any;
   status: string;
   nl_exist: string;
   company_name?:string;
@@ -75,7 +75,7 @@ export type AddNoActionType = {
   category: string;
   sub_category: string;
   year:string;
-  company: string;
+  company: any;
   status: string;
   proposal_text: string;
   nl_exist: string;

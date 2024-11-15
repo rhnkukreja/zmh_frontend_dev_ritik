@@ -23,6 +23,7 @@ import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
+import CompanySelect from "@/components/ReactSelectAsync";
 interface AddNoActionProps {
   addNewNoActionModalVisible: boolean;
   setAddNewNoActionModalVisible: (visible: boolean) => void;
@@ -64,9 +65,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       },
     }
   );
-  const [isSaveForm, setIsSaveForm] = useState(false);
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
+  
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -101,13 +100,10 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     const transformedData = {
       ...data,
       proponent: data.proponent ? Number(data.proponent) : 0,
-      company: companyFilter?.length > 0 ? companyFilter[0] : 0
+      company: data?.company?.value ?? 0
+        
     };
 
-    if (companyFilter?.length === 0) {
-      setIsSaveForm(true);
-      return;
-    }
 
     try {
       let response;
@@ -133,17 +129,17 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     }
   };
 
-  const handleSearch = (searchTerms: string[]) => {
-    setCompanyFilter(searchTerms);
-  };
+  // const handleSearch = (searchTerms: string[]) => {
+  //   setCompanyFilter(searchTerms);
+  // };
 
-  useEffect(() => {
-    if(selectedShareholderNoAction){
-      setSearchTerms(selectedShareholderNoAction?.company_name ? [selectedShareholderNoAction?.company_name] : ['']);
-      setCompanyFilter(selectedShareholderNoAction?.company ? [selectedShareholderNoAction?.company] : ['']);
+  // useEffect(() => {
+  //   if(selectedShareholderNoAction){
+  //     setSearchTerms(selectedShareholderNoAction?.company_name ? [selectedShareholderNoAction?.company_name] : ['']);
+  //     setCompanyFilter(selectedShareholderNoAction?.company ? [selectedShareholderNoAction?.company] : ['']);
 
-    }
-  }, [selectedShareholderNoAction])
+  //   }
+  // }, [selectedShareholderNoAction])
 
   const onError: SubmitErrorHandler<any> = () => { };
 
@@ -176,7 +172,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
             <div className="flex flex-col gap-7">
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Proponent Name
                   </FormCheck.Label>
 
@@ -262,37 +258,28 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   />
                 </div>
 
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                    Company Name
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                   Company Name
                   </FormCheck.Label>
-
-                  <div className="mt-2">
-                    <>
-                      <div className="flex items-center ">
-                        <MultiSearchBar
-                          isRadioInput={true}
-                          onSearch={handleSearch}
-                          searchTerms={searchTerms}
-                          setSearchTerms={setSearchTerms}
-                          url="/company/"
-                          getValueKey="id"
-                          urlQueryKey="company_name"
-                          getOptionKey="name"
-                          placeHolder="Search Company"
-                        />
-                      </div>
-
-                      {isSaveForm && searchTerms?.length === 0 && (
-                        <Error className="text-red-600 mt-2">
-                          Company is Required
-                        </Error>
-                      )}
-                    </>
-                    {/* )} */}
-
-                    {/* /> */}
-                  </div>
+                  <Controller
+                    name="company"
+                    control={control}
+                    rules={{ required: "Company Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <CompanySelect
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        {...error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      />
+                    )}
+                  />
                 </div>
               </div>
 
@@ -300,7 +287,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 <div className="w-full flex-1">
                   <FormCheck.Label
                     htmlFor="engagement_date"
-                    className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
+                    className="block  font-semibold text-gray-800 mb-2 text-left"
                   >
                     Initial Date for Submission
                   </FormCheck.Label>
@@ -343,10 +330,49 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   )}
                 </div>
 
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                    Withdrawn
+                  </FormCheck.Label>
+
+                  <div className="mt-2 flex flex-col sm:flex-row">
+                    <Controller
+                      name="withdrawn"
+                      control={control}
+                      rules={{ required: "Withdrawn is required" }}
+                      render={({ field }) => (
+                        <>
+                          <FormCheck className="flex items-center mr-2">
+                            <FormCheck.Input
+                              id="checkbox-switch-4"
+                              type="checkbox"
+                              {...field}
+                              value="true"
+                              checked={field.value === true}
+                            // onChange={(e) => field.onChange(true)}
+                            />
+                            <FormCheck.Label
+                              htmlFor="checkbox-switch-4"
+                              className="ml-2 text-left"
+                            >
+                              Tick if withdrawn
+                            </FormCheck.Label>
+                          </FormCheck>
+
+                          {errors.status && (
+                            <Error className="max-w-[100%] mt-6">
+                              {errors.status?.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
                 {/* <div className="w-full flex-1">
                   <FormCheck.Label
                     htmlFor="engagement_date"
-                    className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
+                    className="block  font-semibold text-gray-800 mb-2 text-left"
                   >
                     Staff Response Date
                   </FormCheck.Label>
@@ -393,7 +419,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Category Name
                   </FormCheck.Label>
 
@@ -436,7 +462,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div>
 
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Sub Category
                   </FormCheck.Label>
 
@@ -483,7 +509,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
 
 
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Year
                   </FormCheck.Label>
 
@@ -585,7 +611,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
 
 
               <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                   Proposal Text
                 </FormCheck.Label>
                 <Controller
