@@ -23,7 +23,7 @@ interface MainProps {
 function Main(props: MainProps) {
   const dispatch: AppDispatch = useAppDispatch();
   const [search, setSearch] = useState("");
-  const { companyDataList } = useAppSelector((state) => state.dashboard);
+  const { companyDataList, loading } = useAppSelector((state) => state.dashboard);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -141,7 +141,7 @@ function Main(props: MainProps) {
                     </div>
                   </div>
                   <div className="relative z-10 pb-1 mt-1 bg-white rounded-lg shadow-lg max-h-[468px] sm:max-h-[615px] overflow-y-auto">
-                    {companyDataList.length === 0 ? (
+                    {companyDataList.length === 0 && loading ? (
                       <div className="flex flex-col items-center justify-center pt-20 pb-28">
                         <Lucide
                           icon="SearchX"
@@ -152,7 +152,7 @@ function Main(props: MainProps) {
                             ? "No result found"
                             : "Search Companies..."}
                         </div>
-                        {search.length > 0 && (
+                        {search.length > 0 && !loading && (
                           <div className="w-2/3 mt-3 leading-relaxed text-center text-slate-500">
                             No results found for
                             <span className="italic font-medium">

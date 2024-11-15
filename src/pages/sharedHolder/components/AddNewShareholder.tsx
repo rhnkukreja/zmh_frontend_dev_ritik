@@ -58,6 +58,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proposal_num: selectedShareholderProposal?.proposal_num,
       sub_category: selectedShareholderProposal?.sub_category,
       year: selectedShareholderProposal?.year,
+      adminStatus: selectedShareholderProposal?.adminStatus,
     },
   });
 
@@ -534,6 +535,62 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </Error>
                 )}
               </div>
+
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  Admin Status
+                </FormCheck.Label>
+                <div className="flex flex-col sm:flex-row">
+                  <Controller
+                    name="adminStatus"
+                    control={control}
+                    rules={{ required: "Admin Status is required" }}
+                    render={({ field }) => (
+                      <>
+                        <FormCheck className="flex items-center mr-2">
+                          <FormCheck.Input
+                            id="radio-switch-4"
+                            type="radio"
+                            {...field}
+                            value="true"
+                            checked={field.value === true}
+                            onChange={(e) => field.onChange(true)}
+                          />
+                          <FormCheck.Label
+                            htmlFor="radio-switch-4"
+                            className="ml-2"
+                          >
+                            True
+                          </FormCheck.Label>
+                        </FormCheck>
+                        <FormCheck className="flex items-center mt-2 sm:mt-0">
+                          <FormCheck.Input
+                            id="radio-switch-5"
+                            type="radio"
+                            {...field}
+                            value="false"
+                            checked={field.value === false}
+                            onChange={(e) => field.onChange(false)}
+                          />
+                          <FormCheck.Label
+                            htmlFor="radio-switch-5"
+                            className="ml-2"
+                          >
+                            False
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </>
+                    )}
+                  />
+                </div>
+                {errors.adminStatus && (
+                  <Error className="max-w-[100%] mt-6">
+                    {errors.adminStatus?.message}
+                  </Error>
+                )}
+              </div>
+
             </div>
           </Dialog.Description>
 

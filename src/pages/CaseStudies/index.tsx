@@ -26,7 +26,7 @@ import {
   selectUnSelectAllCompany,
   resetPage,
 } from "@/stores/caseStudySlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { caseStudiesService } from "@/services/caseStudies";
 import { FlterDropdown } from "@/types/casestudy";
 import { commonService } from "@/services/common";
@@ -154,11 +154,12 @@ function CaseStudies() {
     getAllCaseStudyDropdowns();
   }, []);
 
-  useEffect(() => {
-    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
-      return;
-    }
+  const [searchParams] = useSearchParams();
+  const institution_name = searchParams.get("institution_name")!;
 
+  const getCaseStudyInvestorProfile = () => {
+
+    const filters = { institution_name: [institution_name], global_search: [companyGlobalSearchName] };
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
       filters,
@@ -166,15 +167,36 @@ function CaseStudies() {
       page
     );
     dispatch(fetchCaseStudies(dynamicURL));
+  }
+  
 
-    const { institution_name, global_search, ...restFilters } = filters;
-    setFiltersLength(
-      countValidFilters(
-        isAllCompanySelected === false
-          ? restFilters
-          : { ...restFilters, global_search: filters.global_search }
-      )
-    );
+  useEffect(() => {
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
+
+    if (institution_name) {
+      getCaseStudyInvestorProfile();
+    }
+
+    else {
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/case_studies/`,
+        filters,
+        undefined,
+        page
+      );
+      dispatch(fetchCaseStudies(dynamicURL));
+  
+      const { institution_name, global_search, ...restFilters } = filters;
+      setFiltersLength(
+        countValidFilters(
+          isAllCompanySelected === false
+            ? restFilters
+            : { ...restFilters, global_search: filters.global_search }
+        )
+      );
+    }
   }, [page, filters]);
 
   const handleNextPage = () => {

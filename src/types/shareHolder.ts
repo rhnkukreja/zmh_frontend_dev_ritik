@@ -45,6 +45,7 @@ export type AddShareholderType = {
   vote_outcome_formula: string;
   institution: string;
   company_name?:string;
+  adminStatus: boolean;
 };
 
 
@@ -57,6 +58,7 @@ export type AddWithdrawnType = {
   status: string;
   nl_exist: string;
   company_name?:string;
+  
 };
 
 
