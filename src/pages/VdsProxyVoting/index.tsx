@@ -137,10 +137,7 @@ const index = () => {
 
   function getContent(text: string): string {
     // const textLines = text.split('<br>');
-    const textContent = text
-  .split('<br>')
-  .map((line) => line.trim())
-  .join('\n\n\n');
+    const textContent = text.split('<br>').map((line) => line.trim()).join('\n\n\n');
     return textContent;
   }
 

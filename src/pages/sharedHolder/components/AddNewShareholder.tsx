@@ -58,7 +58,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proposal_num: selectedShareholderProposal?.proposal_num,
       sub_category: selectedShareholderProposal?.sub_category,
       year: selectedShareholderProposal?.year,
-      adminStatus: selectedShareholderProposal?.adminStatus,
+      actual_proponent_name: selectedShareholderProposal?.actual_proponent_name,
+      percentage_support: selectedShareholderProposal?.percentage_support,
+
+      
     },
   });
 
@@ -227,43 +230,33 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </div>
                 </div>
 
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                    Company Name
+
+
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Actual Proponent Name
                   </FormCheck.Label>
-
-                  <div className="mt-2">
-                    {/* <Controller
-                      name="company"
-                      control={control}
-                      // rules={{ required: "Company Name is required" }}
-                      render={({ field ,fieldState: { error } }) => ( */}
-                    <>
-                      <div className="flex items-center ">
-                        <MultiSearchBar
-                          isRadioInput={true}
-                          onSearch={handleSearch}
-                          searchTerms={searchTerms}
-                          setSearchTerms={setSearchTerms}
-                          url="/company/"
-                          getValueKey="id"
-                          urlQueryKey="company_name"
-                          getOptionKey="name"
-                          placeHolder="Search Company"
+                  <Controller
+                    name="actual_proponent_name"
+                    control={control}
+                    rules={{ required: "Actual Proponent Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Actual Proponent Name"
+                          {...field}
                         />
-                      </div>
-
-                      {isSaveForm && companyFilter?.length === 0 && (
-                        <Error className="text-red-600 mt-2">
-                          Company is Required
-                        </Error>
-                      )}
-                    </>
-                    {/* )} */}
-
-                    {/* /> */}
-                  </div>
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
                 </div>
+                
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -314,6 +307,66 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     )}
                   />
                 </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Percentage Support
+                  </FormCheck.Label>
+                  <Controller
+                    name="percentage_support"
+                    control={control}
+                    rules={{ required: "Percentage Support is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Percentage Support"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                    Company Name
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <>
+                      <div className="flex items-center ">
+                        <MultiSearchBar
+                          isRadioInput={true}
+                          onSearch={handleSearch}
+                          searchTerms={searchTerms}
+                          setSearchTerms={setSearchTerms}
+                          url="/company/"
+                          getValueKey="id"
+                          urlQueryKey="company_name"
+                          getOptionKey="name"
+                          placeHolder="Search Company"
+                        />
+                      </div>
+
+                      {isSaveForm && companyFilter?.length === 0 && (
+                        <Error className="text-red-600 mt-2">
+                          Company is Required
+                        </Error>
+                      )}
+                    </>
+                    {/* )} */}
+
+                    {/* /> */}
+                  </div>
+                </div>
+                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -405,14 +458,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                    Status
+                    Vote Outcome Formula
                   </FormCheck.Label>
 
                   <div className="mt-2">
                     <Controller
-                      name="status"
+                      name="vote_outcome_formula"
                       control={control}
-                      rules={{ required: "Status is required" }}
+                      rules={{ required: "Vote Outcome Formula is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -421,7 +474,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               field.onChange(e.target.value);
                             }}
                             options={{
-                              placeholder: "Select Status",
+                              placeholder: "Select Vote Outcome Formula",
                             }}
                             className="w-full text-left"
                           >
@@ -480,7 +533,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+              {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Link to Filing
@@ -510,7 +563,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     )}
                   />
                 </div>
-              </div>
+              </div> */}
 
               <div>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
@@ -543,7 +596,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </FormCheck.Label>
                 <div className="flex flex-col sm:flex-row">
                   <Controller
-                    name="adminStatus"
+                    name="status"
                     control={control}
                     rules={{ required: "Admin Status is required" }}
                     render={({ field }) => (
@@ -584,9 +637,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     )}
                   />
                 </div>
-                {errors.adminStatus && (
+                {errors.status && (
                   <Error className="max-w-[100%] mt-6">
-                    {errors.adminStatus?.message}
+                    {errors.status?.message}
                   </Error>
                 )}
               </div>

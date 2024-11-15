@@ -51,7 +51,7 @@ interface CompanySliceState {
   notificationDetails: any | null;
   notificationLoading: boolean;
   totalNotification: number,
-
+  instituteName: string | null;
 }
 
 const initialState: CompanySliceState = {
@@ -73,6 +73,7 @@ const initialState: CompanySliceState = {
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
+  instituteName: null,
   percent: '',
   notificationDetails: [],
   notificationLoading: true,
@@ -147,6 +148,9 @@ const companySlice = createSlice({
     },
     setTempSearch(state, action: PayloadAction<string>) {
       state.tempSearch = action.payload;
+    },
+    setInstitution(state, action: PayloadAction<string>) {
+      state.instituteName = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -281,4 +285,4 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage, setTempSearch } = companySlice.actions;
+export const { setPage, resetPage, setTempSearch, setInstitution } = companySlice.actions;

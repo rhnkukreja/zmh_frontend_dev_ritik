@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   CompanyDashboard,
   fetchCompanyDashboard,
+  setInstitution,
   setPage,
   setTempSearch,
 } from "@/stores/dashboardSlice";
@@ -130,6 +131,12 @@ const index = () => {
 
     downloadCSV(csvContent, `Investor-${companyGlobalSearchName}`);
   };
+
+  const redirectCaseStudy = (institution_name: string) => {
+      // window.open(`/case-studies`, "_blank");
+      navigate(`/case-studies`);
+      dispatch(setInstitution(institution_name));
+  }
 
   return (
     <>
@@ -363,9 +370,7 @@ const index = () => {
                                                 content="Case Studies"
                                                 options={{ theme: "light" }}
                                                 className="w-5 h-5 -mt-2 -mr-2"
-                                                onClick={() =>
-                                                  window.open(`/case-studies`, "_blank")
-                                                }
+                                                onClick={()=> redirectCaseStudy(dashboard?.institution_name)}
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary">
                                                   <Lucide icon="FileSearch2" className="w-4 h-4 stroke-[1.5]" />

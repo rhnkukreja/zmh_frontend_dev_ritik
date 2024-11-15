@@ -2,7 +2,7 @@ import TopBar from "@/components/TopBar";
 import DocumentationMenu from "@/components/DocumentationMenu";
 import ContactCard from "@/components/ContactCard";
 import PDFCard from "@/components/PDFCard";
-import MasterCardGrid from "@/components/MasterCardGrid";
+import MasterCardGrid from "@/components/MastergridList";
 import {
   engagement_questions_gridHeaders,
   case_studies_gridHeaders,

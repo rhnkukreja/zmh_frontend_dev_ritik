@@ -35,6 +35,7 @@ import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { modifyRoute } from "@/stores/themeSlice";
 import AddNewCaseStudies from "./Components/AddEditCaseStudies";
+import { setInstitution } from "@/stores/dashboardSlice";
 
 function CaseStudies() {
   interface CaseStudyFilter {
@@ -55,6 +56,9 @@ function CaseStudies() {
   const navigate = useNavigate();
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
+  );
+  const { instituteName: InstituteName } = useAppSelector(
+    (state) => state.dashboard
   );
 
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
@@ -154,12 +158,12 @@ function CaseStudies() {
     getAllCaseStudyDropdowns();
   }, []);
 
-  const [searchParams] = useSearchParams();
-  const institution_name = searchParams.get("institution_name")!;
+  // const [searchParams] = useSearchParams();
+  // const institution_name = searchParams.get("institution_name")!;
 
   const getCaseStudyInvestorProfile = () => {
 
-    const filters = { institution_name: [institution_name], global_search: [companyGlobalSearchName] };
+    const filters = { institution_name: [InstituteName], global_search: [companyGlobalSearchName] };
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
       filters,
@@ -175,7 +179,7 @@ function CaseStudies() {
       return;
     }
 
-    if (institution_name) {
+    if (InstituteName) {
       getCaseStudyInvestorProfile();
     }
 
@@ -197,7 +201,22 @@ function CaseStudies() {
         )
       );
     }
-  }, [page, filters]);
+  }, [page, filters, InstituteName]);
+
+  useEffect(() => {
+    if (InstituteName) {
+      setSearchTerms(
+        InstituteName
+          ? [InstituteName]
+          : [""]
+      );
+      // setCompanyFilter(
+      //   selectedShareholderProposal?.company
+      //     ? [selectedShareholderProposal?.company]
+      //     : [""]
+      // );
+    }
+  }, [InstituteName]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -232,11 +251,13 @@ function CaseStudies() {
     dispatch(
       setFilters({ key: "global_search", value: [companyGlobalSearchName] })
     );
+    dispatch(setInstitution(''));
   };
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilters({ key: "institution_name", value: searchTerms }));
     dispatch(resetPage());
+    // dispatch(setInstitution(''));
   };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {

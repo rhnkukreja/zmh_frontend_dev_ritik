@@ -58,6 +58,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
         link_to_staff_response: selectedShareholderNoAction?.link_to_staff_response,
         staff_response: selectedShareholderNoAction?.staff_response,
         bases_asserted_for_exclusion: selectedShareholderNoAction?.bases_asserted_for_exclusion,
+        withdrawn: selectedShareholderNoAction?.withdrawn,
+        vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
+        actual_proponent_name: selectedShareholderNoAction?.actual_proponent_name,
       },
     }
   );
@@ -205,17 +208,66 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   </div>
                 </div>
 
+
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Actual Proponent Name
+                  </FormCheck.Label>
+                  <Controller
+                    name="actual_proponent_name"
+                    control={control}
+                    rules={{ required: "Actual Proponent Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Actual Proponent Name"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+                
+
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Staff Name
+                  </FormCheck.Label>
+                  <Controller
+                    name="staff_response"
+                    control={control}
+                    rules={{ required: "Staff Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Staff Name"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Company Name
                   </FormCheck.Label>
 
                   <div className="mt-2">
-                    {/* <Controller
-                      name="company"
-                      control={control}
-                      // rules={{ required: "Company Name is required" }}
-                      render={({ field ,fieldState: { error } }) => ( */}
                     <>
                       <div className="flex items-center ">
                         <MultiSearchBar
@@ -242,7 +294,6 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     {/* /> */}
                   </div>
                 </div>
-
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -292,7 +343,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   )}
                 </div>
 
-                <div className="w-full flex-1">
+                {/* <div className="w-full flex-1">
                   <FormCheck.Label
                     htmlFor="engagement_date"
                     className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
@@ -336,7 +387,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       {errors.nl_exist.message}
                     </Error>
                   )}
-                </div>
+                </div> */}
               </div>
 
 
