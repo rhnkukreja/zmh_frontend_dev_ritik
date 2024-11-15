@@ -141,6 +141,13 @@ const index = () => {
     return textContent;
   }
 
+  const getSplitContents = (items: any) => {
+    const resultString = Object.entries(items)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+    return resultString;
+  }
+
   return (
     <>
       {/* <div className="p-y-5 mb-1 font-semibold text-xl ">
@@ -289,7 +296,18 @@ const index = () => {
                                                 "flex items-center",
                                               ])}
                                             >
+                                              <Tippy
+                                                content={
+                                                  isObject(
+                                                    vdsProxy[vdsHeader?.field]
+                                                  ) &&
+                                                  vdsProxy[vdsHeader?.field]?.vote === 'Split Vote' ? getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) : ''
+                                                }
+                                                options={{ theme: "light" }}
+                                              >
                                               {vdsProxy[vdsHeader?.field]?.vote}
+                                              </Tippy>
+
 
                                               <Tippy
                                                 content={
@@ -319,13 +337,10 @@ const index = () => {
                                                 "text-red-700 font-semibold",
                                               ])}
                                             >
-
-                                              {" "}
                                               {vdsProxy[vdsHeader?.field]?.vote}
                                             </h1>
                                           ) : (
                                             <h1>
-                                              {" "}
                                               {vdsProxy[vdsHeader?.field]}
                                             </h1>
                                           )}

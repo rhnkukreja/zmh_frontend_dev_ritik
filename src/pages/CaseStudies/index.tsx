@@ -158,9 +158,6 @@ function CaseStudies() {
     getAllCaseStudyDropdowns();
   }, []);
 
-  // const [searchParams] = useSearchParams();
-  // const institution_name = searchParams.get("institution_name")!;
-
   const getCaseStudyInvestorProfile = () => {
 
     const filters = { institution_name: [InstituteName], global_search: [companyGlobalSearchName] };
@@ -210,11 +207,6 @@ function CaseStudies() {
           ? [InstituteName]
           : [""]
       );
-      // setCompanyFilter(
-      //   selectedShareholderProposal?.company
-      //     ? [selectedShareholderProposal?.company]
-      //     : [""]
-      // );
     }
   }, [InstituteName]);
 
@@ -257,7 +249,7 @@ function CaseStudies() {
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilters({ key: "institution_name", value: searchTerms }));
     dispatch(resetPage());
-    // dispatch(setInstitution(''));
+    dispatch(setInstitution(searchTerms[0]));
   };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
