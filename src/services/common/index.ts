@@ -37,6 +37,15 @@ class CommonService {
       return error;
     }
   }
+
+  public async lastQuickSearches(): Promise<any> {
+    try {
+      const response = await axiosInstance.get("/user/get_last_searches");
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  }
 }
 
 export const commonService = new CommonService();

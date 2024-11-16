@@ -25,6 +25,7 @@ export type CompanyDashboard = {
   voted_against_directors: boolean;
   investor_profile_id: number;
   case_studies_id: number;
+
   // percent_ownership: string;
 };
 
@@ -52,6 +53,8 @@ interface CompanySliceState {
   notificationLoading: boolean;
   totalNotification: number,
   instituteName: string | null;
+  companySearchLoading: boolean;
+
 }
 
 const initialState: CompanySliceState = {
@@ -78,7 +81,7 @@ const initialState: CompanySliceState = {
   notificationDetails: [],
   notificationLoading: true,
   totalNotification: 0,
-
+  companySearchLoading: true
   // {
   //   nominees: [],
   //   proposals: [],
@@ -157,18 +160,18 @@ const companySlice = createSlice({
     builder
 
       .addCase(fetchCompanyByName.pending, (state) => {
-        state.loading = true;
+        state.companySearchLoading = true;
         state.error = null;
       })
       .addCase(
         fetchCompanyByName.fulfilled,
         (state, action: PayloadAction<{ results: CompanyData[] }>) => {
-          state.loading = false;
+          state.companySearchLoading = false;
           state.companyDataList = action.payload.results;
         }
       )
       .addCase(fetchCompanyByName.rejected, (state, action) => {
-        state.loading = false;
+        state.companySearchLoading = false;
         state.error = action.error.message || "Failed to fetch company by name";
       })
 

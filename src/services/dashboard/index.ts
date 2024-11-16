@@ -6,12 +6,16 @@ class DashboardService {
   public async fetchCompanyByName(companyName?: string): Promise<{
     results: CompanyData[];
   }> {
-    const url = `/company/?${
-      companyName ? `company_name=${companyName}&` : ""
-    }all=true`;
-    const response = await axiosInstance.get(url);
-    console.log({ response });
-    const results = response.data;
+    let results = [];
+    if(companyName !== ""){
+      const url = `/company/?${
+        companyName ? `company_name=${companyName}&` : ""
+      }all=true`;
+      const response = await axiosInstance.get(url);
+      console.log({ response });
+      results = response.data;
+    }
+    
 
     return {
       results: results,
