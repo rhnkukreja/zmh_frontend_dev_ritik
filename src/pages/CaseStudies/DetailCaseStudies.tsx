@@ -42,138 +42,125 @@ const DetailCaseStudies = () => {
       <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
           <h1 className="text-xl font-semibold">Case Studies</h1>
-          {/* {loading === false && (
-            <Button
-              type="button"
-              variant="outline-primary"
-              className=" border-none sm:w-fit "
-              onClick={() => {}}
-            >
-              {false ? (
-                <Lucide
-                  icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] group-[.mode--dark]:text-white ${
-                    false ? "animate-spin" : ""
-                  }`}
-                />
-              ) : (
-                <Lucide
-                  icon="Download"
-                  className="w-4 h-4 mr-1.5 stroke-[1.3] group-[.mode--dark]:text-white "
-                />
-              )}
-
-              <div className=" group-[.mode--dark]:text-white">
-                Download PDF
-              </div>
-            </Button>
-          )} */}
         </div>
 
         {loading ? (
           <LoadingWrapper height={200} />
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 border-b-2 pb-6">
+            <div className="space-y-4 border-b-2 pb-6">
               {singleCaseStudy?.institution_name && (
-                <div>
-                  <h3 className="font-semibold">Institution Name</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Institution Name
+                  </h3>
                   <p>{singleCaseStudy.institution_name}</p>
                 </div>
               )}
               {singleCaseStudy?.esg_themes && (
-                <div>
-                  <h3 className="font-semibold">Theme</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">Theme</h3>
                   <p>{singleCaseStudy.esg_themes}</p>
                 </div>
               )}
               {singleCaseStudy?.industry && (
-                <div>
-                  <h3 className="font-semibold">Industry</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Industry
+                  </h3>
                   <p>{singleCaseStudy.industry}</p>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4 border-b-2 pb-6">
+            <div className="space-y-4 border-b-2 pb-6">
               {singleCaseStudy?.company_name && (
-                <div>
-                  <h3 className="font-semibold">Company</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Company
+                  </h3>
                   <p>{singleCaseStudy.company_name}</p>
                 </div>
               )}
               {singleCaseStudy?.company_ticker && (
-                <div>
-                  <h3 className="font-semibold">Company Ticker</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Company Ticker
+                  </h3>
                   <p>{singleCaseStudy.company_ticker}</p>
                 </div>
               )}
               {singleCaseStudy?.company_sector && (
-                <div>
-                  <h3 className="font-semibold">Company Sector</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Company Sector
+                  </h3>
                   <p>{singleCaseStudy.company_sector}</p>
                 </div>
               )}
               {singleCaseStudy?.year && (
-                <div>
-                  <h3 className="font-semibold">Year</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">Year</h3>
                   <p>{singleCaseStudy.year}</p>
                 </div>
               )}
               {singleCaseStudy?.market && (
-                <div>
-                  <h3 className="font-semibold">Market</h3>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Market
+                  </h3>
                   <p>{singleCaseStudy.market}</p>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {singleCaseStudy?.engagement_details && (
-                <div>
-                  <h3 className="font-semibold">Engagement/Voting Details</h3>
-                  <p className="mb-4">{singleCaseStudy.engagement_details}</p>
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Engagement/Voting Details
+                  </h3>
+                  <p>{singleCaseStudy.engagement_details}</p>
                 </div>
               )}
-
-              <div className="flex flex-col">
-                {singleCaseStudy?.proposal_type && (
-                  <div className="mt-2 flex gap-4">
-                    <p className="font-semibold min-w-[100px]">Proponent</p>
-                    <p>{singleCaseStudy.proposal_type}</p>
-                  </div>
-                )}
-                {singleCaseStudy?.resolution_engagement_topic && (
-                  <div className="mt-2 flex gap-4">
-                    <p className="font-semibold min-w-[100px]">Resolution</p>
-                    <p className="text-muted-foreground">
-                      {singleCaseStudy.resolution_engagement_topic}
-                    </p>
-                  </div>
-                )}
-                {singleCaseStudy?.vote && (
-                  <div className="mt-2 flex gap-4">
-                    <p className="font-semibold min-w-[100px]">Vote</p>
-                    <p className="text-destructive">{singleCaseStudy.vote}</p>
-                  </div>
-                )}
-                {singleCaseStudy?.voting_rationale && (
-                  <div className="mt-2 flex gap-4">
-                    <p className="font-semibold min-w-[100px]">Rationale</p>
-                    <p className="text-muted-foreground">
-                      {singleCaseStudy.voting_rationale}
-                    </p>
-                  </div>
-                )}
-                {singleCaseStudy?.voting_details && (
-                  <div className="mt-2 flex gap-4">
-                    <p className="font-semibold min-w-[100px]">Details</p>
-                    <p className="text-muted-foreground">
-                      {singleCaseStudy.voting_details}
-                    </p>
-                  </div>
-                )}
-              </div>
+              {singleCaseStudy?.proposal_type && (
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Proponent
+                  </h3>
+                  <p>{singleCaseStudy.proposal_type}</p>
+                </div>
+              )}
+              {singleCaseStudy?.resolution_engagement_topic && (
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Resolution
+                  </h3>
+                  <p>{singleCaseStudy.resolution_engagement_topic}</p>
+                </div>
+              )}
+              {singleCaseStudy?.vote && (
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">Vote</h3>
+                  <p className="text-destructive">{singleCaseStudy.vote}</p>
+                </div>
+              )}
+              {singleCaseStudy?.voting_rationale && (
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Rationale
+                  </h3>
+                  <p>{singleCaseStudy.voting_rationale}</p>
+                </div>
+              )}
+              {singleCaseStudy?.voting_details && (
+                <div className="flex flex-col sm:flex-row">
+                  <h3 className="font-semibold min-w-[150px] sm:mr-8">
+                    Details
+                  </h3>
+                  <p>{singleCaseStudy.voting_details}</p>
+                </div>
+              )}
             </div>
 
             <div>
