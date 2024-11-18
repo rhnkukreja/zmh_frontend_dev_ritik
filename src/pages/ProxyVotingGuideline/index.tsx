@@ -33,6 +33,7 @@ import { toast } from "react-toastify";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import { FormCheck } from "@/components/Base/Form";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 interface ProxyGuidelineFilter {
   year: string[];
@@ -439,10 +440,12 @@ function ProxyGuideline() {
                                     </>
                                   ) : (
                                     <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                      <Lucide
-                                        icon="User"
-                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                      <img
+                                        alt="ZMH Analytics"
+                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                        src={investorIcon}
                                       />
+
                                       <a
                                         href=""
                                         className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"

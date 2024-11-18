@@ -36,6 +36,7 @@ import CompanySelect from "@/components/ReactSelectAsync";
 import { modifyRoute } from "@/stores/themeSlice";
 import AddNewCaseStudies from "./Components/AddEditCaseStudies";
 import { setInstitution } from "@/stores/dashboardSlice";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 function CaseStudies() {
   interface CaseStudyFilter {
@@ -159,8 +160,10 @@ function CaseStudies() {
   }, []);
 
   const getCaseStudyInvestorProfile = () => {
-
-    const filters = { institution_name: [InstituteName], global_search: [companyGlobalSearchName] };
+    const filters = {
+      institution_name: [InstituteName],
+      global_search: [companyGlobalSearchName],
+    };
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
       filters,
@@ -168,8 +171,7 @@ function CaseStudies() {
       page
     );
     dispatch(fetchCaseStudies(dynamicURL));
-  }
-  
+  };
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
@@ -178,9 +180,7 @@ function CaseStudies() {
 
     if (InstituteName) {
       getCaseStudyInvestorProfile();
-    }
-
-    else {
+    } else {
       const dynamicURL = createDynamicURL(
         `${baseURL}/case_studies/`,
         filters,
@@ -188,7 +188,7 @@ function CaseStudies() {
         page
       );
       dispatch(fetchCaseStudies(dynamicURL));
-  
+
       const { institution_name, global_search, ...restFilters } = filters;
       setFiltersLength(
         countValidFilters(
@@ -202,11 +202,7 @@ function CaseStudies() {
 
   useEffect(() => {
     if (InstituteName) {
-      setSearchTerms(
-        InstituteName
-          ? [InstituteName]
-          : [""]
-      );
+      setSearchTerms(InstituteName ? [InstituteName] : [""]);
     }
   }, [InstituteName]);
 
@@ -243,7 +239,7 @@ function CaseStudies() {
     dispatch(
       setFilters({ key: "global_search", value: [companyGlobalSearchName] })
     );
-    dispatch(setInstitution(''));
+    dispatch(setInstitution(""));
   };
 
   const handleSearch = (searchTerms: string[]) => {
@@ -804,9 +800,10 @@ function CaseStudies() {
                                   </>
                                 ) : (
                                   <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                    <Lucide
-                                      icon="User"
-                                      className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                    <img
+                                      alt="ZMH Analytics"
+                                      className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                      src={investorIcon}
                                     />
                                     <a
                                       href=""

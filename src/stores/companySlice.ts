@@ -127,7 +127,7 @@ const companySlice = createSlice({
       })
       .addCase(addEditCompany.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("action.payload: ", action.payload);
+        // console.log("action.payload: ", action.payload);
         if (action.payload.isEdit) {
           const index = state.companies.findIndex(
             (company) => company.id === action.payload.results.id

@@ -189,8 +189,8 @@ function Main() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/institute/"
-                    getOptionKey="institution"
+                    url="/investor_profile/"
+                    getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
                   />

@@ -112,7 +112,7 @@ const index = () => {
       // Iterate over each cell and get the text content
       cells.forEach((cell) => {
         let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
-        console.log(cellText);
+        // console.log(cellText);
         // Check if the cell contains a comma, wrap it in double quotes
         if (cellText?.includes(",")) {
           cellText = `"${cellText}"`;
@@ -133,10 +133,10 @@ const index = () => {
   };
 
   const redirectCaseStudy = (institution_name: string) => {
-      // window.open(`/case-studies`, "_blank");
-      navigate(`/case-studies`);
-      dispatch(setInstitution(institution_name));
-  }
+    // window.open(`/case-studies`, "_blank");
+    navigate(`/case-studies`);
+    dispatch(setInstitution(institution_name));
+  };
 
   return (
     <>
@@ -204,7 +204,7 @@ const index = () => {
                     <div
                       className={clsx([
                         locationPathName === "/" &&
-                        "overflow-auto max-h-[400px]",
+                          "overflow-auto max-h-[400px]",
                       ])}
                     >
                       <Table className="table">
@@ -269,11 +269,11 @@ const index = () => {
                                             alt="ZMH Analytics"
                                             src={
                                               validImages[
-                                              dashboard.institution_name
+                                                dashboard.institution_name
                                               ] || userLinkedinImage
                                             }
 
-                                          // {dashboard?.institution_logo_url ?? userLinkedinImage}
+                                            // {dashboard?.institution_logo_url ?? userLinkedinImage}
                                           />
                                         </div>
 
@@ -290,7 +290,7 @@ const index = () => {
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize max-w-[150px] text-wrap",
                                                 dashboard?.investor_profile_id &&
-                                                "cursor-pointer underline",
+                                                  "cursor-pointer underline",
                                               ])}
                                             >
                                               {dashboard?.institution_name}
@@ -358,7 +358,10 @@ const index = () => {
                                                 }
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary">
-                                                  <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
+                                                  <Lucide
+                                                    icon="FileText"
+                                                    className="w-4 h-4 stroke-[1.3]"
+                                                  />
                                                 </div>
                                               </Tippy>
                                             ) : (
@@ -370,17 +373,23 @@ const index = () => {
                                                 content="Case Studies"
                                                 options={{ theme: "light" }}
                                                 className="w-5 h-5 -mt-2 -mr-2"
-                                                onClick={()=> redirectCaseStudy(dashboard?.institution_name)}
+                                                onClick={() =>
+                                                  redirectCaseStudy(
+                                                    dashboard?.institution_name
+                                                  )
+                                                }
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary">
-                                                  <Lucide icon="FileSearch2" className="w-4 h-4 stroke-[1.5]" />
+                                                  <Lucide
+                                                    icon="FileSearch2"
+                                                    className="w-4 h-4 stroke-[1.5]"
+                                                  />
                                                 </div>
                                               </Tippy>
                                             ) : (
                                               <div className="w-5 h-5" />
                                             )}
                                           </div>
-
 
                                           {/* {dashboard?.case_studies_id && (
                                             <Tippy
@@ -402,8 +411,6 @@ const index = () => {
                                               </div>
                                             </Tippy>
                                           )} */}
-
-
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
@@ -421,24 +428,24 @@ const index = () => {
                                         <div className="whitespace-nowrap ">
                                           {dashboard?.esg_integration ===
                                             true && (
-                                              <div className="whitespace-nowrap flex items-center justify-center">
-                                                <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                  &#10004;
-                                                </div>
-                                              </div>
-                                            )}
-                                        </div>
-                                      </Table.Td>
-
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        {dashboard?.company_engaged ===
-                                          true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                 &#10004;
                                               </div>
                                             </div>
                                           )}
+                                        </div>
+                                      </Table.Td>
+
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        {dashboard?.company_engaged ===
+                                          true && (
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                              &#10004;
+                                            </div>
+                                          </div>
+                                        )}
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="whitespace-nowrap flex items-center justify-center">
@@ -450,11 +457,11 @@ const index = () => {
                                                   key={index}
                                                   className={clsx([
                                                     char.toLowerCase() ===
-                                                    "s" && "bg-[#F5A623]",
+                                                      "s" && "bg-[#F5A623]",
                                                     char.toLowerCase() ===
-                                                    "e" && "bg-[#05703E]",
+                                                      "e" && "bg-[#05703E]",
                                                     char.toLowerCase() ===
-                                                    "g" && "bg-[#115096]",
+                                                      "g" && "bg-[#115096]",
                                                     "font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white",
                                                   ])}
                                                 >
@@ -467,12 +474,12 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_directors ===
                                           true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                &#10004;
-                                              </div>
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                              &#10004;
                                             </div>
-                                          )}
+                                          </div>
+                                        )}
                                       </Table.Td>
                                     </>
                                   )}
@@ -489,10 +496,15 @@ const index = () => {
 
             <footer className="!pt-3">
               <p id="footnote">
-                <sup className="bold-sup cursor-pointer" style={{ verticalAlign: 'text-bottom', fontSize: '0.8em' }}>*</sup> As disclosed by the investor in the last three years.
+                <sup
+                  className="bold-sup cursor-pointer"
+                  style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
+                >
+                  *
+                </sup>{" "}
+                As disclosed by the investor in the last three years.
               </p>
             </footer>
-
           </div>
         </>
       )}

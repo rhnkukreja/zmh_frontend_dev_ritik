@@ -33,7 +33,7 @@ import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormSwitch } from "@/components/Base/Form";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
-import CompanySelect from "@/components/ReactSelectAsync";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { modifyRoute } from "@/stores/themeSlice";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 
@@ -712,9 +712,10 @@ function PeerAnalysis() {
                                     </>
                                   ) : (
                                     <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                      <Lucide
-                                        icon="User"
-                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                      <img
+                                        alt="ZMH Analytics"
+                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                        src={investorIcon}
                                       />
                                       <a
                                         href=""

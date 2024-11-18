@@ -7,15 +7,14 @@ class DashboardService {
     results: CompanyData[];
   }> {
     let results = [];
-    if(companyName !== ""){
+    if (companyName !== "") {
       const url = `/company/?${
         companyName ? `company_name=${companyName}&` : ""
       }all=true`;
       const response = await axiosInstance.get(url);
-      console.log({ response });
+      // console.log({ response });
       results = response.data;
     }
-    
 
     return {
       results: results,
@@ -23,13 +22,14 @@ class DashboardService {
   }
 
   public async fetchCompanyDashboard(url: string): Promise<{
-    results: CompanyDashboard[], percent: string
+    results: CompanyDashboard[];
+    percent: string;
   }> {
     const response = await axiosInstance.get(url);
-    const {holdings_data, total_percent_ownership} = response.data;
+    const { holdings_data, total_percent_ownership } = response.data;
     return {
       results: holdings_data,
-      percent: total_percent_ownership
+      percent: total_percent_ownership,
     };
   }
 
@@ -61,9 +61,11 @@ class DashboardService {
     return { results };
   }
 
-  public async fetchWhatNewNotification(url: string): Promise<{ results: any, count: number }> {
+  public async fetchWhatNewNotification(
+    url: string
+  ): Promise<{ results: any; count: number }> {
     const response = await axiosInstance.get(url);
-    const {results, count} = response.data;
+    const { results, count } = response.data;
     return { results, count };
   }
 }

@@ -43,7 +43,7 @@ export const AddEditCompany: React.FC<AddEditCompanyProps> = ({
         if (file?.status === "added") {
           const fileType = file?.name?.split(".")?.pop();
 
-          console.log("file: ", file);
+          // console.log("file: ", file);
           if (fileType && !["xlsx"].includes(fileType)) {
             toast.error("Only excel file are allowed!");
           } else {
