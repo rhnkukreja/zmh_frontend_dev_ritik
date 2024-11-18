@@ -180,7 +180,7 @@ function Main(props: MainProps) {
                                   className="flex items-center cursor-pointer gap-2.5 hover:bg-slate-50/80 border border-transparent hover:border-slate-100 p-1 rounded-md"
                                 >
                                   <div className="font-medium truncate ">
-                                    {item?.company_name}
+                                    {item?.name}
                                   </div>
                                 </a>
                               )
