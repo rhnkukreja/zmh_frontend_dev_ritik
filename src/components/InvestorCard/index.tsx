@@ -351,10 +351,11 @@ const index = () => {
                                                 options={{ theme: "light" }}
                                                 className="w-5 h-5 -mt-2 -mr-2"
                                                 onClick={() =>
-                                                  window.open(
-                                                    `/investor-profile/investor/${dashboard?.investor_profile_id}`,
-                                                    "_blank"
-                                                  )
+                                                  navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
+                                                  // window.open(
+                                                  //   `/investor-profile/investor/${dashboard?.investor_profile_id}`,
+                                                  //   "_blank"
+                                                  // )
                                                 }
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary">
