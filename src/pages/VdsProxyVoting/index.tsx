@@ -121,11 +121,7 @@ const index = () => {
   };
 
   function getContent(text: string): string {
-    // const textLines = text.split('<br>');
-    const textContent = text
-      .split("<br>")
-      .map((line) => line.trim())
-      .join("\n\n\n \t \t");
+    const textContent = text.split('<br>').map((line) => line.trim()).join('\n\n\n');
     return textContent;
   }
 
@@ -235,7 +231,7 @@ const index = () => {
                                   <Table.Td
                                     key={headerIndex}
                                     className={clsx([
-                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] max-w-[150px] min-w-[120px] text-left",
+                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] max-w-[150px] min-w-[150px] text-left",
                                       "sticky top-0", // Ensure the header remains sticky at the top
                                       headerIndex === 0 &&
                                         "sticky left-0 bg-header z-50 ", // Fix first column
@@ -265,7 +261,7 @@ const index = () => {
                                         <Table.Td
                                           key={headerIndex}
                                           className={clsx([
-                                            "cell_2 py-2 border-dashed dark:bg-darkmode-600 max-w-[150px] min-w-[120px] text-left",
+                                            "cell_2 py-2 border-dashed dark:bg-darkmode-600 max-w-[150px] min-w-[150px] text-left",
                                             headerIndex === 0 &&
                                               "sticky left-0 bg-white  z-5", // Fix first column
                                             headerIndex === 1 &&
@@ -319,12 +315,9 @@ const index = () => {
                                                   isObject(
                                                     vdsProxy[vdsHeader?.field]
                                                   ) &&
-                                                  /* vdsProxy[vdsHeader?.field]?.vote === 'Split Vote' ?  */ getContent(
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.notes
-                                                  ) /* : vdsProxy[vdsHeader?.field]?.notes */
+                                                  getContent(vdsProxy[vdsHeader?.field]?.notes)
                                                 }
-                                                options={{ theme: "light" }}
+                                                options={{ theme: "light", trigger: "click" }}
                                               >
                                                 <span>
                                                   <Lucide
