@@ -75,7 +75,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
         if (file?.status === "added") {
           const fileType = file?.name?.split(".")?.pop()?.toLowerCase();
 
-          console.log("file: ", file);
+          // console.log("file: ", file);
           if (fileType && !["jpeg", "png", "jpg"].includes(fileType)) {
             toast.error("Image type not allowed!");
           } else {

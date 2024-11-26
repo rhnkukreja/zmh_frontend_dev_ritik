@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import _ from "lodash";
 import Button from "@/components/Base/Button";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AppDispatch } from "@/stores/store";
+import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   fetchSingleInvestersProfile,
@@ -58,6 +58,9 @@ function Main() {
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
+
+  const searchParams = new URLSearchParams(location.search);
+  const from = searchParams.get("from"); // Value will be 'dashboard'
 
   const getSingleInvesterProfile = (id: string, type: string) => {
     dispatch(
@@ -220,9 +223,18 @@ function Main() {
     );
   };
 
+  const { companyGlobalSearchTicker } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+
   const backToPreviousPage = () => {
-    dispatch(setPage(currentPage));
-    navigate(`/investor-profile`);
+    if(from) {
+    navigate(`/?ticker=${companyGlobalSearchTicker}`);
+    }
+    else {
+      dispatch(setPage(currentPage));
+      navigate(`/investor-profile`);
+    }
   };
 
   const checkImageUrl = async (url: string): Promise<boolean> => {

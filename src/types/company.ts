@@ -19,6 +19,7 @@ export type CompanyData = {
   bulk_upload_file?: any;
   created_by_email: string;
   ticker: string;
+  company_name?: string;                                 
 };
 
 export type CompanyFormData = {

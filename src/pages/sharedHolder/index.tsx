@@ -416,7 +416,7 @@ function ShareHolderProposal() {
     setShareholderDetailModalVisible(true);
   };
 
-  console.log({ isAllCompanySelected });
+  // console.log({ isAllCompanySelected });
 
   return (
     <>

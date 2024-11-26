@@ -26,7 +26,7 @@ import {
   selectUnSelectAllCompany,
   resetPage,
 } from "@/stores/caseStudySlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { caseStudiesService } from "@/services/caseStudies";
 import { FlterDropdown } from "@/types/casestudy";
 import { commonService } from "@/services/common";
@@ -35,6 +35,8 @@ import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { modifyRoute } from "@/stores/themeSlice";
 import AddNewCaseStudies from "./Components/AddEditCaseStudies";
+import { setInstitution } from "@/stores/dashboardSlice";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 function CaseStudies() {
   interface CaseStudyFilter {
@@ -55,6 +57,9 @@ function CaseStudies() {
   const navigate = useNavigate();
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
+  );
+  const { instituteName: InstituteName } = useAppSelector(
+    (state) => state.dashboard
   );
 
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
@@ -154,11 +159,11 @@ function CaseStudies() {
     getAllCaseStudyDropdowns();
   }, []);
 
-  useEffect(() => {
-    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
-      return;
-    }
-
+  const getCaseStudyInvestorProfile = () => {
+    const filters = {
+      institution_name: [InstituteName],
+      global_search: [companyGlobalSearchName],
+    };
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
       filters,
@@ -166,16 +171,40 @@ function CaseStudies() {
       page
     );
     dispatch(fetchCaseStudies(dynamicURL));
+  };
 
-    const { institution_name, global_search, ...restFilters } = filters;
-    setFiltersLength(
-      countValidFilters(
-        isAllCompanySelected === false
-          ? restFilters
-          : { ...restFilters, global_search: filters.global_search }
-      )
-    );
-  }, [page, filters]);
+  useEffect(() => {
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
+
+    if (InstituteName) {
+      getCaseStudyInvestorProfile();
+    } else {
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/case_studies/`,
+        filters,
+        undefined,
+        page
+      );
+      dispatch(fetchCaseStudies(dynamicURL));
+
+      const { institution_name, global_search, ...restFilters } = filters;
+      setFiltersLength(
+        countValidFilters(
+          isAllCompanySelected === false
+            ? restFilters
+            : { ...restFilters, global_search: filters.global_search }
+        )
+      );
+    }
+  }, [page, filters, InstituteName]);
+
+  useEffect(() => {
+    if (InstituteName) {
+      setSearchTerms(InstituteName ? [InstituteName] : [""]);
+    }
+  }, [InstituteName]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -210,11 +239,13 @@ function CaseStudies() {
     dispatch(
       setFilters({ key: "global_search", value: [companyGlobalSearchName] })
     );
+    dispatch(setInstitution(""));
   };
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilters({ key: "institution_name", value: searchTerms }));
     dispatch(resetPage());
+    dispatch(setInstitution(searchTerms[0]));
   };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -769,9 +800,10 @@ function CaseStudies() {
                                   </>
                                 ) : (
                                   <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                    <Lucide
-                                      icon="User"
-                                      className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                    <img
+                                      alt="ZMH Analytics"
+                                      className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                      src={investorIcon}
                                     />
                                     <a
                                       href=""

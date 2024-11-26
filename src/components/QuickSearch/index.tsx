@@ -23,7 +23,7 @@ interface MainProps {
 function Main(props: MainProps) {
   const dispatch: AppDispatch = useAppDispatch();
   const [search, setSearch] = useState("");
-  const { companyDataList } = useAppSelector((state) => state.dashboard);
+  const { companyDataList, companySearchLoading } = useAppSelector((state) => state.dashboard);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,6 +68,19 @@ function Main(props: MainProps) {
     }
     return res;
   };
+
+  const lastQuickSearch = async () => {
+    const res = await commonService.lastQuickSearches();
+    setLastSearch(res);
+    // return res;
+  };
+
+  const [lastSearch, setLastSearch] = useState([]);
+
+  useEffect(() => {
+    lastQuickSearch();
+  }, [])
+
 
   const handleCompanyClick = async (
     event: React.MouseEvent<HTMLAnchorElement>,
@@ -141,30 +154,8 @@ function Main(props: MainProps) {
                     </div>
                   </div>
                   <div className="relative z-10 pb-1 mt-1 bg-white rounded-lg shadow-lg max-h-[468px] sm:max-h-[615px] overflow-y-auto">
-                    {companyDataList.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center pt-20 pb-28">
-                        <Lucide
-                          icon="SearchX"
-                          className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
-                        />
-                        <div className="mt-5 text-xl font-medium">
-                          {search.length > 0
-                            ? "No result found"
-                            : "Search Companies..."}
-                        </div>
-                        {search.length > 0 && (
-                          <div className="w-2/3 mt-3 leading-relaxed text-center text-slate-500">
-                            No results found for
-                            <span className="italic font-medium">
-                              "{search}
-                            </span>
-                            ". Please try a different search term or check your
-                            spelling.
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div>
+                    {companyDataList?.length === 0 && lastSearch?.length > 0 && search.length === 0 ?
+                      (<div>
                         <div className="px-5 py-4">
                           <div className="flex items-center">
                             <div className="text-xs uppercase text-slate-500">
@@ -173,39 +164,90 @@ function Main(props: MainProps) {
                           </div>
                         </div>
                         <div className="px-5 py-4 border-t border-dashed">
-                          <div className="flex items-center">
+
+                          <div className="flex items-center ">
                             <div className="text-xs uppercase text-slate-500">
-                              Company
+                              {'Last Company Search '}
                             </div>
                           </div>
+
                           <div className="flex flex-col gap-1 mt-3.5">
-                            {companyDataList?.map(
+                            {companyDataList?.length === 0 && lastSearch?.map(
                               (item: CompanyData, key: number) => (
                                 <a
-                                  onClick={(event) =>
-                                    handleCompanyClick(event, item)
-                                  }
+                                  onClick={(event) => handleCompanyClick(event, item)}
                                   key={key}
                                   className="flex items-center cursor-pointer gap-2.5 hover:bg-slate-50/80 border border-transparent hover:border-slate-100 p-1 rounded-md"
                                 >
-                                  {/* <div className="w-6 h-6 overflow-hidden border-2 rounded-full image-fit zoom-in border-slate-200/70 box">
-                                    <img
-                                      alt="ZMH Analytics"
-                                      src={item.photo}
-                                    />
-                                  </div> */}
                                   <div className="font-medium truncate ">
                                     {item?.name}
                                   </div>
-                                  {/* <div className="hidden text-slate-500 sm:block">
-                                    {item.symbol}
-                                  </div> */}
                                 </a>
                               )
                             )}
                           </div>
+
                         </div>
                       </div>
+                      ) 
+                      :
+                    companyDataList.length === 0 ?
+                    (
+                    <div className="flex flex-col items-center justify-center pt-20 pb-28">
+                      <Lucide
+                        icon="SearchX"
+                        className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
+                      />
+                      <div className="mt-5 text-xl font-medium">
+                        {search?.length > 0 && companySearchLoading ? "Loading..." : "No Records Found"}
+                      </div>
+                      {/* {search.length > 0 && !loading && (
+                          <div className="w-2/3 mt-3 leading-relaxed text-center text-slate-500">
+                            No results found for
+                            <span className="italic font-medium">
+                              "{search}
+                            </span>
+                            ". Please try a different search term or check your
+                            spelling.
+                          </div>
+                        )} */}
+                    </div>
+                    ) : (
+                    <div>
+                      <div className="px-5 py-4">
+                        <div className="flex items-center">
+                          <div className="text-xs uppercase text-slate-500">
+                            Search companies here...
+                          </div>
+                        </div>
+                      </div>
+                      <div className="px-5 py-4 border-t border-dashed">
+
+                        <div className="flex items-center ">
+                          <div className="text-xs uppercase text-slate-500">
+                            { 'Company' }
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1 mt-3.5">
+                          {companyDataList?.map(
+                            (item: CompanyData, key: number) => (
+                              <a
+                                onClick={(event) =>
+                                  handleCompanyClick(event, item)
+                                }
+                                key={key}
+                                className="flex items-center cursor-pointer gap-2.5 hover:bg-slate-50/80 border border-transparent hover:border-slate-100 p-1 rounded-md"
+                              >
+                                <div className="font-medium truncate ">
+                                  {item?.name}
+                                </div>
+                              </a>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
                     )}
                   </div>
                 </HeadlessDialog.Panel>

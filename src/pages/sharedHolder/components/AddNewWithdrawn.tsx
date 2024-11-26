@@ -21,6 +21,7 @@ import { AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import MultiSearchBar from "@/components/MultiSearch";
+import CompanySelect from "@/components/ReactSelectAsync";
 
 interface AddWithdrawnProps {
   addNewWithdrawnModalVisible: boolean;
@@ -48,6 +49,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
         company: selectedShareholderWithdrawn?.company,
         status: selectedShareholderWithdrawn?.status,
         year:selectedShareholderWithdrawn?.year,
+        withdrawal_reason:selectedShareholderWithdrawn?.withdrawal_reason,
       },
     }
   );
@@ -59,10 +61,6 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       sub_category: [],
       year: [],
     });
-
-  const [isSaveForm, setIsSaveForm] = useState(false);
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
 
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -87,13 +85,8 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
     const transformedData = {
       ...data,
       proponent: data.proponent ? Number(data.proponent) : 0,
-      company: companyFilter?.length > 0 ? companyFilter[0] : 0
+      company: data?.company?.value ?? 0
     };
-
-    if(companyFilter?.length === 0) {
-      setIsSaveForm(true);
-      return;
-    }
 
     try {
       let response;
@@ -118,18 +111,6 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       console.error("Error submitting form:", error);
     }
   };
-
-  const handleSearch = (searchTerms: string[]) => {
-    setCompanyFilter(searchTerms);
-  };
-
-  useEffect(() => {
-    if(selectedShareholderWithdrawn){
-      setSearchTerms(selectedShareholderWithdrawn?.company_name ? [selectedShareholderWithdrawn?.company_name] : ['']);
-      setCompanyFilter(selectedShareholderWithdrawn?.company ? [selectedShareholderWithdrawn?.company] : ['']);
-
-    }
-  }, [selectedShareholderWithdrawn])
 
   const onError: SubmitErrorHandler<any> = () => {
   };
@@ -164,7 +145,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
               {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Proponent Name
                   </FormCheck.Label>
 
@@ -196,47 +177,55 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                   </div>
                 </div>
 
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                    Company Name
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                   Company Name
                   </FormCheck.Label>
-
-                  <div className="mt-2">
-                    {/* <Controller
-                      name="company"
-                      control={control}
-                      // rules={{ required: "Company Name is required" }}
-                      render={({ field ,fieldState: { error } }) => ( */}
-                    <>
-                      <div className="flex items-center ">
-                        <MultiSearchBar
-                          isRadioInput={true}
-                          onSearch={handleSearch}
-                          searchTerms={searchTerms}
-                          setSearchTerms={setSearchTerms}
-                          url="/company/"
-                          getValueKey="id"
-                          urlQueryKey="company_name"
-                          getOptionKey="name"
-                          placeHolder="Search Company"
-                        />
-                      </div>
-
-                      {isSaveForm && searchTerms?.length === 0 && (
-                        <Error className="text-red-600 mt-2">
-                          Company is Required
-                        </Error>
-                      )}
-                    </>
-                    {/* )} */}
-
-                    {/* /> */}
-                  </div>
+                  <Controller
+                    name="company"
+                    control={control}
+                    rules={{ required: "Company Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <CompanySelect
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        {...error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      />
+                    )}
+                  />
                 </div>
 
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Reason for Withdrawal
+                  </FormCheck.Label>
+                  <Controller
+                    name="withdrawal_reason"
+                    control={control}
+                    rules={{ required: "Reason for Withdrawal is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Reason for Withdrawal"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Initiative
@@ -248,7 +237,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
-                          placeholder="Enter Initiative Number"
+                          placeholder="Enter Initiative"
                           {...field}
                         />
                         {error && (
@@ -263,12 +252,12 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Status
                   </FormCheck.Label>
 
                   <div className="mt-2">
-                    <Controller
+                    {/* <Controller
                       name="status"
                       control={control}
                       rules={{ required: "Status is required" }}
@@ -292,14 +281,27 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                               }
                             )}
                           </TomSelect>
-                          {/* {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )} */}
+                         
                         </>
                       )}
-                    />
+                    /> */}
+                    <Controller
+                    name="status"
+                    control={control}
+                    rules={{ required: "Status is required" }}
+                    defaultValue="Withdrawn"
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Status"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
                   </div>
 
                   {errors.status && (
@@ -310,7 +312,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                 </div>
 
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Year
                   </FormCheck.Label>
 
@@ -359,6 +361,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
               </div>
 
 
+              
 
 
 

@@ -33,6 +33,7 @@ import { toast } from "react-toastify";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import { FormCheck } from "@/components/Base/Form";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 interface ProxyGuidelineFilter {
   year: string[];
@@ -439,10 +440,12 @@ function ProxyGuideline() {
                                     </>
                                   ) : (
                                     <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                      <Lucide
-                                        icon="User"
-                                        className="w-[65%] h-[65%] fill-slate-300/70 -mt-1.5 stroke-[0.5] stroke-slate-400/50"
+                                      <img
+                                        alt="ZMH Analytics"
+                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                        src={investorIcon}
                                       />
+
                                       <a
                                         href=""
                                         className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
@@ -459,46 +462,28 @@ function ProxyGuideline() {
                                 <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                   {guideline?.year}
                                 </Table.Td>
-                                {guideline?.category && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {/* <Tippy
-                                    content={guideline?.category}
-                                    options={{
-                                      theme: "light",
-                                    }}
-                                  > */}
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.category && (
                                     <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                       {guideline?.category}
                                     </div>
-                                    {/* </Tippy> */}
-                                  </Table.Td>
-                                )}
-                                {guideline?.sub_category && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {guideline?.sub_category}
-                                  </Table.Td>
-                                )}
-                                {guideline?.section && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {guideline?.section}
-                                  </Table.Td>
-                                )}
-                                {guideline?.policy_guidelines && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                    {guideline?.policy_guidelines}
-                                  </Table.Td>
-                                )}
-                                {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {guideline?.active === true ? (
-                                  <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
-                                    <span className="-mt-px">Active</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center justify-center text-xs font-medium rounded-md text-danger bg-danger/10 border  px-1.5 py-1 mr-auto sm:mr-0">
-                                    <span className="-mt-px">In Active</span>
-                                  </div>
-                                )}
-                              </Table.Td> */}
+                                  )}
+                                </Table.Td>
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.sub_category && (
+                                    <>{guideline?.sub_category}</>
+                                  )}
+                                </Table.Td>
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.section && (
+                                    <> {guideline?.section}</>
+                                  )}
+                                </Table.Td>
+                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  {guideline?.policy_guidelines && (
+                                    <> {guideline?.policy_guidelines}</>
+                                  )}
+                                </Table.Td>
 
                                 <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                   <div className="flex gap-3 ">

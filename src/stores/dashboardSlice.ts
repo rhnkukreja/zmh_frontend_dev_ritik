@@ -25,6 +25,7 @@ export type CompanyDashboard = {
   voted_against_directors: boolean;
   investor_profile_id: number;
   case_studies_id: number;
+
   // percent_ownership: string;
 };
 
@@ -51,6 +52,8 @@ interface CompanySliceState {
   notificationDetails: any | null;
   notificationLoading: boolean;
   totalNotification: number,
+  instituteName: string | null;
+  companySearchLoading: boolean;
 
 }
 
@@ -73,11 +76,12 @@ const initialState: CompanySliceState = {
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
+  instituteName: null,
   percent: '',
   notificationDetails: [],
   notificationLoading: true,
   totalNotification: 0,
-
+  companySearchLoading: true
   // {
   //   nominees: [],
   //   proposals: [],
@@ -148,23 +152,26 @@ const companySlice = createSlice({
     setTempSearch(state, action: PayloadAction<string>) {
       state.tempSearch = action.payload;
     },
+    setInstitution(state, action: PayloadAction<string>) {
+      state.instituteName = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
 
       .addCase(fetchCompanyByName.pending, (state) => {
-        state.loading = true;
+        state.companySearchLoading = true;
         state.error = null;
       })
       .addCase(
         fetchCompanyByName.fulfilled,
         (state, action: PayloadAction<{ results: CompanyData[] }>) => {
-          state.loading = false;
+          state.companySearchLoading = false;
           state.companyDataList = action.payload.results;
         }
       )
       .addCase(fetchCompanyByName.rejected, (state, action) => {
-        state.loading = false;
+        state.companySearchLoading = false;
         state.error = action.error.message || "Failed to fetch company by name";
       })
 
@@ -281,4 +288,4 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage, setTempSearch } = companySlice.actions;
+export const { setPage, resetPage, setTempSearch, setInstitution } = companySlice.actions;
