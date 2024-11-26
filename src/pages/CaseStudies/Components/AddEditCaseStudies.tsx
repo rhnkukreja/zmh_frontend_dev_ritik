@@ -214,7 +214,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                             render={({ field, fieldState: { error } }) => (
                                                 <>
                                                     <TomSelectServer
-                                                        url="/institute/?type=Proponent"
+                                                        url="/institute"
                                                         valueKey="id"
                                                         labelKey="institution"
                                                         value={field?.value?.toString() || ""}

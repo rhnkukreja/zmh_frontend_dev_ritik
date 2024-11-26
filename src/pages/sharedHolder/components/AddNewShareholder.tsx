@@ -48,9 +48,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     formState: { errors },
   } = useForm<AddShareholderType>({
     defaultValues: {
-      proponent: selectedShareholderProposal?.proponent,
+      proponent: selectedShareholderProposal?.institution,
       category: selectedShareholderProposal?.category,
-      company: selectedShareholderProposal?.company,
+      company: selectedShareholderProposal?.company_name,
       // company_name: selectedShareholderProposal?.company_name,
       proposal_text: selectedShareholderProposal?.proposal_text,
       proposal_name: selectedShareholderProposal?.proposal_name,
@@ -183,7 +183,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?type=Proponent"
+                            url="/institute"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}

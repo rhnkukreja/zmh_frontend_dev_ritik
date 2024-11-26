@@ -20,6 +20,7 @@ import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
+import MultiSearchBar from "@/components/MultiSearch";
 
 const index = () => {
   const location = useLocation();
@@ -120,6 +121,11 @@ const index = () => {
     return resultString;
   };
 
+  const load = () => {
+  };
+
+  
+
   return (
     <>
       {npxProxyDetails?.npx_report?.length === 0 &&
@@ -143,6 +149,18 @@ const index = () => {
 
       {npxProxyDetails?.npx_report?.length > 0 && (
         <div className="p-5 mt-1 box">
+           <div className="flex">
+           <MultiSearchBar
+              onSearch={load}
+              searchTerms={[]}
+              setSearchTerms={load}
+              url=""
+              getOptionKey="institution_name"
+              placeHolder="Search NPX Voting"
+              onSearchChange={load}
+              isSingle={true}
+            />
+           </div>
           <div className="w-full">
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
@@ -279,12 +297,12 @@ const index = () => {
                                                 }
                                                 options={{ theme: "light", trigger: "click" }}
                                               >
-                                                <span>
+                                                {/* <span>
                                                   <Lucide
                                                     icon="Info"
                                                     className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
                                                   />
-                                                </span>
+                                                </span> */}
                                               </Tippy>
                                             </h1>
                                           ) : isObject(
