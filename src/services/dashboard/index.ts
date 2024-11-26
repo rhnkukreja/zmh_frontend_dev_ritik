@@ -53,6 +53,12 @@ class DashboardService {
     return { results };
   }
 
+  public async fetchNpxProxyDashboard(url: string): Promise<{ results: any }> {
+    const response = await axiosInstance.get(url);
+    const results = response.data;
+    return { results };
+  }
+
   public async fetchInvestorProfileDetails(
     url: string
   ): Promise<{ results: any }> {

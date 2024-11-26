@@ -86,6 +86,8 @@ import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
 import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
+import NPXDetails from "@/pages/NPX";
+
 
 
 function Router() {
@@ -466,6 +468,11 @@ TitleManager();
           element: <UserLoginHistory/> ,
           data: {titleName: 'User Detail - ZMH Analytics'}
 
+        },
+        {
+          path: "npx-details",
+          element: <NPXDetails/> ,
+          data: {titleName: 'NPX - ZMH Analytics'}
         },
       ],
     },
