@@ -25,6 +25,7 @@ import MultiSearchBar from "@/components/MultiSearch";
 import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import { addEditNewCaseStudies, fetchCaseStudies } from "@/stores/caseStudySlice";
+import CompanySelect from "@/components/ReactSelectAsync";
 
 interface AddNewCaseStudiesProps {
     addNewCaseStudyModalVisible: boolean;
@@ -103,7 +104,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         const transformedData: any = {
             ...data,
             institution: data.institution ? Number(data.institution) : 0,
-            company: companyFilter?.length > 0 ? companyFilter[0] : 0,
+            company: data?.company?.value ?? 0
         };
 
         // if (companyFilter?.length === 0) {
@@ -233,34 +234,28 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                     </div>
                                 </div>
 
-                                <div className="flex-1 w-full">
-                                    <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                                         Company Name
                                     </FormCheck.Label>
-
-                                    <div className="mt-2">
-                                        <>
-                                            <div className="flex items-center ">
-                                                <MultiSearchBar
-                                                    isRadioInput={true}
-                                                    onSearch={handleSearch}
-                                                    searchTerms={searchTerms}
-                                                    setSearchTerms={setSearchTerms}
-                                                    url="/company/"
-                                                    getValueKey="id"
-                                                    urlQueryKey="company_name"
-                                                    getOptionKey="name"
-                                                    placeHolder="Search Company"
-                                                />
-                                            </div>
-
-                                            {/* {isSaveForm && companyFilter?.length === 0 && (
-                                                <Error className="text-red-600 mt-2">
-                                                    Company is Required
-                                                </Error>
-                                            )} */}
-                                        </>
-                                    </div>
+                                    <Controller
+                                        name="company"
+                                        control={control}
+                                        rules={{ required: "Company Name is required" }}
+                                        render={({ field, fieldState: { error } }) => (
+                                            <CompanySelect
+                                                value={field.value}
+                                                onChange={(value) => {
+                                                    field.onChange(value);
+                                                }}
+                                                {...error && (
+                                                    <Error className="text-red-600 ">
+                                                        {error.message}
+                                                    </Error>
+                                                )}
+                                            />
+                                        )}
+                                    />
                                 </div>
                             </div>
 
