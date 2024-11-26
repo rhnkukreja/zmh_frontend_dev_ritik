@@ -265,11 +265,12 @@ function bytesToMB(bytes: number): number {
 
 const getYearRange = (range: number): string[] => {
   const now = new Date().getUTCFullYear();
-  return Array(now - (now - range))
+  return Array(range + 1) // Include one extra year
     .fill("")
-    .map((v, idx) => now - idx)
+    .map((_, idx) => now + 1 - idx) // Start from the next year and count backward
     .map(String);
 };
+
 
 const formatedDate = (dateString: string): string => {
   const parsedDate = dayjs(dateString, "D MMM, YYYY");

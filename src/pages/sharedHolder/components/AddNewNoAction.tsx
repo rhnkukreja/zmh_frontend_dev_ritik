@@ -61,7 +61,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
         bases_asserted_for_exclusion: selectedShareholderNoAction?.bases_asserted_for_exclusion,
         withdrawn: selectedShareholderNoAction?.withdrawn,
         vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
-        actual_proponent_name: selectedShareholderNoAction?.actual_proponent_name,
+        // actual_proponent_name: selectedShareholderNoAction?.actual_proponent_name,
       },
     }
   );
@@ -205,7 +205,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div>
 
 
-                <div className="w-full flex-1">
+                {/* <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Actual Proponent Name
                   </FormCheck.Label>
@@ -227,7 +227,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       </>
                     )}
                   />
-                </div>
+                </div> */}
 
                 
 

@@ -59,7 +59,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proposal_num: selectedShareholderProposal?.proposal_num,
       sub_category: selectedShareholderProposal?.sub_category,
       year: selectedShareholderProposal?.year,
-      actual_proponent_name: selectedShareholderProposal?.actual_proponent_name,
+      // actual_proponent_name: selectedShareholderProposal?.actual_proponent_name,
       percentage_support: selectedShareholderProposal?.percentage_support,
       no_shareholder_proposal: selectedShareholderProposal?.no_shareholder_proposal,
     },
@@ -204,7 +204,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
 
 
-                <div className="w-full flex-1">
+                {/* <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Actual Proponent Name
                   </FormCheck.Label>
@@ -226,7 +226,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       </>
                     )}
                   />
-                </div>
+                </div> */}
                 
 
               </div>
