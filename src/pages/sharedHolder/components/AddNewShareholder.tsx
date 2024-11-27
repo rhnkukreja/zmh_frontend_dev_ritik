@@ -97,6 +97,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       ...data,
       proponent: data.proponent ? Number(data.proponent) : 0,
       company: data?.company?.value ?? 0
+
+      
     };
     try {
       let response;

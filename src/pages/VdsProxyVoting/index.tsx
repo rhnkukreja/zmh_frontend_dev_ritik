@@ -121,7 +121,7 @@ const index = () => {
   };
 
   function getContent(text: string): string {
-    const textContent = text.split('<br>').map((line) => line.trim()).join('\n\n\n');
+    const textContent = text.split('<br>').map((line, i) => `(${i+1}). ` + line.trim()).join('\n\n\n');
     return textContent;
   }
 
@@ -317,7 +317,7 @@ const index = () => {
                                                   ) &&
                                                   getContent(vdsProxy[vdsHeader?.field]?.notes)
                                                 }
-                                                options={{ theme: "light", trigger: "click" }}
+                                                options={{ theme: "light"}}
                                               >
                                                 <span>
                                                   <Lucide
