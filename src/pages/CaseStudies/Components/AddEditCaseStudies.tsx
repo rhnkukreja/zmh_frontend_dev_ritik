@@ -48,7 +48,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         formState: { errors },
     } = useForm<any>({
         defaultValues: {
-            company: selectedCaseStudies?.company,
+            company: selectedCaseStudies?.company_name,
             institution: selectedCaseStudies?.institution,
             caspio_company_name: selectedCaseStudies?.caspio_company_name,
             caspio_company_ticker: selectedCaseStudies?.caspio_company_ticker,
@@ -301,6 +301,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                         rules={{ required: "Company Name is required" }}
                                         render={({ field, fieldState: { error } }) => (
                                             <CompanySelect
+                                                setDefaultValue={field.value}
                                                 value={field.value}
                                                 onChange={(value) => {
                                                     field.onChange(value);
@@ -586,9 +587,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                                             id="radio-switch-5"
                                                             type="radio"
                                                             {...field}
-                                                            value="ReturnToAnalyst"
-                                                            checked={field.value === 'ReturnToAnalyst'}
-                                                            onChange={(e) => field.onChange('ReturnToAnalyst')}
+                                                            value="Return To Analyst"
+                                                            checked={field.value === 'Return To Analyst'}
+                                                            onChange={(e) => field.onChange('Return To Analyst')}
                                                         />
                                                         <FormCheck.Label
                                                             htmlFor="radio-switch-5"

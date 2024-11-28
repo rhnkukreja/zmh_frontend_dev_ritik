@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import AsyncSelect from "react-select/async";
 import _ from "lodash";
 import { dashboardService } from "@/services/dashboard";
@@ -19,6 +19,7 @@ interface CompanySelectProps {
   onChange: (selectedOption: OptionType | OptionType[] | null) => void;
   isMulti?: boolean;
   className?: string;
+  setDefaultValue?: any
 }
 
 const fetchOptions = async (inputValue: string): Promise<OptionType[]> => {
@@ -40,6 +41,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   onChange,
   isMulti = false,
   className,
+  setDefaultValue
+  
 }) => {
   const [inputValue, setInputValue] = useState("");
 
@@ -62,6 +65,11 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     setInputValue(newValue);
     return newValue;
   };
+
+  useEffect(() => {
+    handleInputChange(setDefaultValue?.label ?? setDefaultValue ?? '');
+  }, [setDefaultValue])
+  
 
   const customStyles = {
     multiValue: (provided: any) => ({

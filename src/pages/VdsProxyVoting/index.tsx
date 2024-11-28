@@ -19,6 +19,7 @@ import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
+import { Dialog } from "@/components/Base/Headless";
 
 const index = () => {
   const location = useLocation();
@@ -121,7 +122,12 @@ const index = () => {
   };
 
   function getContent(text: string): string {
-    const textContent = text.split('<br>').map((line, i) => `(${i+1}). ` + line.trim()).join('\n\n\n');
+    // const textContent = text.split('<br>').map((line, i) => `(${i+1}). ` + line.trim()).join('\n \n \n');
+    const textContent = text
+      .split('<br>') // Split the text by <br>
+      .map((line, i) => `(${i + 1}). ` + line.trim()) // Add index and trim each line
+      .join('\n');
+
     return textContent;
   }
 
@@ -131,6 +137,19 @@ const index = () => {
       .join(", ");
     return resultString;
   };
+
+  const [isOpenNotes, setIsOpenNotes] = useState(false);
+  const [notes, setNotes] = useState('');
+
+
+  const handleNotes = (item: string) => {
+    const textContent = item
+      .split('<br>') // Split the text by <br>
+      .map((line, i) => line.trim()) // Add index and trim each line
+      .join('<br> <br> <br>');
+    setIsOpenNotes(true);
+    setNotes(textContent);
+  }
 
   return (
     <>
@@ -310,22 +329,23 @@ const index = () => {
                                                 vdsProxy[vdsHeader?.field]?.vote
                                               )}
 
-                                              <Tippy
+                                              {/* <Tippy
                                                 content={
                                                   isObject(
                                                     vdsProxy[vdsHeader?.field]
-                                                  ) &&
+                                                  ) && vdsProxy[vdsHeader?.field]?.notes ? 
                                                   getContent(vdsProxy[vdsHeader?.field]?.notes)
+                                                  : ''
                                                 }
                                                 options={{ theme: "light"}}
-                                              >
-                                                <span>
+                                              > */}
+                                                <span className="cursor-pointer" onClick={()=> handleNotes(vdsProxy[vdsHeader?.field]?.notes)}>
                                                   <Lucide
                                                     icon="Info"
                                                     className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
                                                   />
                                                 </span>
-                                              </Tippy>
+                                              {/* </Tippy> */}
                                             </h1>
                                           ) : isObject(
                                               vdsProxy[vdsHeader?.field]
@@ -384,6 +404,29 @@ const index = () => {
           <h1 className="font-semibold"> Proxy Records Not Found..</h1>
         </div>
       )}
+
+      <Dialog size="lg" open={isOpenNotes} onClose={() => {
+          setIsOpenNotes(false);
+        }}>
+        <Dialog.Panel className="p-10 text-center ">
+          <Dialog.Title>
+            <h2 className="mr-auto text-xl font-semibold">Notes</h2>
+            <div
+              onClick={() => {
+                setIsOpenNotes(false);
+              }}
+              className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+          <Dialog.Description >
+          <div className="relative w-full h-full bg-slate-100 p-8 rounded-lg">
+              <p className=" text-[15px] font-bold" dangerouslySetInnerHTML={{__html: notes}}></p>
+          </div>
+          </Dialog.Description>
+        </Dialog.Panel>
+      </Dialog>
     </>
   );
 };
