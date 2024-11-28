@@ -6,7 +6,7 @@ import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     Controller,
     FieldErrors,
@@ -64,8 +64,15 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
             voting_details: selectedCaseStudies?.voting_details,
             urls_def14: selectedCaseStudies?.urls_def14,
             urls_8k: selectedCaseStudies?.urls_8k,
-            approval_status: selectedCaseStudies?.approval_status,
             year: selectedCaseStudies?.year,
+            meeting_date: selectedCaseStudies?.meeting_date,
+            primary_source: selectedCaseStudies?.primary_source,
+            primary_source_link: selectedCaseStudies?.primary_source_link,
+            page_reference: selectedCaseStudies?.page_reference,
+            approval_status: selectedCaseStudies?.approval_status,
+            investment_type: selectedCaseStudies?.investment_type,
+            category: selectedCaseStudies?.category,
+
         },
     });
 
@@ -73,9 +80,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         (state) => state.authentiction
     );
 
-    const [isSaveForm, setIsSaveForm] = useState(false);
-    const [searchTerms, setSearchTerms] = useState<string[]>([]);
-    const [companyFilter, setCompanyFilter] = useState<string[]>([]);
+    // const [isSaveForm, setIsSaveForm] = useState(false);
+    // const [searchTerms, setSearchTerms] = useState<string[]>([]);
+    // const [companyFilter, setCompanyFilter] = useState<string[]>([]);
 
     const holdingTypeDropdown = [
         'Equity',
@@ -92,18 +99,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     ]
 
     const environmentalTypeDropdown = [
-        'Governance (including ESG General)',
         'Proxy Contest/M&A',
+        'Governance (including ESG General)',
         'Social',
     ]
 
-    const categoryTypeDropdown = [
-        'Board & Governance',
-        'Compensation',
-        'Corporate Strategy & Risk',
-        'ESG',
-        'Other'
-    ]
+
+    const [categoryTypeDropdown, setCategoryTypeDropdown] = useState<string[]>([]);
 
     const voteTypeDropdown = [
         'For',
@@ -113,6 +115,23 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         'Not Available'
     ]
 
+    
+
+    const hideShowCategory = (value: string) => {
+        if (value === 'Governance (including ESG General)') {
+            setCategoryTypeDropdown([
+                'Board & Governance','Compensation','Corporate Strategy & Risk','ESG','Other'
+            ])
+        }
+        else {
+            setCategoryTypeDropdown([]);
+
+        }
+    }
+
+    useEffect(() => {
+        
+    }, [categoryTypeDropdown]);
 
 
     const [apiDropdownOptions, setApiDropdownOptions] =
@@ -172,7 +191,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                         : "New Case Studies Proposal Added"
                 );
                 setAddNewCaseStudyModalVisible(false);
-                setIsSaveForm(false);
                 dispatch(
                     fetchCaseStudies(
                         createDynamicURL(
@@ -189,24 +207,24 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         }
     };
 
-    const handleSearch = (searchTerms: string[]) => {
-        setCompanyFilter(searchTerms);
-    };
+    // const handleSearch = (searchTerms: string[]) => {
+    //     setCompanyFilter(searchTerms);
+    // };
 
-    useEffect(() => {
-        if (selectedCaseStudies) {
-            setSearchTerms(
-                selectedCaseStudies?.company_name
-                    ? [selectedCaseStudies?.company_name]
-                    : [""]
-            );
-            setCompanyFilter(
-                selectedCaseStudies?.company
-                    ? [selectedCaseStudies?.company]
-                    : [""]
-            );
-        }
-    }, [selectedCaseStudies]);
+    // useEffect(() => {
+    //     if (selectedCaseStudies) {
+    //         setSearchTerms(
+    //             selectedCaseStudies?.company_name
+    //                 ? [selectedCaseStudies?.company_name]
+    //                 : [""]
+    //         );
+    //         setCompanyFilter(
+    //             selectedCaseStudies?.company
+    //                 ? [selectedCaseStudies?.company]
+    //                 : [""]
+    //         );
+    //     }
+    // }, [selectedCaseStudies]);
 
     const onError: SubmitErrorHandler<any> = () => {
         // setShowRequiredStateErrors(true);
@@ -437,9 +455,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                                 <>
                                                     <TomSelect
                                                         value={field.value ?? ""}
-                                                        onChange={(e) => {
-                                                            field.onChange(e.target.value);
-                                                        }}
+                                                        onChange={(e) => { hideShowCategory(e.target.value); field.onChange(e.target.value);}}
                                                         options={{
                                                             placeholder: "Select ESG Themes",
                                                         }}
@@ -599,7 +615,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                     Primary Source
                                     </FormCheck.Label>
                                     <Controller
-                                        name="caspio_company_name"
+                                        name="primary_source"
                                         control={control}
                                         // rules={{ required: "Alternate Company Name is required" }}
                                         render={({ field, fieldState: { error } }) => (
@@ -623,7 +639,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                     Page Reference
                                     </FormCheck.Label>
                                     <Controller
-                                        name="caspio_company_ticker"
+                                        name="primary_source_link"
                                         control={control}
                                         // rules={{ required: "Alternate Company Ticker is required" }}
                                         render={({ field, fieldState: { error } }) => (
@@ -649,7 +665,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                     Primary Source Link
                                     </FormCheck.Label>
                                     <Controller
-                                        name="caspio_company_name"
+                                        name="primary_source_link"
                                         control={control}
                                         // rules={{ required: "Alternate Company Name is required" }}
                                         render={({ field, fieldState: { error } }) => (
@@ -678,7 +694,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                         </div>
 
                                         <Controller
-                                            name="meeting_Date"
+                                            name="meeting_date"
                                             control={control}
                                             defaultValue=""
                                             rules={{ required: "Meeting Date is required" }}
