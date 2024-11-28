@@ -48,7 +48,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     {
       defaultValues:
       {
-        proponent: selectedShareholderNoAction?.proponent,
+        proponent: selectedShareholderNoAction?.institution,
         company: selectedShareholderNoAction?.company,
         category: selectedShareholderNoAction?.category,
         proposal_text: selectedShareholderNoAction?.proposal_text,
@@ -184,7 +184,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?type=Proponent"
+                            url="/institute"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}

@@ -56,12 +56,14 @@ export type AddWithdrawnType = {
   id: string;
   initiative: string;
   proponent: string;
+  proponent_name: string;
   year:string;
   company: any;
   status: string;
   nl_exist: string;
   company_name?:string;
   withdrawal_reason: string;
+  institution: string;
 };
 
 
@@ -69,6 +71,7 @@ export type AddNoActionType = {
   id: string;
   proponent: string;
   bases_asserted_for_exclusion: string;
+  proponent_name: string;
   // staff_response: string;
   link_to_staff_response: string;
   link_to_initial_submission: string;
@@ -85,4 +88,5 @@ export type AddNoActionType = {
   withdrawn: boolean;
   company_name?:string;
   vote_outcome_formula: string;
+  institution: string;
 };
