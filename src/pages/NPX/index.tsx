@@ -15,7 +15,7 @@ import { baseURL } from "@/constant";
 import LoadingIcon from "../../components/Base/LoadingIcon";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, FilterX } from "lucide-react";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
@@ -39,29 +39,31 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
 
-  const { globeSearch } = location.state || {};
+  // const { globeSearch } = location.state || {};
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [filter, setFilter] = useState('');
+
 
   useEffect(() => {
     if (companyGlobalSearchTicker && npxProxyDetails?.length === 0) {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
-            `${baseURL}/npx_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': filter}
           )
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (globeSearch !== tempSearch) {
+    } else /* if (globeSearch !== tempSearch) */ {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
-            `${baseURL}/npx_proxy_voting/?ticker=${companyGlobalSearchTicker}`
-          )
+            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': filter})
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }, [companyGlobalSearchTicker, searchTicker]);
+  }, [companyGlobalSearchTicker, searchTicker, filter]);
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -121,7 +123,14 @@ const index = () => {
     return resultString;
   };
 
-  const load = () => {
+  const handleSearch = (searchTerms: string[]) => {
+    setFilter(searchTerms[0]);
+  };
+
+
+  const handleClearAllFilter = () => {
+    setFilter('');
+    setSearchTerms([]);
   };
 
   
@@ -147,20 +156,37 @@ const index = () => {
           </Button>
         )}
 
-      {npxProxyDetails?.npx_report?.length > 0 && (
-        <div className="p-5 mt-1 box">
-           <div className="flex">
-           <MultiSearchBar
-              onSearch={load}
-              searchTerms={[]}
-              setSearchTerms={load}
-              url=""
-              getOptionKey="institution_name"
-              placeHolder="Search NPX Voting"
-              onSearchChange={load}
-              isSingle={true}
-            />
-           </div>
+      
+      <div className="p-5 mt-1 box">
+        <div className="flex">
+          <MultiSearchBar
+            onSearch={handleSearch}
+            searchTerms={searchTerms}
+            setSearchTerms={setSearchTerms}
+            url={`/npx/?global_search=${companyGlobalSearchName}`}
+            getOptionKey="fund_name"
+            placeHolder="Search NPX Voting"
+            isSingle={true}
+          // onSearchChange={resetPage}
+          />
+          <div className="hover:bg-slate-50">
+            <Button onClick={handleClearAllFilter}>
+              <Tippy
+                content="Clear Filters"
+                options={{ theme: "light" }}
+              >
+                <FilterX
+                  size={17}
+                  strokeWidth={1}
+                  className="text-slate-500 cursor-pointer"
+                />
+              </Tippy>
+              {/* <span className="text-slate-500">Clear Filters</span> */}
+            </Button>
+          </div>
+        </div>
+
+        {npxProxyDetails?.npx_report?.length > 0 && (
           <div className="w-full">
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
@@ -212,9 +238,9 @@ const index = () => {
                                       "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] max-w-[150px] min-w-[150px] text-left",
                                       "sticky top-0", // Ensure the header remains sticky at the top
                                       headerIndex === 0 &&
-                                        "sticky left-0 bg-header z-50 ", // Fix first column
+                                      "sticky left-0 bg-header z-50 ", // Fix first column
                                       headerIndex === 1 &&
-                                        "sticky left-[50px] bg-header z-50 ", // Fix second column (adjust 'left' value according to width)
+                                      "sticky left-[50px] bg-header z-50 ", // Fix second column (adjust 'left' value according to width)
                                     ])}
                                   >
                                     {npxHeader?.header}
@@ -241,15 +267,15 @@ const index = () => {
                                           className={clsx([
                                             "cell_2 py-2 border-dashed dark:bg-darkmode-600 max-w-[150px] min-w-[150px] text-left",
                                             headerIndex === 0 &&
-                                              "sticky left-0 bg-white  z-5", // Fix first column
+                                            "sticky left-0 bg-white  z-5", // Fix first column
                                             headerIndex === 1 &&
-                                              "sticky left-[50px] bg-white z-5", // Fix second column
+                                            "sticky left-[50px] bg-white z-5", // Fix second column
                                           ])}
                                         >
                                           {isObject(
                                             vdsProxy[npxHeader?.field]
                                           ) &&
-                                          vdsProxy[npxHeader?.field]?.notes !==
+                                            vdsProxy[npxHeader?.field]?.notes !==
                                             null ? (
                                             <h1
                                               className={clsx([
@@ -261,7 +287,7 @@ const index = () => {
                                                   ]?.vote?.includes(
                                                     "Withhold"
                                                   )) &&
-                                                  "text-red-700 font-semibold",
+                                                "text-red-700 font-semibold",
                                                 "flex items-center",
                                               ])}
                                             >
@@ -306,8 +332,8 @@ const index = () => {
                                               </Tippy>
                                             </h1>
                                           ) : isObject(
-                                              vdsProxy[npxHeader?.field]
-                                            ) &&
+                                            vdsProxy[npxHeader?.field]
+                                          ) &&
                                             vdsProxy[npxHeader?.field]
                                               ?.notes === null ? (
                                             <h1
@@ -320,7 +346,7 @@ const index = () => {
                                                   ]?.vote?.includes(
                                                     "Withhold"
                                                   )) &&
-                                                  "text-red-700 font-semibold",
+                                                "text-red-700 font-semibold",
                                               ])}
                                             >
                                               {vdsProxy[npxHeader?.field]?.vote}
@@ -344,24 +370,29 @@ const index = () => {
               </div>
             </>
           </div>
-        </div>
-      )}
 
-      {!npxProxyDetails && npxProxyLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
-      )}
+        )}
 
-      {npxProxyDetails?.npx_report?.length === 0 && !npxProxyLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <h1 className="font-semibold"> Proxy Records Not Found..</h1>
-        </div>
-      )}
+        {!npxProxyDetails && npxProxyLoading && (
+          <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
+            <LoadingIcon
+              color="#800000"
+              icon="three-dots"
+              className="w-16 h-16"
+            />
+          </div>
+        )}
+
+        {npxProxyDetails?.npx_report?.length === 0 && !npxProxyLoading && (
+          <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
+            <h1 className="font-semibold"> Proxy Records Not Found..</h1>
+          </div>
+        )}
+      </div>
+
+      
+
+      
     </>
   );
 };
