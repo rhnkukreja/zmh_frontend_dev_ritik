@@ -38,7 +38,7 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
 
-  const { globeSearch } = location.state || {};
+  // const { globeSearch } = location.state || {};
 
   useEffect(() => {
     if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
@@ -50,7 +50,7 @@ const index = () => {
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (globeSearch !== tempSearch) {
+    } else /* if (globeSearch !== tempSearch) */ {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
@@ -123,11 +123,9 @@ const index = () => {
 
   function getContent(text: string): string {
     // const textContent = text.split('<br>').map((line, i) => `(${i+1}). ` + line.trim()).join('\n \n \n');
-    const textContent = text
-      .split('<br>') // Split the text by <br>
-      .map((line, i) => `(${i + 1}). ` + line.trim()) // Add index and trim each line
-      .join('\n');
-
+    const textContent = text.split('<br>') // Split the text by <br>
+      .map((line, i) => line.trim()) // Add index and trim each line
+      .join('<br> <br>');
     return textContent;
   }
 
@@ -339,12 +337,23 @@ const index = () => {
                                                 }
                                                 options={{ theme: "light"}}
                                               > */}
-                                                <span className="cursor-pointer" onClick={()=> handleNotes(vdsProxy[vdsHeader?.field]?.notes)}>
+                                              
+                                                <div className="tooltip">
+                                                <Lucide
+                                                    icon="Info"
+                                                    className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                  />
+                                                  <span className="tooltiptext shadow-md	" dangerouslySetInnerHTML={{__html:getContent(vdsProxy[vdsHeader?.field]?.notes)}}>
+                                                  </span>
+                                                </div>
+                                                {/* <span className="cursor-pointer" onClick={()=> handleNotes(vdsProxy[vdsHeader?.field]?.notes)}>
                                                   <Lucide
                                                     icon="Info"
-                                                    className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    className="tooltip w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
                                                   />
-                                                </span>
+                                                  <span className="tooltiptext">{getContent(vdsProxy[vdsHeader?.field]?.notes)}</span>
+
+                                                </span> */}
                                               {/* </Tippy> */}
                                             </h1>
                                           ) : isObject(
