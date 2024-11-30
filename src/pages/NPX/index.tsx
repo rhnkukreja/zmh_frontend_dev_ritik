@@ -163,10 +163,11 @@ const index = () => {
             onSearch={handleSearch}
             searchTerms={searchTerms}
             setSearchTerms={setSearchTerms}
-            url={`/npx/?global_search=${companyGlobalSearchName}`}
+            url={`/npx/fund_name/?all=true`}
             getOptionKey="fund_name"
             placeHolder="Search NPX Voting"
             isSingle={true}
+            isAll={true}
           // onSearchChange={resetPage}
           />
           <div className="hover:bg-slate-50">
