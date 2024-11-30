@@ -14,4 +14,5 @@ export type ProxyVotingGuideline = {
   date_created: string;
   date_updated: string;
   institution_logo_url: string;
+  voting_guidelines_pdf_name: string;
 };

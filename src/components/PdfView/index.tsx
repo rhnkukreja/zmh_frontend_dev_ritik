@@ -6,18 +6,21 @@ import Lucide from "../Base/Lucide";
 
 interface PdfViewerProps {
   file: string;
+  file_name: string;
   pdfVisible: boolean;
   setPdfVisible: (visible: boolean) => void;
 }
 
 const PdfViewer: React.FC<PdfViewerProps> = ({
   file,
+  file_name,
   pdfVisible,
   setPdfVisible,
 }) => {
   const fileName = useMemo(() => {
-    return file?.split("/")?.pop();
-  }, [file]);
+    return file_name;
+  }, [file_name]);
+
   return (
     <Dialog size="xl" open={pdfVisible} onClose={() => setPdfVisible(false)}>
       <Dialog.Panel className="text-center">
@@ -47,6 +50,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
             <iframe
               src={file || ""}
               width="100%"
+              title={fileName}
               style={{
                 height: "100vh",
               }}
