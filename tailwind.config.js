@@ -14,12 +14,12 @@ module.exports = {
   theme: {
     container: {
       screens: {
-        'xs': '350px',  // Adds a custom 'xs' breakpoint at 400px
-        'sm': '640px',
-        'md': '768px',
-        'lg': '1024px',
-        'xl': '1280px',
-        '2xl': '1536px',
+        xs: "350px", // Adds a custom 'xs' breakpoint at 400px
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1536px",
         "2xl": "2400px",
       },
     },
@@ -90,7 +90,9 @@ module.exports = {
     },
   },
   plugins: [
+    require("@tailwindcss/typography"),
     require("@tailwindcss/forms"),
+    require("@tailwindcss/line-clamp"),
     plugin(function ({ addBase, matchUtilities }) {
       addBase({
         // Default colors

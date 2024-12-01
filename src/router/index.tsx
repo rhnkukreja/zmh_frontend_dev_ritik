@@ -86,29 +86,26 @@ import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
 import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
+import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
 
-
-
 function Router() {
+  const TitleManager = () => {
+    const location = useLocation();
 
-  
-const TitleManager = () => {
-  const location = useLocation(); 
-  
-  useEffect(() => {
-    const parentRoute = routes.find((route: any) => route.path === '/');
-    const slicePathName = location.pathname?.split('/')[1];
-    const childRoute = parentRoute?.children?.find((route: any) => route.path.includes(slicePathName));
-    document.title = childRoute?.data?.titleName || 'ZMH Analytics';
-    
-  }, [location.pathname]); 
+    useEffect(() => {
+      const parentRoute = routes.find((route: any) => route.path === "/");
+      const slicePathName = location.pathname?.split("/")[1];
+      const childRoute = parentRoute?.children?.find((route: any) =>
+        route.path.includes(slicePathName)
+      );
+      document.title = childRoute?.data?.titleName || "ZMH Analytics";
+    }, [location.pathname]);
 
-  return null;
-};
+    return null;
+  };
 
-
-TitleManager();
+  TitleManager();
   const routes: any = [
     {
       path: "/",
@@ -117,7 +114,7 @@ TitleManager();
         {
           path: "/",
           element: <ZMHDashboard />,
-          data: {titleName: 'Dashboard - ZMH Analytics'}
+          data: { titleName: "Dashboard - ZMH Analytics" },
         },
         {
           path: "dashboard-overview-2",
@@ -347,132 +344,118 @@ TitleManager();
         {
           path: "investor-profile",
           element: <InvestersProfiles />,
-          data: {titleName: 'Investor Profile - ZMH Analytics'}
+          data: { titleName: "Investor Profile - ZMH Analytics" },
         },
         {
           path: "company",
           element: <CompanyList />,
-          data: {titleName: 'Company - ZMH Analytics'}
-
+          data: { titleName: "Company - ZMH Analytics" },
         },
         {
           path: "investor-profile/:type/:id",
           element: <DetailInvestersProfile />,
-          data: {titleName: 'Investor Profile Detail - ZMH Analytics'}
-
+          data: { titleName: "Investor Profile Detail - ZMH Analytics" },
         },
         {
           path: "engagement-question",
           element: <EngagementQuestion />,
-          data: {titleName: 'Engagement Question - ZMH Analytics'}
-
+          data: { titleName: "Engagement Question - ZMH Analytics" },
         },
         {
           path: "institution",
           element: <Institution />,
-          data: {titleName: 'Institution - ZMH Analytics'}
-
+          data: { titleName: "Institution - ZMH Analytics" },
         },
         {
           path: "proxy-voting-guideline",
           element: <ProxyVotingGuideline />,
-          data: {titleName: 'Voting Guidlines - ZMH Analytics'}
-
+          data: { titleName: "Voting Guidlines - ZMH Analytics" },
         },
         {
           path: "engagement-question/:id",
           element: <DetailEngagementQuesion />,
-          data: {titleName: 'Engagemnt Question Detail - ZMH Analytics'}
-
+          data: { titleName: "Engagemnt Question Detail - ZMH Analytics" },
         },
         {
           path: "company/:id",
           element: <DetailCompany />,
-          data: {titleName: 'Company Detail - ZMH Analytics'}
-
+          data: { titleName: "Company Detail - ZMH Analytics" },
         },
         {
           path: "institution/:id",
           element: <DetailInstitutions />,
-          data: {titleName: 'institution Detail - ZMH Analytics'}
-
+          data: { titleName: "institution Detail - ZMH Analytics" },
         },
         {
           path: "share-holder-proposal",
           element: <SharedHolder />,
-          data: {titleName: 'Shareholder Proposal - ZMH Analytics'}
-
+          data: { titleName: "Shareholder Proposal - ZMH Analytics" },
         },
         {
           path: "share-holder-proposal/:id",
           element: <DetailShareHolder />,
-          data: {titleName: 'Shareholder Proposal Detail - ZMH Analytics'}
-
+          data: { titleName: "Shareholder Proposal Detail - ZMH Analytics" },
         },
         {
           path: "peer-analysis",
           element: <PeerAnalysis />,
-          data: {titleName: 'Engagement Details - ZMH Analytics'}
-
+          data: { titleName: "Engagement Details - ZMH Analytics" },
         },
         {
           path: "case-studies",
           element: <CaseStudies />,
-          data: {titleName: 'Case Studies - ZMH Analytics'}
-
+          data: { titleName: "Case Studies - ZMH Analytics" },
         },
         {
           path: "case-studies/:id",
           element: <DetailCaseStudies />,
-          data: {titleName: 'Case Studies Detail - ZMH Analytics'}
-
+          data: { titleName: "Case Studies Detail - ZMH Analytics" },
         },
         {
           path: "investor-details",
           element: <InvestorCardDetails />,
-          data: {titleName: 'Investor Detail - ZMH Analytics'}
-
+          data: { titleName: "Investor Detail - ZMH Analytics" },
         },
         {
           path: "summary-details",
-          element: <AgmSummaryDetails /> ,
-          data: {titleName: 'AGM Summary Detail - ZMH Analytics'}
-
+          element: <AgmSummaryDetails />,
+          data: { titleName: "AGM Summary Detail - ZMH Analytics" },
         },
         {
           path: "vds-details",
-          element: <VdsProxyVoting/> ,
-          data: {titleName: 'Proxy Voting - ZMH Analytics'}
-
+          element: <VdsProxyVoting />,
+          data: { titleName: "Proxy Voting - ZMH Analytics" },
         },
         {
           path: "vds-proxy-details",
-          element: <VdsProxyVoting/> ,
-          data: {titleName: 'Proxy Voting - ZMH Analytics'}
-
+          element: <VdsProxyVoting />,
+          data: { titleName: "Proxy Voting - ZMH Analytics" },
         },
         {
           path: "investor-company-details/:id",
-          element: <InvestorCompanyDetails/> ,
-          data: {titleName: 'Investor Document Detail - ZMH Analytics'}
-
+          element: <InvestorCompanyDetails />,
+          data: { titleName: "Investor Document Detail - ZMH Analytics" },
         },
         {
           path: "user-details",
-          element: <UserDetails/> ,
-          data: {titleName: 'User Detail - ZMH Analytics'}
-
+          element: <UserDetails />,
+          data: { titleName: "User Detail - ZMH Analytics" },
         },
         {
           path: "user-details/login-history/:id",
-          element: <UserLoginHistory/> ,
-          data: {titleName: 'User Detail - ZMH Analytics'}
+          element: <UserLoginHistory />,
+          data: { titleName: "User Detail - ZMH Analytics" },
+        },
 
+        {
+          path: "/notes",
+          element: <Notes />,
+          data: { titleName: "Notes - ZMH Analytics" },
         },
         {
           path: "npx-details",
-          element: <NPXDetails/> ,
-          data: {titleName: 'NPX - ZMH Analytics'}
+          element: <NPXDetails />,
+          data: { titleName: "NPX - ZMH Analytics" },
         },
       ],
     },

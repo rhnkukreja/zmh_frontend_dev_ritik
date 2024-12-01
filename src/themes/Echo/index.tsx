@@ -55,6 +55,8 @@ import {
 } from "@/stores/caseStudySlice";
 import NotificationAlert from "@/components/NotificationAlert";
 import { modifyRoute, resetRouter } from "@/stores/themeSlice";
+import SubSidebar from "@/pages/Notes/components/SubSidebar";
+import { subSidebarRoutes } from "@/constant";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -80,6 +82,9 @@ function Main() {
   const sideMenuStore = useAppSelector(selectSideMenu);
   const sideMenu = () => nestedMenu(sideMenuStore, location);
   const scrollableRef = createRef<HTMLDivElement>();
+  const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
+
+  console.log({ shouldShowSidebar }, location.pathname);
 
   const [topBarActive, setTopBarActive] = useState(false);
 
@@ -237,16 +242,6 @@ function Main() {
           className={clsx([
             "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
-          // onMouseOver={(event) => {
-          //   event.preventDefault();
-          //   setCompactMenu(false);
-          // }}
-          // onMouseLeave={(event) => {
-          //   event.preventDefault();
-          //   setCompactMenu(true);
-          //   // toggleCompactMenu(event);
-          //   // setCompactMenuOnHover(false);
-          // }}
         >
           <div
             className={clsx([
@@ -271,7 +266,6 @@ function Main() {
                 className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center  ml-auto "
               >
                 <img className=" w-8 rotate-180" src={sideBarIcon} />
-                {/* <Lucide icon="X" className="w-5 h-5 stroke-[1.3] text-white" /> */}
               </a>
             )}
           </div>
@@ -286,14 +280,7 @@ function Main() {
                 />
               </div>
             </div>
-
-            {/* <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
-                ZMH
-              </div> */}
           </a>
-          {/* <hr /> */}
-
-          {/* <div className=" border-t text-white"></div> */}
 
           <div
             ref={scrollableRef}
@@ -335,7 +322,7 @@ function Main() {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
                           linkTo(menu, navigate);
-                        } else if (menu.title !== "Notes") {
+                        } else {
                           linkTo(menu, navigate);
                         }
                         setFormattedMenu([...formattedMenu]);
@@ -627,6 +614,19 @@ function Main() {
                       </span>
                     </div>
                   </a>
+
+                  <div className="flex items-center justify-center w-10  relative cursor-pointer">
+                    <Tippy content="Create Notes" options={{ theme: "light" }}>
+                      <Lucide
+                        onClick={() => {
+                          navigate("/notes");
+                        }}
+                        icon="FileText"
+                        className="w-6 h-6 text-gray-400 shadow-sm"
+                      />
+                    </Tippy>
+                  </div>
+
                   {/* <a
                     href=""
                     className="p-2 text-[#000000] rounded-full hover:bg-white/5"
@@ -734,20 +734,21 @@ function Main() {
 
       <div
         className={clsx([
-          "transition-[margin,width] duration-100 xl:pl-3.5 pt-[54px] pb-8 relative z-10 group mode",
+          "transition-[margin,width] duration-100 pt-[54px] pb-8 relative z-10 group mode",
           { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
         ])}
       >
-        {/* <div className={clsx([!shouldHideHeader && 'mt-4', shouldHideHeader && 'mt-10' , 'px-5'])}> */}
-        <div className="px-5 mt-10 ">
-          <div className="container">
-            {/* <div className="sticky top-20 z-10 "> */}
-            <div className="sticky z-10 " style={{ top: "4rem" }}>
-              {!shouldHideHeader && <CountryInfoHeader />}
+        <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
+          <div className="px-5 mt-10 w-full">
+            <div className={clsx({ container: !shouldShowSidebar })}>
+              <div className="sticky z-10" style={{ top: "4rem" }}>
+                {!shouldHideHeader && <CountryInfoHeader />}
+              </div>
+
+              <Outlet />
             </div>
-            <Outlet />
           </div>
         </div>
       </div>
