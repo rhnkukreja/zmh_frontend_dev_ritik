@@ -38,7 +38,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   getValueKey,
   onSearchChange,
   urlQueryKey,
-  isAll
+  isAll,
 }) => {
   const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
@@ -72,8 +72,11 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       );
       return responses.flatMap((response) => {
         if (isAll) {
-          return (response.data?.map((item: any) => item[getOptionKey as string]) || []);
-         }
+          return (
+            response.data?.map((item: any) => item[getOptionKey as string]) ||
+            []
+          );
+        }
         if (isRadioInput) {
           return response.data.map((item: any) => item) || [];
         } else {
@@ -83,7 +86,6 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             ) || []
           );
         }
-        
       });
     } catch (error) {
       console.error("Error fetching options:", error);
