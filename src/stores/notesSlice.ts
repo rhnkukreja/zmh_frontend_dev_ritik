@@ -152,6 +152,9 @@ const notesSlice = createSlice({
           );
           if (index !== -1) {
             state.folders[index] = action.payload.results;
+            if (state.selectedFolder?.id === action.payload.results.id) {
+              state.selectedFolder = action.payload.results;
+            }
           }
         } else {
           state.folders.unshift(action.payload.results);
