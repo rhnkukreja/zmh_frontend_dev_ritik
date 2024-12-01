@@ -248,12 +248,14 @@ const index = () => {
                                   <Table.Td
                                     key={headerIndex}
                                     className={clsx([
-                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] max-w-[150px] min-w-[150px] text-left",
+                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
                                       "sticky top-0", // Ensure the header remains sticky at the top
                                       headerIndex === 0 &&
-                                        "sticky left-0 bg-header z-50 ", // Fix first column
+                                        "sticky left-0 bg-header z-[100] ", // Fix first column
                                       headerIndex === 1 &&
-                                        "sticky left-[50px] bg-header z-50 ", // Fix second column (adjust 'left' value according to width)
+                                        "sticky left-[50px] min-w-[200px] max-w-[250px] bg-header z-[100] ", // Fix second column (adjust 'left' value according to width)
+                                        headerIndex !== 0 && headerIndex !== 1 &&
+                                              "min-w-[150px] max-w-[170px] ", 
                                     ])}
                                   >
                                     {vdsHeader?.header}
@@ -278,11 +280,13 @@ const index = () => {
                                         <Table.Td
                                           key={headerIndex}
                                           className={clsx([
-                                            "cell_2 py-2 border-dashed dark:bg-darkmode-600 max-w-[150px] min-w-[150px] text-left",
+                                            "cell_2 py-2 border-dashed dark:bg-darkmode-600text-left",
                                             headerIndex === 0 &&
-                                              "sticky min-w-[100px] left-0 bg-white  z-5", // Fix first column
-                                            headerIndex === 1 &&
-                                              "sticky left-[50px] bg-white z-5", // Fix second column
+                                              "sticky left-0 bg-white z-5", // Fix first column
+                                            headerIndex === 1 &&  
+                                              "sticky left-[50px] min-w-[200px] max-w-[250px]  bg-white z-5", // Fix second column
+                                              headerIndex !== 0 && headerIndex !== 1 &&
+                                              "min-w-[150px] max-w-[170px] "
                                           ])}
                                         >
                                           {isObject(
@@ -330,9 +334,9 @@ const index = () => {
                                                 <div className="tooltip">
                                                 <Lucide
                                                     icon="Info"
-                                                    className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    className=" w-4 h-4 ml-1.5 stroke-[1.3]  text-blue-800"
                                                   />
-                                                  <span className="tooltiptext shadow-md	" dangerouslySetInnerHTML={{__html:getContent(vdsProxy[vdsHeader?.field]?.notes)}}>
+                                                  <span className="tooltiptext shadow-md" dangerouslySetInnerHTML={{__html:getContent(vdsProxy[vdsHeader?.field]?.notes)}}>
                                                   </span>
                                                 </div>
                                             </h1>
