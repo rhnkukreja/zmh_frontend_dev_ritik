@@ -184,7 +184,7 @@ a.side-menu__link.side-menu__link--active svg {
 
 .tooltip .tooltiptext {
   visibility: hidden;
-  width: 350px;
+  width: 240px;
   max-height: 180px;
   background-color: #fff;
   color: black;
@@ -195,9 +195,10 @@ a.side-menu__link.side-menu__link--active svg {
   position: absolute;
   z-index: 100;
   font-weight: 500;
-  /* left: 20px; */
+  left: 20px;
   overflow-y: scroll;
   overflow-x: scroll;
+  top: -70px;
 }
 
 .tooltip:hover .tooltiptext {
