@@ -1,5 +1,5 @@
-export const baseURL = `https://zmh-backend-prod-06c2601b6e50.herokuapp.com`;
-// export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
+// export const baseURL = `https://zmh-backend-prod-06c2601b6e50.herokuapp.com`;
+export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
 
 export const PAGE_SIZE = 10;
 export const characterColors: {
@@ -61,3 +61,5 @@ export const no_header_company = [
   "engagement-question",
   "proxy-voting-guideline",
 ];
+
+export const subSidebarRoutes = ["/notes"];

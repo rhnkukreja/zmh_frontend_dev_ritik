@@ -80,6 +80,7 @@ const initialState: ThemeState = {
     "investor-profile",
     "engagement-question",
     "proxy-voting-guideline",
+    "notes",
   ],
 };
 

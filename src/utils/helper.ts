@@ -341,6 +341,14 @@ function countValidFilters(filters: FilterObject): number {
   }).length;
 }
 
+function updateQueryParams(params: { [key: string]: string }) {
+  const url = new URL(window.location.href);
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  window.history.replaceState({}, "", url.toString());
+}
+
 export {
   cutText,
   formatDate,
@@ -365,4 +373,5 @@ export {
   filterMenu,
   downloadCSV,
   countValidFilters,
+  updateQueryParams,
 };
