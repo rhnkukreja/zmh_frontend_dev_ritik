@@ -69,7 +69,9 @@ function ShareHolderProposal() {
     isAllCompanySelected,
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [searchTerms, setSearchTerms] = useState<string[]>([
+    ...filters?.proponent_name,
+  ]);
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -122,6 +124,7 @@ function ShareHolderProposal() {
       status: filters.status,
       keyword: filters.keyword,
       year: filters.year,
+      proponent_name: filters?.proponent_name,
       global_search:
         filters?.global_search?.map((item: string) => ({
           value: item,

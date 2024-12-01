@@ -175,6 +175,34 @@ a.side-menu__link.side-menu__link--active svg {
   font-weight: bold;
   font-size: 14px;
 }
+
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 350px;
+  max-height: 180px;
+  background-color: #fff;
+  color: black;
+  text-align: start;
+  border-radius: 6px;
+  padding: 10px 10px;
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 100;
+  font-weight: 500;
+  /* left: 20px; */
+  overflow-y: scroll;
+  overflow-x: scroll;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
@@ -187,6 +215,7 @@ a.side-menu__link.side-menu__link--active svg {
  | https://tailwindcss.com/docs/installation#include-tailwind-in-your-css
  |
  */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

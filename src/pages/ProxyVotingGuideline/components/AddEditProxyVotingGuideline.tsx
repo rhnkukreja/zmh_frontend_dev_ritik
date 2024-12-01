@@ -219,7 +219,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                       }}
                       className="w-full text-left"
                     >
-                      {getYearRange(25)?.map((y: string) => (
+                      {getYearRange(3)?.map((y: string) => (
                         <option key={y} value={y}>
                           {y}
                         </option>

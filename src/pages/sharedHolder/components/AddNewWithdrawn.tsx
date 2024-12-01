@@ -44,7 +44,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
     {
       defaultValues: 
       {
-        proponent: selectedShareholderWithdrawn?.proponent,
+        proponent: selectedShareholderWithdrawn?.institution,
         initiative: selectedShareholderWithdrawn?.initiative,
         company: selectedShareholderWithdrawn?.company,
         status: selectedShareholderWithdrawn?.status,
@@ -157,7 +157,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?type=Proponent"
+                            url="/institute"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}

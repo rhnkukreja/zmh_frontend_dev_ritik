@@ -48,7 +48,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     {
       defaultValues:
       {
-        proponent: selectedShareholderNoAction?.proponent,
+        proponent: selectedShareholderNoAction?.institution,
         company: selectedShareholderNoAction?.company,
         category: selectedShareholderNoAction?.category,
         proposal_text: selectedShareholderNoAction?.proposal_text,
@@ -61,7 +61,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
         bases_asserted_for_exclusion: selectedShareholderNoAction?.bases_asserted_for_exclusion,
         withdrawn: selectedShareholderNoAction?.withdrawn,
         vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
-        actual_proponent_name: selectedShareholderNoAction?.actual_proponent_name,
+        // actual_proponent_name: selectedShareholderNoAction?.actual_proponent_name,
       },
     }
   );
@@ -184,7 +184,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?type=Proponent"
+                            url="/institute"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}
@@ -205,7 +205,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div>
 
 
-                <div className="w-full flex-1">
+                {/* <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Actual Proponent Name
                   </FormCheck.Label>
@@ -227,7 +227,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       </>
                     )}
                   />
-                </div>
+                </div> */}
 
                 
 

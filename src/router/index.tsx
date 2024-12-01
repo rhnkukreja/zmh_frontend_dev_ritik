@@ -87,6 +87,7 @@ import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
 import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
+import NPXDetails from "@/pages/NPX";
 
 function Router() {
   const TitleManager = () => {
@@ -450,6 +451,11 @@ function Router() {
           path: "/notes",
           element: <Notes />,
           data: { titleName: "Notes - ZMH Analytics" },
+        },
+        {
+          path: "npx-details",
+          element: <NPXDetails />,
+          data: { titleName: "NPX - ZMH Analytics" },
         },
       ],
     },

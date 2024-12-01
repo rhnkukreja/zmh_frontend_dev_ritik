@@ -18,6 +18,7 @@ interface MultiSearchBarProps {
   urlQueryKey?: string;
   onSearchChange?: any;
   isSingle?: boolean;
+  isAll?: boolean;
 }
 
 // type FetchedOptionType = {
@@ -37,6 +38,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   getValueKey,
   onSearchChange,
   urlQueryKey,
+  isAll,
 }) => {
   const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
@@ -69,6 +71,12 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             ]
       );
       return responses.flatMap((response) => {
+        if (isAll) {
+          return (
+            response.data?.map((item: any) => item[getOptionKey as string]) ||
+            []
+          );
+        }
         if (isRadioInput) {
           return response.data.map((item: any) => item) || [];
         } else {
@@ -296,7 +304,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             key={index}
             className="bg-gray-100 px-4 py-1 rounded-full flex items-center shadow-sm "
           >
-            <span className="term-text mr-2 text-nowrap ">{term}</span>
+            <span className="term-text mr-2 text-wrap ">{term}</span>
             <button
               className="remove-btn text-red-500 font-bold"
               onClick={() => handleSearch(term, false)}
