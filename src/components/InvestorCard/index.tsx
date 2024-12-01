@@ -359,8 +359,8 @@ const index = () => {
                                                 }
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                                  <img src={investorIcon} alt="investor Icon" className="w-full" />
-                                                  {/* <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" /> */}
+                                                  {/* <img src={investorIcon} alt="investor Icon" className="w-full" /> */}
+                                                  <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
                                                 </div>
                                               </Tippy>
                                             ) : (
@@ -375,8 +375,8 @@ const index = () => {
                                                 onClick={()=> redirectCaseStudy(dashboard?.institution_name)}
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary">
-                                                  {/* <Lucide icon="FileSearch2" className="w-4 h-4 stroke-[1.5]" /> */}
-                                                  <img src={caseStudiesIcon} alt="Case Studies Icon" className="w-full" />
+                                                  <Lucide icon="FileSearch2" className="w-4 h-4 stroke-[1.5]" />
+                                                  {/* <img src={caseStudiesIcon} alt="Case Studies Icon" className="w-full" /> */}
                                                 </div>
                                               </Tippy>
                                             ) : (

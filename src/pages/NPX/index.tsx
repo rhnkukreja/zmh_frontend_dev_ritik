@@ -49,7 +49,7 @@ const index = () => {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
-            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': filter}
+            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': [filter]}
           )
         )
       );
@@ -58,7 +58,7 @@ const index = () => {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
-            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': filter})
+            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': [filter]})
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
@@ -165,7 +165,7 @@ const index = () => {
             setSearchTerms={setSearchTerms}
             url={`/npx/fund_name/?all=true`}
             getOptionKey="fund_name"
-            placeHolder="Search NPX Voting"
+            placeHolder="Search Fund Name"
             isSingle={true}
             isAll={true}
           // onSearchChange={resetPage}
