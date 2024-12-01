@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { AddFoldersModal } from "../AddFolderModal";
 import {
   clearSelectedFolder,
+  deleteFolder,
   fetchFolders,
   setSelectedFolder,
 } from "@/stores/notesSlice";
@@ -15,10 +16,16 @@ import clsx from "clsx";
 
 import { updateQueryParams } from "@/utils/helper";
 import { useSearchParams } from "react-router-dom";
+import { DeleteConfirmationModal } from "@/components/DeleteModal";
+import { toast } from "react-toastify";
 
 const SubSidebar: React.FC = () => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
+  const [isModalVisible, setModalVisible] = useState<boolean>(false);
+  const [folderToBeDeleted, setFolderToBeDeleted] = useState<FolderData | null>(
+    null
+  );
 
   const { folders, loading, selectedFolder } = useAppSelector(
     (state) => state.notes
@@ -43,6 +50,11 @@ const SubSidebar: React.FC = () => {
   function handleEditFolder(folder: FolderData) {
     setAddNotesModalVisible(true);
     handleFolderClick(folder);
+  }
+
+  function onClickDeleteIcon(folder: FolderData) {
+    setModalVisible(true);
+    setFolderToBeDeleted(folder);
   }
 
   const onClickFolder = (folder: FolderData) => {
@@ -76,6 +88,28 @@ const SubSidebar: React.FC = () => {
     setAddNotesModalVisible(false);
   };
 
+  const handleDelete = async () => {
+    try {
+      if (!folderToBeDeleted) return;
+      const response = await dispatch(
+        deleteFolder(folderToBeDeleted?.id)
+      ).unwrap();
+
+      if (
+        response?.response.status === 200 ||
+        response?.response.status === 204
+      ) {
+        toast.success("Folder deleted successfully");
+        dispatch(fetchFolders());
+      }
+    } catch (error) {
+      console.error("Error deleting the item:", error);
+    } finally {
+      setModalVisible(false);
+      setFolderToBeDeleted(null);
+    }
+  };
+
   return (
     <div className="w-64  bg-white border-r  ml-2   h-full">
       <div className="w-full flex justify-center mb-3">
@@ -97,6 +131,7 @@ const SubSidebar: React.FC = () => {
       <FolderList
         folders={folders}
         handleEditFolder={handleEditFolder}
+        onClickDeleteIcon={onClickDeleteIcon}
         selectedFolder={selectedFolder}
         onClickFolder={onClickFolder}
       />
@@ -128,6 +163,18 @@ const SubSidebar: React.FC = () => {
           onClickCancel={onClickCancel}
         />
       )}
+
+      {isModalVisible && (
+        <DeleteConfirmationModal
+          isVisible={isModalVisible}
+          onClose={() => setModalVisible(false)}
+          onConfirm={handleDelete}
+          description={`Are you sure you want to delete <strong>"${
+            folderToBeDeleted?.folder || ""
+          }"</strong> ?`}
+          loading={loading}
+        />
+      )}
     </div>
   );
 };
@@ -139,9 +186,11 @@ const FolderList = ({
   handleEditFolder,
   selectedFolder,
   onClickFolder,
+  onClickDeleteIcon,
 }: {
   folders: FolderData[];
   handleEditFolder: (folder: FolderData) => void;
+  onClickDeleteIcon: (folder: FolderData) => void;
   selectedFolder: FolderData | null;
   onClickFolder: (folder: FolderData) => void;
 }) => {
@@ -170,17 +219,33 @@ const FolderList = ({
                 </span>
 
                 {hoveredFolderId === folder?.id && (
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 ml-2 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditFolder(folder);
-                    }}
-                  >
-                    <Lucide
-                      icon="Pen"
-                      className="w-3 h-3 text-primary stroke-[1.3]"
-                    />
+                  <div className="flex">
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 ml-2 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditFolder(folder);
+                      }}
+                    >
+                      <Lucide
+                        icon="Pen"
+                        className="w-3 h-3 text-primary stroke-[1.3]"
+                      />
+                    </div>
+                    {selectedFolder?.id !== folder?.id && (
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 ml-2 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClickDeleteIcon(folder);
+                        }}
+                      >
+                        <Lucide
+                          icon="Trash"
+                          className="w-4 h-4 text-primary stroke-[1.3]"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

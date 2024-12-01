@@ -40,9 +40,15 @@ class NotesService {
     results: FolderData;
   }> {
     const response = await axiosInstance.get(`/user/folder/${id}/`);
+
     return {
       results: response?.data,
     };
+  }
+
+  public async deleteFolder(id: number): Promise<any> {
+    const response = await axiosInstance.delete(`/user/folder/${id}/`);
+    return response;
   }
 
   public async addNewNote(data: Partial<Note>): Promise<{
@@ -79,14 +85,19 @@ class NotesService {
     };
   }
 
-  public async getSingleNote(): Promise<{
+  public async getSingleNote(id: number): Promise<{
     results: any;
   }> {
-    const response = await axiosInstance.get(`/investor_profile/`);
+    const response = await axiosInstance.get(`/user/notes/${id}/`);
     const results = response.data;
     return {
       results,
     };
+  }
+
+  public async deleteNote(id: number): Promise<any> {
+    const response = await axiosInstance.delete(`/user/notes/${id}/`);
+    return response;
   }
 }
 

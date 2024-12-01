@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import MenuNoteList from "./MenuNoteList";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   clearSelectedNote,
+  deleteNote,
+  fetchFolders,
   fetchNotes,
   setSelectedNote,
 } from "@/stores/notesSlice";
@@ -12,9 +14,14 @@ import DOMPurify from "dompurify";
 import AddButton from "./AddButton";
 import dayjs from "dayjs";
 import clsx from "clsx";
+import { DeleteConfirmationModal } from "@/components/DeleteModal";
+import { toast } from "react-toastify";
 
 const NotesList: React.FC = () => {
   const dispatch = useAppDispatch();
+  const [noteToBeDeleted, setNoteToBeDeleted] = useState<Note | null>(null);
+  const [isModalVisible, setModalVisible] = useState<boolean>(false);
+
   const { notes, notesLoading, selectedNote, selectedFolder } = useAppSelector(
     (state) => state.notes
   );
@@ -36,6 +43,32 @@ const NotesList: React.FC = () => {
       dispatch(clearSelectedNote());
     }
   }, [selectedNote]);
+
+  const onClickDeleteIcon = (note: Note) => {
+    setNoteToBeDeleted(note);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      if (!noteToBeDeleted) return;
+      const response = await dispatch(deleteNote(noteToBeDeleted?.id)).unwrap();
+
+      if (
+        response?.response.status === 200 ||
+        response?.response.status === 204
+      ) {
+        toast.success("Note deleted successfully");
+        dispatch(fetchFolders());
+        dispatch(fetchNotes(selectedFolder?.id));
+      }
+    } catch (error) {
+      console.error("Error deleting the item:", error);
+    } finally {
+      setModalVisible(false);
+      setNoteToBeDeleted(null);
+    }
+  };
 
   return (
     <div className="w-full border-r border-gray-200 h-screen overflow-y-auto no-scrollbar">
@@ -64,7 +97,11 @@ const NotesList: React.FC = () => {
             >
               <div className="relative flex justify-between items-center">
                 <h4 className="font-semibold mb-2">{note?.name}</h4>
-                <MenuNoteList />
+                <MenuNoteList
+                  onClickDeleteIcon={() => {
+                    onClickDeleteIcon(note);
+                  }}
+                />
               </div>
 
               <div
@@ -103,6 +140,18 @@ const NotesList: React.FC = () => {
             />
           </div>
         </div>
+      )}
+
+      {isModalVisible && (
+        <DeleteConfirmationModal
+          isVisible={isModalVisible}
+          onClose={() => setModalVisible(false)}
+          onConfirm={handleDelete}
+          description={`Are you sure you want to delete <strong>"${
+            noteToBeDeleted?.name || ""
+          }"</strong> ?`}
+          loading={notesLoading}
+        />
       )}
     </div>
   );

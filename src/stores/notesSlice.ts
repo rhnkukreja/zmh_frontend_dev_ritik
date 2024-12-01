@@ -66,6 +66,17 @@ export const fetchSingleFolder = createAsyncThunk<
   return response;
 });
 
+export const deleteFolder = createAsyncThunk<any, number>(
+  `${name}/deleteFolder`,
+  async (id) => {
+    const response = await notesService.deleteFolder(id);
+    return {
+      response,
+      id: id,
+    };
+  }
+);
+
 export const addNote = createAsyncThunk<
   { results: Note; isEdit: boolean },
   { id?: number; data: Partial<Note> }
@@ -90,10 +101,21 @@ export const fetchNotes = createAsyncThunk<
   return response;
 });
 
+export const deleteNote = createAsyncThunk<any, number>(
+  `${name}/deleteNote`,
+  async (id) => {
+    const response = await notesService.deleteNote(id);
+    return {
+      response,
+      id: id,
+    };
+  }
+);
+
 export const fetchSingleNote = createAsyncThunk<Note, number>(
   `${name}/fetchSingleNote`,
   async (id: number) => {
-    const response = await notesService.getSingleNote();
+    const response = await notesService.getSingleNote(id);
     return response.results.find((note: Note) => note.id === id);
   }
 );
@@ -155,9 +177,23 @@ const notesSlice = createSlice({
           }>
         ) => {
           state.loading = false;
-          state.folders = action.payload.results.slice().reverse();
+          state.folders = action.payload.results?.slice()?.reverse();
           state.totalFoldersCount = action.payload.count;
           state.totalFolderPages = getPageNumbers(action.payload.count);
+
+          if (action.payload.results && action.payload.results.length > 0) {
+            const updatedFolderIndex = action.payload.results.findIndex(
+              (folder) => folder.id === state.selectedFolder?.id
+            );
+
+            if (updatedFolderIndex !== -1) {
+              state.selectedFolder = action.payload.results[updatedFolderIndex];
+            } else {
+              state.selectedFolder = action.payload.results
+                ?.slice()
+                ?.reverse()?.[0];
+            }
+          }
         }
       )
       .addCase(fetchFolders.rejected, (state, action) => {
@@ -192,6 +228,21 @@ const notesSlice = createSlice({
       .addCase(fetchSingleFolder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch folders";
+      })
+
+      .addCase(deleteFolder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteFolder.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload?.id === state.selectedFolder?.id) {
+          state.selectedFolder = null;
+        }
+      })
+      .addCase(deleteFolder.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to fetch note";
       })
 
       .addCase(fetchNotes.pending, (state) => {
@@ -247,6 +298,22 @@ const notesSlice = createSlice({
       .addCase(addNote.rejected, (state, action) => {
         state.notesLoading = false;
         state.error = action.error.message || "Failed to add note";
+      })
+
+      .addCase(deleteNote.pending, (state) => {
+        state.notesLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteNote.fulfilled, (state, action) => {
+        state.notesLoading = false;
+
+        if (action.payload?.id === state.selectedNote?.id) {
+          state.selectedNote = null;
+        }
+      })
+      .addCase(deleteNote.rejected, (state, action) => {
+        state.notesLoading = false;
+        state.error = action.error.message || "Failed to fetch note";
       });
   },
 });

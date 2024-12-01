@@ -79,7 +79,7 @@ export const AddFoldersModal: React.FC<AddFoldersModalProps> = ({
     <Dialog
       size="md"
       open={addNotesModalVisible}
-      onClose={() => setAddNotesModalVisible(false)}
+      onClose={onClickCancel}
       staticBackdrop
     >
       <Dialog.Panel>
@@ -89,7 +89,7 @@ export const AddFoldersModal: React.FC<AddFoldersModalProps> = ({
               {selectedFolder ? "Update Folder" : title || "Add New Folder"}
             </h2>
             <div
-              onClick={() => setAddNotesModalVisible(false)}
+              onClick={onClickCancel}
               className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
             >
               <Lucide icon="X" className="w-8 h-8 text-slate-400" />

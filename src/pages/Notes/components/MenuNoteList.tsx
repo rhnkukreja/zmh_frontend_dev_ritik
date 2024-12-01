@@ -2,8 +2,14 @@ import { useEffect, useState } from "react";
 import { Menu } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { twMerge } from "tailwind-merge";
+import { Note } from "@/types/notes";
+import { DeleteConfirmationModal } from "@/components/DeleteModal";
 
-export default function MenuNoteList() {
+export default function MenuNoteList({
+  onClickDeleteIcon,
+}: {
+  onClickDeleteIcon: () => void;
+}) {
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
 
   useEffect(() => {
@@ -13,15 +19,16 @@ export default function MenuNoteList() {
   }, []);
 
   return (
-    <Menu>
-      <Menu.Button className="w-5 h-5 text-slate-500">
-        <Lucide icon="MoreVertical" className="w-4 h-4" />
-      </Menu.Button>
-      <Menu.Items className="w-48 bg-white z-50" placement="bottom-end">
-        <Menu.Item>
-          <Lucide icon="Trash" className="w-4 h-4 mr-2" /> Delete
-        </Menu.Item>
-        {/* <Menu.Item>
+    <>
+      <Menu>
+        <Menu.Button className="w-5 h-5 text-slate-500">
+          <Lucide icon="MoreVertical" className="w-4 h-4" />
+        </Menu.Button>
+        <Menu.Items className="w-48 bg-white z-50" placement="bottom-end">
+          <Menu.Item onClick={onClickDeleteIcon}>
+            <Lucide icon="Trash" className="w-4 h-4 mr-2" /> Delete
+          </Menu.Item>
+          {/* <Menu.Item>
           <Lucide icon="Pin" className="w-4 h-4 mr-2" /> Pin
         </Menu.Item>
         <Menu.Item>
@@ -57,7 +64,8 @@ export default function MenuNoteList() {
             </div>
           )}
         </div> */}
-      </Menu.Items>
-    </Menu>
+        </Menu.Items>
+      </Menu>
+    </>
   );
 }
