@@ -280,7 +280,7 @@ const index = () => {
                                           className={clsx([
                                             "cell_2 py-2 border-dashed dark:bg-darkmode-600 max-w-[150px] min-w-[150px] text-left",
                                             headerIndex === 0 &&
-                                              "sticky left-0 bg-white  z-5", // Fix first column
+                                              "sticky min-w-[100px] left-0 bg-white  z-5", // Fix first column
                                             headerIndex === 1 &&
                                               "sticky left-[50px] bg-white z-5", // Fix second column
                                           ])}
@@ -304,7 +304,8 @@ const index = () => {
                                                 "flex items-center",
                                               ])}
                                             >
-                                              {vdsProxy[vdsHeader?.field]
+                                              {
+                                              vdsProxy[vdsHeader?.field]
                                                 ?.vote === "Split Vote" ? (
                                                 <Tippy
                                                   content={
@@ -312,8 +313,7 @@ const index = () => {
                                                       vdsProxy[vdsHeader?.field]
                                                     ) &&
                                                     getSplitContents(
-                                                      vdsProxy[vdsHeader?.field]
-                                                        ?.split_vote_counts
+                                                      vdsProxy[vdsHeader?.field]?.split_vote_counts
                                                     )
                                                   }
                                                   options={{ theme: "light" }}
@@ -324,20 +324,9 @@ const index = () => {
                                                   }
                                                 </Tippy>
                                               ) : (
-                                                vdsProxy[vdsHeader?.field]?.vote
+                                                <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
                                               )}
 
-                                              {/* <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) && vdsProxy[vdsHeader?.field]?.notes ? 
-                                                  getContent(vdsProxy[vdsHeader?.field]?.notes)
-                                                  : ''
-                                                }
-                                                options={{ theme: "light"}}
-                                              > */}
-                                              
                                                 <div className="tooltip">
                                                 <Lucide
                                                     icon="Info"
@@ -346,21 +335,9 @@ const index = () => {
                                                   <span className="tooltiptext shadow-md	" dangerouslySetInnerHTML={{__html:getContent(vdsProxy[vdsHeader?.field]?.notes)}}>
                                                   </span>
                                                 </div>
-                                                {/* <span className="cursor-pointer" onClick={()=> handleNotes(vdsProxy[vdsHeader?.field]?.notes)}>
-                                                  <Lucide
-                                                    icon="Info"
-                                                    className="tooltip w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                  />
-                                                  <span className="tooltiptext">{getContent(vdsProxy[vdsHeader?.field]?.notes)}</span>
-
-                                                </span> */}
-                                              {/* </Tippy> */}
                                             </h1>
-                                          ) : isObject(
-                                              vdsProxy[vdsHeader?.field]
-                                            ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null ? (
+                                          ) : 
+                                          isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field] ?.notes === null ? (
                                             <h1
                                               className={clsx([
                                                 (vdsProxy[
@@ -368,19 +345,39 @@ const index = () => {
                                                 ]?.vote?.includes("Against") ||
                                                   vdsProxy[
                                                     vdsHeader?.field
-                                                  ]?.vote?.includes(
-                                                    "Withhold"
-                                                  )) &&
+                                                  ]?.vote?.includes("Withhold")) &&
                                                   "text-red-700 font-semibold",
                                               ])}
                                             >
-                                              {vdsProxy[vdsHeader?.field]?.vote}
+                                              {vdsProxy[vdsHeader?.field] ?.vote !== "Split Vote" ? vdsProxy[vdsHeader?.field]?.vote : ''}
                                             </h1>
                                           ) : (
-                                            <h1>
+                                            <h1 className="check">
                                               {vdsProxy[vdsHeader?.field]}
                                             </h1>
                                           )}
+
+
+                                          {
+                                            isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null && vdsProxy[vdsHeader?.field]
+                                              ?.vote === "Split Vote" && (
+                                              <Tippy
+                                                content={
+                                                  isObject(
+                                                    vdsProxy[vdsHeader?.field]
+                                                  ) &&
+                                                  getSplitContents(
+                                                    vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                  )
+                                                }
+                                                options={{ theme: "light" }}
+                                              >
+                                                {
+                                                  vdsProxy[vdsHeader?.field]
+                                                    ?.vote
+                                                }
+                                              </Tippy>
+                                            )}
                                         </Table.Td>
                                       )
                                     )}
