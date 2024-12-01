@@ -614,6 +614,19 @@ function Main() {
                       </span>
                     </div>
                   </a>
+
+                  <div className="flex items-center justify-center w-10  relative cursor-pointer">
+                    <Tippy content="Create Notes" options={{ theme: "light" }}>
+                      <Lucide
+                        onClick={() => {
+                          navigate("/notes");
+                        }}
+                        icon="FileText"
+                        className="w-6 h-6 text-gray-400 shadow-sm"
+                      />
+                    </Tippy>
+                  </div>
+
                   {/* <a
                     href=""
                     className="p-2 text-[#000000] rounded-full hover:bg-white/5"

@@ -105,7 +105,7 @@ const NotesList: React.FC = () => {
               </div>
 
               <div
-                className="prose max-w-none  line-clamp-2  max-h-16 overflow-hidden"
+                className="prose max-w-none  line-clamp-2  max-h-20 overflow-hidden "
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(note?.text),
                 }}

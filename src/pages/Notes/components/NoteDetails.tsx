@@ -67,7 +67,6 @@ const NoteDetails: React.FC = () => {
                 </div>
 
                 <p className="text-xs">
-                  {" "}
                   Last Updated on{" "}
                   {dayjs(selectedNote?.date_updated).format(
                     "MMM DD, YYYY [at] h:mm A"
@@ -99,9 +98,23 @@ const NoteDetails: React.FC = () => {
          </Button>
        </div> */}
             </div>
-            <div className="border-b border-muted mb-4 !z-10"></div>
+            <div className="border-b border-muted mb-2 !z-10"></div>
 
             <div className="mx-4">
+              {isEditing ? null : (
+                <div className=" flex justify-end  text-gray-500 text-xs mb-2">
+                  <div className="flex ">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Tippy content="Edit Note" options={{ theme: "light" }}>
+                        <Lucide icon="Pen" className="w-4 h-4" />
+                      </Tippy>
+                    </Button>
+                  </div>
+                </div>
+              )}
               {/* <h2 className="text-lg font-semibold text-gray-800">Notes Name</h2>
        <div className="border-t text-gray-700 mb-5 mt-2"></div> */}
 
@@ -126,25 +139,6 @@ const NoteDetails: React.FC = () => {
                       __html: DOMPurify.sanitize(selectedNote?.text),
                     }}
                   />
-                )}
-
-                {isEditing ? null : (
-                  <div className="mt-4 flex justify-between items-center text-gray-500 text-xs">
-                    <span>
-                      {dayjs(selectedNote?.date_created).format("MMM DD, YYYY")}
-                    </span>
-                    <div className="flex space-x-2">
-                      {/* <Button variant="secondary">
-               <Lucide icon="Trash2" className="w-4 h-4" />
-                </Button> */}
-                      <Button
-                        variant="secondary"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Lucide icon="Pen" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
                 )}
               </div>
             </div>

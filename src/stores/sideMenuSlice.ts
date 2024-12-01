@@ -140,12 +140,13 @@ const initialState: any = {
       pathname: "#",
       title: "Help",
     },
-    "Coming Soon",
     {
       icon: "FileText",
       pathname: "/notes",
       title: "Notes",
     },
+    // "Coming Soon",
+
     // "UI WIDGETS",
     // {
     //   icon: "Album",
