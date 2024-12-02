@@ -46,7 +46,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         subMenu: item.subMenu,
         ignore: item.ignore,
         isAdmin: item.isAdmin,
-        selectPathName: item?.selectPathName
+        selectPathName: item?.selectPathName,
       };
 
       menuItem.active =
@@ -76,22 +76,24 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   return formattedMenu;
 };
 
-
 const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {
     // Check if selectPathName is defined and title is "Company Search"
-    if (menu.pathname !== undefined && menu.title === "Company Search" && menu.selectPathName) {
+    if (
+      menu.pathname !== undefined &&
+      menu.title === "Company Search" &&
+      menu.selectPathName
+    ) {
       navigate(menu.selectPathName);
-    } 
+    }
     // Navigate to pathname if it's defined and not "Notes"
     else if (menu.pathname !== undefined && menu.pathname !== "Notes") {
       navigate(menu.pathname);
     }
   }
 };
-
 
 const enter = (el: HTMLElement) => {
   slideDown(el, 300);

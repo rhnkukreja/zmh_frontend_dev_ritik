@@ -51,7 +51,7 @@ const DetailCaseStudies = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {singleCaseStudy?.institution_name && (
                 <div>
-                  <h3 className="font-semibold min-w-[150px] ">
+                  <h3 className="font-semibold min-w-[150px] mb-2">
                     Institution Name
                   </h3>
                   <p>{singleCaseStudy.institution_name}</p>
@@ -59,13 +59,13 @@ const DetailCaseStudies = () => {
               )}
               {singleCaseStudy?.esg_themes && (
                 <div>
-                  <h3 className="font-semibold min-w-[150px] ">Theme</h3>
+                  <h3 className="font-semibold min-w-[150px] mb-2">Theme</h3>
                   <p>{singleCaseStudy.esg_themes}</p>
                 </div>
               )}
               {singleCaseStudy?.industry && (
                 <div>
-                  <h3 className="font-semibold min-w-[150px] ">Industry</h3>
+                  <h3 className="font-semibold min-w-[150px] mb-2">Industry</h3>
                   <p>{singleCaseStudy.industry}</p>
                 </div>
               )}

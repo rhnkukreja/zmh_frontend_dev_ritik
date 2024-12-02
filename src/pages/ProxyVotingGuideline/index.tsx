@@ -72,6 +72,7 @@ function ProxyGuideline() {
 
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
   const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
+  const [currentPdfName, setCurrentPdfName] = useState<string>("");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
@@ -104,8 +105,10 @@ function ProxyGuideline() {
     dispatch(setPage(newPage));
   };
 
-  const gotoDetailPage = (pdf: string) => {
+  const gotoDetailPage = (pdf: string, pdf_name: string) => {
     setCurrentPdfDoc(pdf);
+    setCurrentPdfName(pdf_name);
+
   };
 
   const handleSearch = (searchTerms: string[]) => {
@@ -496,7 +499,8 @@ function ProxyGuideline() {
                                       <Lucide
                                         onClick={() => {
                                           gotoDetailPage(
-                                            guideline?.voting_guidelines_pdf_url!
+                                            guideline?.voting_guidelines_pdf_url!,
+                                            guideline?.voting_guidelines_pdf_name!,
                                           );
 
                                           setPdfVisible(true);
@@ -589,6 +593,7 @@ function ProxyGuideline() {
               setPdfVisible={setPdfVisible}
               pdfVisible={pdfVisible}
               file={currentPdfDoc}
+              file_name={currentPdfName}
             />
           )}
         </div>

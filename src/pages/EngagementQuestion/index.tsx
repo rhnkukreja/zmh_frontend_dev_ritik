@@ -508,7 +508,7 @@ function Main() {
                 </Popover>
               </div>
             </div>
-            <div className="overflow-auto xl:overflow-scroll px-5">
+            <div className=" xl:overflow-auto px-5 ">
               <TableWrapper isLoading={loading}>
                 <div className="overflow-auto max-h-[400px]">
                   <Table>

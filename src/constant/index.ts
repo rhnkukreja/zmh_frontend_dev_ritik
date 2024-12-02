@@ -62,3 +62,5 @@ export const no_header_company = [
   "engagement-question",
   "proxy-voting-guideline",
 ];
+
+export const subSidebarRoutes = ["/notes"];

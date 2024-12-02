@@ -87,7 +87,6 @@ const initialState: any = {
       icon: "Network",
       pathname: "/peer-analysis",
       title: "Engagement Details",
-
     },
     {
       icon: "FileText",
@@ -141,12 +140,13 @@ const initialState: any = {
       pathname: "#",
       title: "Help",
     },
-    "Coming Soon",
     {
-      icon: "Briefcase",
-      pathname: "#",
+      icon: "FileText",
+      pathname: "/notes",
       title: "Notes",
     },
+    // "Coming Soon",
+
     // "UI WIDGETS",
     // {
     //   icon: "Album",

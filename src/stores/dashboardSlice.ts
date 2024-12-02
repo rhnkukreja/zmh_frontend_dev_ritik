@@ -45,6 +45,8 @@ interface CompanySliceState {
   investorCardLoading: boolean;
   vdsProxyDetails: any;
   vdsProxyLoading: boolean;
+  npxProxyDetails: any;
+  npxProxyLoading: boolean;
   investorProfileDetails: any;
   investorProfileLoading: boolean;
   tempSearch: string | null;
@@ -73,6 +75,8 @@ const initialState: CompanySliceState = {
   caseStudyLoading: true,
   vdsProxyDetails: "",
   vdsProxyLoading: true,
+  npxProxyDetails: "",
+  npxProxyLoading: true,
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
@@ -123,6 +127,13 @@ export const fetchVdsProxyDashboard = createAsyncThunk<
   string
 >(`${name}/fetchVdsProxyDashboard`, async (url: string) => {
   return await dashboardService.fetchVdsProxyDashboard(url);
+});
+
+export const fetchNpxProxyDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchNpxProxyDashboard`, async (url: string) => {
+  return await dashboardService.fetchNpxProxyDashboard(url);
 });
 
 export const fetchInvestorProfileDetails = createAsyncThunk<
@@ -244,6 +255,25 @@ const companySlice = createSlice({
       )
       .addCase(fetchVdsProxyDashboard.rejected, (state, action) => {
         state.vdsProxyLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+      
+
+      .addCase(fetchNpxProxyDashboard.pending, (state) => {
+        state.npxProxyDetails = "";
+        state.npxProxyLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchNpxProxyDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.npxProxyLoading = false;
+          state.npxProxyDetails = action.payload.results;
+        }
+      )
+      .addCase(fetchNpxProxyDashboard.rejected, (state, action) => {
+        state.npxProxyLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })
