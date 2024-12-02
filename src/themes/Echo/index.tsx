@@ -297,7 +297,7 @@ function Main() {
                     {user.user_type === "Admin" ? (
                       <>{menu}</>
                     ) : user.user_type !== "Admin" && menu === "Admin" ? (
-                      <>{}</>
+                      <>{ }</>
                     ) : (
                       <>{menu}</>
                     )}
@@ -598,6 +598,19 @@ function Main() {
                     </div>
                   </a>
 
+                  <div className="flex items-center justify-center w-10 relative cursor-pointer">
+                    <Tippy content="Notes" options={{ theme: "light" }}>
+                      <Lucide
+                        onClick={() => {
+                          navigate("/notes");
+                        }}
+                        icon="FileText"
+                        className="w-8 h-8 text-gray-400 shadow-sm"
+                      />
+                    </Tippy>
+                  </div>
+
+
                   <a
                     onClick={(event: React.MouseEvent) => {
                       event.preventDefault();
@@ -614,18 +627,6 @@ function Main() {
                       </span>
                     </div>
                   </a>
-
-                  <div className="flex items-center justify-center w-10  relative cursor-pointer">
-                    <Tippy content="Create Notes" options={{ theme: "light" }}>
-                      <Lucide
-                        onClick={() => {
-                          navigate("/notes");
-                        }}
-                        icon="FileText"
-                        className="w-6 h-6 text-gray-400 shadow-sm"
-                      />
-                    </Tippy>
-                  </div>
 
                   {/* <a
                     href=""
@@ -785,9 +786,8 @@ function Main() {
             )}
 
             <iframe
-              className={`w-full h-full ${
-                isFrameLoading || isError ? "hidden" : ""
-              }`}
+              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
+                }`}
               src="https://app.korra.ai/zmhdashboard/globalsearchengine"
               title="Embedded Dashboard"
               onLoad={handleLoad}

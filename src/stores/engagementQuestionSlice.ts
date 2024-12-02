@@ -38,7 +38,7 @@ const initialState: EngagementQuestionsState = {
   page: 1,
   error: null,
   engagementQuestionFilterOptions: {
-    category: ["Environmental", "Governance", "Social"],
+    category: ["Environmental", "Governance", "Social", "Compensation"],
     year: ["2024", "2023", "2022"],
   },
   filters: {

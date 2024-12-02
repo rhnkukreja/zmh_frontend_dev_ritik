@@ -427,6 +427,7 @@ export const AddEditEngagementQuestion: React.FC<
                       <option value="Environmental">Environmental</option>
                       <option value="Governance">Governance</option>
                       <option value="Social">Social</option>
+                      <option value="Compensation">Compensation</option>
                     </TomSelect>
                   )}
                 />

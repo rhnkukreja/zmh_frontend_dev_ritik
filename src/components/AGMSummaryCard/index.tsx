@@ -172,15 +172,15 @@ const index = () => {
                       View More
                     </button>
                   }
-                  <button
+                  {/* <button
                     disabled={dashboardDataList?.length === 0 ? true : false}
                     onClick={(event: any) => handleViewNPX(event)}
                     className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                   >
-                    View NPX
-                  </button>
+                    View N-PX
+                  </button> */}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <Tippy content="Download Excel" options={{ theme: "light" }}>

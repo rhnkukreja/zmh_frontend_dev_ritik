@@ -455,7 +455,7 @@ function Router() {
         {
           path: "npx-details",
           element: <NPXDetails />,
-          data: { titleName: "NPX - ZMH Analytics" },
+          data: { titleName: "N-PX - ZMH Analytics" },
         },
       ],
     },
