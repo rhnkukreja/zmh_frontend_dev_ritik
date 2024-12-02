@@ -20,6 +20,7 @@ import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import { Dialog } from "@/components/Base/Headless";
+import { Tooltip } from 'react-tooltip';
 
 const index = () => {
   const location = useLocation();
@@ -125,8 +126,8 @@ const index = () => {
     // const textContent = text.split('<br>').map((line, i) => `(${i+1}). ` + line.trim()).join('\n \n \n');
     const textContent = text.split('<br>') // Split the text by <br>
       .map((line, i) => line.trim()) // Add index and trim each line
-      .join('<br> <br>');
-    return textContent;
+      .join('<br> <br> <br> <br>');
+    return text;
   }
 
   const getSplitContents = (items: any) => {
@@ -331,13 +332,17 @@ const index = () => {
                                                 <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
                                               )}
                                                
-                                                <div className="tooltip">
-                                                <Lucide
-                                                  icon="Info"
-                                                  className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                />
-                                                  <span className="tooltiptext shadow-md" dangerouslySetInnerHTML={{__html:getContent(vdsProxy[vdsHeader?.field]?.notes)}}>
-                                                  </span>
+                                                {/* <Tippy content={<span dangerouslySetInnerHTML={{ __html: getContent(vdsProxy[vdsHeader?.field]?.notes) ?? '' }}/>}> */}
+                                                <div data-tooltip-id="my-tooltip-data-html"
+                                                
+                                                  data-tooltip-html={vdsProxy[vdsHeader?.field]?.notes}>
+                                                  <Lucide
+                                                    icon="Info"
+                                                    className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                  />
+                                                  {/* <span className="tooltiptext shadow-md" >
+                                                  </span> */}
+                                                {/* </Tippy> */}
                                                 </div>
                                             </h1>
                                           ) : 
@@ -437,6 +442,8 @@ const index = () => {
           </Dialog.Description>
         </Dialog.Panel>
       </Dialog>
+
+      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000" , width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }}/>
     </>
   );
 };
