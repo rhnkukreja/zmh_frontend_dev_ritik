@@ -36,7 +36,7 @@ function Main(props: MainProps) {
     };
   }, []);
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement> | any) => {
     const value = event.target.value;
     setSearch(value);
     debouncedFetchResults(value);
@@ -65,6 +65,7 @@ function Main(props: MainProps) {
           },
         })
       );
+      
     }
     return res;
   };
@@ -100,6 +101,9 @@ function Main(props: MainProps) {
         name: company?.name,
       })
     );
+    setSearch("");
+    const data = {target: {value : ""}}
+    handleSearchChange(data);
   };
 
   return (
