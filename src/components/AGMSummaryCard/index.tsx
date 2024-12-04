@@ -180,7 +180,7 @@ const index = () => {
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                   >
                     View N-PX
-                  </button> */}
+                  </button>
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
