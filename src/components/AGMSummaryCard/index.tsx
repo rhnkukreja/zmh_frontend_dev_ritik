@@ -179,7 +179,7 @@ const index = () => {
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                   >
-                    View NPX
+                    View N-PX
                   </button>
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">

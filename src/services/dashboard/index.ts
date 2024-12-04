@@ -1,6 +1,7 @@
 import { CompanyData } from "@/types/company";
 import { axiosInstance } from "../index";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
+import { createDynamicURL } from "@/utils/helper";
 
 class DashboardService {
   public async fetchCompanyByName(companyName?: string): Promise<{
@@ -53,10 +54,17 @@ class DashboardService {
     return { results };
   }
 
-  public async fetchNpxProxyDashboard(url: string): Promise<{ results: any }> {
+  public async fetchVdsProxyAllInvestor(url: string): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
     return { results };
+  }
+
+  public async fetchNpxProxyDashboard(url: string): Promise<{ results: any; count: number }> {
+    const response = await axiosInstance.get(url);
+    const { results, count } = response.data;
+    return { results, count };
+
   }
 
   public async fetchInvestorProfileDetails(
@@ -74,6 +82,27 @@ class DashboardService {
     const { results, count } = response.data;
     return { results, count };
   }
+
+  public async getNPXDropdownValues(): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(`/get_npx_dropdown_values/`);
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
+  public async getDynamicNPXDropdownValues(paramFilter?:any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get( createDynamicURL(`/get_npx_dropdown_values/`, paramFilter));
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
 }
 
 export const dashboardService = new DashboardService();

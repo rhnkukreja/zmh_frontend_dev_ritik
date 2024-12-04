@@ -9,6 +9,8 @@ import {
   fetchAGMSummaryDashboard,
   fetchNpxProxyDashboard,
   fetchVdsProxyDashboard,
+  resetPage,
+  setPage,
   setTempSearch,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
@@ -21,13 +23,25 @@ import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import MultiSearchBar from "@/components/MultiSearch";
+import { Menu, Popover, Tab } from "@/components/Base/Headless";
+import { Controller, useForm } from "react-hook-form";
+import {
+  FormCheck,
+  FormInput,
+  FormSelect,
+  FormSwitch,
+} from "@/components/Base/Form";
+import { dashboardService } from "@/services/dashboard";
+import TomSelect from "@/components/Base/TomSelect";
+import CPagination from "@/components/Pagination";
+import { toast } from "react-toastify";
 
 const index = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const { npxProxyDetails, npxProxyLoading, tempSearch } = useAppSelector(
+  const { npxProxyDetails, npxProxyLoading, tempSearch, page, totalNPXCount } = useAppSelector(
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
@@ -39,31 +53,35 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
 
-  // const { globeSearch } = location.state || {};
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filter, setFilter] = useState('');
+  const [institutionName, setInstitutionName] = useState('');
+  const [allApplyFilter, setallApplyFilter] = useState<any>();
+
 
 
   useEffect(() => {
-    if (companyGlobalSearchTicker && npxProxyDetails?.length === 0) {
+
+    if (companyGlobalSearchTicker && npxProxyDetails?.length === 0 && allApplyFilter) {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
-            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': [filter]}
+            `${baseURL}/npx/detail/`, allApplyFilter, undefined, page
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else /* if (globeSearch !== tempSearch) */ {
+      dispatch(setTempSearch(companyGlobalSearchName));
+    } else if (allApplyFilter) {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
-            `${baseURL}/npx_proxy_voting/`, {'ticker': companyGlobalSearchTicker, 'fund_name': [filter]})
+            `${baseURL}/npx/detail/`, allApplyFilter, undefined, page)
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      dispatch(setTempSearch(companyGlobalSearchName));
     }
-  }, [companyGlobalSearchTicker, searchTicker, filter]);
+
+  }, [companyGlobalSearchTicker, searchTicker, filter, allApplyFilter, page]);
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -125,6 +143,9 @@ const index = () => {
 
   const handleSearch = (searchTerms: string[]) => {
     setFilter(searchTerms[0]);
+    setInstitutionName(searchTerms[0]);
+
+
   };
 
 
@@ -133,11 +154,137 @@ const index = () => {
     setSearchTerms([]);
   };
 
+  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
+  const [filtersLength, setFiltersLength] = useState<number>(0);
+
+  const handleCollapseFilter = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setIsFilterCollapse(!isFilterCollapse);
+  };
+
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<any>({
+    defaultValues: {
+      institution_name: 'Select',
+      // fund_name: 'Select',
+      // proposal: 'Select',
+      // vote: 'Select',
+    },
+  });
+
+
+  const onSubmit = async (npxFilter: any) => {
+
+    if (npxFilter?.institution_name === "Select") {
+      toast.warning("Please select a Institution Name");
+      return;
+    }
+    setallApplyFilter({
+      global_search: companyGlobalSearchName,
+      institution_name: "Select" === npxFilter?.institution_name ? '' : [npxFilter?.institution_name],
+      fund_name: "Select" === npxFilter?.fund_name ? '' : npxFilter?.fund_name,
+      proposal: "Select" === npxFilter?.proposal ? '' : npxFilter?.proposal,
+      vote: "Select" === npxFilter?.vote ? '' : npxFilter?.vote,
+      keyword: npxFilter?.keyword
+    })
+    // setIsFilterCollapse(!isFilterCollapse);
+    dispatch(resetPage());
+  };
+
+  const onFilterClear = () => {
+    resetFormValues();
+    dispatch(resetPage());
+  };
+
+  const resetFormValues: any = () => {
+    // setApiDropdownOptions({ institution: [] });
+    // setApiDependentDropdownOptions({ fund_name: [], proposal: [], vote: [] });
+    setValue("institution_name", 'Select');
+    setValue("fund_name", 'Select');
+    setValue("proposal", 'Select');
+    setValue("vote", 'Select');
+    setValue("keyword", '');
+  };
   
+  const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
+  const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] = useState<boolean>(false);
+
+  const [apiDropdownOptions, setApiDropdownOptions] =
+    useState<any>({
+      institution: [],
+    });
+
+  const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
+    useState<any>({
+      fund_name: [],
+      proposal: [],
+      vote: [],
+    });
+
+  const getAllInstitutionDropdown = async () => {
+    try {
+      setGetDropdownLoader(true);
+      const res =
+        await dashboardService.getNPXDropdownValues();
+      if (res.result) {
+        setApiDropdownOptions({ ...res.result });
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      setGetDropdownLoader(false);
+    }
+  };
+
+  useEffect(() => {
+    getAllInstitutionDropdown();
+  }, []);
+
+  const getDependentDropdown = async (event: any) => {
+    if (event?.target?.value !== '') {
+      const paramFilter = { global_search: companyGlobalSearchName, institution_name: [event?.target?.value], }
+      try {
+        setGetDynamicDropdownLoader(true);
+        const res =
+          await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+        if (res.result) {
+          setApiDependentDropdownOptions({ ...res.result });
+        }
+      } catch (error) {
+        return error;
+      } finally {
+        setGetDynamicDropdownLoader(false);
+      }
+    }
+
+  }
+
+
+  const handleNextPage = () => {
+    if (page < totalNPXCount) {
+      dispatch(setPage(page + 1));
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 1) {
+      dispatch(setPage(page - 1));
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    dispatch(setPage(newPage));
+  };
 
   return (
     <>
-      {npxProxyDetails?.npx_report?.length === 0 &&
+      {/* {npxProxyDetails?.npx_report?.length === 0 &&
         !npxProxyLoading &&
         location.pathname !== "/" && (
           <Button
@@ -154,52 +301,15 @@ const index = () => {
             />
             Back
           </Button>
-        )}
+        )} */}
 
-      
-      <div className="p-5 mt-1 box">
-        <div className="flex">
-          <MultiSearchBar
-            onSearch={handleSearch}
-            searchTerms={searchTerms}
-            setSearchTerms={setSearchTerms}
-            url={`/npx/fund_name/?all=true`}
-            getOptionKey="fund_name"
-            placeHolder="Search Fund Name"
-            isSingle={true}
-            isAll={true}
-          // onSearchChange={resetPage}
-          />
-          <div className="hover:bg-slate-50">
-            <Button onClick={handleClearAllFilter}>
-              <Tippy
-                content="Clear Filters"
-                options={{ theme: "light" }}
-              >
-                <FilterX
-                  size={17}
-                  strokeWidth={1}
-                  className="text-slate-500 cursor-pointer"
-                />
-              </Tippy>
-              {/* <span className="text-slate-500">Clear Filters</span> */}
-            </Button>
-          </div>
+      <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+          <span>
+            <h1 className="text-lg font-bold">N-PX Voting (Beta)</h1>
+          </span>
         </div>
-
-        {npxProxyDetails?.npx_report?.length > 0 && (
-          <div className="w-full">
-            <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                <span>
-                  <h1 className="text-lg font-bold">NPX Voting (Beta)</h1>
-                </span>
-              </div>
-              <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                {/* <h1 className="text-md font-bold">
-                  Aggregate Ownership:
-                  {npxProxyDetails?.total_percent_ownership}
-                </h1> */}
+        {/* <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                 <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <div
                     className="box p-[5px] cursor-pointer"
@@ -208,173 +318,412 @@ const index = () => {
                     <img alt="download-icon" src={downloadIcon} />
                   </div>
                 </Tippy>
-                {/* {locationPathName === "/vds-details/" && (
-                  <Tippy content="Expand" options={{ theme: "light" }}>
-                    <div
-                      className="box p-2 cursor-pointer"
-                      onClick={() => window.open("/vds-proxy-details", "_blank")}
-                    >
-                      <img alt="tab-icon" src={tabIcon} />
-                    </div>
-                  </Tippy>
-                 )} */}
-              </div>
+              </div> */}
+      </div>
+      <div className="p-5 mt-1 box">
+
+
+
+        <div className="flex flex-col p-5  sm:flex-row gap-y-2">
+          {/* <div className="flex">
+            <MultiSearchBar
+              onSearch={handleSearch}
+              searchTerms={searchTerms}
+              setSearchTerms={setSearchTerms}
+              url={`/npx/fund_name/?all=true`}
+              getOptionKey="fund_name"
+              placeHolder="Search Fund Name"
+              isSingle={true}
+              isAll={true}
+            />
+            <div className="hover:bg-slate-50">
+              <Button onClick={handleClearAllFilter}>
+                <Tippy
+                  content="Clear Filters"
+                  options={{ theme: "light" }}
+                >
+                  <FilterX
+                    size={17}
+                    strokeWidth={1}
+                    className="text-slate-500 cursor-pointer"
+                  />
+                </Tippy>
+              </Button>
             </div>
-            <>
-              <div className="">
-                <div>
-                  <TableWrapper>
-                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                      <Table className="table_2 w-full">
-                        <Table.Thead className="sticky top-50 z-10">
-                          {" "}
-                          {/* Make entire header sticky */}
-                          <Table.Tr className="row_2">
-                            {npxProxyDetails?.npx_report_headers?.length > 0 &&
-                              npxProxyDetails?.npx_report_headers?.map(
-                                (npxHeader: any, headerIndex: number) => (
-                                  <Table.Td
-                                    key={headerIndex}
-                                    className={clsx([
-                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] max-w-[150px] min-w-[150px] text-left",
-                                      "sticky top-0", // Ensure the header remains sticky at the top
-                                      headerIndex === 0 &&
-                                      "sticky left-0 bg-header z-50 ", // Fix first column
-                                      headerIndex === 1 &&
-                                      "sticky left-[50px] bg-header z-50 ", // Fix second column (adjust 'left' value according to width)
-                                    ])}
-                                  >
-                                    {npxHeader?.header}
-                                  </Table.Td>
-                                )
-                              )}
-                          </Table.Tr>
-                        </Table.Thead>
+          </div> */}
+          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
 
-                        <Table.Tbody>
-                          {npxProxyDetails?.npx_report?.length > 0 &&
-                            npxProxyDetails?.npx_report?.map(
-                              (vdsProxy: any, vdsProxyIndex: number) => (
-                                <Table.Tr
-                                  key={vdsProxyIndex}
-                                  className="row_2 [&_td]:last:border-b-0"
-                                >
-                                  {npxProxyDetails?.npx_report_headers?.length >
-                                    0 &&
-                                    npxProxyDetails?.npx_report_headers?.map(
-                                      (npxHeader: any, headerIndex: number) => (
-                                        <Table.Td
-                                          key={headerIndex}
-                                          className={clsx([
-                                            "cell_2 py-2 border-dashed dark:bg-darkmode-600 max-w-[150px] min-w-[150px] text-left",
-                                            headerIndex === 0 &&
-                                            "sticky left-0 bg-white  z-5", // Fix first column
-                                            headerIndex === 1 &&
-                                            "sticky left-[50px] bg-white z-5", // Fix second column
-                                          ])}
-                                        >
-                                          {isObject(
-                                            vdsProxy[npxHeader?.field]
-                                          ) &&
-                                            vdsProxy[npxHeader?.field]?.notes !==
-                                            null ? (
-                                            <h1
-                                              className={clsx([
-                                                (vdsProxy[
-                                                  npxHeader?.field
-                                                ]?.vote?.includes("Against") ||
-                                                  vdsProxy[
-                                                    npxHeader?.field
-                                                  ]?.vote?.includes(
-                                                    "Withhold"
-                                                  )) &&
-                                                "text-red-700 font-semibold",
-                                                "flex items-center",
-                                              ])}
-                                            >
-                                              {vdsProxy[npxHeader?.field]
-                                                ?.vote === "Split Vote" ? (
-                                                <Tippy
-                                                  content={
-                                                    isObject(
-                                                      vdsProxy[npxHeader?.field]
-                                                    ) &&
-                                                    getSplitContents(
-                                                      vdsProxy[npxHeader?.field]
-                                                        ?.split_vote_counts
-                                                    )
-                                                  }
-                                                  options={{ theme: "light" }}
-                                                >
-                                                  {
-                                                    vdsProxy[npxHeader?.field]
-                                                      ?.vote
-                                                  }
-                                                </Tippy>
-                                              ) : (
-                                                vdsProxy[npxHeader?.field]?.vote
-                                              )}
-
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[npxHeader?.field]
-                                                  ) &&
-                                                  getContent(vdsProxy[npxHeader?.field]?.notes)
-                                                }
-                                                options={{ theme: "light", trigger: "click" }}
-                                              >
-                                                {/* <span>
-                                                  <Lucide
-                                                    icon="Info"
-                                                    className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                  />
-                                                </span> */}
-                                              </Tippy>
-                                            </h1>
-                                          ) : isObject(
-                                            vdsProxy[npxHeader?.field]
-                                          ) &&
-                                            vdsProxy[npxHeader?.field]
-                                              ?.notes === null ? (
-                                            <h1
-                                              className={clsx([
-                                                (vdsProxy[
-                                                  npxHeader?.field
-                                                ]?.vote?.includes("Against") ||
-                                                  vdsProxy[
-                                                    npxHeader?.field
-                                                  ]?.vote?.includes(
-                                                    "Withhold"
-                                                  )) &&
-                                                "text-red-700 font-semibold",
-                                              ])}
-                                            >
-                                              {vdsProxy[npxHeader?.field]?.vote}
-                                            </h1>
-                                          ) : (
-                                            <h1>
-                                              {vdsProxy[npxHeader?.field]}
-                                            </h1>
-                                          )}
-                                        </Table.Td>
-                                      )
-                                    )}
-                                </Table.Tr>
-                              )
-                            )}
-                        </Table.Tbody>
-                      </Table>
+            <Popover className="inline-block">
+              {({ close }) => (
+                <>
+                  <Popover.Button
+                    as={Button}
+                    variant="outline-secondary"
+                    className="w-full sm:w-auto"
+                    onClick={handleCollapseFilter}
+                  >
+                    <Lucide
+                      icon="ArrowDownWideNarrow"
+                      className="stroke-[1.3] w-4 h-4 mr-2"
+                    />
+                    Filter
+                    <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                      {filtersLength}
                     </div>
-                  </TableWrapper>
+                  </Popover.Button>
+                </>
+              )}
+            </Popover>
+          </div>
+        </div>
+
+        {isFilterCollapse && (
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="filter-section mb-5">
+              <div className="flex items-center justify-end mt-2 mb-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    onFilterClear();
+                    // close();
+                  }}
+                  type="button"
+                  className="w-32 mx-2"
+                >
+                  Clear
+                </Button>
+                <Button
+                  variant="primary"
+                  className="w-32 mx-2"
+                  type="submit"
+                >
+                  Apply
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                <div className="w-full">
+                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                    Institution
+                    {/* {apiDropdownOptions?.institution?.length > 0 && (
+                      <div>
+                        <FormCheck className="mr-2">
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="institution"
+                            checked={
+                              apiDropdownOptions.institution.length === watch("institution")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "institution",
+                                e.target.checked
+                                  ? apiDropdownOptions.institution
+                                  : []
+                              );
+                            }}
+                          />
+                        </FormCheck>
+                      </div>
+                    )} */}
+                  </div>
+                  <Controller
+                    name="institution_name"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <TomSelect
+                        value={field.value || []}
+
+                        onChange={(value) => {
+                          field.onChange(value);
+                          getDependentDropdown(value);
+                        }}
+                        options={{ placeholder: "Select Institution" }}
+                        className="w-full"
+                        multiple={false}
+                      >
+                        {getDropdownLoader ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          apiDropdownOptions.institution?.map((institution: any) => (
+                            <option key={institution} value={institution}>
+                              {institution}
+                            </option>
+                          ))
+                        )}
+                      </TomSelect>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full">
+                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                    Fund
+                    {/* {apiDropdownOptions?.institution?.length > 0 && (
+                      <div>
+                        <FormCheck className="mr-2">
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="institution"
+                            checked={
+                              apiDropdownOptions.institution.length === watch("institution")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "institution",
+                                e.target.checked
+                                  ? apiDropdownOptions.institution
+                                  : []
+                              );
+                            }}
+                          />
+                        </FormCheck>
+                      </div>
+                    )} */}
+                  </div>
+                  <Controller
+                    name="fund_name"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <TomSelect
+                        value={field.value || []}
+                        onChange={(value) => { field.onChange(value) }}
+                        options={{ placeholder: "Select Fund" }}
+                        className="w-full"
+                        multiple
+                      >
+                        {getDynamicDropdownLoader ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          apiDependentDropdownOptions?.fund_name?.map((fund: any) => (
+                            <option key={fund} value={fund}>
+                              {fund}
+                            </option>
+                          ))
+                        )}
+                      </TomSelect>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full">
+                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                    proposal
+                    {/* {apiDropdownOptions?.institution?.length > 0 && (
+                      <div>
+                        <FormCheck className="mr-2">
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="institution"
+                            checked={
+                              apiDropdownOptions.institution.length === watch("institution")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "institution",
+                                e.target.checked
+                                  ? apiDropdownOptions.institution
+                                  : []
+                              );
+                            }}
+                          />
+                        </FormCheck>
+                      </div>
+                    )} */}
+                  </div>
+                  <Controller
+                    name="proposal"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <TomSelect
+                        value={field.value || []}
+                        onChange={(value) => { field.onChange(value) }}
+                        options={{ placeholder: "Select proposal" }}
+                        className="w-full"
+                        multiple
+                      >
+                        {getDynamicDropdownLoader ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          apiDependentDropdownOptions?.proposal?.map((proposal: any) => (
+                            <option key={proposal} value={proposal}>
+                              {proposal}
+                            </option>
+                          ))
+                        )}
+                      </TomSelect>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full">
+                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                    vote
+                    {/* {apiDropdownOptions?.institution?.length > 0 && (
+                      <div>
+                        <FormCheck className="mr-2">
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="institution"
+                            checked={
+                              apiDropdownOptions.institution.length === watch("institution")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "institution",
+                                e.target.checked
+                                  ? apiDropdownOptions.institution
+                                  : []
+                              );
+                            }}
+                          />
+                        </FormCheck>
+                      </div>
+                    )} */}
+                  </div>
+                  <Controller
+                    name="vote"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <TomSelect
+                        value={field.value || []}
+                        onChange={(value) => { field.onChange(value) }}
+                        options={{ placeholder: "Select vote" }}
+                        className="w-full"
+                        multiple
+                      >
+                        {getDynamicDropdownLoader ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          apiDependentDropdownOptions?.vote?.map((vote: any) => (
+                            <option key={vote} value={vote}>
+                              {vote}
+                            </option>
+                          ))
+                        )}
+                      </TomSelect>
+                    )}
+                  />
+                </div>
+
+
+                <div className="w-full">
+                  <div className="text-left text-slate-500">Keyword</div>
+                  <Controller
+                    name="keyword"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <FormInput
+                        value={field.value?.toString() || ""}
+                        onChange={field.onChange}
+                        type="text"
+                        className="mt-1"
+                        placeholder="Search Keyword"
+                      />
+                    )}
+                  />
                 </div>
               </div>
-            </>
-          </div>
-
+            </div>
+          </form>
         )}
 
-        {!npxProxyDetails && npxProxyLoading && (
+        {/* {npxProxyDetails?.npx_report?.length > 0 && ( */}
+        <div className="w-full">
+
+          <>
+            <div className="">
+              <div>
+                <TableWrapper isLoading={allApplyFilter && npxProxyLoading}>
+                  <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                    <Table>
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Vote Description
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Vote Category
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Vote
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Shared Voted
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            Fund Name
+                          </Table.Td>
+                        </Table.Tr>
+                      </Table.Thead>
+
+                      <Table.Tbody>
+                        {npxProxyDetails?.length > 0 &&
+                          npxProxyDetails?.map((noAction: any) => (
+                            <Table.Tr
+                              key={noAction?.id}
+                              className="[&_td]:last:border-b-0"
+                            >
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                {noAction?.vote_description}
+                              </Table.Td>
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                {noAction?.vote_category}
+                              </Table.Td>
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                {noAction?.vote}
+                              </Table.Td>
+                              <Table.Td className="whitespace-nowrap  overflow-hidden text-ellipsis">
+                                {noAction?.shares_voted}
+                              </Table.Td>
+                              <Table.Td className="whitespace-nowrap text-wrap ">
+                                {noAction?.fund_name}
+                              </Table.Td>
+
+                            </Table.Tr>
+                          ))}
+                      </Table.Tbody>
+                      {npxProxyDetails?.length === 0 && (
+                        <div className="w-full">
+                          <h1 className="mt-3">No Records Found..</h1>
+                        </div>
+                      )}
+                    </Table>
+                  </div>
+                </TableWrapper>
+              </div>
+              <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                <CPagination
+                  page={page}
+                  totalPages={totalNPXCount}
+                  handleNextPage={handleNextPage}
+                  handlePageChange={handlePageChange}
+                  handlePreviousPage={handlePreviousPage}
+                />
+              </div>
+            </div>
+          </>
+        </div>
+
+        {/* {!allApplyFilter && (
+          <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
+            <h1 className="font-semibold">Please search institution name</h1>
+          </div>
+        )} */}
+
+        {/* {!npxProxyDetails && npxProxyLoading && allApplyFilter && (
           <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
             <LoadingIcon
               color="#800000"
@@ -382,18 +731,18 @@ const index = () => {
               className="w-16 h-16"
             />
           </div>
-        )}
+        )} */}
 
-        {npxProxyDetails?.npx_report?.length === 0 && !npxProxyLoading && (
+        {npxProxyDetails?.npx_report?.length === 0 && !npxProxyLoading && allApplyFilter && (
           <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
             <h1 className="font-semibold"> Proxy Records Not Found..</h1>
           </div>
         )}
       </div>
 
-      
 
-      
+
+
     </>
   );
 };

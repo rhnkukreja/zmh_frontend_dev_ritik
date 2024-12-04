@@ -33,6 +33,7 @@ import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
+
 interface InvestorProfileFilter {
   region: string[];
 }

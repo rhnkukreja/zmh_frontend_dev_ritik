@@ -73,7 +73,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       return responses.flatMap((response) => {
         if (isAll) {
           return (
-            response.data?.map((item: any) => item[getOptionKey as string]) ||
+            response.data.institution?.map((item: any) => item[getOptionKey as string]) ||
             []
           );
         }

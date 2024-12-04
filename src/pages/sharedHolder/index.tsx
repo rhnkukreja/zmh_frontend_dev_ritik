@@ -965,7 +965,7 @@ function ShareHolderProposal() {
                                     className="[&_td]:last:border-b-0"
                                   >
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                      {noAction?.proponent_name}
+                                      {noAction?.caspio_proponent_name}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
