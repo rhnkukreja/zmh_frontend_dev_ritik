@@ -20,10 +20,15 @@ import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
-import { Dialog } from "@/components/Base/Headless";
+import { Dialog, Popover } from "@/components/Base/Headless";
 import { Tooltip } from 'react-tooltip';
 import { Tab } from "@/components/Base/Headless";
 import MultiSearchBar from "@/components/MultiSearch";
+import { FormCheck, FormSelect } from "@/components/Base/Form";
+import { dashboardService } from "@/services/dashboard";
+import { Controller, useForm } from "react-hook-form";
+import TomSelect from "@/components/Base/TomSelect";
+
 const index = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -41,9 +46,16 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [filter, setFilter] = useState<any>('');
+  const [filter, setFilter] = useState<any>([]);
   const [selectedTab, setSelectedTab] = useState(0)
   // const { globeSearch } = location.state || {};
+
+  const { handleSubmit, control, reset, setValue, watch } =
+  useForm<any>({
+    defaultValues: {
+      institution: [''],
+    },
+  });
 
   useEffect(() => {
     if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
@@ -56,22 +68,22 @@ const index = () => {
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-    // else /* if (globeSearch !== tempSearch) */ {
-    //   dispatch(
-    //     fetchVdsProxyDashboard(
-    //       createDynamicURL(
-    //         `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
-    //       )
-    //     )
-    //   );
+    else /* if (globeSearch !== tempSearch) */ {
+      dispatch(
+        fetchVdsProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
 
-    //   dispatch(setTempSearch(companyGlobalSearchTicker));
-    // }
-  }, [companyGlobalSearchTicker, searchTicker]);
+      dispatch(setTempSearch(companyGlobalSearchTicker));
+    }
+  }, [companyGlobalSearchTicker, searchTicker, ]);
 
 
   useEffect(() => {
-    if (filter) {
+    if (filter?.length > 0) {
       dispatch(
         fetchVdsProxyAllInvestor(
           createDynamicURL(
@@ -86,7 +98,7 @@ const index = () => {
         fetchVdsProxyAllInvestor(
           createDynamicURL(
             `${baseURL}/vds_proxy_voting/`,
-            { 'ticker': companyGlobalSearchTicker }
+            // { 'ticker': companyGlobalSearchTicker }
           )
         )
       );
@@ -174,27 +186,39 @@ const index = () => {
     }
     return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
   }
+  const [apiDropdownOptions, setApiDropdownOptions] =useState<any>([]);
 
-  const [isOpenNotes, setIsOpenNotes] = useState(false);
-  const [notes, setNotes] = useState('');
-
-
-  const handleNotes = (item: string) => {
-    const textContent = item
-      .split('<br>') // Split the text by <br>
-      .map((line, i) => line.trim()) // Add index and trim each line
-      .join('<br> <br> <br>');
-    setIsOpenNotes(true);
-    setNotes(textContent);
-  }
-
-
-
-  const handleSearch = (searchTerms: string[]) => {
-    setFilter(searchTerms);
+  const getAllInstitutionDropdown = async () => {
+    try {
+      const res = await dashboardService.getInstitution();
+      if (res.result?.institution) {
+        setApiDropdownOptions(res.result?.institution);
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      // setGetDropdownLoader(false);
+    }
   };
 
+  useEffect(() => {
+    getAllInstitutionDropdown();
+  }, [])
+  
 
+  
+    const onSubmit = async (investorProfileFilter: any) => {
+      if(investorProfileFilter?.institution){
+        setFilter(investorProfileFilter?.institution);
+      }
+     
+    };
+
+    const onFilterClear = () => {
+      setFilter([]);
+      reset();
+    };
+    
   return (
     <>
       {/* <div className="p-y-5 mb-1 font-semibold text-xl ">
@@ -471,7 +495,7 @@ const index = () => {
 
                         {vdsProxyDetails?.vds_report?.length === 0 && !vdsProxyLoading && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            <h1 className="font-semibold"> Proxy Records Not Found..</h1>
+                            <h1 className="font-semibold">Proxy Records Not Found..</h1>
                           </div>
                         )}
                       </TableWrapper>
@@ -481,23 +505,131 @@ const index = () => {
 
                 <Tab.Panels className="mt-5">
                   <Tab.Panel className="leading-relaxed">
+                    <div className="flex justify-end mb-4">
+                      <Popover className="inline-block ">
+                        {({ close }) => (
+                          <>
+                            <Popover.Button
+                              as={Button}
+                              variant="outline-secondary"
+                              className="w-full sm:w-auto"
+                            >
+                              <Lucide
+                                icon="ArrowDownWideNarrow"
+                                className="stroke-[1.3] w-4 h-4 mr-2"
+                              />
+                              Filter
+                              <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                                0
+                              </div>
+                            </Popover.Button>
+                            <Popover.Panel placement="bottom-end">
+                              <form onSubmit={handleSubmit(onSubmit)}>
+                                <div className="p-2">
+                                  <div className="flex items-center mt-4">
+                                    <Button
+                                    type="button"
+                                      variant="secondary"
+                                      onClick={() => {
+                                        onFilterClear();
+                                        close();
+                                      }}
+                                      className="w-32 ml-auto"
+                                    >
+                                      Clear
+                                    </Button>
+                                    <Button
+                                      type="submit"
+                                      variant="primary"
+                                      className="w-32 ml-2"
+                                      onClick={() => {
+                                        close();
+                                      }}
+                                    >
+                                      Apply
+                                    </Button>
+                                  </div>
+                                  <div className="mt-3">
+                                    <div className="w-full  my-2">
+                                      <div className="text-left text-slate-500 flex justify-between mb-1">
+                                        Institution
+                                        {apiDropdownOptions?.length > 0 && (
+                                          <div>
+                                            <FormCheck className="mr-2">
+                                              <FormCheck.Label>
+                                                Select All
+                                              </FormCheck.Label>
+                                              <FormCheck.Input
+                                                className="ml-1"
+                                                id={`institution`}
+                                                checked={
+                                                  apiDropdownOptions
+                                                    .length === watch("institution")?.length
+                                                }
+                                                type="checkbox"
+                                                onChange={(e) => {
+                                                  if (e.target.checked === true) {
+                                                    setValue(
+                                                      "institution",
+                                                      apiDropdownOptions
+                                                    );
+                                                  } else {
+                                                    setValue("institution", []);
+                                                  }
+                                                }}
+                                              />
+                                            </FormCheck>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <Controller
+                                        name="institution"
+                                        control={control}
+                                        render={({ field }) => (
+                                          <TomSelect
+                                            value={field.value || []}
+                                            onChange={(value) => {
+                                              field.onChange(value);
+                                            }}
+                                            options={{
+                                              placeholder: "Select institution",
+                                            }}
+                                            className="w-full"
+                                            multiple
+                                          >
+                                            <>
+                                              {apiDropdownOptions.length > 0 &&
+                                                apiDropdownOptions?.map(
+                                                  (institution: string) => {
+                                                    return (
+                                                      <option value={institution}>
+                                                        {institution}
+                                                      </option>
+                                                    );
+                                                  }
+                                                )}
+                                            </>
+                                          </TomSelect>
+                                        )}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </form>
+                            </Popover.Panel>
+                          </>
+                        )}
+                      </Popover>
+                    </div>
+
+                    
+                 
                     <div>
 
-                      <div className="flex">
-                        <MultiSearchBar
-                          onSearch={handleSearch}
-                          searchTerms={searchTerms}
-                          setSearchTerms={setSearchTerms}
-                          url="/get_vds_dropdown_values/"
-                          getOptionKey="institution_name"
-                          placeHolder="Search Institution"
-                          isAll={true}
-                        // onSearchChange={resetPage}
-                        />
-                      </div>
+                     
 
 
-                      <TableWrapper>
+                      <TableWrapper isLoading={vdsProxyAllInvestorLoading && filter?.length > 0}>
                         <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                           <Table className="table_2 w-full">
                             <Table.Thead className="sticky top-50 z-10">
@@ -656,7 +788,7 @@ const index = () => {
                           </Table>
                         </div>
 
-                        {!vdsProxyAllInvestorDetails && vdsProxyAllInvestorLoading && (
+                        {/* {!vdsProxyAllInvestorDetails && vdsProxyAllInvestorLoading && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                             <LoadingIcon
                               color="#800000"
@@ -664,14 +796,21 @@ const index = () => {
                               className="w-16 h-16"
                             />
                           </div>
-                        )}
+                        )} */}
 
-                        {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && !vdsProxyAllInvestorLoading && (
+                        
+                      </TableWrapper>
+                      {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            <h1 className="font-semibold"> Proxy Records Not Found..</h1>
+                            <h1 className="font-semibold"> All Proxy Records Not Found..</h1>
                           </div>
                         )}
-                      </TableWrapper>
+
+                      {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length > 0 && (
+                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                          <h1 className="font-semibold"> All Proxy Records Not Found..</h1>
+                        </div>
+                      )}
                     </div>
                   </Tab.Panel>
                 </Tab.Panels>
