@@ -63,16 +63,17 @@ const index = () => {
 
   useEffect(() => {
 
-    if (companyGlobalSearchTicker && npxProxyDetails?.length === 0 && allApplyFilter) {
-      dispatch(
-        fetchNpxProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/npx/detail/`, allApplyFilter, undefined, page
-          )
-        )
-      );
-      dispatch(setTempSearch(companyGlobalSearchName));
-    } else if (allApplyFilter) {
+    // if (companyGlobalSearchTicker && npxProxyDetails?.length === 0 && allApplyFilter) {
+    //   dispatch(
+    //     fetchNpxProxyDashboard(
+    //       createDynamicURL(
+    //         `${baseURL}/npx/detail/`, allApplyFilter, undefined, page
+    //       )
+    //     )
+    //   );
+    //   dispatch(setTempSearch(companyGlobalSearchName));
+    // } else 
+    if (allApplyFilter) {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
@@ -200,6 +201,7 @@ const index = () => {
 
   const onFilterClear = () => {
     resetFormValues();
+    setallApplyFilter('');
     dispatch(resetPage());
   };
 
@@ -245,11 +247,11 @@ const index = () => {
 
   useEffect(() => {
     getAllInstitutionDropdown();
-  }, []);
+  }, [companyGlobalSearchTicker]);
 
   const getDependentDropdown = async (event: any) => {
     if (event?.target?.value !== '') {
-      const paramFilter = { global_search: companyGlobalSearchName, institution_name: [event?.target?.value], }
+      const paramFilter = { global_search: companyGlobalSearchName, institution_name: [event?.target?.value]}
       try {
         setGetDynamicDropdownLoader(true);
         const res =
