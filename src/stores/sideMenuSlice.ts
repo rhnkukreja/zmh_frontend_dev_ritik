@@ -136,15 +136,16 @@ const initialState: any = {
     },
     "Additional",
     {
-      icon: "HelpCircle",
-      pathname: "#",
-      title: "Help",
-    },
-    {
       icon: "FileText",
       pathname: "/notes",
       title: "Notes",
     },
+    {
+      icon: "HelpCircle",
+      pathname: "#",
+      title: "Help",
+    },
+
     // "Coming Soon",
 
     // "UI WIDGETS",

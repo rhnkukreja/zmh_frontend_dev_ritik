@@ -44,6 +44,7 @@ const index = () => {
   const { npxProxyDetails, npxProxyLoading, tempSearch, page, totalNPXCount } = useAppSelector(
     (state) => state.dashboard
   );
+  const totalPages = Math.ceil(totalNPXCount / 10);
   const [searchParams] = useSearchParams();
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
@@ -211,7 +212,7 @@ const index = () => {
     setValue("vote", 'Select');
     setValue("keyword", '');
   };
-  
+
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] = useState<boolean>(false);
 
@@ -266,8 +267,14 @@ const index = () => {
   }
 
 
+  // const handleNextPage = () => {
+  //   if (page < totalNPXCount) {
+  //     dispatch(setPage(page + 1));
+  //   }
+  // };
+
   const handleNextPage = () => {
-    if (page < totalNPXCount) {
+    if (page < totalPages) {
       dispatch(setPage(page + 1));
     }
   };
@@ -513,7 +520,7 @@ const index = () => {
 
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                    proposal
+                    Proposal
                     {/* {apiDropdownOptions?.institution?.length > 0 && (
                       <div>
                         <FormCheck className="mr-2">
@@ -539,14 +546,14 @@ const index = () => {
                     )} */}
                   </div>
                   <Controller
-                    name="proposal"
+                    name="Proposal"
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
                       <TomSelect
                         value={field.value || []}
                         onChange={(value) => { field.onChange(value) }}
-                        options={{ placeholder: "Select proposal" }}
+                        options={{ placeholder: "Select Proposal" }}
                         className="w-full"
                         multiple
                       >
@@ -566,7 +573,7 @@ const index = () => {
 
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                    vote
+                    Vote
                     {/* {apiDropdownOptions?.institution?.length > 0 && (
                       <div>
                         <FormCheck className="mr-2">
@@ -592,14 +599,14 @@ const index = () => {
                     )} */}
                   </div>
                   <Controller
-                    name="vote"
+                    name="Vote"
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
                       <TomSelect
                         value={field.value || []}
                         onChange={(value) => { field.onChange(value) }}
-                        options={{ placeholder: "Select vote" }}
+                        options={{ placeholder: "Select Vote" }}
                         className="w-full"
                         multiple
                       >
@@ -621,7 +628,7 @@ const index = () => {
                 <div className="w-full">
                   <div className="text-left text-slate-500">Keyword</div>
                   <Controller
-                    name="keyword"
+                    name="Keyword"
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
@@ -685,9 +692,10 @@ const index = () => {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                 {noAction?.vote}
                               </Table.Td>
-                              <Table.Td className="whitespace-nowrap  overflow-hidden text-ellipsis">
-                                {noAction?.shares_voted}
+                              <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis">
+                                {new Intl.NumberFormat('en-US').format(Math.floor(noAction?.shares_voted || 0))}
                               </Table.Td>
+
                               <Table.Td className="whitespace-nowrap text-wrap ">
                                 {noAction?.fund_name}
                               </Table.Td>
@@ -707,7 +715,7 @@ const index = () => {
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                 <CPagination
                   page={page}
-                  totalPages={totalNPXCount}
+                  totalPages={totalPages}
                   handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
                   handlePreviousPage={handlePreviousPage}

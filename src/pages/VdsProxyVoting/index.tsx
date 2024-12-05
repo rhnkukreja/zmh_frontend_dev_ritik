@@ -42,6 +42,7 @@ const index = () => {
   const searchTicker = searchParams.get("ticker");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filter, setFilter] = useState<any>('');
+  const [selectedTab, setSelectedTab] = useState(0)
   // const { globeSearch } = location.state || {};
 
   useEffect(() => {
@@ -54,7 +55,7 @@ const index = () => {
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } 
+    }
     // else /* if (globeSearch !== tempSearch) */ {
     //   dispatch(
     //     fetchVdsProxyDashboard(
@@ -63,19 +64,19 @@ const index = () => {
     //       )
     //     )
     //   );
-      
+
     //   dispatch(setTempSearch(companyGlobalSearchTicker));
     // }
   }, [companyGlobalSearchTicker, searchTicker]);
 
 
   useEffect(() => {
-    if(filter){
+    if (filter) {
       dispatch(
         fetchVdsProxyAllInvestor(
           createDynamicURL(
             `${baseURL}/vds_proxy_voting/`,
-             {'ticker': companyGlobalSearchTicker, 'institution_name': filter}
+            { 'ticker': companyGlobalSearchTicker, 'institution_name': filter }
           )
         )
       );
@@ -85,13 +86,13 @@ const index = () => {
         fetchVdsProxyAllInvestor(
           createDynamicURL(
             `${baseURL}/vds_proxy_voting/`,
-             {'ticker': companyGlobalSearchTicker}
+            { 'ticker': companyGlobalSearchTicker }
           )
         )
       );
     }
   }, [filter])
-  
+
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -167,9 +168,9 @@ const index = () => {
     return resultString;
   };
 
-  function convertToTitleCase(str:string) {
+  function convertToTitleCase(str: string) {
     if (!str) {
-        return ""
+      return ""
     }
     return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
   }
@@ -267,7 +268,7 @@ const index = () => {
                       className="w-full py-2"
                       as="button">
                       <div className="flex items-center justify-center ">
-                        With ownership
+                        Top 20
                       </div>
                     </Tab.Button>
                   </Tab>
@@ -278,7 +279,7 @@ const index = () => {
                       as="button"
                     >
                       <div className="flex items-center justify-center ">
-                        All Investor
+                        All Investors
                       </div>
                     </Tab.Button>
                   </Tab>
@@ -287,6 +288,17 @@ const index = () => {
 
                 <Tab.Panels className="mt-5">
                   <Tab.Panel className="leading-relaxed">
+                    {/* Top 20 Content */}
+
+                    {selectedTab === 0 && (
+                      <div className="flex justify-end mb-4">
+                        <h1 className="text-md font-bold">
+                  Aggregate Ownership:{" "}
+                  {vdsProxyDetails?.total_percent_ownership}
+                </h1>
+                      </div>
+                    )}
+
                     <div>
                       <TableWrapper>
                         <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
@@ -669,7 +681,7 @@ const index = () => {
         </div>
       )}
 
-      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000" , width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }}/>
+      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
     </>
   );
 };

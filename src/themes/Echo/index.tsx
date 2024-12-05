@@ -661,7 +661,7 @@ function Main() {
                     </div>
                   </a>
 
-                  <div className="flex items-center justify-center w-10 relative cursor-pointer">
+                  {/* <div className="flex items-center justify-center w-10 relative cursor-pointer">
                     <Tippy content="Notes" options={{ theme: "light" }}>
                       <Lucide
                         onClick={() => {
@@ -671,7 +671,7 @@ function Main() {
                         className="w-8 h-8 text-gray-400 shadow-sm"
                       />
                     </Tippy>
-                  </div>
+                  </div> */}
 
                   <a
                     onClick={(event: React.MouseEvent) => {
