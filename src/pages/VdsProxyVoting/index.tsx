@@ -203,7 +203,7 @@ const index = () => {
 
   useEffect(() => {
     getAllInstitutionDropdown();
-  }, [])
+  }, [companyGlobalSearchTicker])
   
 
   
@@ -802,7 +802,7 @@ const index = () => {
                       </TableWrapper>
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            <h1 className="font-semibold"> All Proxy Records Not Found..</h1>
+                            <h1 className="font-semibold"> Select Institution Name First. </h1>
                           </div>
                         )}
 
