@@ -204,6 +204,10 @@ a.side-menu__link.side-menu__link--active svg {
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
+
+.tom-select.ts-wrapper.multi.has-items .ts-control {
+  width: 220px !important;
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
