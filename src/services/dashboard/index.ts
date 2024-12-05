@@ -93,6 +93,17 @@ class DashboardService {
     };
   }
 
+  
+  public async getInstitution(): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(`/get_vds_dropdown_values/`);
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
   public async getDynamicNPXDropdownValues(paramFilter?:any): Promise<{
     result: any;
   }> {
