@@ -73,8 +73,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       return responses.flatMap((response) => {
         if (isAll) {
           return (
-            response.data.institution?.map((item: any) => item[getOptionKey as string]) ||
-            []
+            response.data.institution?.map(
+              (item: any) => item[getOptionKey as string]
+            ) || []
           );
         }
         if (isRadioInput) {
@@ -164,17 +165,27 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         />
 
         <div className="search-container">
-          <FormInput
-            type="text"
-            placeholder={placeHolder ?? "Search Institution Name"}
-            className="pl-9 w-full sm:w-96 rounded-[0.5rem] relative"
-            value={
-              !isOpen && isRadioInput && searchTerms
-                ? searchTerms[0]
-                : searchValue
-            }
-            onChange={handleChange}
-          />
+          <div className="relative w-full sm:w-96">
+            <FormInput
+              type="text"
+              placeholder={placeHolder ?? "Search Institution Name"}
+              className="pl-9 w-full rounded-[0.5rem]"
+              value={
+                !isOpen && isRadioInput && searchTerms
+                  ? searchTerms[0]
+                  : searchValue
+              }
+              onChange={handleChange}
+            />
+            {(options?.length > 0 || searchTerms.length > 0) && (
+              <Lucide
+                icon={isOpen ? "ChevronUp" : "ChevronDown"}
+                onClick={() => setIsOpen(!isOpen)}
+                className="cursor-pointer absolute inset-y-0 right-3 z-10 w-4 h-4 my-auto stroke-[1.3] text-slate-500 hover:text-red-500"
+              />
+            )}
+          </div>
+
           {isOpen && (
             <>
               <div className="search-terms-box bg-white mt-2  border rounded absolute z-50 left-0 right-0">
@@ -289,22 +300,14 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             </>
           )}
         </div>
-
-        {(options?.length > 0 || searchTerms.length > 0) && (
-          <Lucide
-            icon={isOpen ? "ChevronUp" : "ChevronDown"}
-            onClick={() => setIsOpen(!isOpen)}
-            className="cursor-pointer absolute inset-y-0 right-3 z-10 w-4 h-4 my-auto ml-3 stroke-[1.3] text-slate-500 hover:text-red-500"
-          />
-        )}
       </div>
-      <div className="flex md:flex-nowrap flex-wrap gap-2 py-2 pb-4 overflow-y-auto max-w-full md:max-w-[385px] no-scrollbar">
+      <div className="flex  flex-wrap gap-2 py-2 pb-4 overflow-y-auto max-w-full w-full no-scrollbar">
         {searchTerms.map((term, index) => (
           <div
             key={index}
             className="bg-gray-100 px-4 py-1 rounded-full flex items-center shadow-sm "
           >
-            <span className="term-text mr-2 text-wrap ">{term}</span>
+            <span className="term-text mr-2 text-nowrap ">{term}</span>
             <button
               className="remove-btn text-red-500 font-bold"
               onClick={() => handleSearch(term, false)}
