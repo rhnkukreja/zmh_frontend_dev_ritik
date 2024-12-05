@@ -64,7 +64,7 @@ const DetailShareHolder = () => {
 
                 // Skip the item.
                 if (item === null || item === undefined ||
-                  key === 'id' || key === 'def14a_id' ||
+                  key === 'id' || key === 'def14a_id' || key === 'nl_exist' || key === 'no_action_link' ||
                   key === 'company' || key === 'institution') return null;
 
                 return (

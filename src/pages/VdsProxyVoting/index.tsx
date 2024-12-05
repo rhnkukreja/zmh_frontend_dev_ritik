@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   fetchAGMSummaryDashboard,
+  fetchVdsProxyAllInvestor,
   fetchVdsProxyDashboard,
   setTempSearch,
 } from "@/stores/dashboardSlice";
@@ -20,13 +21,15 @@ import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import { Dialog } from "@/components/Base/Headless";
-
+import { Tooltip } from 'react-tooltip';
+import { Tab } from "@/components/Base/Headless";
+import MultiSearchBar from "@/components/MultiSearch";
 const index = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const { vdsProxyDetails, vdsProxyLoading, tempSearch } = useAppSelector(
+  const { vdsProxyDetails, vdsProxyLoading, vdsProxyAllInvestorDetails, vdsProxyAllInvestorLoading } = useAppSelector(
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
@@ -37,7 +40,9 @@ const index = () => {
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
-
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [filter, setFilter] = useState<any>('');
+  const [selectedTab, setSelectedTab] = useState(0)
   // const { globeSearch } = location.state || {};
 
   useEffect(() => {
@@ -50,17 +55,44 @@ const index = () => {
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else /* if (globeSearch !== tempSearch) */ {
+    }
+    // else /* if (globeSearch !== tempSearch) */ {
+    //   dispatch(
+    //     fetchVdsProxyDashboard(
+    //       createDynamicURL(
+    //         `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+    //       )
+    //     )
+    //   );
+
+    //   dispatch(setTempSearch(companyGlobalSearchTicker));
+    // }
+  }, [companyGlobalSearchTicker, searchTicker]);
+
+
+  useEffect(() => {
+    if (filter) {
       dispatch(
-        fetchVdsProxyDashboard(
+        fetchVdsProxyAllInvestor(
           createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/vds_proxy_voting/`,
+            { 'ticker': companyGlobalSearchTicker, 'institution_name': filter }
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }, [companyGlobalSearchTicker, searchTicker]);
+    else {
+      dispatch(
+        fetchVdsProxyAllInvestor(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/`,
+            { 'ticker': companyGlobalSearchTicker }
+          )
+        )
+      );
+    }
+  }, [filter])
+
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -125,16 +157,23 @@ const index = () => {
     // const textContent = text.split('<br>').map((line, i) => `(${i+1}). ` + line.trim()).join('\n \n \n');
     const textContent = text.split('<br>') // Split the text by <br>
       .map((line, i) => line.trim()) // Add index and trim each line
-      .join('<br> <br>');
-    return textContent;
+      .join('<br> <br> <br> <br>');
+    return text;
   }
 
   const getSplitContents = (items: any) => {
     const resultString = Object.entries(items)
-      .map(([key, value]) => `${key}: ${value}`)
+      .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
       .join(", ");
     return resultString;
   };
+
+  function convertToTitleCase(str: string) {
+    if (!str) {
+      return ""
+    }
+    return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+  }
 
   const [isOpenNotes, setIsOpenNotes] = useState(false);
   const [notes, setNotes] = useState('');
@@ -148,6 +187,13 @@ const index = () => {
     setIsOpenNotes(true);
     setNotes(textContent);
   }
+
+
+
+  const handleSearch = (searchTerms: string[]) => {
+    setFilter(searchTerms);
+  };
+
 
   return (
     <>
@@ -199,7 +245,7 @@ const index = () => {
                   <h1 className="text-lg font-bold">Proxy Voting (Beta)</h1>
                 </span>
               </div>
-              <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
+              {/* <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                 <h1 className="text-md font-bold">
                   Aggregate Ownership:{" "}
                   {vdsProxyDetails?.total_percent_ownership}
@@ -212,231 +258,430 @@ const index = () => {
                     <img alt="download-icon" src={downloadIcon} />
                   </div>
                 </Tippy>
-                {/* {locationPathName === "/vds-details/" && (
-                  <Tippy content="Expand" options={{ theme: "light" }}>
-                    <div
-                      className="box p-2 cursor-pointer"
-                      onClick={() => window.open("/vds-proxy-details", "_blank")}
-                    >
-                      <img alt="tab-icon" src={tabIcon} />
-                    </div>
-                  </Tippy>
-                 )} */}
-              </div>
+              </div> */}
             </div>
             <>
-              <div className="">
-                <div>
-                  <TableWrapper>
-                    {/* max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] */}
+              <Tab.Group >
+                <Tab.List variant="link-tabs">
+                  <Tab>
+                    <Tab.Button
+                      className="w-full py-2"
+                      as="button">
+                      <div className="flex items-center justify-center ">
+                        Top 20
+                      </div>
+                    </Tab.Button>
+                  </Tab>
 
-                    {/* overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll */}
+                  <Tab>
+                    <Tab.Button
+                      className="w-full py-2"
+                      as="button"
+                    >
+                      <div className="flex items-center justify-center ">
+                        All Investors
+                      </div>
+                    </Tab.Button>
+                  </Tab>
 
-                    {/* className={clsx([locationPathName === "/vds-details/"
-                       && 'overflow-x-auto max-h-[350px] 2xl:max-h-[500px] 3xl:max-h-[550px] overflow-y-scroll',
-                        locationPathName === "/vds-proxy-details " && 
-                       'overflow-x-auto max-h-[350px] 2xl:max-h-[400px] 3xl:max-h-[500px] overflow-y-scroll'])} */}
-                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                      <Table className="table_2 w-full">
-                        <Table.Thead className="sticky top-50 z-10">
-                          {" "}
-                          {/* Make entire header sticky */}
-                          <Table.Tr className="row_2">
-                            {vdsProxyDetails?.vds_report_headers?.length > 0 &&
-                              vdsProxyDetails?.vds_report_headers?.map(
-                                (vdsHeader: any, headerIndex: number) => (
-                                  <Table.Td
-                                    key={headerIndex}
-                                    className={clsx([
-                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
-                                      "sticky top-0", // Ensure the header remains sticky at the top
-                                      headerIndex === 0 &&
-                                        "sticky left-0 bg-header z-[5000] ", // Fix first column
-                                      headerIndex === 1 &&
-                                        "sticky left-[50px] min-w-[200px] max-w-[250px] bg-header z-[5000] ", // Fix second column (adjust 'left' value according to width)
-                                        headerIndex !== 0 && headerIndex !== 1 &&
-                                              "min-w-[150px] max-w-[170px] ", 
-                                    ])}
-                                  >
-                                    {vdsHeader?.header}
-                                  </Table.Td>
-                                )
-                              )}
-                          </Table.Tr>
-                        </Table.Thead>
+                </Tab.List>
 
-                        <Table.Tbody>
-                          {vdsProxyDetails?.vds_report?.length > 0 &&
-                            vdsProxyDetails?.vds_report?.map(
-                              (vdsProxy: any, vdsProxyIndex: number) => (
-                                <Table.Tr
-                                  key={vdsProxyIndex}
-                                  className="row_2 [&_td]:last:border-b-0"
-                                >
-                                  {vdsProxyDetails?.vds_report_headers?.length >
-                                    0 &&
-                                    vdsProxyDetails?.vds_report_headers?.map(
-                                      (vdsHeader: any, headerIndex: number) => (
-                                        <Table.Td
-                                          key={headerIndex}
-                                          className={clsx([
-                                            "cell_2 py-2 border-dashed dark:bg-darkmode-600text-left",
-                                            headerIndex === 0 &&
-                                              "sticky left-0 bg-white z-[9]", // Fix first column
-                                            headerIndex === 1 &&  
-                                              "sticky left-[50px] min-w-[200px] max-w-[250px]  bg-white z-[9]", // Fix second column
-                                              headerIndex !== 0 && headerIndex !== 1 &&
-                                              "min-w-[150px] max-w-[170px] "
-                                          ])}
-                                        >
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                          vdsProxy[vdsHeader?.field]?.notes !==
-                                            null ? (
-                                            <h1
+                <Tab.Panels className="mt-5">
+                  <Tab.Panel className="leading-relaxed">
+                    {/* Top 20 Content */}
+
+                    {selectedTab === 0 && (
+                      <div className="flex justify-end mb-4">
+                        <h1 className="text-md font-bold">
+                  Aggregate Ownership:{" "}
+                  {vdsProxyDetails?.total_percent_ownership}
+                </h1>
+                      </div>
+                    )}
+
+                    <div>
+                      <TableWrapper>
+                        <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                          <Table className="table_2 w-full">
+                            <Table.Thead className="sticky top-50 z-10">
+                              <Table.Tr className="row_2">
+                                {vdsProxyDetails?.vds_report_headers?.length > 0 &&
+                                  vdsProxyDetails?.vds_report_headers?.map(
+                                    (vdsHeader: any, headerIndex: number) => (
+                                      <Table.Td
+                                        key={headerIndex}
+                                        className={clsx([
+                                          "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                          "sticky top-0", // Ensure the header remains sticky at the top
+                                          headerIndex === 0 &&
+                                          "sticky left-0 bg-header z-[5000] ", // Fix first column
+                                          headerIndex === 1 &&
+                                          "sticky left-[50px] min-w-[200px] max-w-[250px] bg-header z-[5000] ", // Fix second column (adjust 'left' value according to width)
+                                          headerIndex !== 0 && headerIndex !== 1 &&
+                                          "min-w-[150px] max-w-[170px] ",
+                                        ])}
+                                      >
+                                        {vdsHeader?.header}
+                                      </Table.Td>
+                                    )
+                                  )}
+                              </Table.Tr>
+                            </Table.Thead>
+
+                            <Table.Tbody>
+                              {vdsProxyDetails?.vds_report?.length > 0 &&
+                                vdsProxyDetails?.vds_report?.map(
+                                  (vdsProxy: any, vdsProxyIndex: number) => (
+                                    <Table.Tr
+                                      key={vdsProxyIndex}
+                                      className="row_2 [&_td]:last:border-b-0"
+                                    >
+                                      {vdsProxyDetails?.vds_report_headers?.length >
+                                        0 &&
+                                        vdsProxyDetails?.vds_report_headers?.map(
+                                          (vdsHeader: any, headerIndex: number) => (
+                                            <Table.Td
+                                              key={headerIndex}
                                               className={clsx([
-                                                (vdsProxy[
-                                                  vdsHeader?.field
-                                                ]?.vote?.includes("Against") ||
-                                                  vdsProxy[
-                                                    vdsHeader?.field
-                                                  ]?.vote?.includes(
-                                                    "Withhold"
-                                                  )) &&
-                                                  "text-red-700 font-semibold",
-                                                "flex items-center",
+                                                "cell_2 py-2 border-dashed dark:bg-darkmode-600text-left",
+                                                headerIndex === 0 &&
+                                                "sticky left-0 bg-white z-[9]", // Fix first column
+                                                headerIndex === 1 &&
+                                                "sticky left-[50px] min-w-[200px] max-w-[250px]  bg-white z-[9]", // Fix second column
+                                                headerIndex !== 0 && headerIndex !== 1 &&
+                                                "min-w-[150px] max-w-[170px] "
                                               ])}
                                             >
-                                              {
-                                              vdsProxy[vdsHeader?.field]
-                                                ?.vote === "Split Vote" ? (
-                                                <Tippy
-                                                  content={
-                                                    isObject(
-                                                      vdsProxy[vdsHeader?.field]
-                                                    ) &&
-                                                    getSplitContents(
-                                                      vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                    )
-                                                  }
-                                                  options={{ theme: "light" }}
+                                              {isObject(
+                                                vdsProxy[vdsHeader?.field]
+                                              ) &&
+                                                vdsProxy[vdsHeader?.field]?.notes !==
+                                                null ? (
+                                                <h1
+                                                  className={clsx([
+                                                    (vdsProxy[
+                                                      vdsHeader?.field
+                                                    ]?.vote?.includes("Against") ||
+                                                      vdsProxy[
+                                                        vdsHeader?.field
+                                                      ]?.vote?.includes(
+                                                        "Withhold"
+                                                      )) &&
+                                                    "text-red-700 font-semibold",
+                                                    "flex items-center",
+                                                  ])}
                                                 >
                                                   {
                                                     vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
-                                                </Tippy>
-                                              ) : (
-                                                <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
-                                              )}
-                                               
-                                                <div className="tooltip">
-                                                <Lucide
-                                                  icon="Info"
-                                                  className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                />
-                                                  <span className="tooltiptext shadow-md" dangerouslySetInnerHTML={{__html:getContent(vdsProxy[vdsHeader?.field]?.notes)}}>
-                                                  </span>
-                                                </div>
-                                            </h1>
-                                          ) : 
-                                          isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field] ?.notes === null ? (
-                                            <h1
+                                                      ?.vote === "Split Vote" ? (
+                                                      <Tippy
+                                                        content={
+                                                          isObject(
+                                                            vdsProxy[vdsHeader?.field]
+                                                          ) &&
+                                                          getSplitContents(
+                                                            vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                          )
+                                                        }
+                                                        options={{ theme: "light" }}
+                                                      >
+                                                        {
+                                                          vdsProxy[vdsHeader?.field]
+                                                            ?.vote
+                                                        }
+                                                      </Tippy>
+                                                    ) : (
+                                                      <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
+                                                    )}
+
+                                                  {/* <Tippy content={<span dangerouslySetInnerHTML={{ __html: getContent(vdsProxy[vdsHeader?.field]?.notes) ?? '' }}/>}> */}
+                                                  <div data-tooltip-id="my-tooltip-data-html"
+
+                                                    data-tooltip-html={vdsProxy[vdsHeader?.field]?.notes}>
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    />
+                                                    {/* <span className="tooltiptext shadow-md" >
+                                                  </span> */}
+                                                    {/* </Tippy> */}
+                                                  </div>
+                                                </h1>
+                                              ) :
+                                                isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null ? (
+                                                  <h1
+                                                    className={clsx([
+                                                      (vdsProxy[
+                                                        vdsHeader?.field
+                                                      ]?.vote?.includes("Against") ||
+                                                        vdsProxy[
+                                                          vdsHeader?.field
+                                                        ]?.vote?.includes("Withhold")) &&
+                                                      "text-red-700 font-semibold",
+                                                    ])}
+                                                  >
+                                                    {vdsProxy[vdsHeader?.field]?.vote !== "Split Vote" ? vdsProxy[vdsHeader?.field]?.vote : ''}
+                                                  </h1>
+                                                ) : (
+                                                  <h1 className="check">
+                                                    {vdsProxy[vdsHeader?.field]}
+                                                  </h1>
+                                                )}
+
+
+                                              {
+                                                isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null && vdsProxy[vdsHeader?.field]
+                                                  ?.vote === "Split Vote" && (
+                                                  <Tippy
+                                                    content={
+                                                      isObject(
+                                                        vdsProxy[vdsHeader?.field]
+                                                      ) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                      )
+                                                    }
+                                                    options={{ theme: "light" }}
+                                                  >
+                                                    {
+                                                      vdsProxy[vdsHeader?.field]
+                                                        ?.vote
+                                                    }
+                                                  </Tippy>
+                                                )}
+                                            </Table.Td>
+                                          )
+                                        )}
+                                    </Table.Tr>
+                                  )
+                                )}
+                            </Table.Tbody>
+                          </Table>
+                        </div>
+
+                        {!vdsProxyDetails && vdsProxyLoading && (
+                          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                            <LoadingIcon
+                              color="#800000"
+                              icon="three-dots"
+                              className="w-16 h-16"
+                            />
+                          </div>
+                        )}
+
+                        {vdsProxyDetails?.vds_report?.length === 0 && !vdsProxyLoading && (
+                          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                            <h1 className="font-semibold"> Proxy Records Not Found..</h1>
+                          </div>
+                        )}
+                      </TableWrapper>
+                    </div>
+                  </Tab.Panel>
+                </Tab.Panels>
+
+                <Tab.Panels className="mt-5">
+                  <Tab.Panel className="leading-relaxed">
+                    <div>
+
+                      <div className="flex">
+                        <MultiSearchBar
+                          onSearch={handleSearch}
+                          searchTerms={searchTerms}
+                          setSearchTerms={setSearchTerms}
+                          url="/get_vds_dropdown_values/"
+                          getOptionKey="institution_name"
+                          placeHolder="Search Institution"
+                          isAll={true}
+                        // onSearchChange={resetPage}
+                        />
+                      </div>
+
+
+                      <TableWrapper>
+                        <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                          <Table className="table_2 w-full">
+                            <Table.Thead className="sticky top-50 z-10">
+                              <Table.Tr className="row_2">
+                                {vdsProxyAllInvestorDetails?.vds_report_headers?.length > 0 &&
+                                  vdsProxyAllInvestorDetails?.vds_report_headers?.map(
+                                    (vdsHeader: any, headerIndex: number) => (
+                                      <Table.Td
+                                        key={headerIndex}
+                                        className={clsx([
+                                          "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                          "sticky top-0", // Ensure the header remains sticky at the top
+                                          headerIndex === 0 &&
+                                          "sticky left-0 bg-header z-[5000] ", // Fix first column
+                                          headerIndex === 1 &&
+                                          "sticky left-[50px] min-w-[200px] max-w-[250px] bg-header z-[5000] ", // Fix second column (adjust 'left' value according to width)
+                                          headerIndex !== 0 && headerIndex !== 1 &&
+                                          "min-w-[150px] max-w-[170px] ",
+                                        ])}
+                                      >
+                                        {vdsHeader?.header}
+                                      </Table.Td>
+                                    )
+                                  )}
+                              </Table.Tr>
+                            </Table.Thead>
+
+                            <Table.Tbody>
+                              {vdsProxyAllInvestorDetails?.vds_report?.length > 0 &&
+                                vdsProxyAllInvestorDetails?.vds_report?.map(
+                                  (vdsProxy: any, vdsProxyIndex: number) => (
+                                    <Table.Tr
+                                      key={vdsProxyIndex}
+                                      className="row_2 [&_td]:last:border-b-0"
+                                    >
+                                      {vdsProxyAllInvestorDetails?.vds_report_headers?.length >
+                                        0 &&
+                                        vdsProxyAllInvestorDetails?.vds_report_headers?.map(
+                                          (vdsHeader: any, headerIndex: number) => (
+                                            <Table.Td
+                                              key={headerIndex}
                                               className={clsx([
-                                                (vdsProxy[
-                                                  vdsHeader?.field
-                                                ]?.vote?.includes("Against") ||
-                                                  vdsProxy[
-                                                    vdsHeader?.field
-                                                  ]?.vote?.includes("Withhold")) &&
-                                                  "text-red-700 font-semibold",
+                                                "cell_2 py-2 border-dashed dark:bg-darkmode-600text-left",
+                                                headerIndex === 0 &&
+                                                "sticky left-0 bg-white z-[9]", // Fix first column
+                                                headerIndex === 1 &&
+                                                "sticky left-[50px] min-w-[200px] max-w-[250px]  bg-white z-[9]", // Fix second column
+                                                headerIndex !== 0 && headerIndex !== 1 &&
+                                                "min-w-[150px] max-w-[170px] "
                                               ])}
                                             >
-                                              {vdsProxy[vdsHeader?.field] ?.vote !== "Split Vote" ? vdsProxy[vdsHeader?.field]?.vote : ''}
-                                            </h1>
-                                          ) : (
-                                            <h1 className="check">
-                                              {vdsProxy[vdsHeader?.field]}
-                                            </h1>
-                                          )}
-
-
-                                          {
-                                            isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null && vdsProxy[vdsHeader?.field]
-                                              ?.vote === "Split Vote" && (
-                                              <Tippy
-                                                content={
-                                                  isObject(
+                                              {isObject(
+                                                vdsProxy[vdsHeader?.field]
+                                              ) &&
+                                                vdsProxy[vdsHeader?.field]?.notes !==
+                                                null ? (
+                                                <h1
+                                                  className={clsx([
+                                                    (vdsProxy[
+                                                      vdsHeader?.field
+                                                    ]?.vote?.includes("Against") ||
+                                                      vdsProxy[
+                                                        vdsHeader?.field
+                                                      ]?.vote?.includes(
+                                                        "Withhold"
+                                                      )) &&
+                                                    "text-red-700 font-semibold",
+                                                    "flex items-center",
+                                                  ])}
+                                                >
+                                                  {
                                                     vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  getSplitContents(
-                                                    vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                  )
-                                                }
-                                                options={{ theme: "light" }}
-                                              >
-                                                {
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                }
-                                              </Tippy>
-                                            )}
-                                        </Table.Td>
-                                      )
-                                    )}
-                                </Table.Tr>
-                              )
-                            )}
-                        </Table.Tbody>
-                      </Table>
+                                                      ?.vote === "Split Vote" ? (
+                                                      <Tippy
+                                                        content={
+                                                          isObject(
+                                                            vdsProxy[vdsHeader?.field]
+                                                          ) &&
+                                                          getSplitContents(
+                                                            vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                          )
+                                                        }
+                                                        options={{ theme: "light" }}
+                                                      >
+                                                        {
+                                                          vdsProxy[vdsHeader?.field]
+                                                            ?.vote
+                                                        }
+                                                      </Tippy>
+                                                    ) : (
+                                                      <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
+                                                    )}
+
+                                                  {/* <Tippy content={<span dangerouslySetInnerHTML={{ __html: getContent(vdsProxy[vdsHeader?.field]?.notes) ?? '' }}/>}> */}
+                                                  <div data-tooltip-id="my-tooltip-data-html"
+
+                                                    data-tooltip-html={vdsProxy[vdsHeader?.field]?.notes}>
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    />
+                                                    {/* <span className="tooltiptext shadow-md" >
+                                                  </span> */}
+                                                    {/* </Tippy> */}
+                                                  </div>
+                                                </h1>
+                                              ) :
+                                                isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null ? (
+                                                  <h1
+                                                    className={clsx([
+                                                      (vdsProxy[
+                                                        vdsHeader?.field
+                                                      ]?.vote?.includes("Against") ||
+                                                        vdsProxy[
+                                                          vdsHeader?.field
+                                                        ]?.vote?.includes("Withhold")) &&
+                                                      "text-red-700 font-semibold",
+                                                    ])}
+                                                  >
+                                                    {vdsProxy[vdsHeader?.field]?.vote !== "Split Vote" ? vdsProxy[vdsHeader?.field]?.vote : ''}
+                                                  </h1>
+                                                ) : (
+                                                  <h1 className="check">
+                                                    {vdsProxy[vdsHeader?.field]}
+                                                  </h1>
+                                                )}
+
+
+                                              {
+                                                isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null && vdsProxy[vdsHeader?.field]
+                                                  ?.vote === "Split Vote" && (
+                                                  <Tippy
+                                                    content={
+                                                      isObject(
+                                                        vdsProxy[vdsHeader?.field]
+                                                      ) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                      )
+                                                    }
+                                                    options={{ theme: "light" }}
+                                                  >
+                                                    {
+                                                      vdsProxy[vdsHeader?.field]
+                                                        ?.vote
+                                                    }
+                                                  </Tippy>
+                                                )}
+                                            </Table.Td>
+                                          )
+                                        )}
+                                    </Table.Tr>
+                                  )
+                                )}
+                            </Table.Tbody>
+                          </Table>
+                        </div>
+
+                        {!vdsProxyAllInvestorDetails && vdsProxyAllInvestorLoading && (
+                          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                            <LoadingIcon
+                              color="#800000"
+                              icon="three-dots"
+                              className="w-16 h-16"
+                            />
+                          </div>
+                        )}
+
+                        {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && !vdsProxyAllInvestorLoading && (
+                          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                            <h1 className="font-semibold"> Proxy Records Not Found..</h1>
+                          </div>
+                        )}
+                      </TableWrapper>
                     </div>
-                  </TableWrapper>
-                </div>
-              </div>
+                  </Tab.Panel>
+                </Tab.Panels>
+              </Tab.Group>
             </>
           </div>
         </div>
       )}
 
-      {!vdsProxyDetails && vdsProxyLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
-      )}
-
-      {vdsProxyDetails?.vds_report?.length === 0 && !vdsProxyLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <h1 className="font-semibold"> Proxy Records Not Found..</h1>
-        </div>
-      )}
-
-      <Dialog size="lg" open={isOpenNotes} onClose={() => {
-          setIsOpenNotes(false);
-        }}>
-        <Dialog.Panel className="p-10 text-center ">
-          <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Notes</h2>
-            <div
-              onClick={() => {
-                setIsOpenNotes(false);
-              }}
-              className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
-            >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-            </div>
-          </Dialog.Title>
-          <Dialog.Description >
-          <div className="relative w-full h-full bg-slate-100 p-8 rounded-lg">
-              <p className=" text-[15px] font-bold" dangerouslySetInnerHTML={{__html: notes}}></p>
-          </div>
-          </Dialog.Description>
-        </Dialog.Panel>
-      </Dialog>
+      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
     </>
   );
 };

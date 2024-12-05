@@ -25,7 +25,6 @@ export type CompanyDashboard = {
   voted_against_directors: boolean;
   investor_profile_id: number;
   case_studies_id: number;
-
   // percent_ownership: string;
 };
 
@@ -45,6 +44,8 @@ interface CompanySliceState {
   investorCardLoading: boolean;
   vdsProxyDetails: any;
   vdsProxyLoading: boolean;
+  vdsProxyAllInvestorDetails: any;
+  vdsProxyAllInvestorLoading: boolean;
   npxProxyDetails: any;
   npxProxyLoading: boolean;
   investorProfileDetails: any;
@@ -56,7 +57,7 @@ interface CompanySliceState {
   totalNotification: number,
   instituteName: string | null;
   companySearchLoading: boolean;
-
+  totalNPXCount: number;
 }
 
 const initialState: CompanySliceState = {
@@ -75,6 +76,9 @@ const initialState: CompanySliceState = {
   caseStudyLoading: true,
   vdsProxyDetails: "",
   vdsProxyLoading: true,
+  vdsProxyAllInvestorDetails: "",
+  vdsProxyAllInvestorLoading: true,
+  totalNPXCount: 0,
   npxProxyDetails: "",
   npxProxyLoading: true,
   investorProfileDetails: "",
@@ -85,7 +89,7 @@ const initialState: CompanySliceState = {
   notificationDetails: [],
   notificationLoading: true,
   totalNotification: 0,
-  companySearchLoading: true
+  companySearchLoading: true,
   // {
   //   nominees: [],
   //   proposals: [],
@@ -129,8 +133,15 @@ export const fetchVdsProxyDashboard = createAsyncThunk<
   return await dashboardService.fetchVdsProxyDashboard(url);
 });
 
-export const fetchNpxProxyDashboard = createAsyncThunk<
+export const fetchVdsProxyAllInvestor = createAsyncThunk<
   { results: any },
+  string
+>(`${name}/fetchVdsProxyAllInvestor`, async (url: string) => {
+  return await dashboardService.fetchVdsProxyAllInvestor(url);
+});
+
+export const fetchNpxProxyDashboard = createAsyncThunk<
+{ results: any, count: number },
   string
 >(`${name}/fetchNpxProxyDashboard`, async (url: string) => {
   return await dashboardService.fetchNpxProxyDashboard(url);
@@ -258,6 +269,24 @@ const companySlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })
+
+      .addCase(fetchVdsProxyAllInvestor.pending, (state) => {
+        state.vdsProxyAllInvestorDetails = "";
+        state.vdsProxyAllInvestorLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchVdsProxyAllInvestor.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.vdsProxyAllInvestorLoading = false;
+          state.vdsProxyAllInvestorDetails = action.payload.results;
+        }
+      )
+      .addCase(fetchVdsProxyAllInvestor.rejected, (state, action) => {
+        state.vdsProxyAllInvestorLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
       
 
       .addCase(fetchNpxProxyDashboard.pending, (state) => {
@@ -267,9 +296,11 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchNpxProxyDashboard.fulfilled,
-        (state, action: PayloadAction<{ results: any }>) => {
+        (state, action: PayloadAction<{ results: any, count: number }>) => {
           state.npxProxyLoading = false;
           state.npxProxyDetails = action.payload.results;
+          state.totalNPXCount = action.payload.count;
+
         }
       )
       .addCase(fetchNpxProxyDashboard.rejected, (state, action) => {

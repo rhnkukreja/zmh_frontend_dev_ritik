@@ -1,7 +1,7 @@
 import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
-import { useState, useEffect, createRef } from "react";
+import { useState, useEffect, createRef, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
 import {
@@ -57,6 +57,7 @@ import NotificationAlert from "@/components/NotificationAlert";
 import { modifyRoute, resetRouter } from "@/stores/themeSlice";
 import SubSidebar from "@/pages/Notes/components/SubSidebar";
 import { subSidebarRoutes } from "@/constant";
+import { Tooltip } from "react-tooltip";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -83,8 +84,6 @@ function Main() {
   const sideMenu = () => nestedMenu(sideMenuStore, location);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
-
-  console.log({ shouldShowSidebar }, location.pathname);
 
   const [topBarActive, setTopBarActive] = useState(false);
 
@@ -200,6 +199,70 @@ function Main() {
     }
   }, [location.pathname]);
 
+  // const handleSelectionChange = () => {
+  //   const selection = window.getSelection();
+  //   const text = selection?.toString() || "";
+
+  //   // Only trigger the alert if there's selected text
+  //   if (text.trim()) {
+  //     console.log("Selected text:", text);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   document.addEventListener("selectionchange", handleSelectionChange);
+
+  //   return () => {
+  //     document.removeEventListener("selectionchange", handleSelectionChange);
+  //   };
+  // }, []);
+
+  // const [selectedText, setSelectedText] = useState<string>("");
+  // const [tooltipPosition, setTooltipPosition] = useState<{
+  //   x: number;
+  //   y: number;
+  // }>({ x: 0, y: 0 });
+  // const tooltipRef = useRef<HTMLDivElement | null>(null);
+
+  // const handleSelectionChange = () => {
+  //   const selection = window.getSelection();
+  //   const text = selection?.toString() || "";
+
+  //   if (text.trim() && selection) {
+  //     const range = selection.getRangeAt(0).getBoundingClientRect();
+  //     setSelectedText(text);
+  //     setTooltipPosition({
+  //       x: range.left + window.scrollX,
+  //       y: range.top + window.scrollY - 30, // Offset above the selection
+  //     });
+  //   } else {
+  //     setSelectedText("");
+  //   }
+  // };
+
+  // const handleCreateNote = () => {
+  //   alert(`Note created: ${selectedText}`);
+  //   setSelectedText("");
+  // };
+  // useEffect(() => {
+  //   const handleClickOutside = (e: MouseEvent) => {
+  //     if (
+  //       tooltipRef.current &&
+  //       !tooltipRef.current.contains(e.target as Node)
+  //     ) {
+  //       setSelectedText("");
+  //     }
+  //   };
+
+  //   document.addEventListener("selectionchange", handleSelectionChange);
+  //   document.addEventListener("mousedown", handleClickOutside);
+
+  //   return () => {
+  //     document.removeEventListener("selectionchange", handleSelectionChange);
+  //     document.removeEventListener("mousedown", handleClickOutside);
+  //   };
+  // }, []);
+
   return (
     <div
       className={clsx([
@@ -297,7 +360,7 @@ function Main() {
                     {user.user_type === "Admin" ? (
                       <>{menu}</>
                     ) : user.user_type !== "Admin" && menu === "Admin" ? (
-                      <>{ }</>
+                      <>{}</>
                     ) : (
                       <>{menu}</>
                     )}
@@ -598,7 +661,7 @@ function Main() {
                     </div>
                   </a>
 
-                  <div className="flex items-center justify-center w-10 relative cursor-pointer">
+                  {/* <div className="flex items-center justify-center w-10 relative cursor-pointer">
                     <Tippy content="Notes" options={{ theme: "light" }}>
                       <Lucide
                         onClick={() => {
@@ -608,8 +671,7 @@ function Main() {
                         className="w-8 h-8 text-gray-400 shadow-sm"
                       />
                     </Tippy>
-                  </div>
-
+                  </div> */}
 
                   <a
                     onClick={(event: React.MouseEvent) => {
@@ -733,6 +795,32 @@ function Main() {
         </div>
       </div>
 
+      {/* <>
+      {selectedText && (
+          <div
+            ref={tooltipRef}
+            style={{
+              position: "absolute",
+              top: tooltipPosition.y,
+              left: tooltipPosition.x,
+              background: "#f9f9f9",
+              border: "1px solid #ccc",
+              borderRadius: "5px",
+              padding: "5px 10px",
+              cursor: "pointer",
+              zIndex: 1000,
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault(); 
+              e.stopPropagation(); 
+            }}
+            onClick={handleCreateNote}
+          >
+            Create Note
+          </div>
+        )}
+      </> */}
+
       <div
         className={clsx([
           "transition-[margin,width] duration-100 pt-[54px] pb-8 relative z-10 group mode",
@@ -786,8 +874,9 @@ function Main() {
             )}
 
             <iframe
-              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
-                }`}
+              className={`w-full h-full ${
+                isFrameLoading || isError ? "hidden" : ""
+              }`}
               src="https://app.korra.ai/zmhdashboard/globalsearchengine"
               title="Embedded Dashboard"
               onLoad={handleLoad}
