@@ -174,9 +174,9 @@ const index = () => {
   } = useForm<any>({
     defaultValues: {
       institution_name: 'Select',
-      // fund_name: 'Select',
-      // proposal: 'Select',
-      // vote: 'Select',
+      fund_name: 'Select',
+      proposal: 'Select',
+      vote: 'Select',
     },
   });
 
@@ -548,7 +548,7 @@ const index = () => {
                     )} */}
                   </div>
                   <Controller
-                    name="Proposal"
+                    name="proposal"
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
@@ -601,7 +601,7 @@ const index = () => {
                     )} */}
                   </div>
                   <Controller
-                    name="Vote"
+                    name="vote"
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
@@ -630,7 +630,7 @@ const index = () => {
                 <div className="w-full">
                   <div className="text-left text-slate-500">Keyword</div>
                   <Controller
-                    name="Keyword"
+                    name="keyword"
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
