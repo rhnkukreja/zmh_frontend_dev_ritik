@@ -205,8 +205,9 @@ a.side-menu__link.side-menu__link--active svg {
   visibility: visible;
 }
 
+
 .tom-select.ts-wrapper.multi.has-items .ts-control {
-  width: 220px !important;
+  /* width: 220px !important; */
 }
 /*
  |--------------------------------------------------------------------------
