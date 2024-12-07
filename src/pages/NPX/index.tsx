@@ -1,6 +1,6 @@
 import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
-import { createDynamicURL, downloadCSV } from "@/utils/helper";
+import { convertToTitleCase, createDynamicURL, downloadCSV } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
@@ -458,7 +458,7 @@ const index = () => {
                         ) : (
                           apiDropdownOptions.institution?.map((institution: any) => (
                             <option key={institution} value={institution}>
-                              {institution}
+                              {convertToTitleCase(institution)}
                             </option>
                           ))
                         )}
@@ -511,7 +511,7 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.fund_name?.map((fund: any) => (
                             <option key={fund} value={fund}>
-                              {fund}
+                              {convertToTitleCase(fund)}
                             </option>
                           ))
                         )}
@@ -564,7 +564,7 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.proposal?.map((proposal: any) => (
                             <option key={proposal} value={proposal}>
-                              {proposal}
+                              {convertToTitleCase(proposal)}
                             </option>
                           ))
                         )}
@@ -617,7 +617,7 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.vote?.map((vote: any) => (
                             <option key={vote} value={vote}>
-                              {vote}
+                              {convertToTitleCase(vote)}
                             </option>
                           ))
                         )}
@@ -686,20 +686,20 @@ const index = () => {
                               className="[&_td]:last:border-b-0"
                             >
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {noAction?.vote_description}
+                              {convertToTitleCase(noAction?.vote_description)}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {noAction?.vote_category}
+                              {convertToTitleCase(noAction?.vote_category)}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {noAction?.vote}
+                              {convertToTitleCase(noAction?.vote)}
                               </Table.Td>
                               <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis">
                                 {new Intl.NumberFormat('en-US').format(Math.floor(noAction?.shares_voted || 0))}
                               </Table.Td>
 
                               <Table.Td className="whitespace-nowrap text-wrap ">
-                                {noAction?.fund_name}
+                                {convertToTitleCase(noAction?.fund_name)}
                               </Table.Td>
 
                             </Table.Tr>
