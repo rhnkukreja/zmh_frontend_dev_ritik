@@ -33,29 +33,17 @@ import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
 import GetHelp from "@/components/Help";
-import { resetFilter as resetInvestorFilters } from "@/stores/investersProfileSlice";
-import {
-  resetFilter as resetCompanyFilters,
-  selectUnSelectAllCompany as unCheckAllCompanyForCompany,
-} from "@/stores/companySlice";
-import { resetFilter as resetInstitutionFilters } from "@/stores/institutionSlice";
-import {
-  resetFilter as resetShareHolderFilters,
-  selectUnSelectAllCompany as unCheckAllCompanyForShareHolder,
-} from "@/stores/shareholderProposalSlice";
-import { resetFilter as resetproxyVotingGuidelineFilters } from "@/stores/proxyVotingGuidelineSlice";
-import { resetFilter as resetEngagementQuestionFilters } from "@/stores/engagementQuestionSlice";
-import {
-  resetFilter as resetPeerAnalysisFilter,
-  selectUnSelectAllCompany as unCheckAllCompanyForPeerAnalysis,
-} from "@/stores/peerAnalysisSlice";
-import {
-  resetFilters as resetCaseStudiesFilter,
-  selectUnSelectAllCompany as unCheckAllCompanyForCaseStudies,
-} from "@/stores/caseStudySlice";
+import { resetInvestorProfiles } from "@/stores/investersProfileSlice";
+import { resetCompany } from "@/stores/companySlice";
+import { resetInstitution } from "@/stores/institutionSlice";
+import { resetShareholderProposal } from "@/stores/shareholderProposalSlice";
+import { resetProxyVotingGuidelines } from "@/stores/proxyVotingGuidelineSlice";
+import { resetEngagementQuestions } from "@/stores/engagementQuestionSlice";
+import { resetPeerAnalysis } from "@/stores/peerAnalysisSlice";
+import { resetCaseStudy } from "@/stores/caseStudySlice";
 import NotificationAlert from "@/components/NotificationAlert";
 import { modifyRoute, resetRouter } from "@/stores/themeSlice";
-import SubSidebar from "@/pages/Notes/components/SubSidebar";
+
 import { subSidebarRoutes } from "@/constant";
 import { Tooltip } from "react-tooltip";
 
@@ -170,32 +158,28 @@ function Main() {
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
-      dispatch(resetCaseStudiesFilter());
-      // dispatch(unCheckAllCompanyForCaseStudies(false));
+      dispatch(resetCaseStudy());
     }
     if (!location.pathname.includes("/engagement-question")) {
-      dispatch(resetEngagementQuestionFilters());
+      dispatch(resetEngagementQuestions());
     }
     if (!location.pathname.includes("/peer-analysis")) {
-      dispatch(resetPeerAnalysisFilter());
-      dispatch(unCheckAllCompanyForPeerAnalysis(false));
+      dispatch(resetPeerAnalysis());
     }
     if (!location.pathname.includes("/proxy-voting-guideline")) {
-      dispatch(resetproxyVotingGuidelineFilters());
+      dispatch(resetProxyVotingGuidelines());
     }
     if (!location.pathname.includes("/share-holder-proposal")) {
-      dispatch(resetShareHolderFilters());
-      dispatch(unCheckAllCompanyForShareHolder(false));
+      dispatch(resetShareholderProposal());
     }
     if (!location.pathname.includes("/institution")) {
-      dispatch(resetInstitutionFilters());
+      dispatch(resetInstitution());
     }
     if (!location.pathname.includes("/company")) {
-      dispatch(resetCompanyFilters());
-      dispatch(unCheckAllCompanyForCompany(false));
+      dispatch(resetCompany());
     }
     if (!location.pathname.includes("/investor-profile")) {
-      dispatch(resetInvestorFilters());
+      dispatch(resetInvestorProfiles());
     }
   }, [location.pathname]);
 

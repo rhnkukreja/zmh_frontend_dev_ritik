@@ -30,9 +30,10 @@ import {
   resetFilter,
   setPage,
   setTabs,
+  resetPage,
   selectUnSelectAllCompany,
 } from "@/stores/shareholderProposalSlice";
-import { resetPage } from "@/stores/shareholderProposalSlice";
+
 import TomSelect from "@/components/Base/TomSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import {

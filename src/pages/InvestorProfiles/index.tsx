@@ -33,7 +33,6 @@ import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
-
 interface InvestorProfileFilter {
   region: string[];
 }
@@ -96,7 +95,6 @@ function Main() {
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilter({ key: "institution_name", value: searchTerms }));
-    dispatch(resetPage());
   };
 
   const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
@@ -188,6 +186,9 @@ function Main() {
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
+                    onSearchSelect={() => {
+                      dispatch(resetPage());
+                    }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/investor_profile/"

@@ -1,13 +1,14 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
 
-import _ from "lodash";
+import _, { set } from "lodash";
 import { axiosInstance } from "@/services";
 import { useAppDispatch } from "@/stores/hooks";
 
 interface MultiSearchBarProps {
   onSearch: (terms: string[]) => void;
+  onSearchSelect?: () => void;
   searchTerms: string[];
   setSearchTerms: (terms: string[]) => void;
   placeHolder?: string;
@@ -28,6 +29,7 @@ interface MultiSearchBarProps {
 
 const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   onSearch,
+  onSearchSelect,
   searchTerms,
   setSearchTerms,
   placeHolder,
@@ -45,6 +47,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   const [options, setOptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [msg, setMsg] = useState("");
 
   async function fetchOptions(query: string): Promise<any> {
     setIsLoading(true);
@@ -53,7 +56,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         Array.isArray(url)
           ? url?.map((u) =>
               axiosInstance.get(
-                `${u}${u.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
+                `${u}${
+                  u.includes("?") ? "&" : "?"
+                }${getOptionKey}=${query}&all=true`
               )
             )
           : isRadioInput
@@ -66,10 +71,13 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             ]
           : [
               axiosInstance.get(
-                `${url}${url.includes("?") ? "&" : "?"}${getOptionKey}=${query}`
+                `${url}${
+                  url.includes("?") ? "&" : "?"
+                }${getOptionKey}=${query}&all=true`
               ),
             ]
       );
+
       return responses.flatMap((response) => {
         if (isAll) {
           return (
@@ -82,9 +90,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
           return response.data.map((item: any) => item) || [];
         } else {
           return (
-            response.data.results?.map(
-              (item: any) => item[getOptionKey as string]
-            ) || []
+            response.data?.map((item: any) => item[getOptionKey as string]) ||
+            []
           );
         }
       });
@@ -99,13 +106,18 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   const debouncedFetchResults = useCallback(
     _.debounce(async (query: string) => {
       const options = await fetchOptions(query);
+      if (options.length === 0) {
+        setMsg("No results found for ");
+      }
       setOptions(Array.isArray(options) ? [...new Set(options)] : []);
     }, 900),
     []
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (msg) setMsg("");
     setSearchValue(e.target.value);
+
     debouncedFetchResults(e.target.value);
 
     if (onSearchChange) {
@@ -116,6 +128,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   const removeTerm = (term: string) => {
     const newTerms = searchTerms.filter((institute) => institute !== term);
     setOptions((prev) => [...new Set([...prev, term])]);
+    if (newTerms?.length === 0 && onSearchSelect) {
+      onSearchSelect();
+    }
     setSearchTerms(newTerms);
 
     setIsOpen(false);
@@ -196,45 +211,27 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                       {isLoading && (
                         <Lucide
                           icon="Loader"
-                          className={`ml-2 w-4 h-4 mr-1.5 stroke-[1.3] ${
+                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
                             isLoading ? "animate-spin" : ""
                           }`}
                         />
                       )}
                     </span>
                   )}
+                  {isLoading === false && options?.length === 0 && msg && (
+                    <div className=" mt-3 leading-relaxed text-center text-slate-500">
+                      {msg}
+                      <span className="italic font-medium">
+                        "{searchValue}"
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="relative z-10 pb-1 mt-1  bg-white rounded-lg shadow-lg  ">
-                  {options?.length === 0 ? (
-                    <div className="flex flex-col items-center  max-h-[200px] justify-center pt-20 pb-28">
-                      <Lucide
-                        icon="SearchX"
-                        className="w-20 h-20 text-theme-1/20 fill-theme-1/5 stroke-[0.5]"
-                      />
-
-                      {searchValue.length > 0 && isLoading === false && (
-                        <div className="w-2/3 mt-3 leading-relaxed text-center text-slate-500">
-                          No results found for
-                          <span className="italic font-medium">
-                            "{searchValue}"
-                          </span>
-                        </div>
-                      )}
-
-                      {searchValue.length === 0 &&
-                        isLoading === false &&
-                        searchTerms.length > 0 && (
-                          <div className="w-2/3 mt-3 leading-relaxed text-center text-slate-500">
-                            <span className=" font-medium">
-                              No Institute Found
-                            </span>
-                          </div>
-                        )}
-                    </div>
-                  ) : (
+                  {options?.length > 0 && (
                     <div>
-                      <div className="  border-t border-dashed">
+                      <div>
                         <div className="flex flex-col gap-1 mt-3.5 max-h-[200px] overflow-y-auto">
                           {options?.length > 0 &&
                             options?.map((item: any, key: number) => {
@@ -242,6 +239,11 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                 <div
                                   key={key}
                                   className="flex items-center cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-md"
+                                  onClick={() => {
+                                    if (onSearchSelect) {
+                                      onSearchSelect();
+                                    }
+                                  }}
                                 >
                                   {!isRadioInput && (
                                     <FormCheck className="mr-2">

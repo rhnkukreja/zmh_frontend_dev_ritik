@@ -159,11 +159,11 @@ function CaseStudies() {
     getAllCaseStudyDropdowns();
   }, []);
 
-  const getCaseStudyInvestorProfile = () => {
-    const filters = {
-      institution_name: [InstituteName],
-      global_search: [companyGlobalSearchName],
-    };
+  useEffect(() => {
+    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
+      return;
+    }
+
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
       filters,
@@ -171,33 +171,15 @@ function CaseStudies() {
       page
     );
     dispatch(fetchCaseStudies(dynamicURL));
-  };
 
-  useEffect(() => {
-    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
-      return;
-    }
-
-    if (InstituteName) {
-      getCaseStudyInvestorProfile();
-    } else {
-      const dynamicURL = createDynamicURL(
-        `${baseURL}/case_studies/`,
-        filters,
-        undefined,
-        page
-      );
-      dispatch(fetchCaseStudies(dynamicURL));
-
-      const { institution_name, global_search, ...restFilters } = filters;
-      setFiltersLength(
-        countValidFilters(
-          isAllCompanySelected === false
-            ? restFilters
-            : { ...restFilters, global_search: filters.global_search }
-        )
-      );
-    }
+    const { institution_name, global_search, ...restFilters } = filters;
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
+      )
+    );
   }, [page, filters, InstituteName]);
 
   useEffect(() => {
@@ -224,7 +206,7 @@ function CaseStudies() {
 
   const onFilterClear = () => {
     resetFormValues();
-    // dispatch(resetFilters());
+    dispatch(resetFilters());
     dispatch(resetPage());
     dispatch(
       setFilters({ key: "global_search", value: [companyGlobalSearchName] })
@@ -244,7 +226,7 @@ function CaseStudies() {
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilters({ key: "institution_name", value: searchTerms }));
-    dispatch(resetPage());
+
     dispatch(setInstitution(searchTerms[0]));
   };
 
@@ -259,7 +241,8 @@ function CaseStudies() {
         ...caseStudyFilters,
         institution_name: searchTerms,
         global_search: isAllCompanySelected
-          ? Array.isArray(caseStudyFilters?.global_search)
+          ? Array.isArray(caseStudyFilters?.global_search) &&
+            caseStudyFilters?.global_search.length > 0
             ? caseStudyFilters?.global_search.map((item: any) => item.label)
             : []
           : [companyGlobalSearchName],
@@ -405,6 +388,9 @@ function CaseStudies() {
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
+                    onSearchSelect={() => {
+                      dispatch(resetPage());
+                    }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/case_studies/"
@@ -836,7 +822,7 @@ function CaseStudies() {
                                 <div className="flex gap-3 justify-center">
                                   <Tippy
                                     content="View"
-                                    options={{ theme: "light" }}
+                                    options={{ theme: "dark" }}
                                   >
                                     <Lucide
                                       onClick={() => {

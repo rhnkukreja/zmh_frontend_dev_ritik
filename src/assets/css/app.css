@@ -176,7 +176,6 @@ a.side-menu__link.side-menu__link--active svg {
   font-size: 14px;
 }
 
-
 .tooltip {
   position: relative;
   display: inline-block;
@@ -205,9 +204,8 @@ a.side-menu__link.side-menu__link--active svg {
   visibility: visible;
 }
 
-
-.tom-select.ts-wrapper.multi.has-items .ts-control {
-  /* width: 220px !important; */
+.css-13cymwt-control {
+  background: #f7f7f7 !important;
 }
 /*
  |--------------------------------------------------------------------------

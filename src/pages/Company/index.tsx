@@ -175,7 +175,8 @@ function CompanyList() {
         ...companyFilters,
 
         global_search: isAllCompanySelected
-          ? Array.isArray(companyFilters?.global_search)
+          ? Array.isArray(companyFilters?.global_search) &&
+            companyFilters?.global_search.length > 0
             ? companyFilters?.global_search.map((item: any) => item.label)
             : []
           : [companyGlobalSearchName],

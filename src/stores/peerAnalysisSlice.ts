@@ -91,6 +91,12 @@ const peerAnalysisSlice = createSlice({
     selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
       state.isAllCompanySelected = action.payload;
     },
+
+    resetPeerAnalysis(state) {
+      state.filters = initialState.filters;
+      state.page = 1;
+      state.isAllCompanySelected = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -129,4 +135,5 @@ export const {
   setFilter,
   setAllFilters,
   selectUnSelectAllCompany,
+  resetPeerAnalysis,
 } = peerAnalysisSlice.actions;

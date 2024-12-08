@@ -94,6 +94,12 @@ const companySlice = createSlice({
     selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
       state.isAllCompanySelected = action.payload;
     },
+
+    resetCompany(state) {
+      state.filters = initialState.filters;
+      state.page = 1;
+      state.isAllCompanySelected = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -174,4 +180,5 @@ export const {
   resetFilter,
   setAllFilters,
   selectUnSelectAllCompany,
+  resetCompany,
 } = companySlice.actions;

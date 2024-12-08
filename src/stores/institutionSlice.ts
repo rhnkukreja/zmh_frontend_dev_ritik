@@ -98,6 +98,11 @@ const institutionsSlice = createSlice({
     setAllFilters(state, action: PayloadAction<Partial<InstitutionType>>) {
       state.filters = { ...state.filters, ...action.payload };
     },
+
+    resetInstitution(state) {
+      state.filters = initialState.filters;
+      state.page = 1;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -163,5 +168,11 @@ const institutionsSlice = createSlice({
 });
 
 export default institutionsSlice;
-export const { setPage, resetPage, setFilter, resetFilter, setAllFilters } =
-  institutionsSlice.actions;
+export const {
+  setPage,
+  resetPage,
+  setFilter,
+  resetFilter,
+  setAllFilters,
+  resetInstitution,
+} = institutionsSlice.actions;

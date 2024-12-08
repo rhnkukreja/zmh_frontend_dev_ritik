@@ -140,8 +140,6 @@ function Main() {
         value: searchTerms,
       })
     );
-
-    dispatch(resetPage());
   }
 
   const handleClearAllFilter = () => {
@@ -276,6 +274,9 @@ function Main() {
               <div className="flex  ">
                 <MultiSearchBar
                   onSearch={handleSearch}
+                  onSearchSelect={() => {
+                    dispatch(resetPage());
+                  }}
                   searchTerms={searchTerms}
                   setSearchTerms={setSearchTerms}
                   url="/engagement_questions/"
@@ -618,10 +619,7 @@ function Main() {
 
                                       <Table.Td className="py-2 w-20 relative box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] border-x-0 dark:bg-darkmode-600">
                                         <div className="flex gap-3 justify-center">
-                                          <Tippy
-                                            content="View"
-                                            options={{ theme: "light" }}
-                                          >
+                                          <Tippy content="View">
                                             <Lucide
                                               onClick={() =>
                                                 navigate(
@@ -634,10 +632,7 @@ function Main() {
                                           </Tippy>
 
                                           {user?.user_type === "Admin" && (
-                                            <Tippy
-                                              content="Edit"
-                                              options={{ theme: "light" }}
-                                            >
+                                            <Tippy content="Edit">
                                               <Lucide
                                                 onClick={() =>
                                                   onEditClickHandler(question)

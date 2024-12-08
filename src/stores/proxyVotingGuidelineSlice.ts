@@ -96,6 +96,11 @@ const proxyVotingGuidelineSlice = createSlice({
     ) {
       state.filters = { ...state.filters, ...action.payload };
     },
+
+    resetProxyVotingGuidelines(state) {
+      state.filters = initialState.filters;
+      state.page = 1;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -155,5 +160,11 @@ const proxyVotingGuidelineSlice = createSlice({
 });
 
 export default proxyVotingGuidelineSlice;
-export const { setPage, resetPage, setFilter, resetFilter, setAllFilters } =
-  proxyVotingGuidelineSlice.actions;
+export const {
+  setPage,
+  resetPage,
+  setFilter,
+  resetFilter,
+  setAllFilters,
+  resetProxyVotingGuidelines,
+} = proxyVotingGuidelineSlice.actions;

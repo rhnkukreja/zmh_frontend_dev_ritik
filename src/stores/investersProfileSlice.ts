@@ -110,6 +110,7 @@ const investersProfileSlice = createSlice({
       state.page = 1;
       state.totalInvestersProfile = 0;
       state.totalPages = 1;
+      state.filters = initialState.filters;
     },
   },
   extraReducers: (builder) => {
