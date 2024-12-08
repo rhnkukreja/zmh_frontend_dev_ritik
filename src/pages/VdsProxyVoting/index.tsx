@@ -59,6 +59,17 @@ const index = () => {
   });
 
   useEffect(() => {
+    if (tab === 'Top-20' && isCompanySelected) {
+      dispatch(
+        fetchVdsProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+      dispatch(setTempSearch(companyGlobalSearchTicker));
+    }
+
     if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
       dispatch(
         fetchVdsProxyDashboard(
@@ -86,15 +97,27 @@ const index = () => {
   useEffect(() => {
 
     if(tab === 'All-Investor' && isCompanySelected){
-      setFilter([]);
-      reset();
-      dispatch(
-        fetchVdsProxyAllInvestor(
-          createDynamicURL(
-            `${baseURL}/vds_proxy_voting/`,
+      // setFilter([]);
+      // reset();
+      if(filter?.length > 0){
+        dispatch(
+          fetchVdsProxyAllInvestor(
+            createDynamicURL(
+              `${baseURL}/vds_proxy_voting/`,
+              { 'ticker': companyGlobalSearchTicker, 'institution_name': filter }
+            )
           )
-        )
-      );
+        );
+      }
+      else {
+        dispatch(
+          fetchVdsProxyAllInvestor(
+            createDynamicURL(
+              `${baseURL}/vds_proxy_voting/`,
+            )
+          )
+        );
+      }
       dispatch(setIsCompanySelected(false));
     }
      else if (filter?.length > 0) {
