@@ -29,6 +29,7 @@ interface AuthState {
   companyGlobalSearchId: number | undefined;
   companyGlobalSearchTicker: string | undefined;
   finhub: Finhub | null;
+  isCompanySelected: boolean
 }
 
 const initialState: AuthState = {
@@ -39,6 +40,7 @@ const initialState: AuthState = {
   companyGlobalSearchTicker: undefined,
   error: null,
   finhub: null,
+  isCompanySelected: false
 };
 
 export const signUp = createAsyncThunk<Register, SignUpRequestDTO>(
@@ -73,6 +75,9 @@ const authSlice = createSlice({
     },
     setFinhub(state, action: PayloadAction<Finhub>) {
       state.finhub = action.payload;
+    },
+    setIsCompanySelected(state, action: PayloadAction<boolean>) {
+      state.isCompanySelected = action.payload;
     },
     logout(state) {
       state.user = null;
@@ -123,7 +128,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, setSavedSearch, setDashboardGlobalSearch, setFinhub } =
+export const { logout, setSavedSearch, setDashboardGlobalSearch, setFinhub, setIsCompanySelected } =
   authSlice.actions;
 
 export default authSlice;

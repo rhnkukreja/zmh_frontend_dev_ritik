@@ -81,6 +81,7 @@ const initialState: ThemeState = {
     "engagement-question",
     "proxy-voting-guideline",
     "notes",
+    "investor-company-details"
   ],
 };
 

@@ -1,6 +1,6 @@
 import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
-import { createDynamicURL, downloadCSV } from "@/utils/helper";
+import { convertToTitleCase, createDynamicURL, downloadCSV } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
@@ -35,6 +35,7 @@ import { dashboardService } from "@/services/dashboard";
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
+import { setIsCompanySelected } from "@/stores/authenticationSlice";
 
 const index = () => {
   const location = useLocation();
@@ -47,7 +48,7 @@ const index = () => {
   const totalPages = Math.ceil(totalNPXCount / 10);
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker, isCompanySelected } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -58,22 +59,29 @@ const index = () => {
   const [filter, setFilter] = useState('');
   const [institutionName, setInstitutionName] = useState('');
   const [allApplyFilter, setallApplyFilter] = useState<any>();
+  const [dropdownValues, setDropdownValues] = useState<any>({institution_name: [], fund_name: []});
 
+  
+  
 
 
   useEffect(() => {
 
-    // if (companyGlobalSearchTicker && npxProxyDetails?.length === 0 && allApplyFilter) {
-    //   dispatch(
-    //     fetchNpxProxyDashboard(
-    //       createDynamicURL(
-    //         `${baseURL}/npx/detail/`, allApplyFilter, undefined, page
-    //       )
-    //     )
-    //   );
-    //   dispatch(setTempSearch(companyGlobalSearchName));
-    // } else 
-    if (allApplyFilter) {
+    if (isCompanySelected && allApplyFilter) {
+      const updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
+
+      dispatch(
+        fetchNpxProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/npx/detail/`, updatedFilter, undefined, page
+          )
+        )
+      );
+      dispatch(setTempSearch(companyGlobalSearchName));
+      dispatch(setIsCompanySelected(false));
+
+    }
+     else if (allApplyFilter) {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
@@ -174,9 +182,10 @@ const index = () => {
   } = useForm<any>({
     defaultValues: {
       institution_name: 'Select',
-      fund_name: 'Select',
-      proposal: 'Select',
-      vote: 'Select',
+      fund_name: [],
+      proposal: [],
+      vote: [],
+      vote_category: []
     },
   });
 
@@ -193,7 +202,9 @@ const index = () => {
       fund_name: "Select" === npxFilter?.fund_name ? '' : npxFilter?.fund_name,
       proposal: "Select" === npxFilter?.proposal ? '' : npxFilter?.proposal,
       vote: "Select" === npxFilter?.vote ? '' : npxFilter?.vote,
+      vote_category: "Select" === npxFilter?.vote_category ? '' : npxFilter?.vote_category,
       keyword: npxFilter?.keyword
+      
     })
     // setIsFilterCollapse(!isFilterCollapse);
     dispatch(resetPage());
@@ -212,22 +223,32 @@ const index = () => {
     setValue("fund_name", 'Select');
     setValue("proposal", 'Select');
     setValue("vote", 'Select');
+    setValue("vote_category", 'Select');
     setValue("keyword", '');
+
+    
   };
 
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] = useState<boolean>(false);
+  const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] = useState<boolean>(false);
+
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
       institution: [],
     });
 
-  const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
+    const [apiFundNameDropdown, setApiFundNameDropdown] =
     useState<any>({
       fund_name: [],
+    });
+
+  const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
+    useState<any>({
       proposal: [],
       vote: [],
+      vote_category: []
     });
 
   const getAllInstitutionDropdown = async () => {
@@ -246,12 +267,38 @@ const index = () => {
   };
 
   useEffect(() => {
-    getAllInstitutionDropdown();
+    if (!isCompanySelected) {
+      getAllInstitutionDropdown();
+    }
+
+    dispatch(setIsCompanySelected(false));
   }, [companyGlobalSearchTicker]);
 
-  const getDependentDropdown = async (event: any) => {
-    if (event?.target?.value !== '') {
-      const paramFilter = { global_search: companyGlobalSearchName, institution_name: [event?.target?.value]}
+  const getFundNameDependentDropdown = async (value: any) => {
+    const paramFilter = {
+      global_search: companyGlobalSearchName,
+      institution_name: [value],
+    }
+      try {
+        setGetFundNameDropdownLoader(true);
+        const res =
+          await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+        if (res.result) {
+          setApiFundNameDropdown({ ...res.result });
+        }
+      } catch (error) {
+        return error;
+      } finally {
+        setGetFundNameDropdownLoader(false);
+      }
+  }
+
+  const getDependentDropdown = async () => {
+    const paramFilter = {
+      global_search: companyGlobalSearchName,
+      institution_name: [dropdownValues?.institution_name],
+      fund_name: dropdownValues?.fund_name
+    }
       try {
         setGetDynamicDropdownLoader(true);
         const res =
@@ -264,10 +311,21 @@ const index = () => {
       } finally {
         setGetDynamicDropdownLoader(false);
       }
-    }
-
   }
 
+  const handleDropdownChange = (key: string, value: any) => {
+    if(value?.length > 0){
+      setDropdownValues((prev: any) => ({
+        ...prev,
+        [key]: value,
+      }));
+    }
+    
+  };
+
+  useEffect(() => {
+    getDependentDropdown();
+  }, [dropdownValues]);
 
   // const handleNextPage = () => {
   //   if (page < totalNPXCount) {
@@ -447,18 +505,20 @@ const index = () => {
 
                         onChange={(value) => {
                           field.onChange(value);
-                          getDependentDropdown(value);
+                          handleDropdownChange("institution_name", value?.target?.value);
+                          // setDropdownValues({institution_name: value?.target?.value})
+                          getFundNameDependentDropdown(value?.target?.value);
                         }}
                         options={{ placeholder: "Select Institution" }}
                         className="w-full"
-                        multiple={false}
+                        
                       >
                         {getDropdownLoader ? (
                           <option disabled>Loading...</option>
                         ) : (
                           apiDropdownOptions.institution?.map((institution: any) => (
                             <option key={institution} value={institution}>
-                              {institution}
+                              {convertToTitleCase(institution)}
                             </option>
                           ))
                         )}
@@ -501,17 +561,25 @@ const index = () => {
                     render={({ field }) => (
                       <TomSelect
                         value={field.value || []}
-                        onChange={(value) => { field.onChange(value) }}
+                        onChange={(value) => {
+                          handleDropdownChange("fund_name", value?.target?.value);
+                          field.onChange(value);
+                          // setDropdownValues((prevSelected:any) => {[...prevSelected, {fund_name: value?.target?.value}]});
+                          // setDropdownValues()
+                          // getDependentDropdown();
+                        }}
                         options={{ placeholder: "Select Fund" }}
                         className="w-full"
                         multiple
                       >
-                        {getDynamicDropdownLoader ? (
+                        {getFundNameDropdownLoader ? (
                           <option disabled>Loading...</option>
                         ) : (
-                          apiDependentDropdownOptions?.fund_name?.map((fund: any) => (
+                          apiFundNameDropdown?.fund_name?.map((fund: any) => (
                             <option key={fund} value={fund}>
-                              {fund}
+                              {(fund)}
+                              {/* {convertToTitleCase(fund)} */}
+
                             </option>
                           ))
                         )}
@@ -564,7 +632,8 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.proposal?.map((proposal: any) => (
                             <option key={proposal} value={proposal}>
-                              {proposal}
+                              {(proposal)}
+                              {/* {convertToTitleCase(proposal)} */}
                             </option>
                           ))
                         )}
@@ -618,6 +687,61 @@ const index = () => {
                           apiDependentDropdownOptions?.vote?.map((vote: any) => (
                             <option key={vote} value={vote}>
                               {vote}
+                              {/* {convertToTitleCase(vote)} */}
+                            </option>
+                          ))
+                        )}
+                      </TomSelect>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full">
+                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                    Vote Category
+                    {/* {apiDropdownOptions?.institution?.length > 0 && (
+                      <div>
+                        <FormCheck className="mr-2">
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="institution"
+                            checked={
+                              apiDropdownOptions.institution.length === watch("institution")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "institution",
+                                e.target.checked
+                                  ? apiDropdownOptions.institution
+                                  : []
+                              );
+                            }}
+                          />
+                        </FormCheck>
+                      </div>
+                    )} */}
+                  </div>
+                  <Controller
+                    name="vote_category"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <TomSelect
+                        value={field.value || []}
+                        onChange={(value) => { field.onChange(value) }}
+                        options={{ placeholder: "Select Vote Category" }}
+                        className="w-full"
+                        multiple
+                      >
+                        {getDynamicDropdownLoader ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          apiDependentDropdownOptions?.vote_category?.map((vote_category: any) => (
+                            <option key={vote_category} value={vote_category}>
+                              {vote_category}
+                              {/* {convertToTitleCase(vote_category)} */}
                             </option>
                           ))
                         )}
@@ -686,20 +810,20 @@ const index = () => {
                               className="[&_td]:last:border-b-0"
                             >
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {noAction?.vote_description}
+                              {convertToTitleCase(noAction?.vote_description)}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {noAction?.vote_category}
+                              {convertToTitleCase(noAction?.vote_category)}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                {noAction?.vote}
+                              {convertToTitleCase(noAction?.vote)}
                               </Table.Td>
                               <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis">
                                 {new Intl.NumberFormat('en-US').format(Math.floor(noAction?.shares_voted || 0))}
                               </Table.Td>
 
                               <Table.Td className="whitespace-nowrap text-wrap ">
-                                {noAction?.fund_name}
+                                {convertToTitleCase(noAction?.fund_name)}
                               </Table.Td>
 
                             </Table.Tr>

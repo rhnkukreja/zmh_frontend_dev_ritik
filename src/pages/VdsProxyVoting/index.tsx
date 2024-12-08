@@ -1,6 +1,6 @@
 import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
-import { createDynamicURL, downloadCSV } from "@/utils/helper";
+import { convertToTitleCase, createDynamicURL, downloadCSV } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
@@ -9,6 +9,7 @@ import {
   fetchAGMSummaryDashboard,
   fetchVdsProxyAllInvestor,
   fetchVdsProxyDashboard,
+  setTabs,
   setTempSearch,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
@@ -28,18 +29,19 @@ import { FormCheck, FormSelect } from "@/components/Base/Form";
 import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
+import { setIsCompanySelected } from "@/stores/authenticationSlice";
 
 const index = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const { vdsProxyDetails, vdsProxyLoading, vdsProxyAllInvestorDetails, vdsProxyAllInvestorLoading } = useAppSelector(
+  const { vdsProxyDetails, vdsProxyLoading, vdsProxyAllInvestorDetails, vdsProxyAllInvestorLoading, tab } = useAppSelector(
     (state) => state.dashboard
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker, isCompanySelected } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -47,17 +49,27 @@ const index = () => {
   const searchTicker = searchParams.get("ticker");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filter, setFilter] = useState<any>([]);
-  const [selectedTab, setSelectedTab] = useState(0)
   // const { globeSearch } = location.state || {};
 
   const { handleSubmit, control, reset, setValue, watch } =
   useForm<any>({
     defaultValues: {
-      institution: [''],
+      institution: [],
     },
   });
 
   useEffect(() => {
+    if (tab === 'Top-20' && isCompanySelected) {
+      dispatch(
+        fetchVdsProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+      dispatch(setTempSearch(companyGlobalSearchTicker));
+    }
+
     if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
       dispatch(
         fetchVdsProxyDashboard(
@@ -79,11 +91,36 @@ const index = () => {
 
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }, [companyGlobalSearchTicker, searchTicker, ]);
+  }, [companyGlobalSearchTicker, searchTicker, tab]);
 
 
   useEffect(() => {
-    if (filter?.length > 0) {
+
+    if(tab === 'All-Investor' && isCompanySelected){
+      // setFilter([]);
+      // reset();
+      if(filter?.length > 0){
+        dispatch(
+          fetchVdsProxyAllInvestor(
+            createDynamicURL(
+              `${baseURL}/vds_proxy_voting/`,
+              { 'ticker': companyGlobalSearchTicker, 'institution_name': filter }
+            )
+          )
+        );
+      }
+      else {
+        dispatch(
+          fetchVdsProxyAllInvestor(
+            createDynamicURL(
+              `${baseURL}/vds_proxy_voting/`,
+            )
+          )
+        );
+      }
+      dispatch(setIsCompanySelected(false));
+    }
+     else if (filter?.length > 0) {
       dispatch(
         fetchVdsProxyAllInvestor(
           createDynamicURL(
@@ -98,12 +135,11 @@ const index = () => {
         fetchVdsProxyAllInvestor(
           createDynamicURL(
             `${baseURL}/vds_proxy_voting/`,
-            // { 'ticker': companyGlobalSearchTicker }
           )
         )
       );
     }
-  }, [filter])
+  }, [filter, tab, companyGlobalSearchTicker])
 
 
   const isObject = (item: any) => {
@@ -162,7 +198,7 @@ const index = () => {
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Proxy-voting-${companyGlobalSearchName}`);
+    downloadCSV(csvContent, `Top-20-Proxy-voting-${companyGlobalSearchName}`);
   };
 
   function getContent(text: string): string {
@@ -180,12 +216,7 @@ const index = () => {
     return resultString;
   };
 
-  function convertToTitleCase(str: string) {
-    if (!str) {
-      return ""
-    }
-    return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
-  }
+  
   const [apiDropdownOptions, setApiDropdownOptions] =useState<any>([]);
 
   const getAllInstitutionDropdown = async () => {
@@ -218,6 +249,16 @@ const index = () => {
       setFilter([]);
       reset();
     };
+
+    const getSelectedTabIndex = () => {
+      const tabIndex =
+        tab === "Top-20"
+          ? 0
+          : tab === "All-Investor"
+          ? 1
+          : -1;
+      return tabIndex;
+    };
     
   return (
     <>
@@ -244,7 +285,7 @@ const index = () => {
           </Button>
         )}
 
-      {vdsProxyDetails?.vds_report?.length > 0 && (
+      {/* {vdsProxyDetails?.vds_report?.length > 0 && ( */}
         <div className="p-5 mt-1 box">
           {/* {location.pathname !== "/" && (
             <Button
@@ -269,28 +310,18 @@ const index = () => {
                   <h1 className="text-lg font-bold">Proxy Voting (Beta)</h1>
                 </span>
               </div>
-              {/* <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                <h1 className="text-md font-bold">
-                  Aggregate Ownership:{" "}
-                  {vdsProxyDetails?.total_percent_ownership}
-                </h1>
-                <Tippy content="Download Excel" options={{ theme: "light" }}>
-                  <div
-                    className="box p-[5px] cursor-pointer"
-                    onClick={convertDivTableToCSV}
-                  >
-                    <img alt="download-icon" src={downloadIcon} />
-                  </div>
-                </Tippy>
-              </div> */}
+              
             </div>
             <>
-              <Tab.Group >
+              <Tab.Group selectedIndex={getSelectedTabIndex()}>
                 <Tab.List variant="link-tabs">
                   <Tab>
                     <Tab.Button
                       className="w-full py-2"
-                      as="button">
+                      as="button"
+                      onClick={() => {
+                        dispatch(setTabs("Top-20"));
+                      }}>
                       <div className="flex items-center justify-center ">
                         Top 20
                       </div>
@@ -301,6 +332,9 @@ const index = () => {
                     <Tab.Button
                       className="w-full py-2"
                       as="button"
+                      onClick={() => {
+                        dispatch(setTabs("All-Investor"));
+                      }}
                     >
                       <div className="flex items-center justify-center ">
                         All Investors
@@ -312,16 +346,22 @@ const index = () => {
 
                 <Tab.Panels className="mt-5">
                   <Tab.Panel className="leading-relaxed">
-                    {/* Top 20 Content */}
-
-                    {selectedTab === 0 && (
-                      <div className="flex justify-end mb-4">
-                        <h1 className="text-md font-bold">
-                  Aggregate Ownership:{" "}
-                  {vdsProxyDetails?.total_percent_ownership}
-                </h1>
-                      </div>
-                    )}
+                    {tab === 'Top-20' && vdsProxyDetails?.vds_report_headers?.length > 0 &&
+                     <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
+                      <h1 className="text-md font-bold">
+                        Aggregate Ownership:{" "}
+                        {vdsProxyDetails?.total_percent_ownership}
+                      </h1>
+                      <Tippy content="Download Excel" options={{ theme: "light" }}>
+                        <div
+                          className="box p-[5px] cursor-pointer"
+                          onClick={convertDivTableToCSV}
+                        >
+                          <img alt="download-icon" src={downloadIcon} />
+                        </div>
+                      </Tippy>
+                    </div>}
+                    
 
                     <div>
                       <TableWrapper>
@@ -482,7 +522,7 @@ const index = () => {
                             </Table.Tbody>
                           </Table>
                         </div>
-
+                      
                         {!vdsProxyDetails && vdsProxyLoading && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                             <LoadingIcon
@@ -495,7 +535,7 @@ const index = () => {
 
                         {vdsProxyDetails?.vds_report?.length === 0 && !vdsProxyLoading && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            <h1 className="font-semibold">Proxy Records Not Found..</h1>
+                            <h1 className="font-semibold">Top 20 Proxy Records Not Found..</h1>
                           </div>
                         )}
                       </TableWrapper>
@@ -505,130 +545,98 @@ const index = () => {
 
                 <Tab.Panels className="mt-5">
                   <Tab.Panel className="leading-relaxed">
-                    <div className="flex justify-end mb-4">
-                      <Popover className="inline-block ">
-                        {({ close }) => (
-                          <>
-                            <Popover.Button
-                              as={Button}
-                              variant="outline-secondary"
-                              className="w-full sm:w-auto"
-                            >
-                              <Lucide
-                                icon="ArrowDownWideNarrow"
-                                className="stroke-[1.3] w-4 h-4 mr-2"
-                              />
-                              Filter
-                              <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                                0
-                              </div>
-                            </Popover.Button>
-                            <Popover.Panel placement="bottom-end">
-                              <form onSubmit={handleSubmit(onSubmit)}>
-                                <div className="p-2">
-                                  <div className="flex items-center mt-4">
-                                    <Button
-                                    type="button"
-                                      variant="secondary"
-                                      onClick={() => {
-                                        onFilterClear();
-                                        close();
-                                      }}
-                                      className="w-32 ml-auto"
-                                    >
-                                      Clear
-                                    </Button>
-                                    <Button
-                                      type="submit"
-                                      variant="primary"
-                                      className="w-32 ml-2"
-                                      onClick={() => {
-                                        close();
-                                      }}
-                                    >
-                                      Apply
-                                    </Button>
-                                  </div>
-                                  <div className="mt-3">
-                                    <div className="w-full  my-2">
-                                      <div className="text-left text-slate-500 flex justify-between mb-1">
-                                        Institution
-                                        {apiDropdownOptions?.length > 0 && (
-                                          <div>
-                                            <FormCheck className="mr-2">
-                                              <FormCheck.Label>
-                                                Select All
-                                              </FormCheck.Label>
-                                              <FormCheck.Input
-                                                className="ml-1"
-                                                id={`institution`}
-                                                checked={
-                                                  apiDropdownOptions
-                                                    .length === watch("institution")?.length
-                                                }
-                                                type="checkbox"
-                                                onChange={(e) => {
-                                                  if (e.target.checked === true) {
-                                                    setValue(
-                                                      "institution",
-                                                      apiDropdownOptions
-                                                    );
-                                                  } else {
-                                                    setValue("institution", []);
-                                                  }
-                                                }}
-                                              />
-                                            </FormCheck>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <Controller
-                                        name="institution"
-                                        control={control}
-                                        render={({ field }) => (
-                                          <TomSelect
-                                            value={field.value || []}
-                                            onChange={(value) => {
-                                              field.onChange(value);
-                                            }}
-                                            options={{
-                                              placeholder: "Select institution",
-                                            }}
-                                            className="w-full"
-                                            multiple
-                                          >
-                                            <>
-                                              {apiDropdownOptions.length > 0 &&
-                                                apiDropdownOptions?.map(
-                                                  (institution: string) => {
-                                                    return (
-                                                      <option value={institution}>
-                                                        {institution}
-                                                      </option>
-                                                    );
-                                                  }
-                                                )}
-                                            </>
-                                          </TomSelect>
-                                        )}
+                    <div className="">
+                        <div className="p-2">
+                      <form onSubmit={handleSubmit(onSubmit)}>
+
+                          <div className="flex items-end gap-4">
+                            <div className=" w-10/12">
+                              <div className="text-left text-slate-500 flex justify-between mb-1">
+                                Institution
+                                {apiDropdownOptions?.length > 0 && (
+                                  <div>
+                                    <FormCheck className="mr-2">
+                                      <FormCheck.Label>
+                                        Select All
+                                      </FormCheck.Label>
+                                      <FormCheck.Input
+                                        className="ml-1"
+                                        id={`institution`}
+                                        checked={
+                                          apiDropdownOptions
+                                            .length === watch("institution")?.length
+                                        }
+                                        type="checkbox"
+                                        onChange={(e) => {
+                                          if (e.target.checked === true) {
+                                            setValue(
+                                              "institution",
+                                              apiDropdownOptions
+                                            );
+                                          } else {
+                                            setValue("institution", []);
+                                          }
+                                        }}
                                       />
-                                    </div>
+                                    </FormCheck>
                                   </div>
-                                </div>
-                              </form>
-                            </Popover.Panel>
-                          </>
-                        )}
-                      </Popover>
+                                )}
+                              </div>
+                              <Controller
+                                name="institution"
+                                control={control}
+                                render={({ field }) => (
+                                  <TomSelect
+                                    value={field.value || []}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                    options={{
+                                      placeholder: "Select institution",
+                                    }}
+                                    className="w-full"
+                                    multiple
+                                  >
+                                    <>
+                                      {apiDropdownOptions.length > 0 &&
+                                        apiDropdownOptions?.map(
+                                          (institution: string) => {
+                                            return (
+                                              <option value={institution}>
+                                                {institution}
+                                              </option>
+                                            );
+                                          }
+                                        )}
+                                    </>
+                                  </TomSelect>
+                                )}
+                              />
+                            </div>
+                            <div className="flex items-center mt-7">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => {
+                                  onFilterClear();
+                                }}
+                                className="w-32 ml-auto"
+                              >
+                                Clear
+                              </Button>
+                              <Button
+                                type="submit"
+                                variant="primary"
+                                className="w-32 ml-2"
+                              >
+                                Apply
+                              </Button>
+                            </div>
+                          </div>
+                      </form>
+                        </div>
                     </div>
-
-                    
-                 
                     <div>
-
-                     
-
-
                       <TableWrapper isLoading={vdsProxyAllInvestorLoading && filter?.length > 0}>
                         <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                           <Table className="table_2 w-full">
@@ -788,17 +796,6 @@ const index = () => {
                           </Table>
                         </div>
 
-                        {/* {!vdsProxyAllInvestorDetails && vdsProxyAllInvestorLoading && filter?.length === 0 && (
-                          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            <LoadingIcon
-                              color="#800000"
-                              icon="three-dots"
-                              className="w-16 h-16"
-                            />
-                          </div>
-                        )} */}
-
-                        
                       </TableWrapper>
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
@@ -818,7 +815,7 @@ const index = () => {
             </>
           </div>
         </div>
-      )}
+      {/* )} */}
 
       <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
     </>
