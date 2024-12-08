@@ -314,12 +314,12 @@ const index = () => {
   }
 
   const handleDropdownChange = (key: string, value: any) => {
-    if(value?.length > 0){
+    // if(value?.length > 0){
       setDropdownValues((prev: any) => ({
         ...prev,
         [key]: value,
       }));
-    }
+    // }
     
   };
 
