@@ -57,59 +57,263 @@ const DetailShareHolder = () => {
         {loading ? (
           <LoadingWrapper height={200} />
         ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <>
+            {selectedTab !== 'withdrawn' &&
+              (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getSingleShareHolder?.year && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Year
+                        </h3>
+                        <p>{getSingleShareHolder.year}</p>
+                      </div>
+                    )}
+                    {getSingleShareHolder?.proponent_name && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Proponent</h3>
+                        <p>{getSingleShareHolder.proponent_name}</p>
+                      </div>
+                    )}
+                    {getSingleShareHolder?.company_name && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Company Name</h3>
+                        <p>{getSingleShareHolder.company_name}</p>
+                      </div>
+                    )}
+                  </div>
 
-              {getSingleShareHolder && Object.entries(getSingleShareHolder)?.map(([key, item]: [string, any]) => {
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getSingleShareHolder?.proposal_name && selectedTab === 'proposal' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Proposal Number and Name</h3>
+                        <p>({getSingleShareHolder.proposal_num}) {getSingleShareHolder.proposal_name}</p>
+                      </div>
+                    )}
 
-                // Skip the item.
-                if (item === null || item === undefined ||
-                  key === 'id' || key === 'def14a_id' || key === 'nl_exist' || key === 'no_action_link' ||
-                  key === 'proponent_name' ||
-                  key === 'company' || key === 'institution') return null;
+                    {/* {getSingleShareHolder?.category && selectedTab === 'no-action' && (
+                <div>
+                  <h3 className="font-semibold min-w-[150px] mb-2">Category</h3>
+                  <p>({getSingleShareHolder.category}) {getSingleShareHolder.category}</p>
+                </div>
+              )} */}
 
-                return (
-                  <div className="flex flex-col">
-                    <div key={key} className="mb-4">
-                      <h2 className="text-md font-medium text-gray-700 mb-1">
-                        {key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}
-                      </h2>
-                      <p className="text-gray-500 break-words overflow-hidden">
-                        {item && typeof item === 'string' && item.startsWith('http') ? (
-                          <a
-                            href={item}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 break-words inline-block max-w-full overflow-hidden"
-                          >
-                            {item}
-                            
-                          </a>
-                        ) : Array.isArray(item) && typeof item[0] === 'object' ? (
-                          item?.map((obj: any, index: number) => (
-                            <div key={index}>
-                              {Object.keys(obj).map((key) => (
-                                <div key={key}>
-                                  <span className="font-semibold">{key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}: </span>
-                                  <span>{obj[key]}</span>
-                                </div>
-                              ))}
+                    {getSingleShareHolder?.category && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Category
+                        </h3>
+                        <p>{getSingleShareHolder.category}</p>
+                      </div>
+                    )}
+                    {getSingleShareHolder?.sub_category && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Sub-Category
+                        </h3>
+                        <p>{getSingleShareHolder.sub_category}</p>
+                      </div>
+                    )}
+
+                    {getSingleShareHolder?.bases_asserted_for_exclusion && selectedTab === 'no-action' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Bases asserted for exclusion</h3>
+                        <p>({getSingleShareHolder.bases_asserted_for_exclusion})</p>
+                      </div>
+                    )}
+
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                    {getSingleShareHolder?.no_action_link && selectedTab === 'proposal' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Link to Proxy</h3>
+                        <p>{getSingleShareHolder.no_action_link}</p>
+                      </div>
+                    )}
+
+                    {getSingleShareHolder?.staff_response && selectedTab === 'no-action' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Staff Response</h3>
+                        <p>{getSingleShareHolder.staff_response}</p>
+                      </div>
+                    )}
+
+                    {getSingleShareHolder?.staff_response_date && selectedTab === 'no-action' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Staff Response Date</h3>
+                        <p>{getSingleShareHolder.staff_response_date}</p>
+                      </div>
+                    )}
+
+                    {getSingleShareHolder?.initial_date_for_submission && selectedTab === 'no-action' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Initial Date for Submission</h3>
+                        <p>{getSingleShareHolder.initial_date_for_submission}</p>
+                      </div>
+                    )}
+
+                    {selectedTab === 'proposal' && <div>
+                      {/* <h3 className="font-semibold min-w-[150px] mb-2">Link to Proxy</h3>
+                        <p>{getSingleShareHolder.no_action_link}</p> */}
+                    </div>
+                    }
+
+                    {getSingleShareHolder?.outcome_percentage && selectedTab === 'proposal' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">Outcome Percentage</h3>
+                        <p>{getSingleShareHolder.outcome_percentage}</p>
+                      </div>
+                    )}
+
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {getSingleShareHolder?.proposal_text && selectedTab === 'proposal' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Proposal Text
+                        </h3>
+                        <p>{getSingleShareHolder.proposal_text}</p>
+                      </div>
+                    )}
+
+                    
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getSingleShareHolder?.link_to_initial_submission && selectedTab === 'no-action' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Link to Initial Submission
+                        </h3>
+                        <p>{getSingleShareHolder.link_to_initial_submission}</p>
+                      </div>
+                    )}
+
+                    {selectedTab === 'no-action' && (
+                      <div>
+                      </div>
+                    )}
+
+                    {getSingleShareHolder?.staff_response && selectedTab === 'no-action' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Link to Staff Response
+                        </h3>
+                        <p>{getSingleShareHolder.staff_response}</p>
+                      </div>
+                    )}
+                  </div>
+
+
+
+                  <div className="grid grid-cols-1 gap-4">
+
+                    
+
+                    {getSingleShareHolder?.vote_details?.length > 0 && selectedTab === 'proposal' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Vote Details
+                        </h3>
+                        <ul className="list-disc pl-5">
+                          {getSingleShareHolder.vote_details.map((detail: any, index: number) => {
+                            const [key, value]: [any, any] = Object.entries(detail)[0]; // Extract key and value from the object
+                            return (
+                              <li key={index}>
+                                <span className="font-bold">{key}: </span> {value}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+
+                  </div>
+
+
+                  <div className="grid grid-cols-1 gap-4">
+
+                    {getSingleShareHolder?.proposal_text && selectedTab === 'no-action' && (
+                      <div>
+                        <h3 className="font-semibold min-w-[150px] mb-2">
+                          Proposal Text
+                        </h3>
+                        <p>{getSingleShareHolder.proposal_text}</p>
+                      </div>
+                    )}
+                  </div>
+
+
+                </div>
+              )
+            }
+
+            {
+              selectedTab === 'withdrawn' && (
+                <>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                      {getSingleShareHolder && Object.entries(getSingleShareHolder)?.map(([key, item]: [string, any]) => {
+
+                        // Skip the item.
+                        if (item === null || item === undefined ||
+                          key === 'id' || key === 'def14a_id' || key === 'nl_exist' || key === 'no_action_link' ||
+                          key === 'proponent_name' ||
+                          key === 'company' || key === 'institution') return null;
+
+                        return (
+                          <div className="flex flex-col">
+                            <div key={key} className="mb-4">
+                              <h2 className="text-md font-medium text-gray-700 mb-1">
+                                {key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}
+                              </h2>
+                              <p className="text-gray-500 break-words overflow-hidden">
+                                {item && typeof item === 'string' && item.startsWith('http') ? (
+                                  <a
+                                    href={item}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 break-words inline-block max-w-full overflow-hidden"
+                                  >
+                                    {item}
+
+                                  </a>
+                                ) :
+
+                                  Array.isArray(item) && typeof item[0] === 'object' ? (
+                                    item?.map((obj: any, index: number) => (
+                                      <div key={index}>
+                                        {Object.keys(obj).map((key) => (
+                                          <div key={key}>
+                                            <span className="font-semibold">{key.replace(/_/g, ' ').replace(/^\w/, (c) => { return c.toUpperCase() })}: </span>
+                                            <span>{obj[key]}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ))
+                                  ) : (
+                                    item
+                                  )}
+                              </p>
+
                             </div>
-                          ))
-                        ) : (
-                          item
-                        )}
-                      </p>
+                          </div>
+                        );
+                      })}
+
 
                     </div>
+
                   </div>
-                );
-              })}
-
-
-            </div>
-
-          </div>
+                </>
+              )
+            }
+          </>
         )}
       </div>
     </>
@@ -117,3 +321,7 @@ const DetailShareHolder = () => {
 };
 
 export default DetailShareHolder;
+
+
+
+

@@ -674,8 +674,8 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.vote_category?.map((vote_category: any) => (
                             <option key={vote_category} value={vote_category}>
-                              {vote_category}
-                              {/* {convertToTitleCase(vote_category)} */}
+                              {/* {vote_category} */}
+                              {convertToTitleCase(vote_category)}
                             </option>
                           ))
                         )}
