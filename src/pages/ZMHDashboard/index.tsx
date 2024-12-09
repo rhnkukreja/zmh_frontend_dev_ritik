@@ -7,15 +7,24 @@ import {
   setPage,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { AppDispatch } from "@/stores/store";
+import { AppDispatch, RootState } from "@/stores/store";
 import { Helmet } from "react-helmet-async";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import InvestorCard from "@/components/InvestorCard";
 import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
+import { setIsCompanySelected } from "@/stores/authenticationSlice";
 
 function Main() {
+  const dispatch: AppDispatch = useAppDispatch();
+  const { isCompanySelected } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+  useEffect(() => {
+    dispatch(setIsCompanySelected(false));
+  }, [isCompanySelected])
+  
   return (
     <>
       {/* <Helmet>
