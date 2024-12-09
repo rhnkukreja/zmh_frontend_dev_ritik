@@ -248,15 +248,15 @@ const index = () => {
     //   dispatch(setTempSearch(companyGlobalSearchName));
     // }
 
-    // return () => {
-    //   dispatch(
-    //       fetchNpxProxyDashboard(
-    //         createDynamicURL(
-    //           `${baseURL}/npx/detail/`,, undefined, 1
-    //         )
-    //       )
-    //     );
-    // }
+    return () => {
+      dispatch(
+          fetchNpxProxyDashboard(
+            createDynamicURL(
+              `${baseURL}/npx/detail/`, {}, undefined, 1
+            )
+          )
+        );
+    }
 
   }, [companyGlobalSearchTicker, searchTicker, filter, allApplyFilter, page]);
 
