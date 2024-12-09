@@ -1035,7 +1035,10 @@ function ShareHolderProposal() {
                                           );
                                       }}
                                     >
+                                      <div className="flex items-center justify-center">
                                       {noAction?.nl_exist === true ? "Yes" : ""}
+                                          </div>
+                                      
                                     </Table.Td>
 
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">

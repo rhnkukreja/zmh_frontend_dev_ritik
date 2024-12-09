@@ -518,7 +518,7 @@ const index = () => {
                         ) : (
                           apiDropdownOptions.institution?.map((institution: any) => (
                             <option key={institution} value={institution}>
-                              {convertToTitleCase(institution)}
+                              {institution}
                             </option>
                           ))
                         )}
@@ -580,6 +580,60 @@ const index = () => {
                               {(fund)}
                               {/* {convertToTitleCase(fund)} */}
 
+                            </option>
+                          ))
+                        )}
+                      </TomSelect>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full">
+                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                    Vote Category
+                    {/* {apiDropdownOptions?.institution?.length > 0 && (
+                      <div>
+                        <FormCheck className="mr-2">
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="institution"
+                            checked={
+                              apiDropdownOptions.institution.length === watch("institution")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "institution",
+                                e.target.checked
+                                  ? apiDropdownOptions.institution
+                                  : []
+                              );
+                            }}
+                          />
+                        </FormCheck>
+                      </div>
+                    )} */}
+                  </div>
+                  <Controller
+                    name="vote_category"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <TomSelect
+                        value={field.value || []}
+                        onChange={(value) => { field.onChange(value) }}
+                        options={{ placeholder: "Select Vote Category" }}
+                        className="w-full"
+                        multiple
+                      >
+                        {getDynamicDropdownLoader ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          apiDependentDropdownOptions?.vote_category?.map((vote_category: any) => (
+                            <option key={vote_category} value={vote_category}>
+                              {vote_category}
+                              {/* {convertToTitleCase(vote_category)} */}
                             </option>
                           ))
                         )}
@@ -696,59 +750,7 @@ const index = () => {
                   />
                 </div>
 
-                <div className="w-full">
-                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Vote Category
-                    {/* {apiDropdownOptions?.institution?.length > 0 && (
-                      <div>
-                        <FormCheck className="mr-2">
-                          <FormCheck.Label>Select All</FormCheck.Label>
-                          <FormCheck.Input
-                            className="ml-1"
-                            id="institution"
-                            checked={
-                              apiDropdownOptions.institution.length === watch("institution")?.length
-                            }
-                            type="checkbox"
-                            onChange={(e) => {
-                              setValue(
-                                "institution",
-                                e.target.checked
-                                  ? apiDropdownOptions.institution
-                                  : []
-                              );
-                            }}
-                          />
-                        </FormCheck>
-                      </div>
-                    )} */}
-                  </div>
-                  <Controller
-                    name="vote_category"
-                    control={control}
-                    defaultValue={[]}
-                    render={({ field }) => (
-                      <TomSelect
-                        value={field.value || []}
-                        onChange={(value) => { field.onChange(value) }}
-                        options={{ placeholder: "Select Vote Category" }}
-                        className="w-full"
-                        multiple
-                      >
-                        {getDynamicDropdownLoader ? (
-                          <option disabled>Loading...</option>
-                        ) : (
-                          apiDependentDropdownOptions?.vote_category?.map((vote_category: any) => (
-                            <option key={vote_category} value={vote_category}>
-                              {vote_category}
-                              {/* {convertToTitleCase(vote_category)} */}
-                            </option>
-                          ))
-                        )}
-                      </TomSelect>
-                    )}
-                  />
-                </div>
+                
 
 
                 <div className="w-full">

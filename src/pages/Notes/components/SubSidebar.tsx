@@ -108,7 +108,7 @@ const SubSidebar: React.FC = () => {
         response?.response.status === 200 ||
         response?.response.status === 204
       ) {
-        toast.success("Folder deleted successfully");
+        // toast.success("Folder deleted successfully");
         dispatch(fetchFolders());
         if (folderToBeDeleted?.id === selectedNote?.folder) {
           dispatch(clearSelectedNote());

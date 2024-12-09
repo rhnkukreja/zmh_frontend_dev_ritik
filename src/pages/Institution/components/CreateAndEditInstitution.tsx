@@ -298,7 +298,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                       <option value="" disabled selected>
                         Select Type
                       </option>
-                      <option value="investor">investor</option>
+                      <option value="Investor">Investor</option>
                       <option value="Proponent">Proponent</option>
                     </TomSelect>
                   )}
