@@ -90,6 +90,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
           return response.data.map((item: any) => item) || [];
         } else {
           return (
+            response.data?.results?.map(
+              (item: any) => item[getOptionKey as string]
+            ) ||
             response.data?.map((item: any) => item[getOptionKey as string]) ||
             []
           );

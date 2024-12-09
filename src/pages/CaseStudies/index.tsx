@@ -38,23 +38,32 @@ import AddNewCaseStudies from "./Components/AddEditCaseStudies";
 import { setInstitution } from "@/stores/dashboardSlice";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
+interface CaseStudyFilter {
+  keyword: string;
+  market: string[];
+  sector: string[];
+  year: string[];
+  institution_name?: string[];
+  global_search?: string[];
+  themes: string[];
+  proposal_type: string[];
+  vote: string[];
+  company_name?: string[];
+  [key: string]: any;
+}
 function CaseStudies() {
-  interface CaseStudyFilter {
-    keyword: string;
-    market: string[];
-    sector: string[];
-    year: string[];
-    institution_name?: string[];
-    global_search?: string[];
-    themes: string[];
-    proposal_type: string[];
-    vote: string[];
-    company_name?: string[];
-    [key: string]: any;
-  }
-
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  const {
+    loading,
+    caseStudies,
+    page,
+    totalPages,
+    filters,
+    isAllCompanySelected,
+  } = useAppSelector((state) => state.caseStudies);
+
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
@@ -62,7 +71,9 @@ function CaseStudies() {
     (state) => state.dashboard
   );
 
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [searchTerms, setSearchTerms] = useState<string[]>(
+    filters.institution_name.length > 0 ? filters.institution_name : []
+  );
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] = useState<FlterDropdown>({
     institution: [],
@@ -75,19 +86,13 @@ function CaseStudies() {
   });
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
+  const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
+    null
+  );
 
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [addNewCaseStudyModalVisible, setAddNewCaseStudyModalVisible] =
     useState<boolean>(false);
-
-  const {
-    loading,
-    caseStudies,
-    page,
-    totalPages,
-    filters,
-    isAllCompanySelected,
-  } = useAppSelector((state) => state.caseStudies);
 
   const {
     handleSubmit,
@@ -181,12 +186,6 @@ function CaseStudies() {
       )
     );
   }, [page, filters, InstituteName]);
-
-  useEffect(() => {
-    if (InstituteName) {
-      setSearchTerms(InstituteName ? [InstituteName] : [""]);
-    }
-  }, [InstituteName]);
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -313,10 +312,6 @@ function CaseStudies() {
       toast.success("Searched saved successfully");
     }
   };
-
-  const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
-    null
-  );
 
   const onEditCaseStudiesClickHandler = (caseStudy: any) => {
     setSelectedCaseStudies(caseStudy);
@@ -744,19 +739,19 @@ function CaseStudies() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Institution Name
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Year
                           </Table.Td>
                           {isAllCompanySelected && (
-                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Theme
                           </Table.Td>
 
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Industry
                           </Table.Td>
                           <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -803,22 +798,22 @@ function CaseStudies() {
                                   </p>
                                 </div>
                               </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
                                 {item?.year}
                               </Table.Td>
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
                                   {item?.company_name}
                                 </Table.Td>
                               )}
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
                                 {item?.esg_themes}
                               </Table.Td>
 
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
                                 {item?.industry}
                               </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
                                 <div className="flex gap-3 justify-center">
                                   <Tippy
                                     content="View"

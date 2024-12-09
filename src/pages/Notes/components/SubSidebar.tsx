@@ -5,8 +5,10 @@ import React, { useEffect, useState } from "react";
 import { AddFoldersModal } from "../AddFolderModal";
 import {
   clearSelectedFolder,
+  clearSelectedNote,
   deleteFolder,
   fetchFolders,
+  removeAllNotes,
   setSelectedFolder,
 } from "@/stores/notesSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -15,21 +17,31 @@ import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 
 import { updateQueryParams } from "@/utils/helper";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
 import { toast } from "react-toastify";
 
 const SubSidebar: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams();
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
   const [folderToBeDeleted, setFolderToBeDeleted] = useState<FolderData | null>(
     null
   );
+  const [folderToBeEdited, setFolderToBeEdited] = useState<FolderData | null>(
+    null
+  );
 
-  const { folders, loading, selectedFolder } = useAppSelector(
+  const { folders, loading, selectedFolder, selectedNote } = useAppSelector(
     (state) => state.notes
   );
+
+  const removeSearchParams = () => {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.search = "";
+    navigate("/notes");
+  };
 
   const [addNotesModalVisible, setAddNotesModalVisible] =
     useState<boolean>(false);
@@ -44,12 +56,13 @@ const SubSidebar: React.FC = () => {
 
   const onClickNewFolder = () => {
     setAddNotesModalVisible(true);
-    dispatch(clearSelectedFolder());
+    setFolderToBeEdited(null);
+    // dispatch(clearSelectedFolder());
   };
 
   function handleEditFolder(folder: FolderData) {
     setAddNotesModalVisible(true);
-    handleFolderClick(folder);
+    setFolderToBeEdited(folder);
   }
 
   function onClickDeleteIcon(folder: FolderData) {
@@ -62,29 +75,25 @@ const SubSidebar: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!selectedFolder?.id) return;
-    updateQueryParams({
-      id: selectedFolder?.id,
-      folder: selectedFolder?.folder,
-    });
+    if (selectedFolder?.id) {
+      updateQueryParams({
+        id: selectedFolder?.id,
+        folder: selectedFolder?.folder,
+      });
+    }
   }, [selectedFolder]);
 
-  useEffect(() => {
-    if (folders?.length > 0 && !selectedFolder) {
-      dispatch(setSelectedFolder(folders[0]));
-    }
-  }, [folders]);
-
   const onClickCancel = () => {
-    if (!selectedFolder) {
-      const id = searchParams.get("id");
-      if (id) {
-        const lastSelectedFolder = folders?.find(
-          (folder: FolderData) => folder?.id === Number(id)
-        );
-        dispatch(setSelectedFolder(lastSelectedFolder));
-      }
-    }
+    // if (!selectedFolder) {
+    //   const id = searchParams.get("id");
+    //   if (id) {
+    //     const lastSelectedFolder = folders?.find(
+    //       (folder: FolderData) => folder?.id === Number(id)
+    //     );
+    //     dispatch(setSelectedFolder(lastSelectedFolder));
+    //   }
+    // }
+    setFolderToBeEdited(null);
     setAddNotesModalVisible(false);
   };
 
@@ -101,6 +110,15 @@ const SubSidebar: React.FC = () => {
       ) {
         toast.success("Folder deleted successfully");
         dispatch(fetchFolders());
+        if (folderToBeDeleted?.id === selectedNote?.folder) {
+          dispatch(clearSelectedNote());
+          dispatch(removeAllNotes());
+        }
+
+        const id = new URLSearchParams(window.location.search).get("id");
+        if (folderToBeDeleted?.id == Number(id)) {
+          removeSearchParams();
+        }
       }
     } catch (error) {
       console.error("Error deleting the item:", error);
@@ -159,7 +177,7 @@ const SubSidebar: React.FC = () => {
           title="Add New Folder"
           addNotesModalVisible={addNotesModalVisible}
           setAddNotesModalVisible={setAddNotesModalVisible}
-          selectedFolder={selectedFolder}
+          selectedFolder={folderToBeEdited}
           onClickCancel={onClickCancel}
         />
       )}
@@ -232,20 +250,19 @@ const FolderList = ({
                         className="w-3 h-3 text-primary stroke-[1.3]"
                       />
                     </div>
-                    {selectedFolder?.id !== folder?.id && (
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 ml-2 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onClickDeleteIcon(folder);
-                        }}
-                      >
-                        <Lucide
-                          icon="Trash"
-                          className="w-4 h-4 text-primary stroke-[1.3]"
-                        />
-                      </div>
-                    )}
+
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 ml-2 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClickDeleteIcon(folder);
+                      }}
+                    >
+                      <Lucide
+                        icon="Trash"
+                        className="w-4 h-4 text-primary stroke-[1.3]"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

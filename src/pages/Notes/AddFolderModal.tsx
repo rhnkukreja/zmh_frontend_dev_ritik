@@ -41,26 +41,18 @@ export const AddFoldersModal: React.FC<AddFoldersModalProps> = ({
   const onSubmit = async (data: NewFolder) => {
     try {
       if (selectedFolder?.id) {
-        const response = await dispatch(
+        await dispatch(
           addNewFolder({
             id: selectedFolder.id,
             data: data,
           })
         ).unwrap();
-
-        if (response?.results.id) {
-          toast.success("Folder updated successfully");
-        }
       } else {
-        const response = await dispatch(
+        await dispatch(
           addNewFolder({
             data: data,
           })
         ).unwrap();
-
-        if (response?.results?.id) {
-          toast.success("Folder created successfully");
-        }
       }
     } catch (error) {
       toast.error("An error occurred while saving the folder");

@@ -596,28 +596,30 @@ function Main() {
                 </a>
               </div>
 
-              <div
-                className="relative justify-center hidden md:flex md:ml-2"
-                onClick={() => setQuickSearch(true)}
-              >
-                <div
-                  className={clsx([
-                    "bg-[#D9D9D926] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
-                    companyGlobalSearchName !== ""
-                      ? "text-[#545454]"
-                      : "text-[#545454]",
-                  ])}
-                >
-                  <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">
-                    {/* {companyGlobalSearchName !== ""
-                      ? companyGlobalSearchName
-                      : "Quick search..."} */}
-                    {"Search by company name, ticker, or symbol"}
+              <>
+                {["/notes"]?.includes(location.pathname) ? (
+                  <h1 className="font-semibold text-2xl">Notes (Beta)</h1>
+                ) : (
+                  <div
+                    className="relative justify-center hidden md:flex md:ml-2"
+                    onClick={() => setQuickSearch(true)}
+                  >
+                    <div
+                      className={clsx([
+                        "bg-[#D9D9D926] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
+                        companyGlobalSearchName !== ""
+                          ? "text-[#545454]"
+                          : "text-[#545454]",
+                      ])}
+                    >
+                      <Lucide icon="Search" className="w-[18px] h-[18px]" />
+                      <div className="ml-2.5 mr-auto">
+                        {"Search by company name, ticker, or symbol"}
+                      </div>
+                    </div>
                   </div>
-                  {/* <div>⌘K</div> */}
-                </div>
-              </div>
+                )}
+              </>
 
               <QuickSearch
                 quickSearch={quickSearch}

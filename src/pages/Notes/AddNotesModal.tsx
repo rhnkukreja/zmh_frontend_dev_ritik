@@ -27,20 +27,13 @@ const AddNoteModal = ({
 
   const handleNoteSubmit = async (data: Note) => {
     try {
-      // if (selectedNote?.id) {
-      //   const response = await dispatch(
-      //     addNote({ id: selectedNote.id, data })
-      //   ).unwrap();
-      //   if (response?.results?.id) {
-      //     toast.success("Note updated successfully");
-      //   }
-      // } else {
-      // }
-
-      const response = await dispatch(addNote({ data })).unwrap();
-      if (response?.results?.id) {
-        toast.success("Note created successfully");
-        dispatch(fetchSingleFolder(response?.results?.folder));
+      if (selectedNote?.id) {
+        await dispatch(addNote({ id: selectedNote.id, data }));
+      } else {
+        const response = await dispatch(addNote({ data })).unwrap();
+        if (response?.results?.id) {
+          dispatch(fetchSingleFolder(response?.results?.folder));
+        }
       }
     } catch (error) {
       toast.error("An error occurred while saving the note");

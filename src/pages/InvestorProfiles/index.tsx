@@ -39,12 +39,6 @@ interface InvestorProfileFilter {
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
-    useState<boolean>(false);
-  const [tab, setTab] = useState<"investor" | "equity">("investor");
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [filtersLength, setFiltersLength] = useState<number>(0);
-
   const {
     loading,
     investersProfile,
@@ -53,6 +47,15 @@ function Main() {
     filters,
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
+
+  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [tab, setTab] = useState<"investor" | "equity">("investor");
+  const [searchTerms, setSearchTerms] = useState<string[]>(
+    filters?.institution_name?.length > 0 ? filters?.institution_name : []
+  );
+  const [filtersLength, setFiltersLength] = useState<number>(0);
+
   const { user } = useAppSelector((state) => state.authentiction);
 
   const { handleSubmit, control, reset, setValue, watch } =

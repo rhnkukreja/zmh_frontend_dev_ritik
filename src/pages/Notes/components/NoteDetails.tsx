@@ -22,12 +22,9 @@ const NoteDetails: React.FC = () => {
   const handleNoteSubmit = async (data: Note) => {
     try {
       if (selectedNote?.id) {
-        const response = await dispatch(
+        await dispatch(
           addNote({ id: selectedNote?.id, data: { text: data?.text } })
-        ).unwrap();
-        if (response?.results?.id) {
-          toast.success("Note updated successfully");
-        }
+        );
       }
     } catch (error) {
       toast.error("An error occurred while saving the note");
@@ -155,15 +152,7 @@ const NoteDetails: React.FC = () => {
             />
           )}
         </>
-      ) : (
-        <div className="flex items-center justify-center h-full flex-col">
-          <Lucide
-            icon="NotebookPen"
-            className=" text-gray-200 stroke-[1.3] w-[20%] h-[20%] ml-2  cursor-pointer"
-          />
-          <p className="text-gray-400 text-xl">Detail not found</p>
-        </div>
-      )}
+      ) : null}
     </>
   );
 };
