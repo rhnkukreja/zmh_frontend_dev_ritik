@@ -33,19 +33,12 @@ import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
-
 interface InvestorProfileFilter {
   region: string[];
 }
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
-    useState<boolean>(false);
-  const [tab, setTab] = useState<"investor" | "equity">("investor");
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [filtersLength, setFiltersLength] = useState<number>(0);
-
   const {
     loading,
     investersProfile,
@@ -54,6 +47,15 @@ function Main() {
     filters,
     investerProfileFilterOption,
   } = useAppSelector((state) => state.investersProfile);
+
+  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [tab, setTab] = useState<"investor" | "equity">("investor");
+  const [searchTerms, setSearchTerms] = useState<string[]>(
+    filters?.institution_name?.length > 0 ? filters?.institution_name : []
+  );
+  const [filtersLength, setFiltersLength] = useState<number>(0);
+
   const { user } = useAppSelector((state) => state.authentiction);
 
   const { handleSubmit, control, reset, setValue, watch } =
@@ -96,7 +98,6 @@ function Main() {
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilter({ key: "institution_name", value: searchTerms }));
-    dispatch(resetPage());
   };
 
   const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
@@ -188,6 +189,9 @@ function Main() {
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
+                    onSearchSelect={() => {
+                      dispatch(resetPage());
+                    }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/investor_profile/"

@@ -30,9 +30,10 @@ import {
   resetFilter,
   setPage,
   setTabs,
+  resetPage,
   selectUnSelectAllCompany,
 } from "@/stores/shareholderProposalSlice";
-import { resetPage } from "@/stores/shareholderProposalSlice";
+
 import TomSelect from "@/components/Base/TomSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import {
@@ -930,28 +931,28 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                     Company
                                   </Table.Td>
                                 )}
 
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome/Percentage for
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Vote Details
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] w-[180px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="py-2 pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-2/12 odd:pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -1034,7 +1035,10 @@ function ShareHolderProposal() {
                                           );
                                       }}
                                     >
+                                      <div className="flex items-center justify-center">
                                       {noAction?.nl_exist === true ? "Yes" : ""}
+                                          </div>
+                                      
                                     </Table.Td>
 
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
@@ -1112,22 +1116,22 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Year
-                                </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Category
-                                </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Sub Category
-                                </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Year
+                                </Table.Td>
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Category
+                                </Table.Td>
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Sub Category
+                                </Table.Td>
+                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="py-2 flex items-center justify-center  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -1141,6 +1145,9 @@ function ShareHolderProposal() {
                                     className="[&_td]:last:border-b-0"
                                   >
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.caspio_proponent_name || '-'}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
@@ -1148,9 +1155,6 @@ function ShareHolderProposal() {
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.sub_category}
-                                    </Table.Td>
-                                    <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
-                                      {noAction?.caspio_proponent_name}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
                                       {noAction?.staff_response}
@@ -1230,16 +1234,16 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Year
-                                </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Year
+                                </Table.Td>
+                                <Table.Td className="py-2 w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="py-2 flex items-center justify-center  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -1252,11 +1256,11 @@ function ShareHolderProposal() {
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
                                   >
-                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.year}
-                                    </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
                                       {noAction?.caspio_proponent_name}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
                                       {noAction?.status}

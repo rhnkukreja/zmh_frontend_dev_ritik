@@ -175,6 +175,12 @@ const shareHolderProposal = createSlice({
     ) {
       state.filters = { ...state.filters, ...action.payload };
     },
+
+    resetShareholderProposal(state) {
+      state.filters = initialState.filters;
+      state.page = 1;
+      state.isAllCompanySelected = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -255,4 +261,5 @@ export const {
   setFilter,
   selectUnSelectAllCompany,
   resetFilter,
+  resetShareholderProposal,
 } = shareHolderProposal.actions;

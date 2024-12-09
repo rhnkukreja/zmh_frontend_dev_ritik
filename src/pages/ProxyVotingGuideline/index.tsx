@@ -108,7 +108,6 @@ function ProxyGuideline() {
   const gotoDetailPage = (pdf: string, pdf_name: string) => {
     setCurrentPdfDoc(pdf);
     setCurrentPdfName(pdf_name);
-
   };
 
   const handleSearch = (searchTerms: string[]) => {
@@ -118,8 +117,6 @@ function ProxyGuideline() {
         value: searchTerms,
       })
     );
-
-    dispatch(resetPage());
   };
 
   const onFilterClear = () => {
@@ -216,6 +213,9 @@ function ProxyGuideline() {
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
+                    onSearchSelect={() => {
+                      dispatch(resetPage());
+                    }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/proxy_voting_guidelines/"
@@ -465,28 +465,40 @@ function ProxyGuideline() {
                                 <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                   {guideline?.year}
                                 </Table.Td>
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.category && (
-                                    <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                      {guideline?.category}
-                                    </div>
-                                  )}
-                                </Table.Td>
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.sub_category && (
-                                    <>{guideline?.sub_category}</>
-                                  )}
-                                </Table.Td>
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.section && (
-                                    <> {guideline?.section}</>
-                                  )}
-                                </Table.Td>
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.policy_guidelines && (
-                                    <> {guideline?.policy_guidelines}</>
-                                  )}
-                                </Table.Td>
+
+                                {user?.user_type === "Admin" && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {guideline?.category && (
+                                      <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
+                                        {guideline?.category}
+                                      </div>
+                                    )}
+                                  </Table.Td>
+                                )}
+
+                                {user?.user_type === "Admin" && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {guideline?.sub_category && (
+                                      <>{guideline?.sub_category}</>
+                                    )}
+                                  </Table.Td>
+                                )}
+
+                                {user?.user_type === "Admin" && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {guideline?.section && (
+                                      <> {guideline?.section}</>
+                                    )}
+                                  </Table.Td>
+                                )}
+
+                                {user?.user_type === "Admin" && (
+                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    {guideline?.policy_guidelines && (
+                                      <> {guideline?.policy_guidelines}</>
+                                    )}
+                                  </Table.Td>
+                                )}
 
                                 <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                   <div className="flex gap-3 ">
@@ -500,7 +512,7 @@ function ProxyGuideline() {
                                         onClick={() => {
                                           gotoDetailPage(
                                             guideline?.voting_guidelines_pdf_url!,
-                                            guideline?.voting_guidelines_pdf_name!,
+                                            guideline?.voting_guidelines_pdf_name!
                                           );
 
                                           setPdfVisible(true);

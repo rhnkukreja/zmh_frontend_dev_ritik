@@ -31,7 +31,7 @@ const initialState: ProxyVotingGuidelineSlice = {
   totalPages: 1,
   page: 1,
   guidelineFilterOptions: {
-    year: ["2024", "2023"],
+    year: ["2025", "2024", "2023"],
   },
   filters: {
     year: [],
@@ -96,6 +96,11 @@ const proxyVotingGuidelineSlice = createSlice({
     ) {
       state.filters = { ...state.filters, ...action.payload };
     },
+
+    resetProxyVotingGuidelines(state) {
+      state.filters = initialState.filters;
+      state.page = 1;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -155,5 +160,11 @@ const proxyVotingGuidelineSlice = createSlice({
 });
 
 export default proxyVotingGuidelineSlice;
-export const { setPage, resetPage, setFilter, resetFilter, setAllFilters } =
-  proxyVotingGuidelineSlice.actions;
+export const {
+  setPage,
+  resetPage,
+  setFilter,
+  resetFilter,
+  setAllFilters,
+  resetProxyVotingGuidelines,
+} = proxyVotingGuidelineSlice.actions;

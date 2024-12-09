@@ -111,6 +111,11 @@ const engagementQuestionsSlice = createSlice({
     resetFilter(state) {
       state.filters = initialState.filters;
     },
+
+    resetEngagementQuestions(state) {
+      state.filters = initialState.filters;
+      state.page = 1;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -130,7 +135,7 @@ const engagementQuestionsSlice = createSlice({
           state.loading = false;
           state.questions = action.payload.results;
           state.totalQuestions = action.payload.count;
-          state.totalPages = getPageNumbers(action.payload.count);
+          state.totalPages = getPageNumbers(action.payload.count, 50);
         }
       )
       .addCase(fetchEngagementQuestions.rejected, (state, action) => {
@@ -187,5 +192,11 @@ const engagementQuestionsSlice = createSlice({
 });
 
 export default engagementQuestionsSlice;
-export const { setPage, resetPage, setFilter, resetFilter, setAllFilters } =
-  engagementQuestionsSlice.actions;
+export const {
+  setPage,
+  resetPage,
+  setFilter,
+  resetFilter,
+  setAllFilters,
+  resetEngagementQuestions,
+} = engagementQuestionsSlice.actions;

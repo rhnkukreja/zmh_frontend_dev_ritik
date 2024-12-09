@@ -197,7 +197,6 @@ function PeerAnalysis() {
 
   const handleSearch = (searchTerms: string[]) => {
     dispatch(setFilter({ key: "institution_name", value: searchTerms }));
-    dispatch(resetPage());
   };
 
   const getSavedSearches = () => {
@@ -247,7 +246,8 @@ function PeerAnalysis() {
         ...peerAnalysisFilters,
         institution_name: searchTerms,
         global_search: isAllCompanySelected
-          ? Array.isArray(peerAnalysisFilters?.global_search)
+          ? Array.isArray(peerAnalysisFilters?.global_search) &&
+            peerAnalysisFilters?.global_search.length > 0
             ? peerAnalysisFilters?.global_search.map((item: any) => item.label)
             : []
           : [companyGlobalSearchName],
@@ -304,6 +304,9 @@ function PeerAnalysis() {
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
+                    onSearchSelect={() => {
+                      dispatch(resetPage());
+                    }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/peer_analysis/"
@@ -667,29 +670,29 @@ function PeerAnalysis() {
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Institution Name
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Year
                           </Table.Td>
                           {isAllCompanySelected && (
-                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Country
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Sector
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Govt. List
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                            Governance
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Env. List
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                            Environmental
                           </Table.Td>
 
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Social List
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                            Social
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
@@ -731,28 +734,28 @@ function PeerAnalysis() {
                                   </div>
                                 </div>
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.year}
                               </Table.Td>
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600  w-[200px]">
                                   {peer?.company_name}
                                 </Table.Td>
                               )}
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.caspio_company_country}
                               </Table.Td>
 
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.caspio_company_sector}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.gov_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.env_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.soc_list}
                               </Table.Td>
                             </Table.Tr>

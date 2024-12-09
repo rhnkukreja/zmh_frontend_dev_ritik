@@ -33,7 +33,7 @@ export const DeleteConfirmationModal: React.FC<
             dangerouslySetInnerHTML={{ __html: description }}
           />
         </Dialog.Description>
-        <Dialog.Footer>
+        <Dialog.Footer className="!border-none">
           <div className="flex justify-center gap-4">
             <Button
               type="button"

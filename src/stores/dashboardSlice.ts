@@ -58,6 +58,8 @@ interface CompanySliceState {
   instituteName: string | null;
   companySearchLoading: boolean;
   totalNPXCount: number;
+  searchCompletion: number;
+  tab: "Top-20" | "All-Investor" | "";
 }
 
 const initialState: CompanySliceState = {
@@ -90,6 +92,9 @@ const initialState: CompanySliceState = {
   notificationLoading: true,
   totalNotification: 0,
   companySearchLoading: true,
+  tab: "Top-20",
+  searchCompletion: 0
+
   // {
   //   nominees: [],
   //   proposals: [],
@@ -177,6 +182,12 @@ const companySlice = createSlice({
     setInstitution(state, action: PayloadAction<string>) {
       state.instituteName = action.payload;
     },
+    setTabs(
+      state,
+      action: PayloadAction<"Top-20" | "All-Investor" | "">
+    ) {
+      state.tab = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -184,17 +195,25 @@ const companySlice = createSlice({
       .addCase(fetchCompanyByName.pending, (state) => {
         state.companySearchLoading = true;
         state.error = null;
+        state.searchCompletion = 0;
       })
       .addCase(
         fetchCompanyByName.fulfilled,
         (state, action: PayloadAction<{ results: CompanyData[] }>) => {
           state.companySearchLoading = false;
           state.companyDataList = action.payload.results;
+          if(state.companyDataList.length > 0){
+            state.searchCompletion = 1;
+          }
+          else {
+            state.searchCompletion = 2;
+          }
         }
       )
       .addCase(fetchCompanyByName.rejected, (state, action) => {
         state.companySearchLoading = false;
         state.error = action.error.message || "Failed to fetch company by name";
+        state.searchCompletion = 0;
       })
 
       .addCase(fetchCompanyDashboard.pending, (state) => {
@@ -349,4 +368,4 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage, setTempSearch, setInstitution } = companySlice.actions;
+export const { setPage, resetPage, setTempSearch, setInstitution, setTabs } = companySlice.actions;

@@ -66,18 +66,18 @@ export const getSingleSingleCaseStudy = createAsyncThunk<
   return await caseStudiesService.getSingleSingleCaseStudy(id);
 });
 
-export const addEditNewCaseStudies = createAsyncThunk<
-  { results: any },
-  any
->(`${name}/addEditNewCaseStudies`, async ({ id, data }) => {
-  let response;
-  if (id) {
-    response = await caseStudiesService.updateCaseStudies(id, data);
-  } else {
-    response = await caseStudiesService.addNewCaseStudies(data);
+export const addEditNewCaseStudies = createAsyncThunk<{ results: any }, any>(
+  `${name}/addEditNewCaseStudies`,
+  async ({ id, data }) => {
+    let response;
+    if (id) {
+      response = await caseStudiesService.updateCaseStudies(id, data);
+    } else {
+      response = await caseStudiesService.addNewCaseStudies(data);
+    }
+    return response;
   }
-  return response;
-});
+);
 const caseStudies = createSlice({
   name,
   initialState,
@@ -109,6 +109,12 @@ const caseStudies = createSlice({
 
     selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
       state.isAllCompanySelected = action.payload;
+    },
+
+    resetCaseStudy(state) {
+      state.filters = initialState.filters;
+      state.isAllCompanySelected = false;
+      state.page = 1;
     },
   },
   extraReducers: (builder) => {
@@ -162,4 +168,5 @@ export const {
   resetFilters,
   setAllFilters,
   selectUnSelectAllCompany,
+  resetCaseStudy,
 } = caseStudies.actions;

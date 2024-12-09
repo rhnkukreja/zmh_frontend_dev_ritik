@@ -342,6 +342,13 @@ function countValidFilters(filters: FilterObject): number {
   }).length;
 }
 
+function convertToTitleCase(str: string): string {
+  if (!str) {
+    return ""
+  }
+  return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+}
+
 function updateQueryParams(params: { [key: string]: string }) {
   const url = new URL(window.location.href);
   Object.entries(params).forEach(([key, value]) => {
@@ -375,4 +382,5 @@ export {
   downloadCSV,
   countValidFilters,
   updateQueryParams,
+  convertToTitleCase
 };

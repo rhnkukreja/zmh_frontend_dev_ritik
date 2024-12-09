@@ -156,9 +156,9 @@ const index = () => {
                     </h1>
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
-                  {agmSummaryDetails?.Year !== "2023" && (
+
+                  {dashboardDataList?.length >  0 && agmSummaryDetails?.Year !== "2023" && (
                     <button
-                      disabled={dashboardDataList?.length === 0 ? true : false}
                       onClick={(event: any) => handleViewMore(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                     md:w-auto flex items-center justify-center border-red-800 border-2
@@ -167,15 +167,16 @@ const index = () => {
                       View More
                     </button>
                   )}
-                  <button
-                    disabled={dashboardDataList?.length === 0 ? true : false}
-                    onClick={(event: any) => handleViewNPX(event)}
-                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
-                                    md:w-auto flex items-center justify-center border-red-800 border-2
-                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                  >
-                    View N-PX
-                  </button>
+                  {dashboardDataList?.length > 0 &&
+                    <button
+                      onClick={(event: any) => handleViewNPX(event)}
+                      className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
+                                   md:w-auto flex items-center justify-center border-red-800 border-2
+                                    font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                    >
+                      View N-PX
+                    </button>
+                  }
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <Tippy content="Download Excel" options={{ theme: "light" }}>

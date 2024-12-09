@@ -137,6 +137,10 @@ const notesSlice = createSlice({
     clearSelectedNote(state) {
       state.selectedNote = null;
     },
+
+    removeAllNotes(state) {
+      state.notes = [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -158,6 +162,7 @@ const notesSlice = createSlice({
           }
         } else {
           state.folders.unshift(action.payload.results);
+          state.selectedFolder = action.payload.results;
         }
       })
       .addCase(addNewFolder.rejected, (state, action) => {
@@ -191,11 +196,13 @@ const notesSlice = createSlice({
 
             if (updatedFolderIndex !== -1) {
               state.selectedFolder = action.payload.results[updatedFolderIndex];
-            } else {
-              state.selectedFolder = action.payload.results
-                ?.slice()
-                ?.reverse()?.[0];
             }
+
+            // else {
+            //   state.selectedFolder = action.payload.results
+            //     ?.slice()
+            //     ?.reverse()?.[0];
+            // }
           }
         }
       )
@@ -327,4 +334,5 @@ export const {
   setSelectedFolder,
   setSelectedNote,
   clearSelectedNote,
+  removeAllNotes,
 } = notesSlice.actions;
