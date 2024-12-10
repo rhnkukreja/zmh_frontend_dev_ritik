@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { convertToTitleCase } from "@/utils/helper";
 
 const DetailShareHolder = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -73,7 +74,7 @@ const DetailShareHolder = () => {
                     {getSingleShareHolder?.proponent_name && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">Proponent</h3>
-                        <p>{getSingleShareHolder.proponent_name}</p>
+                        <p>{getSingleShareHolder.proponent}</p>
                       </div>
                     )}
                     {getSingleShareHolder?.company_name && (
@@ -88,9 +89,13 @@ const DetailShareHolder = () => {
                     {getSingleShareHolder?.proposal_name && selectedTab === 'proposal' && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">Proposal Number and Name</h3>
-                        <p>({getSingleShareHolder.proposal_num}) {getSingleShareHolder.proposal_name}</p>
+                        <p>
+                          {getSingleShareHolder.proposal_num}. {convertToTitleCase(getSingleShareHolder.proposal_name)}
+                        </p>
                       </div>
                     )}
+
+
 
                     {/* {getSingleShareHolder?.category && selectedTab === 'no-action' && (
                 <div>
@@ -127,12 +132,20 @@ const DetailShareHolder = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-                    {getSingleShareHolder?.no_action_link && selectedTab === 'proposal' && (
+                    {getSingleShareHolder?.link_to_filing && selectedTab === 'proposal' && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">Link to Proxy</h3>
-                        <p>{getSingleShareHolder.no_action_link}</p>
+                        <a
+                          href={getSingleShareHolder.link_to_filing}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          {getSingleShareHolder.link_to_filing}
+                        </a>
                       </div>
                     )}
+
 
                     {getSingleShareHolder?.staff_response && selectedTab === 'no-action' && (
                       <div>
@@ -180,16 +193,24 @@ const DetailShareHolder = () => {
                       </div>
                     )}
 
-                    
+
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {getSingleShareHolder?.link_to_initial_submission && selectedTab === 'no-action' && (
+
+                    {getSingleShareHolder?.link_to_staff_response && selectedTab === 'no-action' && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">
-                          Link to Initial Submission
+                          Link to Staff Response
                         </h3>
-                        <p>{getSingleShareHolder.link_to_initial_submission}</p>
+                        <a
+                          href={getSingleShareHolder.link_to_staff_response}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          {getSingleShareHolder.link_to_staff_response}
+                        </a>
                       </div>
                     )}
 
@@ -198,21 +219,31 @@ const DetailShareHolder = () => {
                       </div>
                     )}
 
-                    {getSingleShareHolder?.staff_response && selectedTab === 'no-action' && (
+
+
+                    {getSingleShareHolder?.link_to_initial_submission && selectedTab === 'no-action' && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">
-                          Link to Staff Response
+                          Link to Initial Submission
                         </h3>
-                        <p>{getSingleShareHolder.staff_response}</p>
+                        <a
+                          href={getSingleShareHolder.link_to_initial_submission}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          {getSingleShareHolder.link_to_initial_submission}
+                        </a>
                       </div>
                     )}
+
                   </div>
 
 
 
                   <div className="grid grid-cols-1 gap-4">
 
-                    
+
 
                     {getSingleShareHolder?.vote_details?.length > 0 && selectedTab === 'proposal' && (
                       <div>

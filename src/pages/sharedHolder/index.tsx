@@ -1045,9 +1045,7 @@ function ShareHolderProposal() {
                                       <div className="flex gap-3 justify-center">
                                         <Tippy
                                           content=" See Details"
-                                          options={{
-                                            theme: "dark",
-                                          }}
+                                          options={{ theme: "light" }}
                                         >
                                           <Lucide
                                             onClick={() =>
@@ -1163,9 +1161,7 @@ function ShareHolderProposal() {
                                       <div className="flex gap-3 justify-center">
                                         <Tippy
                                           content=" See Details"
-                                          options={{
-                                            theme: "dark",
-                                          }}
+                                          options={{ theme: "light" }}
                                         >
                                           <Lucide
                                             onClick={() =>
@@ -1269,9 +1265,7 @@ function ShareHolderProposal() {
                                       <div className="flex gap-3 justify-center">
                                         <Tippy
                                           content=" See Details"
-                                          options={{
-                                            theme: "dark",
-                                          }}
+                                          options={{ theme: "light" }}
                                         >
                                           <Lucide
                                             onClick={() =>

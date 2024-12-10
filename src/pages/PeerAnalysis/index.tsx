@@ -685,14 +685,13 @@ function PeerAnalysis() {
                             Sector
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                            Governance
-                          </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Environmental
                           </Table.Td>
-
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Social
+                          </Table.Td>
+                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                            Governance
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
@@ -750,14 +749,15 @@ function PeerAnalysis() {
                                 {peer?.caspio_company_sector}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
-                                {peer?.gov_list}
-                              </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.env_list}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.soc_list}
                               </Table.Td>
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
+                                {peer?.gov_list}
+                              </Table.Td>
+                              
                             </Table.Tr>
                           ))}
                       </Table.Tbody>

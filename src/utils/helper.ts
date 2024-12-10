@@ -344,10 +344,14 @@ function countValidFilters(filters: FilterObject): number {
 
 function convertToTitleCase(str: string): string {
   if (!str) {
-    return ""
+    return "";
   }
-  return str.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+  return str
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase()) // Capitalize the first letter of each word
+    .replace(/'\w/g, (match) => match.toLowerCase()); // Lowercase letters after an apostrophe
 }
+
 
 function updateQueryParams(params: { [key: string]: string }) {
   const url = new URL(window.location.href);
