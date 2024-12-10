@@ -38,10 +38,6 @@ interface InstituteFilter {
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-
-  const [filtersLength, setFiltersLength] = useState<number>(0);
-
   const {
     institutions,
     loading,
@@ -50,6 +46,12 @@ function Main() {
     institutionFilterOptions,
     filters,
   } = useAppSelector((state) => state.institutions);
+
+  const [searchTerms, setSearchTerms] = useState<string[]>(
+    filters?.institution_name?.length > 0 ? filters?.institution_name : []
+  );
+
+  const [filtersLength, setFiltersLength] = useState<number>(0);
 
   const { handleSubmit, control, reset, setValue, watch } =
     useForm<InstituteFilter>({
@@ -196,6 +198,7 @@ function Main() {
                   setSearchTerms={setSearchTerms}
                   url="/institute/"
                   getOptionKey="institution"
+                  queryKey="institution_name"
                   placeHolder="Search Institution"
                   onSearchChange={resetPage}
                 />

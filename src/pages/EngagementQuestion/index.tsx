@@ -70,7 +70,9 @@ function Main() {
 
   const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
     useState<EngagementQuestions | null>(null);
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
+  const [searchTerms, setSearchTerms] = useState<string[]>(
+    filters?.institution_name?.length > 0 ? filters?.institution_name : []
+  );
   const [groupedQuestions, setGroupedQuestions] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});

@@ -93,6 +93,9 @@ const companySlice = createSlice({
     },
     selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
       state.isAllCompanySelected = action.payload;
+      if (action.payload === false) {
+        state.page = 1;
+      }
     },
 
     resetCompany(state) {

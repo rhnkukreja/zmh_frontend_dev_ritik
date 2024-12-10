@@ -63,6 +63,7 @@ function CaseStudies() {
     filters,
     isAllCompanySelected,
   } = useAppSelector((state) => state.caseStudies);
+  const [searchParams] = useSearchParams();
 
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -72,7 +73,11 @@ function CaseStudies() {
   );
 
   const [searchTerms, setSearchTerms] = useState<string[]>(
-    filters.institution_name.length > 0 ? filters.institution_name : []
+    searchParams.get("institution_name")
+      ? [searchParams.get("institution_name")]
+      : filters.institution_name.length > 0
+      ? filters.institution_name
+      : []
   );
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] = useState<FlterDropdown>({

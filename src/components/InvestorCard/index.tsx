@@ -7,7 +7,6 @@ import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
 import investorIcon from "../../assets/images/zmh-images/investor.svg";
 
-
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   CompanyDashboard,
@@ -138,8 +137,7 @@ const index = () => {
 
   const redirectCaseStudy = (institution_name: string) => {
     // window.open(`/case-studies`, "_blank");
-    navigate(`/case-studies`);
-    dispatch(setInstitution(institution_name));
+    navigate(`/case-studies?institution_name=${institution_name}`);
   };
 
   return (
@@ -355,12 +353,17 @@ const index = () => {
                                                 options={{ theme: "light" }}
                                                 className="w-5 h-5 -mt-2"
                                                 onClick={() =>
-                                                  navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
+                                                  navigate(
+                                                    `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
+                                                  )
                                                 }
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary mr-2">
                                                   {/* <img src={investorIcon} alt="investor Icon" className="w-full" /> */}
-                                                  <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
+                                                  <Lucide
+                                                    icon="FileText"
+                                                    className="w-4 h-4 stroke-[1.3]"
+                                                  />
                                                 </div>
                                               </Tippy>
                                             ) : (
@@ -372,10 +375,17 @@ const index = () => {
                                                 content="Case Studies"
                                                 options={{ theme: "light" }}
                                                 className="w-4 h-4 -mt-2"
-                                                onClick={()=> redirectCaseStudy(dashboard?.institution_name)}
+                                                onClick={() =>
+                                                  redirectCaseStudy(
+                                                    dashboard?.institution_name
+                                                  )
+                                                }
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary">
-                                                  <Lucide icon="FileSearch2" className="w-4 h-4 stroke-[1.5]" />
+                                                  <Lucide
+                                                    icon="FileSearch2"
+                                                    className="w-4 h-4 stroke-[1.5]"
+                                                  />
                                                   {/* <img src={caseStudiesIcon} alt="Case Studies Icon" className="w-full" /> */}
                                                 </div>
                                               </Tippy>

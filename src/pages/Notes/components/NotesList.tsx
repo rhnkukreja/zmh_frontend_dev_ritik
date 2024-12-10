@@ -10,8 +10,8 @@ import {
 } from "@/stores/notesSlice";
 import { Note } from "@/types/notes";
 import LoadingIcon from "@/components/Base/LoadingIcon";
-import DOMPurify from "dompurify";
-import AddButton from "./AddButton";
+// import DOMPurify from "dompurify";
+// import AddButton from "./AddButton";
 import dayjs from "dayjs";
 import clsx from "clsx";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
