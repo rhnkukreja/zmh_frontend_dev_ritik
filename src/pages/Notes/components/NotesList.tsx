@@ -10,8 +10,8 @@ import {
 } from "@/stores/notesSlice";
 import { Note } from "@/types/notes";
 import LoadingIcon from "@/components/Base/LoadingIcon";
-import DOMPurify from "dompurify";
-import AddButton from "./AddButton";
+// import DOMPurify from "dompurify";
+// import AddButton from "./AddButton";
 import dayjs from "dayjs";
 import clsx from "clsx";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
@@ -75,14 +75,14 @@ const NotesList: React.FC = () => {
 
   return (
     <div className="w-full border-r border-gray-200 h-screen overflow-y-auto no-scrollbar">
-      {/* <div className="flex justify-between items-center  px-4 py-4  ">
+      <div className="flex justify-between items-center  px-4 py-4  ">
         <h2 className="text-lg font-semibold">
-          {selectedFolder?.folder || "All Notes"}
+          {"Notes"}
         </h2>
         <span className="text-muted-foreground">{`${
           selectedFolder?.notes_count || 0
         } Notes`}</span>
-      </div> */}
+      </div>
 
       <div className="border-b border-muted "></div>
       {notes?.length > 0 &&
@@ -116,9 +116,9 @@ const NotesList: React.FC = () => {
                   }}
                 /> */}
                 <section className="flex justify-between items-center mt-3">
-                  <span className="text-xs text-muted-foreground">
+                  {/* <span className="text-xs text-muted-foreground">
                     {note?.folder_name}
-                  </span>
+                  </span> */}
                   <span className="text-xs text-muted-foreground">
                     {dayjs(note?.date_created).format("MMM DD, YYYY")}
                   </span>

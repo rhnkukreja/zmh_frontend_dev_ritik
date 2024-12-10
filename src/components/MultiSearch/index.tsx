@@ -14,6 +14,7 @@ interface MultiSearchBarProps {
   placeHolder?: string;
   url: string | string[];
   getOptionKey: string | string[];
+  queryKey?: string;
   isRadioInput?: boolean;
   getValueKey?: string | string[];
   urlQueryKey?: string;
@@ -37,6 +38,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   isSingle,
   getOptionKey,
   isRadioInput,
+  queryKey,
   getValueKey,
   onSearchChange,
   urlQueryKey,
@@ -56,9 +58,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         Array.isArray(url)
           ? url?.map((u) =>
               axiosInstance.get(
-                `${u}${
-                  u.includes("?") ? "&" : "?"
-                }${getOptionKey}=${query}&all=true`
+                `${u}${u.includes("?") ? "&" : "?"}${
+                  queryKey || getOptionKey
+                }=${query}&all=true`
               )
             )
           : isRadioInput
@@ -71,9 +73,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             ]
           : [
               axiosInstance.get(
-                `${url}${
-                  url.includes("?") ? "&" : "?"
-                }${getOptionKey}=${query}&all=true`
+                `${url}${url.includes("?") ? "&" : "?"}${
+                  queryKey || getOptionKey
+                }=${query}&all=true`
               ),
             ]
       );

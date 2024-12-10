@@ -114,6 +114,7 @@ function Main(props: MainProps) {
     setSearch("");
     const data = { target: { value: "" } };
     handleSearchChange(data);
+    lastQuickSearch();
   };
 
   return (

@@ -55,40 +55,207 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
 
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filter, setFilter] = useState('');
   const [institutionName, setInstitutionName] = useState('');
   const [allApplyFilter, setallApplyFilter] = useState<any>();
-  const [dropdownValues, setDropdownValues] = useState<any>({institution_name: [], fund_name: []});
+  const [dropdownValues, setDropdownValues] = useState<any>({ institution_name: [], fund_name: [] });
 
-  
-  
+  const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
+  const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] = useState<boolean>(false);
+  const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] = useState<boolean>(false);
+
+
+  const [apiDropdownOptions, setApiDropdownOptions] =
+    useState<any>({
+      institution: [],
+    });
+
+  const [apiFundNameDropdown, setApiFundNameDropdown] =
+    useState<any>({
+      fund_name: [],
+    });
+
+  const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
+    useState<any>({
+      proposal: [],
+      vote: [],
+      vote_category: []
+    });
+
+  const getAllInstitutionDropdown = async () => {
+    try {
+      setGetDropdownLoader(true);
+      const res =
+        await dashboardService.getNPXDropdownValues();
+      if (res.result) {
+        setApiDropdownOptions({ ...res.result });
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      setGetDropdownLoader(false);
+    }
+  };
+
+
+
+
+  const getFundNameDependentDropdown = async (value: any) => {
+
+    if (value !== '') {
+      const paramFilter = {
+        global_search: companyGlobalSearchName,
+        institution_name: [value],
+      }
+      try {
+        setGetFundNameDropdownLoader(true);
+        const res =
+          await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+        if (res.result) {
+          setApiFundNameDropdown({ ...res.result });
+        }
+      } catch (error) {
+        return error;
+      } finally {
+        setGetFundNameDropdownLoader(false);
+      }
+    }
+
+  }
+
+  const getDependentDropdown = async () => {
+    const paramFilter = {
+      global_search: companyGlobalSearchName,
+      institution_name: dropdownValues?.institution_name !== '' ? [dropdownValues?.institution_name] : [],
+      fund_name: dropdownValues?.fund_name
+    }
+
+    try {
+      setGetDynamicDropdownLoader(true);
+      const res =
+        await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+      if (res.result) {
+        setApiDependentDropdownOptions({ ...res.result });
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      setGetDynamicDropdownLoader(false);
+    }
+  }
+
+  const handleDropdownChange = (key: string, value: any) => {
+    // if(value?.length > 0){
+    setDropdownValues((prev: any) => ({
+      ...prev,
+      [key]: value,
+    }));
+    // }
+
+  };
+
+  useEffect(() => {
+    // if(!isCompanySelected){
+    getDependentDropdown();
+    // dispatch(setIsCompanySelected(false));
+    // }
+
+  }, [dropdownValues]);
+
+
+  useEffect(() => {
+    getAllInstitutionDropdown();
+    // dispatch(setIsCompanySelected(false));
+  }, []);
+
+  let updatedFilter: any = [];
+
+
+
+
 
 
   useEffect(() => {
 
-    if (isCompanySelected && allApplyFilter) {
-      const updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
 
+    if (allApplyFilter) {
+      if (isCompanySelected) {
+
+        updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
+        updatedFilter.proposal = [];
+        // getAllInstitutionDropdown();
+        if (updatedFilter?.institution_name[0] !== '') {
+          getFundNameDependentDropdown(updatedFilter?.institution_name[0]);
+        }
+        getDependentDropdown();
+
+        setTimeout(() => {
+          if (updatedFilter?.institution_name[0] !== '') {
+            setValue("institution_name", updatedFilter?.institution_name[0]);
+          }
+          setValue("fund_name", updatedFilter?.fund_name);
+          setValue("vote", updatedFilter?.vote);
+          // setValue("proposal", updatedFilter?.proposal);
+          setValue("vote_category", updatedFilter?.vote_category);
+          setValue("keyword", updatedFilter?.keyword);
+
+          dispatch(
+            fetchNpxProxyDashboard(
+              createDynamicURL(
+                `${baseURL}/npx/detail/`, updatedFilter, undefined, page)
+            )
+          );
+
+        }, 1000);
+
+        // dispatch(
+        //   fetchNpxProxyDashboard(
+        //     createDynamicURL(
+        //       `${baseURL}/npx/detail/`, updatedFilter, undefined, 1
+        //     )
+        //   )
+        // );
+        dispatch(setIsCompanySelected(false));
+
+      }
+      else {
+
+        dispatch(
+          fetchNpxProxyDashboard(
+            createDynamicURL(
+              `${baseURL}/npx/detail/`, allApplyFilter, undefined, page)
+          )
+        );
+      }
+      dispatch(setTempSearch(companyGlobalSearchName));
+    }
+    // else {
+    //   dispatch(
+    //     fetchNpxProxyDashboard(
+    //       createDynamicURL(
+    //         `${baseURL}/npx/detail/`,{}, undefined, page)
+    //     )
+    //   );
+    // }
+
+    //  else if (allApplyFilter) {
+    //   dispatch(
+    //     fetchNpxProxyDashboard(
+    //       createDynamicURL(
+    //         `${baseURL}/npx/detail/`, allApplyFilter, undefined, page)
+    //     )
+    //   );
+    //   dispatch(setTempSearch(companyGlobalSearchName));
+    // }
+
+    return () => {
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
-            `${baseURL}/npx/detail/`, updatedFilter, undefined, page
+            `${baseURL}/npx/detail/`, {}, undefined, 1
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchName));
-      dispatch(setIsCompanySelected(false));
-
-    }
-     else if (allApplyFilter) {
-      dispatch(
-        fetchNpxProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/npx/detail/`, allApplyFilter, undefined, page)
-        )
-      );
-      dispatch(setTempSearch(companyGlobalSearchName));
     }
 
   }, [companyGlobalSearchTicker, searchTicker, filter, allApplyFilter, page]);
@@ -139,30 +306,6 @@ const index = () => {
     downloadCSV(csvContent, `NPX-${companyGlobalSearchName}`);
   };
 
-  function getContent(text: string): string {
-    const textContent = text?.split('<br>').map((line) => line.trim()).join('\n\n\n');
-    return textContent;
-  }
-
-  const getSplitContents = (items: any) => {
-    const resultString = Object.entries(items)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(", ");
-    return resultString;
-  };
-
-  const handleSearch = (searchTerms: string[]) => {
-    setFilter(searchTerms[0]);
-    setInstitutionName(searchTerms[0]);
-
-
-  };
-
-
-  const handleClearAllFilter = () => {
-    setFilter('');
-    setSearchTerms([]);
-  };
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
   const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -193,7 +336,7 @@ const index = () => {
   const onSubmit = async (npxFilter: any) => {
 
     if (npxFilter?.institution_name === "Select") {
-      toast.warning("Please select a Institution Name");
+      toast.warning("Please select Institution");
       return;
     }
     setallApplyFilter({
@@ -204,7 +347,7 @@ const index = () => {
       vote: "Select" === npxFilter?.vote ? '' : npxFilter?.vote,
       vote_category: "Select" === npxFilter?.vote_category ? '' : npxFilter?.vote_category,
       keyword: npxFilter?.keyword
-      
+
     })
     // setIsFilterCollapse(!isFilterCollapse);
     dispatch(resetPage());
@@ -220,118 +363,17 @@ const index = () => {
     // setApiDropdownOptions({ institution: [] });
     // setApiDependentDropdownOptions({ fund_name: [], proposal: [], vote: [] });
     setValue("institution_name", 'Select');
-    setValue("fund_name", 'Select');
-    setValue("proposal", 'Select');
-    setValue("vote", 'Select');
-    setValue("vote_category", 'Select');
+    setValue("fund_name", []);
+    setValue("proposal", []);
+    setValue("vote", []);
+    setValue("vote_category", []);
     setValue("keyword", '');
 
-    
+
   };
 
-  const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
-  const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] = useState<boolean>(false);
-  const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] = useState<boolean>(false);
 
 
-  const [apiDropdownOptions, setApiDropdownOptions] =
-    useState<any>({
-      institution: [],
-    });
-
-    const [apiFundNameDropdown, setApiFundNameDropdown] =
-    useState<any>({
-      fund_name: [],
-    });
-
-  const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
-    useState<any>({
-      proposal: [],
-      vote: [],
-      vote_category: []
-    });
-
-  const getAllInstitutionDropdown = async () => {
-    try {
-      setGetDropdownLoader(true);
-      const res =
-        await dashboardService.getNPXDropdownValues();
-      if (res.result) {
-        setApiDropdownOptions({ ...res.result });
-      }
-    } catch (error) {
-      return error;
-    } finally {
-      setGetDropdownLoader(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isCompanySelected) {
-      getAllInstitutionDropdown();
-    }
-
-    dispatch(setIsCompanySelected(false));
-  }, [companyGlobalSearchTicker]);
-
-  const getFundNameDependentDropdown = async (value: any) => {
-    const paramFilter = {
-      global_search: companyGlobalSearchName,
-      institution_name: [value],
-    }
-      try {
-        setGetFundNameDropdownLoader(true);
-        const res =
-          await dashboardService.getDynamicNPXDropdownValues(paramFilter);
-        if (res.result) {
-          setApiFundNameDropdown({ ...res.result });
-        }
-      } catch (error) {
-        return error;
-      } finally {
-        setGetFundNameDropdownLoader(false);
-      }
-  }
-
-  const getDependentDropdown = async () => {
-    const paramFilter = {
-      global_search: companyGlobalSearchName,
-      institution_name: [dropdownValues?.institution_name],
-      fund_name: dropdownValues?.fund_name
-    }
-      try {
-        setGetDynamicDropdownLoader(true);
-        const res =
-          await dashboardService.getDynamicNPXDropdownValues(paramFilter);
-        if (res.result) {
-          setApiDependentDropdownOptions({ ...res.result });
-        }
-      } catch (error) {
-        return error;
-      } finally {
-        setGetDynamicDropdownLoader(false);
-      }
-  }
-
-  const handleDropdownChange = (key: string, value: any) => {
-    // if(value?.length > 0){
-      setDropdownValues((prev: any) => ({
-        ...prev,
-        [key]: value,
-      }));
-    // }
-    
-  };
-
-  useEffect(() => {
-    getDependentDropdown();
-  }, [dropdownValues]);
-
-  // const handleNextPage = () => {
-  //   if (page < totalNPXCount) {
-  //     dispatch(setPage(page + 1));
-  //   }
-  // };
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -511,7 +553,7 @@ const index = () => {
                         }}
                         options={{ placeholder: "Select Institution" }}
                         className="w-full"
-                        
+
                       >
                         {getDropdownLoader ? (
                           <option disabled>Loading...</option>
@@ -577,8 +619,8 @@ const index = () => {
                         ) : (
                           apiFundNameDropdown?.fund_name?.map((fund: any) => (
                             <option key={fund} value={fund}>
-                              {(fund)}
-                              {/* {convertToTitleCase(fund)} */}
+                              {/* {(fund)} */}
+                              {convertToTitleCase(fund)}
 
                             </option>
                           ))
@@ -590,7 +632,7 @@ const index = () => {
 
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Vote Category
+                    Category
                     {/* {apiDropdownOptions?.institution?.length > 0 && (
                       <div>
                         <FormCheck className="mr-2">
@@ -632,8 +674,8 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.vote_category?.map((vote_category: any) => (
                             <option key={vote_category} value={vote_category}>
-                              {vote_category}
-                              {/* {convertToTitleCase(vote_category)} */}
+                              {/* {vote_category} */}
+                              {convertToTitleCase(vote_category)}
                             </option>
                           ))
                         )}
@@ -686,8 +728,8 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.proposal?.map((proposal: any) => (
                             <option key={proposal} value={proposal}>
-                              {(proposal)}
-                              {/* {convertToTitleCase(proposal)} */}
+                              {/* {(proposal)} */}
+                              {convertToTitleCase(proposal)}
                             </option>
                           ))
                         )}
@@ -740,8 +782,8 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.vote?.map((vote: any) => (
                             <option key={vote} value={vote}>
-                              {vote}
-                              {/* {convertToTitleCase(vote)} */}
+                              {/* {vote} */}
+                              {convertToTitleCase(vote)}
                             </option>
                           ))
                         )}
@@ -750,7 +792,7 @@ const index = () => {
                   />
                 </div>
 
-                
+
 
 
                 <div className="w-full">
@@ -786,19 +828,34 @@ const index = () => {
                     <Table>
                       <Table.Thead>
                         <Table.Tr>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Vote Description
+                          <Table.Td
+                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                            style={{ width: '30%' }} // Proposal gets more width
+                          >
+                            Proposal
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Vote Category
+                          <Table.Td
+                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                            style={{ width: '17.5%' }} // Remaining columns have equal widths
+                          >
+                            Category
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td
+                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                            style={{ width: '17.5%' }}
+                          >
                             Vote
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td
+                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                            style={{ width: '17.5%' }}
+                          >
                             Shared Voted
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td
+                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                            style={{ width: '17.5%' }}
+                          >
                             Fund Name
                           </Table.Td>
                         </Table.Tr>
@@ -807,36 +864,41 @@ const index = () => {
                       <Table.Tbody>
                         {npxProxyDetails?.length > 0 &&
                           npxProxyDetails?.map((noAction: any) => (
-                            <Table.Tr
-                              key={noAction?.id}
-                              className="[&_td]:last:border-b-0"
-                            >
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {convertToTitleCase(noAction?.vote_description)}
+                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '30%' }}>
+                                {convertToTitleCase(noAction?.vote_description)}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {convertToTitleCase(noAction?.vote_category)}
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
+                                {convertToTitleCase(noAction?.vote_category)}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                              {convertToTitleCase(noAction?.vote)}
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
+                                {convertToTitleCase(noAction?.vote)}
                               </Table.Td>
-                              <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis">
-                                {new Intl.NumberFormat('en-US').format(Math.floor(noAction?.shares_voted || 0))}
+                              <Table.Td
+                                className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                style={{ width: '17.5%' }}
+                              >
+                                {noAction?.shares_voted
+                                  ?.split(' ')
+                                  .map((num: string) =>
+                                    new Intl.NumberFormat('en-US').format(Math.floor(Number(num)))
+                                  )
+                                  .join(' ')}
                               </Table.Td>
-
-                              <Table.Td className="whitespace-nowrap text-wrap ">
+                              <Table.Td className="whitespace-nowrap text-wrap" style={{ width: '17.5%' }}>
                                 {convertToTitleCase(noAction?.fund_name)}
                               </Table.Td>
-
                             </Table.Tr>
                           ))}
                       </Table.Tbody>
+
                       {npxProxyDetails?.length === 0 && (
                         <div className="w-full">
                           <h1 className="mt-3">No Records Found..</h1>
                         </div>
                       )}
                     </Table>
+
                   </div>
                 </TableWrapper>
               </div>
