@@ -46,6 +46,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     handleSubmit,
     control,
     formState: { errors },
+    watch,
   } = useForm<AddShareholderType>({
     defaultValues: {
       institution: selectedShareholderProposal?.institution,
@@ -54,10 +55,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       // company_name: selectedShareholderProposal?.company_name,
       proposal_text: selectedShareholderProposal?.proposal_text,
       proposal_name: selectedShareholderProposal?.proposal_name,
-      vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula,
+      vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula || '  ',
+      matched_id_no_action: selectedShareholderProposal?.matched_id_no_action,
       vote_outcome: selectedShareholderProposal?.vote_outcome,
       status: selectedShareholderProposal?.status,
       nl_exist: selectedShareholderProposal?.nl_exist,
+      ready_for_review: selectedShareholderProposal?.ready_for_review,
       proposal_num: selectedShareholderProposal?.proposal_num,
       sub_category: selectedShareholderProposal?.sub_category,
       year: selectedShareholderProposal?.year,
@@ -67,6 +70,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       link_to_filing: selectedShareholderProposal?.link_to_filing,
     },
   });
+
+
+  const nlExistValue = watch("nl_exist", false); // Default to `false`
+
 
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -80,7 +87,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       year: [],
     });
 
-  const getAllCaseStudyDropdowns = async () => {
+  const getAllShareholderDropdowns = async () => {
     try {
       const res =
         await shareHolderProposalService.getShareHolderDropdownValues();
@@ -92,8 +99,36 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     }
   };
   useEffect(() => {
-    getAllCaseStudyDropdowns();
+    getSubCategoryDropdown();
+    getAllShareholderDropdowns();
   }, []);
+
+  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] =
+  useState<any>({sub_category: []});
+
+
+const getSubCategoryDropdown = async (value?: any) => {
+
+  if (value !== '') {
+    const paramFilter = {
+      // global_search: companyGlobalSearchName,
+      category: value,
+    }
+    try {
+      // setGetFundNameDropdownLoader(true);
+      const res =
+        await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
+      if (res.result) {
+        setapiSubCategoryDropdown({sub_category: res.result?.sub_category});
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      // setGetFundNameDropdownLoader(false);
+    }
+  }
+
+}
 
   const onSubmit = async (data: AddShareholderType) => {
     const transformedData: any = {
@@ -185,6 +220,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     rules={{ required: "Company Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <CompanySelect
+                      setDefaultValue={field.value}
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value);
@@ -291,6 +327,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
+                              getSubCategoryDropdown(e?.target?.value);
                             }}
                             options={{
                               placeholder: "Select Category",
@@ -338,7 +375,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             }}
                             className="w-full text-left"
                           >
-                            {apiDropdownOptions?.sub_category?.map(
+                            {apiSubCategoryDropdown?.sub_category?.map(
                               (sub_category: string) => {
                                 return (
                                   <option value={sub_category}>
@@ -419,7 +456,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 <Controller
                   name="proposal_text"
                   control={control}
-                  rules={{ required: true }}
+                  // rules={{ required: true }}
                   render={({ field }) => (
                     <ClassicEditor
                       value={field?.value ?? ""}
@@ -446,7 +483,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="institution"
                       control={control}
-                      rules={{ required: "Proponent Name is required" }}
+                      // rules={{ required: "Proponent Name is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
@@ -455,7 +492,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             labelKey="institution"
                             value={field?.value?.toString() || ""}
                             onChange={(value) => field.onChange(value)}
-                            options={{ placeholder: "Select proponent" }}
+                            options={{ placeholder: "Select Proponent Options" }}
                             className="w-full"
                           />
                           {error && (
@@ -610,14 +647,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="vote_outcome_formula"
                       control={control}
-                      rules={{ required: "Vote Requirement is required" }}
+                      // rules={{ required: "Vote Requirement is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
                             value={field.value ?? ""}
                             onChange={(e) => field.onChange(e.target.value)}
                             options={{
-                              placeholder: "Select Sub Category",
+                              placeholder: "Select Vote Requirement",
                             }}
                             className="w-full text-left"
                           >
@@ -642,10 +679,55 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                  Ready for Review
+                  </FormCheck.Label>
+
+                  <div className="mt-2 flex flex-col">
+                    <Controller
+                      name="ready_for_review"
+                      control={control}
+                      // rules={{ required: "NL exists is required" }}
+                      render={({ field }) => (
+                        <>
+                          <FormCheck className="flex items-center mr-2">
+                            <FormCheck.Input
+                              id="checkbox-switch-4"
+                              type="checkbox"
+                              {...field}
+                              value="true"
+                              checked={field.value === true}
+                            // onChange={(e) => field.onChange(true)}
+                            />
+                            <FormCheck.Label
+                              htmlFor="checkbox-switch-4"
+                              className="ml-2 text-left"
+                            >
+                              Yes
+                            </FormCheck.Label>
+                          </FormCheck>
+
+                          <div>
+                            {errors.status && (
+                              <Error className="max-w-[100%] mt-6">
+                                {errors.status?.message}
+                              </Error>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
                     NL Exist
                   </FormCheck.Label>
 
-                  <div className="mt-2 flex flex-col sm:flex-row">
+                  <div className="mt-2 flex flex-col">
                     <Controller
                       name="nl_exist"
                       control={control}
@@ -669,16 +751,62 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             </FormCheck.Label>
                           </FormCheck>
 
-                          {errors.status && (
-                            <Error className="max-w-[100%] mt-6">
-                              {errors.status?.message}
-                            </Error>
-                          )}
+                          <div>
+                            {errors.status && (
+                              <Error className="max-w-[100%] mt-6">
+                                {errors.status?.message}
+                              </Error>
+                            )}
+                          </div>
+                          
                         </>
+                        
                       )}
+                      
                     />
                   </div>
                 </div>
+
+                {nlExistValue &&
+                  <div className="flex-1 w-full">
+                    <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                      No Action ID Match
+                    </FormCheck.Label>
+
+                    <div className="mt-2">
+                      <Controller
+                        name="matched_id_no_action"
+                        control={control}
+                        // rules={{ required: "Vote Requirement is required" }}
+                        render={({ field, fieldState: { error } }) => (
+                          <>
+                            <TomSelect
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              options={{
+                                placeholder: "Select No Action ID Match",
+                              }}
+                              className="w-full text-left"
+                            >
+                              {[
+                                // "For / (For + Against)",
+                                // "For / (For + Against + Abstain)",
+                                // "For / (For + Against + Abstain + Broker Non-Votes)",
+                              ].map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </TomSelect>
+                            {error && (
+                              <Error className="text-red-600 mt-2">{error.message}</Error>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+                }
 
               </div>
 
@@ -689,14 +817,15 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     Status on the Dashboard
                   </FormCheck.Label>
 
-                  <div className="mt-2 flex flex-col sm:flex-row">
+                  <div className="mt-2 flex flex-col">
                     <Controller
                       name="status"
                       control={control}
                       rules={{ required: "Admin Status is required" }}
                       render={({ field }) => (
                         <>
-                          <FormCheck className="flex items-center mr-2">
+                          <div className="flex flex-row items-center mr-2">
+                          <FormCheck className="flex flex-row items-center mr-2">
                             <FormCheck.Input
                               id="radio-switch-4"
                               type="radio"
@@ -712,7 +841,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               True
                             </FormCheck.Label>
                           </FormCheck>
-                          <FormCheck className="flex items-center mt-2 sm:mt-0">
+                          <FormCheck className="flex flex-row items-center mt-2 sm:mt-0">
                             <FormCheck.Input
                               id="radio-switch-5"
                               type="radio"
@@ -728,11 +857,16 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               False
                             </FormCheck.Label>
                           </FormCheck>
+                          </div>
+
+                          <div>
+
                           {errors.status && (
                             <Error className="max-w-[100%] mt-6">
                               {errors.status?.message}
                             </Error>
                           )}
+                          </div>
                         </>
                       )}
                     />
@@ -745,7 +879,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     Proposals
                   </FormCheck.Label>
 
-                  <div className="mt-2 flex flex-col sm:flex-row">
+                  <div className="mt-2 flex flex-col">
                     <Controller
                       name="no_shareholder_proposal"
                       control={control}
@@ -769,11 +903,13 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             </FormCheck.Label>
                           </FormCheck>
 
-                          {errors.status && (
-                            <Error className="max-w-[100%] mt-6">
-                              {errors.status?.message}
-                            </Error>
-                          )}
+                          <div>
+                            {errors.status && (
+                              <Error className="max-w-[100%] mt-6">
+                                {errors.status?.message}
+                              </Error>
+                            )}
+                          </div>
                         </>
                       )}
                     />

@@ -40,6 +40,7 @@ export type AddShareholderType = {
   proposal_text: string;
   proposal_name: string;
   nl_exist: boolean;
+  ready_for_review: boolean;
   proposal_num: string;
   institution: string;
   company_name?:string;
@@ -49,7 +50,8 @@ export type AddShareholderType = {
   vote_outcome_formula: string;
   vote_outcome: string;
   no_shareholder_proposal:boolean;
-  link_to_filing:string
+  link_to_filing:string;
+  matched_id_no_action: string;
   
 };
 
