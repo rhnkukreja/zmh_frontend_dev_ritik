@@ -48,20 +48,23 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     formState: { errors },
   } = useForm<AddShareholderType>({
     defaultValues: {
-      proponent: selectedShareholderProposal?.institution,
+      institution: selectedShareholderProposal?.institution,
       category: selectedShareholderProposal?.category,
       company: selectedShareholderProposal?.company_name,
       // company_name: selectedShareholderProposal?.company_name,
       proposal_text: selectedShareholderProposal?.proposal_text,
       proposal_name: selectedShareholderProposal?.proposal_name,
       vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula,
+      vote_outcome: selectedShareholderProposal?.vote_outcome,
       status: selectedShareholderProposal?.status,
+      nl_exist: selectedShareholderProposal?.nl_exist,
       proposal_num: selectedShareholderProposal?.proposal_num,
       sub_category: selectedShareholderProposal?.sub_category,
       year: selectedShareholderProposal?.year,
-      // actual_proponent_name: selectedShareholderProposal?.actual_proponent_name,
+      proponent: selectedShareholderProposal?.proponent,
       percentage_support: selectedShareholderProposal?.percentage_support,
       no_shareholder_proposal: selectedShareholderProposal?.no_shareholder_proposal,
+      link_to_filing: selectedShareholderProposal?.link_to_filing,
     },
   });
 
@@ -98,7 +101,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proponent: data.proponent ? Number(data.proponent) : 0,
       company: data?.company?.value ?? 0
 
-      
+
     };
     try {
       let response;
@@ -172,145 +175,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
             <div className="flex flex-col gap-7">
               {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                    Proponent Name
-                  </FormCheck.Label>
-
-                  <div className="mt-2">
-                    <Controller
-                      name="proponent"
-                      control={control}
-                      rules={{ required: "Proponent Name is required" }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
-                          <TomSelectServer
-                            url="/institute"
-                            valueKey="id"
-                            labelKey="institution"
-                            value={field?.value?.toString() || ""}
-                            onChange={(value) => field.onChange(value)}
-                            options={{ placeholder: "Select proponent" }}
-                            className="w-full"
-                          />
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
-                    />
-                  </div>
-                </div>
-
-
-
-                {/* <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Actual Proponent Name
-                  </FormCheck.Label>
-                  <Controller
-                    name="actual_proponent_name"
-                    control={control}
-                    rules={{ required: "Actual Proponent Name is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Actual Proponent Name"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">
-                            {error.message}
-                          </Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div> */}
-                
-
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proposal Name
-                  </FormCheck.Label>
-                  <Controller
-                    name="proposal_name"
-                    control={control}
-                    rules={{ required: "Proposal Name is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Proposal Name"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">
-                            {error.message}
-                          </Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
-
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proposal Number
-                  </FormCheck.Label>
-                  <Controller
-                    name="proposal_num"
-                    control={control}
-                    rules={{ required: "Proposal Number is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Proposal Number"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">
-                            {error.message}
-                          </Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Percentage Support
-                  </FormCheck.Label>
-                  <Controller
-                    name="percentage_support"
-                    control={control}
-                    rules={{ required: "Percentage Support is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Percentage Support"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">
-                            {error.message}
-                          </Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
-
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                   Company Name
+                    Company Name
                   </FormCheck.Label>
                   <Controller
                     name="company"
@@ -331,12 +198,86 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     )}
                   />
                 </div>
+
+
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                    Year
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="year"
+                      control={control}
+                      rules={{ required: "Year is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ""}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Year",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.year?.map((year: string) => {
+                              return <option value={year}>{year}</option>;
+                            })}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
+
+
+
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Link to proxy
+                  </FormCheck.Label>
+                  <Controller
+                    name="link_to_filing"
+                    control={control}
+                    rules={{
+                      required: "Proposal Link is required",
+                      pattern: {
+                        value: /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\w\-.~:?#[\]@!$&'()*+,;=]*)*\/?$/,
+                        message: "Please enter a valid URL",
+                      },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          type="url"
+                          placeholder="Enter Proposal Link (e.g., https://example.com)"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Category Name
+                    Category
                   </FormCheck.Label>
 
                   <div className="mt-2">
@@ -420,14 +361,178 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Proposal Number
+                  </FormCheck.Label>
+                  <Controller
+                    name="proposal_num"
+                    control={control}
+                    rules={{ required: "Proposal Number is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Proposal Number"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Proposal Name
+                  </FormCheck.Label>
+                  <Controller
+                    name="proposal_name"
+                    control={control}
+                    rules={{ required: "Proposal Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Proposal Name"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+
+              </div>
+
+              <div>
+                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                  Proposal Text
+                </FormCheck.Label>
+                <Controller
+                  name="proposal_text"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <ClassicEditor
+                      value={field?.value ?? ""}
+                      onChange={(event) => {
+                        field.onChange(event);
+                      }}
+                    />
+                  )}
+                />
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%] ">
+                    Proposal Text are required
+                  </Error>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
-                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Vote Outcome Formula
+                  <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                    Select Proponent Options
                   </FormCheck.Label>
 
                   <div className="mt-2">
                     <Controller
-                      name="vote_outcome_formula"
+                      name="institution"
+                      control={control}
+                      rules={{ required: "Proponent Name is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelectServer
+                            url="/institute/?type=Proponent&all=true"
+                            valueKey="id"
+                            labelKey="institution"
+                            value={field?.value?.toString() || ""}
+                            onChange={(value) => field.onChange(value)}
+                            options={{ placeholder: "Select proponent" }}
+                            className="w-full"
+                          />
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
+
+
+
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Actual Proponent Name
+                  </FormCheck.Label>
+                  <Controller
+                    name="proponent"
+                    control={control}
+                    rules={{ required: "Actual Proponent Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Actual Proponent Name"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Percentage Support
+                  </FormCheck.Label>
+                  <Controller
+                    name="percentage_support"
+                    control={control}
+                    rules={{ required: "Percentage Support is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Percentage Support"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+
+
+
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                    Pass or Fail
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="vote_outcome"
                       control={control}
                       rules={{ required: "Vote Outcome Formula is required" }}
                       render={({ field, fieldState: { error } }) => (
@@ -459,42 +564,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </div>
                 </div>
 
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Year
-                  </FormCheck.Label>
 
-                  <div className="mt-2">
-                    <Controller
-                      name="year"
-                      control={control}
-                      rules={{ required: "Year is required" }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
-                          <TomSelect
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                            }}
-                            options={{
-                              placeholder: "Select Year",
-                            }}
-                            className="w-full text-left"
-                          >
-                            {apiDropdownOptions?.year?.map((year: string) => {
-                              return <option value={year}>{year}</option>;
-                            })}
-                          </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
-                    />
-                  </div>
-                </div>
               </div>
 
               {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -529,12 +599,95 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </div>
               </div> */}
 
-            
+
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
-                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                  Admin Status
-                </FormCheck.Label>
+                  <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                    Vote Requirement
+                  </FormCheck.Label>
+
+                  <div className="mt-2">
+                    <Controller
+                      name="vote_outcome_formula"
+                      control={control}
+                      rules={{ required: "Vote Requirement is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            options={{
+                              placeholder: "Select Sub Category",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {[
+                              "For / (For + Against)",
+                              "For / (For + Against + Abstain)",
+                              "For / (For + Against + Abstain + Broker Non-Votes)",
+                            ].map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">{error.message}</Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                    NL Exist
+                  </FormCheck.Label>
+
+                  <div className="mt-2 flex flex-col sm:flex-row">
+                    <Controller
+                      name="nl_exist"
+                      control={control}
+                      rules={{ required: "NL exists is required" }}
+                      render={({ field }) => (
+                        <>
+                          <FormCheck className="flex items-center mr-2">
+                            <FormCheck.Input
+                              id="checkbox-switch-4"
+                              type="checkbox"
+                              {...field}
+                              value="true"
+                              checked={field.value === true}
+                            // onChange={(e) => field.onChange(true)}
+                            />
+                            <FormCheck.Label
+                              htmlFor="checkbox-switch-4"
+                              className="ml-2 text-left"
+                            >
+                              Yes
+                            </FormCheck.Label>
+                          </FormCheck>
+
+                          {errors.status && (
+                            <Error className="max-w-[100%] mt-6">
+                              {errors.status?.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                    Status on the Dashboard
+                  </FormCheck.Label>
 
                   <div className="mt-2 flex flex-col sm:flex-row">
                     <Controller
@@ -586,10 +739,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </div>
                 </div>
 
+
                 <div className="flex-1 w-full">
-                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                  Proposals
-                </FormCheck.Label>
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                    Proposals
+                  </FormCheck.Label>
 
                   <div className="mt-2 flex flex-col sm:flex-row">
                     <Controller
@@ -605,7 +759,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               {...field}
                               value="true"
                               checked={field.value === true}
-                              // onChange={(e) => field.onChange(true)}
+                            // onChange={(e) => field.onChange(true)}
                             />
                             <FormCheck.Label
                               htmlFor="checkbox-switch-4"
@@ -614,7 +768,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               Tick if there are no shareholder proposals for this year
                             </FormCheck.Label>
                           </FormCheck>
-                          
+
                           {errors.status && (
                             <Error className="max-w-[100%] mt-6">
                               {errors.status?.message}
@@ -626,32 +780,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </div>
                 </div>
 
-               
+
               </div>
 
-              <div>
-                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                  Proposal Text
-                </FormCheck.Label>
-                <Controller
-                  name="proposal_text"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
-                    />
-                  )}
-                />
-                {errors.proposal_text && (
-                  <Error className="lg:max-w-[50%] ">
-                    Proposal Text are required
-                  </Error>
-                )}
-              </div>
+
 
 
 
@@ -673,9 +805,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               {loading && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                    loading ? "animate-spin" : ""
-                  }`}
+                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                    }`}
                 />
               )}
               Save

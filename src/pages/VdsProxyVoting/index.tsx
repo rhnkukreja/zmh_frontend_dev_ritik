@@ -67,7 +67,7 @@ const index = () => {
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      // dispatch(setTempSearch(companyGlobalSearchName));
     }
 
     if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
@@ -78,7 +78,7 @@ const index = () => {
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      // dispatch(setTempSearch(companyGlobalSearchName));
     }
     else /* if (globeSearch !== tempSearch) */ {
       dispatch(
@@ -89,7 +89,7 @@ const index = () => {
         )
       );
 
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      // dispatch(setTempSearch(companyGlobalSearchName));
     }
   }, [companyGlobalSearchTicker, searchTicker, tab]);
 
@@ -135,6 +135,16 @@ const index = () => {
         fetchVdsProxyAllInvestor(
           createDynamicURL(
             `${baseURL}/vds_proxy_voting/`,
+          )
+        )
+      );
+    }
+
+    return () => {
+      dispatch(
+        fetchVdsProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
           )
         )
       );
