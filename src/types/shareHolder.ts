@@ -32,7 +32,6 @@ export type ShareHolderData = {
 
 export type AddShareholderType = {
   id: string;
-  proponent: string;
   category: string;
   sub_category: string;
   year:string;
@@ -40,15 +39,18 @@ export type AddShareholderType = {
   status: boolean;
   proposal_text: string;
   proposal_name: string;
-  nl_exist: string;
+  nl_exist: boolean;
   proposal_num: string;
   institution: string;
   company_name?:string;
   // adminStatus: boolean;
-  actual_proponent_name: string;
+  proponent: string;
   percentage_support: string;
   vote_outcome_formula: string;
+  vote_outcome: string;
   no_shareholder_proposal:boolean;
+  link_to_filing:string
+  
 };
 
 
