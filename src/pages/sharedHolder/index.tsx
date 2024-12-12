@@ -250,7 +250,7 @@ function ShareHolderProposal() {
           )
         );
       if (withdrawnResponse?.result) {
-        setWithdrawnCount(withdrawnResponse?.result?.count);
+        setWithdrawnCount(withdrawnResponse?.result?.count ?? 0);
       }
     } catch (error) {
       return error;
