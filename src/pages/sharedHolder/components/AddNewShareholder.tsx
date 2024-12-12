@@ -26,6 +26,7 @@ import MultiSearchBar from "@/components/MultiSearch";
 import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { useNavigate } from "react-router-dom";
 
 interface AddNewShareholderProps {
   addNewShareholderModalVisible: boolean;
@@ -56,23 +57,28 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proposal_text: selectedShareholderProposal?.proposal_text,
       proposal_name: selectedShareholderProposal?.proposal_name,
       vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula || '  ',
-      matched_id_no_action: selectedShareholderProposal?.matched_id_no_action,
+      matched_id_no_action: selectedShareholderProposal?.matched_id_no_action || '  ',
       vote_outcome: selectedShareholderProposal?.vote_outcome,
-      status: selectedShareholderProposal?.status,
-      nl_exist: selectedShareholderProposal?.nl_exist,
-      ready_for_review: selectedShareholderProposal?.ready_for_review,
+      status: selectedShareholderProposal?.status ? true : false,
+      nl_exist: selectedShareholderProposal?.nl_exist ? true : false,
+      ready_for_review: selectedShareholderProposal?.ready_for_review ? true : false,
       proposal_num: selectedShareholderProposal?.proposal_num,
       sub_category: selectedShareholderProposal?.sub_category,
       year: selectedShareholderProposal?.year,
       proponent: selectedShareholderProposal?.proponent,
       percentage_support: selectedShareholderProposal?.percentage_support,
-      no_shareholder_proposal: selectedShareholderProposal?.no_shareholder_proposal,
+      no_shareholder_proposal: selectedShareholderProposal?.no_shareholder_proposal ? true : false,
       link_to_filing: selectedShareholderProposal?.link_to_filing,
     },
   });
 
+  const navigate = useNavigate();
 
-  const nlExistValue = watch("nl_exist", false); // Default to `false`
+
+  const nlExistValue = watch("nl_exist", false); 
+  const yearValue = watch("year"); 
+  const companyValue = watch("company"); 
+
 
 
   const { user, companyGlobalSearchName } = useAppSelector(
@@ -81,7 +87,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
-      status: [],
+      vote_outcome: [],
       category: [],
       sub_category: [],
       year: [],
@@ -103,40 +109,65 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     getAllShareholderDropdowns();
   }, []);
 
-  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] =
-  useState<any>({sub_category: []});
+  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({ sub_category: [] });
+  const [apiNoActionDropdown, setapiNoActionDropdown] = useState<any>({ proposals: [] });
 
 
-const getSubCategoryDropdown = async (value?: any) => {
 
-  if (value !== '') {
-    const paramFilter = {
-      // global_search: companyGlobalSearchName,
-      category: value,
-    }
-    try {
-      // setGetFundNameDropdownLoader(true);
-      const res =
-        await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
-      if (res.result) {
-        setapiSubCategoryDropdown({sub_category: res.result?.sub_category});
+  const getSubCategoryDropdown = async (value?: any) => {
+
+    if (value !== '') {
+      const paramFilter = {
+        category: value,
       }
-    } catch (error) {
-      return error;
-    } finally {
-      // setGetFundNameDropdownLoader(false);
+      try {
+        const res =
+          await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
+        if (res.result) {
+          setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
+        }
+      } catch (error) {
+        return error;
+      } finally {
+      }
     }
+
   }
 
-}
+  useEffect(() => {
+    getNoActionDropdown();
+  }, [yearValue, companyValue])
+  
+
+  const getNoActionDropdown = async () => {
+   const company = selectedShareholderProposal?.company;
+   const year = selectedShareholderProposal?.year;
+
+    if ((yearValue || year) && (companyValue || company)) {
+      const paramFilter = { company: Number(companyValue?.value ?? company), year: yearValue ?? year };
+      try {
+        const res =
+          await shareHolderProposalService.getNoActionrDropdownValues(paramFilter);
+        if (res.result) {
+          setapiNoActionDropdown({ proposals: res.result?.proposals });
+        }
+      } catch (error) {
+        return error;
+      } finally {
+      }
+    }
+
+  }
+
+
 
   const onSubmit = async (data: AddShareholderType) => {
     const transformedData: any = {
       ...data,
-      proponent: data.proponent ? Number(data.proponent) : 0,
-      company: data?.company?.value ?? 0
-
-
+      institution: data.institution ? Number(data.institution) : 0,
+      company: data?.company?.value ?? 0,
+      vote_outcome_formula : data?.vote_outcome_formula === '  ' ? null : data?.vote_outcome_formula,
+      matched_id_no_action : data?.matched_id_no_action === '  ' ? null : (data?.matched_id_no_action)
     };
     try {
       let response;
@@ -220,10 +251,11 @@ const getSubCategoryDropdown = async (value?: any) => {
                     rules={{ required: "Company Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <CompanySelect
-                      setDefaultValue={field.value}
+                        setDefaultValue={field.value}
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value);
+                          // getNoActionDropdown()
                         }}
                         {...error && (
                           <Error className="text-red-600 ">
@@ -252,6 +284,7 @@ const getSubCategoryDropdown = async (value?: any) => {
                             value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
+                              // getNoActionDropdown()
                             }}
                             options={{
                               placeholder: "Select Year",
@@ -575,7 +608,7 @@ const getSubCategoryDropdown = async (value?: any) => {
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ""}
+                            value={field.value ?? " "}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -584,9 +617,9 @@ const getSubCategoryDropdown = async (value?: any) => {
                             }}
                             className="w-full text-left"
                           >
-                            {apiDropdownOptions?.status?.map(
-                              (status: string) => {
-                                return <option value={status}>{status}</option>;
+                            {apiDropdownOptions?.vote_outcome?.map(
+                              (vote_outcome: string) => {
+                                return <option value={vote_outcome}>{vote_outcome}</option>;
                               }
                             )}
                           </TomSelect>
@@ -679,7 +712,7 @@ const getSubCategoryDropdown = async (value?: any) => {
 
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                  Ready for Review
+                    Ready for Review
                   </FormCheck.Label>
 
                   <div className="mt-2 flex flex-col">
@@ -706,13 +739,13 @@ const getSubCategoryDropdown = async (value?: any) => {
                             </FormCheck.Label>
                           </FormCheck>
 
-                          <div>
+                          {/* <div>
                             {errors.status && (
                               <Error className="max-w-[100%] mt-6">
                                 {errors.status?.message}
                               </Error>
                             )}
-                          </div>
+                          </div> */}
                         </>
                       )}
                     />
@@ -731,7 +764,7 @@ const getSubCategoryDropdown = async (value?: any) => {
                     <Controller
                       name="nl_exist"
                       control={control}
-                      rules={{ required: "NL exists is required" }}
+                      // rules={{ required: "NL exists is required" }}
                       render={({ field }) => (
                         <>
                           <FormCheck className="flex items-center mr-2">
@@ -751,21 +784,26 @@ const getSubCategoryDropdown = async (value?: any) => {
                             </FormCheck.Label>
                           </FormCheck>
 
-                          <div>
+                          {/* <div>
                             {errors.status && (
                               <Error className="max-w-[100%] mt-6">
                                 {errors.status?.message}
                               </Error>
                             )}
-                          </div>
-                          
+                          </div> */}
+
                         </>
-                        
+
                       )}
-                      
+
                     />
                   </div>
                 </div>
+               
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                
 
                 {nlExistValue &&
                   <div className="flex-1 w-full">
@@ -788,15 +826,19 @@ const getSubCategoryDropdown = async (value?: any) => {
                               }}
                               className="w-full text-left"
                             >
-                              {[
-                                // "For / (For + Against)",
-                                // "For / (For + Against + Abstain)",
-                                // "For / (For + Against + Abstain + Broker Non-Votes)",
-                              ].map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
+                              {apiNoActionDropdown?.proposals?.map(
+                                (proposals: any) => {
+                                  return <option 
+                                  className=" text-blue-400"
+                                   onClick={() => navigate(`share-holder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`)}
+                                    value={proposals?.id} key={proposals?.id}>
+                                    {proposals?.proposal_text?.length > 150
+                                      ? proposals.proposal_text.substring(0, 150) + "..."
+                                      : proposals?.proposal_text}
+                                  </option>
+                                }
+                               
+                              )}
                             </TomSelect>
                             {error && (
                               <Error className="text-red-600 mt-2">{error.message}</Error>
@@ -821,52 +863,35 @@ const getSubCategoryDropdown = async (value?: any) => {
                     <Controller
                       name="status"
                       control={control}
-                      rules={{ required: "Admin Status is required" }}
+                      // rules={{ required: "Admin Status is required" }}
                       render={({ field }) => (
                         <>
                           <div className="flex flex-row items-center mr-2">
-                          <FormCheck className="flex flex-row items-center mr-2">
-                            <FormCheck.Input
-                              id="radio-switch-4"
-                              type="radio"
-                              {...field}
-                              value="true"
-                              checked={field.value === true}
-                              onChange={(e) => field.onChange(true)}
-                            />
-                            <FormCheck.Label
-                              htmlFor="radio-switch-4"
-                              className="ml-2"
-                            >
-                              True
-                            </FormCheck.Label>
-                          </FormCheck>
-                          <FormCheck className="flex flex-row items-center mt-2 sm:mt-0">
-                            <FormCheck.Input
-                              id="radio-switch-5"
-                              type="radio"
-                              {...field}
-                              value="false"
-                              checked={field.value === false}
-                              onChange={(e) => field.onChange(false)}
-                            />
-                            <FormCheck.Label
-                              htmlFor="radio-switch-5"
-                              className="ml-2"
-                            >
-                              False
-                            </FormCheck.Label>
-                          </FormCheck>
+                            <FormCheck className="flex items-center mr-2">
+                              <FormCheck.Input
+                                id="checkbox-switch-4"
+                                type="checkbox"
+                                {...field}
+                                value="Admin"
+                                checked={field.value === true}
+                              />
+                              <FormCheck.Label
+                                htmlFor="checkbox-switch-4"
+                                className="ml-2 text-left"
+                              >
+                                Admin
+                              </FormCheck.Label>
+                            </FormCheck>
                           </div>
 
-                          <div>
+                          {/* <div>
 
                           {errors.status && (
                             <Error className="max-w-[100%] mt-6">
                               {errors.status?.message}
                             </Error>
                           )}
-                          </div>
+                          </div> */}
                         </>
                       )}
                     />
@@ -883,7 +908,7 @@ const getSubCategoryDropdown = async (value?: any) => {
                     <Controller
                       name="no_shareholder_proposal"
                       control={control}
-                      rules={{ required: "Proposals is required" }}
+                      // rules={{ required: "Proposals is required" }}
                       render={({ field }) => (
                         <>
                           <FormCheck className="flex items-center mr-2">
@@ -903,13 +928,13 @@ const getSubCategoryDropdown = async (value?: any) => {
                             </FormCheck.Label>
                           </FormCheck>
 
-                          <div>
+                          {/* <div>
                             {errors.status && (
                               <Error className="max-w-[100%] mt-6">
                                 {errors.status?.message}
                               </Error>
                             )}
-                          </div>
+                          </div> */}
                         </>
                       )}
                     />

@@ -1,11 +1,12 @@
 export type ShareHolderDropdown = {
   institution?: string[];
-  year: string[];
+  year?: string[];
   proponent?: string[];
-  category: string[];
-  sub_category: string[];
-  status: string[];
+  category?: string[];
+  sub_category?: string[];
+  status?: string[];
   company?: string[];
+  vote_outcome?: string[];
 };
 
 export type ShareHolderData = {
@@ -47,7 +48,7 @@ export type AddShareholderType = {
   // adminStatus: boolean;
   proponent: string;
   percentage_support: string;
-  vote_outcome_formula: string;
+  vote_outcome_formula: any;
   vote_outcome: string;
   no_shareholder_proposal:boolean;
   link_to_filing:string;

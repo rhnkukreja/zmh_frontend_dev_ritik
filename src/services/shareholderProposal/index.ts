@@ -42,6 +42,16 @@ class ShareHolderProposalService {
     };
   }
 
+  public async getNoActionrDropdownValues(paramFilter?:any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get( createDynamicURL(`/get_shareholder_noaction_proposal/`, paramFilter));
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
   public async getSingleShareHolder(
     url: string,
     id: number
