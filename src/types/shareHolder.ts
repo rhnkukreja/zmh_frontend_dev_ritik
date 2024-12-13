@@ -1,10 +1,10 @@
 export type ShareHolderDropdown = {
   institution?: string[];
-  year?: string[];
+  year: string[];
   proponent?: string[];
-  category?: string[];
-  sub_category?: string[];
-  status?: string[];
+  category: string[];
+  sub_category: string[];
+  status: string[];
   company?: string[];
   vote_outcome?: string[];
 };
