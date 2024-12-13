@@ -1,5 +1,6 @@
 import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
 import { axiosInstance } from "../index";
+import { createDynamicURL } from "@/utils/helper";
 
 class ShareHolderProposalService {
   public async getShareHolderProposal(url: string): Promise<{
@@ -21,12 +22,30 @@ class ShareHolderProposalService {
     };
   }
 
-  public async getShareHolderDropdownValues(): Promise<{
-    result: ShareHolderDropdown;
+  // public async getShareHolderDropdownValues(): Promise<{
+  //   result: ShareHolderDropdown;
+  // }> {
+  //   const response = await axiosInstance.get(`/get_shareholder_dropdown_values/`);
+  //   const result = response.data;
+  //   return {
+  //     result: result,
+  //   };
+  // }
+
+  public async getShareHolderDropdownValues(paramFilter?:any): Promise<{
+    result: any;
   }> {
-    const response = await axiosInstance.get(
-      `/get_shareholder_dropdown_values/`
-    );
+    const response = await axiosInstance.get( createDynamicURL(`/get_shareholder_dropdown_values/`, paramFilter));
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
+  public async getNoActionrDropdownValues(paramFilter?:any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get( createDynamicURL(`/get_shareholder_noaction_proposal/`, paramFilter));
     const result = response.data;
     return {
       result: result,

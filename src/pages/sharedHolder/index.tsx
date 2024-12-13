@@ -250,13 +250,13 @@ function ShareHolderProposal() {
           )
         );
       if (withdrawnResponse?.result) {
-        setWithdrawnCount(withdrawnResponse?.result?.count);
+        setWithdrawnCount(withdrawnResponse?.result?.count ?? 0);
       }
     } catch (error) {
       return error;
     }
   };
-  const getAllCaseStudyDropdowns = async () => {
+  const getAllShareholderDropdowns = async () => {
     try {
       setGetDropdownLoader(true);
       const res =
@@ -272,7 +272,8 @@ function ShareHolderProposal() {
   };
 
   useEffect(() => {
-    getAllCaseStudyDropdowns();
+    getAllShareholderDropdowns();
+    getSubCategoryDropdown();
   }, []);
 
   const handleNextPage = () => {
@@ -359,6 +360,33 @@ function ShareHolderProposal() {
         : -1;
     return tabIndex;
   };
+
+  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] =
+    useState<any>({sub_category: []});
+
+
+  const getSubCategoryDropdown = async (value?: any) => {
+
+    if (value !== '') {
+      const paramFilter = {
+        // global_search: companyGlobalSearchName,
+        category: value,
+      }
+      try {
+        // setGetFundNameDropdownLoader(true);
+        const res =
+          await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
+        if (res.result) {
+          setapiSubCategoryDropdown({sub_category: res.result?.sub_category});
+        }
+      } catch (error) {
+        return error;
+      } finally {
+        // setGetFundNameDropdownLoader(false);
+      }
+    }
+
+  }
 
   const getSavedSearches = () => {
     if (user?.saved_search["Shareholder Proposal"]) {
@@ -672,6 +700,7 @@ function ShareHolderProposal() {
                                         ? apiDropdownOptions.category
                                         : []
                                     );
+                                    getSubCategoryDropdown(apiDropdownOptions.category);
                                   }}
                                 />
                               </FormCheck>
@@ -685,7 +714,11 @@ function ShareHolderProposal() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={field.onChange}
+                              // onChange={field.onChange}
+                              onChange={(value) => {
+                                field.onChange(value);
+                                getSubCategoryDropdown(value?.target?.value);
+                              }}
                               options={{ placeholder: "Select Category" }}
                               className="w-full"
                               multiple
@@ -707,7 +740,7 @@ function ShareHolderProposal() {
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Sub Category
-                          {apiDropdownOptions.sub_category?.length > 0 && (
+                          {apiSubCategoryDropdown.sub_category?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -715,7 +748,7 @@ function ShareHolderProposal() {
                                   className="ml-1"
                                   id="sub_category"
                                   checked={
-                                    apiDropdownOptions.sub_category.length ===
+                                    apiSubCategoryDropdown.sub_category.length ===
                                     watch("sub_category")?.length
                                   }
                                   type="checkbox"
@@ -723,7 +756,7 @@ function ShareHolderProposal() {
                                     setValue(
                                       "sub_category",
                                       e.target.checked
-                                        ? apiDropdownOptions.sub_category
+                                        ? apiSubCategoryDropdown.sub_category
                                         : []
                                     );
                                   }}
@@ -747,8 +780,8 @@ function ShareHolderProposal() {
                               {getDropdownLoader ? (
                                 <option disabled>Loading...</option>
                               ) : (
-                                apiDropdownOptions.sub_category?.map(
-                                  (subCat) => (
+                                apiSubCategoryDropdown.sub_category?.map(
+                                  (subCat: any) => (
                                     <option key={subCat} value={subCat}>
                                       {subCat}
                                     </option>
