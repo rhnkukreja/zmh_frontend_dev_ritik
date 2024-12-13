@@ -75,9 +75,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const navigate = useNavigate();
 
 
-  const nlExistValue = watch("nl_exist", false); 
-  const yearValue = watch("year"); 
-  const companyValue = watch("company"); 
+  const nlExistValue = watch("nl_exist", false);
+  const yearValue = watch("year");
+  const companyValue = watch("company");
 
 
 
@@ -87,7 +87,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
-      vote_outcome: [],
+      status: [],
       category: [],
       sub_category: [],
       year: [],
@@ -137,11 +137,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   useEffect(() => {
     getNoActionDropdown();
   }, [yearValue, companyValue])
-  
+
 
   const getNoActionDropdown = async () => {
-   const company = selectedShareholderProposal?.company;
-   const year = selectedShareholderProposal?.year;
+    const company = selectedShareholderProposal?.company;
+    const year = selectedShareholderProposal?.year;
 
     if ((yearValue || year) && (companyValue || company)) {
       const paramFilter = { company: Number(companyValue?.value ?? company), year: yearValue ?? year };
@@ -164,10 +164,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const onSubmit = async (data: AddShareholderType) => {
     const transformedData: any = {
       ...data,
-      institution: data.institution ? Number(data.institution) : 0,
+      institution: data.institution ? Number(data.institution) : null,
       company: data?.company?.value ?? 0,
-      vote_outcome_formula : data?.vote_outcome_formula === '  ' ? null : data?.vote_outcome_formula,
-      matched_id_no_action : data?.matched_id_no_action === '  ' ? null : (data?.matched_id_no_action)
+      vote_outcome_formula: data?.vote_outcome_formula === '  ' ? null : data?.vote_outcome_formula,
+      matched_id_no_action: data?.matched_id_no_action === '  ' ? null : (data?.matched_id_no_action)
     };
     try {
       let response;
@@ -320,10 +320,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     control={control}
                     rules={{
                       required: "Proposal Link is required",
-                      pattern: {
-                        value: /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\w\-.~:?#[\]@!$&'()*+,;=]*)*\/?$/,
-                        message: "Please enter a valid URL",
-                      },
+                      // pattern: {
+                      //   value: /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\w\-.~:?#[\]@!$&'()*+,;=]*)*\/?$/,
+                      //   message: "Please enter a valid URL",
+                      // },
                     }}
                     render={({ field, fieldState: { error } }) => (
                       <>
@@ -483,28 +483,29 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               </div>
 
               <div>
-                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
                   Proposal Text
                 </FormCheck.Label>
                 <Controller
                   name="proposal_text"
                   control={control}
-                  // rules={{ required: true }}
+                  rules={{ required: true }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your proposal text here"
                     />
                   )}
                 />
                 {errors.proposal_text && (
-                  <Error className="lg:max-w-[50%] ">
-                    Proposal Text are required
+                  <Error className="lg:max-w-[50%]">
+                    Proposal Text is required
                   </Error>
                 )}
               </div>
+
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
@@ -617,9 +618,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             }}
                             className="w-full text-left"
                           >
-                            {apiDropdownOptions?.vote_outcome?.map(
-                              (vote_outcome: string) => {
-                                return <option value={vote_outcome}>{vote_outcome}</option>;
+                            {apiDropdownOptions?.status?.map(
+                              (status: string) => {
+                                return <option value={status}>{status}</option>;
                               }
                             )}
                           </TomSelect>
@@ -799,11 +800,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     />
                   </div>
                 </div>
-               
+
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                
+
 
                 {nlExistValue &&
                   <div className="flex-1 w-full">
@@ -828,16 +829,16 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             >
                               {apiNoActionDropdown?.proposals?.map(
                                 (proposals: any) => {
-                                  return <option 
-                                  className=" text-blue-400"
-                                   onClick={() => navigate(`share-holder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`)}
+                                  return <option
+                                    className=" text-blue-400"
+                                    onClick={() => navigate(`share-holder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`)}
                                     value={proposals?.id} key={proposals?.id}>
                                     {proposals?.proposal_text?.length > 150
                                       ? proposals.proposal_text.substring(0, 150) + "..."
                                       : proposals?.proposal_text}
                                   </option>
                                 }
-                               
+
                               )}
                             </TomSelect>
                             {error && (
