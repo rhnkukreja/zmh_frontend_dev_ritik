@@ -58,7 +58,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       proposal_name: selectedShareholderProposal?.proposal_name,
       vote_outcome_formula: selectedShareholderProposal?.vote_outcome_formula || '  ',
       matched_id_no_action: selectedShareholderProposal?.matched_id_no_action || '  ',
-      vote_outcome: selectedShareholderProposal?.vote_outcome,
+      vote_outcome: selectedShareholderProposal?.vote_outcome|| '  ',
       status: selectedShareholderProposal?.status ? true : false,
       nl_exist: selectedShareholderProposal?.nl_exist ? true : false,
       ready_for_review: selectedShareholderProposal?.ready_for_review ? true : false,
@@ -166,6 +166,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       ...data,
       institution: data.institution ? Number(data.institution) : null,
       company: data?.company?.value ?? 0,
+      vote_outcome: data?.vote_outcome === '  ' ? null : data?.vote_outcome,
       vote_outcome_formula: data?.vote_outcome_formula === '  ' ? null : data?.vote_outcome_formula,
       matched_id_no_action: data?.matched_id_no_action === '  ' ? null : (data?.matched_id_no_action)
     };
@@ -576,7 +577,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   <Controller
                     name="percentage_support"
                     control={control}
-                    rules={{ required: "Percentage Support is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -605,7 +605,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="vote_outcome"
                       control={control}
-                      rules={{ required: "Vote Outcome Formula is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
