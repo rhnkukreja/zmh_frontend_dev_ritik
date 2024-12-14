@@ -227,8 +227,7 @@ const index = () => {
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               ESG Integration
                             </Table.Td>
-                            <Table.Td className="cell py-2 font-semibold h-[50px] min-w-[130px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Engaged with Company{""}
+                            <Table.Td className="cell py-2 font-semibold h-[50px] min-w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <span
                                 id="footnote-1"
                                 className="cursor-pointer"
@@ -238,8 +237,11 @@ const index = () => {
                                     behavior: "smooth",
                                   });
                                 }}
-                              >
-                                *
+                                >
+                              Engaged with Company
+
+                                <Lucide icon="Eye"
+                                  className="w-3 h-3 mr-1.5 stroke-[1.3]"/>
                               </span>
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -258,6 +260,7 @@ const index = () => {
                                   key={dashboard.filer_id}
                                   className="row [&_td]:last:border-b-0"
                                 >
+
                                   {dashboard?.institution_name && (
                                     <>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
@@ -265,8 +268,20 @@ const index = () => {
                                           {index + 1}
                                         </div>
                                       </Table.Td>
+
                                       <Table.Td className="flex items-center">
-                                        <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                        {
+                                          !dashboard.institution_id &&
+                                          <h1 className="cursor-pointer" onClick={() => {
+                                            window.scrollBy({
+                                              top: 350,
+                                              behavior: "smooth",
+                                            });
+                                          }} >*</h1>
+                                        }
+
+                                       
+                                        <div className="w-9 h-9 ml-1 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                           <img
                                             alt="ZMH Analytics"
                                             src={
@@ -450,7 +465,7 @@ const index = () => {
                                           </div>
                                         )}
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 ">
                                         <div className="whitespace-nowrap flex items-center justify-center">
                                           <div className="flex space-x-2">
                                             {dashboard?.engagement_topic
@@ -497,16 +512,30 @@ const index = () => {
               </div>
             </div>
 
-            <footer className="!pt-3">
-              <p id="footnote">
-                <sup
-                  className="bold-sup cursor-pointer"
-                  style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
-                >
-                  *
-                </sup>{" "}
-                As disclosed by the investor in the last three years.
-              </p>
+            <footer className="!pt-3 flex items-start flex-col">
+              <span className="!pt-3 flex items-center">
+                <Lucide
+                  icon="Eye"
+                  className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                />
+                <p id="footnote">
+                  As disclosed by the investor in the last three years.
+                </p>
+              </span>
+
+              <span className="!pt-3 flex items-center">
+
+                <p id="footnote">
+                  <sup
+                    className="bold-sup cursor-pointer"
+                    style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
+                  >
+                    *
+                  </sup>{" "}
+                  Not in ZMH coverage universe.
+                </p>
+              </span>
+
             </footer>
           </div>
         </>
