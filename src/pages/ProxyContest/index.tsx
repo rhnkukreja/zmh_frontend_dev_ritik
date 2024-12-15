@@ -293,7 +293,7 @@ const index = () => {
                                             <form onSubmit={handleSubmit(onSubmitTopFive)}>
 
                                                 <div className="flex items-end gap-4">
-                                                    <div className="w-10/12">
+                                                    <div className="w-4/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
                                                             Company
                                                         </div>
