@@ -45,6 +45,8 @@ interface CompanySliceState {
   investorCardLoading: boolean;
   vdsProxyDetails: any;
   vdsProxyLoading: boolean;
+  proxyContestAllInvestorDetails: any;
+  proxyContestAllInvestorLoading: boolean;
   vdsProxyAllInvestorDetails: any;
   vdsProxyAllInvestorLoading: boolean;
   npxProxyDetails: any;
@@ -60,7 +62,7 @@ interface CompanySliceState {
   companySearchLoading: boolean;
   totalNPXCount: number;
   searchCompletion: number;
-  tab: "Top-20" | "All-Investor" | "";
+  tab: "Top-20" | "All-Investor" | "Top-5" | "";
 }
 
 const initialState: CompanySliceState = {
@@ -94,7 +96,9 @@ const initialState: CompanySliceState = {
   totalNotification: 0,
   companySearchLoading: true,
   tab: "Top-20",
-  searchCompletion: 0
+  searchCompletion: 0,
+  proxyContestAllInvestorLoading: true,
+  proxyContestAllInvestorDetails: ''
 
   // {
   //   nominees: [],
@@ -167,6 +171,13 @@ export const fetchWhatNewNotification = createAsyncThunk<
   return await dashboardService.fetchWhatNewNotification(url);
 });
 
+export const fetchProxyContestDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchProxyContestDashboard`, async (url: string) => {
+  return await dashboardService.fetchProxyContestDashboard(url);
+});
+
 const companySlice = createSlice({
   name,
   initialState,
@@ -185,7 +196,7 @@ const companySlice = createSlice({
     },
     setTabs(
       state,
-      action: PayloadAction<"Top-20" | "All-Investor" | "">
+      action: PayloadAction<"Top-20" | "All-Investor" | "Top-5" | "">
     ) {
       state.tab = action.payload;
     },
@@ -289,7 +300,24 @@ const companySlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })
-
+      .addCase(fetchProxyContestDashboard.pending, (state) => {
+        state.proxyContestAllInvestorDetails = "";
+        state.proxyContestAllInvestorLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchProxyContestDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.proxyContestAllInvestorLoading = false;
+          state.proxyContestAllInvestorDetails = action.payload.results;
+        }
+      )
+      .addCase(fetchProxyContestDashboard.rejected, (state, action) => {
+        state.proxyContestAllInvestorLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+      
       .addCase(fetchVdsProxyAllInvestor.pending, (state) => {
         state.vdsProxyAllInvestorDetails = "";
         state.vdsProxyAllInvestorLoading = true;

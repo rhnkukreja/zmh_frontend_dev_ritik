@@ -88,6 +88,7 @@ import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
+import ProxyContest from "@/pages/ProxyContest";
 
 function Router() {
   const TitleManager = () => {
@@ -457,6 +458,12 @@ function Router() {
           element: <NPXDetails />,
           data: { titleName: "N-PX - ZMH Analytics" },
         },
+        {
+          path: "proxy-contest",
+          element: <ProxyContest />,
+          data: { titleName: "Proxy - Contest - ZMH Analytics" },
+        },
+        
       ],
     },
     {

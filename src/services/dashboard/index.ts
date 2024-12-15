@@ -54,6 +54,12 @@ class DashboardService {
     return { results };
   }
 
+  public async fetchProxyContestDashboard(url: string): Promise<{ results: any }> {
+    const response = await axiosInstance.get(url);
+    const results = response.data;
+    return { results };
+  }
+
   public async fetchVdsProxyAllInvestor(url: string): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
