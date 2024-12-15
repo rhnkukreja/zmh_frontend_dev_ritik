@@ -578,7 +578,7 @@ const index = () => {
                                                     <div className=" w-5/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
                                                             Institution
-                                                            {apiDropdownOptions?.institution?.length > 0 && (
+                                                            {/* {apiDropdownOptions?.institution?.length > 0 && (
                                                                 <div>
                                                                     <FormCheck className="mr-2">
                                                                         <FormCheck.Label>
@@ -604,7 +604,7 @@ const index = () => {
                                                                         />
                                                                     </FormCheck>
                                                                 </div>
-                                                            )}
+                                                            )} */}
                                                         </div>
                                                         <Controller
                                                             name="institution_name"

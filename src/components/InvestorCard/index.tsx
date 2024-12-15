@@ -238,10 +238,7 @@ const index = () => {
                                   });
                                 }}
                                 >
-                              Engaged with Company
-
-                                <Lucide icon="Eye"
-                                  className="w-3 h-3 mr-1.5 stroke-[1.3]"/>
+                              Engaged with Company {""} (i)
                               </span>
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -272,7 +269,7 @@ const index = () => {
                                       <Table.Td className="flex items-center">
                                         {
                                           !dashboard.institution_id &&
-                                          <h1 className="cursor-pointer" onClick={() => {
+                                          <h1 className="cursor-pointer text-lg" onClick={() => {
                                             window.scrollBy({
                                               top: 350,
                                               behavior: "smooth",
@@ -514,25 +511,24 @@ const index = () => {
 
             <footer className="!pt-3 flex items-start flex-col">
               <span className="!pt-3 flex items-center">
-                <Lucide
-                  icon="Eye"
-                  className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                />
+                <sup  className="bold-sup cursor-pointer"
+                    style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}>(i)</sup>
                 <p id="footnote">
-                  As disclosed by the investor in the last three years.
+                {" "} As disclosed by the investor in the last three years.
                 </p>
               </span>
 
               <span className="!pt-3 flex items-center">
 
-                <p id="footnote">
                   <sup
                     className="bold-sup cursor-pointer"
                     style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
                   >
                     *
                   </sup>{" "}
-                  Not in ZMH coverage universe.
+                <p id="footnote">
+                 Not in ZMH coverage universe.
+
                 </p>
               </span>
 
