@@ -237,8 +237,8 @@ const index = () => {
                                     behavior: "smooth",
                                   });
                                 }}
-                                >
-                              Engaged with Company {""} (i)
+                              >
+                                Engaged with Company {""} (i)
                               </span>
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -257,7 +257,6 @@ const index = () => {
                                   key={dashboard.filer_id}
                                   className="row [&_td]:last:border-b-0"
                                 >
-
                                   {dashboard?.institution_name && (
                                     <>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
@@ -267,17 +266,20 @@ const index = () => {
                                       </Table.Td>
 
                                       <Table.Td className="flex items-center">
-                                        {
-                                          !dashboard.institution_id &&
-                                          <h1 className="cursor-pointer text-lg" onClick={() => {
-                                            window.scrollBy({
-                                              top: 350,
-                                              behavior: "smooth",
-                                            });
-                                          }} >*</h1>
-                                        }
+                                        {!dashboard.institution_id && (
+                                          <h1
+                                            className="cursor-pointer text-lg"
+                                            onClick={() => {
+                                              window.scrollBy({
+                                                top: 350,
+                                                behavior: "smooth",
+                                              });
+                                            }}
+                                          >
+                                            *
+                                          </h1>
+                                        )}
 
-                                       
                                         <div className="w-9 h-9 ml-1 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                           <img
                                             alt="ZMH Analytics"
@@ -511,27 +513,27 @@ const index = () => {
 
             <footer className="!pt-3 flex items-start flex-col">
               <span className="!pt-3 flex items-center">
-                <sup  className="bold-sup cursor-pointer"
-                    style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}>(i)</sup>
+                <p
+                  className="bold-sup cursor-pointer mr-1"
+                  style={{ verticalAlign: "text-bottom", fontSize: "1em" }}
+                >
+                  i
+                </p>
                 <p id="footnote">
-                {" "} As disclosed by the investor in the last three years.
+                  {" "}
+                  As disclosed by the investor in the last three years.
                 </p>
               </span>
 
               <span className="!pt-3 flex items-center">
-
-                  <sup
-                    className="bold-sup cursor-pointer"
-                    style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
-                  >
-                    *
-                  </sup>{" "}
-                <p id="footnote">
-                 Not in ZMH coverage universe.
-
-                </p>
+                <sup
+                  className="bold-sup cursor-pointer"
+                  style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
+                >
+                  *
+                </sup>{" "}
+                <p id="footnote">Not in ZMH coverage universe.</p>
               </span>
-
             </footer>
           </div>
         </>
