@@ -276,9 +276,7 @@ const index = () => {
         {companyGlobalSearchName}
       </div> */}
 
-      {vdsProxyDetails?.vds_report?.length === 0 &&
-        !vdsProxyLoading &&
-        location.pathname !== "/" && (
+      
           <Button
             onClick={() => {
               navigate("/");
@@ -293,7 +291,6 @@ const index = () => {
             />
             Back
           </Button>
-        )}
 
       {/* {vdsProxyDetails?.vds_report?.length > 0 && ( */}
         <div className="p-5 mt-1 box">
@@ -317,7 +314,7 @@ const index = () => {
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                 <span>
-                  <h1 className="text-lg font-bold">Proxy Voting (Beta)</h1>
+                  <h1 className="text-lg font-bold">Proxy Voting</h1>
                 </span>
               </div>
               
@@ -560,10 +557,10 @@ const index = () => {
                       <form onSubmit={handleSubmit(onSubmit)}>
 
                           <div className="flex items-end gap-4">
-                            <div className=" w-10/12">
+                            <div className=" w-5/12">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
                                 Institution
-                                {apiDropdownOptions?.length > 0 && (
+                                {/* {apiDropdownOptions?.length > 0 && (
                                   <div>
                                     <FormCheck className="mr-2">
                                       <FormCheck.Label>
@@ -590,7 +587,7 @@ const index = () => {
                                       />
                                     </FormCheck>
                                   </div>
-                                )}
+                                )} */}
                               </div>
                               <Controller
                                 name="institution"

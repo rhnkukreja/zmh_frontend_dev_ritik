@@ -309,7 +309,7 @@ function PeerAnalysis() {
                     }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/peer_analysis/"
+                    url="/get_engagement_question_dropdown_values/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
@@ -757,7 +757,6 @@ function PeerAnalysis() {
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
                                 {peer?.gov_list}
                               </Table.Td>
-                              
                             </Table.Tr>
                           ))}
                       </Table.Tbody>

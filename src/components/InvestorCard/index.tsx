@@ -225,10 +225,9 @@ const index = () => {
                               Proxy Advisory Influence
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              ESG Integration
+                            UN PRI Signatory
                             </Table.Td>
-                            <Table.Td className="cell py-2 font-semibold h-[50px] min-w-[130px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Engaged with Company{""}
+                            <Table.Td className="cell py-2 font-semibold h-[50px] min-w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <span
                                 id="footnote-1"
                                 className="cursor-pointer"
@@ -238,8 +237,8 @@ const index = () => {
                                     behavior: "smooth",
                                   });
                                 }}
-                              >
-                                *
+                                >
+                              Engaged with Company {""} (i)
                               </span>
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -265,8 +264,23 @@ const index = () => {
                                           {index + 1}
                                         </div>
                                       </Table.Td>
+
                                       <Table.Td className="flex items-center">
-                                        <div className="w-9 h-9 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                        {!dashboard.institution_id && (
+                                          <h1
+                                            className="cursor-pointer text-lg"
+                                            onClick={() => {
+                                              window.scrollBy({
+                                                top: 350,
+                                                behavior: "smooth",
+                                              });
+                                            }}
+                                          >
+                                            *
+                                          </h1>
+                                        )}
+
+                                        <div className="w-9 h-9 ml-1 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                           <img
                                             alt="ZMH Analytics"
                                             src={
@@ -429,7 +443,7 @@ const index = () => {
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="whitespace-nowrap ">
-                                          {dashboard?.esg_integration ===
+                                          {dashboard?.unpri_signatory ===
                                             true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -450,7 +464,7 @@ const index = () => {
                                           </div>
                                         )}
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 ">
                                         <div className="whitespace-nowrap flex items-center justify-center">
                                           <div className="flex space-x-2">
                                             {dashboard?.engagement_topic
@@ -497,16 +511,29 @@ const index = () => {
               </div>
             </div>
 
-            <footer className="!pt-3">
-              <p id="footnote">
-                <sup
-                  className="bold-sup cursor-pointer"
+            <footer className="!pt-3 flex items-start flex-col">
+              <span className="!pt-3 flex items-center">
+                <span className="bold-sup cursor-pointer mr-1"
+                  style={{ verticalAlign: "text-bottom", fontSize: "1em" }}>
+                  i</span>
+                <p id="footnote">
+                  As disclosed by the investor in the last three years.
+                </p>
+              </span>
+
+              <span className="!pt-3 flex items-center relative">
+
+                <span
+                  className="bold-sup cursor-pointer mr-1 absolute top-[14px]" 
                   style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
                 >
                   *
-                </sup>{" "}
-                As disclosed by the investor in the last three years.
-              </p>
+                </span>
+                <p id="footnote" className="ml-2">
+                  Not in ZMH coverage universe.
+
+                </p>
+              </span>
             </footer>
           </div>
         </>

@@ -98,6 +98,11 @@ const initialState: any = {
       pathname: "/share-holder-proposal",
       title: "Shareholder Proposals",
     },
+    {
+      icon: "ShieldAlert",
+      pathname: "/proxy-contest",
+      title: "Proxy Contest",
+    },
 
     // {
     //   icon: "PanelTopClose",

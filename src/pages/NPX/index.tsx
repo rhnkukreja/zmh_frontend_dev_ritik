@@ -395,7 +395,7 @@ const index = () => {
     <>
       {/* {npxProxyDetails?.npx_report?.length === 0 &&
         !npxProxyLoading &&
-        location.pathname !== "/" && (
+        location.pathname !== "/" && ( */}
           <Button
             onClick={() => {
               navigate("/");
@@ -410,14 +410,14 @@ const index = () => {
             />
             Back
           </Button>
-        )} */}
+        {/* )} */}
 
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+        {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
           <span>
             <h1 className="text-lg font-bold">N-PX Voting (Beta)</h1>
           </span>
-        </div>
+        </div> */}
         {/* <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                 <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <div
@@ -434,6 +434,12 @@ const index = () => {
 
 
         <div className="flex flex-col p-5  sm:flex-row gap-y-2">
+
+        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+          <span>
+            <h1 className="text-lg font-bold">N-PX Voting 2024 (Beta)</h1>
+          </span>
+        </div>
           {/* <div className="flex">
             <MultiSearchBar
               onSearch={handleSearch}
@@ -728,8 +734,8 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.proposal?.map((proposal: any) => (
                             <option key={proposal} value={proposal}>
-                              {/* {(proposal)} */}
-                              {convertToTitleCase(proposal)}
+                              {(proposal)}
+                              {/* {convertToTitleCase(proposal)} */}
                             </option>
                           ))
                         )}
@@ -866,7 +872,8 @@ const index = () => {
                           npxProxyDetails?.map((noAction: any) => (
                             <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '30%' }}>
-                                {convertToTitleCase(noAction?.vote_description)}
+                                {/* {convertToTitleCase(noAction?.vote_description)} */}
+                                {noAction?.vote_description}
                               </Table.Td>
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
                                 {convertToTitleCase(noAction?.vote_category)}

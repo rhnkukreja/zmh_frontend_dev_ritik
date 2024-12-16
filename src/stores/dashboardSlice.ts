@@ -25,6 +25,8 @@ export type CompanyDashboard = {
   voted_against_directors: boolean;
   investor_profile_id: number;
   case_studies_id: number;
+  institution_id: number;
+  unpri_signatory: boolean;
   // percent_ownership: string;
 };
 
@@ -44,6 +46,10 @@ interface CompanySliceState {
   investorCardLoading: boolean;
   vdsProxyDetails: any;
   vdsProxyLoading: boolean;
+  proxyContestAllInvestorDetails: any;
+  proxyContestAllInvestorLoading: boolean;
+  proxyContestTopFiveDetails: any;
+  proxyContestTopFiveLoading: boolean;
   vdsProxyAllInvestorDetails: any;
   vdsProxyAllInvestorLoading: boolean;
   npxProxyDetails: any;
@@ -59,7 +65,7 @@ interface CompanySliceState {
   companySearchLoading: boolean;
   totalNPXCount: number;
   searchCompletion: number;
-  tab: "Top-20" | "All-Investor" | "";
+  tab: "Top-20" | "All-Investor" | "Top-5" | "";
 }
 
 const initialState: CompanySliceState = {
@@ -80,6 +86,8 @@ const initialState: CompanySliceState = {
   vdsProxyLoading: true,
   vdsProxyAllInvestorDetails: "",
   vdsProxyAllInvestorLoading: true,
+  proxyContestTopFiveDetails: "",
+  proxyContestTopFiveLoading: true,
   totalNPXCount: 0,
   npxProxyDetails: "",
   npxProxyLoading: true,
@@ -93,7 +101,9 @@ const initialState: CompanySliceState = {
   totalNotification: 0,
   companySearchLoading: true,
   tab: "Top-20",
-  searchCompletion: 0
+  searchCompletion: 0,
+  proxyContestAllInvestorLoading: true,
+  proxyContestAllInvestorDetails: ''
 
   // {
   //   nominees: [],
@@ -166,6 +176,19 @@ export const fetchWhatNewNotification = createAsyncThunk<
   return await dashboardService.fetchWhatNewNotification(url);
 });
 
+export const fetchProxyContestDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchProxyContestDashboard`, async (url: string) => {
+  return await dashboardService.fetchProxyContestDashboard(url);
+});
+
+export const fetchProxyTopFiveContestDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchProxyTopFiveContestDashboard`, async (url: string) => {
+  return await dashboardService.fetchProxyTopFiveContestDashboard(url);
+});
 const companySlice = createSlice({
   name,
   initialState,
@@ -184,7 +207,7 @@ const companySlice = createSlice({
     },
     setTabs(
       state,
-      action: PayloadAction<"Top-20" | "All-Investor" | "">
+      action: PayloadAction<"Top-20" | "All-Investor" | "Top-5" | "">
     ) {
       state.tab = action.payload;
     },
@@ -289,6 +312,44 @@ const companySlice = createSlice({
           action.error.message || "Failed to fetch company dashboard";
       })
 
+      .addCase(fetchProxyTopFiveContestDashboard.pending, (state) => {
+        state.proxyContestTopFiveDetails = "";
+        state.proxyContestTopFiveLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchProxyTopFiveContestDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.proxyContestTopFiveLoading = false;
+          state.proxyContestTopFiveDetails = action.payload.results;
+        }
+      )
+      .addCase(fetchProxyTopFiveContestDashboard.rejected, (state, action) => {
+        state.proxyContestTopFiveLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+
+      .addCase(fetchProxyContestDashboard.pending, (state) => {
+        state.proxyContestAllInvestorDetails = "";
+        state.proxyContestAllInvestorLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchProxyContestDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.proxyContestAllInvestorLoading = false;
+          state.proxyContestAllInvestorDetails = action.payload.results;
+        }
+      )
+      .addCase(fetchProxyContestDashboard.rejected, (state, action) => {
+        state.proxyContestAllInvestorLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+
+      
+      
       .addCase(fetchVdsProxyAllInvestor.pending, (state) => {
         state.vdsProxyAllInvestorDetails = "";
         state.vdsProxyAllInvestorLoading = true;

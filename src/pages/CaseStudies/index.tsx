@@ -393,7 +393,7 @@ function CaseStudies() {
                     }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/case_studies/"
+                    url="/get_case_studies_dropdown_values"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
