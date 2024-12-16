@@ -598,7 +598,7 @@ function Main() {
 
               <>
                 {["/notes", "/proxy-contest"]?.includes(location.pathname) ? (
-                  <h1 className="font-semibold text-2xl">{location.pathname === '/proxy-contest' ? 'Proxy Contest' : 'Notes (Beta)' } </h1>
+                  <h1 className="font-semibold text-2xl">{location.pathname === '/proxy-contest' ? 'Proxy Contest 2024 (Beta)' : 'Notes (Beta)' } </h1>
                 ) : (
                   <div
                     className="relative justify-center hidden md:flex md:ml-2"

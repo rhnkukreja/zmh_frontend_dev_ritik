@@ -99,7 +99,7 @@ const initialState: any = {
       title: "Shareholder Proposals",
     },
     {
-      icon: "FileType",
+      icon: "ShieldAlert",
       pathname: "/proxy-contest",
       title: "Proxy Contest",
     },

@@ -314,7 +314,7 @@ const index = () => {
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                 <span>
-                  <h1 className="text-lg font-bold">Proxy Voting (Beta)</h1>
+                  <h1 className="text-lg font-bold">Proxy Voting</h1>
                 </span>
               </div>
               

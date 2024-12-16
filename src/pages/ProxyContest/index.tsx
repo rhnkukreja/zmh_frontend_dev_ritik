@@ -245,11 +245,11 @@ const index = () => {
         
                 <div className="w-full">
                     <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                        {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                             <span>
-                                <h1 className="text-lg font-bold">Proxy Contest</h1>
+                                <h1 className="text-lg font-bold">Proxy Contest 2024 (Beta) </h1>
                             </span>
-                        </div>
+                        </div> */}
 
                     </div>
                     <>
