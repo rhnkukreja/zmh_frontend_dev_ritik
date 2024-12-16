@@ -521,15 +521,15 @@ const index = () => {
                 </p>
               </span>
 
-              <span className="!pt-3 flex items-center">
+              <span className="!pt-3 flex items-center relative">
 
                 <span
-                  className="bold-sup cursor-pointer mr-1"
+                  className="bold-sup cursor-pointer mr-1 absolute top-[14px]" 
                   style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
                 >
                   *
                 </span>
-                <p id="footnote">
+                <p id="footnote" className="ml-2">
                   Not in ZMH coverage universe.
 
                 </p>
