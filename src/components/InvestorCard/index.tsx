@@ -225,7 +225,7 @@ const index = () => {
                               Proxy Advisory Influence
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              ESG Integration
+                            UN PRI Signatory
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px] min-w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <span
@@ -237,8 +237,8 @@ const index = () => {
                                     behavior: "smooth",
                                   });
                                 }}
-                              >
-                                Engaged with Company {""} (i)
+                                >
+                              Engaged with Company {""} i
                               </span>
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -443,7 +443,7 @@ const index = () => {
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="whitespace-nowrap ">
-                                          {dashboard?.esg_integration ===
+                                          {dashboard?.unpri_signatory ===
                                             true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -513,26 +513,26 @@ const index = () => {
 
             <footer className="!pt-3 flex items-start flex-col">
               <span className="!pt-3 flex items-center">
-                <p
-                  className="bold-sup cursor-pointer mr-1"
-                  style={{ verticalAlign: "text-bottom", fontSize: "1em" }}
-                >
-                  i
-                </p>
+                <span className="bold-sup cursor-pointer mr-1"
+                  style={{ verticalAlign: "text-bottom", fontSize: "1em" }}>
+                  i</span>
                 <p id="footnote">
-                  {" "}
                   As disclosed by the investor in the last three years.
                 </p>
               </span>
 
               <span className="!pt-3 flex items-center">
-                <sup
-                  className="bold-sup cursor-pointer"
+
+                <span
+                  className="bold-sup cursor-pointer mr-1"
                   style={{ verticalAlign: "text-bottom", fontSize: "0.8em" }}
                 >
                   *
-                </sup>{" "}
-                <p id="footnote">Not in ZMH coverage universe.</p>
+                </span>
+                <p id="footnote">
+                  Not in ZMH coverage universe.
+
+                </p>
               </span>
             </footer>
           </div>

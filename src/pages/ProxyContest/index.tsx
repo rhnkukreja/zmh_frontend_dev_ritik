@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
     fetchProxyContestDashboard,
+    fetchProxyTopFiveContestDashboard,
     fetchVdsProxyAllInvestor,
     fetchVdsProxyDashboard,
     setTabs,
@@ -31,7 +32,7 @@ const index = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch: AppDispatch = useAppDispatch();
-    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, vdsProxyDetails, vdsProxyLoading, tab } = useAppSelector(
+    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, proxyContestTopFiveLoading, tab } = useAppSelector(
         (state) => state.dashboard
     );
     const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
@@ -54,7 +55,7 @@ const index = () => {
 
         if (tab === 'Top-20') {
             dispatch(
-                fetchVdsProxyDashboard(
+                fetchProxyTopFiveContestDashboard(
                     createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...companyFilter}))
             );
         }
@@ -348,7 +349,7 @@ const index = () => {
                                                 {/* <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
                                                         <h1 className="text-md font-bold">
                                                             Aggregate Ownership:{" "}
-                                                            {    vdsProxyDetails?.total_percent_ownership}
+                                                            {    proxyContestTopFiveDetails?.total_percent_ownership}
                                                         </h1>
                                                         <Tippy content="Download Excel" options={{ theme: "light" }}>
                                                             <div
@@ -363,13 +364,13 @@ const index = () => {
                                         </div>
                                     </div>
                                     <div>
-                                        <TableWrapper isLoading={vdsProxyLoading && (companyFilter.company_name?.length > 0)}>
+                                        <TableWrapper isLoading={proxyContestTopFiveLoading && (companyFilter.company_name?.length > 0)}>
                                             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                                                 <Table className="table_2 w-full">
                                                     <Table.Thead className="sticky top-50 z-10">
                                                         <Table.Tr className="row_2">
-                                                            {vdsProxyDetails?.vds_report_headers?.length > 0 &&
-                                                                vdsProxyDetails?.vds_report_headers?.map(
+                                                            {proxyContestTopFiveDetails?.vds_report_headers?.length > 0 &&
+                                                                proxyContestTopFiveDetails?.vds_report_headers?.map(
                                                                     (vdsHeader: any, headerIndex: number) => (
                                                                         <Table.Td
                                                                             key={headerIndex}
@@ -392,16 +393,16 @@ const index = () => {
                                                     </Table.Thead>
 
                                                     <Table.Tbody>
-                                                        {vdsProxyDetails?.vds_report?.length > 0 &&
-                                                            vdsProxyDetails?.vds_report?.map(
+                                                        {proxyContestTopFiveDetails?.vds_report?.length > 0 &&
+                                                            proxyContestTopFiveDetails?.vds_report?.map(
                                                                 (vdsProxy: any, vdsProxyIndex: number) => (
                                                                     <Table.Tr
                                                                         key={vdsProxyIndex}
                                                                         className="row_2 [&_td]:last:border-b-0"
                                                                     >
-                                                                        {vdsProxyDetails?.vds_report_headers?.length >
+                                                                        {proxyContestTopFiveDetails?.vds_report_headers?.length >
                                                                             0 &&
-                                                                            vdsProxyDetails?.vds_report_headers?.map(
+                                                                            proxyContestTopFiveDetails?.vds_report_headers?.map(
                                                                                 (vdsHeader: any, headerIndex: number) => (
                                                                                     <Table.Td
                                                                                         key={headerIndex}
@@ -523,13 +524,13 @@ const index = () => {
                                             </div>
 
                                         </TableWrapper>
-                                        {vdsProxyDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length === 0) && (
+                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold"> Please Select Company First. </h1>
                                             </div>
                                         )}
 
-                                        {vdsProxyDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length > 0)  && (
+                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length > 0)  && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold"> Top 5 Proxy Contest Records Not Found..</h1>
                                             </div>
