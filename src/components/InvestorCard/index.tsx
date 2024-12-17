@@ -238,7 +238,13 @@ const index = () => {
                                   });
                                 }}
                                 >
-                              Engaged with Company {""} (i)
+                              Engaged with Company
+                                <sup
+                                  className="bold-sup cursor-pointer ml-1"
+                                  style={{  fontSize: "0.8em" }}
+                                >
+                                  (i)
+                                </sup>
                               </span>
                             </Table.Td>
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -265,10 +271,10 @@ const index = () => {
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="flex items-center">
+                                      <Table.Td className="flex items-center relative">
                                         {!dashboard.institution_id && (
                                           <h1
-                                            className="cursor-pointer text-lg"
+                                            className="cursor-pointer text-lg absolute left-3"
                                             onClick={() => {
                                               window.scrollBy({
                                                 top: 350,
@@ -513,12 +519,21 @@ const index = () => {
 
             <footer className="!pt-3 flex items-start flex-col">
               <span className="!pt-3 flex items-center">
-                <span className="bold-sup cursor-pointer mr-1"
+                <sup
+                  className="bold-sup cursor-pointer ml-1"
+                  style={{ fontSize: "0.8em" }}
+                >
+                  (i)
+                </sup>
+                <p id="footnote">
+                  As disclosed by the investor in the last three years.
+                </p>
+                {/* <span className="bold-sup cursor-pointer mr-1"
                   style={{ verticalAlign: "text-bottom", fontSize: "1em" }}>
                   i</span>
                 <p id="footnote">
                   As disclosed by the investor in the last three years.
-                </p>
+                </p> */}
               </span>
 
               <span className="!pt-3 flex items-center relative">
