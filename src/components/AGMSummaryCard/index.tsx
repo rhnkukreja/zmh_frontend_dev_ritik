@@ -117,29 +117,29 @@ const index = () => {
   }, [companyGlobalSearchTicker, searchTicker]);
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-        navigate(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
-          state: {
-            globeSearch: companyGlobalSearchTicker,
-          },
-    })
-    // window.open(
-    //   `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
-    //   "_blank"
-    // );
+    // event.preventDefault();
+    //     navigate(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
+    //       state: {
+    //         globeSearch: companyGlobalSearchTicker,
+    //       },
+    // })
+    window.open(
+      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+      "_blank"
+    );
   };
 
   const handleViewNPX = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-        navigate(`npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
-          state: {
-            globeSearch: companyGlobalSearchTicker,
-          },
-    })
-    // window.open(
-    //   `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
-    //   "_blank"
-    // );
+    // event.preventDefault();
+    //     navigate(`npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
+    //       state: {
+    //         globeSearch: companyGlobalSearchTicker,
+    //       },
+    // })
+    window.open(
+      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+      "_blank"
+    );
   };
 
   return (

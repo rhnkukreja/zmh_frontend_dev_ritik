@@ -76,6 +76,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
 
   const nlExistValue = watch("nl_exist", false);
+  const noShareholderProposalValue = watch("no_shareholder_proposal", false);
   const yearValue = watch("year");
   const companyValue = watch("company");
 
@@ -251,19 +252,21 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     control={control}
                     rules={{ required: "Company Name is required" }}
                     render={({ field, fieldState: { error } }) => (
-                      <CompanySelect
-                        setDefaultValue={field.value}
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                          // getNoActionDropdown()
-                        }}
-                        {...error && (
-                          <Error className="text-red-600 ">
+                      <>
+                        <CompanySelect
+                          setDefaultValue={field.value}
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            // getNoActionDropdown()
+                          }}
+                        />
+                        {error && (
+                          <Error className="text-red-600 mt-2">
                             {error.message}
                           </Error>
                         )}
-                      />
+                      </>
                     )}
                   />
                 </div>
@@ -278,7 +281,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="year"
                       control={control}
-                      rules={{ required: "Year is required" }}
+                      rules={{required: "Year is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -319,13 +322,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   <Controller
                     name="link_to_filing"
                     control={control}
-                    rules={{
-                      required: "Proposal Link is required",
-                      // pattern: {
-                      //   value: /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\w\-.~:?#[\]@!$&'()*+,;=]*)*\/?$/,
-                      //   message: "Please enter a valid URL",
-                      // },
-                    }}
+                    // rules={{
+                    //   required: "Proposal Link is required",
+                    //   // pattern: {
+                    //   //   value: /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\w\-.~:?#[\]@!$&'()*+,;=]*)*\/?$/,
+                    //   //   message: "Please enter a valid URL",
+                    //   // },
+                    // }}
+                    rules={{required: !noShareholderProposalValue ? "Proposal Link is required" : false }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -354,7 +358,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="category"
                       control={control}
-                      rules={{ required: "Category is required" }}
+                      rules={{required: !noShareholderProposalValue ? "Category is required" : false }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -396,7 +400,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="sub_category"
                       control={control}
-                      rules={{ required: "Sub Category is required" }}
+                      rules={{required: !noShareholderProposalValue ? "Sub Category is required" : false }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -440,7 +444,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   <Controller
                     name="proposal_num"
                     control={control}
-                    rules={{ required: "Proposal Number is required" }}
+                    rules={{required: !noShareholderProposalValue ? "Proposal Number is required" : false }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -463,7 +467,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   <Controller
                     name="proposal_name"
                     control={control}
-                    rules={{ required: "Proposal Name is required" }}
+                    rules={{required: !noShareholderProposalValue ? "Proposal Name is required" : false }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -490,7 +494,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 <Controller
                   name="proposal_text"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{required: !noShareholderProposalValue ? true : false }}
                   render={({ field }) => (
                     <textarea
                       {...field}
@@ -550,7 +554,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   <Controller
                     name="proponent"
                     control={control}
-                    rules={{ required: "Actual Proponent Name is required" }}
+                    rules={{required: !noShareholderProposalValue ? "Actual Proponent Name is required" : false }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -832,9 +836,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                                     className=" text-blue-400"
                                     onClick={() => navigate(`share-holder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`)}
                                     value={proposals?.id} key={proposals?.id}>
-                                    {proposals?.proposal_text?.length > 150
-                                      ? proposals.proposal_text.substring(0, 150) + "..."
-                                      : proposals?.proposal_text}
+                                    {
+                                    // proposals?.proposal_text?.length > 150
+                                    //   ? proposals.proposal_text.substring(0, 150) + "..."
+                                    //   : 
+                                      
+                                      proposals?.proposal_text}
                                   </option>
                                 }
 
