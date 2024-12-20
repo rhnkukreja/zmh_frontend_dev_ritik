@@ -5,7 +5,7 @@ import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
-import investorIcon from "../../assets/images/zmh-images/investor.svg";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -92,7 +92,7 @@ const index = () => {
         const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
         tempValidImages[dashbboard?.institution_name] = isValid
           ? dashbboard?.institution_logo_url
-          : userLinkedinImage;
+          : investorIcon;
       }
 
       setValidImages(tempValidImages);
@@ -292,7 +292,7 @@ const index = () => {
                                             src={
                                               validImages[
                                                 dashboard.institution_name
-                                              ] || userLinkedinImage
+                                              ] || investorIcon
                                             }
 
                                             // {dashboard?.institution_logo_url ?? userLinkedinImage}
