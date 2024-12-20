@@ -243,7 +243,7 @@ const index = () => {
                                   className="bold-sup cursor-pointer ml-1"
                                   style={{  fontSize: "0.8em" }}
                                 >
-                                  (i)
+                                  i
                                 </sup>
                               </span>
                             </Table.Td>
@@ -523,7 +523,7 @@ const index = () => {
                   className="bold-sup cursor-pointer ml-1"
                   style={{ fontSize: "0.8em" }}
                 >
-                  (i)
+                  i
                 </sup>
                 <p id="footnote">
                   As disclosed by the investor in the last three years.
