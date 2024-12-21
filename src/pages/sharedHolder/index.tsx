@@ -8,7 +8,7 @@ import {
 } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -361,23 +361,24 @@ function ShareHolderProposal() {
     return tabIndex;
   };
 
-  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] =
-    useState<any>({sub_category: []});
-
+  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
+    sub_category: [],
+  });
 
   const getSubCategoryDropdown = async (value?: any) => {
-
-    if (value !== '') {
+    if (value !== "") {
       const paramFilter = {
         // global_search: companyGlobalSearchName,
         category: value,
-      }
+      };
       try {
         // setGetFundNameDropdownLoader(true);
         const res =
-          await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
+          await shareHolderProposalService.getShareHolderDropdownValues(
+            paramFilter
+          );
         if (res.result) {
-          setapiSubCategoryDropdown({sub_category: res.result?.sub_category});
+          setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
         }
       } catch (error) {
         return error;
@@ -385,8 +386,7 @@ function ShareHolderProposal() {
         // setGetFundNameDropdownLoader(false);
       }
     }
-
-  }
+  };
 
   const getSavedSearches = () => {
     if (user?.saved_search["Shareholder Proposal"]) {
@@ -448,7 +448,22 @@ function ShareHolderProposal() {
     setShareholderDetailModalVisible(true);
   };
 
-  // console.log({ isAllCompanySelected });
+  const multSearchUrls = useMemo(() => {
+    const baseUrls = [
+      "/shareholder_proposal/withdrawn/",
+      "/shareholder_proposal/no_action/",
+      "/shareholder_proposal/def14a/",
+    ];
+
+    if (isAllCompanySelected) {
+      return baseUrls.map((baseUrl) => baseUrl);
+    } else {
+      const queryParam = `?global_search=${
+        companyGlobalSearchName || filters?.global_search?.[0]
+      }`;
+      return baseUrls.map((baseUrl) => `${baseUrl}${queryParam}`);
+    }
+  }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
   return (
     <>
@@ -508,11 +523,7 @@ function ShareHolderProposal() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url={[
-                      "/shareholder_proposal/withdrawn/",
-                      "/shareholder_proposal/no_action/",
-                      "/shareholder_proposal/def14a/",
-                    ]}
+                    url={[...multSearchUrls]}
                     getOptionKey="proponent_name"
                     placeHolder="Search Proponent"
                     onSearchChange={resetPage}
@@ -700,7 +711,9 @@ function ShareHolderProposal() {
                                         ? apiDropdownOptions.category
                                         : []
                                     );
-                                    getSubCategoryDropdown(apiDropdownOptions.category);
+                                    getSubCategoryDropdown(
+                                      apiDropdownOptions.category
+                                    );
                                   }}
                                 />
                               </FormCheck>
@@ -748,8 +761,8 @@ function ShareHolderProposal() {
                                   className="ml-1"
                                   id="sub_category"
                                   checked={
-                                    apiSubCategoryDropdown.sub_category.length ===
-                                    watch("sub_category")?.length
+                                    apiSubCategoryDropdown.sub_category
+                                      .length === watch("sub_category")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
@@ -1069,9 +1082,10 @@ function ShareHolderProposal() {
                                       }}
                                     >
                                       <div className="flex items-center justify-center">
-                                      {noAction?.nl_exist === true ? "Yes" : ""}
-                                          </div>
-                                      
+                                        {noAction?.nl_exist === true
+                                          ? "Yes"
+                                          : ""}
+                                      </div>
                                     </Table.Td>
 
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
@@ -1176,7 +1190,7 @@ function ShareHolderProposal() {
                                     className="[&_td]:last:border-b-0"
                                   >
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.proponent || '-'}
+                                      {noAction?.proponent || "-"}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
@@ -1263,7 +1277,7 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                              <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
                                 <Table.Td className="py-2 w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
