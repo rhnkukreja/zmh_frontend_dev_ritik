@@ -877,6 +877,137 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
+
+                      {
+                        user?.user_type === "Admin" &&
+                        <>
+
+                          <div className="w-full ">
+                            <div className="text-left text-slate-500">Ready For Review</div>
+                            <Controller
+                              name="ready_for_review"
+                              control={control}
+                              defaultValue=""
+                              render={({ field }) => (
+                                <>
+                                  <div className="flex flex-row mt-[10px]">
+                                    <FormCheck className="flex items-center mr-2">
+                                      <FormCheck.Input
+                                        id="checkbox-switch-4"
+                                        type="checkbox"
+                                        {...field}
+                                        value="true"
+                                        checked={field.value === true}
+                                      />
+                                      <FormCheck.Label
+                                        htmlFor="checkbox-switch-4"
+                                        className="ml-2 text-left"
+                                      >
+                                        Yes
+                                      </FormCheck.Label>
+                                    </FormCheck>
+                                  </div>
+                                </>
+
+                              )}
+                            />
+                          </div>
+
+                          <div className="w-full ">
+                            <div className="text-left text-slate-500">Admin Status</div>
+                            <Controller
+                              name="check_status"
+                              control={control}
+                              defaultValue=""
+                              render={({ field }) => (
+                                <>
+                                  <div className="flex flex-row mt-[10px]">
+                                    <FormCheck className="flex items-center mr-2">
+                                      <FormCheck.Input
+                                        id="checkbox-switch-4"
+                                        type="checkbox"
+                                        {...field}
+                                        value="true"
+                                        checked={field.value === true}
+                                      />
+                                      <FormCheck.Label
+                                        htmlFor="checkbox-switch-4"
+                                        className="ml-2 text-left"
+                                      >
+                                        Yes
+                                      </FormCheck.Label>
+                                    </FormCheck>
+                                  </div>
+                                </>
+
+                              )}
+                            />
+                          </div>
+
+                          <div className="w-full ">
+                            <div className="text-left text-slate-500">No Shareholder Proposal</div>
+                            <Controller
+                              name="no_shareholder_proposal"
+                              control={control}
+                              defaultValue=""
+                              render={({ field }) => (
+                                <>
+                                  <div className="flex flex-row mt-[10px]">
+                                    <FormCheck className="flex items-center mr-2">
+                                      <FormCheck.Input
+                                        id="checkbox-switch-4"
+                                        type="checkbox"
+                                        {...field}
+                                        value="true"
+                                        checked={field.value === true}
+                                      />
+                                      <FormCheck.Label
+                                        htmlFor="checkbox-switch-4"
+                                        className="ml-2 text-left"
+                                      >
+                                        Yes
+                                      </FormCheck.Label>
+                                    </FormCheck>
+                                  </div>
+                                </>
+                              )}
+                            />
+                          </div>
+
+                          <div className="w-full ">
+                            <div className="text-left text-slate-500">NL Exist</div>
+                            <Controller
+                              name="nl_exist"
+                              control={control}
+                              defaultValue=""
+                              render={({ field }) => (
+                                <>
+                                  <div className="flex flex-row mt-[10px]">
+                                    <FormCheck className="flex items-center mr-2">
+                                      <FormCheck.Input
+                                        id="checkbox-switch-4"
+                                        type="checkbox"
+                                        {...field}
+                                        value="true"
+                                        checked={field.value === true}
+                                      />
+                                      <FormCheck.Label
+                                        htmlFor="checkbox-switch-4"
+                                        className="ml-2 text-left"
+                                      >
+                                        Yes
+                                      </FormCheck.Label>
+                                    </FormCheck>
+                                  </div>
+                                </>
+
+                              )}
+                            />
+                          </div>
+                        </>
+                      }
+
+                    
                     </div>
                   </div>
                 </form>
