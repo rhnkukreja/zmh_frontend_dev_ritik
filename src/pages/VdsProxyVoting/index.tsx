@@ -30,6 +30,7 @@ import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
+import noRecordFoundIcon from "../../assets/images/zmh-images/no-record-found.png";
 
 const index = () => {
   const location = useLocation();
@@ -544,7 +545,7 @@ const index = () => {
                           <div className="flex items-end gap-4">
                             <div className=" w-4/12">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
-                                Institution
+                                Select Institution
                                 {/* {apiDropdownOptions?.length > 0 && (
                                   <div>
                                     <FormCheck className="mr-2">
@@ -806,8 +807,8 @@ const index = () => {
                       </TableWrapper>
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            <h1 className="font-semibold"> Select Institution Name First. </h1>
-                          </div>
+                                                <img width={150} src={noRecordFoundIcon} alt="no record found" />
+                                                </div>
                         )}
 
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length > 0 && (
@@ -824,7 +825,7 @@ const index = () => {
         </div>
       {/* )} */}
 
-      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "white", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
+      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "white", color: "#000000", width: 700, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
     </>
   );
 };

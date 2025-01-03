@@ -13,16 +13,14 @@ import {
     setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
-import LoadingIcon from "../../components/Base/LoadingIcon";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
-import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import noRecordFoundIcon from "../../assets/images/zmh-images/no-record-found.png";
 import { Tooltip } from 'react-tooltip';
 import { Tab } from "@/components/Base/Headless";
-import { FormCheck, FormSelect } from "@/components/Base/Form";
 import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
@@ -296,7 +294,7 @@ const index = () => {
                                                 <div className="flex items-end gap-4">
                                                     <div className="w-4/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Company
+                                                            Select Company
                                                         </div>
                                                         <Controller
                                                             name="company_name"
@@ -309,7 +307,7 @@ const index = () => {
                                                                     onChange={(value) => {
                                                                         field.onChange(value);
                                                                     }}
-                                                                    options={{ placeholder: "Select Company" }}
+                                                                    options={{ placeholder: "Company" }}
                                                                     className="w-full"
 
                                                                 >
@@ -526,8 +524,8 @@ const index = () => {
                                         </TableWrapper>
                                         {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold"> Please Select Company First. </h1>
-                                            </div>
+                                                <img width={150} src={noRecordFoundIcon} alt="no record found" />
+                                                </div>
                                         )}
 
                                         {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length > 0)  && (
@@ -548,7 +546,7 @@ const index = () => {
                                                 <div className="flex items-end gap-4">
                                                     <div className="w-5/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Company
+                                                           Select Company
                                                         </div>
                                                         <Controller
                                                             name="company_name"
@@ -561,7 +559,7 @@ const index = () => {
                                                                     onChange={(value) => {
                                                                         field.onChange(value);
                                                                     }}
-                                                                    options={{ placeholder: "Select Company" }}
+                                                                    options={{ placeholder: "Company" }}
                                                                     className="w-full"
 
                                                                 >
@@ -578,7 +576,7 @@ const index = () => {
                                                     </div>
                                                     <div className=" w-5/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Institution
+                                                           Select Institution
                                                             {/* {apiDropdownOptions?.institution?.length > 0 && (
                                                                 <div>
                                                                     <FormCheck className="mr-2">
@@ -617,7 +615,7 @@ const index = () => {
                                                                         field.onChange(value);
                                                                     }}
                                                                     options={{
-                                                                        placeholder: "Select institution",
+                                                                        placeholder: "institution",
                                                                     }}
                                                                     className="w-full"
                                                                     multiple
@@ -825,7 +823,7 @@ const index = () => {
                                         </TableWrapper>
                                         {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (filter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold"> Please Apply Filters First. </h1>
+                                                <img width={150} src={noRecordFoundIcon} alt="no record found" />
                                             </div>
                                         )}
 
