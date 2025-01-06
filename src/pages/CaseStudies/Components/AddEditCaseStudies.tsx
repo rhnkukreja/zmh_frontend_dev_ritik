@@ -55,11 +55,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
             region: selectedCaseStudies?.region,
             market: selectedCaseStudies?.market,
             industry: selectedCaseStudies?.industry,
-            esg_themes: selectedCaseStudies?.esg_themes,
+            esg_themes: selectedCaseStudies?.esg_themes || '  ',
             engagement_details: selectedCaseStudies?.engagement_details,
-            proposal_type: selectedCaseStudies?.proposal_type,
+            proposal_type: selectedCaseStudies?.proposal_type || '  ',
             resolution_engagement_topic: selectedCaseStudies?.resolution_engagement_topic,
-            vote: selectedCaseStudies?.vote,
+            vote: selectedCaseStudies?.vote || '  ',
             voting_rationale: selectedCaseStudies?.voting_rationale,
             voting_details: selectedCaseStudies?.voting_details,
             urls_def14: selectedCaseStudies?.urls_def14,
@@ -70,12 +70,12 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
             primary_source_link: selectedCaseStudies?.primary_source_link,
             page_reference: selectedCaseStudies?.page_reference,
             approval_status: selectedCaseStudies?.approval_status,
-            investment_type: selectedCaseStudies?.investment_type,
+            investment_type: selectedCaseStudies?.investment_type || '  ',
             category: selectedCaseStudies?.category,
 
         },
     });
-
+    
     const { user, companyGlobalSearchName } = useAppSelector(
         (state) => state.authentiction
     );
@@ -115,12 +115,12 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         'Not Available'
     ]
 
-    
+
 
     const hideShowCategory = (value: string) => {
         if (value === 'Governance (including ESG General)') {
             setCategoryTypeDropdown([
-                'Board & Governance','Compensation','Corporate Strategy & Risk','ESG','Other'
+                'Board & Governance', 'Compensation', 'Corporate Strategy & Risk', 'ESG', 'Other'
             ])
         }
         else {
@@ -130,7 +130,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     }
 
     useEffect(() => {
-        
+
     }, [categoryTypeDropdown]);
 
 
@@ -162,9 +162,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         const transformedData: any = {
             ...data,
             institution: data.institution ? Number(data.institution) : 0,
-            company: data?.company?.value ?? 0
-        };
+            company: data?.company?.value ?? 0,
+            esg_themes: data?.esg_themes === '  ' ? null : data?.esg_themes,
+            proposal_type: data?.proposal_type === '  ' ? null : data?.proposal_type,
+            vote: data?.vote === '  ' ? null : (data?.vote),
+            investment_type: data?.investment_type === '  ' ? null : (data?.investment_type)
 
+        };
         // if (companyFilter?.length === 0) {
         //     setIsSaveForm(true);
         //     return;
@@ -317,32 +321,60 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                 </div>
                             </div>
 
-                            
+                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        Company Description
+                                    </FormCheck.Label>
+                                    <Controller
+                                        name="company_description"
+                                        control={control}
+                                        render={({ field, fieldState: { error } }) => (
+                                            <>
+                                                <FormInput
+                                                    placeholder="Enter Company Description"
+                                                    {...field}
+                                                />
+                                            </>
+                                        )}
+                                    />
+                                </div>
+
+
+                            </div>
+
+
 
 
                             <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                                 <div className="w-full flex-1">
                                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                        Industry
+                                        Holding Type
                                     </FormCheck.Label>
-                                    <Controller
-                                        name="industry"
-                                        control={control}
-                                        // rules={{ required: "Industry is required" }}
-                                        render={({ field, fieldState: { error } }) => (
-                                            <>
-                                                <FormInput
-                                                    placeholder="Enter Industry"
-                                                    {...field}
-                                                />
-                                                {/* {error && (
-                                                    <Error className="text-red-600 ">
-                                                        {error.message}
-                                                    </Error>
-                                                )} */}
-                                            </>
-                                        )}
-                                    />
+                                    <div className="mt-2">
+                                        <Controller
+                                            name="investment_type"
+                                            control={control}
+                                            // rules={{ required: "Year is required" }}
+                                            render={({ field, fieldState: { error } }) => (
+                                                <>
+                                                    <TomSelect
+                                                        value={field.value ?? ""}
+                                                        onChange={(e) => {
+                                                            field.onChange(e.target.value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Holding Type",
+                                                        }}
+                                                        className="w-full text-left">
+                                                        {holdingTypeDropdown?.map((item: string) => {
+                                                            return <option value={item}>{item}</option>;
+                                                        })}
+                                                    </TomSelect>
+                                                </>
+                                            )}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="flex-1 w-full">
@@ -381,11 +413,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                             <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                                 <div className="w-full flex-1">
                                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                        Holding Type
+                                        Region
                                     </FormCheck.Label>
                                     <div className="mt-2">
                                         <Controller
-                                            name="investment_type"
+                                            name="region"
                                             control={control}
                                             // rules={{ required: "Year is required" }}
                                             render={({ field, fieldState: { error } }) => (
@@ -396,140 +428,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                                             field.onChange(e.target.value);
                                                         }}
                                                         options={{
-                                                            placeholder: "Select Holding Type",
+                                                            placeholder: "Select Region",
                                                         }}
                                                         className="w-full text-left">
-                                                        {holdingTypeDropdown?.map((item: string) => {
-                                                            return <option value={item}>{item}</option>;
-                                                        })}
-                                                    </TomSelect>
-                                                </>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="w-full flex-1">
-                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                        Proposal Type
-                                    </FormCheck.Label>
-                                    <div className="mt-2">
-                                        <Controller
-                                            name="proposal_type"
-                                            control={control}
-                                            // rules={{ required: "Year is required" }}
-                                            render={({ field, fieldState: { error } }) => (
-                                                <>
-                                                    <TomSelect
-                                                        value={field.value ?? ""}
-                                                        onChange={(e) => {
-                                                            field.onChange(e.target.value);
-                                                        }}
-                                                        options={{
-                                                            placeholder: "Select Holding Type",
-                                                        }}
-                                                        className="w-full text-left"
-                                                    >
-                                                       {proposalTypeDropdown?.map((item: string) => {
-                                                            return <option value={item}>{item}</option>;
-                                                        })}
-                                                    </TomSelect>
-                                                </>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                                <div className="w-full flex-1">
-                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    ESG Themes
-                                    </FormCheck.Label>
-                                    <div className="mt-2">
-                                        <Controller
-                                            name="esg_themes"
-                                            control={control}
-                                            // rules={{ required: "Year is required" }}
-                                            render={({ field, fieldState: { error } }) => (
-                                                <>
-                                                    <TomSelect
-                                                        value={field.value ?? ""}
-                                                        onChange={(e) => { hideShowCategory(e.target.value); field.onChange(e.target.value);}}
-                                                        options={{
-                                                            placeholder: "Select ESG Themes",
-                                                        }}
-                                                        className="w-full text-left"
-                                                    >
-                                                        {environmentalTypeDropdown?.map((item: string) => {
-                                                            return <option value={item}>{item}</option>;
-                                                        })}
-                                                    </TomSelect>
-                                                </>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="w-full flex-1">
-                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    Category
-                                    </FormCheck.Label>
-                                    <div className="mt-2">
-                                        <Controller
-                                            name="category"
-                                            control={control}
-                                            // rules={{ required: "Year is required" }}
-                                            render={({ field, fieldState: { error } }) => (
-                                                <>
-                                                    <TomSelect
-                                                        value={field.value ?? ""}
-                                                        onChange={(e) => {
-                                                            field.onChange(e.target.value);
-                                                        }}
-                                                        options={{
-                                                            placeholder: "Select Category",
-                                                        }}
-                                                        className="w-full text-left"
-                                                    >
-                                                        {categoryTypeDropdown?.map((item: string) => {
-                                                            return <option value={item}>{item}</option>;
-                                                        })}
-                                                    </TomSelect>
-                                                </>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                                
-
-                                <div className="w-full flex-1">
-                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    Vote
-                                    </FormCheck.Label>
-                                    <div className="mt-2">
-                                        <Controller
-                                            name="vote"
-                                            control={control}
-                                            // rules={{ required: "Year is required" }}
-                                            render={({ field, fieldState: { error } }) => (
-                                                <>
-                                                    <TomSelect
-                                                        value={field.value ?? ""}
-                                                        onChange={(e) => {
-                                                            field.onChange(e.target.value);
-                                                        }}
-                                                        options={{
-                                                            placeholder: "Select Vote",
-                                                        }}
-                                                        className="w-full text-left"
-                                                    >
-                                                        {voteTypeDropdown?.map((item: string) => {
-                                                            return <option value={item}>{item}</option>;
+                                                        {apiDropdownOptions?.region?.map((region: string) => {
+                                                            return <option value={region}>{region}</option>;
                                                         })}
                                                     </TomSelect>
                                                 </>
@@ -539,70 +442,31 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                 </div>
 
                                 <div className="flex-1 w-full">
-                                    <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                                        Approval Status
+                                    <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                                        Market
                                     </FormCheck.Label>
 
-                                    <div className="mt-2 flex flex-col sm:flex-row">
+                                    <div className="mt-2">
                                         <Controller
-                                            name="approval_status"
+                                            name="market"
                                             control={control}
-                                            rules={{ required: "Approval Status is required" }}
-                                            render={({ field }) => (
+                                            // rules={{ required: "Year is required" }}
+                                            render={({ field, fieldState: { error } }) => (
                                                 <>
-                                                    <FormCheck className="flex items-center mr-2">
-                                                        <FormCheck.Input
-                                                            id="radio-switch-4"
-                                                            type="radio"
-                                                            {...field}
-                                                            value="Approved"
-                                                            checked={field.value === 'Approved'}
-                                                            onChange={(e) => field.onChange('Approved')}
-                                                        />
-                                                        <FormCheck.Label
-                                                            htmlFor="radio-switch-4"
-                                                            className="ml-2"
-                                                        >
-                                                            Approved
-                                                        </FormCheck.Label>
-                                                    </FormCheck>
-                                                    <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
-                                                        <FormCheck.Input
-                                                            id="radio-switch-5"
-                                                            type="radio"
-                                                            {...field}
-                                                            value="Pending"
-                                                            checked={field.value === 'Pending'}
-                                                            onChange={(e) => field.onChange('Pending')}
-                                                        />
-                                                        <FormCheck.Label
-                                                            htmlFor="radio-switch-5"
-                                                            className="ml-2"
-                                                        >
-                                                            Pending
-                                                        </FormCheck.Label>
-                                                    </FormCheck>
-                                                    <FormCheck className="flex items-center mt-2 sm:mt-0">
-                                                        <FormCheck.Input
-                                                            id="radio-switch-5"
-                                                            type="radio"
-                                                            {...field}
-                                                            value="Return To Analyst"
-                                                            checked={field.value === 'Return To Analyst'}
-                                                            onChange={(e) => field.onChange('Return To Analyst')}
-                                                        />
-                                                        <FormCheck.Label
-                                                            htmlFor="radio-switch-5"
-                                                            className="ml-2"
-                                                        >
-                                                            Returned to Analyst
-                                                        </FormCheck.Label>
-                                                    </FormCheck>
-                                                    {/* {errors.approval_status && (
-                                                        <Error className="max-w-[100%] mt-6">
-                                                            {errors.approval_status?.message}
-                                                        </Error>
-                                                    )} */}
+                                                    <TomSelect
+                                                        value={field.value ?? ""}
+                                                        onChange={(e) => {
+                                                            field.onChange(e.target.value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Market",
+                                                        }}
+                                                        className="w-full text-left"
+                                                    >
+                                                        {apiDropdownOptions?.market?.map((market: string) => {
+                                                            return <option value={market}>{market}</option>;
+                                                        })}
+                                                    </TomSelect>
                                                 </>
                                             )}
                                         />
@@ -611,18 +475,19 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                             </div>
 
                             <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+
                                 <div className="w-full flex-1">
                                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    Primary Source
+                                        Industry
                                     </FormCheck.Label>
                                     <Controller
-                                        name="primary_source"
+                                        name="industry"
                                         control={control}
-                                        // rules={{ required: "Alternate Company Name is required" }}
+                                        // rules={{ required: "Industry is required" }}
                                         render={({ field, fieldState: { error } }) => (
                                             <>
                                                 <FormInput
-                                                    placeholder="Enter Primary Source"
+                                                    placeholder="Enter Industry"
                                                     {...field}
                                                 />
                                                 {/* {error && (
@@ -635,55 +500,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                     />
                                 </div>
 
-                                <div className="w-full flex-1">
-                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    Page Reference
-                                    </FormCheck.Label>
-                                    <Controller
-                                        name="primary_source_link"
-                                        control={control}
-                                        // rules={{ required: "Alternate Company Ticker is required" }}
-                                        render={({ field, fieldState: { error } }) => (
-                                            <>
-                                                <FormInput
-                                                    placeholder="Enter Page Reference"
-                                                    {...field}
-                                                />
-                                                {/* {error && (
-                                                    <Error className="text-red-600 ">
-                                                        {error.message}
-                                                    </Error>
-                                                )} */}
-                                            </>
-                                        )}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                                <div className="w-full flex-1">
-                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    Primary Source Link
-                                    </FormCheck.Label>
-                                    <Controller
-                                        name="primary_source_link"
-                                        control={control}
-                                        // rules={{ required: "Alternate Company Name is required" }}
-                                        render={({ field, fieldState: { error } }) => (
-                                            <>
-                                                <FormInput
-                                                    placeholder="Enter Primary Source Link"
-                                                    {...field}
-                                                />
-                                                {/* {error && (
-                                                    <Error className="text-red-600 ">
-                                                        {error.message}
-                                                    </Error>
-                                                )} */}
-                                            </>
-                                        )}
-                                    />
-                                </div>
 
                                 <div className="w-full flex-1">
                                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
@@ -720,12 +536,227 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                         />
                                     </div>
                                 </div>
+
+
+
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        Proposal Type
+                                    </FormCheck.Label>
+                                    <div className="mt-2">
+                                        <Controller
+                                            name="proposal_type"
+                                            control={control}
+                                            // rules={{ required: "Year is required" }}
+                                            render={({ field, fieldState: { error } }) => (
+                                                <>
+                                                    <TomSelect
+                                                        value={field.value ?? ""}
+                                                        onChange={(e) => {
+                                                            field.onChange(e.target.value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Holding Type",
+                                                        }}
+                                                        className="w-full text-left"
+                                                    >
+                                                        {proposalTypeDropdown?.map((item: string) => {
+                                                            return <option value={item}>{item}</option>;
+                                                        })}
+                                                    </TomSelect>
+                                                </>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+
+
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        Vote
+                                    </FormCheck.Label>
+                                    <div className="mt-2">
+                                        <Controller
+                                            name="vote"
+                                            control={control}
+                                            // rules={{ required: "Year is required" }}
+                                            render={({ field, fieldState: { error } }) => (
+                                                <>
+                                                    <TomSelect
+                                                        value={field.value ?? ""}
+                                                        onChange={(e) => {
+                                                            field.onChange(e.target.value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Vote",
+                                                        }}
+                                                        className="w-full text-left"
+                                                    >
+                                                        {voteTypeDropdown?.map((item: string) => {
+                                                            return <option value={item}>{item}</option>;
+                                                        })}
+                                                    </TomSelect>
+                                                </>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+
+
                             </div>
 
                             <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                                 <div className="w-full flex-1">
                                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    URL def14
+                                        ESG Themes
+                                    </FormCheck.Label>
+                                    <div className="mt-2">
+                                        <Controller
+                                            name="esg_themes"
+                                            control={control}
+                                            // rules={{ required: "Year is required" }}
+                                            render={({ field, fieldState: { error } }) => (
+                                                <>
+                                                    <TomSelect
+                                                        value={field.value ?? ""}
+                                                        onChange={(e) => { hideShowCategory(e.target.value); field.onChange(e.target.value); }}
+                                                        options={{
+                                                            placeholder: "Select ESG Themes",
+                                                        }}
+                                                        className="w-full text-left"
+                                                    >
+                                                        {environmentalTypeDropdown?.map((item: string) => {
+                                                            return <option value={item}>{item}</option>;
+                                                        })}
+                                                    </TomSelect>
+                                                </>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        Category
+                                    </FormCheck.Label>
+                                    <div className="mt-2">
+                                        <Controller
+                                            name="category"
+                                            control={control}
+                                            // rules={{ required: "Year is required" }}
+                                            render={({ field, fieldState: { error } }) => (
+                                                <>
+                                                    <TomSelect
+                                                        value={field.value ?? ""}
+                                                        onChange={(e) => {
+                                                            field.onChange(e.target.value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Category",
+                                                        }}
+                                                        className="w-full text-left"
+                                                    >
+                                                        {categoryTypeDropdown?.map((item: string) => {
+                                                            return <option value={item}>{item}</option>;
+                                                        })}
+                                                    </TomSelect>
+                                                </>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        Primary Source
+                                    </FormCheck.Label>
+                                    <Controller
+                                        name="primary_source"
+                                        control={control}
+                                        // rules={{ required: "Alternate Company Name is required" }}
+                                        render={({ field, fieldState: { error } }) => (
+                                            <>
+                                                <FormInput
+                                                    placeholder="Enter Primary Source"
+                                                    {...field}
+                                                />
+                                                {/* {error && (
+                                                    <Error className="text-red-600 ">
+                                                        {error.message}
+                                                    </Error>
+                                                )} */}
+                                            </>
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        Page Reference
+                                    </FormCheck.Label>
+                                    <Controller
+                                        name="page_reference_link"
+                                        control={control}
+                                        // rules={{ required: "Alternate Company Ticker is required" }}
+                                        render={({ field, fieldState: { error } }) => (
+                                            <>
+                                                <FormInput
+                                                    placeholder="Enter Page Reference"
+                                                    {...field}
+                                                />
+                                                {/* {error && (
+                                                    <Error className="text-red-600 ">
+                                                        {error.message}
+                                                    </Error>
+                                                )} */}
+                                            </>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        Primary Source Link
+                                    </FormCheck.Label>
+                                    <Controller
+                                        name="primary_source_link"
+                                        control={control}
+                                        // rules={{ required: "Alternate Company Name is required" }}
+                                        render={({ field, fieldState: { error } }) => (
+                                            <>
+                                                <FormInput
+                                                    placeholder="Enter Primary Source Link"
+                                                    {...field}
+                                                />
+                                                {/* {error && (
+                                                    <Error className="text-red-600 ">
+                                                        {error.message}
+                                                    </Error>
+                                                )} */}
+                                            </>
+                                        )}
+                                    />
+                                </div>
+
+
+
+
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                                <div className="w-full flex-1">
+                                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                                        URL def14
                                     </FormCheck.Label>
                                     <Controller
                                         name="urls_def14"
@@ -757,7 +788,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                             <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                                 <div className="w-full flex-1">
                                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                                    URL 8k
+                                        URL 8k
                                     </FormCheck.Label>
                                     <Controller
                                         name="urls_8k"
@@ -788,7 +819,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
                             <div>
                                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                                Resolution Engagement Topic
+                                    Resolution / Engagement Topic
                                 </FormCheck.Label>
                                 <Controller
                                     name="resolution_engagement_topic"
@@ -880,6 +911,77 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                         Voting Rationale are required
                                     </Error>
                                 )}
+                            </div>
+
+                            <div className="flex-1 w-full">
+                                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                                    Approval Status
+                                </FormCheck.Label>
+
+                                <div className="mt-2 flex flex-col sm:flex-row">
+                                    <Controller
+                                        name="approval_status"
+                                        control={control}
+                                        rules={{ required: "Approval Status is required" }}
+                                        render={({ field }) => (
+                                            <>
+                                                <FormCheck className="flex items-center mr-2">
+                                                    <FormCheck.Input
+                                                        id="radio-switch-4"
+                                                        type="radio"
+                                                        {...field}
+                                                        value="Approved"
+                                                        checked={field.value === 'Approved'}
+                                                        onChange={(e) => field.onChange('Approved')}
+                                                    />
+                                                    <FormCheck.Label
+                                                        htmlFor="radio-switch-4"
+                                                        className="ml-2"
+                                                    >
+                                                        Approved
+                                                    </FormCheck.Label>
+                                                </FormCheck>
+                                                <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
+                                                    <FormCheck.Input
+                                                        id="radio-switch-5"
+                                                        type="radio"
+                                                        {...field}
+                                                        value="Pending"
+                                                        checked={field.value === 'Pending'}
+                                                        onChange={(e) => field.onChange('Pending')}
+                                                    />
+                                                    <FormCheck.Label
+                                                        htmlFor="radio-switch-5"
+                                                        className="ml-2"
+                                                    >
+                                                        Pending
+                                                    </FormCheck.Label>
+                                                </FormCheck>
+                                                <FormCheck className="flex items-center mt-2 sm:mt-0">
+                                                    <FormCheck.Input
+                                                        id="radio-switch-5"
+                                                        type="radio"
+                                                        {...field}
+                                                        value="Return To Analyst"
+                                                        checked={field.value === 'Return To Analyst'}
+                                                        onChange={(e) => field.onChange('Return To Analyst')}
+                                                    />
+                                                    <FormCheck.Label
+                                                        htmlFor="radio-switch-5"
+                                                        className="ml-2"
+                                                    >
+                                                        Returned to Analyst
+                                                    </FormCheck.Label>
+                                                </FormCheck>
+                                                {/* {errors.approval_status && (
+                                                        <Error className="max-w-[100%] mt-6">
+                                                            {errors.approval_status?.message}
+                                                        </Error>
+                                                    )} */}
+                                            </>
+                                        )}
+                                    />
+                                </div>
                             </div>
 
                         </div>
