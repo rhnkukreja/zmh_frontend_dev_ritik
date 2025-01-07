@@ -410,7 +410,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                            {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                                 <div className="w-full flex-1">
                                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                                         Region
@@ -472,7 +472,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                                         />
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
 
                             <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
 

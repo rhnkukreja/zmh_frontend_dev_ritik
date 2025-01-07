@@ -74,6 +74,54 @@ function ShareHolderProposal() {
     ...filters?.proponent_name,
   ]);
 
+  const month = [{
+    id: 1,
+    month: 'January',
+  },
+  {
+    id: 2,
+    month: 'February',
+  },
+  {
+    id: 3,
+    month: 'March',
+  },
+  {
+    id: 4,
+    month: 'April',
+  },
+  {
+    id: 5,
+    month: 'May',
+  },
+  {
+    id: 6,
+    month: 'June',
+  },
+  {
+    id: 7,
+    month: 'July',
+  },
+  {
+    id: 8,
+    month: 'August',
+  },
+  {
+    id: 9,
+    month: 'September',
+  },
+  {
+    id: 10,
+    month: 'October',
+  },
+  {
+    id: 11,
+    month: 'November',
+  },
+  {
+    id: 12,
+    month: 'December',
+  },]
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
@@ -86,6 +134,8 @@ function ShareHolderProposal() {
       sub_category: [],
       year: [],
     });
+
+  const [monthDropdownOption, setMonthDropdownOption] = useState<any>(month);
 
   const [addNewShareholderModalVisible, setAddNewShareholderModalVisible] =
     useState<boolean>(false);
@@ -882,6 +932,35 @@ function ShareHolderProposal() {
                         user?.user_type === "Admin" &&
                         <>
 
+                          <div className="w-full">
+                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                              Month
+                            </div>
+                            <Controller
+                              name="month"
+                              control={control}
+                              defaultValue={[]}
+                              render={({ field }) => (
+                                <TomSelect
+                                  value={field.value || []}
+                                  onChange={field.onChange}
+                                  options={{ placeholder: "Select Month" }}
+                                  className="w-full"
+                                  multiple
+                                >
+                                  {getDropdownLoader ? (
+                                    <option disabled>Loading...</option>
+                                  ) : (
+                                    monthDropdownOption?.map((item: any) => (
+                                      <option key={item?.id} value={item?.id}>
+                                        {item?.month}
+                                      </option>
+                                    ))
+                                  )}
+                                </TomSelect>
+                              )}
+                            />
+                          </div>
                           <div className="w-full ">
                             <div className="text-left text-slate-500">Ready For Review</div>
                             <Controller
