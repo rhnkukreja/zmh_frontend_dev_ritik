@@ -807,7 +807,9 @@ const index = () => {
                       </TableWrapper>
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <img width={150} src={noRecordFoundIcon} alt="no record found" />
+                                                {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
+                                                <h1 className="font-semibold"> Select Institution (Required)</h1>
+
                                                 </div>
                         )}
 

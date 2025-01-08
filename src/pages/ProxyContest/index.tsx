@@ -39,6 +39,7 @@ const index = () => {
 
     const [filter, setFilter] = useState<any>({institution_name: [], company_name: []});
     const [companyFilter, setCompanyFilter] = useState<any>({company_name: [], top: false});
+    const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
 
 
     const { handleSubmit, control, reset, setValue, watch } =
@@ -48,6 +49,30 @@ const index = () => {
                 institution_name: [],
             },
         });
+
+        useEffect(() => {
+
+            if (tab === 'Top-20') {
+                dispatch(
+                    fetchProxyTopFiveContestDashboard(
+                        createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...companyFilter}))
+                );
+            }
+        }, [])
+    
+        useEffect(() => {
+    
+            if (tab === 'All-Investor') {
+                    dispatch(
+                        fetchProxyContestDashboard(
+                            createDynamicURL(
+                                `${baseURL}/vds_proxy_voting/`,{...filter}
+                                
+                            )
+                        )
+                    );
+            }
+        }, [])
 
     useEffect(() => {
 
@@ -82,57 +107,6 @@ const index = () => {
         }
     };
 
-    const convertDivTableToCSV = () => {
-        const table = document.querySelector(".table_2");
-        const rows = table?.querySelectorAll(".row_2");
-        const tableProposal = document.querySelector(".table_3");
-        const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-        let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
-
-        // Iterate over each row in the first table
-        rows?.forEach((row) => {
-            const cells = row.querySelectorAll(".cell_2");
-            let rowData: any = [];
-
-            // Iterate over each cell and get the text content
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
-
-                // Check if the cell contains a comma, wrap it in double quotes
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            // Join cells with commas to form a CSV row
-            csvContent += rowData.join(",") + "\n";
-        });
-
-        // Iterate over each row in the second table
-        rowsProposal?.forEach((row) => {
-            const cells = row.querySelectorAll(".cell_3");
-            let rowData: any = [];
-
-            // Iterate over each cell and get the text content
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim();
-
-                // Check if the cell contains a comma, wrap it in double quotes
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            csvContent += rowData.join(",") + "\n";
-        });
-
-        downloadCSV(csvContent, `Top-5-Proxy-voting-${companyGlobalSearchName}`);
-    };
-
 
     const getSplitContents = (items: any) => {
         const resultString = Object.entries(items)
@@ -147,9 +121,9 @@ const index = () => {
         company: []
     });
 
-    const getAllInstitutionDropdown = async () => {
+    const getAllInstitutionDropdown = async (params?:any) => {
         try {
-            const res = await dashboardService.getInstitution();
+            const res = await dashboardService.getInstitution(params);
             if (res.result?.institution) {
                 setApiDropdownOptions(res.result);
             }
@@ -198,6 +172,7 @@ const index = () => {
     const onTopFiveFilterClear = () => {
         resetTopFiveFormValues();
         setCompanyFilter({company_name: [], top: false})
+        setCompanyHeaderName('');
       };
     
     const resetTopFiveFormValues: any = () => {
@@ -289,6 +264,9 @@ const index = () => {
                                 <Tab.Panel className="leading-relaxed">
                                     <div className="">
                                         <div className="p-2">
+
+                                        <div className="font-semibold text-xl py-4">{companyHeaderName}</div>
+
                                             <form onSubmit={handleSubmit(onSubmitTopFive)}>
 
                                                 <div className="flex items-end gap-4">
@@ -303,9 +281,9 @@ const index = () => {
                                                             render={({ field }) => (
                                                                 <TomSelect
                                                                     value={field.value || []}
-
-                                                                    onChange={(value) => {
-                                                                        field.onChange(value);
+                                                                    onChange={(event) => {
+                                                                        field.onChange(event);
+                                                                        setCompanyHeaderName(event?.target?.value);
                                                                     }}
                                                                     options={{ placeholder: "Company" }}
                                                                     className="w-full"
@@ -524,7 +502,9 @@ const index = () => {
                                         </TableWrapper>
                                         {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <img width={150} src={noRecordFoundIcon} alt="no record found" />
+                                                {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
+                                                <h1 className="font-semibold"> Select Company (Required)</h1>
+
                                                 </div>
                                         )}
 
@@ -558,7 +538,8 @@ const index = () => {
 
                                                                     onChange={(value) => {
                                                                         field.onChange(value);
-                                                                    }}
+                                                                        getAllInstitutionDropdown({"company_name": [value?.target?.value]});
+                                                                      }}
                                                                     options={{ placeholder: "Company" }}
                                                                     className="w-full"
 
@@ -577,33 +558,7 @@ const index = () => {
                                                     <div className=" w-5/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
                                                            Select Institution
-                                                            {/* {apiDropdownOptions?.institution?.length > 0 && (
-                                                                <div>
-                                                                    <FormCheck className="mr-2">
-                                                                        <FormCheck.Label>
-                                                                            Select All
-                                                                        </FormCheck.Label>
-                                                                        <FormCheck.Input
-                                                                            className="ml-1"
-                                                                            id={`institution_name`}
-                                                                            checked={
-                                                                                apiDropdownOptions?.institution?.length === watch("institution_name")?.length
-                                                                            }
-                                                                            type="checkbox"
-                                                                            onChange={(e) => {
-                                                                                if (e.target.checked === true) {
-                                                                                    setValue(
-                                                                                        "institution_name",
-                                                                                        apiDropdownOptions
-                                                                                    );
-                                                                                } else {
-                                                                                    setValue("institution_name", []);
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </FormCheck>
-                                                                </div>
-                                                            )} */}
+                                                            
                                                         </div>
                                                         <Controller
                                                             name="institution_name"
@@ -823,7 +778,9 @@ const index = () => {
                                         </TableWrapper>
                                         {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (filter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <img width={150} src={noRecordFoundIcon} alt="no record found" />
+                                                {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
+                                                <h1 className="font-semibold"> Select Company (Required)</h1>
+
                                             </div>
                                         )}
 
