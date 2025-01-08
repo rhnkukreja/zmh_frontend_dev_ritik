@@ -585,7 +585,7 @@ const index = () => {
                                       field.onChange(value);
                                     }}
                                     options={{
-                                      placeholder: "Select institution",
+                                      placeholder: "Institution",
                                     }}
                                     className="w-full"
                                     multiple
