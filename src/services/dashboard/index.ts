@@ -106,10 +106,10 @@ class DashboardService {
   }
 
   
-  public async getInstitution(): Promise<{
+  public async getInstitution(paramFilter?: any): Promise<{
     result: any;
   }> {
-    const response = await axiosInstance.get(`/get_vds_dropdown_values/`);
+    const response = await axiosInstance.get( createDynamicURL(`/get_vds_dropdown_values/`, paramFilter));
     const result = response.data;
     return {
       result: result,
