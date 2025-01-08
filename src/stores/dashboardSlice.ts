@@ -66,6 +66,8 @@ interface CompanySliceState {
   totalNPXCount: number;
   searchCompletion: number;
   tab: "Top-20" | "All-Investor" | "Top-5" | "";
+  proxyContestinvestorFilter: any;
+  proxyContestTopFilter: any;
 }
 
 const initialState: CompanySliceState = {
@@ -103,7 +105,9 @@ const initialState: CompanySliceState = {
   tab: "Top-20",
   searchCompletion: 0,
   proxyContestAllInvestorLoading: true,
-  proxyContestAllInvestorDetails: ''
+  proxyContestAllInvestorDetails: '',
+  proxyContestinvestorFilter: {institution_name: [], company_name: []},
+  proxyContestTopFilter: {company_name: [], top: false}
 
   // {
   //   nominees: [],
@@ -211,6 +215,33 @@ const companySlice = createSlice({
     ) {
       state.tab = action.payload;
     },
+
+    // setProxyContestFilter(state, action: any) {
+    //   // state.proxyContestinvestorFilter = action.payload;
+    //   // state.proxyContestinvestorFilter[action.payload.key] = action.payload.value as any;
+    // },
+
+    setProxyContestInvestorFilter(
+      state,
+      action: PayloadAction<{
+        key: any;
+        value: string | string[];
+      }>
+    ) {
+      state.proxyContestinvestorFilter[action.payload.key] = action.payload
+        .value as any;
+    },
+
+    setProxyTopFilter(
+      state,
+      action: PayloadAction<{
+        key: any;
+        value: string | string[];
+      }>
+    ) {
+      state.proxyContestTopFilter[action.payload.key] = action.payload
+        .value as any;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -225,10 +256,9 @@ const companySlice = createSlice({
         (state, action: PayloadAction<{ results: CompanyData[] }>) => {
           state.companySearchLoading = false;
           state.companyDataList = action.payload.results;
-          if(state.companyDataList.length > 0){
+          if (state.companyDataList.length > 0) {
             state.searchCompletion = 1;
-          }
-          else {
+          } else {
             state.searchCompletion = 2;
           }
         }
@@ -246,7 +276,13 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchCompanyDashboard.fulfilled,
-        (state, action: PayloadAction<{ results: CompanyDashboard[], percent: string }>) => {
+        (
+          state,
+          action: PayloadAction<{
+            results: CompanyDashboard[];
+            percent: string;
+          }>
+        ) => {
           state.dashboardDataList = action.payload.results;
           state.percent = action.payload.percent;
           state.investorCardLoading = false;
@@ -291,7 +327,7 @@ const companySlice = createSlice({
         state.caseStudyLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
-          state.caseStudyDetails = [];
+        state.caseStudyDetails = [];
       })
 
       .addCase(fetchVdsProxyDashboard.pending, (state) => {
@@ -348,8 +384,6 @@ const companySlice = createSlice({
           action.error.message || "Failed to fetch company dashboard";
       })
 
-      
-      
       .addCase(fetchVdsProxyAllInvestor.pending, (state) => {
         state.vdsProxyAllInvestorDetails = "";
         state.vdsProxyAllInvestorLoading = true;
@@ -367,7 +401,6 @@ const companySlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })
-      
 
       .addCase(fetchNpxProxyDashboard.pending, (state) => {
         state.npxProxyDetails = "";
@@ -376,11 +409,10 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchNpxProxyDashboard.fulfilled,
-        (state, action: PayloadAction<{ results: any, count: number }>) => {
+        (state, action: PayloadAction<{ results: any; count: number }>) => {
           state.npxProxyLoading = false;
           state.npxProxyDetails = action.payload.results;
           state.totalNPXCount = action.payload.count;
-
         }
       )
       .addCase(fetchNpxProxyDashboard.rejected, (state, action) => {
@@ -413,11 +445,10 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchWhatNewNotification.fulfilled,
-        (state, action: PayloadAction<{ results: any, count: number }>) => {
+        (state, action: PayloadAction<{ results: any; count: number }>) => {
           state.investorProfileLoading = false;
           state.notificationDetails = action.payload.results;
           state.totalNotification = action.payload.count;
-
         }
       )
       .addCase(fetchWhatNewNotification.rejected, (state, action) => {
@@ -429,4 +460,4 @@ const companySlice = createSlice({
 });
 
 export default companySlice;
-export const { setPage, resetPage, setTempSearch, setInstitution, setTabs } = companySlice.actions;
+export const { setPage, resetPage, setTempSearch, setInstitution, setTabs, setProxyContestInvestorFilter , setProxyTopFilter} = companySlice.actions;

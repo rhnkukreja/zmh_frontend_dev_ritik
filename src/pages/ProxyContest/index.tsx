@@ -10,6 +10,8 @@ import {
     fetchProxyTopFiveContestDashboard,
     fetchVdsProxyAllInvestor,
     fetchVdsProxyDashboard,
+    setProxyContestInvestorFilter,
+    setProxyTopFilter,
     setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
@@ -30,15 +32,15 @@ const index = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch: AppDispatch = useAppDispatch();
-    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, proxyContestTopFiveLoading, tab } = useAppSelector(
+    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, 
+        proxyContestTopFiveLoading, tab, proxyContestinvestorFilter, proxyContestTopFilter } = useAppSelector(
         (state) => state.dashboard
     );
     const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
         (state: RootState) => state.authentiction
     );
 
-    const [filter, setFilter] = useState<any>({institution_name: [], company_name: []});
-    const [companyFilter, setCompanyFilter] = useState<any>({company_name: [], top: false});
+    // const [proxyContestTopFilter, setCompanyFilter] = useState<any>({company_name: [], top: false});
     const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
 
 
@@ -50,39 +52,17 @@ const index = () => {
             },
         });
 
-        useEffect(() => {
-
-            if (tab === 'Top-20') {
-                dispatch(
-                    fetchProxyTopFiveContestDashboard(
-                        createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...companyFilter}))
-                );
-            }
-        }, [])
-    
-        useEffect(() => {
-    
-            if (tab === 'All-Investor') {
-                    dispatch(
-                        fetchProxyContestDashboard(
-                            createDynamicURL(
-                                `${baseURL}/vds_proxy_voting/`,{...filter}
-                                
-                            )
-                        )
-                    );
-            }
-        }, [])
 
     useEffect(() => {
 
         if (tab === 'Top-20') {
             dispatch(
                 fetchProxyTopFiveContestDashboard(
-                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...companyFilter}))
+                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...proxyContestTopFilter}))
             );
+            setCompanyHeaderName(proxyContestTopFilter?.company_name[0]);
         }
-    }, [companyFilter, tab])
+    }, [proxyContestTopFilter, tab])
 
     useEffect(() => {
 
@@ -90,13 +70,13 @@ const index = () => {
                 dispatch(
                     fetchProxyContestDashboard(
                         createDynamicURL(
-                            `${baseURL}/vds_proxy_voting/`,{...filter}
+                            `${baseURL}/vds_proxy_voting/`,{...proxyContestinvestorFilter}
                             
                         )
                     )
                 );
         }
-    }, [filter, tab])
+    }, [proxyContestinvestorFilter, tab])
 
 
     const isObject = (item: any) => {
@@ -146,13 +126,20 @@ const index = () => {
             toast.warning("Please select Company");
             return;
         }
-        const applyFilter = {company_name: [proxyFilter?.company_name], institution_name: proxyFilter?.institution_name};
-        setFilter(applyFilter);
+        const applyFilter = { company_name: [proxyFilter?.company_name], institution_name: proxyFilter?.institution_name };
+
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyContestInvestorFilter({ key: key as any, value }));
+        });
     };
 
     const onFilterClear = () => {
         resetFormValues();
-        setFilter({institution_name: [], company_name: []});
+        const applyFilter = {institution_name: [], company_name: []};
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyContestInvestorFilter({ key: key as any, value }));
+        });
+
       };
     
     const resetFormValues: any = () => {
@@ -166,12 +153,20 @@ const index = () => {
             toast.warning("Please select Company");
             return;
         }
-        setCompanyFilter({company_name: [proxyFilter?.company_name], top: true})
+        const applyFilter = {company_name: [proxyFilter?.company_name], top: 'true'};
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyTopFilter({ key: key as any, value }));
+        });
+        // setProxyTopFilter({company_name: [proxyFilter?.company_name], top: 'true'})
     };
 
     const onTopFiveFilterClear = () => {
         resetTopFiveFormValues();
-        setCompanyFilter({company_name: [], top: false})
+        // setCompanyFilter({company_name: [], top: false})
+        const applyFilter = {company_name: [], top: 'false'};
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyTopFilter({ key: key as any, value }));
+        });
         setCompanyHeaderName('');
       };
     
@@ -340,7 +335,7 @@ const index = () => {
                                         </div>
                                     </div>
                                     <div>
-                                        <TableWrapper isLoading={proxyContestTopFiveLoading && (companyFilter.company_name?.length > 0)}>
+                                        <TableWrapper isLoading={proxyContestTopFiveLoading && (proxyContestTopFilter.company_name?.length > 0)}>
                                             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                                                 <Table className="table_2 w-full">
                                                     <Table.Thead className="sticky top-50 z-10">
@@ -500,7 +495,7 @@ const index = () => {
                                             </div>
 
                                         </TableWrapper>
-                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length === 0) && (
+                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (proxyContestTopFilter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
                                                 <h1 className="font-semibold"> Select Company (Required)</h1>
@@ -508,7 +503,7 @@ const index = () => {
                                                 </div>
                                         )}
 
-                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length > 0)  && (
+                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (proxyContestTopFilter.company_name?.length > 0)  && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold"> Top 5 Proxy Contest Records Not Found..</h1>
                                             </div>
@@ -616,7 +611,7 @@ const index = () => {
                                     </div>
 
                                     <div>
-                                        <TableWrapper isLoading={proxyContestAllInvestorLoading && (filter.institution_name?.length > 0 || filter.company_name?.length > 0)}>
+                                        <TableWrapper isLoading={proxyContestAllInvestorLoading && (proxyContestinvestorFilter.institution_name?.length > 0 || proxyContestinvestorFilter.company_name?.length > 0)}>
                                             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                                                 <Table className="table_2 w-full">
                                                     <Table.Thead className="sticky top-50 z-10">
@@ -776,7 +771,7 @@ const index = () => {
                                             </div>
 
                                         </TableWrapper>
-                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (filter.company_name?.length === 0) && (
+                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (proxyContestinvestorFilter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
                                                 <h1 className="font-semibold"> Select Company (Required)</h1>
@@ -784,7 +779,7 @@ const index = () => {
                                             </div>
                                         )}
 
-                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (filter.company_name?.length > 0)  && (
+                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0)  && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold"> All Proxy Contest Records Not Found..</h1>
                                             </div>
