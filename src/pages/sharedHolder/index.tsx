@@ -943,7 +943,10 @@ function ShareHolderProposal() {
                               render={({ field }) => (
                                 <TomSelect
                                   value={field.value || []}
-                                  onChange={field.onChange}
+                                  onChange={(event) => {
+                                    const values = event.target.value;
+                                    field.onChange(values.map((value: string) => parseInt(value, 10)));
+                                  }}                                  
                                   options={{ placeholder: "Select Month" }}
                                   className="w-full"
                                   multiple
