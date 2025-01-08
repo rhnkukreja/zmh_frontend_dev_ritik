@@ -294,7 +294,7 @@ const index = () => {
                                                 <div className="flex items-end gap-4">
                                                     <div className="w-4/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Select Company First
+                                                            Select Company
                                                         </div>
                                                         <Controller
                                                             name="company_name"
@@ -546,7 +546,7 @@ const index = () => {
                                                 <div className="flex items-end gap-4">
                                                     <div className="w-5/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                        Select Company First
+                                                        Select Company
                                                         </div>
                                                         <Controller
                                                             name="company_name"
