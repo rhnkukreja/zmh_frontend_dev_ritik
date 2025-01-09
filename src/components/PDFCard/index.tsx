@@ -139,9 +139,9 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                         <div className="flex justify-center items-center h-full">
                           <Tippy
                         //   Download
-                            content="View"
+                            content="See Details"
                             options={{
-                              theme: "dark",
+                              theme: "light",
                             }}
                           >
                             <a

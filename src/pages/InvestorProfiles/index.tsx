@@ -410,9 +410,9 @@ function Main() {
                           </div>
 
                           <Tippy
-                            content="View"
+                            content="See Details"
                             options={{
-                              theme: "dark",
+                              theme: "light",
                             }}
                           >
                             <Lucide

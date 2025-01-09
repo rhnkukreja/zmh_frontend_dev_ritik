@@ -503,9 +503,9 @@ function ProxyGuideline() {
                                 <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                   <div className="flex gap-3 ">
                                     <Tippy
-                                      content="View"
+                                      content="See Details"
                                       options={{
-                                        theme: "dark",
+                                        theme: "light",
                                       }}
                                     >
                                       <Lucide
@@ -526,7 +526,7 @@ function ProxyGuideline() {
                                       <Tippy
                                         content="Edit"
                                         options={{
-                                          theme: "dark",
+                                          theme: "light",
                                         }}
                                       >
                                         <Lucide
@@ -542,7 +542,7 @@ function ProxyGuideline() {
                                     <Tippy
                                       content="Download"
                                       options={{
-                                        theme: "dark",
+                                        theme: "light",
                                       }}
                                     >
                                       <a

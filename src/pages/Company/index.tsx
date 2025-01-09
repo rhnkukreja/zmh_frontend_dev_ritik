@@ -403,7 +403,7 @@ function CompanyList() {
                                 <Tippy
                                   content="View "
                                   options={{
-                                    theme: "dark",
+                                    theme: "light",
                                   }}
                                 >
                                   <Lucide

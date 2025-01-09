@@ -833,8 +833,8 @@ function CaseStudies() {
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
                                 <div className="flex gap-3 justify-center">
                                   <Tippy
-                                    content="View"
-                                    options={{ theme: "dark" }}
+                                    content="See Details"
+                                    options={{ theme: "light" }}
                                   >
                                     <Lucide
                                       onClick={() => {
@@ -848,7 +848,7 @@ function CaseStudies() {
                                   {user?.user_type === "Admin" && (
                                     <Tippy
                                       content="Edit"
-                                      options={{ theme: "dark" }}
+                                      options={{ theme: "light" }}
                                     >
                                       <Lucide
                                         onClick={() =>

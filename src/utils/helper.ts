@@ -224,7 +224,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
         if (value.length > 0) {
           queryParams.append(key, JSON.stringify(value));
         }
-      } else if (value) {
+      } else if (value !== null && value !== undefined && value !== "") {
         queryParams.append(key, value);
       }
     }
@@ -237,7 +237,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
         if (value.length > 0) {
           queryParams.append(key, JSON.stringify(value));
         }
-      } else if (value) {
+      } else if (value !== null && value !== undefined && value !== "") {
         queryParams.append(key, value);
       }
     }
