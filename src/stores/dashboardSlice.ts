@@ -41,6 +41,7 @@ interface CompanySliceState {
   totalPages: number;
   totalCompanyDashboard: number;
   agmSummaryDetails: any;
+  agmSummaryProxyContest: any;
   caseStudyDetails: any;
   caseStudyLoading: boolean;
   investorCardLoading: boolean;
@@ -81,6 +82,7 @@ const initialState: CompanySliceState = {
   totalPages: 1,
   totalCompanyDashboard: 0,
   agmSummaryDetails: "",
+  agmSummaryProxyContest: "",
   investorCardLoading: true,
   caseStudyDetails: "",
   caseStudyLoading: true,
@@ -137,6 +139,16 @@ export const fetchAGMSummaryDashboard = createAsyncThunk<
 >(`${name}/fetchAGMSummaryDashboard`, async (url: string) => {
   return await dashboardService.fetchAGMSummaryDashboard(url);
 });
+
+
+export const fetchAGMProxyContestDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchAGMProxyContestDashboard`, async (url: string) => {
+  return await dashboardService.fetchAGMSummaryDashboard(url);
+});
+
+
 
 export const fetchCaseStudyDashboard = createAsyncThunk<
   { results: any },
@@ -306,6 +318,23 @@ const companySlice = createSlice({
         }
       )
       .addCase(fetchAGMSummaryDashboard.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+      .addCase(fetchAGMProxyContestDashboard.pending, (state) => {
+        state.agmSummaryProxyContest = "";
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchAGMProxyContestDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.loading = false;
+          state.agmSummaryProxyContest = action.payload.results;
+        }
+      )
+      .addCase(fetchAGMProxyContestDashboard.rejected, (state, action) => {
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";

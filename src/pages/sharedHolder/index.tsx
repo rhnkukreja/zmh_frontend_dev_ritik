@@ -168,7 +168,7 @@ function ShareHolderProposal() {
     formState: { errors },
     setValue,
     watch,
-  } = useForm<ShareHolderFilter>({
+  } = useForm<any>({
     defaultValues: {
       category: filters.category,
       sub_category: filters.sub_category,
@@ -176,6 +176,10 @@ function ShareHolderProposal() {
       keyword: filters.keyword,
       year: filters.year,
       proponent_name: filters?.proponent_name,
+      ready_for_review: filters?.ready_for_review,
+      check_status: filters?.check_status,
+      no_shareholder_proposal: filters?.no_shareholder_proposal,
+      nl_exist: filters?.nl_exist,
       global_search:
         filters?.global_search?.map((item: string) => ({
           value: item,
@@ -191,6 +195,12 @@ function ShareHolderProposal() {
     setValue("status", []);
     setValue("year", []);
     setValue("global_search", []);
+    setValue("ready_for_review", null);
+    setValue("check_status", null);
+    setValue("no_shareholder_proposal", null);
+    setValue("nl_exist", null);
+
+    
   };
 
   const navigate = useNavigate();
