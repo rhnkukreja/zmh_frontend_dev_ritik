@@ -119,7 +119,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       }
       setOptions(Array.isArray(options) ? [...new Set(options)] : []);
     }, 900),
-    []
+    [url]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -8,7 +8,7 @@ import {
 } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -74,6 +74,54 @@ function ShareHolderProposal() {
     ...filters?.proponent_name,
   ]);
 
+  const month = [{
+    id: 1,
+    month: 'January',
+  },
+  {
+    id: 2,
+    month: 'February',
+  },
+  {
+    id: 3,
+    month: 'March',
+  },
+  {
+    id: 4,
+    month: 'April',
+  },
+  {
+    id: 5,
+    month: 'May',
+  },
+  {
+    id: 6,
+    month: 'June',
+  },
+  {
+    id: 7,
+    month: 'July',
+  },
+  {
+    id: 8,
+    month: 'August',
+  },
+  {
+    id: 9,
+    month: 'September',
+  },
+  {
+    id: 10,
+    month: 'October',
+  },
+  {
+    id: 11,
+    month: 'November',
+  },
+  {
+    id: 12,
+    month: 'December',
+  },]
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
@@ -86,6 +134,8 @@ function ShareHolderProposal() {
       sub_category: [],
       year: [],
     });
+
+  const [monthDropdownOption, setMonthDropdownOption] = useState<any>(month);
 
   const [addNewShareholderModalVisible, setAddNewShareholderModalVisible] =
     useState<boolean>(false);
@@ -354,30 +404,31 @@ function ShareHolderProposal() {
       tab === "proposal"
         ? 0
         : tab === "no-action"
-        ? 1
-        : tab === "withdrawn"
-        ? 2
-        : -1;
+          ? 1
+          : tab === "withdrawn"
+            ? 2
+            : -1;
     return tabIndex;
   };
 
-  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] =
-    useState<any>({sub_category: []});
-
+  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
+    sub_category: [],
+  });
 
   const getSubCategoryDropdown = async (value?: any) => {
-
-    if (value !== '') {
+    if (value !== "") {
       const paramFilter = {
         // global_search: companyGlobalSearchName,
         category: value,
-      }
+      };
       try {
         // setGetFundNameDropdownLoader(true);
         const res =
-          await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
+          await shareHolderProposalService.getShareHolderDropdownValues(
+            paramFilter
+          );
         if (res.result) {
-          setapiSubCategoryDropdown({sub_category: res.result?.sub_category});
+          setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
         }
       } catch (error) {
         return error;
@@ -385,8 +436,7 @@ function ShareHolderProposal() {
         // setGetFundNameDropdownLoader(false);
       }
     }
-
-  }
+  };
 
   const getSavedSearches = () => {
     if (user?.saved_search["Shareholder Proposal"]) {
@@ -448,7 +498,21 @@ function ShareHolderProposal() {
     setShareholderDetailModalVisible(true);
   };
 
-  // console.log({ isAllCompanySelected });
+  const multSearchUrls = useMemo(() => {
+    const baseUrls = [
+      "/shareholder_proposal/withdrawn/",
+      "/shareholder_proposal/no_action/",
+      "/shareholder_proposal/def14a/",
+    ];
+
+    if (isAllCompanySelected) {
+      return baseUrls.map((baseUrl) => baseUrl);
+    } else {
+      const queryParam = `?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
+        }`;
+      return baseUrls.map((baseUrl) => `${baseUrl}${queryParam}`);
+    }
+  }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
   return (
     <>
@@ -490,7 +554,7 @@ function ShareHolderProposal() {
                               type: e.target.checked,
                             })
                           );
-                        } catch (error) {}
+                        } catch (error) { }
                       }}
                     />
                     <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
@@ -508,11 +572,7 @@ function ShareHolderProposal() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url={[
-                      "/shareholder_proposal/withdrawn/",
-                      "/shareholder_proposal/no_action/",
-                      "/shareholder_proposal/def14a/",
-                    ]}
+                    url={[...multSearchUrls]}
                     getOptionKey="proponent_name"
                     placeHolder="Search Proponent"
                     onSearchChange={resetPage}
@@ -551,12 +611,12 @@ function ShareHolderProposal() {
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                    <div className="hover:bg-slate-50 ">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
-                  )}
+                      <div className="hover:bg-slate-50 ">
+                        <Button onClick={getSavedSearches}>
+                          Previous Search
+                        </Button>
+                      </div>
+                    )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -700,7 +760,9 @@ function ShareHolderProposal() {
                                         ? apiDropdownOptions.category
                                         : []
                                     );
-                                    getSubCategoryDropdown(apiDropdownOptions.category);
+                                    getSubCategoryDropdown(
+                                      apiDropdownOptions.category
+                                    );
                                   }}
                                 />
                               </FormCheck>
@@ -748,8 +810,8 @@ function ShareHolderProposal() {
                                   className="ml-1"
                                   id="sub_category"
                                   checked={
-                                    apiSubCategoryDropdown.sub_category.length ===
-                                    watch("sub_category")?.length
+                                    apiSubCategoryDropdown.sub_category
+                                      .length === watch("sub_category")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
@@ -864,6 +926,233 @@ function ShareHolderProposal() {
                           )}
                         />
                       </div>
+
+                      {
+                        user?.user_type === "Admin" &&
+                        <>
+
+                          <div className="w-full">
+                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                              Month
+                            </div>
+                            <Controller
+                              name="month"
+                              control={control}
+                              defaultValue={[]}
+                              render={({ field }) => (
+                                <TomSelect
+                                  value={field.value || []}
+                                  onChange={(event) => {
+                                    const values = event.target.value;
+                                    field.onChange(values.map((value: string) => parseInt(value, 10)));
+                                  }}
+                                  options={{ placeholder: "Select Month" }}
+                                  className="w-full"
+                                  multiple
+                                >
+                                  {getDropdownLoader ? (
+                                    <option disabled>Loading...</option>
+                                  ) : (
+                                    monthDropdownOption?.map((item: any) => (
+                                      <option key={item?.id} value={item?.id}>
+                                        {item?.month}
+                                      </option>
+                                    ))
+                                  )}
+                                </TomSelect>
+                              )}
+                            />
+                          </div>
+                          <div className="w-full">
+                            <div className="text-left text-slate-500">Ready For Review</div>
+                            <Controller
+                              name="ready_for_review"
+                              control={control}
+                              defaultValue={null} // Ensure it starts as null (neither true nor false)
+                              render={({ field }) => (
+                                <div className="flex flex-row mt-[10px]">
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-true"
+                                      type="checkbox"
+                                      checked={field.value === true} // Check for true value
+                                      onChange={() =>
+                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-true"
+                                      className="ml-2 text-left"
+                                    >
+                                      True
+                                    </FormCheck.Label>
+                                  </FormCheck>
+
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-false"
+                                      type="checkbox"
+                                      checked={field.value === false} // Check for false value
+                                      onChange={() =>
+                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-false"
+                                      className="ml-2 text-left"
+                                    >
+                                      False
+                                    </FormCheck.Label>
+                                  </FormCheck>
+                                </div>
+                              )}
+                            />
+                          </div>
+
+
+                          <div className="w-full">
+                            <div className="text-left text-slate-500">Admin Status</div>
+                            <Controller
+                              name="check_status"
+                              control={control}
+                              defaultValue={null} // Ensure it starts as null (neither true nor false)
+                              render={({ field }) => (
+                                <div className="flex flex-row mt-[10px]">
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-true"
+                                      type="checkbox"
+                                      checked={field.value === true} // Check for true value
+                                      onChange={() =>
+                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-true"
+                                      className="ml-2 text-left"
+                                    >
+                                      True
+                                    </FormCheck.Label>
+                                  </FormCheck>
+
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-false"
+                                      type="checkbox"
+                                      checked={field.value === false} // Check for false value
+                                      onChange={() =>
+                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-false"
+                                      className="ml-2 text-left"
+                                    >
+                                      False
+                                    </FormCheck.Label>
+                                  </FormCheck>
+                                </div>
+                              )}
+                            />
+                          </div>
+
+
+                          <div className="w-full">
+                            <div className="text-left text-slate-500">No Shareholder Proposal</div>
+                            <Controller
+                              name="no_shareholder_proposal"
+                              control={control}
+                              defaultValue={null} // Default as null to allow toggling
+                              render={({ field }) => (
+                                <div className="flex flex-row mt-[10px]">
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-true"
+                                      type="checkbox"
+                                      checked={field.value === true} // Check for true value
+                                      onChange={() =>
+                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-true"
+                                      className="ml-2 text-left"
+                                    >
+                                      True
+                                    </FormCheck.Label>
+                                  </FormCheck>
+
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-false"
+                                      type="checkbox"
+                                      checked={field.value === false} // Check for false value
+                                      onChange={() =>
+                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-false"
+                                      className="ml-2 text-left"
+                                    >
+                                      False
+                                    </FormCheck.Label>
+                                  </FormCheck>
+                                </div>
+                              )}
+                            />
+                          </div>
+
+                          <div className="w-full">
+                            <div className="text-left text-slate-500">NL Exist</div>
+                            <Controller
+                              name="nl_exist"
+                              control={control}
+                              defaultValue={null} // Default as null to allow toggling
+                              render={({ field }) => (
+                                <div className="flex flex-row mt-[10px]">
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-true"
+                                      type="checkbox"
+                                      checked={field.value === true} // Check for true value
+                                      onChange={() =>
+                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-true"
+                                      className="ml-2 text-left"
+                                    >
+                                      True
+                                    </FormCheck.Label>
+                                  </FormCheck>
+
+                                  <FormCheck className="flex items-center mr-2">
+                                    <FormCheck.Input
+                                      id="checkbox-switch-false"
+                                      type="checkbox"
+                                      checked={field.value === false} // Check for false value
+                                      onChange={() =>
+                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      }
+                                    />
+                                    <FormCheck.Label
+                                      htmlFor="checkbox-switch-false"
+                                      className="ml-2 text-left"
+                                    >
+                                      False
+                                    </FormCheck.Label>
+                                  </FormCheck>
+                                </div>
+                              )}
+                            />
+                          </div>
+
+                        </>
+                      }
+
+
                     </div>
                   </div>
                 </form>
@@ -1052,15 +1341,15 @@ function ShareHolderProposal() {
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                         noAction?.nl_exist &&
-                                          "text-blue-600 underline cursor-pointer",
+                                        "text-blue-600 underline cursor-pointer",
                                       ])}
                                       onClick={() => {
                                         const id =
                                           noAction?.nl_exist === true
                                             ? noAction?.no_action_link
-                                                ?.split("/")
-                                                .filter(Boolean)
-                                                .pop()
+                                              ?.split("/")
+                                              .filter(Boolean)
+                                              .pop()
                                             : 0;
                                         noAction?.nl_exist === true &&
                                           navigate(
@@ -1069,9 +1358,10 @@ function ShareHolderProposal() {
                                       }}
                                     >
                                       <div className="flex items-center justify-center">
-                                      {noAction?.nl_exist === true ? "Yes" : ""}
-                                          </div>
-                                      
+                                        {noAction?.nl_exist === true
+                                          ? "Yes"
+                                          : ""}
+                                      </div>
                                     </Table.Td>
 
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
@@ -1093,7 +1383,7 @@ function ShareHolderProposal() {
                                         {user?.user_type === "Admin" && (
                                           <Tippy
                                             content="Edit"
-                                            options={{ theme: "dark" }}
+                                            options={{ theme: "light" }}
                                           >
                                             <Lucide
                                               onClick={() =>
@@ -1176,7 +1466,7 @@ function ShareHolderProposal() {
                                     className="[&_td]:last:border-b-0"
                                   >
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.proponent || '-'}
+                                      {noAction?.proponent || "-"}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
@@ -1263,7 +1553,7 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                              <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
                                 <Table.Td className="py-2 w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">

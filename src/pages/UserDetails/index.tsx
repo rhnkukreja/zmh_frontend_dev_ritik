@@ -519,7 +519,7 @@ function UserDetail() {
                                                             <Tippy
                                                               content=" See Details"
                                                               options={{
-                                                                theme: "dark",
+                                                                theme: "light",
                                                               }}
                                                             >
                                                               <Lucide

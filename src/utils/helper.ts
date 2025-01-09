@@ -224,7 +224,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
         if (value.length > 0) {
           queryParams.append(key, JSON.stringify(value));
         }
-      } else if (value) {
+      } else if (value !== null && value !== undefined && value !== "") {
         queryParams.append(key, value);
       }
     }
@@ -237,7 +237,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
         if (value.length > 0) {
           queryParams.append(key, JSON.stringify(value));
         }
-      } else if (value) {
+      } else if (value !== null && value !== undefined && value !== "") {
         queryParams.append(key, value);
       }
     }
@@ -270,7 +270,6 @@ const getYearRange = (range: number): string[] => {
     .map((_, idx) => now + 1 - idx) // Start from the next year and count backward
     .map(String);
 };
-
 
 const formatedDate = (dateString: string): string => {
   const parsedDate = dayjs(dateString, "D MMM, YYYY");
@@ -348,10 +347,9 @@ function convertToTitleCase(str: string): string {
   }
   return str
     .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase()) // Capitalize the first letter of each word
-    .replace(/'\w/g, (match) => match.toLowerCase()); // Lowercase letters after an apostrophe
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/'\w/g, (match) => match.toLowerCase());
 }
-
 
 function updateQueryParams(params: { [key: string]: string }) {
   const url = new URL(window.location.href);
@@ -360,6 +358,29 @@ function updateQueryParams(params: { [key: string]: string }) {
   });
   window.history.replaceState({}, "", url.toString());
 }
+
+const localStorageHelper = {
+  setItem: (key: string, value: any) => {
+    if (typeof value === "object") {
+      localStorage.setItem(key, JSON.stringify(value));
+    } else {
+      localStorage.setItem(key, value);
+    }
+  },
+  getItem: (key: string) => {
+    const value = localStorage.getItem(key);
+    try {
+      return JSON.parse(value as any);
+    } catch {
+      return value;
+    }
+  },
+  removeItem: (key: string) => {
+    localStorage.removeItem(key);
+  },
+};
+
+export default localStorageHelper;
 
 export {
   cutText,
@@ -386,5 +407,6 @@ export {
   downloadCSV,
   countValidFilters,
   updateQueryParams,
-  convertToTitleCase
+  convertToTitleCase,
+  localStorageHelper,
 };

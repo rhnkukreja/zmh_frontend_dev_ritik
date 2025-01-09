@@ -1,5 +1,5 @@
 import Button from "@/components/Base/Button";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -255,6 +255,16 @@ function PeerAnalysis() {
     );
     dispatch(resetPage());
   };
+
+  const multSearchUrl = useMemo(() => {
+    if (isAllCompanySelected) {
+      return `/get_engagement_question_dropdown_values/`;
+    } else {
+      return `/get_engagement_question_dropdown_values/?global_search=${
+        companyGlobalSearchName || filters?.global_search?.[0]
+      }`;
+    }
+  }, [isAllCompanySelected, companyGlobalSearchName, filters]);
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -309,7 +319,7 @@ function PeerAnalysis() {
                     }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/get_engagement_question_dropdown_values/"
+                    url={multSearchUrl}
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}

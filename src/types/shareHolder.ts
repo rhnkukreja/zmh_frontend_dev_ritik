@@ -77,7 +77,7 @@ export type AddNoActionType = {
   proponent: string;
   bases_asserted_for_exclusion: string;
   proponent_name: string;
-  // staff_response: string;
+  shareholder: string;
   link_to_staff_response: string;
   link_to_initial_submission: string;
   category: string;
@@ -94,4 +94,8 @@ export type AddNoActionType = {
   company_name?:string;
   vote_outcome_formula: string;
   institution: string;
+  reconsideration: string;
+  staff_response_date: string;
+  approved: boolean;
+  initial_date_for_submission: string;
 };

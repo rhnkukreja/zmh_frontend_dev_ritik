@@ -19,9 +19,9 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
-import { filterMenu } from "@/utils/helper";
+import localStorageHelper, { filterMenu } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
-import { logout } from "@/stores/authenticationSlice";
+import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
 import { FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
@@ -45,11 +45,13 @@ import NotificationAlert from "@/components/NotificationAlert";
 import { modifyRoute, resetRouter } from "@/stores/themeSlice";
 
 import { subSidebarRoutes } from "@/constant";
-import { Tooltip } from "react-tooltip";
+import useCompanySearch from "@/hooks/useCompanySearch";
 
 function Main() {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, finhub } = useAppSelector((state) => state.authentiction);
+  const { companySearchAndUpdate } = useCompanySearch();
+
   const { noCompanyHeaderRoutes } = useAppSelector((state) => state.theme);
 
   const compactMenu = useAppSelector(selectCompactMenu);
@@ -247,6 +249,20 @@ function Main() {
   //   };
   // }, []);
 
+  useEffect(() => {
+    const handleStorageChange = async (event: StorageEvent) => {
+      if (event.key === "searchCompanyData") {
+        const companyData = localStorageHelper.getItem("searchCompanyData");
+        if (companyData?.id !== finhub?.id) {
+          await companySearchAndUpdate(companyData);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
   return (
     <div
       className={clsx([
@@ -598,7 +614,11 @@ function Main() {
 
               <>
                 {["/notes", "/proxy-contest"]?.includes(location.pathname) ? (
-                  <h1 className="font-semibold text-2xl">{location.pathname === '/proxy-contest' ? 'Proxy Contest 2024 (Beta)' : 'Notes (Beta)' } </h1>
+                  <h1 className="font-semibold text-2xl">
+                    {location.pathname === "/proxy-contest"
+                      ? "Proxy Contest 2024 (Beta)"
+                      : "Notes (Beta)"}{" "}
+                  </h1>
                 ) : (
                   <div
                     className="relative justify-center hidden md:flex md:ml-2"

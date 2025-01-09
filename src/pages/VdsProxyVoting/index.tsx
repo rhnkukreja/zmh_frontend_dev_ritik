@@ -30,6 +30,7 @@ import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
+import noRecordFoundIcon from "../../assets/images/zmh-images/no-record-found.png";
 
 const index = () => {
   const location = useLocation();
@@ -160,23 +161,19 @@ const index = () => {
     }
   };
 
-  const convertDivTableToCSV = () => {
+  const convertDivTableToCSV = (tabName: string) => {
     const table = document.querySelector(".table_2");
     const rows = table?.querySelectorAll(".row_2");
     const tableProposal = document.querySelector(".table_3");
     const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-    let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
+    let csvContent = "\uFEFF";
 
-    // Iterate over each row in the first table
     rows?.forEach((row) => {
       const cells = row.querySelectorAll(".cell_2");
       let rowData: any = [];
 
-      // Iterate over each cell and get the text content
       cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
-
-        // Check if the cell contains a comma, wrap it in double quotes
+        let cellText = cell.textContent?.trim(); 
         if (cellText?.includes(",")) {
           cellText = `"${cellText}"`;
         }
@@ -184,20 +181,16 @@ const index = () => {
         rowData.push(cellText);
       });
 
-      // Join cells with commas to form a CSV row
       csvContent += rowData.join(",") + "\n";
     });
 
-    // Iterate over each row in the second table
     rowsProposal?.forEach((row) => {
       const cells = row.querySelectorAll(".cell_3");
       let rowData: any = [];
 
-      // Iterate over each cell and get the text content
       cells.forEach((cell) => {
         let cellText = cell.textContent?.trim();
 
-        // Check if the cell contains a comma, wrap it in double quotes
         if (cellText?.includes(",")) {
           cellText = `"${cellText}"`;
         }
@@ -208,16 +201,9 @@ const index = () => {
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Top-20-Proxy-voting-${companyGlobalSearchName}`);
+    downloadCSV(csvContent, `${tabName}-${companyGlobalSearchName}`);
   };
 
-  function getContent(text: string): string {
-    // const textContent = text.split('<br>').map((line, i) => `(${i+1}). ` + line.trim()).join('\n \n \n');
-    const textContent = text.split('<br>') // Split the text by <br>
-      .map((line, i) => line.trim()) // Add index and trim each line
-      .join('<br> <br> <br> <br>');
-    return text;
-  }
 
   const getSplitContents = (items: any) => {
     const resultString = Object.entries(items)
@@ -362,7 +348,7 @@ const index = () => {
                       <Tippy content="Download Excel" options={{ theme: "light" }}>
                         <div
                           className="box p-[5px] cursor-pointer"
-                          onClick={convertDivTableToCSV}
+                          onClick={() => convertDivTableToCSV('Top-20-Proxy-voting')}
                         >
                           <img alt="download-icon" src={downloadIcon} />
                         </div>
@@ -557,9 +543,9 @@ const index = () => {
                       <form onSubmit={handleSubmit(onSubmit)}>
 
                           <div className="flex items-end gap-4">
-                            <div className=" w-5/12">
+                            <div className=" w-4/12">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
-                                Institution
+                                Select Institution
                                 {/* {apiDropdownOptions?.length > 0 && (
                                   <div>
                                     <FormCheck className="mr-2">
@@ -599,7 +585,7 @@ const index = () => {
                                       field.onChange(value);
                                     }}
                                     options={{
-                                      placeholder: "Select institution",
+                                      placeholder: "Institution",
                                     }}
                                     className="w-full"
                                     multiple
@@ -639,23 +625,38 @@ const index = () => {
                                 Apply
                               </Button>
                             </div>
+
                           </div>
+                          
+                          { vdsProxyAllInvestorDetails?.vds_report?.length > 0
+                            && 
+                            <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
+                            <Tippy content="Download Excel" options={{ theme: "light" }}>
+                              <div
+                                className="box p-[5px] cursor-pointer"
+                                onClick={()=> convertDivTableToCSV('All Investor')}
+                              >
+                                <img alt="download-icon" src={downloadIcon} />
+                              </div>
+                            </Tippy>
+                          </div>
+                          }
                       </form>
                         </div>
                     </div>
                     <div>
                       <TableWrapper isLoading={vdsProxyAllInvestorLoading && filter?.length > 0}>
                         <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                          <Table className="table_2 w-full">
+                          <Table className="table_3 w-full">
                             <Table.Thead className="sticky top-50 z-10">
-                              <Table.Tr className="row_2">
+                              <Table.Tr className="row_3">
                                 {vdsProxyAllInvestorDetails?.vds_report_headers?.length > 0 &&
                                   vdsProxyAllInvestorDetails?.vds_report_headers?.map(
                                     (vdsHeader: any, headerIndex: number) => (
                                       <Table.Td
                                         key={headerIndex}
                                         className={clsx([
-                                          "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                          "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
                                           "sticky top-0", // Ensure the header remains sticky at the top
                                           headerIndex === 0 &&
                                           "sticky left-0 bg-header z-[5000] ", // Fix first column
@@ -678,7 +679,7 @@ const index = () => {
                                   (vdsProxy: any, vdsProxyIndex: number) => (
                                     <Table.Tr
                                       key={vdsProxyIndex}
-                                      className="row_2 [&_td]:last:border-b-0"
+                                      className="row_3 [&_td]:last:border-b-0"
                                     >
                                       {vdsProxyAllInvestorDetails?.vds_report_headers?.length >
                                         0 &&
@@ -687,7 +688,7 @@ const index = () => {
                                             <Table.Td
                                               key={headerIndex}
                                               className={clsx([
-                                                "cell_2 py-2 border-dashed dark:bg-darkmode-600text-left",
+                                                "cell_3 py-2 border-dashed dark:bg-darkmode-600text-left",
                                                 headerIndex === 0 &&
                                                 "sticky left-0 bg-white z-[9]", // Fix first column
                                                 headerIndex === 1 &&
@@ -806,8 +807,10 @@ const index = () => {
                       </TableWrapper>
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            <h1 className="font-semibold"> Select Institution Name First. </h1>
-                          </div>
+                                                {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
+                                                <h1 className="font-semibold"> Select Institution (Required)</h1>
+
+                                                </div>
                         )}
 
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length > 0 && (
@@ -824,7 +827,7 @@ const index = () => {
         </div>
       {/* )} */}
 
-      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
+      <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "white", color: "#000000", width: 700, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
     </>
   );
 };

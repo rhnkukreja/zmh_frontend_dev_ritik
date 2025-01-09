@@ -183,7 +183,6 @@ const index = () => {
 
         updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
         updatedFilter.proposal = [];
-        // getAllInstitutionDropdown();
         if (updatedFilter?.institution_name[0] !== '') {
           getFundNameDependentDropdown(updatedFilter?.institution_name[0]);
         }
@@ -208,13 +207,6 @@ const index = () => {
 
         }, 1000);
 
-        // dispatch(
-        //   fetchNpxProxyDashboard(
-        //     createDynamicURL(
-        //       `${baseURL}/npx/detail/`, updatedFilter, undefined, 1
-        //     )
-        //   )
-        // );
         dispatch(setIsCompanySelected(false));
 
       }
@@ -229,34 +221,15 @@ const index = () => {
       }
       dispatch(setTempSearch(companyGlobalSearchName));
     }
-    // else {
+    // return () => {
     //   dispatch(
     //     fetchNpxProxyDashboard(
     //       createDynamicURL(
-    //         `${baseURL}/npx/detail/`,{}, undefined, page)
+    //         `${baseURL}/npx/detail/`, {}, undefined, 1
+    //       )
     //     )
     //   );
     // }
-
-    //  else if (allApplyFilter) {
-    //   dispatch(
-    //     fetchNpxProxyDashboard(
-    //       createDynamicURL(
-    //         `${baseURL}/npx/detail/`, allApplyFilter, undefined, page)
-    //     )
-    //   );
-    //   dispatch(setTempSearch(companyGlobalSearchName));
-    // }
-
-    return () => {
-      dispatch(
-        fetchNpxProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/npx/detail/`, {}, undefined, 1
-          )
-        )
-      );
-    }
 
   }, [companyGlobalSearchTicker, searchTicker, filter, allApplyFilter, page]);
 

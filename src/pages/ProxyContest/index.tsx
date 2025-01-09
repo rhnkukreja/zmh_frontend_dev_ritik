@@ -10,19 +10,19 @@ import {
     fetchProxyTopFiveContestDashboard,
     fetchVdsProxyAllInvestor,
     fetchVdsProxyDashboard,
+    setProxyContestInvestorFilter,
+    setProxyTopFilter,
     setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
-import LoadingIcon from "../../components/Base/LoadingIcon";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
-import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import noRecordFoundIcon from "../../assets/images/zmh-images/no-record-found.png";
 import { Tooltip } from 'react-tooltip';
 import { Tab } from "@/components/Base/Headless";
-import { FormCheck, FormSelect } from "@/components/Base/Form";
 import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
@@ -32,15 +32,16 @@ const index = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch: AppDispatch = useAppDispatch();
-    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, proxyContestTopFiveLoading, tab } = useAppSelector(
+    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, 
+        proxyContestTopFiveLoading, tab, proxyContestinvestorFilter, proxyContestTopFilter } = useAppSelector(
         (state) => state.dashboard
     );
     const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
         (state: RootState) => state.authentiction
     );
 
-    const [filter, setFilter] = useState<any>({institution_name: [], company_name: []});
-    const [companyFilter, setCompanyFilter] = useState<any>({company_name: [], top: false});
+    // const [proxyContestTopFilter, setCompanyFilter] = useState<any>({company_name: [], top: false});
+    const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
 
 
     const { handleSubmit, control, reset, setValue, watch } =
@@ -51,15 +52,17 @@ const index = () => {
             },
         });
 
+
     useEffect(() => {
 
         if (tab === 'Top-20') {
             dispatch(
                 fetchProxyTopFiveContestDashboard(
-                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...companyFilter}))
+                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...proxyContestTopFilter}))
             );
+            setCompanyHeaderName(proxyContestTopFilter?.company_name[0]);
         }
-    }, [companyFilter, tab])
+    }, [proxyContestTopFilter, tab])
 
     useEffect(() => {
 
@@ -67,13 +70,13 @@ const index = () => {
                 dispatch(
                     fetchProxyContestDashboard(
                         createDynamicURL(
-                            `${baseURL}/vds_proxy_voting/`,{...filter}
+                            `${baseURL}/vds_proxy_voting/`,{...proxyContestinvestorFilter}
                             
                         )
                     )
                 );
         }
-    }, [filter, tab])
+    }, [proxyContestinvestorFilter, tab])
 
 
     const isObject = (item: any) => {
@@ -82,57 +85,6 @@ const index = () => {
         } else {
             false;
         }
-    };
-
-    const convertDivTableToCSV = () => {
-        const table = document.querySelector(".table_2");
-        const rows = table?.querySelectorAll(".row_2");
-        const tableProposal = document.querySelector(".table_3");
-        const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-        let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
-
-        // Iterate over each row in the first table
-        rows?.forEach((row) => {
-            const cells = row.querySelectorAll(".cell_2");
-            let rowData: any = [];
-
-            // Iterate over each cell and get the text content
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
-
-                // Check if the cell contains a comma, wrap it in double quotes
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            // Join cells with commas to form a CSV row
-            csvContent += rowData.join(",") + "\n";
-        });
-
-        // Iterate over each row in the second table
-        rowsProposal?.forEach((row) => {
-            const cells = row.querySelectorAll(".cell_3");
-            let rowData: any = [];
-
-            // Iterate over each cell and get the text content
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim();
-
-                // Check if the cell contains a comma, wrap it in double quotes
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            csvContent += rowData.join(",") + "\n";
-        });
-
-        downloadCSV(csvContent, `Top-5-Proxy-voting-${companyGlobalSearchName}`);
     };
 
 
@@ -149,9 +101,9 @@ const index = () => {
         company: []
     });
 
-    const getAllInstitutionDropdown = async () => {
+    const getAllInstitutionDropdown = async (params?:any) => {
         try {
-            const res = await dashboardService.getInstitution();
+            const res = await dashboardService.getInstitution(params);
             if (res.result?.institution) {
                 setApiDropdownOptions(res.result);
             }
@@ -174,13 +126,20 @@ const index = () => {
             toast.warning("Please select Company");
             return;
         }
-        const applyFilter = {company_name: [proxyFilter?.company_name], institution_name: proxyFilter?.institution_name};
-        setFilter(applyFilter);
+        const applyFilter = { company_name: [proxyFilter?.company_name], institution_name: proxyFilter?.institution_name };
+
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyContestInvestorFilter({ key: key as any, value }));
+        });
     };
 
     const onFilterClear = () => {
         resetFormValues();
-        setFilter({institution_name: [], company_name: []});
+        const applyFilter = {institution_name: [], company_name: []};
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyContestInvestorFilter({ key: key as any, value }));
+        });
+
       };
     
     const resetFormValues: any = () => {
@@ -194,12 +153,21 @@ const index = () => {
             toast.warning("Please select Company");
             return;
         }
-        setCompanyFilter({company_name: [proxyFilter?.company_name], top: true})
+        const applyFilter = {company_name: [proxyFilter?.company_name], top: 'true'};
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyTopFilter({ key: key as any, value }));
+        });
+        // setProxyTopFilter({company_name: [proxyFilter?.company_name], top: 'true'})
     };
 
     const onTopFiveFilterClear = () => {
         resetTopFiveFormValues();
-        setCompanyFilter({company_name: [], top: false})
+        // setCompanyFilter({company_name: [], top: false})
+        const applyFilter = {company_name: [], top: 'false'};
+        Object.entries(applyFilter).forEach(([key, value]) => {
+            dispatch(setProxyTopFilter({ key: key as any, value }));
+        });
+        setCompanyHeaderName('');
       };
     
     const resetTopFiveFormValues: any = () => {
@@ -291,12 +259,15 @@ const index = () => {
                                 <Tab.Panel className="leading-relaxed">
                                     <div className="">
                                         <div className="p-2">
+
+                                        <div className="font-semibold text-xl py-4">{companyHeaderName}</div>
+
                                             <form onSubmit={handleSubmit(onSubmitTopFive)}>
 
                                                 <div className="flex items-end gap-4">
                                                     <div className="w-4/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Company
+                                                            Select Company
                                                         </div>
                                                         <Controller
                                                             name="company_name"
@@ -305,11 +276,11 @@ const index = () => {
                                                             render={({ field }) => (
                                                                 <TomSelect
                                                                     value={field.value || []}
-
-                                                                    onChange={(value) => {
-                                                                        field.onChange(value);
+                                                                    onChange={(event) => {
+                                                                        field.onChange(event);
+                                                                        setCompanyHeaderName(event?.target?.value);
                                                                     }}
-                                                                    options={{ placeholder: "Select Company" }}
+                                                                    options={{ placeholder: "Company" }}
                                                                     className="w-full"
 
                                                                 >
@@ -364,7 +335,7 @@ const index = () => {
                                         </div>
                                     </div>
                                     <div>
-                                        <TableWrapper isLoading={proxyContestTopFiveLoading && (companyFilter.company_name?.length > 0)}>
+                                        <TableWrapper isLoading={proxyContestTopFiveLoading && (proxyContestTopFilter.company_name?.length > 0)}>
                                             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                                                 <Table className="table_2 w-full">
                                                     <Table.Thead className="sticky top-50 z-10">
@@ -524,13 +495,15 @@ const index = () => {
                                             </div>
 
                                         </TableWrapper>
-                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length === 0) && (
+                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (proxyContestTopFilter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold"> Please Select Company First. </h1>
-                                            </div>
+                                                {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
+                                                <h1 className="font-semibold"> Select Company (Required)</h1>
+
+                                                </div>
                                         )}
 
-                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (companyFilter.company_name?.length > 0)  && (
+                                        {proxyContestTopFiveDetails?.vds_report?.length === 0 && (proxyContestTopFilter.company_name?.length > 0)  && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold"> Top 5 Proxy Contest Records Not Found..</h1>
                                             </div>
@@ -548,7 +521,7 @@ const index = () => {
                                                 <div className="flex items-end gap-4">
                                                     <div className="w-5/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Company
+                                                        Select Company
                                                         </div>
                                                         <Controller
                                                             name="company_name"
@@ -560,8 +533,9 @@ const index = () => {
 
                                                                     onChange={(value) => {
                                                                         field.onChange(value);
-                                                                    }}
-                                                                    options={{ placeholder: "Select Company" }}
+                                                                        getAllInstitutionDropdown({"company_name": [value?.target?.value]});
+                                                                      }}
+                                                                    options={{ placeholder: "Company" }}
                                                                     className="w-full"
 
                                                                 >
@@ -578,34 +552,8 @@ const index = () => {
                                                     </div>
                                                     <div className=" w-5/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Institution
-                                                            {/* {apiDropdownOptions?.institution?.length > 0 && (
-                                                                <div>
-                                                                    <FormCheck className="mr-2">
-                                                                        <FormCheck.Label>
-                                                                            Select All
-                                                                        </FormCheck.Label>
-                                                                        <FormCheck.Input
-                                                                            className="ml-1"
-                                                                            id={`institution_name`}
-                                                                            checked={
-                                                                                apiDropdownOptions?.institution?.length === watch("institution_name")?.length
-                                                                            }
-                                                                            type="checkbox"
-                                                                            onChange={(e) => {
-                                                                                if (e.target.checked === true) {
-                                                                                    setValue(
-                                                                                        "institution_name",
-                                                                                        apiDropdownOptions
-                                                                                    );
-                                                                                } else {
-                                                                                    setValue("institution_name", []);
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </FormCheck>
-                                                                </div>
-                                                            )} */}
+                                                           Select Institution
+                                                            
                                                         </div>
                                                         <Controller
                                                             name="institution_name"
@@ -617,7 +565,7 @@ const index = () => {
                                                                         field.onChange(value);
                                                                     }}
                                                                     options={{
-                                                                        placeholder: "Select institution",
+                                                                        placeholder: "Institution",
                                                                     }}
                                                                     className="w-full"
                                                                     multiple
@@ -663,7 +611,7 @@ const index = () => {
                                     </div>
 
                                     <div>
-                                        <TableWrapper isLoading={proxyContestAllInvestorLoading && (filter.institution_name?.length > 0 || filter.company_name?.length > 0)}>
+                                        <TableWrapper isLoading={proxyContestAllInvestorLoading && (proxyContestinvestorFilter.institution_name?.length > 0 || proxyContestinvestorFilter.company_name?.length > 0)}>
                                             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                                                 <Table className="table_2 w-full">
                                                     <Table.Thead className="sticky top-50 z-10">
@@ -823,13 +771,15 @@ const index = () => {
                                             </div>
 
                                         </TableWrapper>
-                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (filter.company_name?.length === 0) && (
+                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (proxyContestinvestorFilter.company_name?.length === 0) && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold"> Please Apply Filters First. </h1>
+                                                {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
+                                                <h1 className="font-semibold"> Select Company (Required)</h1>
+
                                             </div>
                                         )}
 
-                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (filter.company_name?.length > 0)  && (
+                                        {proxyContestAllInvestorDetails?.vds_report?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0)  && (
                                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold"> All Proxy Contest Records Not Found..</h1>
                                             </div>

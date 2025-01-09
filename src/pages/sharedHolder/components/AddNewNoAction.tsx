@@ -49,7 +49,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       defaultValues:
       {
         proponent: selectedShareholderNoAction?.institution,
-        company: selectedShareholderNoAction?.company,
+        company: selectedShareholderNoAction?.company_name,
         category: selectedShareholderNoAction?.category,
         proposal_text: selectedShareholderNoAction?.proposal_text,
         status: selectedShareholderNoAction?.status,
@@ -59,13 +59,43 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
         link_to_staff_response: selectedShareholderNoAction?.link_to_staff_response,
         staff_response: selectedShareholderNoAction?.staff_response,
         bases_asserted_for_exclusion: selectedShareholderNoAction?.bases_asserted_for_exclusion,
-        withdrawn: selectedShareholderNoAction?.withdrawn,
+        withdrawn: selectedShareholderNoAction?.withdrawn ? true : false,
         vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
-        // actual_proponent_name: selectedShareholderNoAction?.actual_proponent_name,
+        approved: selectedShareholderNoAction?.approved ? true : false,
+        staff_response_date: selectedShareholderNoAction?.staff_response_date,
+        reconsideration: selectedShareholderNoAction?.reconsideration,
+        shareholder: selectedShareholderNoAction?.shareholder,
+        initial_date_for_submission: selectedShareholderNoAction?.initial_date_for_submission,
       },
     }
   );
   
+  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({ sub_category: [] });
+
+   useEffect(() => {
+      getSubCategoryDropdown();
+    }, []);
+  
+  
+    const getSubCategoryDropdown = async (value?: any) => {
+  
+      if (value !== '') {
+        const paramFilter = {
+          category: value,
+        }
+        try {
+          const res =
+            await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
+          if (res.result) {
+            setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
+          }
+        } catch (error) {
+          return error;
+        } finally {
+        }
+      }
+  
+    }
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -171,6 +201,33 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="flex flex-col gap-7">
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+               
+              <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Company Name
+                  </FormCheck.Label>
+                  <Controller
+                    name="company"
+                    control={control}
+                    rules={{ required: "Company Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <CompanySelect
+                          setDefaultValue={field.value}
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                        />
+                        {error && (
+                          <Error className="text-red-600 mt-2">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Proponent Name
@@ -204,13 +261,16 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   </div>
                 </div>
 
+              </div>
 
-                {/* <div className="w-full flex-1">
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+               
+               <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Actual Proponent Name
                   </FormCheck.Label>
                   <Controller
-                    name="actual_proponent_name"
+                    name="shareholder"
                     control={control}
                     rules={{ required: "Actual Proponent Name is required" }}
                     render={({ field, fieldState: { error } }) => (
@@ -227,13 +287,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       </>
                     )}
                   />
-                </div> */}
-
-                
-
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                </div>
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Staff Name
@@ -258,29 +312,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   />
                 </div>
 
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                   Company Name
-                  </FormCheck.Label>
-                  <Controller
-                    name="company"
-                    control={control}
-                    rules={{ required: "Company Name is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <CompanySelect
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        {...error && (
-                          <Error className="text-red-600 ">
-                            {error.message}
-                          </Error>
-                        )}
-                      />
-                    )}
-                  />
-                </div>
+                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -298,7 +330,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     </div>
 
                     <Controller
-                      name="link_to_initial_submission"
+                      name="initial_date_for_submission"
                       control={control}
                       defaultValue=""
                       rules={{ required: "Initial Date for Submission is required" }}
@@ -323,52 +355,36 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     />
                   </div>
 
-                  {errors.nl_exist && (
+                  {errors.initial_date_for_submission && (
                     <Error className="max-w-[100%] ">
-                      {errors.nl_exist.message}
+                      {errors.initial_date_for_submission.message}
                     </Error>
                   )}
                 </div>
 
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Withdrawn
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Bases Asserted for Exclution
                   </FormCheck.Label>
-
-                  <div className="mt-2 flex flex-col sm:flex-row">
-                    <Controller
-                      name="withdrawn"
-                      control={control}
-                      rules={{ required: "Withdrawn is required" }}
-                      render={({ field }) => (
-                        <>
-                          <FormCheck className="flex items-center mr-2">
-                            <FormCheck.Input
-                              id="checkbox-switch-4"
-                              type="checkbox"
-                              {...field}
-                              value="true"
-                              checked={field.value === true}
-                            // onChange={(e) => field.onChange(true)}
-                            />
-                            <FormCheck.Label
-                              htmlFor="checkbox-switch-4"
-                              className="ml-2 text-left"
-                            >
-                              Tick if withdrawn
-                            </FormCheck.Label>
-                          </FormCheck>
-
-                          {errors.status && (
-                            <Error className="max-w-[100%] mt-6">
-                              {errors.status?.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="bases_asserted_for_exclusion"
+                    control={control}
+                    rules={{ required: "Bases Asserted for Exclutione is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Bases Asserted for Exclution"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
                 </div>
+
+               
                 {/* <div className="w-full flex-1">
                   <FormCheck.Label
                     htmlFor="engagement_date"
@@ -416,24 +432,86 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div> */}
               </div>
 
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Link to Initial Submission
+                  </FormCheck.Label>
+                  <Controller
+                    name="link_to_initial_submission"
+                    control={control}
+                    rules={{
+                      required: "Link to Initial Submission is required",
+                      pattern: {
+                        value: /^https:\/\/.+$/i,
+                        message: "The link must start with 'https://'",
+                      },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Link to Initial Submission"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Link to Staff Response
+                  </FormCheck.Label>
+                  <Controller
+                    name="link_to_staff_response"
+                    control={control}
+                    rules={{
+                      required: "Link to Staff Response is required",
+                      pattern: {
+                        value: /^https:\/\/.+$/i,
+                        message: "The link must start with 'https://'",
+                      },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Link to Staff Response"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+
+
+              </div>
+
+
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Category Name
+                    Category
                   </FormCheck.Label>
 
                   <div className="mt-2">
                     <Controller
                       name="category"
                       control={control}
-                      rules={{ required: "Category is required" }}
+                      rules={{required: "Category is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
+                              getSubCategoryDropdown(e?.target?.value);
                             }}
                             options={{
                               placeholder: "Select Category",
@@ -448,17 +526,15 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                               }
                             )}
                           </TomSelect>
-
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
                         </>
                       )}
                     />
                   </div>
-
-                  {errors.category && (
-                    <Error className="max-w-[100%] ">
-                      {errors?.category.message}
-                    </Error>
-                  )}
                 </div>
 
                 <div className="flex-1 w-full">
@@ -470,11 +546,11 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     <Controller
                       name="sub_category"
                       control={control}
-                      rules={{ required: "Sub Category is required" }}
+                      rules={{required: "Sub Category is required"  }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -483,28 +559,27 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                             }}
                             className="w-full text-left"
                           >
-                            {apiDropdownOptions?.sub_category?.map(
+                            {apiSubCategoryDropdown?.sub_category?.map(
                               (sub_category: string) => {
                                 return (
-                                  <option value={sub_category}>{sub_category}</option>
+                                  <option value={sub_category}>
+                                    {sub_category}
+                                  </option>
                                 );
                               }
                             )}
                           </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
                         </>
                       )}
                     />
                   </div>
-
-                  {errors.sub_category && (
-                    <Error className="max-w-[100%] ">
-                      {errors?.sub_category.message}
-                    </Error>
-                  )}
                 </div>
-
               </div>
-
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
 
 
@@ -550,65 +625,46 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   )}
                 </div>
 
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Bases Asserted for Exclution
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                    Withdrawn
                   </FormCheck.Label>
-                  <Controller
-                    name="bases_asserted_for_exclusion"
-                    control={control}
-                    rules={{ required: "Bases Asserted for Exclutione is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Bases Asserted for Exclution"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
-                        )}
-                      </>
-                    )}
-                  />
+
+                  <div className="mt-2 flex flex-col sm:flex-row">
+                    <Controller
+                      name="withdrawn"
+                      control={control}
+                      render={({ field }) => (
+                        <>
+                          <FormCheck className="flex items-center mr-2">
+                            <FormCheck.Input
+                              id="checkbox-switch-4"
+                              type="checkbox"
+                              {...field}
+                              value="true"
+                              checked={field.value === true}
+                            // onChange={(e) => field.onChange(true)}
+                            />
+                            <FormCheck.Label
+                              htmlFor="checkbox-switch-4"
+                              className="ml-2 text-left"
+                            >
+                              Tick if withdrawn
+                            </FormCheck.Label>
+                          </FormCheck>
+
+                          {errors.withdrawn && (
+                            <Error className="max-w-[100%] mt-6">
+                              {errors.withdrawn?.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
                 </div>
 
               </div>
-
-
-
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Link to Staff Response
-                  </FormCheck.Label>
-                  <Controller
-                    name="vote_outcome_formula"
-                    control={control}
-                    rules={{
-                      required: "Link to Staff Response is required",
-                      pattern: {
-                        value: /^https:\/\/.+$/i,
-                        message: "The link must start with 'https://'",
-                      },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Link to Staff Response"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
-
-
-              </div>
-
 
               <div>
                 <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
@@ -617,13 +673,12 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 <Controller
                   name="proposal_text"
                   control={control}
-                  rules={{ required: true }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ''}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your proposal text here"
                     />
                   )}
                 />
@@ -632,6 +687,119 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     Proposal Text are required
                   </Error>
                 )}
+              </div>
+
+
+              <div>
+                <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                  Link for Reconsideration
+                </FormCheck.Label>
+                <Controller
+                  name="reconsideration"
+                  control={control}
+                  render={({ field }) => (
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your reconsideration text here"
+                    />
+                  )}
+                />
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%] ">
+                    Proposal Text are required
+                  </Error>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="w-full flex-1">
+                  <FormCheck.Label
+                    htmlFor="engagement_date"
+                    className="block  font-semibold text-gray-800 mb-2 text-left"
+                  >
+                    Date of Staff Response
+                  </FormCheck.Label>
+
+                  <div className="relative">
+                    <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                      <Lucide icon="Calendar" className="w-4 h-4" />
+                    </div>
+
+                    <Controller
+                      name="staff_response_date"
+                      control={control}
+                      defaultValue=""
+                      rules={{ required: "Date of Staff Response is required" }}
+                      render={({ field }) => (
+                        <Litepicker
+                          placeholder="Select Date of Staff Response"
+                          value={field.value}
+                          onChange={(date) => field.onChange(date)}
+                          options={{
+                            autoApply: false,
+                            showWeekNumbers: true,
+                            dropdowns: {
+                              minYear: 1990,
+                              maxYear: null,
+                              months: true,
+                              years: true,
+                            },
+                          }}
+                          className="pl-12"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {errors.staff_response_date && (
+                    <Error className="max-w-[100%] ">
+                      {errors.staff_response_date.message}
+                    </Error>
+                  )}
+                </div>
+
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                    Status
+                  </FormCheck.Label>
+
+                  <div className="mt-2 flex flex-col sm:flex-row">
+                    <Controller
+                      name="approved"
+                      control={control}
+                      render={({ field }) => (
+                        <>
+                          <FormCheck className="flex items-center mr-2">
+                            <FormCheck.Input
+                              id="checkbox-switch-4"
+                              type="checkbox"
+                              {...field}
+                              value="true"
+                              checked={field.value === true}
+                            // onChange={(e) => field.onChange(true)}
+                            />
+                            <FormCheck.Label
+                              htmlFor="checkbox-switch-4"
+                              className="ml-2 text-left"
+                            >
+                              Tick if Approved
+                            </FormCheck.Label>
+                          </FormCheck>
+
+                          {errors.status && (
+                            <Error className="max-w-[100%] mt-6">
+                              {errors.status?.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
+
+
               </div>
 
             </div>

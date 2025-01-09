@@ -3,7 +3,7 @@ import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -68,6 +68,8 @@ function CaseStudies() {
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
+
+  console.log({ companyGlobalSearchName, data: filters?.global_search });
   const { instituteName: InstituteName } = useAppSelector(
     (state) => state.dashboard
   );
@@ -323,6 +325,16 @@ function CaseStudies() {
     setAddNewCaseStudyModalVisible(true);
   };
 
+  const multSearchUrl = useMemo(() => {
+    if (isAllCompanySelected) {
+      return `/get_case_studies_dropdown_values/`;
+    } else {
+      return `/get_case_studies_dropdown_values/?global_search=${
+        companyGlobalSearchName || filters?.global_search?.[0]
+      }`;
+    }
+  }, [isAllCompanySelected, companyGlobalSearchName, filters]);
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -393,7 +405,7 @@ function CaseStudies() {
                     }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/get_case_studies_dropdown_values"
+                    url={multSearchUrl}
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
@@ -821,8 +833,8 @@ function CaseStudies() {
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
                                 <div className="flex gap-3 justify-center">
                                   <Tippy
-                                    content="View"
-                                    options={{ theme: "dark" }}
+                                    content="See Details"
+                                    options={{ theme: "light" }}
                                   >
                                     <Lucide
                                       onClick={() => {
@@ -836,7 +848,7 @@ function CaseStudies() {
                                   {user?.user_type === "Admin" && (
                                     <Tippy
                                       content="Edit"
-                                      options={{ theme: "dark" }}
+                                      options={{ theme: "light" }}
                                     >
                                       <Lucide
                                         onClick={() =>
