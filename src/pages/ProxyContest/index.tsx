@@ -339,7 +339,7 @@ const index = () => {
 
                                     {/* AGM Summary Table */}
 
-                                    <div className="mt-5 ">
+                                    {/* <div className="mt-5 ">
                                         <TableWrapper isLoading={loading}>
                                             <div className="max-h-[30vh] overflow-y-scroll">
                                                 <Table className="table_2 w-full">
@@ -481,7 +481,7 @@ const index = () => {
                                                 </Table>
                                             </div>
                                         </TableWrapper>
-                                    </div>
+                                    </div> */}
 
                                     {/* AGM Summary Table */}
 
