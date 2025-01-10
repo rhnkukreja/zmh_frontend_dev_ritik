@@ -166,7 +166,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     const transformedData: any = {
       ...data,
       institution: data.institution ? Number(data.institution) : null,
-      company: data?.company?.value ?? 0,
+      company: data?.company?.value ?? selectedShareholderProposal?.company ?? 0,
       vote_outcome: data?.vote_outcome === '  ' ? null : data?.vote_outcome,
       vote_outcome_formula: data?.vote_outcome_formula === '  ' ? null : data?.vote_outcome_formula,
       matched_id_no_action: data?.matched_id_no_action === '  ' ? null : (data?.matched_id_no_action)

@@ -130,7 +130,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     const transformedData = {
       ...data,
       proponent: data.proponent ? Number(data.proponent) : 0,
-      company: data?.company?.value ?? 0
+      company: data?.company?.value ?? selectedShareholderNoAction?.company ?? 0
         
     };
 

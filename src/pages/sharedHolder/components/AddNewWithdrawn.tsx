@@ -85,7 +85,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
     const transformedData = {
       ...data,
       proponent: data.proponent ? Number(data.proponent) : 0,
-      company: data?.company?.value ?? 0
+      company: data?.company?.value ?? selectedShareholderWithdrawn?.company ?? 0
     };
 
     try {

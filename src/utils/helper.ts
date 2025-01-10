@@ -337,7 +337,7 @@ function countValidFilters(filters: FilterObject): number {
     const value = filters[key];
     return Array.isArray(value)
       ? value.length !== 0
-      : value !== undefined && value !== "";
+      : value !== undefined && value !== "" && value !== null;
   }).length;
 }
 

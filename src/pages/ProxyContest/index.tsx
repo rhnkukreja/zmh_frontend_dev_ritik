@@ -6,10 +6,9 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
+    fetchAGMProxyContestDashboard,
     fetchProxyContestDashboard,
     fetchProxyTopFiveContestDashboard,
-    fetchVdsProxyAllInvestor,
-    fetchVdsProxyDashboard,
     setProxyContestInvestorFilter,
     setProxyTopFilter,
     setTabs,
@@ -27,12 +26,14 @@ import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import { toast } from "react-toastify";
+import CPagination from "@/components/Pagination";
+import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 
 const index = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch: AppDispatch = useAppDispatch();
-    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, 
+    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, agmSummaryProxyContest, loading,
         proxyContestTopFiveLoading, tab, proxyContestinvestorFilter, proxyContestTopFilter } = useAppSelector(
         (state) => state.dashboard
     );
@@ -40,7 +41,6 @@ const index = () => {
         (state: RootState) => state.authentiction
     );
 
-    // const [proxyContestTopFilter, setCompanyFilter] = useState<any>({company_name: [], top: false});
     const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
 
 
@@ -58,8 +58,25 @@ const index = () => {
         if (tab === 'Top-20') {
             dispatch(
                 fetchProxyTopFiveContestDashboard(
-                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...proxyContestTopFilter}))
+                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...proxyContestTopFilter }))
             );
+            
+            if (proxyContestTopFilter?.company_name?.length > 0) {
+                dispatch(
+                    fetchAGMProxyContestDashboard(
+                        createDynamicURL(
+                            `${baseURL}/voting_report_8k/`, { ...proxyContestTopFilter, ticker: companyGlobalSearchTicker })
+                    )
+                );
+            }
+            else {
+                dispatch(
+                    fetchAGMProxyContestDashboard(
+                        createDynamicURL(
+                            `${baseURL}/voting_report_8k/`, {ticker: ''})
+                    )
+                );
+            }
             setCompanyHeaderName(proxyContestTopFilter?.company_name[0]);
         }
     }, [proxyContestTopFilter, tab])
@@ -183,7 +200,7 @@ const index = () => {
                     : -1;
         return tabIndex;
     };
-
+      
     return (
         <>
             {/* <div className="p-y-5 mb-1 font-semibold text-xl ">
@@ -315,25 +332,161 @@ const index = () => {
                                                             Apply
                                                         </Button>
                                                     </div>
-
                                                 </div>
-                                                {/* <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
-                                                        <h1 className="text-md font-bold">
-                                                            Aggregate Ownership:{" "}
-                                                            {    proxyContestTopFiveDetails?.total_percent_ownership}
-                                                        </h1>
-                                                        <Tippy content="Download Excel" options={{ theme: "light" }}>
-                                                            <div
-                                                                className="box p-[5px] cursor-pointer"
-                                                                onClick={convertDivTableToCSV}
-                                                            >
-                                                                <img alt="download-icon" src={downloadIcon} />
-                                                            </div>
-                                                        </Tippy>
-                                                    </div> */}
                                             </form>
                                         </div>
                                     </div>
+
+                                    {/* AGM Summary Table */}
+
+                                    {/* <div className="mt-5 ">
+                                        <TableWrapper isLoading={loading}>
+                                            <div className="max-h-[30vh] overflow-y-scroll">
+                                                <Table className="table_2 w-full">
+                                                    <Table.Thead className="sticky top-0 z-10">
+                                                        <Table.Tr className="row_2">
+                                                            {agmSummaryProxyContest?.nominees_headers?.length > 0 &&
+                                                                agmSummaryProxyContest?.nominees_headers?.map(
+                                                                    (nomineeHeader: any, headerIndex: number) => (
+                                                                        <Table.Td
+                                                                            key={headerIndex}
+                                                                            className={clsx([
+                                                                                "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                                                                headerIndex === 0 && "text-left",
+                                                                            ])}
+                                                                        >
+                                                                            {nomineeHeader.header}
+                                                                        </Table.Td>
+                                                                    )
+                                                                )}
+                                                        </Table.Tr>
+                                                    </Table.Thead>
+
+                                                    <Table.Tbody>
+                                                        {agmSummaryProxyContest?.nominees?.length > 0 &&
+                                                            agmSummaryProxyContest?.nominees?.map(
+                                                                (nominee: any, nomineeIndex: number) => (
+                                                                    <Table.Tr
+                                                                        key={nomineeIndex}
+                                                                        className="row_2 [&_td]:last:border-b-0"
+                                                                    >
+                                                                        {agmSummaryProxyContest?.nominees_headers?.length >
+                                                                            0 &&
+                                                                            agmSummaryProxyContest?.nominees_headers?.map(
+                                                                                (
+                                                                                    nomineeHeader: any,
+                                                                                    headerIndex: number
+                                                                                ) => (
+                                                                                    <Table.Td
+                                                                                        key={headerIndex}
+                                                                                        className={clsx([
+                                                                                            "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
+                                                                                            headerIndex === 0 && "text-left ",
+                                                                                        ])}
+                                                                                    >
+                                                                                        <h1
+                                                                                            className={clsx([
+                                                                                                headerIndex === 0 &&
+                                                                                                "font-semibold ",
+                                                                                                headerIndex ===
+                                                                                                agmSummaryProxyContest
+                                                                                                    ?.nominees_headers?.length -
+                                                                                                1 &&
+                                                                                                parseFloat(
+                                                                                                    nominee[nomineeHeader?.field]
+                                                                                                ) < 85 &&
+                                                                                                "text-red-700 font-semibold",
+                                                                                            ])}
+                                                                                        >
+                                                                                            {nominee[nomineeHeader?.field]}
+                                                                                        </h1>
+                                                                                    </Table.Td>
+                                                                                )
+                                                                            )}
+                                                                    </Table.Tr>
+                                                                )
+                                                            )}
+                                                    </Table.Tbody>
+                                                </Table>
+                                            </div>
+                                        </TableWrapper>
+
+                                        <br />
+                                        <TableWrapper isLoading={loading}>
+                                            <div className="max-h-[30vh] overflow-y-scroll">
+                                                <Table className="table_3 w-full">
+                                                    <Table.Thead className="sticky top-0 z-10">
+                                                        <Table.Tr className="row_3">
+                                                            {agmSummaryProxyContest?.proposals_headers?.map(
+                                                                (proposalHeader: any, headerIndex: number) => (
+                                                                    <Table.Td
+                                                                        key={headerIndex}
+                                                                        className={clsx([
+                                                                            "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                                                            headerIndex === 0 && "text-left",
+                                                                        ])}
+                                                                    >
+                                                                        {proposalHeader?.header}
+                                                                    </Table.Td>
+                                                                )
+                                                            )}
+                                                        </Table.Tr>
+                                                    </Table.Thead>
+
+                                                    <Table.Tbody>
+                                                        {agmSummaryProxyContest?.proposals?.length > 0 &&
+                                                            agmSummaryProxyContest?.proposals?.map(
+                                                                (proposal: any, proposalIndex: number) => (
+                                                                    <Table.Tr
+                                                                        key={proposalIndex}
+                                                                        className="row_3 [&_td]:last:border-b-0"
+                                                                    >
+                                                                        {agmSummaryProxyContest?.proposals_headers?.length >
+                                                                            0 &&
+                                                                            agmSummaryProxyContest?.proposals_headers?.map(
+                                                                                (
+                                                                                    proposalHeader: any,
+                                                                                    headerIndex: number
+                                                                                ) => (
+                                                                                    <Table.Td
+                                                                                        key={headerIndex}
+                                                                                        className={clsx([
+                                                                                            "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
+                                                                                            headerIndex === 0 && "text-left",
+                                                                                        ])}
+                                                                                    >
+                                                                                        <h1
+                                                                                            className={clsx([
+                                                                                                headerIndex === 0 &&
+                                                                                                "font-semibold ",
+                                                                                                headerIndex ===
+                                                                                                agmSummaryProxyContest
+                                                                                                    ?.proposals_headers?.length -
+                                                                                                1 &&
+                                                                                                parseFloat(
+                                                                                                    proposal[proposalHeader?.field]
+                                                                                                ) < 85 &&
+                                                                                                "text-red-700 font-semibold",
+                                                                                            ])}
+                                                                                        >
+                                                                                            {proposal[proposalHeader?.field]}
+                                                                                        </h1>
+                                                                                    </Table.Td>
+                                                                                )
+                                                                            )}
+                                                                    </Table.Tr>
+                                                                )
+                                                            )}
+                                                    </Table.Tbody>
+                                                </Table>
+                                            </div>
+                                        </TableWrapper>
+                                    </div> */}
+
+                                    {/* AGM Summary Table */}
+
+                                    <br />
+                                    
                                     <div>
                                         <TableWrapper isLoading={proxyContestTopFiveLoading && (proxyContestTopFilter.company_name?.length > 0)}>
                                             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
@@ -610,6 +763,8 @@ const index = () => {
                                         </div>
                                     </div>
 
+                                    
+
                                     <div>
                                         <TableWrapper isLoading={proxyContestAllInvestorLoading && (proxyContestinvestorFilter.institution_name?.length > 0 || proxyContestinvestorFilter.company_name?.length > 0)}>
                                             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
@@ -785,6 +940,10 @@ const index = () => {
                                             </div>
                                         )}
                                     </div>
+
+
+                                    
+
                                 </Tab.Panel>
                             </Tab.Panels>
                         </Tab.Group>
