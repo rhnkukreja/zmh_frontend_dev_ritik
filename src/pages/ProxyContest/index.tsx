@@ -32,6 +32,7 @@ import { toast } from "react-toastify";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import CPagination from "@/components/Pagination";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import CaseProxyModal from "./CaseProxyModal";
 
 const index = () => {
     const location = useLocation();
@@ -48,7 +49,9 @@ const index = () => {
 
     const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
     const [companyAllHeaderName, setCompanyAllHeaderName] = useState<string | null>(null);
-
+    const [caseProxyModalVisible, setCaseProxyModalVisible] =
+    useState<boolean>(false);
+    const [caseProxyModalData, setCaseProxyModalData] = useState<any>(null);
     const companyDetails = agmSummaryProxyContest?.company ? agmSummaryProxyContest?.company[0] : "";
     const companyName = Object.keys(companyDetails)[0];
     const meetingDetails = companyDetails[companyName];
@@ -718,7 +721,8 @@ const index = () => {
                                                                                                 >
                                                                                                     <Lucide
                                                                                                         onClick={() => {
-                                                                                                            navigate(`/case-studies/${item?.id}`);
+                                                                                                            setCaseProxyModalVisible(true);
+                                                                                                            setCaseProxyModalData(item);
                                                                                                         }}
                                                                                                         icon="Eye"
                                                                                                         className="w-4 h-4 mr-1.5 stroke-[1.3]"
@@ -1358,7 +1362,8 @@ const index = () => {
                                                                                             >
                                                                                                 <Lucide
                                                                                                     onClick={() => {
-                                                                                                        navigate(`/case-studies/${item?.id}`);
+                                                                                                        setCaseProxyModalVisible(true);
+                                                                                                        setCaseProxyModalData(item);
                                                                                                     }}
                                                                                                     icon="Eye"
                                                                                                     className="w-4 h-4 mr-1.5 stroke-[1.3]"
@@ -1615,6 +1620,14 @@ const index = () => {
                 </div>
             </div>
             {/* )} */}
+
+            {caseProxyModalVisible && (
+                <CaseProxyModal
+                    caseProxyModalVisible={caseProxyModalVisible}
+                    setCaseProxyModalVisible={setCaseProxyModalVisible}
+                    caseProxyModalData={caseProxyModalData}
+                />
+            )}
 
             <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
         </>
