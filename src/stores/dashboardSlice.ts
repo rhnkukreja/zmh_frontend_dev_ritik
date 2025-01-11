@@ -441,8 +441,7 @@ const companySlice = createSlice({
         ) => {
           state.loading = false;
           state.caseStudiesTopProxy = action.payload.results;
-          state.totalCaseStudiesTopProxyPages = action.payload.count;
-          state.totalPages = getPageNumbers(action.payload.count);
+          state.totalCaseStudiesTopProxyPages = getPageNumbers(action.payload.count);
         }
       )
       .addCase(fetchCaseStudiesTopProxyContext.rejected, (state, action) => {
@@ -466,8 +465,8 @@ const companySlice = createSlice({
         ) => {
           state.loading = false;
           state.caseStudiesAllProxy = action.payload.results;
-          state.totalCaseStudiesAllProxyPages = action.payload.count;
-          state.totalPages = getPageNumbers(action.payload.count);
+          state.totalCaseStudiesAllProxyPages =  getPageNumbers(action.payload.count);
+          // state.totalPages = getPageNumbers(action.payload.count);
         }
       )
       .addCase(fetchCaseStudiesAllProxyContext.rejected, (state, action) => {

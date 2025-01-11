@@ -617,7 +617,7 @@ const index = () => {
                                     {/* Case Studies Table */}
                                    
                                     <section >
-                                        {!loading && proxyContestTopFiveDetails?.vds_report_headers?.length > 0 && caseStudiesTopProxy?.length > 0 &&
+                                        {!loading && caseStudiesTopProxy?.length > 0 &&
 
                                             <section className="box p-5 mt-3.5">
                                                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
@@ -1257,7 +1257,7 @@ const index = () => {
                                     {/* Case Studies Table */}
 
                                     <section >
-                                        {!loading && caseStudiesAllProxy?.vds_report_headers?.length > 0 && caseStudiesTopProxy?.length > 0 &&
+                                        {!loading && caseStudiesAllProxy?.length > 0 &&
 
                                             <section className="box p-5 mt-3.5">
                                                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
@@ -1381,7 +1381,7 @@ const index = () => {
                                                     <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                                                         <CPagination
                                                             page={page}
-                                                            totalPages={totalCaseStudiesTopProxyPages}
+                                                            totalPages={totalCaseStudiesAllProxyPages}
                                                             handleNextPage={handleNextPage}
                                                             handlePageChange={handlePageChange}
                                                             handlePreviousPage={handlePreviousPage}
