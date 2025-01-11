@@ -1,6 +1,6 @@
 import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
-import { convertToTitleCase, createDynamicURL } from "@/utils/helper";
+import { convertToTitleCase, createDynamicURL, downloadCSV } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import clsx from "clsx";
@@ -264,16 +264,53 @@ const index = () => {
                     : -1;
         return tabIndex;
     };
+
+    const convertDivTableToCSV = () => {
+        const table = document.querySelector(".agm_table_2");
+        const rows = table?.querySelectorAll(".row_2");
+        const tableProposal = document.querySelector(".agm_table_3");
+        const rowsProposal = tableProposal?.querySelectorAll(".agm_row_3");
+        let csvContent = "\uFEFF"; 
+    
+        rows?.forEach((row) => {
+          const cells = row.querySelectorAll(".agm_cell_2");
+          let rowData: any = [];
+    
+          cells.forEach((cell) => {
+            let cellText = cell.textContent?.trim(); 
+    
+            if (cellText?.includes(",")) {
+              cellText = `"${cellText}"`;
+            }
+    
+            rowData.push(cellText);
+          });
+    
+          csvContent += rowData.join(",") + "\n";
+        });
+    
+        rowsProposal?.forEach((row) => {
+          const cells = row.querySelectorAll(".agm_cell_3");
+          let rowData: any = [];
+    
+          cells.forEach((cell) => {
+            let cellText = cell.textContent?.trim();
+    
+            if (cellText?.includes(",")) {
+              cellText = `"${cellText}"`;
+            }
+    
+            rowData.push(cellText);
+          });
+    
+          csvContent += rowData.join(",") + "\n";
+        });
+    
+        downloadCSV(csvContent, `Agm-Summary-${companyHeaderName}`);
+      };
       
     return (
         <>
-            {/* <div className="p-y-5 mb-1 font-semibold text-xl ">
-        {companyGlobalSearchName}
-      </div> */}
-
-            {proxyContestAllInvestorDetails?.vds_report?.length === 0 &&
-                !proxyContestAllInvestorLoading &&
-                location.pathname !== "/" && (
                     <Button
                         onClick={() => {
                             navigate("/");
@@ -288,18 +325,11 @@ const index = () => {
                         />
                         Back
                     </Button>
-                )}
 
             <div className="p-5 mt-1 box">
         
                 <div className="w-full">
                     <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                        {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                            <span>
-                                <h1 className="text-lg font-bold">Proxy Contest 2024 (Beta) </h1>
-                            </span>
-                        </div> */}
-
                     </div>
                     <>
                         <Tab.Group selectedIndex={getSelectedTabIndex()}>
@@ -416,7 +446,7 @@ const index = () => {
                                                             <p className=" italic"> Meeting Date: {meetingDate}</p>
                                                         </span>
                                                     </div>
-                                                    {/* <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
+                                                    <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                                                         <Tippy content="Download Excel" options={{ theme: "light" }}>
                                                             <div
                                                                 className="box p-[5px] cursor-pointer"
@@ -425,21 +455,21 @@ const index = () => {
                                                                 <img alt="download-icon" src={downloadIcon} />
                                                             </div>
                                                         </Tippy>
-                                                    </div> */}
+                                                    </div>
                                                 </div>
                                                 <div className="">
                                                     <TableWrapper>
                                                         <div className="max-h-[30vh] overflow-y-scroll">
-                                                            <Table className="table_2 w-full">
+                                                            <Table className="agm_table_2 w-full">
                                                                 <Table.Thead className="sticky top-0 z-10">
-                                                                    <Table.Tr className="row_2">
+                                                                    <Table.Tr className="agm_row_2">
                                                                         {agmSummaryProxyContest?.nominees_headers?.length > 0 &&
                                                                             agmSummaryProxyContest?.nominees_headers?.map(
                                                                                 (nomineeHeader: any, headerIndex: number) => (
                                                                                     <Table.Td
                                                                                         key={headerIndex}
                                                                                         className={clsx([
-                                                                                            "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                                                                            "agm_cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
                                                                                             headerIndex === 0 && "text-left",
                                                                                         ])}
                                                                                     >
@@ -456,7 +486,7 @@ const index = () => {
                                                                             (nominee: any, nomineeIndex: number) => (
                                                                                 <Table.Tr
                                                                                     key={nomineeIndex}
-                                                                                    className="row_2 [&_td]:last:border-b-0"
+                                                                                    className="agm_row_2 [&_td]:last:border-b-0"
                                                                                 >
                                                                                     {agmSummaryProxyContest?.nominees_headers?.length >
                                                                                         0 &&
@@ -468,7 +498,7 @@ const index = () => {
                                                                                                 <Table.Td
                                                                                                     key={headerIndex}
                                                                                                     className={clsx([
-                                                                                                        "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
+                                                                                                        "agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
                                                                                                         headerIndex === 0 && "text-left ",
                                                                                                     ])}
                                                                                                 >
@@ -502,15 +532,15 @@ const index = () => {
                                                     <br />
                                                     <TableWrapper >
                                                         <div className="max-h-[30vh] overflow-y-scroll">
-                                                            <Table className="table_3 w-full">
+                                                            <Table className="agm_table_3 w-full">
                                                                 <Table.Thead className="sticky top-0 z-10">
-                                                                    <Table.Tr className="row_3">
+                                                                    <Table.Tr className="agm_row_3">
                                                                         {agmSummaryProxyContest?.proposals_headers?.map(
                                                                             (proposalHeader: any, headerIndex: number) => (
                                                                                 <Table.Td
                                                                                     key={headerIndex}
                                                                                     className={clsx([
-                                                                                        "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                                                                        "agm_cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
                                                                                         headerIndex === 0 && "text-left",
                                                                                     ])}
                                                                                 >
@@ -527,7 +557,7 @@ const index = () => {
                                                                             (proposal: any, proposalIndex: number) => (
                                                                                 <Table.Tr
                                                                                     key={proposalIndex}
-                                                                                    className="row_3 [&_td]:last:border-b-0"
+                                                                                    className="agm_row_3 [&_td]:last:border-b-0"
                                                                                 >
                                                                                     {agmSummaryProxyContest?.proposals_headers?.length >
                                                                                         0 &&
@@ -539,7 +569,7 @@ const index = () => {
                                                                                                 <Table.Td
                                                                                                     key={headerIndex}
                                                                                                     className={clsx([
-                                                                                                        "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
+                                                                                                        "agm_cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
                                                                                                         headerIndex === 0 && "text-left",
                                                                                                     ])}
                                                                                                 >
@@ -1142,7 +1172,7 @@ const index = () => {
                                                     <br />
                                                     <TableWrapper >
                                                         <div className="max-h-[30vh] overflow-y-scroll">
-                                                            <Table className="table_3 w-full">
+                                                            <Table className="agm_table_3 w-full">
                                                                 <Table.Thead className="sticky top-0 z-10">
                                                                     <Table.Tr className="row_3">
                                                                         {agmSummaryAllProxyContest?.proposals_headers?.map(
