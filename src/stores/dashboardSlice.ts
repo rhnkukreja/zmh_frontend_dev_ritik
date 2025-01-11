@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
 import { Filer } from "@/types/dashboard";
 import { CompanyData } from "@/types/company";
+import { getPageNumbers } from "@/utils/helper";
 const name = "dashboard";
 
 export type CompanyDashboard = {
@@ -69,6 +70,11 @@ interface CompanySliceState {
   tab: "Top-20" | "All-Investor" | "Top-5" | "";
   proxyContestinvestorFilter: any;
   proxyContestTopFilter: any;
+  caseStudiesTopProxy: any;
+  totalCaseStudiesTopProxyPages: number;
+  agmSummaryAllProxyContest: any;
+  caseStudiesAllProxy: any;
+  totalCaseStudiesAllProxyPages: number;
 }
 
 const initialState: CompanySliceState = {
@@ -99,7 +105,7 @@ const initialState: CompanySliceState = {
   investorProfileLoading: true,
   tempSearch: null,
   instituteName: null,
-  percent: '',
+  percent: "",
   notificationDetails: [],
   notificationLoading: true,
   totalNotification: 0,
@@ -107,9 +113,14 @@ const initialState: CompanySliceState = {
   tab: "Top-20",
   searchCompletion: 0,
   proxyContestAllInvestorLoading: true,
-  proxyContestAllInvestorDetails: '',
-  proxyContestinvestorFilter: {institution_name: [], company_name: []},
-  proxyContestTopFilter: {company_name: [], top: false}
+  proxyContestAllInvestorDetails: "",
+  proxyContestinvestorFilter: { institution_name: [], company_name: [] },
+  proxyContestTopFilter: { company_name: [], top: false },
+  caseStudiesTopProxy: "",
+  totalCaseStudiesTopProxyPages: 0,
+  agmSummaryAllProxyContest: "",
+  caseStudiesAllProxy: "",
+  totalCaseStudiesAllProxyPages: 0,
 
   // {
   //   nominees: [],
@@ -149,6 +160,27 @@ export const fetchAGMProxyContestDashboard = createAsyncThunk<
 });
 
 
+export const fetchCaseStudiesTopProxyContext = createAsyncThunk<
+  { count: number; results: any[] },
+  string
+>(`${name}/fetchCaseStudiesTopProxyContext`, async (url: string) => {
+  return await dashboardService.fetchCaseStudiesTopProxyContext(url);
+});
+
+export const fetchAGMProxyAllContestDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchAGMProxyAllContestDashboard`, async (url: string) => {
+  return await dashboardService.fetchAGMSummaryDashboard(url);
+});
+
+
+export const fetchCaseStudiesAllProxyContext = createAsyncThunk<
+  { count: number; results: any[] },
+  string
+>(`${name}/fetchCaseStudiesAllProxyContext`, async (url: string) => {
+  return await dashboardService.fetchCaseStudiesTopProxyContext(url);
+});
 
 export const fetchCaseStudyDashboard = createAsyncThunk<
   { results: any },
@@ -391,6 +423,74 @@ const companySlice = createSlice({
       )
       .addCase(fetchProxyTopFiveContestDashboard.rejected, (state, action) => {
         state.proxyContestTopFiveLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+      .addCase(fetchCaseStudiesTopProxyContext.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchCaseStudiesTopProxyContext.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            count: number;
+            results: any[];
+          }>
+        ) => {
+          state.loading = false;
+          state.caseStudiesTopProxy = action.payload.results;
+          state.totalCaseStudiesTopProxyPages = action.payload.count;
+          state.totalPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchCaseStudiesTopProxyContext.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch voting guidelines";
+      })
+
+      .addCase(fetchCaseStudiesAllProxyContext.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchCaseStudiesAllProxyContext.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            count: number;
+            results: any[];
+          }>
+        ) => {
+          state.loading = false;
+          state.caseStudiesAllProxy = action.payload.results;
+          state.totalCaseStudiesAllProxyPages = action.payload.count;
+          state.totalPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchCaseStudiesAllProxyContext.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch voting guidelines";
+      })
+      
+
+      .addCase(fetchAGMProxyAllContestDashboard.pending, (state) => {
+        state.agmSummaryAllProxyContest = "";
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchAGMProxyAllContestDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.loading = false;
+          state.agmSummaryAllProxyContest = action.payload.results;
+        }
+      )
+      .addCase(fetchAGMProxyAllContestDashboard.rejected, (state, action) => {
+        state.loading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })
