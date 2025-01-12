@@ -83,7 +83,7 @@ const index = () => {
                 dispatch(
                     fetchAGMProxyContestDashboard(
                         createDynamicURL(
-                            `${baseURL}/voting_report_8k/`, { ...proxyContestTopFilter, ticker: companyGlobalSearchTicker })
+                            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker })
                     )
                 );
                 dispatch(
@@ -121,7 +121,7 @@ const index = () => {
                 dispatch(
                     fetchAGMProxyAllContestDashboard(
                         createDynamicURL(
-                            `${baseURL}/voting_report_8k/`, { ...proxyContestinvestorFilter, ticker: companyGlobalSearchTicker })
+                            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker })
                     )
                 );
                 dispatch(
@@ -606,11 +606,11 @@ const index = () => {
                                             </section>
                                         }
 
-                                        {!loading && agmSummaryProxyContest?.nominees_headers?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
+                                        {/* {!loading && agmSummaryProxyContest?.nominees_headers?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
                                             <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold">Meeting Details Not Found</h1>
                                             </div>
-                                        }
+                                        } */}
 
                                     </section>
                                     {/* AGM Summary Table */}
@@ -756,11 +756,11 @@ const index = () => {
                                             </section>
                                         }
 
-                                        {!loading && caseStudiesTopProxy?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
+                                        {/* {!loading && caseStudiesTopProxy?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
                                             <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold">Case Studies Records Not Found.</h1>
                                             </div>
-                                        }
+                                        } */}
 
                                     </section>
                                     
@@ -950,11 +950,11 @@ const index = () => {
                                             </section>
                                         }
 
-                                        {!loading && proxyContestTopFiveDetails?.vds_report_headers?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
+                                        {/* {!loading && proxyContestTopFiveDetails?.vds_report_headers?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
                                             <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold">Top 5 Proxy Contest Records Not Found.</h1>
                                             </div>
-                                        }
+                                        } */}
 
                                     </section>
                                     
@@ -1247,11 +1247,11 @@ const index = () => {
                                             </section>
                                         }
 
-                                        {!loading && agmSummaryAllProxyContest?.nominees_headers?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0) &&
+                                        {/* {!loading && agmSummaryAllProxyContest?.nominees_headers?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0) &&
                                             <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold">Meeting Details Not Found</h1>
                                             </div>
-                                        }
+                                        } */}
 
                                     </section>
                                     {/* AGM Summary Table */}
@@ -1397,11 +1397,11 @@ const index = () => {
                                             </section>
                                         }
 
-                                        {!loading && caseStudiesAllProxy?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0) &&
+                                        {/* {!loading && caseStudiesAllProxy?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0) &&
                                             <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold">Case Studies Records Not Found.</h1>
                                             </div>
-                                        }
+                                        } */}
 
                                     </section>
 
@@ -1591,11 +1591,11 @@ const index = () => {
                                             </section>
                                         }
 
-                                        {!loading && proxyContestAllInvestorDetails?.vds_report_headers?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0) &&
+                                        {/* {!loading && proxyContestAllInvestorDetails?.vds_report_headers?.length === 0 && (proxyContestinvestorFilter.company_name?.length > 0) &&
                                             <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 <h1 className="font-semibold">All Proxy Contest Records Not Found.</h1>
                                             </div>
-                                        }
+                                        } */}
 
                                     </section>
 
