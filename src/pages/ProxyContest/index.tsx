@@ -83,7 +83,7 @@ const index = () => {
                 dispatch(
                     fetchAGMProxyContestDashboard(
                         createDynamicURL(
-                            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker })
+                            `${baseURL}/voting_report_8k/`, { company_name: proxyContestTopFilter?.company_name })
                     )
                 );
                 dispatch(
@@ -121,7 +121,7 @@ const index = () => {
                 dispatch(
                     fetchAGMProxyAllContestDashboard(
                         createDynamicURL(
-                            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker })
+                            `${baseURL}/voting_report_8k/`, { company_name: proxyContestTopFilter?.company_name })
                     )
                 );
                 dispatch(
