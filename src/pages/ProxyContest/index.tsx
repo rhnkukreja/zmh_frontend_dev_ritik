@@ -210,6 +210,11 @@ const index = () => {
             toast.warning("Please select Company");
             return;
         }
+        resetFormValues();
+        const instituteFilter = { institution_name: [] };
+        Object.entries(instituteFilter).forEach(([key, value]) => {
+            dispatch(setProxyTopFilter({ key: key as any, value }));
+        });
         const applyFilter = { company_name: [proxyFilter?.company_name], top: 'true' };
         Object.entries(applyFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
