@@ -101,6 +101,14 @@ const index = () => {
                             `${baseURL}/voting_report_8k/`, {ticker: ''})
                     )
                 );
+
+                dispatch(
+                    fetchCaseStudiesTopProxyContext(
+                        createDynamicURL(
+                            `${baseURL}/case_studies/`, { company_name: [""]})
+                    )
+                );
+                
             }
             setCompanyHeaderName(proxyContestTopFilter?.company_name[0]);
         }
@@ -137,6 +145,13 @@ const index = () => {
                     fetchAGMProxyAllContestDashboard(
                         createDynamicURL(
                             `${baseURL}/voting_report_8k/`, {ticker: ''})
+                    )
+                );
+
+                dispatch(
+                    fetchCaseStudiesAllProxyContext(
+                        createDynamicURL(
+                            `${baseURL}/case_studies/`, { company_name: [""]})
                     )
                 );
             }
@@ -776,7 +791,8 @@ const index = () => {
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                         <span>
                                                             <h1 className="text-lg font-bold">
-                                                                Proxy Contest
+                                                                {/* Proxy Contest */}
+                                                                Voting Details
                                                             </h1>
                                                         </span>
                                                     </div>
@@ -1417,7 +1433,8 @@ const index = () => {
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                         <span>
                                                             <h1 className="text-lg font-bold">
-                                                                Proxy Contest
+                                                                {/* Proxy Contest */}
+                                                                Voting Details
                                                             </h1>
                                                         </span>
                                                     </div>

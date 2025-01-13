@@ -41,7 +41,7 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
             <Dialog.Panel >
                 <Dialog.Title>
                     <h2 className="mr-auto text-xl font-semibold">
-                        View Case Study Information
+                        Case Study Detail
                     </h2>
                     <div
                         onClick={() => {
