@@ -358,6 +358,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                               months: true,
                               years: true,
                             },
+                            position: 'top'
                           }}
                           className="pl-12"
                         />
@@ -751,6 +752,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                               months: true,
                               years: true,
                             },
+                            position: 'top'
                           }}
                           className="pl-12"
                         />
