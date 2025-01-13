@@ -42,14 +42,17 @@ import { resetEngagementQuestions } from "@/stores/engagementQuestionSlice";
 import { resetPeerAnalysis } from "@/stores/peerAnalysisSlice";
 import { resetCaseStudy } from "@/stores/caseStudySlice";
 import NotificationAlert from "@/components/NotificationAlert";
-import { modifyRoute, resetRouter } from "@/stores/themeSlice";
 
 import { subSidebarRoutes } from "@/constant";
 import useCompanySearch from "@/hooks/useCompanySearch";
+import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
 
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
+
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+
   const { companySearchAndUpdate } = useCompanySearch();
 
   const { noCompanyHeaderRoutes } = useAppSelector((state) => state.theme);
@@ -59,6 +62,15 @@ function Main() {
     localStorage.setItem("compactMenu", val.toString());
     dispatch(setCompactMenuStore(val));
   };
+
+  const [selectedText, setSelectedText] = useState<string>("");
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
+
+  const [globalCreateNoteModalVisible, setGlobalCreateNoteModalVisible] =
+    useState<boolean>(false);
   const [quickSearch, setQuickSearch] = useState(false);
   const [switchAccount, setSwitchAccount] = useState(false);
   const [notificationsPanel, setNotificationsPanel] = useState(false);
@@ -189,37 +201,12 @@ function Main() {
   //   const selection = window.getSelection();
   //   const text = selection?.toString() || "";
 
-  //   // Only trigger the alert if there's selected text
-  //   if (text.trim()) {
-  //     console.log("Selected text:", text);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   document.addEventListener("selectionchange", handleSelectionChange);
-
-  //   return () => {
-  //     document.removeEventListener("selectionchange", handleSelectionChange);
-  //   };
-  // }, []);
-
-  // const [selectedText, setSelectedText] = useState<string>("");
-  // const [tooltipPosition, setTooltipPosition] = useState<{
-  //   x: number;
-  //   y: number;
-  // }>({ x: 0, y: 0 });
-  // const tooltipRef = useRef<HTMLDivElement | null>(null);
-
-  // const handleSelectionChange = () => {
-  //   const selection = window.getSelection();
-  //   const text = selection?.toString() || "";
-
   //   if (text.trim() && selection) {
   //     const range = selection.getRangeAt(0).getBoundingClientRect();
   //     setSelectedText(text);
   //     setTooltipPosition({
   //       x: range.left + window.scrollX,
-  //       y: range.top + window.scrollY - 30, // Offset above the selection
+  //       y: range.top + window.scrollY - 30,
   //     });
   //   } else {
   //     setSelectedText("");
@@ -227,9 +214,9 @@ function Main() {
   // };
 
   // const handleCreateNote = () => {
-  //   alert(`Note created: ${selectedText}`);
-  //   setSelectedText("");
+  //   setGlobalCreateNoteModalVisible(true);
   // };
+
   // useEffect(() => {
   //   const handleClickOutside = (e: MouseEvent) => {
   //     if (
@@ -263,6 +250,7 @@ function Main() {
       window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
+
   return (
     <div
       className={clsx([
@@ -802,27 +790,24 @@ function Main() {
       </div>
 
       {/* <>
-      {selectedText && (
+        {selectedText && (
           <div
             ref={tooltipRef}
+            className="absolute bg-white shadow-lg rounded-lg px-4  py-2 cursor-pointer z-50 transform transition-transform hover:scale-105"
             style={{
-              position: "absolute",
               top: tooltipPosition.y,
               left: tooltipPosition.x,
-              background: "#f9f9f9",
-              border: "1px solid #ccc",
-              borderRadius: "5px",
-              padding: "5px 10px",
-              cursor: "pointer",
-              zIndex: 1000,
             }}
             onMouseDown={(e) => {
-              e.preventDefault(); 
-              e.stopPropagation(); 
+              e.preventDefault();
+              e.stopPropagation();
             }}
             onClick={handleCreateNote}
           >
-            Create Note
+            <span className="text-sm font-medium text-primary flex justify-center items-center">
+              <Lucide icon="Pen" className="w-4 h-4 stroke-[1.3] mr-1.5" />
+              Create Note
+            </span>
           </div>
         )}
       </> */}
@@ -847,6 +832,11 @@ function Main() {
           </div>
         </div>
       </div>
+
+      {/* <GlobalCreateNoteModal
+        globalCreateNoteModalVisible={globalCreateNoteModalVisible}
+        setGlobalCreateNoteModalVisible={setGlobalCreateNoteModalVisible}
+      /> */}
 
       <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}>
         <Dialog.Panel className="p-10 text-center h-full">

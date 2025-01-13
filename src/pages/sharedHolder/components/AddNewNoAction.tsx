@@ -18,7 +18,10 @@ import {
 import { toast } from "react-toastify";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addEditNewNoAction, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import {
+  addEditNewNoAction,
+  fetchShareHolderProposal,
+} from "@/stores/shareholderProposalSlice";
 import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
@@ -30,72 +33,73 @@ interface AddNoActionProps {
   selectedShareholderNoAction: AddNoActionType | null;
 }
 
-
-
 const AddNewNoAction: React.FC<AddNoActionProps> = ({
   addNewNoActionModalVisible,
   setAddNewNoActionModalVisible,
-  selectedShareholderNoAction
+  selectedShareholderNoAction,
 }) => {
-
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
+  const { loading, page } = useAppSelector(
+    (state) => state.sharedHolderNoAction
+  );
   const {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<AddNoActionType>(
-    {
-      defaultValues:
-      {
-        proponent: selectedShareholderNoAction?.institution,
-        company: selectedShareholderNoAction?.company_name,
-        category: selectedShareholderNoAction?.category,
-        proposal_text: selectedShareholderNoAction?.proposal_text,
-        status: selectedShareholderNoAction?.status,
-        sub_category: selectedShareholderNoAction?.sub_category,
-        year: selectedShareholderNoAction?.year,
-        link_to_initial_submission: selectedShareholderNoAction?.link_to_initial_submission,
-        link_to_staff_response: selectedShareholderNoAction?.link_to_staff_response,
-        staff_response: selectedShareholderNoAction?.staff_response,
-        bases_asserted_for_exclusion: selectedShareholderNoAction?.bases_asserted_for_exclusion,
-        withdrawn: selectedShareholderNoAction?.withdrawn ? true : false,
-        vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
-        approved: selectedShareholderNoAction?.approved ? true : false,
-        staff_response_date: selectedShareholderNoAction?.staff_response_date,
-        reconsideration: selectedShareholderNoAction?.reconsideration,
-        shareholder: selectedShareholderNoAction?.shareholder,
-        initial_date_for_submission: selectedShareholderNoAction?.initial_date_for_submission,
-      },
-    }
-  );
-  
-  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({ sub_category: [] });
+  } = useForm<AddNoActionType>({
+    defaultValues: {
+      proponent: selectedShareholderNoAction?.institution,
+      company: selectedShareholderNoAction?.company_name,
+      category: selectedShareholderNoAction?.category,
+      proposal_text: selectedShareholderNoAction?.proposal_text,
+      status: selectedShareholderNoAction?.status,
+      sub_category: selectedShareholderNoAction?.sub_category,
+      year: selectedShareholderNoAction?.year,
+      link_to_initial_submission:
+        selectedShareholderNoAction?.link_to_initial_submission,
+      link_to_staff_response:
+        selectedShareholderNoAction?.link_to_staff_response,
+      staff_response: selectedShareholderNoAction?.staff_response,
+      bases_asserted_for_exclusion:
+        selectedShareholderNoAction?.bases_asserted_for_exclusion,
+      withdrawn: selectedShareholderNoAction?.withdrawn ? true : false,
+      vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
+      approved: selectedShareholderNoAction?.approved ? true : false,
+      staff_response_date: selectedShareholderNoAction?.staff_response_date,
+      reconsideration: selectedShareholderNoAction?.reconsideration,
+      shareholder: selectedShareholderNoAction?.shareholder,
+      initial_date_for_submission:
+        selectedShareholderNoAction?.initial_date_for_submission,
+    },
+  });
 
-   useEffect(() => {
-      getSubCategoryDropdown();
-    }, []);
-  
-  
-    const getSubCategoryDropdown = async (value?: any) => {
-  
-      if (value !== '') {
-        const paramFilter = {
-          category: value,
+  const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
+    sub_category: [],
+  });
+
+  useEffect(() => {
+    getSubCategoryDropdown();
+  }, []);
+
+  const getSubCategoryDropdown = async (value?: any) => {
+    if (value !== "") {
+      const paramFilter = {
+        category: value,
+      };
+      try {
+        const res =
+          await shareHolderProposalService.getShareHolderDropdownValues(
+            paramFilter
+          );
+        if (res.result) {
+          setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
         }
-        try {
-          const res =
-            await shareHolderProposalService.getShareHolderDropdownValues(paramFilter);
-          if (res.result) {
-            setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
-          }
-        } catch (error) {
-          return error;
-        } finally {
-        }
+      } catch (error) {
+        return error;
+      } finally {
       }
-  
     }
+  };
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -125,32 +129,45 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     getAllCaseStudyDropdowns();
   }, []);
 
-
   const onSubmit = async (data: AddNoActionType) => {
     const transformedData = {
       ...data,
       proponent: data.proponent ? Number(data.proponent) : 0,
-      company: data?.company?.value ?? selectedShareholderNoAction?.company ?? 0
-        
+      company:
+        data?.company?.value ?? selectedShareholderNoAction?.company ?? 0,
     };
-
 
     try {
       let response;
       if (selectedShareholderNoAction) {
-        response = await dispatch(addEditNewNoAction({ id: selectedShareholderNoAction?.id!, data: transformedData })).unwrap();
-      }
-      else {
-        response = await dispatch(addEditNewNoAction({ data: transformedData })).unwrap();
+        response = await dispatch(
+          addEditNewNoAction({
+            id: selectedShareholderNoAction?.id!,
+            data: transformedData,
+          })
+        ).unwrap();
+      } else {
+        response = await dispatch(
+          addEditNewNoAction({ data: transformedData })
+        ).unwrap();
       }
 
       if (response.results?.id) {
-        toast.success(selectedShareholderNoAction ? 'Shareholder No Action Updated' : "New Shareholder No Action Added");
+        toast.success(
+          selectedShareholderNoAction
+            ? "Shareholder No Action Updated"
+            : "New Shareholder No Action Added"
+        );
         setAddNewNoActionModalVisible(false);
 
         dispatch(
           fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/no_action/`, { global_search: companyGlobalSearchName }, undefined, page)
+            createDynamicURL(
+              `${baseURL}/shareholder_proposal/no_action/`,
+              { global_search: companyGlobalSearchName },
+              undefined,
+              page
+            )
           )
         );
       }
@@ -171,7 +188,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   //   }
   // }, [selectedShareholderNoAction])
 
-  const onError: SubmitErrorHandler<any> = () => { };
+  const onError: SubmitErrorHandler<any> = () => {};
 
   return (
     <Dialog
@@ -185,10 +202,10 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
-            {selectedShareholderNoAction
+              {selectedShareholderNoAction
                 ? "Edit Shareholder No Action"
                 : "Add New Shareholder No Action"}
-              </h2>
+            </h2>
             <div
               onClick={() => {
                 setAddNewNoActionModalVisible(false);
@@ -201,8 +218,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="flex flex-col gap-7">
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-               
-              <div className="w-full flex-1">
+                <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Company Name
                   </FormCheck.Label>
@@ -256,18 +272,15 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                           )}
                         </>
                       )}
-
                     />
                   </div>
                 </div>
-
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-               
-               <div className="w-full flex-1">
+                <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Actual Proponent Name
+                    Actual Proponent Name
                   </FormCheck.Label>
                   <Controller
                     name="shareholder"
@@ -298,10 +311,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     rules={{ required: "Staff Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
-                        <FormInput
-                          placeholder="Enter Staff Name"
-                          {...field}
-                        />
+                        <FormInput placeholder="Enter Staff Name" {...field} />
                         {error && (
                           <Error className="text-red-600 ">
                             {error.message}
@@ -311,8 +321,6 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     )}
                   />
                 </div>
-
-                
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -333,7 +341,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       name="initial_date_for_submission"
                       control={control}
                       defaultValue=""
-                      rules={{ required: "Initial Date for Submission is required" }}
+                      rules={{
+                        required: "Initial Date for Submission is required",
+                      }}
                       render={({ field }) => (
                         <Litepicker
                           placeholder="Select Initial Date for Submission"
@@ -369,7 +379,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   <Controller
                     name="bases_asserted_for_exclusion"
                     control={control}
-                    rules={{ required: "Bases Asserted for Exclutione is required" }}
+                    rules={{
+                      required: "Bases Asserted for Exclutione is required",
+                    }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -377,14 +389,15 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                           {...field}
                         />
                         {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
                         )}
                       </>
                     )}
                   />
                 </div>
 
-               
                 {/* <div className="w-full flex-1">
                   <FormCheck.Label
                     htmlFor="engagement_date"
@@ -454,7 +467,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                           {...field}
                         />
                         {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
                         )}
                       </>
                     )}
@@ -482,17 +497,15 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                           {...field}
                         />
                         {error && (
-                          <Error className="text-red-600 ">{error.message}</Error>
+                          <Error className="text-red-600 ">
+                            {error.message}
+                          </Error>
                         )}
                       </>
                     )}
                   />
                 </div>
-
-
               </div>
-
-
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
@@ -504,7 +517,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     <Controller
                       name="category"
                       control={control}
-                      rules={{required: "Category is required" }}
+                      rules={{ required: "Category is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -546,7 +559,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     <Controller
                       name="sub_category"
                       control={control}
-                      rules={{required: "Sub Category is required"  }}
+                      rules={{ required: "Sub Category is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -581,8 +594,6 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-
-
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Year
@@ -596,7 +607,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -605,13 +616,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                             }}
                             className="w-full text-left"
                           >
-                            {apiDropdownOptions?.year?.map(
-                              (year: string) => {
-                                return (
-                                  <option value={year}>{year}</option>
-                                );
-                              }
-                            )}
+                            {apiDropdownOptions?.year?.map((year: string) => {
+                              return <option value={year}>{year}</option>;
+                            })}
                           </TomSelect>
                         </>
                       )}
@@ -643,7 +650,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                               {...field}
                               value="true"
                               checked={field.value === true}
-                            // onChange={(e) => field.onChange(true)}
+                              // onChange={(e) => field.onChange(true)}
                             />
                             <FormCheck.Label
                               htmlFor="checkbox-switch-4"
@@ -663,7 +670,6 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     />
                   </div>
                 </div>
-
               </div>
 
               <div>
@@ -688,7 +694,6 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   </Error>
                 )}
               </div>
-
 
               <div>
                 <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
@@ -778,7 +783,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                               {...field}
                               value="true"
                               checked={field.value === true}
-                            // onChange={(e) => field.onChange(true)}
+                              // onChange={(e) => field.onChange(true)}
                             />
                             <FormCheck.Label
                               htmlFor="checkbox-switch-4"
@@ -798,10 +803,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     />
                   </div>
                 </div>
-
-
               </div>
-
             </div>
           </Dialog.Description>
           <Dialog.Footer className="flex justify-end">
@@ -818,8 +820,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
               {loading && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
-                    }`}
+                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
+                    loading ? "animate-spin" : ""
+                  }`}
                 />
               )}
               Save
