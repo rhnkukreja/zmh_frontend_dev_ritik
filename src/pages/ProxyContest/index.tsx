@@ -33,6 +33,7 @@ import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import CPagination from "@/components/Pagination";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import CaseProxyModal from "./CaseProxyModal";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
 const index = () => {
     const location = useLocation();
@@ -87,19 +88,23 @@ const index = () => {
         }
 
         if (proxyContestTopFilter?.company_name?.length > 0) {
-            dispatch(
-                fetchAGMProxyContestDashboard(
-                    createDynamicURL(
-                        `${baseURL}/voting_report_8k/`, { company_name: proxyContestTopFilter?.company_name })
-                )
-            );
-            dispatch(
-                fetchCaseStudiesTopProxyContext(
-                    createDynamicURL(
-                        `${baseURL}/case_studies/`, { company_name: proxyContestTopFilter?.company_name, themes: ['Proxy Contest/M&A'] }, undefined,
-                        page)
-                )
-            );
+
+            if ((proxyContestTopFilter?.institution_name?.length === 0 || !proxyContestTopFilter?.institution_name)) {
+                dispatch(
+                    fetchAGMProxyContestDashboard(
+                        createDynamicURL(
+                            `${baseURL}/voting_report_8k/`, { company_name: proxyContestTopFilter?.company_name })
+                    )
+                );
+                dispatch(
+                    fetchCaseStudiesTopProxyContext(
+                        createDynamicURL(
+                            `${baseURL}/case_studies/`, { company_name: proxyContestTopFilter?.company_name, themes: ['Proxy Contest/M&A'] }, undefined,
+                            page)
+                    )
+                );
+            }
+
         }
         else {
             dispatch(
@@ -185,7 +190,7 @@ const index = () => {
             toast.warning("Please select Institution");
             return;
         }
-        const applyFilter = { company_name: proxyContestTopFilter?.company_name, institution_name: proxyFilter?.institution_name };
+        const applyFilter = { company_name: proxyContestTopFilter?.company_name, institution_name: proxyFilter?.institution_name, top: null };
         Object.entries(applyFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
         });
@@ -193,7 +198,7 @@ const index = () => {
 
     const onFilterClear = () => {
         resetFormValues();
-        const applyFilter = {institution_name: []};
+        const applyFilter = {institution_name: [], top: 'true'};
         Object.entries(applyFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
         });
@@ -338,6 +343,7 @@ const index = () => {
                                                                     value={field.value || []}
                                                                     onChange={(event) => {
                                                                         field.onChange(event);
+                                                                        getAllInstitutionDropdown({"company_name": [event?.target?.value]});
                                                                         // setCompanyHeaderName(event?.target?.value);
                                                                     }}
                                                                     options={{ placeholder: "Company" }}
@@ -968,21 +974,27 @@ const index = () => {
 
                                             </section>
                                         }
-
-                                        {/* {!loading && proxyContestTopFiveDetails?.vds_report_headers?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
-                                            <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold">Top 5 Proxy Contest Records Not Found.</h1>
-                                            </div>
-                                        } */}
-
                                     </section>
+
+                                    {(proxyContestTopFiveDetails === "" && proxyContestTopFiveLoading) && (
+                                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                            {/* <h1 className="font-semibold">Loading...</h1> */}
+                                            <div className="absolute inset-0 flex items-center justify-center bg-white">
+                                                <LoadingIcon
+                                                    color="#800000"
+                                                    icon="three-dots"
+                                                    className="w-16 h-16"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Proxy Contest Table */}
 
 
                                     {/* No Filters Record */}
 
-                                    {(proxyContestTopFilter.company_name?.length === 0) && (
+                                    {(proxyContestTopFilter.company_name?.length === 0 && !proxyContestTopFiveLoading) && (
                                         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                             <h1 className="font-semibold"></h1>
                                         </div>
