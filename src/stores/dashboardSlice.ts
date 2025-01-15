@@ -48,8 +48,8 @@ interface CompanySliceState {
   investorCardLoading: boolean;
   vdsProxyDetails: any;
   vdsProxyLoading: boolean;
-  proxyContestAllInvestorDetails: any;
-  proxyContestAllInvestorLoading: boolean;
+  proxyContestReleaseDetails: any;
+  proxyContestReleaseLoading: boolean;
   proxyContestTopFiveDetails: any;
   proxyContestTopFiveLoading: boolean;
   vdsProxyAllInvestorDetails: any;
@@ -112,8 +112,8 @@ const initialState: CompanySliceState = {
   companySearchLoading: true,
   tab: "Top-20",
   searchCompletion: 0,
-  proxyContestAllInvestorLoading: true,
-  proxyContestAllInvestorDetails: "",
+  proxyContestReleaseLoading: true,
+  proxyContestReleaseDetails: "",
   proxyContestinvestorFilter: { institution_name: [], company_name: [] },
   proxyContestTopFilter: { company_name: [], top: false },
   caseStudiesTopProxy: "",
@@ -224,11 +224,11 @@ export const fetchWhatNewNotification = createAsyncThunk<
   return await dashboardService.fetchWhatNewNotification(url);
 });
 
-export const fetchProxyContestDashboard = createAsyncThunk<
+export const fetchProxyContestReleaseDashboard = createAsyncThunk<
   { results: any },
   string
->(`${name}/fetchProxyContestDashboard`, async (url: string) => {
-  return await dashboardService.fetchProxyContestDashboard(url);
+>(`${name}/fetchProxyContestReleaseDashboard`, async (url: string) => {
+  return await dashboardService.fetchProxyContestReleaseDashboard(url);
 });
 
 export const fetchProxyTopFiveContestDashboard = createAsyncThunk<
@@ -280,7 +280,7 @@ const companySlice = createSlice({
       state,
       action: PayloadAction<{
         key: any;
-        value: string | string[];
+        value: string | string[] | boolean;
       }>
     ) {
       state.proxyContestTopFilter[action.payload.key] = action.payload
@@ -494,20 +494,20 @@ const companySlice = createSlice({
           action.error.message || "Failed to fetch company dashboard";
       })
 
-      .addCase(fetchProxyContestDashboard.pending, (state) => {
-        state.proxyContestAllInvestorDetails = "";
-        state.proxyContestAllInvestorLoading = true;
+      .addCase(fetchProxyContestReleaseDashboard.pending, (state) => {
+        state.proxyContestReleaseDetails = "";
+        state.proxyContestReleaseLoading = true;
         state.error = null;
       })
       .addCase(
-        fetchProxyContestDashboard.fulfilled,
+        fetchProxyContestReleaseDashboard.fulfilled,
         (state, action: PayloadAction<{ results: any }>) => {
-          state.proxyContestAllInvestorLoading = false;
-          state.proxyContestAllInvestorDetails = action.payload.results;
+          state.proxyContestReleaseLoading = false;
+          state.proxyContestReleaseDetails = action.payload.results;
         }
       )
-      .addCase(fetchProxyContestDashboard.rejected, (state, action) => {
-        state.proxyContestAllInvestorLoading = false;
+      .addCase(fetchProxyContestReleaseDashboard.rejected, (state, action) => {
+        state.proxyContestReleaseLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })

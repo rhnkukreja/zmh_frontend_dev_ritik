@@ -10,7 +10,7 @@ import {
     fetchAGMProxyContestDashboard,
     fetchCaseStudiesAllProxyContext,
     fetchCaseStudiesTopProxyContext,
-    fetchProxyContestDashboard,
+    fetchProxyContestReleaseDashboard,
     fetchProxyTopFiveContestDashboard,
     setPage,
     setProxyContestInvestorFilter,
@@ -34,19 +34,23 @@ import CPagination from "@/components/Pagination";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import CaseProxyModal from "./CaseProxyModal";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import PdfViewer from "@/components/PdfView";
 
 const index = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch: AppDispatch = useAppDispatch();
-    const { proxyContestAllInvestorLoading, proxyContestAllInvestorDetails, proxyContestTopFiveDetails, agmSummaryProxyContest, loading,
-        proxyContestTopFiveLoading, tab, proxyContestinvestorFilter, proxyContestTopFilter, caseStudiesTopProxy, agmSummaryAllProxyContest, caseStudiesAllProxy, totalCaseStudiesAllProxyPages,
+    const { proxyContestReleaseLoading, proxyContestReleaseDetails, proxyContestTopFiveDetails, agmSummaryProxyContest, loading,
+        proxyContestTopFiveLoading, tab, proxyContestTopFilter, caseStudiesTopProxy, agmSummaryAllProxyContest,
         page, totalCaseStudiesTopProxyPages, } = useAppSelector(
             (state) => state.dashboard
         );
     const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
         (state: RootState) => state.authentiction
     );
+    const [pdfVisible, setPdfVisible] = useState<boolean>(false);
+    const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
+    const [currentPdfName, setCurrentPdfName] = useState<string>("");
 
     const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
     const [companyAllHeaderName, setCompanyAllHeaderName] = useState<string | null>(null);
@@ -71,14 +75,19 @@ const index = () => {
             },
         });
 
+const gotoDetailPage = (pdf: string, pdf_name: string) => {
+    setCurrentPdfDoc(pdf);
+    setCurrentPdfName(pdf_name);
+  };
 
     useEffect(() => {
 
         // if (tab === 'Top-20') {
         if (proxyContestTopFilter?.company_name?.length > 0) {
+            let { institution_clear, ...restFilter } = proxyContestTopFilter;
             dispatch(
                 fetchProxyTopFiveContestDashboard(
-                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...proxyContestTopFilter }))
+                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...restFilter }))
             );
         } else {
             dispatch(
@@ -89,7 +98,7 @@ const index = () => {
 
         if (proxyContestTopFilter?.company_name?.length > 0) {
 
-            if ((proxyContestTopFilter?.institution_name?.length === 0 || !proxyContestTopFilter?.institution_name)) {
+            if (((proxyContestTopFilter?.institution_name?.length === 0 || !proxyContestTopFilter?.institution_name) && (proxyContestTopFilter?.institution_clear === false) )) {
                 dispatch(
                     fetchAGMProxyContestDashboard(
                         createDynamicURL(
@@ -103,9 +112,15 @@ const index = () => {
                             page)
                     )
                 );
+                dispatch(
+                    fetchProxyContestReleaseDashboard(
+                        createDynamicURL(
+                            `${baseURL}/activism_tables/`, { company_name: proxyContestTopFilter?.company_name[0] })
+                    )
+                );
             }
-
         }
+
         else {
             dispatch(
                 fetchAGMProxyContestDashboard(
@@ -113,11 +128,16 @@ const index = () => {
                         `${baseURL}/voting_report_8k/`, { ticker: '' })
                 )
             );
-
             dispatch(
                 fetchCaseStudiesTopProxyContext(
                     createDynamicURL(
                         `${baseURL}/case_studies/`, { company_name: [""] })
+                )
+            );
+            dispatch(
+                fetchProxyContestReleaseDashboard(
+                    createDynamicURL(
+                        `${baseURL}/activism_tables/`, { company_name: "" })
                 )
             );
 
@@ -190,7 +210,7 @@ const index = () => {
             toast.warning("Please select Institution");
             return;
         }
-        const applyFilter = { company_name: proxyContestTopFilter?.company_name, institution_name: proxyFilter?.institution_name, top: null };
+        const applyFilter = { company_name: proxyContestTopFilter?.company_name, institution_name: proxyFilter?.institution_name, top: null, institution_clear: false};
         Object.entries(applyFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
         });
@@ -198,7 +218,7 @@ const index = () => {
 
     const onFilterClear = () => {
         resetFormValues();
-        const applyFilter = {institution_name: [], top: 'true'};
+        const applyFilter = {institution_name: [], top: 'true', institution_clear: true};
         Object.entries(applyFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
         });
@@ -216,11 +236,11 @@ const index = () => {
             return;
         }
         resetFormValues();
-        const instituteFilter = { institution_name: [] };
+        const instituteFilter = { institution_name: [], institution_clear: false };
         Object.entries(instituteFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
         });
-        const applyFilter = { company_name: [proxyFilter?.company_name], top: 'true' };
+        const applyFilter = { company_name: [proxyFilter?.company_name], top: 'true', institution_clear: false  };
         Object.entries(applyFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
         });
@@ -230,7 +250,7 @@ const index = () => {
     const onTopFiveFilterClear = () => {
         resetTopFiveFormValues();
         // setCompanyFilter({company_name: [], top: false})
-        const applyFilter = { company_name: [], top: 'false' };
+        const applyFilter = { company_name: [], top: 'false', institution_clear: false };
         Object.entries(applyFilter).forEach(([key, value]) => {
             dispatch(setProxyTopFilter({ key: key as any, value }));
         });
@@ -389,6 +409,185 @@ const index = () => {
                                         <div className="font-bold text-2xl pt-4">{companyHeaderName}</div>
 
                                     </div>
+
+                                    {/* AGM Summary Table */}
+
+                                    <section >
+                                        {!loading && proxyContestReleaseDetails?.Activism_Presentation?.length > 0 &&
+
+                                            <section className="box p-5 mt-3.5">
+                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                                                        <span>
+                                                            <h1 className="text-lg font-bold">
+                                                                Activism Presentation
+                                                            </h1>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <TableWrapper>
+                                                    <div>
+                                                        <Table className="table">
+                                                            <Table.Thead>
+                                                                <Table.Tr className="row">
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                                        Document Name
+                                                                    </Table.Td>
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center">
+                                                                        View
+                                                                    </Table.Td>
+                                                                </Table.Tr>
+                                                            </Table.Thead>
+                                                            <Table.Tbody>
+                                                                {proxyContestReleaseDetails?.Activism_Presentation?.length > 0 &&
+                                                                    proxyContestReleaseDetails?.Activism_Presentation?.map((document: any) => (
+                                                                        <Table.Tr
+                                                                            key={document.name}
+                                                                            className="row [&_td]:last:border-b-0"
+                                                                        >
+                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
+                                                                                <div className="flex justify-between items-center ">
+                                                                                    <div>
+                                                                                        <h1
+                                                                                            onClick={() => {
+                                                                                                gotoDetailPage(
+                                                                                                    document?.document_url!,
+                                                                                                    document?.document_name!
+                                                                                                );
+
+                                                                                                setPdfVisible(true);
+                                                                                            }}
+                                                                                            className="font-semibold cursor-pointer hover:underline"
+                                                                                        >
+                                                                                            {document?.document_name}
+                                                                                        </h1>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
+                                                                                <div className="flex justify-center items-center h-full">
+                                                                                    <Tippy
+                                                                                        content="See Details"
+                                                                                        options={{
+                                                                                            theme: "light",
+                                                                                        }}
+                                                                                    >
+                                                                                        <Lucide
+                                                                                            onClick={() => {
+                                                                                                gotoDetailPage(
+                                                                                                    document?.document_url!,
+                                                                                                    document?.document_name!
+                                                                                                );
+
+                                                                                                setPdfVisible(true);
+                                                                                            }}
+                                                                                            icon="Eye"
+                                                                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                                                                        />
+                                                                                    </Tippy>
+                                                                                </div>
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                    ))}
+                                                            </Table.Tbody>
+                                                        </Table>
+                                                    </div>
+                                                </TableWrapper>
+                                            </section>
+                                        }
+
+                                    </section>
+
+                                    <section >
+                                        {!loading && proxyContestReleaseDetails?.Activism_Press_Release?.length > 0 &&
+
+                                            <section className="box p-5 mt-3.5">
+                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                                                        <span>
+                                                            <h1 className="text-lg font-bold">
+                                                                Activism Press Release
+                                                            </h1>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <TableWrapper>
+                                                    <div>
+                                                        <Table className="table">
+                                                            <Table.Thead>
+                                                                <Table.Tr className="row">
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                                        Document Name
+                                                                    </Table.Td>
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center">
+                                                                        View
+                                                                    </Table.Td>
+                                                                </Table.Tr>
+                                                            </Table.Thead>
+                                                            <Table.Tbody>
+                                                                {proxyContestReleaseDetails?.Activism_Press_Release?.length > 0 &&
+                                                                    proxyContestReleaseDetails?.Activism_Press_Release?.map((document: any) => (
+                                                                        <Table.Tr
+                                                                            key={document.name}
+                                                                            className="row [&_td]:last:border-b-0"
+                                                                        >
+
+                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
+                                                                                <div className="flex justify-between items-center ">
+                                                                                    <div>
+                                                                                    <h1
+                                                                                            onClick={() => {
+                                                                                                gotoDetailPage(
+                                                                                                    document?.document_url!,
+                                                                                                    document?.document_name!
+                                                                                                );
+
+                                                                                                setPdfVisible(true);
+                                                                                            }}
+                                                                                            className="font-semibold cursor-pointer hover:underline"
+                                                                                        >
+                                                                                            {document?.document_name}
+                                                                                        </h1>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
+                                                                                <div className="flex justify-center items-center h-full">
+                                                                                    <Tippy
+                                                                                        //   Download
+                                                                                        content="See Details"
+                                                                                        options={{
+                                                                                            theme: "light",
+                                                                                        }}
+                                                                                    >
+                                                                                         <Lucide
+                                                                                            onClick={() => {
+                                                                                                gotoDetailPage(
+                                                                                                    document?.document_url!,
+                                                                                                    document?.document_name!
+                                                                                                );
+
+                                                                                                setPdfVisible(true);
+                                                                                            }}
+                                                                                            icon="Eye"
+                                                                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                                                                        />
+                                                                                    </Tippy>
+                                                                                </div>
+                                                                            </Table.Td>
+
+                                                                        </Table.Tr>
+                                                                    ))}
+                                                            </Table.Tbody>
+                                                        </Table>
+                                                    </div>
+                                                </TableWrapper>
+                                            </section>
+                                        }
+
+                                    </section>
+
+                                    {/* AGM Summary Table */}
 
                                     {/* AGM Summary Table */}
 
@@ -1020,6 +1219,14 @@ const index = () => {
                 />
             )}
 
+            {pdfVisible && (
+                <PdfViewer
+                    setPdfVisible={setPdfVisible}
+                    pdfVisible={pdfVisible}
+                    file={currentPdfDoc}
+                    file_name={currentPdfName}
+                />
+            )}
             <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
         </>
     );
