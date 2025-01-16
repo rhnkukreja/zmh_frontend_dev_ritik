@@ -64,7 +64,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
           vote_outcome_formula:
             selectedShareholderProposal?.vote_outcome_formula || "  ",
           matched_id_no_action:
-            selectedShareholderProposal?.matched_id_no_action || "  ",
+            selectedShareholderProposal?.matched_id_no_action,
           vote_outcome: selectedShareholderProposal?.vote_outcome || "  ",
           status: selectedShareholderProposal?.status ? true : false,
           nl_exist: selectedShareholderProposal?.nl_exist ? true : false,
@@ -92,6 +92,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
   const nlExistValue = watch("nl_exist", false);
   const noShareholderProposalValue = watch("no_shareholder_proposal", false);
+
   const yearValue = watch("year");
   const companyValue = watch("company");
 
@@ -790,7 +791,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                    NL Exist
+                  No Action Letter Exists
                   </FormCheck.Label>
 
                   <div className="mt-2 flex flex-col">
@@ -842,7 +843,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       <Controller
                         name="matched_id_no_action"
                         control={control}
-                        // rules={{ required: "Vote Requirement is required" }}
+                        rules={{
+                          required: nlExistValue ? 
+                            "No Action ID Match is required" : false
+                        }}
                         render={({ field, fieldState: { error } }) => (
                           <>
                             <TomSelect

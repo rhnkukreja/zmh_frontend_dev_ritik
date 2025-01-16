@@ -161,17 +161,17 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
         const groupedData: any = {};
 
         data?.forEach((entry:any) => {
-            const { company_id, type, management, activist, split } = entry;
+            const { company_id, type, management, activist, split, company_tent } = entry;
 
             if (!groupedData[company_id]) {
                 groupedData[company_id] = {
-                    company: `Company Name (ID: ${company_id})`, // Replace with actual name if available
+                    company: company_tent,
                     iss: { management: "", activist: "", split: "" },
                     gl: { management: "", activist: "", split: "" }
                 };
             }
 
-            const typeKey = type.toLowerCase(); // "iss" or "gl"
+            const typeKey = type.toLowerCase();
             groupedData[company_id][typeKey] = {
                 management: management ? true : false,
                 activist: activist ? true : false,
@@ -456,7 +456,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                         <span>
                                                             <h1 className="text-lg font-bold">
-                                                            Company and Acticism
+                                                            Company and Activism
                                                             </h1>
                                                         </span>
                                                     </div>
@@ -513,26 +513,62 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                         className={`row [&_td]:last:border-b-0 ${row.highlighted ? "highlighted-row" : ""
                                                                             }`}
                                                                     >
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-left">
+                                                                        <Table.Td className="px-5 font-bold border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
                                                                             {row.company}
                                                                         </Table.Td>
                                                                         <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.iss.management ? '&#10004' : ''}
+                                                                        {row.iss.management === true && (
+                                                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
                                                                         <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.iss.activist ? '&#10004' : ''}
+                                                                            {row.iss.activist === true && (
+                                                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
                                                                         <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.iss.split ? '&#10004' : ''}
+                                                                        {row.iss.split === true && (
+                                                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
                                                                         <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.gl.management ? '&#10004' : ''}
+                                                                        {row.gl.management === true && (
+                                                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
                                                                         <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.gl.activist ? '&#10004' : ''}
+                                                                        {row.gl.activist === true && (
+                                                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
                                                                         <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.gl.split ? '&#10004' : ''}
+                                                                        {row.gl.split === true && (
+                                                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
                                                                     </Table.Tr>
                                                                 ))}
@@ -546,7 +582,8 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
 
                                     </section>
 
-                                    <section >
+                                    <div className="flex items-start gap-4 justify-center xs:flex-col md:flex-row">
+                                    <section className="flex-1" >
                                         {!loading && proxyContestReleaseDetails?.Activism_Presentation?.length > 0 &&
 
                                             <section className="box p-5 mt-3.5">
@@ -632,7 +669,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
 
                                     </section>
 
-                                    <section >
+                                    <section className="flex-1"  >
                                         {!loading && proxyContestReleaseDetails?.Activism_Press_Release?.length > 0 &&
 
                                             <section className="box p-5 mt-3.5">
@@ -720,6 +757,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                         }
 
                                     </section>
+                                    </div>
 
                                     {/* AGM Summary Table */}
 

@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { pdfjs } from "react-pdf";
-
+import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import { Dialog } from "../Base/Headless";
 import Lucide from "../Base/Lucide";
+import Tippy from "../Base/Tippy";
 
 interface PdfViewerProps {
   file: string;
@@ -21,14 +22,28 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
     return file_name;
   }, [file_name]);
 
+  type Size = "sm" | "md" | "lg" | "xl" | "2xl";
+  const [dialogSize, setDialogSize] = useState<Size>("xl");
+
   return (
-    <Dialog size="xl" open={pdfVisible} onClose={() => setPdfVisible(false)}>
+    <Dialog size={dialogSize} open={pdfVisible} onClose={() => setPdfVisible(false)}>
       <Dialog.Panel className="text-center">
         <Dialog.Title>
-          <h2 className="mr-auto text-xl font-semibold">{fileName}</h2>
+          <h2 className="mr-auto text-lg font-semibold">{fileName}</h2>
+          <Tippy content="Expand" options={{ theme: "light" }}>
+            <div
+              className="box p-2 cursor-pointer"
+              onClick={() =>
+                dialogSize === "2xl" ? setDialogSize("xl") : setDialogSize("2xl")
+                // window.open("investor-details", "_blank")
+              }
+            >
+              <img alt="tab-icon" src={tabIcon} />
+            </div>
+          </Tippy>
           <div
             onClick={() => setPdfVisible(false)}
-            className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+            className=" ml-5 top-0 right-0 mt-1 mr-3 cursor-pointer"
           >
             <Lucide icon="X" className="w-8 h-8 text-slate-400" />
           </div>
