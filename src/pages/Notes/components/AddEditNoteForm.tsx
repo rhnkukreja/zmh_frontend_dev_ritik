@@ -9,6 +9,9 @@ import { Note } from "@/types/notes";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import { useAppSelector } from "@/stores/hooks";
+import FolderField from "./SelectFolders";
+import NoteField from "./NoteEditor";
+import NameField from "./CreateNoteName";
 
 interface NoteFormProps {
   initialData: Partial<Note>;
@@ -43,79 +46,24 @@ const NoteForm: React.FC<NoteFormProps> = ({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {fieldsToRender.includes("name") && (
-        <div>
-          <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2 !ml-0">
-            Note Name
-          </FormCheck.Label>
-          <Controller
-            name="name"
-            control={control}
-            rules={{ required: "Note Name is required" }}
-            render={({ field, fieldState: { error } }) => (
-              <>
-                <FormInput placeholder="Enter Note Name" {...field} />
-                {error && (
-                  <Error className="text-red-600">{error.message}</Error>
-                )}
-              </>
-            )}
-          />
-        </div>
+        <NameField
+          control={control}
+          rules={{ required: "Note Name is required" }}
+        />
       )}
 
       {fieldsToRender.includes("text") && (
-        <div>
-          <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left !ml-0">
-            Note
-          </FormCheck.Label>
-          <Controller
-            name="text"
-            control={control}
-            rules={{ required: "Note Detail is required" }}
-            render={({ field, fieldState: { error } }) => (
-              <>
-                <ClassicEditor
-                  value={field.value}
-                  onChange={(event) => {
-                    field.onChange(event);
-                  }}
-                />
-                {error && (
-                  <Error className="text-red-600">{error.message}</Error>
-                )}
-              </>
-            )}
-          />
-        </div>
+        <NoteField
+          control={control}
+          rules={{ required: "Note Detail is required" }}
+        />
       )}
 
       {fieldsToRender.includes("folder") && (
-        <div>
-          <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-            Folder
-          </FormCheck.Label>
-          <Controller
-            name="folder"
-            control={control}
-            rules={{ required: "Folder Name is required" }}
-            render={({ field, fieldState: { error } }) => (
-              <>
-                <TomSelectServer
-                  url="/user/folder/"
-                  valueKey="id"
-                  labelKey="folder"
-                  value={field?.value?.toString() || ""}
-                  onChange={(value) => field.onChange(value)}
-                  options={{ placeholder: "Select Folder" }}
-                  className="w-full"
-                />
-                {error && (
-                  <Error className="text-red-600 mt-2">{error.message}</Error>
-                )}
-              </>
-            )}
-          />
-        </div>
+        <FolderField
+          control={control}
+          rules={{ required: "Folder Name is required" }}
+        />
       )}
 
       <div className="w-full flex justify-end">

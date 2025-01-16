@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
 import { Filer } from "@/types/dashboard";
 import { CompanyData } from "@/types/company";
+import { getPageNumbers } from "@/utils/helper";
 const name = "dashboard";
 
 export type CompanyDashboard = {
@@ -47,8 +48,8 @@ interface CompanySliceState {
   investorCardLoading: boolean;
   vdsProxyDetails: any;
   vdsProxyLoading: boolean;
-  proxyContestAllInvestorDetails: any;
-  proxyContestAllInvestorLoading: boolean;
+  proxyContestReleaseDetails: any;
+  proxyContestReleaseLoading: boolean;
   proxyContestTopFiveDetails: any;
   proxyContestTopFiveLoading: boolean;
   vdsProxyAllInvestorDetails: any;
@@ -69,6 +70,11 @@ interface CompanySliceState {
   tab: "Top-20" | "All-Investor" | "Top-5" | "";
   proxyContestinvestorFilter: any;
   proxyContestTopFilter: any;
+  caseStudiesTopProxy: any;
+  totalCaseStudiesTopProxyPages: number;
+  agmSummaryAllProxyContest: any;
+  caseStudiesAllProxy: any;
+  totalCaseStudiesAllProxyPages: number;
 }
 
 const initialState: CompanySliceState = {
@@ -99,17 +105,22 @@ const initialState: CompanySliceState = {
   investorProfileLoading: true,
   tempSearch: null,
   instituteName: null,
-  percent: '',
+  percent: "",
   notificationDetails: [],
   notificationLoading: true,
   totalNotification: 0,
   companySearchLoading: true,
   tab: "Top-20",
   searchCompletion: 0,
-  proxyContestAllInvestorLoading: true,
-  proxyContestAllInvestorDetails: '',
-  proxyContestinvestorFilter: {institution_name: [], company_name: []},
-  proxyContestTopFilter: {company_name: [], top: false}
+  proxyContestReleaseLoading: true,
+  proxyContestReleaseDetails: "",
+  proxyContestinvestorFilter: { institution_name: [], company_name: [] },
+  proxyContestTopFilter: { company_name: [], top: false },
+  caseStudiesTopProxy: "",
+  totalCaseStudiesTopProxyPages: 0,
+  agmSummaryAllProxyContest: "",
+  caseStudiesAllProxy: "",
+  totalCaseStudiesAllProxyPages: 0,
 
   // {
   //   nominees: [],
@@ -149,6 +160,27 @@ export const fetchAGMProxyContestDashboard = createAsyncThunk<
 });
 
 
+export const fetchCaseStudiesTopProxyContext = createAsyncThunk<
+  { count: number; results: any[] },
+  string
+>(`${name}/fetchCaseStudiesTopProxyContext`, async (url: string) => {
+  return await dashboardService.fetchCaseStudiesTopProxyContext(url);
+});
+
+export const fetchAGMProxyAllContestDashboard = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchAGMProxyAllContestDashboard`, async (url: string) => {
+  return await dashboardService.fetchAGMSummaryDashboard(url);
+});
+
+
+export const fetchCaseStudiesAllProxyContext = createAsyncThunk<
+  { count: number; results: any[] },
+  string
+>(`${name}/fetchCaseStudiesAllProxyContext`, async (url: string) => {
+  return await dashboardService.fetchCaseStudiesTopProxyContext(url);
+});
 
 export const fetchCaseStudyDashboard = createAsyncThunk<
   { results: any },
@@ -192,11 +224,11 @@ export const fetchWhatNewNotification = createAsyncThunk<
   return await dashboardService.fetchWhatNewNotification(url);
 });
 
-export const fetchProxyContestDashboard = createAsyncThunk<
+export const fetchProxyContestReleaseDashboard = createAsyncThunk<
   { results: any },
   string
->(`${name}/fetchProxyContestDashboard`, async (url: string) => {
-  return await dashboardService.fetchProxyContestDashboard(url);
+>(`${name}/fetchProxyContestReleaseDashboard`, async (url: string) => {
+  return await dashboardService.fetchProxyContestReleaseDashboard(url);
 });
 
 export const fetchProxyTopFiveContestDashboard = createAsyncThunk<
@@ -248,7 +280,7 @@ const companySlice = createSlice({
       state,
       action: PayloadAction<{
         key: any;
-        value: string | string[];
+        value: string | string[] | boolean;
       }>
     ) {
       state.proxyContestTopFilter[action.payload.key] = action.payload
@@ -394,21 +426,88 @@ const companySlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })
-
-      .addCase(fetchProxyContestDashboard.pending, (state) => {
-        state.proxyContestAllInvestorDetails = "";
-        state.proxyContestAllInvestorLoading = true;
+      .addCase(fetchCaseStudiesTopProxyContext.pending, (state) => {
+        state.loading = true;
         state.error = null;
       })
       .addCase(
-        fetchProxyContestDashboard.fulfilled,
-        (state, action: PayloadAction<{ results: any }>) => {
-          state.proxyContestAllInvestorLoading = false;
-          state.proxyContestAllInvestorDetails = action.payload.results;
+        fetchCaseStudiesTopProxyContext.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            count: number;
+            results: any[];
+          }>
+        ) => {
+          state.loading = false;
+          state.caseStudiesTopProxy = action.payload.results;
+          state.totalCaseStudiesTopProxyPages = getPageNumbers(action.payload.count);
         }
       )
-      .addCase(fetchProxyContestDashboard.rejected, (state, action) => {
-        state.proxyContestAllInvestorLoading = false;
+      .addCase(fetchCaseStudiesTopProxyContext.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch voting guidelines";
+      })
+
+      .addCase(fetchCaseStudiesAllProxyContext.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchCaseStudiesAllProxyContext.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            count: number;
+            results: any[];
+          }>
+        ) => {
+          state.loading = false;
+          state.caseStudiesAllProxy = action.payload.results;
+          state.totalCaseStudiesAllProxyPages =  getPageNumbers(action.payload.count);
+          // state.totalPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchCaseStudiesAllProxyContext.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch voting guidelines";
+      })
+      
+
+      .addCase(fetchAGMProxyAllContestDashboard.pending, (state) => {
+        state.agmSummaryAllProxyContest = "";
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchAGMProxyAllContestDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.loading = false;
+          state.agmSummaryAllProxyContest = action.payload.results;
+        }
+      )
+      .addCase(fetchAGMProxyAllContestDashboard.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
+      })
+
+      .addCase(fetchProxyContestReleaseDashboard.pending, (state) => {
+        state.proxyContestReleaseDetails = "";
+        state.proxyContestReleaseLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchProxyContestReleaseDashboard.fulfilled,
+        (state, action: PayloadAction<{ results: any }>) => {
+          state.proxyContestReleaseLoading = false;
+          state.proxyContestReleaseDetails = action.payload.results;
+        }
+      )
+      .addCase(fetchProxyContestReleaseDashboard.rejected, (state, action) => {
+        state.proxyContestReleaseLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })

@@ -74,54 +74,56 @@ function ShareHolderProposal() {
     ...filters?.proponent_name,
   ]);
 
-  const month = [{
-    id: 1,
-    month: 'January',
-  },
-  {
-    id: 2,
-    month: 'February',
-  },
-  {
-    id: 3,
-    month: 'March',
-  },
-  {
-    id: 4,
-    month: 'April',
-  },
-  {
-    id: 5,
-    month: 'May',
-  },
-  {
-    id: 6,
-    month: 'June',
-  },
-  {
-    id: 7,
-    month: 'July',
-  },
-  {
-    id: 8,
-    month: 'August',
-  },
-  {
-    id: 9,
-    month: 'September',
-  },
-  {
-    id: 10,
-    month: 'October',
-  },
-  {
-    id: 11,
-    month: 'November',
-  },
-  {
-    id: 12,
-    month: 'December',
-  },]
+  const month = [
+    {
+      id: 1,
+      month: "January",
+    },
+    {
+      id: 2,
+      month: "February",
+    },
+    {
+      id: 3,
+      month: "March",
+    },
+    {
+      id: 4,
+      month: "April",
+    },
+    {
+      id: 5,
+      month: "May",
+    },
+    {
+      id: 6,
+      month: "June",
+    },
+    {
+      id: 7,
+      month: "July",
+    },
+    {
+      id: 8,
+      month: "August",
+    },
+    {
+      id: 9,
+      month: "September",
+    },
+    {
+      id: 10,
+      month: "October",
+    },
+    {
+      id: 11,
+      month: "November",
+    },
+    {
+      id: 12,
+      month: "December",
+    },
+  ];
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
 
@@ -145,6 +147,8 @@ function ShareHolderProposal() {
     useState<boolean>(false);
   const [shareholderDetailModalVisible, setShareholderDetailModalVisible] =
     useState<boolean>(false);
+
+  const [actionType, setActionType] = useState<"edit" | "duplicate">("edit");
 
   const [proposalCount, setProposalCount] = useState<number>(0);
   const [withdrawnCount, setWithdrawnCount] = useState<number>(0);
@@ -199,8 +203,6 @@ function ShareHolderProposal() {
     setValue("check_status", null);
     setValue("no_shareholder_proposal", null);
     setValue("nl_exist", null);
-
-    
   };
 
   const navigate = useNavigate();
@@ -210,9 +212,13 @@ function ShareHolderProposal() {
     setIsFilterCollapse(!isFilterCollapse);
   };
 
-  const onEditProposalClickHandler = (proposal: AddShareholderType) => {
+  const onEditProposalClickHandler = (
+    proposal: AddShareholderType,
+    actionType: "edit" | "duplicate"
+  ) => {
     setSelectedShareholderProposal(proposal);
     setAddNewShareholderModalVisible(true);
+    setActionType(actionType);
   };
 
   const onEditWithdrawnClickHandler = (withdrawn: AddWithdrawnType) => {
@@ -414,10 +420,10 @@ function ShareHolderProposal() {
       tab === "proposal"
         ? 0
         : tab === "no-action"
-          ? 1
-          : tab === "withdrawn"
-            ? 2
-            : -1;
+        ? 1
+        : tab === "withdrawn"
+        ? 2
+        : -1;
     return tabIndex;
   };
 
@@ -518,8 +524,9 @@ function ShareHolderProposal() {
     if (isAllCompanySelected) {
       return baseUrls.map((baseUrl) => baseUrl);
     } else {
-      const queryParam = `?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
-        }`;
+      const queryParam = `?global_search=${
+        companyGlobalSearchName || filters?.global_search?.[0]
+      }`;
       return baseUrls.map((baseUrl) => `${baseUrl}${queryParam}`);
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
@@ -564,7 +571,7 @@ function ShareHolderProposal() {
                               type: e.target.checked,
                             })
                           );
-                        } catch (error) { }
+                        } catch (error) {}
                       }}
                     />
                     <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
@@ -621,12 +628,12 @@ function ShareHolderProposal() {
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                      <div className="hover:bg-slate-50 ">
-                        <Button onClick={getSavedSearches}>
-                          Previous Search
-                        </Button>
-                      </div>
-                    )}
+                    <div className="hover:bg-slate-50 ">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -937,10 +944,8 @@ function ShareHolderProposal() {
                         />
                       </div>
 
-                      {
-                        user?.user_type === "Admin" &&
+                      {user?.user_type === "Admin" && (
                         <>
-
                           <div className="w-full">
                             <div className="text-left text-slate-500 flex justify-between mb-1">
                               Month
@@ -954,7 +959,11 @@ function ShareHolderProposal() {
                                   value={field.value || []}
                                   onChange={(event) => {
                                     const values = event.target.value;
-                                    field.onChange(values.map((value: string) => parseInt(value, 10)));
+                                    field.onChange(
+                                      values.map((value: string) =>
+                                        parseInt(value, 10)
+                                      )
+                                    );
                                   }}
                                   options={{ placeholder: "Select Month" }}
                                   className="w-full"
@@ -974,7 +983,9 @@ function ShareHolderProposal() {
                             />
                           </div>
                           <div className="w-full">
-                            <div className="text-left text-slate-500">Ready For Review</div>
+                            <div className="text-left text-slate-500">
+                              Ready For Review
+                            </div>
                             <Controller
                               name="ready_for_review"
                               control={control}
@@ -986,8 +997,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-true"
                                       type="checkbox"
                                       checked={field.value === true} // Check for true value
-                                      onChange={() =>
-                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === true ? null : true
+                                          ) // Toggle true/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1003,8 +1017,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-false"
                                       type="checkbox"
                                       checked={field.value === false} // Check for false value
-                                      onChange={() =>
-                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === false ? null : false
+                                          ) // Toggle false/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1019,9 +1036,10 @@ function ShareHolderProposal() {
                             />
                           </div>
 
-
                           <div className="w-full">
-                            <div className="text-left text-slate-500">Admin Status</div>
+                            <div className="text-left text-slate-500">
+                              Admin Status
+                            </div>
                             <Controller
                               name="check_status"
                               control={control}
@@ -1033,8 +1051,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-true"
                                       type="checkbox"
                                       checked={field.value === true} // Check for true value
-                                      onChange={() =>
-                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === true ? null : true
+                                          ) // Toggle true/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1050,8 +1071,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-false"
                                       type="checkbox"
                                       checked={field.value === false} // Check for false value
-                                      onChange={() =>
-                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === false ? null : false
+                                          ) // Toggle false/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1066,9 +1090,10 @@ function ShareHolderProposal() {
                             />
                           </div>
 
-
                           <div className="w-full">
-                            <div className="text-left text-slate-500">No Shareholder Proposal</div>
+                            <div className="text-left text-slate-500">
+                              No Shareholder Proposal
+                            </div>
                             <Controller
                               name="no_shareholder_proposal"
                               control={control}
@@ -1080,8 +1105,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-true"
                                       type="checkbox"
                                       checked={field.value === true} // Check for true value
-                                      onChange={() =>
-                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === true ? null : true
+                                          ) // Toggle true/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1097,8 +1125,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-false"
                                       type="checkbox"
                                       checked={field.value === false} // Check for false value
-                                      onChange={() =>
-                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === false ? null : false
+                                          ) // Toggle false/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1114,7 +1145,9 @@ function ShareHolderProposal() {
                           </div>
 
                           <div className="w-full">
-                            <div className="text-left text-slate-500">NL Exist</div>
+                            <div className="text-left text-slate-500">
+                              NL Exist
+                            </div>
                             <Controller
                               name="nl_exist"
                               control={control}
@@ -1126,8 +1159,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-true"
                                       type="checkbox"
                                       checked={field.value === true} // Check for true value
-                                      onChange={() =>
-                                        field.onChange(field.value === true ? null : true) // Toggle true/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === true ? null : true
+                                          ) // Toggle true/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1143,8 +1179,11 @@ function ShareHolderProposal() {
                                       id="checkbox-switch-false"
                                       type="checkbox"
                                       checked={field.value === false} // Check for false value
-                                      onChange={() =>
-                                        field.onChange(field.value === false ? null : false) // Toggle false/null
+                                      onChange={
+                                        () =>
+                                          field.onChange(
+                                            field.value === false ? null : false
+                                          ) // Toggle false/null
                                       }
                                     />
                                     <FormCheck.Label
@@ -1158,11 +1197,8 @@ function ShareHolderProposal() {
                               )}
                             />
                           </div>
-
                         </>
-                      }
-
-
+                      )}
                     </div>
                   </div>
                 </form>
@@ -1352,15 +1388,15 @@ function ShareHolderProposal() {
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                         noAction?.nl_exist &&
-                                        "text-blue-600 underline cursor-pointer",
+                                          "text-blue-600 underline cursor-pointer",
                                       ])}
                                       onClick={() => {
                                         const id =
                                           noAction?.nl_exist === true
                                             ? noAction?.no_action_link
-                                              ?.split("/")
-                                              .filter(Boolean)
-                                              .pop()
+                                                ?.split("/")
+                                                .filter(Boolean)
+                                                .pop()
                                             : 0;
                                         noAction?.nl_exist === true &&
                                           navigate(
@@ -1377,6 +1413,21 @@ function ShareHolderProposal() {
 
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex gap-3 justify-center">
+                                        <Tippy
+                                          content="Duplicate"
+                                          options={{ theme: "light" }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              onEditProposalClickHandler(
+                                                noAction,
+                                                "duplicate"
+                                              )
+                                            }
+                                            icon="Copy"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                          />
+                                        </Tippy>
                                         <Tippy
                                           content=" See Details"
                                           options={{ theme: "light" }}
@@ -1399,7 +1450,8 @@ function ShareHolderProposal() {
                                             <Lucide
                                               onClick={() =>
                                                 onEditProposalClickHandler(
-                                                  noAction
+                                                  noAction,
+                                                  "edit"
                                                 )
                                               }
                                               icon="PenLine"
@@ -1513,11 +1565,11 @@ function ShareHolderProposal() {
                                             options={{ theme: "light" }}
                                           >
                                             <Lucide
-                                              onClick={() =>
+                                              onClick={() => {
                                                 onEditNoActionClickHandler(
                                                   noAction
-                                                )
-                                              }
+                                                );
+                                              }}
                                               icon="PenLine"
                                               className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                             />
@@ -1662,6 +1714,7 @@ function ShareHolderProposal() {
                 setAddNewShareholderModalVisible
               }
               selectedShareholderProposal={selectedShareholderProposal}
+              type={actionType}
             />
           )}
 

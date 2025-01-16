@@ -42,6 +42,18 @@ class DashboardService {
     return { results };
   }
 
+  public async fetchCaseStudiesTopProxyContext(url: string): Promise<{
+    count: number;
+    results: any[];
+  }> {
+    const response = await axiosInstance.get(url);
+    const { count, results } = response.data;
+    return {
+      count,
+      results,
+    };
+  }
+
   public async fetchCaseStudyDashboard(url: string): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
@@ -54,7 +66,7 @@ class DashboardService {
     return { results };
   }
 
-  public async fetchProxyContestDashboard(url: string): Promise<{ results: any }> {
+  public async fetchProxyContestReleaseDashboard(url: string): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
     return { results };
