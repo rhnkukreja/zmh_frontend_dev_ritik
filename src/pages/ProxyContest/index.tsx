@@ -420,7 +420,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                         <span>
                                                             <h1 className="text-lg font-bold">
-                                                                Activism Presentation
+                                                            Company and Investor Presentations
                                                             </h1>
                                                         </span>
                                                     </div>
@@ -506,7 +506,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                         <span>
                                                             <h1 className="text-lg font-bold">
-                                                                Activism Press Release
+                                                            Press Releases Mentioning ISS and GL Recommendations
                                                             </h1>
                                                         </span>
                                                     </div>
