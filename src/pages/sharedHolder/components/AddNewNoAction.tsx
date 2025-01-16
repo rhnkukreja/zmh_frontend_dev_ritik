@@ -253,7 +253,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     <Controller
                       name="proponent"
                       control={control}
-                      rules={{ required: "Proponent Name is required" }}
+                      // rules={{ required: "Proponent Name is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
