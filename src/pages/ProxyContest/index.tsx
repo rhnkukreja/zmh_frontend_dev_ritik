@@ -51,6 +51,8 @@ const index = () => {
     const [pdfVisible, setPdfVisible] = useState<boolean>(false);
     const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
     const [currentPdfName, setCurrentPdfName] = useState<string>("");
+    const [modifyActicismData, setmodifyActicismData] = useState<any[]>([]);
+
 
     const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
     const [companyAllHeaderName, setCompanyAllHeaderName] = useState<string | null>(null);
@@ -140,12 +142,45 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                         `${baseURL}/activism_tables/`, { company_name: "" })
                 )
             );
+            setmodifyActicismData([]);
 
         }
         setCompanyHeaderName(proxyContestTopFilter?.company_name[0]);
         // }
     }, [proxyContestTopFilter, tab])
 
+
+    useEffect(() => {
+        const transformedData = transformData(proxyContestReleaseDetails?.Activism_ISS_GL);
+        setmodifyActicismData(transformedData);
+
+    }, [proxyContestTopFilter, proxyContestReleaseDetails])
+
+    
+    const transformData = (data:any) => {
+        const groupedData: any = {};
+
+        data?.forEach((entry:any) => {
+            const { company_id, type, management, activist, split } = entry;
+
+            if (!groupedData[company_id]) {
+                groupedData[company_id] = {
+                    company: `Company Name (ID: ${company_id})`, // Replace with actual name if available
+                    iss: { management: "", activist: "", split: "" },
+                    gl: { management: "", activist: "", split: "" }
+                };
+            }
+
+            const typeKey = type.toLowerCase(); // "iss" or "gl"
+            groupedData[company_id][typeKey] = {
+                management: management ? true : false,
+                activist: activist ? true : false,
+                split: split ? true : false,
+            };
+        });
+
+        return Object.values(groupedData);
+    };
 
     const isObject = (item: any) => {
         if (typeof item === "object") {
@@ -315,6 +350,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
         downloadCSV(csvContent, `Agm-Summary-${companyHeaderName}`);
     };
 
+
     return (
         <>
             <Button
@@ -411,6 +447,104 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                     </div>
 
                                     {/* AGM Summary Table */}
+
+                                    <section >
+                                        {!loading && modifyActicismData?.length > 0 &&
+
+                                            <section className="box p-5 mt-3.5">
+                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                                                        <span>
+                                                            <h1 className="text-lg font-bold">
+                                                            Company and Acticism
+                                                            </h1>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <TableWrapper>
+                                                    <div>
+                                                        <Table className="table">
+                                                            <Table.Thead>
+                                                                <Table.Tr className="row">
+                                                                    <Table.Td
+                                                                        rowSpan={2}
+                                                                        className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]"
+                                                                    >
+                                                                        Company
+                                                                    </Table.Td>
+                                                                    <Table.Td
+                                                                        colSpan={3}
+                                                                        className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center"
+                                                                    >
+                                                                        ISS
+                                                                    </Table.Td>
+                                                                    <Table.Td
+                                                                        colSpan={3}
+                                                                        className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center"
+                                                                    >
+                                                                        GL
+                                                                    </Table.Td>
+                                                                </Table.Tr>
+                                                                <Table.Tr className="row">
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Management
+                                                                    </Table.Td>
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Activist
+                                                                    </Table.Td>
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Split
+                                                                    </Table.Td>
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Management
+                                                                    </Table.Td>
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Activist
+                                                                    </Table.Td>
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Split
+                                                                    </Table.Td>
+                                                                </Table.Tr>
+                                                            </Table.Thead>
+                                                            <Table.Tbody>
+                                                                {modifyActicismData?.map((row: any, index: any) => (
+                                                                    <Table.Tr
+                                                                        key={index}
+                                                                        className={`row [&_td]:last:border-b-0 ${row.highlighted ? "highlighted-row" : ""
+                                                                            }`}
+                                                                    >
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-left">
+                                                                            {row.company}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                            {row.iss.management ? '&#10004' : ''}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                            {row.iss.activist ? '&#10004' : ''}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                            {row.iss.split ? '&#10004' : ''}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                            {row.gl.management ? '&#10004' : ''}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                            {row.gl.activist ? '&#10004' : ''}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                            {row.gl.split ? '&#10004' : ''}
+                                                                        </Table.Td>
+                                                                    </Table.Tr>
+                                                                ))}
+                                                            </Table.Tbody>
+                                                        </Table>
+                                                    </div>
+                                                </TableWrapper>
+
+                                            </section>
+                                        }
+
+                                    </section>
 
                                     <section >
                                         {!loading && proxyContestReleaseDetails?.Activism_Presentation?.length > 0 &&
