@@ -602,7 +602,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                             <Table.Thead>
                                                                 <Table.Tr className="row">
                                                                     <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                                        Document Name
+                                                                        {/* Document Name */}
                                                                     </Table.Td>
                                                                     <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center">
                                                                         View
@@ -688,7 +688,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                             <Table.Thead>
                                                                 <Table.Tr className="row">
                                                                     <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                                        Document Name
+                                                                        {/* Document Name */}
                                                                     </Table.Td>
                                                                     <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center">
                                                                         View
