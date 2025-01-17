@@ -161,10 +161,10 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
         const groupedData: any = {};
 
         data?.forEach((entry:any) => {
-            const { company_id, type, management, activist, split, company_tent } = entry;
+            const { company_id, type, management, activist, split, company_tent, id } = entry;
 
-            if (!groupedData[company_id]) {
-                groupedData[company_id] = {
+            if (!groupedData[company_tent]) {
+                groupedData[company_tent] = {
                     company: company_tent,
                     iss: { management: "", activist: "", split: "" },
                     gl: { management: "", activist: "", split: "" }
@@ -172,7 +172,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
             }
 
             const typeKey = type.toLowerCase();
-            groupedData[company_id][typeKey] = {
+            groupedData[company_tent][typeKey] = {
                 management: management ? true : false,
                 activist: activist ? true : false,
                 split: split ? true : false,
@@ -468,40 +468,40 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                 <Table.Tr className="row">
                                                                     <Table.Td
                                                                         rowSpan={2}
-                                                                        className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]"
+                                                                        className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500 border-r-2 bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem]  text-[#000000B2]"
                                                                     >
                                                                         Company
                                                                     </Table.Td>
                                                                     <Table.Td
                                                                         colSpan={3}
-                                                                        className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center"
+                                                                        className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-gray-500 border-r-2 text-[#000000B2] text-center"
                                                                     >
                                                                         ISS
                                                                     </Table.Td>
                                                                     <Table.Td
                                                                         colSpan={3}
-                                                                        className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center"
+                                                                        className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header text-[#000000B2] text-center"
                                                                     >
                                                                         GL
                                                                     </Table.Td>
                                                                 </Table.Tr>
                                                                 <Table.Tr className="row">
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Management
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Activist
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500 border-r-2 bg-header  text-[#000000B2] text-center">
                                                                         Split
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Management
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Activist
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Split
                                                                     </Table.Td>
                                                                 </Table.Tr>
@@ -510,13 +510,13 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                 {modifyActicismData?.map((row: any, index: any) => (
                                                                     <Table.Tr
                                                                         key={index}
-                                                                        className={`row [&_td]:last:border-b-0 ${row.highlighted ? "highlighted-row" : ""
-                                                                            }`}
+                                                                        // className={`row [&_td]:last:border-b-0 ${row.highlighted ? "highlighted-row" : ""
+                                                                        //     }`}
                                                                     >
-                                                                        <Table.Td className="px-5 font-bold border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                                                        <Table.Td className="px-5 border-b-0 font-bold dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
                                                                             {row.company}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5  border-l border-gray-500 border-b-0 dark:border-darkmode-300 py-2 text-center">
                                                                         {row.iss.management === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -525,16 +525,16 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                 </div>
                                                                             )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
                                                                             {row.iss.activist === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                                                         &#10004;
-                                                                                    </div>
+                                                                                    </div>A
                                                                                 </div>
                                                                             )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5 border-r border-b-0 border-gray-500 dark:border-darkmode-300 py-2 text-center">
                                                                         {row.iss.split === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -543,7 +543,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                 </div>
                                                                             )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
                                                                         {row.gl.management === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -552,7 +552,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                 </div>
                                                                             )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
                                                                         {row.gl.activist === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -561,7 +561,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                 </div>
                                                                             )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
                                                                         {row.gl.split === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -1130,6 +1130,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                 onChange={(value) => {
                                                                                     field.onChange(value);
                                                                                 }}
+                                                                                // selectedLimit={3}
                                                                                 options={{
                                                                                     placeholder: "Institution",
                                                                                 }}

@@ -39,13 +39,14 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   selectedShareholderNoAction,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading, page } = useAppSelector(
+  const { loading, page, filters} = useAppSelector(
     (state) => state.sharedHolderNoAction
   );
   const {
     handleSubmit,
     control,
     formState: { errors },
+    watch,
   } = useForm<AddNoActionType>({
     defaultValues: {
       proponent: selectedShareholderNoAction?.institution,
@@ -73,33 +74,38 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     },
   });
 
+  const categoryValue = watch("category");
+
+
   const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
     sub_category: [],
   });
 
   useEffect(() => {
     getSubCategoryDropdown();
-  }, []);
+  }, [categoryValue]);
+
 
   const getSubCategoryDropdown = async (value?: any) => {
-    if (value !== "") {
-      const paramFilter = {
-        category: value,
-      };
-      try {
-        const res =
-          await shareHolderProposalService.getShareHolderDropdownValues(
-            paramFilter
-          );
-        if (res.result) {
-          setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
+      const categoryName = selectedShareholderNoAction?.category;
+      if (value !== "" || categoryValue !== "" || categoryName !== "") {
+        const paramFilter = {
+          category: value ?? categoryValue ?? categoryName,
+        };
+        try {
+          const res =
+            await shareHolderProposalService.getShareHolderDropdownValues(
+              paramFilter
+            );
+          if (res.result) {
+            setapiSubCategoryDropdown({ sub_category: res.result?.sub_category });
+          }
+        } catch (error) {
+          return error;
+        } finally {
         }
-      } catch (error) {
-        return error;
-      } finally {
       }
-    }
-  };
+    };
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -159,12 +165,12 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
             : "New Shareholder No Action Added"
         );
         setAddNewNoActionModalVisible(false);
-
         dispatch(
           fetchShareHolderProposal(
             createDynamicURL(
               `${baseURL}/shareholder_proposal/no_action/`,
-              { global_search: companyGlobalSearchName },
+              // { global_search: companyGlobalSearchName },
+              filters,
               undefined,
               page
             )
@@ -525,7 +531,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                             value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
-                              getSubCategoryDropdown(e?.target?.value);
+                              // getSubCategoryDropdown(e?.target?.value);
                             }}
                             options={{
                               placeholder: "Select Category",

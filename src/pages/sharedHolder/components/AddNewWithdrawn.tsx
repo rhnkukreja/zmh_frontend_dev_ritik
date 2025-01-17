@@ -35,7 +35,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
   selectedShareholderWithdrawn
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
+  const { loading, page, filters } = useAppSelector((state) => state.sharedHolderNoAction);
   const {
     handleSubmit,
     control,
@@ -101,11 +101,23 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
         toast.success(selectedShareholderWithdrawn ? 'Shareholder Withdrawn Updated' : "New Shareholder Withdrawn Added");
         setAddNewWithdrawnModalVisible(false);
 
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/?global_search=${companyGlobalSearchName}`, undefined, page)
-          )
-        );
+        // dispatch(
+        //   fetchShareHolderProposal(
+        //     createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/?global_search=${companyGlobalSearchName}`, undefined, page)
+        //   )
+        // );
+
+         dispatch(
+                  fetchShareHolderProposal(
+                    createDynamicURL(
+                      `${baseURL}/shareholder_proposal/withdrawn/`,
+                      // { global_search: companyGlobalSearchName },
+                      filters,
+                      undefined,
+                      page
+                    )
+                  )
+                );
       }
     } catch (error) {
       console.error("Error submitting form:", error);
