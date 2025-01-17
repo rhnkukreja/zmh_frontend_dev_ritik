@@ -396,6 +396,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                             defaultValue={[]}
                                                             render={({ field }) => (
                                                                 <TomSelect
+                                                                
                                                                     value={field.value || []}
                                                                     onChange={(event) => {
                                                                         field.onChange(event);
@@ -1131,9 +1132,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                     field.onChange(value);
                                                                                 }}
                                                                                 // selectedLimit={3}
-                                                                                options={{
-                                                                                    placeholder: "Institution",
-                                                                                }}
+                                                                            options={{placeholder: "Institution", maxItems: 3, closeAfterSelect: true}}
                                                                                 className="w-full"
                                                                                 multiple
                                                                             >
