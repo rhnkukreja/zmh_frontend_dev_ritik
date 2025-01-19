@@ -35,7 +35,6 @@ const GlobalCreateNoteModal = ({
         <Dialog.Description>
           <CreateAndSelectFolder
             selectedText={selectedText}
-            globalCreateNoteModalVisible={globalCreateNoteModalVisible}
             setGlobalCreateNoteModalVisible={setGlobalCreateNoteModalVisible}
           />
         </Dialog.Description>

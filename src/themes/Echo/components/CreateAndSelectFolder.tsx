@@ -20,7 +20,6 @@ import SelectNoteField from "@/pages/Notes/components/SelectNote";
 import _ from "lodash";
 
 interface CreateAndSelectFolderProps {
-  globalCreateNoteModalVisible: boolean;
   setGlobalCreateNoteModalVisible: Dispatch<SetStateAction<boolean>>;
   selectedText: string;
 }
@@ -168,7 +167,6 @@ const StepThree: React.FC<{
 
 const CreateAndSelectFolder: React.FC<CreateAndSelectFolderProps> = ({
   selectedText,
-  globalCreateNoteModalVisible,
   setGlobalCreateNoteModalVisible,
 }) => {
   const dispatch = useAppDispatch();
