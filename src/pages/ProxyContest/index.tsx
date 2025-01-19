@@ -517,7 +517,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                         <Table.Td className="px-5 border-b-0 font-bold dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
                                                                             {row.company}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5  border-l border-gray-500 border-b-0 dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5 border-l-2 border-gray-500 border-b-0 dark:border-darkmode-300 py-2 text-center">
                                                                         {row.iss.management === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -535,7 +535,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                 </div>
                                                                             )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="px-5 border-r border-b-0 border-gray-500 dark:border-darkmode-300 py-2 text-center">
+                                                                        <Table.Td className="px-5 border-r-2 border-b-0 border-gray-500 dark:border-darkmode-300 py-2 text-center">
                                                                         {row.iss.split === true && (
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">

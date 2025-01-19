@@ -30,7 +30,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
       <Dialog.Panel className="text-center">
         <Dialog.Title>
           <h2 className="mr-auto text-lg font-semibold">{fileName}</h2>
-          <Tippy content="Expand" options={{ theme: "light" }}>
+          <Tippy content={dialogSize === "2xl" ? "Collapse" : "Expand"} options={{ theme: "light" }}>
             <div
               className="box p-2 cursor-pointer"
               onClick={() =>
