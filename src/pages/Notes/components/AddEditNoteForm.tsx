@@ -1,10 +1,6 @@
 import React, { SetStateAction, Dispatch } from "react";
-import { useForm, Controller } from "react-hook-form";
-import FormCheck from "@/components/Base/Form/FormCheck";
-import FormInput from "@/components/Base/Form/FormInput";
-import Error from "@/components/Error";
-import { ClassicEditor } from "@/components/Base/Ckeditor";
-import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
+import { useForm } from "react-hook-form";
+
 import { Note } from "@/types/notes";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";

@@ -6,7 +6,7 @@ import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Controller,
   FieldErrors,
@@ -95,7 +95,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const yearValue = watch("year");
   const companyValue = watch("company");
 
-  const { user, companyGlobalSearchName } = useAppSelector(
+  const { companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
 

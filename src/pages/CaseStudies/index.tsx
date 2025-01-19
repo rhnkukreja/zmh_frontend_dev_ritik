@@ -27,8 +27,7 @@ import {
   resetPage,
 } from "@/stores/caseStudySlice";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { caseStudiesService } from "@/services/caseStudies";
-import { FlterDropdown } from "@/types/casestudy";
+
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
@@ -37,6 +36,7 @@ import { modifyRoute } from "@/stores/themeSlice";
 import AddNewCaseStudies from "./Components/AddEditCaseStudies";
 import { setInstitution } from "@/stores/dashboardSlice";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 
 interface CaseStudyFilter {
   keyword: string;
@@ -63,13 +63,15 @@ function CaseStudies() {
     filters,
     isAllCompanySelected,
   } = useAppSelector((state) => state.caseStudies);
+
+  const { apiDropdownOptions, loading: getDropdownLoader } =
+    useCaseStudyDropdowns();
   const [searchParams] = useSearchParams();
 
   const { user, companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
 
-  console.log({ companyGlobalSearchName, data: filters?.global_search });
   const { instituteName: InstituteName } = useAppSelector(
     (state) => state.dashboard
   );
@@ -81,16 +83,6 @@ function CaseStudies() {
       ? filters.institution_name
       : []
   );
-  const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
-  const [apiDropdownOptions, setApiDropdownOptions] = useState<FlterDropdown>({
-    institution: [],
-    market: [],
-    proposal_type: [],
-    sector: [],
-    themes: [],
-    vote: [],
-    year: [],
-  });
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
@@ -137,20 +129,6 @@ function CaseStudies() {
     setValue("vote", []);
   };
 
-  const getAllCaseStudyDropdowns = async () => {
-    try {
-      setGetDropdownLoader(true);
-      const res = await caseStudiesService.getCaseStudiesDropdownValues();
-      if (res.result) {
-        setApiDropdownOptions({ ...res.result });
-      }
-    } catch (error) {
-      return error;
-    } finally {
-      setGetDropdownLoader(false);
-    }
-  };
-
   useEffect(() => {
     dispatch(
       setFilters({
@@ -166,10 +144,6 @@ function CaseStudies() {
       })
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);
-
-  useEffect(() => {
-    getAllCaseStudyDropdowns();
-  }, []);
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
@@ -784,35 +758,37 @@ function CaseStudies() {
                               key={item?.id}
                               className="[&_td]:last:border-b-0"
                             >
-                              <Table.Td className="flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                {item?.institution_logo_url ? (
-                                  <>
-                                    <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
+                              <Table.Td>
+                                <div className="w-full flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                  {item?.institution_logo_url ? (
+                                    <>
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
+                                        <img
+                                          alt="Institution Logo"
+                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                          src={item?.institution_logo_url}
+                                          content={item?.institution_name || ""}
+                                        />
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
                                       <img
-                                        alt="Institution Logo"
+                                        alt="ZMH Analytics"
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                        src={item?.institution_logo_url}
-                                        content={item?.institution_name || ""}
+                                        src={investorIcon}
                                       />
+                                      <a
+                                        href=""
+                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
+                                      ></a>
                                     </div>
-                                  </>
-                                ) : (
-                                  <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                    <img
-                                      alt="ZMH Analytics"
-                                      className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                      src={investorIcon}
-                                    />
-                                    <a
-                                      href=""
-                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
-                                    ></a>
+                                  )}
+                                  <div className="ml-4 max-w-[150px]">
+                                    <p className="font-medium whitespace-normal line-clamp-2">
+                                      {item?.institution_name}
+                                    </p>
                                   </div>
-                                )}
-                                <div className="ml-4 max-w-[150px]">
-                                  <p className="font-medium whitespace-normal line-clamp-2">
-                                    {item?.institution_name}
-                                  </p>
                                 </div>
                               </Table.Td>
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">

@@ -1,4 +1,4 @@
-import { FlterDropdown } from "@/types/casestudy";
+import { FilterDropdown } from "@/types/casestudy";
 import { axiosInstance } from "../index";
 
 class CaseStudiesService {
@@ -23,7 +23,7 @@ class CaseStudiesService {
     };
   }
   public async getCaseStudiesDropdownValues(): Promise<{
-    result: FlterDropdown;
+    result: FilterDropdown;
   }> {
     const response = await axiosInstance.get(
       `/get_case_studies_dropdown_values/`
@@ -44,7 +44,10 @@ class CaseStudiesService {
     };
   }
 
-  public async updateCaseStudies(id: string, data: Partial<any>): Promise<{
+  public async updateCaseStudies(
+    id: string,
+    data: Partial<any>
+  ): Promise<{
     results: any;
   }> {
     const response = await axiosInstance.put(`/case_studies/${id}/`, data);
