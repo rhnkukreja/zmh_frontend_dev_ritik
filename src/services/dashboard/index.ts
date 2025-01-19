@@ -66,7 +66,7 @@ class DashboardService {
     return { results };
   }
 
-  public async fetchProxyContestDashboard(url: string): Promise<{ results: any }> {
+  public async fetchProxyContestReleaseDashboard(url: string): Promise<{ results: any }> {
     const response = await axiosInstance.get(url);
     const results = response.data;
     return { results };
