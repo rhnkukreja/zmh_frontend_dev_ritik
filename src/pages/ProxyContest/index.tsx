@@ -475,7 +475,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                     </Table.Td>
                                                                     <Table.Td
                                                                         colSpan={3}
-                                                                        className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-gray-500 border-r-2 text-[#000000B2] text-center"
+                                                                        className="px-5 min-w-[150px] max-w-[170px] dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-gray-500 border-r-2 text-[#000000B2] text-center"
                                                                     >
                                                                         ISS
                                                                     </Table.Td>
@@ -487,22 +487,23 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                     </Table.Td>
                                                                 </Table.Tr>
                                                                 <Table.Tr className="row">
-                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
+                                                                    {/* px-5 border-b dark:border-darkmode-300 cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] text-left sticky top-0 min-w-[150px] max-w-[170px] */}
+                                                                    <Table.Td className="px-5 min-w-[100px] max-w-[120px]  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Management
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px]  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Activist
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500 border-r-2 bg-header  text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px] dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500 border-r-2 bg-header  text-[#000000B2] text-center">
                                                                         Split
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px] dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Management
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5 min-w-[100px] max-w-[120px]  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Activist
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px] dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
                                                                         Split
                                                                     </Table.Td>
                                                                 </Table.Tr>
@@ -602,10 +603,10 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                         <Table className="table">
                                                             <Table.Thead>
                                                                 <Table.Tr className="row">
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] min-w-[120px] max-w-[140px] ">
                                                                         {/* Document Name */}
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center min-w-[20px] max-w-[40px]">
                                                                         View
                                                                     </Table.Td>
                                                                 </Table.Tr>
@@ -617,7 +618,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                             key={document.name}
                                                                             className="row [&_td]:last:border-b-0"
                                                                         >
-                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
+                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
                                                                                 <div className="flex justify-between items-center ">
                                                                                     <div>
                                                                                         <h1
@@ -636,7 +637,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                     </div>
                                                                                 </div>
                                                                             </Table.Td>
-                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
+                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
                                                                                 <div className="flex justify-center items-center h-full">
                                                                                     <Tippy
                                                                                         content="See Details"
@@ -687,11 +688,11 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                     <div>
                                                         <Table className="table">
                                                             <Table.Thead>
-                                                                <Table.Tr className="row">
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                            <Table.Tr className="row">
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] min-w-[120px] max-w-[140px] ">
                                                                         {/* Document Name */}
                                                                     </Table.Td>
-                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center">
+                                                                    <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center min-w-[20px] max-w-[40px]">
                                                                         View
                                                                     </Table.Td>
                                                                 </Table.Tr>
@@ -700,55 +701,52 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                 {proxyContestReleaseDetails?.Activism_Press_Release?.length > 0 &&
                                                                     proxyContestReleaseDetails?.Activism_Press_Release?.map((document: any) => (
                                                                         <Table.Tr
-                                                                            key={document.name}
-                                                                            className="row [&_td]:last:border-b-0"
-                                                                        >
-
-                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
-                                                                                <div className="flex justify-between items-center ">
-                                                                                    <div>
+                                                                        key={document.name}
+                                                                        className="row [&_td]:last:border-b-0"
+                                                                    >
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                                                            <div className="flex justify-between items-center ">
+                                                                                <div>
                                                                                     <h1
-                                                                                            onClick={() => {
-                                                                                                gotoDetailPage(
-                                                                                                    document?.document_url!,
-                                                                                                    document?.document_name!
-                                                                                                );
+                                                                                        onClick={() => {
+                                                                                            gotoDetailPage(
+                                                                                                document?.document_url!,
+                                                                                                document?.document_name!
+                                                                                            );
 
-                                                                                                setPdfVisible(true);
-                                                                                            }}
-                                                                                            className="font-semibold cursor-pointer hover:underline"
-                                                                                        >
-                                                                                            {document?.document_name}
-                                                                                        </h1>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </Table.Td>
-                                                                            <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
-                                                                                <div className="flex justify-center items-center h-full">
-                                                                                    <Tippy
-                                                                                        //   Download
-                                                                                        content="See Details"
-                                                                                        options={{
-                                                                                            theme: "light",
+                                                                                            setPdfVisible(true);
                                                                                         }}
+                                                                                        className="font-semibold cursor-pointer hover:underline"
                                                                                     >
-                                                                                         <Lucide
-                                                                                            onClick={() => {
-                                                                                                gotoDetailPage(
-                                                                                                    document?.document_url!,
-                                                                                                    document?.document_name!
-                                                                                                );
-
-                                                                                                setPdfVisible(true);
-                                                                                            }}
-                                                                                            icon="Eye"
-                                                                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                                                                        />
-                                                                                    </Tippy>
+                                                                                        {document?.document_name}
+                                                                                    </h1>
                                                                                 </div>
-                                                                            </Table.Td>
+                                                                            </div>
+                                                                        </Table.Td>
+                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                                                            <div className="flex justify-center items-center h-full">
+                                                                                <Tippy
+                                                                                    content="See Details"
+                                                                                    options={{
+                                                                                        theme: "light",
+                                                                                    }}
+                                                                                >
+                                                                                    <Lucide
+                                                                                        onClick={() => {
+                                                                                            gotoDetailPage(
+                                                                                                document?.document_url!,
+                                                                                                document?.document_name!
+                                                                                            );
 
-                                                                        </Table.Tr>
+                                                                                            setPdfVisible(true);
+                                                                                        }}
+                                                                                        icon="Eye"
+                                                                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                                                                    />
+                                                                                </Tippy>
+                                                                            </div>
+                                                                        </Table.Td>
+                                                                    </Table.Tr>
                                                                     ))}
                                                             </Table.Tbody>
                                                         </Table>
@@ -1097,8 +1095,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                     {/* Proxy Contest Table */}
 
                                     <section >
-                                        {!loading && proxyContestTopFiveDetails?.vds_report_headers?.length > 0 &&
-
+                                        {!loading && proxyContestTopFilter?.company_name?.length > 0 &&
                                             <section className="box p-5 mt-3.5">
                                                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
@@ -1174,13 +1171,24 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                             </div>
                                                         </form>
 
+                                                </div>
+
+                                                {(proxyContestTopFiveDetails === "" && proxyContestTopFiveLoading) && (
+                                                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                                        {/* <h1 className="font-semibold">Loading...</h1> */}
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-white">
+                                                            <LoadingIcon
+                                                                color="#800000"
+                                                                icon="three-dots"
+                                                                className="w-16 h-16"
+                                                            />
+                                                        </div>
                                                     </div>
-
-
+                                                )}
 
 
                                                 <div>
-                                                    <TableWrapper isLoading={proxyContestTopFiveLoading && (proxyContestTopFilter.company_name?.length > 0)}>
+                                                    <TableWrapper isLoading={false}>
                                                         <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                                                             <Table className="table_2 w-full">
                                                                 <Table.Thead className="sticky top-50 z-10">
@@ -1336,6 +1344,11 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                             )
                                                                         )}
                                                                 </Table.Tbody>
+                                                                {proxyContestTopFiveDetails?.vds_report_headers?.length === 0 && (
+                                                                    <div className="w-full">
+                                                                        <h1 className="mt-3">No Records Found..</h1>
+                                                                    </div>
+                                                                )}
                                                             </Table>
                                                         </div>
 
@@ -1347,18 +1360,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                         }
                                     </section>
 
-                                    {(proxyContestTopFiveDetails === "" && proxyContestTopFiveLoading) && (
-                                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                            {/* <h1 className="font-semibold">Loading...</h1> */}
-                                            <div className="absolute inset-0 flex items-center justify-center bg-white">
-                                                <LoadingIcon
-                                                    color="#800000"
-                                                    icon="three-dots"
-                                                    className="w-16 h-16"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
+                                    
 
                                     {/* Proxy Contest Table */}
 
