@@ -460,13 +460,13 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   <Controller
                     name="link_to_initial_submission"
                     control={control}
-                    rules={{
-                      required: "Link to Initial Submission is required",
-                      pattern: {
-                        value: /^https:\/\/.+$/i,
-                        message: "The link must start with 'https://'",
-                      },
-                    }}
+                    // rules={{
+                    //   required: "Link to Initial Submission is required",
+                    //   pattern: {
+                    //     value: /^https:\/\/.+$/i,
+                    //     message: "The link must start with 'https://'",
+                    //   },
+                    // }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput

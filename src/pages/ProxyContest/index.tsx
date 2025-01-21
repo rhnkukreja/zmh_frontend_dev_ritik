@@ -457,7 +457,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                         <span>
                                                             <h1 className="text-lg font-bold">
-                                                            Company and Activism
+                                                            Proxy Advisory Firm Recommendation
                                                             </h1>
                                                         </span>
                                                     </div>
@@ -471,7 +471,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                         rowSpan={2}
                                                                         className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500 border-r-2 bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem]  text-[#000000B2]"
                                                                     >
-                                                                        Company
+                                                                        {/* Company */}
                                                                     </Table.Td>
                                                                     <Table.Td
                                                                         colSpan={3}
@@ -532,7 +532,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                                                     <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                                                         &#10004;
-                                                                                    </div>A
+                                                                                    </div>
                                                                                 </div>
                                                                             )}
                                                                         </Table.Td>
@@ -583,6 +583,155 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                         }
 
                                     </section>
+
+                                    {/* Case Studies Table */}
+
+                                    <section >
+                                        {!loading && caseStudiesTopProxy?.length > 0 &&
+
+                                            <section className="box p-5 mt-3.5">
+                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                                                        <span>
+                                                            <h1 className="text-lg font-bold">
+                                                                Case Studies
+                                                            </h1>
+                                                        </span>
+                                                    </div>
+
+                                                </div>
+                                                <span>
+                                                    <div className="">
+                                                        <TableWrapper isLoading={loading}>
+                                                            <div className="overflow-auto max-h-[400px]">
+                                                                <Table>
+                                                                    <Table.Thead>
+                                                                        <Table.Tr>
+                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                                                Institution Name
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                                                                                Year
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                                                                                Company
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                                                                                Theme
+                                                                            </Table.Td>
+
+                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                                                                                Industry
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                                                Details
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                    </Table.Thead>
+
+                                                                    <Table.Tbody>
+                                                                        {caseStudiesTopProxy?.length > 0 &&
+                                                                            caseStudiesTopProxy?.map((item: any) => (
+                                                                                <Table.Tr
+                                                                                    key={item?.id}
+                                                                                    className="[&_td]:last:border-b-0"
+                                                                                >
+                                                                                    <Table.Td className="flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                                                                        {item?.institution_logo_url ? (
+                                                                                            <>
+                                                                                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
+                                                                                                    <img
+                                                                                                        alt="Institution Logo"
+                                                                                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                                                                                        src={item?.institution_logo_url}
+                                                                                                        content={item?.institution_name || ""}
+                                                                                                    />
+                                                                                                </div>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                                                                                <img
+                                                                                                    alt="ZMH Analytics"
+                                                                                                    className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                                                                                    src={investorIcon}
+                                                                                                />
+                                                                                                <a
+                                                                                                    href=""
+                                                                                                    className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
+                                                                                                ></a>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        <div className="ml-4 max-w-[150px]">
+                                                                                            <p className="font-medium whitespace-normal line-clamp-2">
+                                                                                                {item?.institution_name}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                                                                        {item?.year}
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                                                                        {item?.company_name}
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                                                                        {item?.esg_themes}
+                                                                                    </Table.Td>
+
+                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                                                                        {item?.industry}
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
+                                                                                        <div className="flex gap-3 justify-center">
+                                                                                            <Tippy
+                                                                                                content="See Details"
+                                                                                                options={{ theme: "light" }}
+                                                                                            >
+                                                                                                <Lucide
+                                                                                                    onClick={() => {
+                                                                                                        setCaseProxyModalVisible(true);
+                                                                                                        setCaseProxyModalData(item);
+                                                                                                    }}
+                                                                                                    icon="Eye"
+                                                                                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                                                                                />
+                                                                                            </Tippy>
+                                                                                        </div>
+                                                                                    </Table.Td>
+                                                                                </Table.Tr>
+                                                                            ))}
+                                                                    </Table.Tbody>
+                                                                    {caseStudiesTopProxy?.length === 0 && (
+                                                                        <div className="w-full">
+                                                                            <h1 className="mt-3">No Records Found..</h1>
+                                                                        </div>
+                                                                    )}
+                                                                </Table>
+                                                            </div>
+                                                        </TableWrapper>
+                                                    </div>
+                                                    <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                                        <CPagination
+                                                            page={page}
+                                                            totalPages={totalCaseStudiesTopProxyPages}
+                                                            handleNextPage={handleNextPage}
+                                                            handlePageChange={handlePageChange}
+                                                            handlePreviousPage={handlePreviousPage}
+                                                        />
+                                                    </div>
+                                                </span>
+
+                                            </section>
+                                        }
+
+                                        {/* {!loading && caseStudiesTopProxy?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
+                                            <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                                <h1 className="font-semibold">Case Studies Records Not Found.</h1>
+                                            </div>
+                                        } */}
+
+                                    </section>
+
+                                    {/* Case Studies Table */}
 
                                     <div className="flex items-start gap-4 justify-center xs:flex-col md:flex-row">
                                     <section className="flex-1" >
@@ -942,155 +1091,6 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                     {/* AGM Summary Table */}
 
                                     <br />
-
-                                    {/* Case Studies Table */}
-
-                                    <section >
-                                        {!loading && caseStudiesTopProxy?.length > 0 &&
-
-                                            <section className="box p-5 mt-3.5">
-                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                                                        <span>
-                                                            <h1 className="text-lg font-bold">
-                                                                Case Studies
-                                                            </h1>
-                                                        </span>
-                                                    </div>
-
-                                                </div>
-                                                <span>
-                                                    <div className="">
-                                                        <TableWrapper isLoading={loading}>
-                                                            <div className="overflow-auto max-h-[400px]">
-                                                                <Table>
-                                                                    <Table.Thead>
-                                                                        <Table.Tr>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                                                Institution Name
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Year
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Company
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Theme
-                                                                            </Table.Td>
-
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Industry
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                                                Details
-                                                                            </Table.Td>
-                                                                        </Table.Tr>
-                                                                    </Table.Thead>
-
-                                                                    <Table.Tbody>
-                                                                        {caseStudiesTopProxy?.length > 0 &&
-                                                                            caseStudiesTopProxy?.map((item: any) => (
-                                                                                <Table.Tr
-                                                                                    key={item?.id}
-                                                                                    className="[&_td]:last:border-b-0"
-                                                                                >
-                                                                                    <Table.Td className="flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                                                                        {item?.institution_logo_url ? (
-                                                                                            <>
-                                                                                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
-                                                                                                    <img
-                                                                                                        alt="Institution Logo"
-                                                                                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                                                                                        src={item?.institution_logo_url}
-                                                                                                        content={item?.institution_name || ""}
-                                                                                                    />
-                                                                                                </div>
-                                                                                            </>
-                                                                                        ) : (
-                                                                                            <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                                                                                <img
-                                                                                                    alt="ZMH Analytics"
-                                                                                                    className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                                                                                    src={investorIcon}
-                                                                                                />
-                                                                                                <a
-                                                                                                    href=""
-                                                                                                    className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
-                                                                                                ></a>
-                                                                                            </div>
-                                                                                        )}
-                                                                                        <div className="ml-4 max-w-[150px]">
-                                                                                            <p className="font-medium whitespace-normal line-clamp-2">
-                                                                                                {item?.institution_name}
-                                                                                            </p>
-                                                                                        </div>
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.year}
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.company_name}
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.esg_themes}
-                                                                                    </Table.Td>
-
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.industry}
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
-                                                                                        <div className="flex gap-3 justify-center">
-                                                                                            <Tippy
-                                                                                                content="See Details"
-                                                                                                options={{ theme: "light" }}
-                                                                                            >
-                                                                                                <Lucide
-                                                                                                    onClick={() => {
-                                                                                                        setCaseProxyModalVisible(true);
-                                                                                                        setCaseProxyModalData(item);
-                                                                                                    }}
-                                                                                                    icon="Eye"
-                                                                                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                                                                                />
-                                                                                            </Tippy>
-                                                                                        </div>
-                                                                                    </Table.Td>
-                                                                                </Table.Tr>
-                                                                            ))}
-                                                                    </Table.Tbody>
-                                                                    {caseStudiesTopProxy?.length === 0 && (
-                                                                        <div className="w-full">
-                                                                            <h1 className="mt-3">No Records Found..</h1>
-                                                                        </div>
-                                                                    )}
-                                                                </Table>
-                                                            </div>
-                                                        </TableWrapper>
-                                                    </div>
-                                                    <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                                                        <CPagination
-                                                            page={page}
-                                                            totalPages={totalCaseStudiesTopProxyPages}
-                                                            handleNextPage={handleNextPage}
-                                                            handlePageChange={handlePageChange}
-                                                            handlePreviousPage={handlePreviousPage}
-                                                        />
-                                                    </div>
-                                                </span>
-
-                                            </section>
-                                        }
-
-                                        {/* {!loading && caseStudiesTopProxy?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
-                                            <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold">Case Studies Records Not Found.</h1>
-                                            </div>
-                                        } */}
-
-                                    </section>
-
-                                    {/* Case Studies Table */}
 
                                     {/* Proxy Contest Table */}
 
