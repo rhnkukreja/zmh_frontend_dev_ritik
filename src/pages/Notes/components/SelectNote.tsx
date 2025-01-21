@@ -5,31 +5,37 @@ import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import Error from "@/components/Error";
 import { Note } from "@/types/notes";
 
-interface FolderFieldProps {
+interface NoteFieldProps {
   control: Control<Note, any>;
   rules?: object;
+  folder: number;
 }
 
-const FolderField: React.FC<FolderFieldProps> = ({ control, rules }) => {
+const SelectNoteField: React.FC<NoteFieldProps> = ({
+  control,
+  rules,
+  folder,
+}) => {
   return (
     <div className="w-full">
       <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-        Folder
+        Note
       </FormCheck.Label>
       <Controller
-        name="folder"
+        name="name"
         control={control}
         rules={rules}
         render={({ field, fieldState: { error } }) => (
           <>
             <TomSelectServer
-              url="/user/folder/"
+              url={`/user/notes/?folder=${folder}`}
               valueKey="id"
-              labelKey="folder"
+              labelKey="name"
               value={field?.value?.toString() || ""}
               onChange={(value) => field.onChange(value)}
-              options={{ placeholder: "Select Folder" }}
+              options={{ placeholder: "Select Note" }}
               className="w-full"
+              fetchAll={false}
             />
             {error && (
               <Error className="text-red-600 mt-2">{error.message}</Error>
@@ -41,4 +47,4 @@ const FolderField: React.FC<FolderFieldProps> = ({ control, rules }) => {
   );
 };
 
-export default FolderField;
+export default SelectNoteField;

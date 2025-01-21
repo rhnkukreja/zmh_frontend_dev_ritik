@@ -1,4 +1,10 @@
-import { AddNoActionType, AddShareholderType, AddWithdrawnType, ShareHolderData, ShareHolderDropdown } from "@/types/shareHolder";
+import {
+  AddNoActionType,
+  AddShareholderType,
+  AddWithdrawnType,
+  ShareHolderData,
+  ShareHolderDropdown,
+} from "@/types/shareHolder";
 import { axiosInstance } from "../index";
 import { createDynamicURL } from "@/utils/helper";
 
@@ -32,20 +38,24 @@ class ShareHolderProposalService {
   //   };
   // }
 
-  public async getShareHolderDropdownValues(paramFilter?:any): Promise<{
+  public async getShareHolderDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
-    const response = await axiosInstance.get( createDynamicURL(`/get_shareholder_dropdown_values/`, paramFilter));
+    const response = await axiosInstance.get(
+      createDynamicURL(`/get_shareholder_dropdown_values/`, paramFilter)
+    );
     const result = response.data;
     return {
       result: result,
     };
   }
 
-  public async getNoActionrDropdownValues(paramFilter?:any): Promise<{
+  public async getNoActionrDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
-    const response = await axiosInstance.get( createDynamicURL(`/get_shareholder_noaction_proposal/`, paramFilter));
+    const response = await axiosInstance.get(
+      createDynamicURL(`/get_shareholder_noaction_proposal/`, paramFilter)
+    );
     const result = response.data;
     return {
       result: result,
@@ -68,17 +78,26 @@ class ShareHolderProposalService {
   public async addNewShareHolder(data: Partial<AddShareholderType>): Promise<{
     results: AddShareholderType;
   }> {
-    const response = await axiosInstance.post(`/shareholder_proposal/def14a/`, data);
+    const response = await axiosInstance.post(
+      `/shareholder_proposal/def14a/`,
+      data
+    );
     const results = response.data;
     return {
       results,
     };
   }
 
-  public async updateNewShareHolder(id: string, data: Partial<AddShareholderType>): Promise<{
+  public async updateNewShareHolder(
+    id: string,
+    data: Partial<AddShareholderType>
+  ): Promise<{
     results: AddShareholderType;
   }> {
-    const response = await axiosInstance.put(`/shareholder_proposal/def14a/${id}/`, data);
+    const response = await axiosInstance.put(
+      `/shareholder_proposal/def14a/${id}/`,
+      data
+    );
     const results = response.data;
     return {
       results,
@@ -88,17 +107,26 @@ class ShareHolderProposalService {
   public async AddNewWithdrawn(data: Partial<AddWithdrawnType>): Promise<{
     results: AddWithdrawnType;
   }> {
-    const response = await axiosInstance.post(`/shareholder_proposal/withdrawn/`, data);
+    const response = await axiosInstance.post(
+      `/shareholder_proposal/withdrawn/`,
+      data
+    );
     const results = response.data;
     return {
       results,
     };
   }
 
-  public async updateNewWithdrawn(id: string, data: Partial<AddWithdrawnType>): Promise<{
+  public async updateNewWithdrawn(
+    id: string,
+    data: Partial<AddWithdrawnType>
+  ): Promise<{
     results: AddWithdrawnType;
   }> {
-    const response = await axiosInstance.put(`/shareholder_proposal/withdrawn/${id}/`, data);
+    const response = await axiosInstance.put(
+      `/shareholder_proposal/withdrawn/${id}/`,
+      data
+    );
     const results = response.data;
     return {
       results,
@@ -108,18 +136,26 @@ class ShareHolderProposalService {
   public async AddNewNoAction(data: Partial<AddNoActionType>): Promise<{
     results: AddNoActionType;
   }> {
-    const response = await axiosInstance.post(`/shareholder_proposal/no_action/`, data);
+    const response = await axiosInstance.post(
+      `/shareholder_proposal/no_action/`,
+      data
+    );
     const results = response.data;
     return {
       results,
     };
   }
 
-
-  public async updateNoAction(id: string, data: Partial<AddNoActionType>): Promise<{
+  public async updateNoAction(
+    id: string,
+    data: Partial<AddNoActionType>
+  ): Promise<{
     results: AddNoActionType;
   }> {
-    const response = await axiosInstance.put(`/shareholder_proposal/no_action/${id}/`, data);
+    const response = await axiosInstance.put(
+      `/shareholder_proposal/no_action/${id}/`,
+      data
+    );
     const results = response.data;
     return {
       results,

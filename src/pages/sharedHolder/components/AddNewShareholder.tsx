@@ -6,7 +6,7 @@ import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Controller,
   FieldErrors,
@@ -42,7 +42,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   type,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading, page } = useAppSelector(
+  const { loading, page, filters } = useAppSelector(
     (state) => state.sharedHolderNoAction
   );
 
@@ -64,7 +64,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
           vote_outcome_formula:
             selectedShareholderProposal?.vote_outcome_formula || "  ",
           matched_id_no_action:
-            selectedShareholderProposal?.matched_id_no_action || "  ",
+            selectedShareholderProposal?.matched_id_no_action,
           vote_outcome: selectedShareholderProposal?.vote_outcome || "  ",
           status: selectedShareholderProposal?.status ? true : false,
           nl_exist: selectedShareholderProposal?.nl_exist ? true : false,
@@ -92,10 +92,13 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
   const nlExistValue = watch("nl_exist", false);
   const noShareholderProposalValue = watch("no_shareholder_proposal", false);
+
   const yearValue = watch("year");
   const companyValue = watch("company");
+  const categoryValue = watch("category");
 
-  const { user, companyGlobalSearchName } = useAppSelector(
+
+  const { companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
 
@@ -119,9 +122,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     }
   };
   useEffect(() => {
-    getSubCategoryDropdown();
     getAllShareholderDropdowns();
   }, []);
+
+  useEffect(() => {
+    getSubCategoryDropdown();
+  }, [categoryValue]);
 
   const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
     sub_category: [],
@@ -131,9 +137,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   });
 
   const getSubCategoryDropdown = async (value?: any) => {
-    if (value !== "") {
+    const categoryName = selectedShareholderProposal?.category;
+    if (value !== "" || categoryValue !== "" || categoryName !== "") {
       const paramFilter = {
-        category: value,
+        category: value ?? categoryValue ?? categoryName,
       };
       try {
         const res =
@@ -188,6 +195,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         data?.vote_outcome_formula === "  " ? null : data?.vote_outcome_formula,
       matched_id_no_action:
         data?.matched_id_no_action === "  " ? null : data?.matched_id_no_action,
+        nl_exist: data?.matched_id_no_action ? true : false,
     };
     try {
       let response;
@@ -215,7 +223,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
           fetchShareHolderProposal(
             createDynamicURL(
               `${baseURL}/shareholder_proposal/def14a/`,
-              { global_search: companyGlobalSearchName },
+              // { global_search: companyGlobalSearchName },
+              filters,
               undefined,
               page
             )
@@ -386,7 +395,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
-                              getSubCategoryDropdown(e?.target?.value);
+                              // getSubCategoryDropdown(e?.target?.value);
                             }}
                             options={{
                               placeholder: "Select Category",
@@ -787,17 +796,16 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+              {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                    NL Exist
+                  No Action Letter Exists
                   </FormCheck.Label>
 
                   <div className="mt-2 flex flex-col">
                     <Controller
                       name="nl_exist"
                       control={control}
-                      // rules={{ required: "NL exists is required" }}
                       render={({ field }) => (
                         <>
                           <FormCheck className="flex items-center mr-2">
@@ -807,7 +815,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               {...field}
                               value="true"
                               checked={field.value === true}
-                              // onChange={(e) => field.onChange(true)}
                             />
                             <FormCheck.Label
                               htmlFor="checkbox-switch-4"
@@ -817,22 +824,16 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             </FormCheck.Label>
                           </FormCheck>
 
-                          {/* <div>
-                            {errors.status && (
-                              <Error className="max-w-[100%] mt-6">
-                                {errors.status?.message}
-                              </Error>
-                            )}
-                          </div> */}
+                          
                         </>
                       )}
                     />
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                {nlExistValue && (
+                {/* {nlExistValue && ( */}
                   <div className="flex-1 w-full">
                     <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
                       No Action ID Match
@@ -842,7 +843,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       <Controller
                         name="matched_id_no_action"
                         control={control}
-                        // rules={{ required: "Vote Requirement is required" }}
+                        // rules={{
+                        //   required:  "No Action ID Match is required" }}
                         render={({ field, fieldState: { error } }) => (
                           <>
                             <TomSelect
@@ -867,10 +869,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                                       key={proposals?.id}
                                     >
                                       {
-                                        // proposals?.proposal_text?.length > 150
-                                        //   ? proposals.proposal_text.substring(0, 150) + "..."
-                                        //   :
-
                                         proposals?.proposal_text
                                       }
                                     </option>
@@ -878,17 +876,17 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                                 }
                               )}
                             </TomSelect>
-                            {error && (
+                            {/* {error && (
                               <Error className="text-red-600 mt-2">
                                 {error.message}
                               </Error>
-                            )}
+                            )} */}
                           </>
                         )}
                       />
                     </div>
                   </div>
-                )}
+                {/* )} */}
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">

@@ -12,7 +12,7 @@ interface NameFieldProps {
 
 const NameField: React.FC<NameFieldProps> = ({ control, rules }) => {
   return (
-    <div>
+    <div className="w-full">
       <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2 !ml-0">
         Note Name
       </FormCheck.Label>

@@ -197,44 +197,46 @@ function Main() {
     }
   }, [location.pathname]);
 
-  // const handleSelectionChange = () => {
-  //   const selection = window.getSelection();
-  //   const text = selection?.toString() || "";
+  const handleSelectionChange = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const container = document.createElement("div");
+      container.appendChild(range.cloneContents());
+      const selectedHtml = container.innerHTML;
 
-  //   if (text.trim() && selection) {
-  //     const range = selection.getRangeAt(0).getBoundingClientRect();
-  //     setSelectedText(text);
-  //     setTooltipPosition({
-  //       x: range.left + window.scrollX,
-  //       y: range.top + window.scrollY - 30,
-  //     });
-  //   } else {
-  //     setSelectedText("");
-  //   }
-  // };
+      if (selectedHtml.trim()) {
+        const rect = range.getBoundingClientRect();
+        setSelectedText(selectedHtml);
+        setTooltipPosition({
+          x: rect.left + window.scrollX,
+          y: rect.top + window.scrollY - 30,
+        });
+      }
+    }
+  };
 
-  // const handleCreateNote = () => {
-  //   setGlobalCreateNoteModalVisible(true);
-  // };
+  const handleCreateNote = () => {
+    setGlobalCreateNoteModalVisible(true);
+  };
 
-  // useEffect(() => {
-  //   const handleClickOutside = (e: MouseEvent) => {
-  //     if (
-  //       tooltipRef.current &&
-  //       !tooltipRef.current.contains(e.target as Node)
-  //     ) {
-  //       setSelectedText("");
-  //     }
-  //   };
+  useEffect(() => {
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+    };
+  }, []);
 
-  //   document.addEventListener("selectionchange", handleSelectionChange);
-  //   document.addEventListener("mousedown", handleClickOutside);
-
-  //   return () => {
-  //     document.removeEventListener("selectionchange", handleSelectionChange);
-  //     document.removeEventListener("mousedown", handleClickOutside);
-  //   };
-  // }, []);
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (tooltipRef.current && selectedText) {
+        setSelectedText("");
+      }
+    };
+    if (!globalCreateNoteModalVisible) {
+      handleClickOutside();
+    }
+  }, [globalCreateNoteModalVisible]);
 
   useEffect(() => {
     const handleStorageChange = async (event: StorageEvent) => {
@@ -789,7 +791,7 @@ function Main() {
         </div>
       </div>
 
-      {/* <>
+      <>
         {selectedText && (
           <div
             ref={tooltipRef}
@@ -810,7 +812,7 @@ function Main() {
             </span>
           </div>
         )}
-      </> */}
+      </>
 
       <div
         className={clsx([
@@ -833,10 +835,13 @@ function Main() {
         </div>
       </div>
 
-      {/* <GlobalCreateNoteModal
-        globalCreateNoteModalVisible={globalCreateNoteModalVisible}
-        setGlobalCreateNoteModalVisible={setGlobalCreateNoteModalVisible}
-      /> */}
+      {globalCreateNoteModalVisible && (
+        <GlobalCreateNoteModal
+          globalCreateNoteModalVisible={globalCreateNoteModalVisible}
+          setGlobalCreateNoteModalVisible={setGlobalCreateNoteModalVisible}
+          selectedText={selectedText}
+        />
+      )}
 
       <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}>
         <Dialog.Panel className="p-10 text-center h-full">

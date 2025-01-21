@@ -54,30 +54,7 @@ export interface TomSelectProps<T extends string | string[] = string | string[]>
   url: string;
   isMultiple?: boolean;
   ContainerClassName?: string;
-}
-
-async function fetchOptions({
-  url,
-  valueKey,
-  labelKey,
-}: {
-  url: string;
-  valueKey: string;
-  labelKey: string;
-}): Promise<FetchedOptionType[]> {
-  const response =
-    url.includes("def14a") ||
-    url.includes("Proponent") ||
-    url.includes("shareholder_proposal")
-      ? await axiosInstance.get(`${url}`)
-      : await axiosInstance.get(`${url}?all=true`);
-
-  const data = response.data.results || response.data;
-
-  return data?.map((item: any) => ({
-    value: String(item[valueKey]),
-    label: item[labelKey],
-  }));
+  fetchAll?: boolean;
 }
 
 function TomSelect<T extends string | string[]>({
@@ -92,7 +69,7 @@ function TomSelect<T extends string | string[]>({
   labelKey,
   url,
   isMultiple = false,
-
+  fetchAll = true,
   ...computedProps
 }: TomSelectProps<T>) {
   const props = {
@@ -107,6 +84,32 @@ function TomSelect<T extends string | string[]>({
     labelKey: labelKey,
     url,
   };
+
+  async function fetchOptions({
+    fetchUrl,
+    valueKey,
+    labelKey,
+  }: {
+    fetchUrl: string;
+    valueKey: string;
+    labelKey: string;
+  }): Promise<FetchedOptionType[]> {
+    const url = fetchAll === false ? fetchUrl : `${fetchUrl}?all=true`;
+    const response =
+      url.includes("def14a") ||
+      url.includes("Proponent") ||
+      url.includes("shareholder_proposal")
+        ? await axiosInstance.get(`${url}`)
+        : await axiosInstance.get(`${url}`);
+
+    const data = response.data.results || response.data;
+
+    return data?.map((item: any) => ({
+      value: String(item[valueKey]),
+      label: item[labelKey],
+    }));
+  }
+
   const initialRender = useRef(true);
   const tomSelectRef = createRef<TomSelectElement>();
 
@@ -119,7 +122,11 @@ function TomSelect<T extends string | string[]>({
       setLoading(true);
       setError(null);
       try {
-        const fetchedOptions = await fetchOptions({ url, valueKey, labelKey });
+        const fetchedOptions = await fetchOptions({
+          fetchUrl: url,
+          valueKey,
+          labelKey,
+        });
         setFetchedOption(fetchedOptions);
         setLoading(false);
       } catch (err) {
@@ -129,7 +136,9 @@ function TomSelect<T extends string | string[]>({
       }
     };
 
-    loadOptions();
+    if (fetchedOption.length === 0) {
+      loadOptions();
+    }
   }, [url, valueKey, labelKey]);
 
   const computedOptions = useMemo(() => {

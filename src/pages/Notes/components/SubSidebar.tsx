@@ -84,15 +84,6 @@ const SubSidebar: React.FC = () => {
   }, [selectedFolder]);
 
   const onClickCancel = () => {
-    // if (!selectedFolder) {
-    //   const id = searchParams.get("id");
-    //   if (id) {
-    //     const lastSelectedFolder = folders?.find(
-    //       (folder: FolderData) => folder?.id === Number(id)
-    //     );
-    //     dispatch(setSelectedFolder(lastSelectedFolder));
-    //   }
-    // }
     setFolderToBeEdited(null);
     setAddNotesModalVisible(false);
   };
@@ -108,7 +99,6 @@ const SubSidebar: React.FC = () => {
         response?.response.status === 200 ||
         response?.response.status === 204
       ) {
-        // toast.success("Folder deleted successfully");
         dispatch(fetchFolders());
         if (folderToBeDeleted?.id === selectedNote?.folder) {
           dispatch(clearSelectedNote());
@@ -140,11 +130,6 @@ const SubSidebar: React.FC = () => {
           New Folder
         </Button>
       </div>
-
-      {/* <div className="flex justify-between px-4 ">
-        <span>All Notes</span>
-        <span className="font-semibold text-sm text-gray-500">276</span>
-      </div> */}
 
       <FolderList
         folders={folders}

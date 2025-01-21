@@ -29,7 +29,13 @@ const NotesList: React.FC = () => {
 
   useEffect(() => {
     if (selectedFolder?.id) {
-      dispatch(fetchNotes(selectedFolder?.id));
+      if (!notes || notes?.length === 0) {
+        dispatch(fetchNotes(selectedFolder.id));
+      } else if (notes[0]?.folder !== selectedFolder.id) {
+        dispatch(fetchNotes(selectedFolder.id));
+      } else {
+        return;
+      }
     }
   }, [dispatch, selectedFolder]);
 
@@ -76,9 +82,7 @@ const NotesList: React.FC = () => {
   return (
     <div className="w-full border-r border-gray-200 h-screen overflow-y-auto no-scrollbar">
       <div className="flex justify-between items-center  px-4 py-4  ">
-        <h2 className="text-lg font-semibold">
-          {"Notes"}
-        </h2>
+        <h2 className="text-lg font-semibold">{"Notes"}</h2>
         <span className="text-muted-foreground">{`${
           selectedFolder?.notes_count || 0
         } Notes`}</span>

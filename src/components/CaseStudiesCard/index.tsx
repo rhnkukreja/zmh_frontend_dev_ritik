@@ -19,17 +19,26 @@ const index = () => {
     const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   
     useEffect(() => {
-    //   if(ticker !== companyGlobalSearchTicker){
-    //     return;
-    //   }
         if (companyGlobalSearchName) {
-            dispatch(fetchCaseStudyDashboard(
-                createDynamicURL(`https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q=${companyGlobalSearchName}&dateRestrict=y1&start=${pageNumber}`)
-            )
-            );
+            // Check if "Company" or "Corporation" exists in the name
+            const hasKeywords = /\b(Company|Corporation)\b/i.test(companyGlobalSearchName);
+    
+            // If keywords exist, replace them with "Co"
+            const companyGlobalSearchNamev2 = hasKeywords
+                ? companyGlobalSearchName.replace(/\b(Company|Corporation)\b/gi, "Co")
+                : null;
+    
+            // Construct the URL based on the condition
+            const url = hasKeywords
+                ? `https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q="${companyGlobalSearchName}" OR "${companyGlobalSearchNamev2}"&dateRestrict=y1&start=${pageNumber}`
+                : `https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q="${companyGlobalSearchName}"&dateRestrict=y1&start=${pageNumber}`;
+    
+            // Dispatch the action with the constructed URL
+            dispatch(fetchCaseStudyDashboard(createDynamicURL(url)));
         }
-
     }, [companyGlobalSearchName]);
+    
+    
 
 
 

@@ -1,5 +1,4 @@
-export type FlterDropdown = {
-  // company: string[];
+export interface FilterDropdown {
   institution: string[];
   market: string[];
   proposal_type: string[];
@@ -7,4 +6,6 @@ export type FlterDropdown = {
   themes: string[];
   vote: string[];
   year: string[];
-};
+  category: string[];
+  sub_category: string[];
+}
