@@ -22,15 +22,22 @@ class CaseStudiesService {
       result: result,
     };
   }
-  public async getCaseStudiesDropdownValues(): Promise<{
-    result: FilterDropdown;
-  }> {
-    const response = await axiosInstance.get(
-      `/get_case_studies_dropdown_values/`
-    );
-    const result = response.data;
+
+  public async getCaseStudiesDropdownValues(
+    queryParams?: Record<string, any>
+  ): Promise<any> {
+    const queryString = new URLSearchParams(
+      queryParams as Record<string, any>
+    ).toString();
+
+    const url = queryParams
+      ? `/get_case_studies_dropdown_values/?${queryString}`
+      : `/get_case_studies_dropdown_values/`;
+
+    const response = await axiosInstance.get(url);
+
     return {
-      result: result,
+      result: response.data,
     };
   }
 

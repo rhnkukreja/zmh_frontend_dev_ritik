@@ -64,6 +64,7 @@ function Main() {
   };
 
   const [selectedText, setSelectedText] = useState<string>("");
+  const [noteText, setNoteText] = useState<string>("");
   const [tooltipPosition, setTooltipPosition] = useState<{
     x: number;
     y: number;
@@ -213,6 +214,12 @@ function Main() {
           y: rect.top + window.scrollY - 30,
         });
       }
+    } else if (
+      selection &&
+      selection?.rangeCount === 0 &&
+      globalCreateNoteModalVisible === false
+    ) {
+      setSelectedText("");
     }
   };
 
@@ -229,9 +236,7 @@ function Main() {
 
   useEffect(() => {
     const handleClickOutside = () => {
-      if (tooltipRef.current && selectedText) {
-        setSelectedText("");
-      }
+      if (tooltipRef.current && noteText) setNoteText("");
     };
     if (!globalCreateNoteModalVisible) {
       handleClickOutside();
@@ -806,7 +811,15 @@ function Main() {
             }}
             onClick={handleCreateNote}
           >
-            <span className="text-sm font-medium text-primary flex justify-center items-center">
+            <span
+              className="text-sm font-medium text-primary flex justify-center items-center"
+              onClick={() => {
+                if (selectedText) {
+                  setNoteText(selectedText);
+                  setSelectedText("");
+                }
+              }}
+            >
               <Lucide icon="Pen" className="w-4 h-4 stroke-[1.3] mr-1.5" />
               Create Note
             </span>
@@ -839,7 +852,7 @@ function Main() {
         <GlobalCreateNoteModal
           globalCreateNoteModalVisible={globalCreateNoteModalVisible}
           setGlobalCreateNoteModalVisible={setGlobalCreateNoteModalVisible}
-          selectedText={selectedText}
+          selectedText={noteText}
         />
       )}
 

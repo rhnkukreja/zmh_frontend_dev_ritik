@@ -6,6 +6,7 @@ interface UseCaseStudyDropdownsResult {
   apiDropdownOptions: FilterDropdown;
   loading: boolean;
   forceFetch: () => void;
+  setApiDropdownOptions: React.Dispatch<React.SetStateAction<FilterDropdown>>;
 }
 
 const useCaseStudyDropdowns = (): UseCaseStudyDropdownsResult => {
@@ -44,7 +45,7 @@ const useCaseStudyDropdowns = (): UseCaseStudyDropdownsResult => {
     fetchDropdownValues();
   }, []);
 
-  return { apiDropdownOptions, loading, forceFetch };
+  return { apiDropdownOptions, loading, forceFetch, setApiDropdownOptions };
 };
 
 export default useCaseStudyDropdowns;

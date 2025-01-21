@@ -784,7 +784,7 @@ function CaseStudies() {
                                       ></a>
                                     </div>
                                   )}
-                                  <div className="ml-4 max-w-[150px]">
+                                  <div className="ml-4 ">
                                     <p className="font-medium whitespace-normal line-clamp-2">
                                       {item?.institution_name}
                                     </p>
