@@ -309,15 +309,15 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div>
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Staff Name
+                    Staff Response
                   </FormCheck.Label>
                   <Controller
                     name="staff_response"
                     control={control}
-                    rules={{ required: "Staff Name is required" }}
+                    rules={{ required: "Staff Response is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
-                        <FormInput placeholder="Enter Staff Name" {...field} />
+                        <FormInput placeholder="Enter Staff Response" {...field} />
                         {error && (
                           <Error className="text-red-600 ">
                             {error.message}
