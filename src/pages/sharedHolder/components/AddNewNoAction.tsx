@@ -314,7 +314,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   <Controller
                     name="staff_response"
                     control={control}
-                    // rules={{ required: "Staff Response is required" }}
+                    rules={{ required: "Staff Response is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput placeholder="Enter Staff Response" {...field} />
@@ -490,13 +490,13 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   <Controller
                     name="link_to_staff_response"
                     control={control}
-                    rules={{
-                      required: "Link to Staff Response is required",
-                      pattern: {
-                        value: /^https:\/\/.+$/i,
-                        message: "The link must start with 'https://'",
-                      },
-                    }}
+                    // rules={{
+                    //   required: "Link to Staff Response is required",
+                    //   pattern: {
+                    //     value: /^https:\/\/.+$/i,
+                    //     message: "The link must start with 'https://'",
+                    //   },
+                    // }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
