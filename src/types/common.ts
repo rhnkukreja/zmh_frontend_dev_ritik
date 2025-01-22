@@ -38,6 +38,11 @@ export type ShareholderProposalPayload = {
   year: string[];
   status: string[];
   keyword: string;
+  no_shareholder_proposal: boolean;
+  approved: boolean;
+  is_correct: boolean;
+  company_status: boolean;
+  nl_exist: boolean;
 };
 
 type CaseStudiesPayload = {
