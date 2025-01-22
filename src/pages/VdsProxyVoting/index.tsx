@@ -165,24 +165,38 @@ const index = () => {
     const table = document.querySelector(".table_2");
     const rows = table?.querySelectorAll(".row_2");
     const tableProposal = document.querySelector(".table_3");
+    const tooltip = document.querySelectorAll(".my-tooltip-data-html");
+    
     const rowsProposal = tableProposal?.querySelectorAll(".row_3");
     let csvContent = "\uFEFF";
-
+    console.log(tooltip);
+    
     rows?.forEach((row) => {
       const cells = row.querySelectorAll(".cell_2");
       let rowData: any = [];
 
       cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim(); 
-        if (cellText?.includes(",")) {
-          cellText = `"${cellText}"`;
+          let cellText = cell.textContent?.trim();
+          if (cellText?.includes(",")) {
+              cellText = `"${cellText}"`;
+          }
+
+          const tooltip = cell.querySelector('[data-tooltip-html]');
+          const tooltipText = tooltip?.getAttribute("data-tooltip-html")?.trim();
+          
+          if (tooltipText) {
+              cellText += ` (voting rationale: ${tooltipText})`;
+          }
+
+        if (cellText) {
+          cellText = `"${cellText.replace(/"/g, '""')}"`;
         }
 
-        rowData.push(cellText);
+          rowData.push(cellText);
       });
 
       csvContent += rowData.join(",") + "\n";
-    });
+  });
 
     rowsProposal?.forEach((row) => {
       const cells = row.querySelectorAll(".cell_3");
@@ -193,6 +207,17 @@ const index = () => {
 
         if (cellText?.includes(",")) {
           cellText = `"${cellText}"`;
+        }
+
+        const tooltip = cell.querySelector('[data-tooltip-html]');
+          const tooltipText = tooltip?.getAttribute("data-tooltip-html")?.trim();
+          
+          if (tooltipText) {
+              cellText += ` (voting rationale: ${tooltipText})`;
+          }
+
+        if (cellText) {
+          cellText = `"${cellText.replace(/"/g, '""')}"`;
         }
 
         rowData.push(cellText);
@@ -424,8 +449,8 @@ const index = () => {
                                                       ]?.vote?.includes(
                                                         "Withhold"
                                                       )) &&
-                                                    "text-red-700 font-semibold",
-                                                    "flex items-center",
+                                                    "text-red-700 font-semibold ",
+                                                    "flex items-center ",
                                                   ])}
                                                 >
                                                   {
@@ -448,7 +473,7 @@ const index = () => {
                                                         }
                                                       </Tippy>
                                                     ) : (
-                                                      <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
+                                                      <span className="for ">{vdsProxy[vdsHeader?.field]?.vote}</span>
                                                     )}
 
                                                   {/* <Tippy content={<span dangerouslySetInnerHTML={{ __html: getContent(vdsProxy[vdsHeader?.field]?.notes) ?? '' }}/>}> */}
@@ -474,13 +499,13 @@ const index = () => {
                                                         vdsProxy[
                                                           vdsHeader?.field
                                                         ]?.vote?.includes("Withhold")) &&
-                                                      "text-red-700 font-semibold",
+                                                      "text-red-700 font-semibold ",
                                                     ])}
                                                   >
                                                     {vdsProxy[vdsHeader?.field]?.vote !== "Split Vote" ? vdsProxy[vdsHeader?.field]?.vote : ''}
                                                   </h1>
                                                 ) : (
-                                                  <h1 className="check">
+                                                  <h1 className="check ">
                                                     {vdsProxy[vdsHeader?.field]}
                                                   </h1>
                                                 )}
