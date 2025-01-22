@@ -253,6 +253,9 @@ const index = () => {
                             <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Voted Against Directors
                             </Table.Td>
+                            {/* <Table.Td className="cell py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              Voted Against Directors
+                            </Table.Td> */}
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>

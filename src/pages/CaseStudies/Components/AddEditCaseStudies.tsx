@@ -5,7 +5,7 @@ import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
-import { createDynamicURL } from "@/utils/helper";
+import { createDynamicURL, formatedDate } from "@/utils/helper";
 import React, { useEffect, useState } from "react";
 import {
   Controller,
@@ -28,6 +28,7 @@ import {
 import CompanySelect from "@/components/ReactSelectAsync";
 import Litepicker from "@/components/Base/Litepicker";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
+import { caseStudiesService } from "@/services/caseStudies";
 interface AddNewCaseStudiesProps {
   addNewCaseStudyModalVisible: boolean;
   setAddNewCaseStudyModalVisible: (visible: boolean) => void;
@@ -46,6 +47,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   const {
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<any>({
     defaultValues: {
@@ -67,13 +69,16 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       urls_def14: selectedCaseStudies?.urls_def14,
       urls_8k: selectedCaseStudies?.urls_8k,
       year: selectedCaseStudies?.year,
-      meeting_date: selectedCaseStudies?.meeting_date,
+      meeting_date:
+        selectedCaseStudies?.meeting_date instanceof Date
+          ? selectedCaseStudies?.meeting_date.toISOString().split("T")[0]
+          : selectedCaseStudies?.meeting_date || "",
       primary_source: selectedCaseStudies?.primary_source,
       primary_source_link: selectedCaseStudies?.primary_source_link,
       page_reference: selectedCaseStudies?.page_reference,
       approval_status: selectedCaseStudies?.approval_status,
       investment_type: selectedCaseStudies?.investment_type || "  ",
-      category: selectedCaseStudies?.category,
+      esg_category: selectedCaseStudies?.esg_category,
     },
   });
 
@@ -81,42 +86,50 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     (state) => state.authentiction
   );
 
-  const { apiDropdownOptions, loading: getDropdownLoader } =
-    useCaseStudyDropdowns();
+  const {
+    apiDropdownOptions,
+    loading: getDropdownLoader,
+    setApiDropdownOptions,
+  } = useCaseStudyDropdowns();
 
-  //   const [apiDropdownOptions, setApiDropdownOptions] = useState<any>({
-  //     status: [],
-  //     category: [],
-  //     sub_category: [],
-  //     year: [],
-  //   });
+  const esgTheme = watch("esg_themes");
+  useEffect(() => {
+    const fetchDropdownValues = async (params: { esg_themes: string }) => {
+      try {
+        const res = await caseStudiesService.getCaseStudiesDropdownValues(
+          params
+        );
+        if (res.result) {
+          setApiDropdownOptions((prevOptions) => ({
+            ...prevOptions,
+            category: res.result.category || [],
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch dropdown values:", error);
+      }
+    };
 
-  //   const getAllCaseStudyDropdowns = async () => {
-  //     try {
-  //       const res =
-  //         await shareHolderProposalService.getShareHolderDropdownValues();
-  //       if (res.result) {
-  //         setApiDropdownOptions({ ...res.result });
-  //       }
-  //     } catch (error) {
-  //       return error;
-  //     }
-  //   };
-
-  //   useEffect(() => {
-  //     getAllCaseStudyDropdowns();
-  //   }, []);
+    if (Array.isArray(esgTheme) && esgTheme.length > 0) {
+      const queryParam = {
+        esg_themes: esgTheme.join(","),
+      };
+      fetchDropdownValues(queryParam);
+    }
+  }, [esgTheme]);
 
   const onSubmit = async (data: any) => {
     const transformedData: any = {
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
       company: data?.company?.value ?? 0,
-      esg_themes: data?.esg_themes === "  " ? null : data?.esg_themes,
+      esg_themes:
+        data?.esg_themes.lenght > 0 ? data?.esg_themes.join(",") : null,
       proposal_type: data?.proposal_type === "  " ? null : data?.proposal_type,
       vote: data?.vote === "  " ? null : data?.vote,
       investment_type:
         data?.investment_type === "  " ? null : data?.investment_type,
+      meeting_date: formatedDate(data?.meeting_date),
     };
 
     try {
@@ -239,26 +252,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                           </Error>
                         ))}
                       />
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Company Description
-                  </FormCheck.Label>
-                  <Controller
-                    name="company_description"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Company Description"
-                          {...field}
-                        />
-                      </>
                     )}
                   />
                 </div>
@@ -438,9 +431,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     </Error>
                   )}
                 </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     ESG Themes
@@ -449,13 +440,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="esg_themes"
                       control={control}
+                      defaultValue={[]}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                            }}
+                            multiple
+                            value={field.value || []}
+                            onChange={field.onChange}
                             options={{
                               placeholder: "Select ESG Themes",
                             }}
@@ -470,22 +461,23 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     />
                   </div>
                 </div>
+              </div>
 
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Category
                   </FormCheck.Label>
                   <div className="mt-2">
                     <Controller
-                      name="category"
+                      name="esg_category"
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                            }}
+                            multiple
+                            value={field.value || []}
+                            onChange={field.onChange}
                             options={{
                               placeholder: "Select Category",
                             }}
@@ -644,9 +636,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     )}
                   />
                 </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Page Reference
@@ -665,6 +655,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   />
                 </div>
               </div>
+
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
@@ -691,9 +682,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     )}
                   />
                 </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     URL 8k
