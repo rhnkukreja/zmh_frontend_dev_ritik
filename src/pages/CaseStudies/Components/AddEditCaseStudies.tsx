@@ -509,72 +509,78 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
               </div>
 
               <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Engagement Details
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                Engagement Details
                 </FormCheck.Label>
                 <Controller
                   name="engagement_details"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    required: true
+                  }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your engagement details here"
                     />
                   )}
                 />
-                {errors.engagement_details && (
-                  <Error className="lg:max-w-[50%] ">
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%]">
                     Engagement Details are required
                   </Error>
                 )}
               </div>
 
               <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Voting Details
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                Voting Details
                 </FormCheck.Label>
                 <Controller
                   name="voting_details"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    required: true
+                  }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your voting details here"
                     />
                   )}
                 />
-                {errors.voting_rationale && (
-                  <Error className="lg:max-w-[50%] ">
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%]">
                     Voting Details are required
                   </Error>
                 )}
               </div>
 
               <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Voting Rationale
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                Voting Rationale
                 </FormCheck.Label>
                 <Controller
                   name="voting_rationale"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    required: true
+                  }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your voting rationale here"
                     />
                   )}
                 />
-                {errors.voting_rationale && (
-                  <Error className="lg:max-w-[50%] ">
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%]">
                     Voting Rationale are required
                   </Error>
                 )}

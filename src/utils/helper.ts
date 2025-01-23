@@ -265,9 +265,9 @@ function bytesToMB(bytes: number): number {
 
 const getYearRange = (range: number): string[] => {
   const now = new Date().getUTCFullYear();
-  return Array(range + 1) // Include one extra year
+  return Array(now - (now - range))
     .fill("")
-    .map((_, idx) => now + 1 - idx) // Start from the next year and count backward
+    .map((v, idx) => now - idx)
     .map(String);
 };
 

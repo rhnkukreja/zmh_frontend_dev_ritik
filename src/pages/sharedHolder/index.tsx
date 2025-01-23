@@ -1017,6 +1017,10 @@ function ShareHolderProposal() {
                               )}
                             />
                           </div>
+
+                          {
+                            tab === 'proposal' && 
+                            <>
                           <div className="w-full">
                             <div className="text-left text-slate-500">
                               Ready For Review
@@ -1232,6 +1236,9 @@ function ShareHolderProposal() {
                               )}
                             />
                           </div>
+
+                          </>
+}
 
                           {
                             tab === 'no-action' && 

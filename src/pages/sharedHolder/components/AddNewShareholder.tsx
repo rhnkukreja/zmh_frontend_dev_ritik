@@ -385,11 +385,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="category"
                       control={control}
-                      rules={{
-                        required: !noShareholderProposalValue
-                          ? "Category is required"
-                          : false,
-                      }}
+                      // rules={{
+                      //   required: !noShareholderProposalValue
+                      //     ? "Category is required"
+                      //     : false,
+                      // }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -431,11 +431,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="sub_category"
                       control={control}
-                      rules={{
-                        required: !noShareholderProposalValue
-                          ? "Sub Category is required"
-                          : false,
-                      }}
+                      // rules={{
+                      //   required: !noShareholderProposalValue
+                      //     ? "Sub Category is required"
+                      //     : false,
+                      // }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
