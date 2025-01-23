@@ -47,6 +47,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   const {
     handleSubmit,
     control,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<any>({
@@ -58,7 +59,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       region: selectedCaseStudies?.region,
       market: selectedCaseStudies?.market,
       industry: selectedCaseStudies?.industry,
-      esg_themes: selectedCaseStudies?.esg_themes || "  ",
+      esg_themes: selectedCaseStudies?.esg_themes
+        ? selectedCaseStudies?.esg_themes?.split(",")
+        : [],
       engagement_details: selectedCaseStudies?.engagement_details,
       proposal_type: selectedCaseStudies?.proposal_type || "  ",
       resolution_engagement_topic:
@@ -78,7 +81,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       page_reference: selectedCaseStudies?.page_reference,
       approval_status: selectedCaseStudies?.approval_status,
       investment_type: selectedCaseStudies?.investment_type || "  ",
-      esg_category: selectedCaseStudies?.esg_category,
+      esg_category: selectedCaseStudies?.esg_category
+        ? selectedCaseStudies?.esg_category?.split(",")
+        : [],
     },
   });
 
@@ -92,9 +97,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     setApiDropdownOptions,
   } = useCaseStudyDropdowns();
 
+  useEffect(() => {}, [selectedCaseStudies?.company_name]);
+
   const esgTheme = watch("esg_themes");
   useEffect(() => {
-    const fetchDropdownValues = async (params: { esg_themes: string }) => {
+    const fetchDropdownValues = async (params: { themes: string[] }) => {
       try {
         const res = await caseStudiesService.getCaseStudiesDropdownValues(
           params
@@ -104,6 +111,12 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
             ...prevOptions,
             category: res.result.category || [],
           }));
+          // setValue(
+          //   "esg_category",
+          //   selectedCaseStudies?.esg_category
+          //     ? selectedCaseStudies?.esg_category?.split(",")
+          //     : []
+          // );
         }
       } catch (error) {
         console.error("Failed to fetch dropdown values:", error);
@@ -112,7 +125,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
     if (Array.isArray(esgTheme) && esgTheme.length > 0) {
       const queryParam = {
-        esg_themes: esgTheme.join(","),
+        themes: esgTheme,
       };
       fetchDropdownValues(queryParam);
     }
@@ -122,9 +135,15 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     const transformedData: any = {
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
-      company: data?.company?.value ?? 0,
+      company: data?.company?.value ?? selectedCaseStudies?.company,
       esg_themes:
-        data?.esg_themes.lenght > 0 ? data?.esg_themes.join(",") : null,
+        Array.isArray(data.esg_themes) && data.esg_themes.length > 0
+          ? data.esg_themes.join(",")
+          : null,
+      esg_category:
+        Array.isArray(data.esg_category) && data.esg_category.length > 0
+          ? data.esg_category.join(",")
+          : null,
       proposal_type: data?.proposal_type === "  " ? null : data?.proposal_type,
       vote: data?.vote === "  " ? null : data?.vote,
       investment_type:
@@ -440,7 +459,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="esg_themes"
                       control={control}
-                      defaultValue={[]}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect

@@ -1,5 +1,6 @@
 import { FilterDropdown } from "@/types/casestudy";
 import { axiosInstance } from "../index";
+import { createQueryParams } from "@/utils/helper";
 
 class CaseStudiesService {
   public async getCaseStudies(url: string): Promise<{
@@ -26,12 +27,8 @@ class CaseStudiesService {
   public async getCaseStudiesDropdownValues(
     queryParams?: Record<string, any>
   ): Promise<any> {
-    const queryString = new URLSearchParams(
-      queryParams as Record<string, any>
-    ).toString();
-
     const url = queryParams
-      ? `/get_case_studies_dropdown_values/?${queryString}`
+      ? `/get_case_studies_dropdown_values/?${createQueryParams(queryParams)}`
       : `/get_case_studies_dropdown_values/`;
 
     const response = await axiosInstance.get(url);

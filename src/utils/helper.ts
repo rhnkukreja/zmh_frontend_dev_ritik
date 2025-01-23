@@ -229,7 +229,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
       }
     }
   }
-  // debugger;
+
   if (filters) {
     for (const key in filters) {
       const value = filters[key];
@@ -380,6 +380,22 @@ const localStorageHelper = {
   },
 };
 
+const createQueryParams = (params: Record<string, any>) => {
+  const queryParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        queryParams.append(key, JSON.stringify(value));
+      }
+    } else if (value !== null && value !== undefined && value !== "") {
+      queryParams.append(key, value.toString());
+    }
+  });
+
+  return queryParams.toString();
+};
+
 export default localStorageHelper;
 
 export {
@@ -408,5 +424,6 @@ export {
   countValidFilters,
   updateQueryParams,
   convertToTitleCase,
+  createQueryParams,
   localStorageHelper,
 };
