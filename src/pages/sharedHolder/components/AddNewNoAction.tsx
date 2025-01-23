@@ -222,6 +222,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
+
             <div className="flex flex-col gap-7">
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
@@ -250,6 +251,9 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     )}
                   />
                 </div>
+                
+                
+                
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Proponent Name
@@ -282,6 +286,22 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   </div>
                 </div>
               </div>
+
+              {selectedShareholderNoAction && <div>
+                <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16" >
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Website Company Name
+                  </FormCheck.Label>
+                      <>
+                      <FormInput disabled
+                        value={selectedShareholderNoAction?.website_company_name}
+                        // placeholder={selectedShareholderNoAction?.website_company_name}
+                      />
+                      </>
+                </div>
+                </div>
+              </div>}
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">

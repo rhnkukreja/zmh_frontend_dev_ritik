@@ -307,47 +307,54 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
     };
 
     const convertDivTableToCSV = () => {
-        const table = document.querySelector(".agm_table_2");
+        const table = document.querySelector(".table_2");
         const rows = table?.querySelectorAll(".row_2");
-        const tableProposal = document.querySelector(".agm_table_3");
-        const rowsProposal = tableProposal?.querySelectorAll(".agm_row_3");
-        let csvContent = "\uFEFF";
-
+        const tableProposal = document.querySelector(".table_3");
+        const rowsProposal = tableProposal?.querySelectorAll(".row_3");
+        let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
+    
+        // Iterate over each row in the first table
         rows?.forEach((row) => {
-            const cells = row.querySelectorAll(".agm_cell_2");
-            let rowData: any = [];
-
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim();
-
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            csvContent += rowData.join(",") + "\n";
+          const cells = row.querySelectorAll(".cell_2");
+          let rowData: any = [];
+    
+          // Iterate over each cell and get the text content
+          cells.forEach((cell) => {
+            let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
+    
+            // Check if the cell contains a comma, wrap it in double quotes
+            if (cellText?.includes(",")) {
+              cellText = `"${cellText}"`;
+            }
+    
+            rowData.push(cellText);
+          });
+    
+          // Join cells with commas to form a CSV row
+          csvContent += rowData.join(",") + "\n";
         });
-
+    
+        // Iterate over each row in the second table
         rowsProposal?.forEach((row) => {
-            const cells = row.querySelectorAll(".agm_cell_3");
-            let rowData: any = [];
-
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim();
-
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            csvContent += rowData.join(",") + "\n";
+          const cells = row.querySelectorAll(".cell_3");
+          let rowData: any = [];
+    
+          // Iterate over each cell and get the text content
+          cells.forEach((cell) => {
+            let cellText = cell.textContent?.trim();
+    
+            // Check if the cell contains a comma, wrap it in double quotes
+            if (cellText?.includes(",")) {
+              cellText = `"${cellText}"`;
+            }
+    
+            rowData.push(cellText);
+          });
+    
+          csvContent += rowData.join(",") + "\n";
         });
 
-        downloadCSV(csvContent, `Agm-Summary-${companyHeaderName}`);
+        downloadCSV(csvContent, `Meeting-Details-${proxyContestTopFilter?.company_name}`);
     };
 
     const convertVotingDivTableToCSV = (tabName: string) => {
@@ -383,7 +390,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
           csvContent += rowData.join(",") + "\n";
       });
     
-        downloadCSV(csvContent, `${tabName}-${companyGlobalSearchName}`);
+        downloadCSV(csvContent, `${tabName}-${proxyContestTopFilter?.company_name}`);
       };
 
 
@@ -974,16 +981,16 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                 <div className="">
                                                     <TableWrapper>
                                                         <div className="max-h-[30vh] overflow-y-scroll">
-                                                            <Table className="agm_table_2 w-full">
+                                                            <Table className="table_2 w-full">
                                                                 <Table.Thead className="sticky top-0 z-10">
-                                                                    <Table.Tr className="agm_row_2">
+                                                                    <Table.Tr className="row_2">
                                                                         {agmSummaryProxyContest?.nominees_headers?.length > 0 &&
                                                                             agmSummaryProxyContest?.nominees_headers?.map(
                                                                                 (nomineeHeader: any, headerIndex: number) => (
                                                                                     <Table.Td
                                                                                         key={headerIndex}
                                                                                         className={clsx([
-                                                                                            "agm_cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                                                                            "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
                                                                                             headerIndex === 0 && "text-left",
                                                                                         ])}
                                                                                     >
@@ -1000,7 +1007,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                             (nominee: any, nomineeIndex: number) => (
                                                                                 <Table.Tr
                                                                                     key={nomineeIndex}
-                                                                                    className="agm_row_2 [&_td]:last:border-b-0"
+                                                                                    className="row_2 [&_td]:last:border-b-0"
                                                                                 >
                                                                                     {agmSummaryProxyContest?.nominees_headers?.length >
                                                                                         0 &&
@@ -1012,7 +1019,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                                 <Table.Td
                                                                                                     key={headerIndex}
                                                                                                     className={clsx([
-                                                                                                        "agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
+                                                                                                        "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
                                                                                                         headerIndex === 0 && "text-left ",
                                                                                                     ])}
                                                                                                 >
@@ -1046,15 +1053,15 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                     <br />
                                                     <TableWrapper >
                                                         <div className="max-h-[30vh] overflow-y-scroll">
-                                                            <Table className="agm_table_3 w-full">
+                                                            <Table className="table_3 w-full">
                                                                 <Table.Thead className="sticky top-0 z-10">
-                                                                    <Table.Tr className="agm_row_3">
+                                                                    <Table.Tr className="row_3">
                                                                         {agmSummaryProxyContest?.proposals_headers?.map(
                                                                             (proposalHeader: any, headerIndex: number) => (
                                                                                 <Table.Td
                                                                                     key={headerIndex}
                                                                                     className={clsx([
-                                                                                        "agm_cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
+                                                                                        "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
                                                                                         headerIndex === 0 && "text-left",
                                                                                     ])}
                                                                                 >
@@ -1071,7 +1078,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                             (proposal: any, proposalIndex: number) => (
                                                                                 <Table.Tr
                                                                                     key={proposalIndex}
-                                                                                    className="agm_row_3 [&_td]:last:border-b-0"
+                                                                                    className="row_3 [&_td]:last:border-b-0"
                                                                                 >
                                                                                     {agmSummaryProxyContest?.proposals_headers?.length >
                                                                                         0 &&
@@ -1083,7 +1090,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                                 <Table.Td
                                                                                                     key={headerIndex}
                                                                                                     className={clsx([
-                                                                                                        "agm_cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
+                                                                                                        "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
                                                                                                         headerIndex === 0 && "text-left",
                                                                                                     ])}
                                                                                                 >
@@ -1214,7 +1221,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                         <Tippy content="Download Excel" options={{ theme: "light" }}>
                                                             <div
                                                                 className="box p-[5px] cursor-pointer"
-                                                                onClick={() => convertVotingDivTableToCSV('Voting-details')}
+                                                                onClick={() => convertVotingDivTableToCSV('Voting-Details')}
                                                             >
                                                                 <img alt="download-icon" src={downloadIcon} />
                                                             </div>
