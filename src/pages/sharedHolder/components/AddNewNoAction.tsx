@@ -138,7 +138,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   const onSubmit = async (data: AddNoActionType) => {
     const transformedData = {
       ...data,
-      proponent: data.proponent ? Number(data.proponent) : 0,
+      institution: data.institution ? Number(data.institution) : null,
       company:
         data?.company?.value ?? selectedShareholderNoAction?.company ?? 0,
     };
@@ -257,7 +257,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
 
                   <div className="mt-2">
                     <Controller
-                      name="proponent"
+                      name="institution"
                       control={control}
                       // rules={{ required: "Proponent Name is required" }}
                       render={({ field, fieldState: { error } }) => (
@@ -309,15 +309,15 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div>
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Staff Name
+                    Staff Response
                   </FormCheck.Label>
                   <Controller
                     name="staff_response"
                     control={control}
-                    rules={{ required: "Staff Name is required" }}
+                    rules={{ required: "Staff Response is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
-                        <FormInput placeholder="Enter Staff Name" {...field} />
+                        <FormInput placeholder="Enter Staff Response" {...field} />
                         {error && (
                           <Error className="text-red-600 ">
                             {error.message}
@@ -490,13 +490,13 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                   <Controller
                     name="link_to_staff_response"
                     control={control}
-                    rules={{
-                      required: "Link to Staff Response is required",
-                      pattern: {
-                        value: /^https:\/\/.+$/i,
-                        message: "The link must start with 'https://'",
-                      },
-                    }}
+                    // rules={{
+                    //   required: "Link to Staff Response is required",
+                    //   pattern: {
+                    //     value: /^https:\/\/.+$/i,
+                    //     message: "The link must start with 'https://'",
+                    //   },
+                    // }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
@@ -743,7 +743,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       name="staff_response_date"
                       control={control}
                       defaultValue=""
-                      rules={{ required: "Date of Staff Response is required" }}
+                      // rules={{ required: "Date of Staff Response is required" }}
                       render={({ field }) => (
                         <Litepicker
                           placeholder="Select Date of Staff Response"

@@ -28,6 +28,7 @@ export type CompanyDashboard = {
   case_studies_id: number;
   institution_id: number;
   unpri_signatory: boolean;
+  voted_against_say_on_pay: boolean;
   // percent_ownership: string;
 };
 

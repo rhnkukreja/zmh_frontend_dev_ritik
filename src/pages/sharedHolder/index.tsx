@@ -183,6 +183,9 @@ function ShareHolderProposal() {
       ready_for_review: filters?.ready_for_review,
       check_status: filters?.check_status,
       no_shareholder_proposal: filters?.no_shareholder_proposal,
+      approved: filters?.approved,
+      is_correct: filters?.is_correct,
+      company_status: filters?.company_status,
       nl_exist: filters?.nl_exist,
       global_search:
         filters?.global_search?.map((item: string) => ({
@@ -202,6 +205,9 @@ function ShareHolderProposal() {
     setValue("ready_for_review", null);
     setValue("check_status", null);
     setValue("no_shareholder_proposal", null);
+    setValue("approved", null);
+    setValue("is_correct", null);
+    setValue("company_status", null);
     setValue("nl_exist", null);
   };
 
@@ -261,7 +267,13 @@ function ShareHolderProposal() {
     const dynamicURL = createDynamicURL(tabUrls[tab], filters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
 
-    const { institution_name, global_search, ...restFilters } = filters;
+    if (tab === 'no-action') {
+      var { institution_name, global_search, ...restFilters } = filters;
+    }
+    else {
+      var { is_correct, company_status, approved, institution_name, global_search, ...restFilters } = filters;
+
+    }
     setFiltersLength(
       countValidFilters(
         isAllCompanySelected === false
@@ -489,6 +501,11 @@ function ShareHolderProposal() {
       status: filters?.status || [],
       keyword: filters?.keyword || "",
       global_search: filters?.global_search,
+      no_shareholder_proposal: filters?.no_shareholder_proposal,
+      approved: filters?.approved,
+      is_correct: filters?.is_correct,
+      company_status: filters?.company_status,
+      nl_exist: filters?.nl_exist,
     });
     if (res?.user_id) {
       dispatch(
@@ -530,6 +547,24 @@ function ShareHolderProposal() {
       return baseUrls.map((baseUrl) => `${baseUrl}${queryParam}`);
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
+
+  const clearNoActionFilter = () => {
+    // setValue("is_correct", null);
+    // setValue("company_status", null);
+    // setValue("approved", null);
+
+    const { is_correct, company_status, approved , ...restFilters } = filters;
+    setFiltersLength(
+      countValidFilters(
+        isAllCompanySelected === false
+          ? restFilters
+          : { ...restFilters, global_search: filters.global_search }
+      )
+    );
+
+    
+  }
+  
 
   return (
     <>
@@ -1197,6 +1232,176 @@ function ShareHolderProposal() {
                               )}
                             />
                           </div>
+
+                          {
+                            tab === 'no-action' && 
+                            <>
+                              <div className="w-full">
+                                <div className="text-left text-slate-500">
+                                  Approved
+                                </div>
+                                <Controller
+                                  name="approved"
+                                  control={control}
+                                  defaultValue={null} // Default as null to allow toggling
+                                  render={({ field }) => (
+                                    <div className="flex flex-row mt-[10px]">
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="checkbox-switch-true"
+                                          type="checkbox"
+                                          checked={field.value === true} // Check for true value
+                                          onChange={
+                                            () =>
+                                              field.onChange(
+                                                field.value === true ? null : true
+                                              ) // Toggle true/null
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="checkbox-switch-true"
+                                          className="ml-2 text-left"
+                                        >
+                                          True
+                                        </FormCheck.Label>
+                                      </FormCheck>
+
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="checkbox-switch-false"
+                                          type="checkbox"
+                                          checked={field.value === false} // Check for false value
+                                          onChange={
+                                            () =>
+                                              field.onChange(
+                                                field.value === false ? null : false
+                                              ) // Toggle false/null
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="checkbox-switch-false"
+                                          className="ml-2 text-left"
+                                        >
+                                          False
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                    </div>
+                                  )}
+                                />
+                              </div>
+
+                            
+
+                              <div className="w-full">
+                                <div className="text-left text-slate-500">
+                                  Is Correct
+                                </div>
+                                <Controller
+                                  name="is_correct"
+                                  control={control}
+                                  defaultValue={null} // Default as null to allow toggling
+                                  render={({ field }) => (
+                                    <div className="flex flex-row mt-[10px]">
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="checkbox-switch-true"
+                                          type="checkbox"
+                                          checked={field.value === true} // Check for true value
+                                          onChange={
+                                            () =>
+                                              field.onChange(
+                                                field.value === true ? null : true
+                                              ) // Toggle true/null
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="checkbox-switch-true"
+                                          className="ml-2 text-left"
+                                        >
+                                          True
+                                        </FormCheck.Label>
+                                      </FormCheck>
+
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="checkbox-switch-false"
+                                          type="checkbox"
+                                          checked={field.value === false} // Check for false value
+                                          onChange={
+                                            () =>
+                                              field.onChange(
+                                                field.value === false ? null : false
+                                              ) // Toggle false/null
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="checkbox-switch-false"
+                                          className="ml-2 text-left"
+                                        >
+                                          False
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                    </div>
+                                  )}
+                                />
+                              </div>
+
+                              <div className="w-full">
+                                <div className="text-left text-slate-500">
+                                  Company Status
+                                </div>
+                                <Controller
+                                  name="company_status"
+                                  control={control}
+                                  defaultValue={null} // Default as null to allow toggling
+                                  render={({ field }) => (
+                                    <div className="flex flex-row mt-[10px]">
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="checkbox-switch-true"
+                                          type="checkbox"
+                                          checked={field.value === true} // Check for true value
+                                          onChange={
+                                            () =>
+                                              field.onChange(
+                                                field.value === true ? null : true
+                                              ) // Toggle true/null
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="checkbox-switch-true"
+                                          className="ml-2 text-left"
+                                        >
+                                          True
+                                        </FormCheck.Label>
+                                      </FormCheck>
+
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="checkbox-switch-false"
+                                          type="checkbox"
+                                          checked={field.value === false} // Check for false value
+                                          onChange={
+                                            () =>
+                                              field.onChange(
+                                                field.value === false ? null : false
+                                              ) // Toggle false/null
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="checkbox-switch-false"
+                                          className="ml-2 text-left"
+                                        >
+                                          False
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                    </div>
+                                  )}
+                                />
+                              </div>
+                            </>
+                            
+                          }
                         </>
                       )}
                     </div>
@@ -1214,6 +1419,7 @@ function ShareHolderProposal() {
                         onClick={() => {
                           dispatch(setTabs("proposal"));
                           dispatch(resetPage());
+                          clearNoActionFilter();
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1258,6 +1464,7 @@ function ShareHolderProposal() {
                         onClick={() => {
                           dispatch(setTabs("withdrawn"));
                           dispatch(resetPage());
+                          clearNoActionFilter();
                         }}
                       >
                         <div className="flex items-center justify-center ">
