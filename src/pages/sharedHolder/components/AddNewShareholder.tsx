@@ -97,6 +97,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const companyValue = watch("company");
   const categoryValue = watch("category");
 
+  console.log("yearValue", selectedShareholderProposal);
 
   const { companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -195,7 +196,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         data?.vote_outcome_formula === "  " ? null : data?.vote_outcome_formula,
       matched_id_no_action:
         data?.matched_id_no_action === "  " ? null : data?.matched_id_no_action,
-        nl_exist: data?.matched_id_no_action ? true : false,
+      nl_exist: data?.matched_id_no_action ? true : false,
     };
     try {
       let response;
@@ -384,11 +385,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="category"
                       control={control}
-                      rules={{
-                        required: !noShareholderProposalValue
-                          ? "Category is required"
-                          : false,
-                      }}
+                      // rules={{
+                      //   required: !noShareholderProposalValue
+                      //     ? "Category is required"
+                      //     : false,
+                      // }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -430,11 +431,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="sub_category"
                       control={control}
-                      rules={{
-                        required: !noShareholderProposalValue
-                          ? "Sub Category is required"
-                          : false,
-                      }}
+                      // rules={{
+                      //   required: !noShareholderProposalValue
+                      //     ? "Sub Category is required"
+                      //     : false,
+                      // }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -834,58 +835,56 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 {/* {nlExistValue && ( */}
-                  <div className="flex-1 w-full">
-                    <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                      No Action ID Match
-                    </FormCheck.Label>
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                    No Action ID Match
+                  </FormCheck.Label>
 
-                    <div className="mt-2">
-                      <Controller
-                        name="matched_id_no_action"
-                        control={control}
-                        // rules={{
-                        //   required:  "No Action ID Match is required" }}
-                        render={({ field, fieldState: { error } }) => (
-                          <>
-                            <TomSelect
-                              value={field.value ?? ""}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              options={{
-                                placeholder: "Select No Action ID Match",
-                              }}
-                              className="w-full text-left"
-                            >
-                              {apiNoActionDropdown?.proposals?.map(
-                                (proposals: any) => {
-                                  return (
-                                    <option
-                                      className=" text-blue-400"
-                                      onClick={() =>
-                                        navigate(
-                                          `share-holder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`
-                                        )
-                                      }
-                                      value={proposals?.id}
-                                      key={proposals?.id}
-                                    >
-                                      {
-                                        proposals?.proposal_text
-                                      }
-                                    </option>
-                                  );
-                                }
-                              )}
-                            </TomSelect>
-                            {/* {error && (
+                  <div className="mt-2">
+                    <Controller
+                      name="matched_id_no_action"
+                      control={control}
+                      // rules={{
+                      //   required:  "No Action ID Match is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            options={{
+                              placeholder: "Select No Action ID Match",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiNoActionDropdown?.proposals?.map(
+                              (proposals: any) => {
+                                return (
+                                  <option
+                                    className=" text-blue-400"
+                                    onClick={() =>
+                                      navigate(
+                                        `share-holder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`
+                                      )
+                                    }
+                                    value={proposals?.id}
+                                    key={proposals?.id}
+                                  >
+                                    {proposals?.proposal_text}
+                                  </option>
+                                );
+                              }
+                            )}
+                          </TomSelect>
+                          {/* {error && (
                               <Error className="text-red-600 mt-2">
                                 {error.message}
                               </Error>
                             )} */}
-                          </>
-                        )}
-                      />
-                    </div>
+                        </>
+                      )}
+                    />
                   </div>
+                </div>
                 {/* )} */}
               </div>
 

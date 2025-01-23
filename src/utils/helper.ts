@@ -229,7 +229,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
       }
     }
   }
-  // debugger;
+
   if (filters) {
     for (const key in filters) {
       const value = filters[key];
@@ -265,9 +265,9 @@ function bytesToMB(bytes: number): number {
 
 const getYearRange = (range: number): string[] => {
   const now = new Date().getUTCFullYear();
-  return Array(range + 1) // Include one extra year
+  return Array(now - (now - range))
     .fill("")
-    .map((_, idx) => now + 1 - idx) // Start from the next year and count backward
+    .map((v, idx) => now - idx)
     .map(String);
 };
 
@@ -380,6 +380,22 @@ const localStorageHelper = {
   },
 };
 
+const createQueryParams = (params: Record<string, any>) => {
+  const queryParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        queryParams.append(key, JSON.stringify(value));
+      }
+    } else if (value !== null && value !== undefined && value !== "") {
+      queryParams.append(key, value.toString());
+    }
+  });
+
+  return queryParams.toString();
+};
+
 export default localStorageHelper;
 
 export {
@@ -408,5 +424,6 @@ export {
   countValidFilters,
   updateQueryParams,
   convertToTitleCase,
+  createQueryParams,
   localStorageHelper,
 };

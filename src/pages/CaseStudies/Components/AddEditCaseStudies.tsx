@@ -47,6 +47,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   const {
     handleSubmit,
     control,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<any>({
@@ -58,7 +59,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       region: selectedCaseStudies?.region,
       market: selectedCaseStudies?.market,
       industry: selectedCaseStudies?.industry,
-      esg_themes: selectedCaseStudies?.esg_themes || "  ",
+      esg_themes: selectedCaseStudies?.esg_themes
+        ? selectedCaseStudies?.esg_themes?.split(",")
+        : [],
       engagement_details: selectedCaseStudies?.engagement_details,
       proposal_type: selectedCaseStudies?.proposal_type || "  ",
       resolution_engagement_topic:
@@ -78,7 +81,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       page_reference: selectedCaseStudies?.page_reference,
       approval_status: selectedCaseStudies?.approval_status,
       investment_type: selectedCaseStudies?.investment_type || "  ",
-      esg_category: selectedCaseStudies?.esg_category,
+      esg_category: selectedCaseStudies?.esg_category
+        ? selectedCaseStudies?.esg_category?.split("|")
+        : [],
     },
   });
 
@@ -92,9 +97,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     setApiDropdownOptions,
   } = useCaseStudyDropdowns();
 
+  useEffect(() => {}, [selectedCaseStudies?.company_name]);
+
   const esgTheme = watch("esg_themes");
   useEffect(() => {
-    const fetchDropdownValues = async (params: { esg_themes: string }) => {
+    const fetchDropdownValues = async (params: { themes: string[] }) => {
       try {
         const res = await caseStudiesService.getCaseStudiesDropdownValues(
           params
@@ -112,7 +119,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
     if (Array.isArray(esgTheme) && esgTheme.length > 0) {
       const queryParam = {
-        esg_themes: esgTheme.join(","),
+        themes: esgTheme,
       };
       fetchDropdownValues(queryParam);
     }
@@ -122,9 +129,15 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     const transformedData: any = {
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
-      company: data?.company?.value ?? 0,
+      company: data?.company?.value ?? selectedCaseStudies?.company,
       esg_themes:
-        data?.esg_themes.lenght > 0 ? data?.esg_themes.join(",") : null,
+        Array.isArray(data.esg_themes) && data.esg_themes.length > 0
+          ? data.esg_themes.join(",")
+          : null,
+      esg_category:
+        Array.isArray(data.esg_category) && data.esg_category.length > 0
+          ? data.esg_category.join("|")
+          : null,
       proposal_type: data?.proposal_type === "  " ? null : data?.proposal_type,
       vote: data?.vote === "  " ? null : data?.vote,
       investment_type:
@@ -440,7 +453,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="esg_themes"
                       control={control}
-                      defaultValue={[]}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -497,72 +509,78 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
               </div>
 
               <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Engagement Details
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                Engagement Details
                 </FormCheck.Label>
                 <Controller
                   name="engagement_details"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    required: true
+                  }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your engagement details here"
                     />
                   )}
                 />
-                {errors.engagement_details && (
-                  <Error className="lg:max-w-[50%] ">
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%]">
                     Engagement Details are required
                   </Error>
                 )}
               </div>
 
               <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Voting Details
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                Voting Details
                 </FormCheck.Label>
                 <Controller
                   name="voting_details"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    required: true
+                  }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your voting details here"
                     />
                   )}
                 />
-                {errors.voting_rationale && (
-                  <Error className="lg:max-w-[50%] ">
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%]">
                     Voting Details are required
                   </Error>
                 )}
               </div>
 
               <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Voting Rationale
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                Voting Rationale
                 </FormCheck.Label>
                 <Controller
                   name="voting_rationale"
                   control={control}
-                  rules={{ required: true }}
+                  rules={{
+                    required: true
+                  }}
                   render={({ field }) => (
-                    <ClassicEditor
-                      value={field?.value ?? ""}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Enter your voting rationale here"
                     />
                   )}
                 />
-                {errors.voting_rationale && (
-                  <Error className="lg:max-w-[50%] ">
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%]">
                     Voting Rationale are required
                   </Error>
                 )}

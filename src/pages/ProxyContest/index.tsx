@@ -350,6 +350,42 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
         downloadCSV(csvContent, `Agm-Summary-${companyHeaderName}`);
     };
 
+    const convertVotingDivTableToCSV = (tabName: string) => {
+        const table = document.querySelector(".table_voting");
+        const rows = table?.querySelectorAll(".row_voting");
+        const tooltip = document.querySelectorAll(".my-tooltip-data-html");
+        
+        let csvContent = "\uFEFF";        
+        rows?.forEach((row) => {
+          const cells = row.querySelectorAll(".cell_voting");
+          let rowData: any = [];
+    
+          cells.forEach((cell) => {
+              let cellText = cell.textContent?.trim();
+              if (cellText?.includes(",")) {
+                  cellText = `"${cellText}"`;
+              }
+    
+              const tooltip = cell.querySelector('[data-tooltip-html]');
+              const tooltipText = tooltip?.getAttribute("data-tooltip-html")?.trim();
+              
+              if (tooltipText) {
+                  cellText += ` (voting rationale: ${tooltipText})`;
+              }
+    
+            if (cellText) {
+              cellText = `"${cellText.replace(/"/g, '""')}"`;
+            }
+    
+              rowData.push(cellText);
+          });
+    
+          csvContent += rowData.join(",") + "\n";
+      });
+    
+        downloadCSV(csvContent, `${tabName}-${companyGlobalSearchName}`);
+      };
+
 
     return (
         <>
@@ -1105,8 +1141,10 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                 Voting Details 
                                                                 {proxyContestTopFilter?.institution_name?.length > 0 ? "" : ' (Top 5)'}
                                                             </h1>
+                                                            
                                                         </span>
                                                     </div>
+                                                    
                                                 </div>
 
                                                 <div className="py-2">
@@ -1168,8 +1206,20 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                         Apply
                                                                     </Button>
                                                                 </div>
+                                                                
                                                             </div>
                                                         </form>
+
+                                                        <div className="flex items-center justify-end">
+                                                        <Tippy content="Download Excel" options={{ theme: "light" }}>
+                                                            <div
+                                                                className="box p-[5px] cursor-pointer"
+                                                                onClick={() => convertVotingDivTableToCSV('Voting-details')}
+                                                            >
+                                                                <img alt="download-icon" src={downloadIcon} />
+                                                            </div>
+                                                        </Tippy>
+                                                        </div>
 
                                                 </div>
 
@@ -1190,16 +1240,16 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                 <div>
                                                     <TableWrapper isLoading={false}>
                                                         <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                                                            <Table className="table_2 w-full">
+                                                            <Table className="table_voting w-full">
                                                                 <Table.Thead className="sticky top-50 z-10">
-                                                                    <Table.Tr className="row_2">
+                                                                    <Table.Tr className="row_voting">
                                                                         {proxyContestTopFiveDetails?.vds_report_headers?.length > 0 &&
                                                                             proxyContestTopFiveDetails?.vds_report_headers?.map(
                                                                                 (vdsHeader: any, headerIndex: number) => (
                                                                                     <Table.Td
                                                                                         key={headerIndex}
                                                                                         className={clsx([
-                                                                                            "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                                                                            "cell_voting py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
                                                                                             "sticky top-0", // Ensure the header remains sticky at the top
                                                                                             headerIndex === 0 &&
                                                                                             "sticky left-0 bg-header z-[5000] ", // Fix first column
@@ -1222,7 +1272,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                             (vdsProxy: any, vdsProxyIndex: number) => (
                                                                                 <Table.Tr
                                                                                     key={vdsProxyIndex}
-                                                                                    className="row_2 [&_td]:last:border-b-0"
+                                                                                    className="row_voting [&_td]:last:border-b-0"
                                                                                 >
                                                                                     {proxyContestTopFiveDetails?.vds_report_headers?.length >
                                                                                         0 &&
@@ -1231,7 +1281,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                                                 <Table.Td
                                                                                                     key={headerIndex}
                                                                                                     className={clsx([
-                                                                                                        "cell_2 py-2 border-dashed dark:bg-darkmode-600text-left",
+                                                                                                        "cell_voting py-2 border-dashed dark:bg-darkmode-600text-left",
                                                                                                         headerIndex === 0 &&
                                                                                                         "sticky left-0 bg-white z-[9]", // Fix first column
                                                                                                         headerIndex === 1 &&
