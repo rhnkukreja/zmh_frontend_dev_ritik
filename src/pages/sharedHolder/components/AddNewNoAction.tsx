@@ -544,7 +544,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     <Controller
                       name="category"
                       control={control}
-                      rules={{ required: "Category is required" }}
+                      // rules={{ required: "Category is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -586,7 +586,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                     <Controller
                       name="sub_category"
                       control={control}
-                      rules={{ required: "Sub Category is required" }}
+                      // rules={{ required: "Sub Category is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect

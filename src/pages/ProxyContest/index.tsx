@@ -745,7 +745,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                     </Table.Tbody>
                                                                     {caseStudiesTopProxy?.length === 0 && (
                                                                         <div className="w-full">
-                                                                            <h1 className="mt-3">No Records Found..</h1>
+                                                                            <h1 className="mt-3">No case study available</h1>
                                                                         </div>
                                                                     )}
                                                                 </Table>
@@ -1403,7 +1403,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                                 </Table.Tbody>
                                                                 {proxyContestTopFiveDetails?.vds_report_headers?.length === 0 && (
                                                                     <div className="w-full">
-                                                                        <h1 className="mt-3">No Records Found..</h1>
+                                                                        <h1 className="mt-3">No voting details available</h1>
                                                                     </div>
                                                                 )}
                                                             </Table>
