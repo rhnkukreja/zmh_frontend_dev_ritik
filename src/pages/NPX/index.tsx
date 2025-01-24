@@ -598,8 +598,8 @@ const index = () => {
                         ) : (
                           apiFundNameDropdown?.fund_name?.map((fund: any) => (
                             <option key={fund} value={fund}>
-                              {/* {(fund)} */}
-                              {convertToTitleCase(fund)}
+                              {(fund)}
+                              {/* {convertToTitleCase(fund)} */}
 
                             </option>
                           ))
@@ -866,7 +866,8 @@ const index = () => {
                                   .join(' ')}
                               </Table.Td>
                               <Table.Td className="whitespace-nowrap text-wrap" style={{ width: '17.5%' }}>
-                                {convertToTitleCase(noAction?.fund_name)}
+                                {/* {convertToTitleCase(noAction?.fund_name)} */}
+                                {noAction?.fund_name}
                               </Table.Td>
                             </Table.Tr>
                           ))}
@@ -874,7 +875,7 @@ const index = () => {
 
                       {npxProxyDetails?.length === 0 && (
                         <div className="w-full">
-                          <h1 className="mt-3">No Records Found..</h1>
+                          <h1 className="mt-3">No NPX records available</h1>
                         </div>
                       )}
                     </Table>
