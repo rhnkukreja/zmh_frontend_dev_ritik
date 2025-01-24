@@ -98,4 +98,5 @@ export type AddNoActionType = {
   staff_response_date: string;
   approved: boolean;
   initial_date_for_submission: string;
+  website_company_name?: string;
 };

@@ -97,8 +97,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const companyValue = watch("company");
   const categoryValue = watch("category");
 
-  console.log("yearValue", selectedShareholderProposal);
-
   const { companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
   );
@@ -310,21 +308,31 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       rules={{ required: "Year is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
-                          <TomSelect
+                          <select
                             value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                               // getNoActionDropdown()
                             }}
-                            options={{
-                              placeholder: "Select Year",
-                            }}
-                            className="w-full text-left"
+                            className="w-full text-left bg-white border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-[#9f123933] focus:outline-none focus:border-[#9f123933] py-2 px-3 text-gray-700"
                           >
-                            {apiDropdownOptions?.year?.map((year: string) => {
-                              return <option value={year}>{year}</option>;
-                            })}
-                          </TomSelect>
+                            <option value="" disabled hidden>
+                              Select Year
+                            </option>
+                            {apiDropdownOptions?.year?.map((year: string) => (
+                              <option
+                                key={year}
+                                value={year}
+                                className="text-gray-900 hover:bg-gray-100 hover:text-black"
+                                style={{
+                                  backgroundColor: field.value === year ? "rgba(220, 38, 38, 0.1)" : "",
+                                }}
+                              >
+                                {year}
+                              </option>
+                            ))}
+                          </select>
+
                           {error && (
                             <Error className="text-red-600 mt-2">
                               {error.message}
@@ -385,11 +393,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="category"
                       control={control}
-                      // rules={{
-                      //   required: !noShareholderProposalValue
-                      //     ? "Category is required"
-                      //     : false,
-                      // }}
+                      rules={{
+                        required: !noShareholderProposalValue
+                          ? "Category is required"
+                          : false,
+                      }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -431,11 +439,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     <Controller
                       name="sub_category"
                       control={control}
-                      // rules={{
-                      //   required: !noShareholderProposalValue
-                      //     ? "Sub Category is required"
-                      //     : false,
-                      // }}
+                      rules={{
+                        required: !noShareholderProposalValue
+                          ? "Sub Category is required"
+                          : false,
+                      }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
