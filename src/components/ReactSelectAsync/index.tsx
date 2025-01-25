@@ -3,6 +3,8 @@ import AsyncSelect from "react-select/async";
 import _ from "lodash";
 import { dashboardService } from "@/services/dashboard";
 import { MultiValue } from "react-select";
+import { RootState } from "@/stores/store";
+import { useAppSelector } from "@/stores/hooks";
 
 interface CompanyData {
   id: number;
@@ -20,16 +22,31 @@ interface CompanySelectProps {
   isMulti?: boolean;
   className?: string;
   setDefaultValue?: any
+  isInstitution?: boolean;
 }
 
-const fetchOptions = async (inputValue: string): Promise<OptionType[]> => {
+const fetchOptions = async (inputValue: string,  isInstitution?: boolean, companyGlobalSearchName?: string): Promise<OptionType[]> => {
   try {
-    const response = await dashboardService.fetchCompanyByName(inputValue);
+    // const response = await dashboardService.fetchCompanyByName(inputValue);
 
-    return response.results.map((company: CompanyData) => ({
-      value: company.id,
-      label: company.name,
-    }));
+    const response = isInstitution
+      ? await dashboardService.fetchInstitutionByName(inputValue, companyGlobalSearchName)
+      : await dashboardService.fetchCompanyByName(inputValue);
+
+    if (isInstitution) {
+      return response.results.map((institution: any) => ({
+        value: institution,
+        label: institution,
+      }));
+    }
+    else {
+      return response.results.map((company: CompanyData) => ({
+        value: company.id,
+        label: company.name,
+      }));
+    }
+
+    
   } catch (error) {
     console.error("Error fetching data:", error);
     return [];
@@ -41,15 +58,20 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   onChange,
   isMulti = false,
   className,
-  setDefaultValue
+  setDefaultValue,
+  isInstitution = false
   
 }) => {
   const [inputValue, setInputValue] = useState("");
 
+    const { companyGlobalSearchName, companyGlobalSearchTicker, isCompanySelected } = useAppSelector(
+      (state: RootState) => state.authentiction
+    );
+
   const loadOptions = useCallback(
     _.debounce(
       (inputValue: string, callback: (options: OptionType[]) => void) => {
-        fetchOptions(inputValue).then((options) => {
+        fetchOptions(inputValue, isInstitution, companyGlobalSearchName).then((options) => {
           callback(options);
         });
       },
@@ -99,7 +121,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       isMulti={isMulti}
       loadOptions={loadOptions}
       defaultOptions={false}
-      placeholder="Select Company"
+      placeholder={isInstitution ? "Select Instittution" : "Select Company"}
       onInputChange={handleInputChange}
       inputValue={inputValue}
       value={value}

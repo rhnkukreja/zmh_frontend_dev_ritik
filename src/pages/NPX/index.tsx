@@ -36,6 +36,7 @@ import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
+import CompanySelect from "@/components/ReactSelectAsync";
 
 const index = () => {
   const location = useLocation();
@@ -63,6 +64,8 @@ const index = () => {
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] = useState<boolean>(false);
   const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] = useState<boolean>(false);
+  const [showFundName, setShowFundName] = useState<boolean>(false);
+
 
 
   const [apiDropdownOptions, setApiDropdownOptions] =
@@ -112,6 +115,7 @@ const index = () => {
         const res =
           await dashboardService.getDynamicNPXDropdownValues(paramFilter);
         if (res.result) {
+          setShowFundName(res.result?.is_institution);
           setApiFundNameDropdown({ ...res.result });
         }
       } catch (error) {
@@ -168,12 +172,6 @@ const index = () => {
     // dispatch(setIsCompanySelected(false));
   }, []);
 
-  let updatedFilter: any = [];
-
-
-
-
-
 
   useEffect(() => {
 
@@ -181,31 +179,40 @@ const index = () => {
     if (allApplyFilter) {
       if (isCompanySelected) {
 
-        updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
-        updatedFilter.proposal = [];
-        if (updatedFilter?.institution_name[0] !== '') {
-          getFundNameDependentDropdown(updatedFilter?.institution_name[0]);
-        }
-        getDependentDropdown();
-
-        setTimeout(() => {
-          if (updatedFilter?.institution_name[0] !== '') {
-            setValue("institution_name", updatedFilter?.institution_name[0]);
-          }
-          setValue("fund_name", updatedFilter?.fund_name);
-          setValue("vote", updatedFilter?.vote);
-          // setValue("proposal", updatedFilter?.proposal);
-          setValue("vote_category", updatedFilter?.vote_category);
-          setValue("keyword", updatedFilter?.keyword);
+        reset();
 
           dispatch(
             fetchNpxProxyDashboard(
               createDynamicURL(
-                `${baseURL}/npx/detail/`, updatedFilter, undefined, page)
+                `${baseURL}/npx/detail/`, undefined, undefined, page)
             )
           );
 
-        }, 1000);
+        // updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
+        // updatedFilter.proposal = [];
+        // if (updatedFilter?.institution_name[0] !== '') {
+        //   getFundNameDependentDropdown(updatedFilter?.institution_name[0]);
+        // }
+        // getDependentDropdown();
+
+        // setTimeout(() => {
+        //   if (updatedFilter?.institution_name[0] !== '') {
+        //     setValue("institution_name", updatedFilter?.institution_name[0]);
+        //   }
+        //   setValue("fund_name", updatedFilter?.fund_name);
+        //   setValue("vote", updatedFilter?.vote);
+        //   // setValue("proposal", updatedFilter?.proposal);
+        //   setValue("vote_category", updatedFilter?.vote_category);
+        //   setValue("keyword", updatedFilter?.keyword);
+
+        //   dispatch(
+        //     fetchNpxProxyDashboard(
+        //       createDynamicURL(
+        //         `${baseURL}/npx/detail/`, updatedFilter, undefined, page)
+        //     )
+        //   );
+
+        // }, 1000);
 
         dispatch(setIsCompanySelected(false));
 
@@ -221,15 +228,6 @@ const index = () => {
       }
       dispatch(setTempSearch(companyGlobalSearchName));
     }
-    // return () => {
-    //   dispatch(
-    //     fetchNpxProxyDashboard(
-    //       createDynamicURL(
-    //         `${baseURL}/npx/detail/`, {}, undefined, 1
-    //       )
-    //     )
-    //   );
-    // }
 
   }, [companyGlobalSearchTicker, searchTicker, filter, allApplyFilter, page]);
 
@@ -240,45 +238,6 @@ const index = () => {
       false;
     }
   };
-
-  const convertDivTableToCSV = () => {
-    const table = document.querySelector(".table_2");
-    const rows = table?.querySelectorAll(".row_2");
-    const tableProposal = document.querySelector(".table_3");
-    const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-    let csvContent = "\uFEFF";
-    rows?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_2");
-      let rowData: any = [];
-      cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim();
-        if (cellText?.includes(",")) {
-          cellText = `"${cellText}"`;
-        }
-        rowData.push(cellText);
-      });
-
-      csvContent += rowData.join(",") + "\n";
-    });
-
-    rowsProposal?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_3");
-      let rowData: any = [];
-      cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim();
-        if (cellText?.includes(",")) {
-          cellText = `"${cellText}"`;
-        }
-
-        rowData.push(cellText);
-      });
-
-      csvContent += rowData.join(",") + "\n";
-    });
-
-    downloadCSV(csvContent, `NPX-${companyGlobalSearchName}`);
-  };
-
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
   const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -314,7 +273,7 @@ const index = () => {
     }
     setallApplyFilter({
       global_search: companyGlobalSearchName,
-      institution_name: "Select" === npxFilter?.institution_name ? '' : [npxFilter?.institution_name],
+      institution_name: "Select" === npxFilter?.institution_name?.label ? '' : [npxFilter?.institution_name?.label],
       fund_name: "Select" === npxFilter?.fund_name ? '' : npxFilter?.fund_name,
       proposal: "Select" === npxFilter?.proposal ? '' : npxFilter?.proposal,
       vote: "Select" === npxFilter?.vote ? '' : npxFilter?.vote,
@@ -327,9 +286,16 @@ const index = () => {
   };
 
   const onFilterClear = () => {
+    setShowFundName(false);
     resetFormValues();
     setallApplyFilter('');
     dispatch(resetPage());
+    dispatch(
+      fetchNpxProxyDashboard(
+        createDynamicURL(
+          `${baseURL}/npx/detail/`, undefined, undefined, page)
+      )
+    );
   };
 
   const resetFormValues: any = () => {
@@ -369,21 +335,21 @@ const index = () => {
       {/* {npxProxyDetails?.npx_report?.length === 0 &&
         !npxProxyLoading &&
         location.pathname !== "/" && ( */}
-          <Button
-            onClick={() => {
-              navigate("/");
-            }}
-            variant="primary"
-            className="bg-theme-2 border-bg-theme-2 mb-1"
-          >
-            <ChevronLeft
-              className="group-[.mode--light]:text-white text-white"
-              size={18}
-              strokeWidth={1.5}
-            />
-            Back
-          </Button>
-        {/* )} */}
+      <Button
+        onClick={() => {
+          navigate("/");
+        }}
+        variant="primary"
+        className="bg-theme-2 border-bg-theme-2 mb-1"
+      >
+        <ChevronLeft
+          className="group-[.mode--light]:text-white text-white"
+          size={18}
+          strokeWidth={1.5}
+        />
+        Back
+      </Button>
+      {/* )} */}
 
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
         {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
@@ -408,11 +374,11 @@ const index = () => {
 
         <div className="flex flex-col p-5  sm:flex-row gap-y-2">
 
-        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-          <span>
-            <h1 className="text-lg font-bold">N-PX Voting 2024 (Beta)</h1>
-          </span>
-        </div>
+          <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+            <span>
+              <h1 className="text-lg font-bold">N-PX Voting 2024 (Beta)</h1>
+            </span>
+          </div>
           {/* <div className="flex">
             <MultiSearchBar
               onSearch={handleSearch}
@@ -492,149 +458,91 @@ const index = () => {
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
                     Institution
-                    {/* {apiDropdownOptions?.institution?.length > 0 && (
-                      <div>
-                        <FormCheck className="mr-2">
-                          <FormCheck.Label>Select All</FormCheck.Label>
-                          <FormCheck.Input
-                            className="ml-1"
-                            id="institution"
-                            checked={
-                              apiDropdownOptions.institution.length === watch("institution")?.length
-                            }
-                            type="checkbox"
-                            onChange={(e) => {
-                              setValue(
-                                "institution",
-                                e.target.checked
-                                  ? apiDropdownOptions.institution
-                                  : []
-                              );
-                            }}
-                          />
-                        </FormCheck>
-                      </div>
-                    )} */}
                   </div>
                   <Controller
                     name="institution_name"
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
-                      <TomSelect
-                        value={field.value || []}
-
-                        onChange={(value) => {
+                      <CompanySelect
+                        isInstitution={true}
+                        value={field.value}
+                        onChange={(value: any) => {
                           field.onChange(value);
-                          handleDropdownChange("institution_name", value?.target?.value);
-                          // setDropdownValues({institution_name: value?.target?.value})
-                          getFundNameDependentDropdown(value?.target?.value);
+                              handleDropdownChange("institution_name", value?.label);
+                              getFundNameDependentDropdown(value?.label);
                         }}
-                        options={{ placeholder: "Select Institution" }}
-                        className="w-full"
+                      />
+                      // <TomSelect
+                      //   value={field.value || []}
 
-                      >
-                        {getDropdownLoader ? (
-                          <option disabled>Loading...</option>
-                        ) : (
-                          apiDropdownOptions.institution?.map((institution: any) => (
-                            <option key={institution} value={institution}>
-                              {institution}
-                            </option>
-                          ))
-                        )}
-                      </TomSelect>
+                      //   onChange={(value) => {
+                      //     field.onChange(value);
+                      //     handleDropdownChange("institution_name", value?.target?.value);
+                      //     getFundNameDependentDropdown(value?.target?.value);
+                      //   }}
+                      //   options={{ placeholder: "Select Institution" }}
+                      //   className="w-full"
+
+                      // >
+                      //   {getDropdownLoader ? (
+                      //     <option disabled>Loading...</option>
+                      //   ) : (
+                      //     apiDropdownOptions.institution?.map((institution: any) => (
+                      //       <option key={institution} value={institution}>
+                      //         {institution}
+                      //       </option>
+                      //     ))
+                      //   )}
+                      // </TomSelect>
                     )}
                   />
+
+                
                 </div>
 
-                <div className="w-full">
-                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Fund
-                    {/* {apiDropdownOptions?.institution?.length > 0 && (
-                      <div>
-                        <FormCheck className="mr-2">
-                          <FormCheck.Label>Select All</FormCheck.Label>
-                          <FormCheck.Input
-                            className="ml-1"
-                            id="institution"
-                            checked={
-                              apiDropdownOptions.institution.length === watch("institution")?.length
-                            }
-                            type="checkbox"
-                            onChange={(e) => {
-                              setValue(
-                                "institution",
-                                e.target.checked
-                                  ? apiDropdownOptions.institution
-                                  : []
-                              );
-                            }}
-                          />
-                        </FormCheck>
-                      </div>
-                    )} */}
+                {
+                  showFundName &&
+                  <div className="w-full">
+                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                      Fund
+                    </div>
+                    <Controller
+                      name="fund_name"
+                      control={control}
+                      defaultValue={[]}
+                      render={({ field }) => (
+                        <TomSelect
+                          value={field.value || []}
+                          onChange={(value) => {
+                            handleDropdownChange("fund_name", value?.target?.value);
+                            field.onChange(value);
+
+                          }}
+                          options={{ placeholder: "Select Fund" }}
+                          className="w-full"
+                          multiple
+                        >
+                          {getFundNameDropdownLoader ? (
+                            <option disabled>Loading...</option>
+                          ) : (
+                            apiFundNameDropdown?.fund_name?.map((fund: any) => (
+                              <option key={fund} value={fund}>
+                                {(fund)}
+                              </option>
+                            ))
+                          )}
+                        </TomSelect>
+                      )}
+                    />
                   </div>
-                  <Controller
-                    name="fund_name"
-                    control={control}
-                    defaultValue={[]}
-                    render={({ field }) => (
-                      <TomSelect
-                        value={field.value || []}
-                        onChange={(value) => {
-                          handleDropdownChange("fund_name", value?.target?.value);
-                          field.onChange(value);
-                          // setDropdownValues((prevSelected:any) => {[...prevSelected, {fund_name: value?.target?.value}]});
-                          // setDropdownValues()
-                          // getDependentDropdown();
-                        }}
-                        options={{ placeholder: "Select Fund" }}
-                        className="w-full"
-                        multiple
-                      >
-                        {getFundNameDropdownLoader ? (
-                          <option disabled>Loading...</option>
-                        ) : (
-                          apiFundNameDropdown?.fund_name?.map((fund: any) => (
-                            <option key={fund} value={fund}>
-                              {(fund)}
-                              {/* {convertToTitleCase(fund)} */}
+                }
 
-                            </option>
-                          ))
-                        )}
-                      </TomSelect>
-                    )}
-                  />
-                </div>
+
 
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
                     Category
-                    {/* {apiDropdownOptions?.institution?.length > 0 && (
-                      <div>
-                        <FormCheck className="mr-2">
-                          <FormCheck.Label>Select All</FormCheck.Label>
-                          <FormCheck.Input
-                            className="ml-1"
-                            id="institution"
-                            checked={
-                              apiDropdownOptions.institution.length === watch("institution")?.length
-                            }
-                            type="checkbox"
-                            onChange={(e) => {
-                              setValue(
-                                "institution",
-                                e.target.checked
-                                  ? apiDropdownOptions.institution
-                                  : []
-                              );
-                            }}
-                          />
-                        </FormCheck>
-                      </div>
-                    )} */}
                   </div>
                   <Controller
                     name="vote_category"
@@ -653,7 +561,6 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.vote_category?.map((vote_category: any) => (
                             <option key={vote_category} value={vote_category}>
-                              {/* {vote_category} */}
                               {convertToTitleCase(vote_category)}
                             </option>
                           ))
@@ -666,29 +573,6 @@ const index = () => {
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
                     Proposal
-                    {/* {apiDropdownOptions?.institution?.length > 0 && (
-                      <div>
-                        <FormCheck className="mr-2">
-                          <FormCheck.Label>Select All</FormCheck.Label>
-                          <FormCheck.Input
-                            className="ml-1"
-                            id="institution"
-                            checked={
-                              apiDropdownOptions.institution.length === watch("institution")?.length
-                            }
-                            type="checkbox"
-                            onChange={(e) => {
-                              setValue(
-                                "institution",
-                                e.target.checked
-                                  ? apiDropdownOptions.institution
-                                  : []
-                              );
-                            }}
-                          />
-                        </FormCheck>
-                      </div>
-                    )} */}
                   </div>
                   <Controller
                     name="proposal"
@@ -708,7 +592,6 @@ const index = () => {
                           apiDependentDropdownOptions?.proposal?.map((proposal: any) => (
                             <option key={proposal} value={proposal}>
                               {(proposal)}
-                              {/* {convertToTitleCase(proposal)} */}
                             </option>
                           ))
                         )}
@@ -720,29 +603,6 @@ const index = () => {
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
                     Vote
-                    {/* {apiDropdownOptions?.institution?.length > 0 && (
-                      <div>
-                        <FormCheck className="mr-2">
-                          <FormCheck.Label>Select All</FormCheck.Label>
-                          <FormCheck.Input
-                            className="ml-1"
-                            id="institution"
-                            checked={
-                              apiDropdownOptions.institution.length === watch("institution")?.length
-                            }
-                            type="checkbox"
-                            onChange={(e) => {
-                              setValue(
-                                "institution",
-                                e.target.checked
-                                  ? apiDropdownOptions.institution
-                                  : []
-                              );
-                            }}
-                          />
-                        </FormCheck>
-                      </div>
-                    )} */}
                   </div>
                   <Controller
                     name="vote"
@@ -761,7 +621,6 @@ const index = () => {
                         ) : (
                           apiDependentDropdownOptions?.vote?.map((vote: any) => (
                             <option key={vote} value={vote}>
-                              {/* {vote} */}
                               {convertToTitleCase(vote)}
                             </option>
                           ))
@@ -770,9 +629,6 @@ const index = () => {
                     )}
                   />
                 </div>
-
-
-
 
                 <div className="w-full">
                   <div className="text-left text-slate-500">Keyword</div>
@@ -796,9 +652,7 @@ const index = () => {
           </form>
         )}
 
-        {/* {npxProxyDetails?.npx_report?.length > 0 && ( */}
         <div className="w-full">
-
           <>
             <div className="">
               <div>
@@ -845,7 +699,6 @@ const index = () => {
                           npxProxyDetails?.map((noAction: any) => (
                             <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '30%' }}>
-                                {/* {convertToTitleCase(noAction?.vote_description)} */}
                                 {noAction?.vote_description}
                               </Table.Td>
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
@@ -866,7 +719,6 @@ const index = () => {
                                   .join(' ')}
                               </Table.Td>
                               <Table.Td className="whitespace-nowrap text-wrap" style={{ width: '17.5%' }}>
-                                {/* {convertToTitleCase(noAction?.fund_name)} */}
                                 {noAction?.fund_name}
                               </Table.Td>
                             </Table.Tr>
@@ -895,23 +747,6 @@ const index = () => {
             </div>
           </>
         </div>
-
-        {/* {!allApplyFilter && (
-          <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
-            <h1 className="font-semibold">Please search institution name</h1>
-          </div>
-        )} */}
-
-        {/* {!npxProxyDetails && npxProxyLoading && allApplyFilter && (
-          <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
-            <LoadingIcon
-              color="#800000"
-              icon="three-dots"
-              className="w-16 h-16"
-            />
-          </div>
-        )} */}
-
         {npxProxyDetails?.npx_report?.length === 0 && !npxProxyLoading && allApplyFilter && (
           <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
             <h1 className="font-semibold"> Proxy Records Not Found..</h1>
