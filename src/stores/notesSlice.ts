@@ -303,6 +303,7 @@ const notesSlice = createSlice({
           }
         } else {
           state.notes.unshift(action.payload.results);
+          state.selectedNote = action.payload.results;
         }
       })
       .addCase(addNote.rejected, (state, action) => {

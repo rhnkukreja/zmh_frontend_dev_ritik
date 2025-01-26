@@ -174,10 +174,16 @@ const CreateAndSelectFolder: React.FC<CreateAndSelectFolderProps> = ({
     (state) => state.notes
   );
 
-  const { control, handleSubmit, watch, setValue } = useForm<Note>();
+  const { control, handleSubmit, watch, setValue } = useForm<Note>({
+    defaultValues: {
+      folder: selectedNote?.folder || undefined,
+      name: selectedNote?.id || undefined,
+      text: selectedNote?.text || "",
+    },
+  });
   const folderValue = watch("folder");
   const noteValue = watch("name");
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(selectedNote ? 3 : 1);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [newCreatedFolder, setNewCreatedFolder] = useState<number | undefined>(
