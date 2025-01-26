@@ -23,12 +23,13 @@ interface CompanySelectProps {
   className?: string;
   setDefaultValue?: any
   isInstitution?: boolean;
+  companyGlobalSearchName?: string;
 }
 
 const fetchOptions = async (inputValue: string,  isInstitution?: boolean, companyGlobalSearchName?: string): Promise<OptionType[]> => {
   try {
     // const response = await dashboardService.fetchCompanyByName(inputValue);
-
+console.log(companyGlobalSearchName)
     const response = isInstitution
       ? await dashboardService.fetchInstitutionByName(inputValue, companyGlobalSearchName)
       : await dashboardService.fetchCompanyByName(inputValue);
@@ -59,14 +60,11 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   isMulti = false,
   className,
   setDefaultValue,
-  isInstitution = false
+  isInstitution = false,
+  companyGlobalSearchName = ''
   
 }) => {
   const [inputValue, setInputValue] = useState("");
-
-    const { companyGlobalSearchName, companyGlobalSearchTicker, isCompanySelected } = useAppSelector(
-      (state: RootState) => state.authentiction
-    );
 
   const loadOptions = useCallback(
     _.debounce(
@@ -77,7 +75,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       },
       300
     ),
-    []
+    [companyGlobalSearchName]
   );
 
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
@@ -116,7 +114,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
 
   return (
     <AsyncSelect
-      cacheOptions
+      // cacheOptions
       styles={customStyles}
       isMulti={isMulti}
       loadOptions={loadOptions}

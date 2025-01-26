@@ -466,6 +466,7 @@ const index = () => {
                     render={({ field }) => (
                       <CompanySelect
                         isInstitution={true}
+                        companyGlobalSearchName={companyGlobalSearchName}
                         value={field.value}
                         onChange={(value: any) => {
                           field.onChange(value);
