@@ -55,7 +55,7 @@ interface CompanySliceState {
   proxyContestTopFiveLoading: boolean;
   vdsProxyAllInvestorDetails: any;
   vdsProxyAllInvestorLoading: boolean;
-  npxProxyDetails: any;
+  npxProxyDetails: any[];
   npxProxyLoading: boolean;
   investorProfileDetails: any;
   investorProfileLoading: boolean;
@@ -100,8 +100,8 @@ const initialState: CompanySliceState = {
   proxyContestTopFiveDetails: "",
   proxyContestTopFiveLoading: true,
   totalNPXCount: 0,
-  npxProxyDetails: "",
-  npxProxyLoading: true,
+  npxProxyDetails: [],
+  npxProxyLoading: false,
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
@@ -532,7 +532,7 @@ const companySlice = createSlice({
       })
 
       .addCase(fetchNpxProxyDashboard.pending, (state) => {
-        state.npxProxyDetails = "";
+        // state.npxProxyDetails = [];
         state.npxProxyLoading = true;
         state.error = null;
       })

@@ -431,7 +431,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                 <div className="flex items-end gap-4">
                                                     <div className="w-4/12">
                                                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Select Company (Required)
+                                                            Select Company*
                                                         </div>
                                                         <Controller
                                                             name="company_name"

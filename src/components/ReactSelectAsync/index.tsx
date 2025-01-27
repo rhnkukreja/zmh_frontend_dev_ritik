@@ -29,7 +29,6 @@ interface CompanySelectProps {
 const fetchOptions = async (inputValue: string,  isInstitution?: boolean, companyGlobalSearchName?: string): Promise<OptionType[]> => {
   try {
     // const response = await dashboardService.fetchCompanyByName(inputValue);
-console.log(companyGlobalSearchName)
     const response = isInstitution
       ? await dashboardService.fetchInstitutionByName(inputValue, companyGlobalSearchName)
       : await dashboardService.fetchCompanyByName(inputValue);
