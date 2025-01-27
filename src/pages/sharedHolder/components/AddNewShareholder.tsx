@@ -275,10 +275,22 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
+
+            {/* Garbage */}
+            <div className=" absolute top-[-900px]">
+              <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                .
+              </FormCheck.Label>
+              <input />
+            </div>
+            {/* Garbage */}
+            
             <div className="flex flex-col gap-7">
               {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
              
+             
+
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Company Name
