@@ -21,12 +21,14 @@ import Error from "@/components/Error";
 import {
   addEditNewNoAction,
   fetchShareHolderProposal,
+  getSingleShareHolderData,
 } from "@/stores/shareholderProposalSlice";
 import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { useLocation } from "react-router-dom";
 interface AddNoActionProps {
   addNewNoActionModalVisible: boolean;
   setAddNewNoActionModalVisible: (visible: boolean) => void;
@@ -39,6 +41,11 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   selectedShareholderNoAction,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
+  
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const url = searchParams.get('url')
+  
   const { loading, page, filters} = useAppSelector(
     (state) => state.sharedHolderNoAction
   );
@@ -176,6 +183,10 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
             )
           )
         );
+
+           if (selectedShareholderNoAction?.id && url) {
+                  dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/no_action', id: Number(selectedShareholderNoAction?.id) }));
+                }
       }
     } catch (error) {
       console.error("Error submitting form:", error);

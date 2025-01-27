@@ -180,7 +180,7 @@ const index = () => {
       if (isCompanySelected) {
 
         reset();
-
+        setShowFundName(false);
         dispatch(
           fetchNpxProxyDashboard(
             createDynamicURL(

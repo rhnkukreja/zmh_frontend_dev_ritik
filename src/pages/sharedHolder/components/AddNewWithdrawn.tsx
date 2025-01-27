@@ -16,12 +16,13 @@ import {
 import { toast } from "react-toastify";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addEditNewWithdrawn, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import { addEditNewWithdrawn, fetchShareHolderProposal, getSingleShareHolderData } from "@/stores/shareholderProposalSlice";
 import { AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import MultiSearchBar from "@/components/MultiSearch";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { useLocation } from "react-router-dom";
 
 interface AddWithdrawnProps {
   addNewWithdrawnModalVisible: boolean;
@@ -36,6 +37,11 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page, filters } = useAppSelector((state) => state.sharedHolderNoAction);
+
+
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const url = searchParams.get('url')
   const {
     handleSubmit,
     control,
@@ -46,7 +52,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       {
         proponent: selectedShareholderWithdrawn?.institution,
         initiative: selectedShareholderWithdrawn?.initiative,
-        company: selectedShareholderWithdrawn?.company,
+        company: selectedShareholderWithdrawn?.company_name,
         status: selectedShareholderWithdrawn?.status,
         year:selectedShareholderWithdrawn?.year,
         withdrawal_reason:selectedShareholderWithdrawn?.withdrawal_reason,
@@ -101,23 +107,21 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
         toast.success(selectedShareholderWithdrawn ? 'Shareholder Withdrawn Updated' : "New Shareholder Withdrawn Added");
         setAddNewWithdrawnModalVisible(false);
 
-        // dispatch(
-        //   fetchShareHolderProposal(
-        //     createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/?global_search=${companyGlobalSearchName}`, undefined, page)
-        //   )
-        // );
+        dispatch(
+          fetchShareHolderProposal(
+            createDynamicURL(
+              `${baseURL}/shareholder_proposal/withdrawn/`,
+              // { global_search: companyGlobalSearchName },
+              filters,
+              undefined,
+              page
+            )
+          )
+        );
 
-         dispatch(
-                  fetchShareHolderProposal(
-                    createDynamicURL(
-                      `${baseURL}/shareholder_proposal/withdrawn/`,
-                      // { global_search: companyGlobalSearchName },
-                      filters,
-                      undefined,
-                      page
-                    )
-                  )
-                );
+        if (selectedShareholderWithdrawn?.id && url) {
+          dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/withdrawn', id: Number(selectedShareholderWithdrawn?.id) }));
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -199,6 +203,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                     rules={{ required: "Company Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <CompanySelect
+                        setDefaultValue={field.value}
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value);
