@@ -82,7 +82,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       approval_status: selectedCaseStudies?.approval_status,
       investment_type: selectedCaseStudies?.investment_type || "  ",
       esg_category: selectedCaseStudies?.esg_category
-        ? selectedCaseStudies?.esg_category?.split("|")
+        ? selectedCaseStudies?.esg_category?.split(",")
         : [],
     },
   });
@@ -136,7 +136,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
           : null,
       esg_category:
         Array.isArray(data.esg_category) && data.esg_category.length > 0
-          ? data.esg_category.join("|")
+          ? data.esg_category.join(",")
           : null,
       proposal_type: data?.proposal_type === "  " ? null : data?.proposal_type,
       vote: data?.vote === "  " ? null : data?.vote,
@@ -510,13 +510,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
               <div>
                 <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                Engagement Details
+                  Engagement Details
                 </FormCheck.Label>
                 <Controller
                   name="engagement_details"
                   control={control}
                   rules={{
-                    required: true
+                    required: true,
                   }}
                   render={({ field }) => (
                     <textarea
@@ -536,13 +536,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
               <div>
                 <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                Voting Details
+                  Voting Details
                 </FormCheck.Label>
                 <Controller
                   name="voting_details"
                   control={control}
                   rules={{
-                    required: true
+                    required: true,
                   }}
                   render={({ field }) => (
                     <textarea
@@ -562,13 +562,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
               <div>
                 <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                Voting Rationale
+                  Voting Rationale
                 </FormCheck.Label>
                 <Controller
                   name="voting_rationale"
                   control={control}
                   rules={{
-                    required: true
+                    required: true,
                   }}
                   render={({ field }) => (
                     <textarea

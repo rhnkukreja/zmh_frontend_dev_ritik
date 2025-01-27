@@ -4,6 +4,8 @@ import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
 
 class DashboardService {
+
+  
   public async fetchCompanyByName(companyName?: string): Promise<{
     results: CompanyData[];
   }> {
@@ -13,12 +15,26 @@ class DashboardService {
         companyName ? `company_name=${companyName}&` : ""
       }all=true`;
       const response = await axiosInstance.get(url);
-      // console.log({ response });
       results = response.data;
     }
 
     return {
       results: results,
+    };
+  }
+
+  public async fetchInstitutionByName(institutionValue?: string, companyGlobalSearchName?: string): Promise<{
+    results: CompanyData[];
+  }> {
+    let results = [];
+    if (institutionValue !== "") {
+      const url = `/get_npx_dropdown_values/?global_search=${companyGlobalSearchName}&institution_name=${institutionValue}`
+      const response = await axiosInstance.get(url);
+      results = response.data;
+    }
+
+    return {
+      results: results?.institution,
     };
   }
 

@@ -103,6 +103,8 @@ class AxiosServiceConfig {
             }
           } else if (error.request) {
             errorMessage = "No response received from server";
+            logout();
+
           } else {
             errorMessage = error.message;
           }

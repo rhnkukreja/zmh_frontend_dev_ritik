@@ -242,7 +242,7 @@ const index = () => {
 
   const getAllInstitutionDropdown = async () => {
     try {
-      const res = await dashboardService.getInstitution();
+      const res = await dashboardService.getInstitution({company_name: [companyGlobalSearchName]});
       if (res.result?.institution) {
         setApiDropdownOptions(res.result?.institution);
       }
@@ -571,34 +571,6 @@ const index = () => {
                             <div className=" w-4/12">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
                                 Select Institution
-                                {/* {apiDropdownOptions?.length > 0 && (
-                                  <div>
-                                    <FormCheck className="mr-2">
-                                      <FormCheck.Label>
-                                        Select All
-                                      </FormCheck.Label>
-                                      <FormCheck.Input
-                                        className="ml-1"
-                                        id={`institution`}
-                                        checked={
-                                          apiDropdownOptions
-                                            .length === watch("institution")?.length
-                                        }
-                                        type="checkbox"
-                                        onChange={(e) => {
-                                          if (e.target.checked === true) {
-                                            setValue(
-                                              "institution",
-                                              apiDropdownOptions
-                                            );
-                                          } else {
-                                            setValue("institution", []);
-                                          }
-                                        }}
-                                      />
-                                    </FormCheck>
-                                  </div>
-                                )} */}
                               </div>
                               <Controller
                                 name="institution"

@@ -204,43 +204,48 @@ function Main() {
       const range = selection.getRangeAt(0);
       const container = document.createElement("div");
       container.appendChild(range.cloneContents());
-      const selectedHtml = container.innerHTML;
-
-      if (selectedHtml.trim()) {
+      const selectedHtml = container.innerHTML.trim();
+      if (selectedHtml) {
         const rect = range.getBoundingClientRect();
         setSelectedText(selectedHtml);
         setTooltipPosition({
           x: rect.left + window.scrollX,
           y: rect.top + window.scrollY - 30,
         });
+      } else {
+        setSelectedText("");
       }
-    } else if (
-      selection &&
-      selection?.rangeCount === 0 &&
-      globalCreateNoteModalVisible === false
-    ) {
+    } else if (!globalCreateNoteModalVisible) {
       setSelectedText("");
     }
   };
 
   const handleCreateNote = () => {
-    setGlobalCreateNoteModalVisible(true);
+    if (selectedText) {
+      setNoteText(selectedText);
+      setSelectedText("");
+      setGlobalCreateNoteModalVisible(true);
+    }
   };
 
   useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        tooltipRef.current &&
+        !tooltipRef.current.contains(e.target as Node) &&
+        !globalCreateNoteModalVisible
+      ) {
+        setSelectedText("");
+      }
+    };
+
     document.addEventListener("selectionchange", handleSelectionChange);
+    document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (tooltipRef.current && noteText) setNoteText("");
-    };
-    if (!globalCreateNoteModalVisible) {
-      handleClickOutside();
-    }
   }, [globalCreateNoteModalVisible]);
 
   useEffect(() => {
@@ -800,26 +805,17 @@ function Main() {
         {selectedText && (
           <div
             ref={tooltipRef}
-            className="absolute bg-white shadow-lg rounded-lg px-4  py-2 cursor-pointer z-50 transform transition-transform hover:scale-105"
+            className="absolute bg-white shadow-lg rounded-lg px-4 py-2 cursor-pointer z-50 transform transition-transform hover:scale-105"
             style={{
               top: tooltipPosition.y,
               left: tooltipPosition.x,
             }}
             onMouseDown={(e) => {
               e.preventDefault();
-              e.stopPropagation();
             }}
             onClick={handleCreateNote}
           >
-            <span
-              className="text-sm font-medium text-primary flex justify-center items-center"
-              onClick={() => {
-                if (selectedText) {
-                  setNoteText(selectedText);
-                  setSelectedText("");
-                }
-              }}
-            >
+            <span className="text-sm font-medium text-primary flex justify-center items-center">
               <Lucide icon="Pen" className="w-4 h-4 stroke-[1.3] mr-1.5" />
               Create Note
             </span>
