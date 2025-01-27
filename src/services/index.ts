@@ -28,7 +28,8 @@ function APIErrors(message: string) {
       ?.toLowerCase()
       .includes(
         "Signature has expired".toLowerCase() ||
-          "signature has expired.".toLowerCase()
+          "signature has expired.".toLowerCase() ||
+          "Authentication credentials were not provided".toLowerCase()
       )
   ) {
     return logout();
@@ -103,14 +104,19 @@ class AxiosServiceConfig {
             }
           } else if (error.request) {
             errorMessage = "No response received from server";
-            logout();
 
           } else {
             errorMessage = error.message;
           }
 
           APIErrors(errorMessage);
+
+          if(error?.status === 401){
+            logout();
+          }
+          
           return Promise.reject(new Error(errorMessage));
+          
         }
       );
     }
