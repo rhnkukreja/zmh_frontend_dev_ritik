@@ -106,14 +106,6 @@ function Router() {
     return null;
   };
 
-  useEffect(() => {
-    // Prevent any initial automatic focus by browsers
-    const focusedElement = document.activeElement as HTMLElement;
-    if (focusedElement && focusedElement !== document.body) {
-      focusedElement.blur(); // Call the blur method to remove focus
-    }
-  }, []);
-  
 
   TitleManager();
   const routes: any = [

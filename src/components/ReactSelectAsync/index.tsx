@@ -115,7 +115,6 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     <AsyncSelect
       // cacheOptions
       styles={customStyles}
-      autoFocus={false}
       isMulti={isMulti}
       loadOptions={loadOptions}
       defaultOptions={false}
