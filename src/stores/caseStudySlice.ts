@@ -15,6 +15,7 @@ export interface CaseStudyFilter {
   proposal_type: string[];
   vote: string[];
   company_name?: string[];
+  approval_status: string;
   [key: string]: any;
 }
 
@@ -49,6 +50,7 @@ const initialState: CaseStudies = {
     vote: [],
     institution_name: [],
     global_search: [],
+    approval_status: "",
   },
 };
 

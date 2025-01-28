@@ -49,6 +49,7 @@ interface CaseStudyFilter {
   proposal_type: string[];
   vote: string[];
   company_name?: string[];
+  approval_status: string;
   [key: string]: any;
 }
 function CaseStudies() {
@@ -115,6 +116,7 @@ function CaseStudies() {
         })) || [],
       proposal_type: filters?.proposal_type,
       vote: filters?.vote,
+      approval_status: filters?.approval_status,
     },
   });
 
@@ -127,6 +129,7 @@ function CaseStudies() {
     setValue("global_search", []);
     setValue("proposal_type", []);
     setValue("vote", []);
+    setValue("approval_status", "");
   };
 
   useEffect(() => {
@@ -242,6 +245,8 @@ function CaseStudies() {
       setValue("sector", savedSearch?.sector || []);
       setValue("year", savedSearch?.year || []);
       setValue("themes", savedSearch.themes || []);
+      setValue("approval_status", savedSearch.approval_status || "");
+
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
       dispatch(
@@ -251,6 +256,8 @@ function CaseStudies() {
           sector: savedSearch?.sector || [],
           year: savedSearch?.year || [],
           themes: savedSearch?.themes || [],
+          approval_status: savedSearch?.approval_status || "",
+
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
           global_search: savedSearch?.global_search,
@@ -267,6 +274,7 @@ function CaseStudies() {
       market: filters.market || [],
       sector: filters.sector || [],
       themes: filters.themes || [],
+      approval_status: filters.approval_status || [],
       proposal_type: filters.proposal_type || [],
       vote: filters.vote || [],
       year: filters.year || [],
@@ -282,6 +290,7 @@ function CaseStudies() {
             market: filters.market || [],
             sector: filters.sector || [],
             themes: filters.themes || [],
+            approval_status: filters.approval_status || [],
             proposal_type: filters.proposal_type || [],
             vote: filters.vote || [],
             year: filters.year || [],
@@ -716,6 +725,83 @@ function CaseStudies() {
                           )}
                         />
                       </div>
+
+                      {user.user_type === "Admin" && (
+                        <div className="mx-2">
+                          <div className="flex-1 w-full text-slate-500">
+                            Approval Status
+                            <div className="mt-2 flex flex-col sm:flex-row">
+                              <Controller
+                                name="approval_status"
+                                control={control}
+                                rules={{
+                                  required: "Approval Status is required",
+                                }}
+                                render={({ field }) => (
+                                  <>
+                                    <FormCheck className="flex items-center mr-2">
+                                      <FormCheck.Input
+                                        id="radio-switch-4"
+                                        type="radio"
+                                        {...field}
+                                        value="Approved"
+                                        checked={field.value === "Approved"}
+                                        onChange={(e) =>
+                                          field.onChange("Approved")
+                                        }
+                                      />
+                                      <FormCheck.Label
+                                        htmlFor="radio-switch-4"
+                                        className="ml-2"
+                                      >
+                                        Approved
+                                      </FormCheck.Label>
+                                    </FormCheck>
+                                    <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
+                                      <FormCheck.Input
+                                        id="radio-switch-5"
+                                        type="radio"
+                                        {...field}
+                                        value="Pending"
+                                        checked={field.value === "Pending"}
+                                        onChange={(e) =>
+                                          field.onChange("Pending")
+                                        }
+                                      />
+                                      <FormCheck.Label
+                                        htmlFor="radio-switch-5"
+                                        className="ml-2"
+                                      >
+                                        Pending
+                                      </FormCheck.Label>
+                                    </FormCheck>
+                                    <FormCheck className="flex items-center mt-2 sm:mt-0">
+                                      <FormCheck.Input
+                                        id="radio-switch-5"
+                                        type="radio"
+                                        {...field}
+                                        value="Return To Analyst"
+                                        checked={
+                                          field.value === "Return To Analyst"
+                                        }
+                                        onChange={(e) =>
+                                          field.onChange("Return To Analyst")
+                                        }
+                                      />
+                                      <FormCheck.Label
+                                        htmlFor="radio-switch-5"
+                                        className="ml-2"
+                                      >
+                                        Returned to Analyst
+                                      </FormCheck.Label>
+                                    </FormCheck>
+                                  </>
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </form>
