@@ -58,7 +58,7 @@ const index = () => {
 
   const [filter, setFilter] = useState('');
   const [institutionName, setInstitutionName] = useState('');
-  const [allApplyFilter, setallApplyFilter] = useState<any>();
+  const [allApplyFilter, setallApplyFilter] = useState<any>('');
   const [dropdownValues, setDropdownValues] = useState<any>({ institution_name: [], fund_name: [] });
 
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
@@ -180,13 +180,13 @@ const index = () => {
       if (isCompanySelected) {
 
         reset();
-
-          dispatch(
-            fetchNpxProxyDashboard(
-              createDynamicURL(
-                `${baseURL}/npx/detail/`, undefined, undefined, page)
-            )
-          );
+        setShowFundName(false);
+        dispatch(
+          fetchNpxProxyDashboard(
+            createDynamicURL(
+              `${baseURL}/npx/detail/`, undefined, undefined, page)
+          )
+        );
 
         // updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
         // updatedFilter.proposal = [];
@@ -457,7 +457,7 @@ const index = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                 <div className="w-full">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Institution
+                    Institution*
                   </div>
                   <Controller
                     name="institution_name"
@@ -470,8 +470,8 @@ const index = () => {
                         value={field.value}
                         onChange={(value: any) => {
                           field.onChange(value);
-                              handleDropdownChange("institution_name", value?.label);
-                              getFundNameDependentDropdown(value?.label);
+                          handleDropdownChange("institution_name", value?.label);
+                          getFundNameDependentDropdown(value?.label);
                         }}
                       />
                       // <TomSelect
@@ -499,7 +499,7 @@ const index = () => {
                     )}
                   />
 
-                
+
                 </div>
 
                 {
@@ -653,101 +653,109 @@ const index = () => {
           </form>
         )}
 
-        <div className="w-full">
-          <>
-            <div className="">
-              <div>
-                <TableWrapper isLoading={allApplyFilter && npxProxyLoading}>
-                  <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                    <Table>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Td
-                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                            style={{ width: '30%' }} // Proposal gets more width
-                          >
-                            Proposal
-                          </Table.Td>
-                          <Table.Td
-                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                            style={{ width: '17.5%' }} // Remaining columns have equal widths
-                          >
-                            Category
-                          </Table.Td>
-                          <Table.Td
-                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                            style={{ width: '17.5%' }}
-                          >
-                            Vote
-                          </Table.Td>
-                          <Table.Td
-                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                            style={{ width: '17.5%' }}
-                          >
-                            Shared Voted
-                          </Table.Td>
-                          <Table.Td
-                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                            style={{ width: '17.5%' }}
-                          >
-                            Fund Name
-                          </Table.Td>
-                        </Table.Tr>
-                      </Table.Thead>
-
-                      <Table.Tbody>
-                        {npxProxyDetails?.length > 0 &&
-                          npxProxyDetails?.map((noAction: any) => (
-                            <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '30%' }}>
-                                {noAction?.vote_description}
-                              </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
-                                {convertToTitleCase(noAction?.vote_category)}
-                              </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
-                                {convertToTitleCase(noAction?.vote)}
+        {
+          npxProxyDetails?.length > 0 ?
+            <div className="w-full">
+              <>
+                <div className="">
+                  <div>
+                    <TableWrapper isLoading={allApplyFilter && npxProxyLoading}>
+                      <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                        <Table>
+                          <Table.Thead>
+                            <Table.Tr>
+                              <Table.Td
+                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                style={{ width: '30%' }} // Proposal gets more width
+                              >
+                                Proposal
                               </Table.Td>
                               <Table.Td
-                                className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                style={{ width: '17.5%' }} // Remaining columns have equal widths
+                              >
+                                Category
+                              </Table.Td>
+                              <Table.Td
+                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                 style={{ width: '17.5%' }}
                               >
-                                {noAction?.shares_voted
-                                  ?.split(' ')
-                                  .map((num: string) =>
-                                    new Intl.NumberFormat('en-US').format(Math.floor(Number(num)))
-                                  )
-                                  .join(' ')}
+                                Vote
                               </Table.Td>
-                              <Table.Td className="whitespace-nowrap text-wrap" style={{ width: '17.5%' }}>
-                                {noAction?.fund_name}
+                              <Table.Td
+                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                style={{ width: '17.5%' }}
+                              >
+                                Shared Voted
+                              </Table.Td>
+                              <Table.Td
+                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                style={{ width: '17.5%' }}
+                              >
+                                Fund Name
                               </Table.Td>
                             </Table.Tr>
-                          ))}
-                      </Table.Tbody>
+                          </Table.Thead>
 
-                      {npxProxyDetails?.length === 0 && (
-                        <div className="w-full">
-                          <h1 className="mt-3">No NPX records available</h1>
-                        </div>
-                      )}
-                    </Table>
+                          <Table.Tbody>
+                            {npxProxyDetails?.length > 0 &&
+                              npxProxyDetails?.map((noAction: any) => (
+                                <Table.Tr key={noAction?.id} className="[&_td]:last:border-b-0">
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '30%' }}>
+                                    {noAction?.vote_description}
+                                  </Table.Td>
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
+                                    {convertToTitleCase(noAction?.vote_category)}
+                                  </Table.Td>
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600" style={{ width: '17.5%' }}>
+                                    {convertToTitleCase(noAction?.vote)}
+                                  </Table.Td>
+                                  <Table.Td
+                                    className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                    style={{ width: '17.5%' }}
+                                  >
+                                    {noAction?.shares_voted
+                                      ?.split(' ')
+                                      .map((num: string) =>
+                                        new Intl.NumberFormat('en-US').format(Math.floor(Number(num)))
+                                      )
+                                      .join(' ')}
+                                  </Table.Td>
+                                  <Table.Td className="whitespace-nowrap text-wrap" style={{ width: '17.5%' }}>
+                                    {noAction?.fund_name}
+                                  </Table.Td>
+                                </Table.Tr>
+                              ))}
+                          </Table.Tbody>
 
+                          {npxProxyDetails?.length === 0 && (
+                            <div className="w-full">
+                              <h1 className="mt-3">No NPX records available</h1>
+                            </div>
+                          )}
+                        </Table>
+
+                      </div>
+                    </TableWrapper>
                   </div>
-                </TableWrapper>
-              </div>
-              <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                <CPagination
-                  page={page}
-                  totalPages={totalPages}
-                  handleNextPage={handleNextPage}
-                  handlePageChange={handlePageChange}
-                  handlePreviousPage={handlePreviousPage}
-                />
-              </div>
+                  <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                    <CPagination
+                      page={page}
+                      totalPages={totalPages}
+                      handleNextPage={handleNextPage}
+                      handlePageChange={handlePageChange}
+                      handlePreviousPage={handlePreviousPage}
+                    />
+                  </div>
+                </div>
+              </>
             </div>
-          </>
-        </div>
+            :
+            <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+              <h1 className="font-semibold"></h1>
+            </div>
+        }
+
         {npxProxyDetails?.npx_report?.length === 0 && !npxProxyLoading && allApplyFilter && (
           <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
             <h1 className="font-semibold"> Proxy Records Not Found..</h1>

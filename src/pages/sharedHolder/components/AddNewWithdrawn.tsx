@@ -16,12 +16,13 @@ import {
 import { toast } from "react-toastify";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addEditNewWithdrawn, fetchShareHolderProposal } from "@/stores/shareholderProposalSlice";
+import { addEditNewWithdrawn, fetchShareHolderProposal, getSingleShareHolderData } from "@/stores/shareholderProposalSlice";
 import { AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import MultiSearchBar from "@/components/MultiSearch";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { useLocation } from "react-router-dom";
 
 interface AddWithdrawnProps {
   addNewWithdrawnModalVisible: boolean;
@@ -36,6 +37,11 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const { loading, page, filters } = useAppSelector((state) => state.sharedHolderNoAction);
+
+
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const url = searchParams.get('url')
   const {
     handleSubmit,
     control,
@@ -46,7 +52,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       {
         proponent: selectedShareholderWithdrawn?.institution,
         initiative: selectedShareholderWithdrawn?.initiative,
-        company: selectedShareholderWithdrawn?.company,
+        company: selectedShareholderWithdrawn?.company_name,
         status: selectedShareholderWithdrawn?.status,
         year:selectedShareholderWithdrawn?.year,
         withdrawal_reason:selectedShareholderWithdrawn?.withdrawal_reason,
@@ -101,23 +107,21 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
         toast.success(selectedShareholderWithdrawn ? 'Shareholder Withdrawn Updated' : "New Shareholder Withdrawn Added");
         setAddNewWithdrawnModalVisible(false);
 
-        // dispatch(
-        //   fetchShareHolderProposal(
-        //     createDynamicURL(`${baseURL}/shareholder_proposal/withdrawn/?global_search=${companyGlobalSearchName}`, undefined, page)
-        //   )
-        // );
+        dispatch(
+          fetchShareHolderProposal(
+            createDynamicURL(
+              `${baseURL}/shareholder_proposal/withdrawn/`,
+              // { global_search: companyGlobalSearchName },
+              filters,
+              undefined,
+              page
+            )
+          )
+        );
 
-         dispatch(
-                  fetchShareHolderProposal(
-                    createDynamicURL(
-                      `${baseURL}/shareholder_proposal/withdrawn/`,
-                      // { global_search: companyGlobalSearchName },
-                      filters,
-                      undefined,
-                      page
-                    )
-                  )
-                );
+        if (selectedShareholderWithdrawn?.id && url) {
+          dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/withdrawn', id: Number(selectedShareholderWithdrawn?.id) }));
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -153,6 +157,16 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
+
+            {/* Garbage */}
+            <div className=" absolute top-[-900px]">
+              <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                .
+              </FormCheck.Label>
+              <input />
+            </div>
+            {/* Garbage */}
+            
             <div className="flex flex-col gap-7">
               {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -199,6 +213,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
                     rules={{ required: "Company Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <CompanySelect
+                        setDefaultValue={field.value}
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value);

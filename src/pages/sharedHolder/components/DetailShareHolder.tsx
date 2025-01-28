@@ -6,9 +6,15 @@ import { getSingleShareHolderData, setPage, setTabs } from "@/stores/shareholder
 import { AppDispatch } from "@/stores/store";
 import dayjs from "dayjs";
 import { ChevronLeft } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { convertToTitleCase } from "@/utils/helper";
+import Tippy from "@/components/Base/Tippy";
+import Lucide from "@/components/Base/Lucide";
+import { AddNoActionType, AddShareholderType, AddWithdrawnType } from "@/types/shareHolder";
+import AddNewShareholder from "./AddNewShareholder";
+import AddNewNoAction from "./AddNewNoAction";
+import AddNewWithdrawn from "./AddNewWithdrawn";
 
 const DetailShareHolder = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -16,6 +22,9 @@ const DetailShareHolder = () => {
   const navigate = useNavigate();
 
   const { getSingleShareHolder, loading, page } = useAppSelector((state) => state.sharedHolderNoAction);
+  const { user, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -36,6 +45,40 @@ const DetailShareHolder = () => {
     navigate(`/share-holder-proposal`);
   }
 
+
+  const [selectedShareholderProposal, setSelectedShareholderProposal] =
+    useState<AddShareholderType | null>(null);
+  const [selectedShareholderWithdrawn, setSelectedShareholderWithdrawn] =
+    useState<AddWithdrawnType | null>(null);
+  const [selectedShareholderNoAction, setSelectedShareholderNoAction] =
+    useState<AddNoActionType | null>(null);
+
+    const [addNewShareholderModalVisible, setAddNewShareholderModalVisible] =
+    useState<boolean>(false);
+  const [addNewWithdrawnModalVisible, setAddNewWithdrawnModalVisible] =
+    useState<boolean>(false);
+  const [addNewNoActionModalVisible, setAddNewNoActionModalVisible] =
+    useState<boolean>(false);
+
+
+  const onEditProposalClickHandler = (
+    detail: any,
+    detailType: string
+  ) => {
+    if (detailType === 'Shareholder Proposal Details') {
+      setSelectedShareholderProposal(detail);
+      setAddNewShareholderModalVisible(true);
+    }
+    else if (detailType === 'Withdrawn Proposal Details') {
+      setSelectedShareholderWithdrawn(detail);
+      setAddNewWithdrawnModalVisible(true);
+    }
+    else if (detailType === 'No Action Letter Details') {
+      setSelectedShareholderNoAction(detail);
+      setAddNewNoActionModalVisible(true);
+    }
+  };
+
   return (
     <>
       <Button
@@ -53,6 +96,26 @@ const DetailShareHolder = () => {
       <div className=" mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
           <h1 className="text-xl font-semibold">{headingTitle}</h1>
+
+          {user?.user_type === "Admin" && (
+            <Tippy
+              content="Edit"
+              options={{ theme: "light" }}
+            >
+              <div className="cursor-pointer box p-2">
+              <Lucide
+                onClick={() =>
+                  onEditProposalClickHandler(
+                    getSingleShareHolder,
+                    headingTitle
+                  )
+                }
+                icon="PenLine"
+                className="w-4 h-4 mr-1.5 stroke-[1.3] text-red-700 "
+              />
+                </div>
+            </Tippy>
+          )}
         </div>
 
         {loading ? (
@@ -347,6 +410,34 @@ const DetailShareHolder = () => {
           </>
         )}
       </div>
+
+
+      {addNewShareholderModalVisible && (
+        <AddNewShareholder
+          addNewShareholderModalVisible={addNewShareholderModalVisible}
+          setAddNewShareholderModalVisible={
+            setAddNewShareholderModalVisible
+          }
+          selectedShareholderProposal={selectedShareholderProposal}
+          type={'edit'}
+        />
+      )}
+
+      {addNewNoActionModalVisible && (
+        <AddNewNoAction
+          addNewNoActionModalVisible={addNewNoActionModalVisible}
+          setAddNewNoActionModalVisible={setAddNewNoActionModalVisible}
+          selectedShareholderNoAction={selectedShareholderNoAction}
+        />
+      )}
+
+      {addNewWithdrawnModalVisible && (
+        <AddNewWithdrawn
+          addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
+          setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
+          selectedShareholderWithdrawn={selectedShareholderWithdrawn}
+        />
+      )}
     </>
   );
 };

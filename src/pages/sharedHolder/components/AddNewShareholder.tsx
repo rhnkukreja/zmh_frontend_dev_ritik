@@ -19,6 +19,7 @@ import Error from "@/components/Error";
 import {
   addEditNewShareHolder,
   fetchShareHolderProposal,
+  getSingleShareHolderData,
 } from "@/stores/shareholderProposalSlice";
 import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
@@ -26,7 +27,7 @@ import MultiSearchBar from "@/components/MultiSearch";
 import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import CompanySelect from "@/components/ReactSelectAsync";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface AddNewShareholderProps {
   addNewShareholderModalVisible: boolean;
@@ -46,6 +47,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     (state) => state.sharedHolderNoAction
   );
 
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const url = searchParams.get('url')
   const defaultValues =
     type === "duplicate"
       ? {
@@ -229,11 +233,17 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
             )
           )
         );
+
+        if (selectedShareholderProposal?.id && url) {
+          dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/def14a', id: Number(selectedShareholderProposal?.id) }));
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
     }
   };
+
+  
 
   const onError: SubmitErrorHandler<any> = () => {
     // setShowRequiredStateErrors(true);
@@ -248,7 +258,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       }}
     >
       <Dialog.Panel className="text-center">
-        <form onSubmit={handleSubmit(onSubmit, onError)}>
+        <form onSubmit={handleSubmit(onSubmit, onError)} autoFocus={false}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
               {selectedShareholderProposal
@@ -265,9 +275,22 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
+
+            {/* Garbage */}
+            <div className=" absolute top-[-900px]">
+              <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                .
+              </FormCheck.Label>
+              <input />
+            </div>
+            {/* Garbage */}
+            
             <div className="flex flex-col gap-7">
               {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+             
+             
+
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Company Name

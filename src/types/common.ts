@@ -56,6 +56,7 @@ type CaseStudiesPayload = {
   vote: string[];
   year: string[];
   keyword: string;
+  approval_status: string;
 };
 
 type PeerAnalysisPayload = {

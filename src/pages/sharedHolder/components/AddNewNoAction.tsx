@@ -21,12 +21,14 @@ import Error from "@/components/Error";
 import {
   addEditNewNoAction,
   fetchShareHolderProposal,
+  getSingleShareHolderData,
 } from "@/stores/shareholderProposalSlice";
 import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import MultiSearchBar from "@/components/MultiSearch";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { useLocation } from "react-router-dom";
 interface AddNoActionProps {
   addNewNoActionModalVisible: boolean;
   setAddNewNoActionModalVisible: (visible: boolean) => void;
@@ -39,6 +41,11 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   selectedShareholderNoAction,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
+  
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const url = searchParams.get('url')
+  
   const { loading, page, filters} = useAppSelector(
     (state) => state.sharedHolderNoAction
   );
@@ -176,6 +183,10 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
             )
           )
         );
+
+           if (selectedShareholderNoAction?.id && url) {
+                  dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/no_action', id: Number(selectedShareholderNoAction?.id) }));
+                }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -222,6 +233,15 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
+
+            {/* Garbage */}
+            <div className=" absolute top-[-900px]">
+              <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                .
+              </FormCheck.Label>
+              <input />
+            </div>
+            {/* Garbage */}
 
             <div className="flex flex-col gap-7">
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">

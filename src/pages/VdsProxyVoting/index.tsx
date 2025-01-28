@@ -570,7 +570,7 @@ const index = () => {
                           <div className="flex items-end gap-4">
                             <div className=" w-4/12">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
-                                Select Institution
+                                Select Institution*
                               </div>
                               <Controller
                                 name="institution"
@@ -805,7 +805,7 @@ const index = () => {
                       {vdsProxyAllInvestorDetails?.vds_report?.length === 0 && filter?.length === 0 && (
                           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                                                 {/* <img width={150} src={noRecordFoundIcon} alt="no record found" /> */}
-                                                <h1 className="font-semibold"> Select Institution (Required)</h1>
+                                                <h1 className="font-semibold"></h1>
 
                                                 </div>
                         )}
