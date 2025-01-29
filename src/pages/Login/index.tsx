@@ -67,7 +67,16 @@ const Main: React.FC = () => {
         dispatch(setFinhub(response?.finnhub));
       }
 
-      navigate(`/?ticker=${response?.company_ticker}`);
+      const redirectPath = sessionStorage.getItem('redirectPath') || '/';
+      sessionStorage.removeItem('redirectPath');
+
+      if (redirectPath) {
+        navigate(redirectPath);
+      }
+      else {
+        navigate(`/?ticker=${response?.company_ticker}`);
+      }
+
     } catch (error) {}
   };
 
