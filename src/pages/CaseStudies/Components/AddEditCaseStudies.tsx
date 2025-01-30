@@ -5,7 +5,11 @@ import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
-import { createDynamicURL, formatedDate } from "@/utils/helper";
+import {
+  createDynamicURL,
+  formatedDate,
+  getDateWithoutTime,
+} from "@/utils/helper";
 import React, { useEffect, useState } from "react";
 import {
   Controller,
@@ -71,11 +75,8 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       voting_details: selectedCaseStudies?.voting_details,
       urls_def14: selectedCaseStudies?.urls_def14,
       urls_8k: selectedCaseStudies?.urls_8k,
-      year: selectedCaseStudies?.year,
-      meeting_date:
-        selectedCaseStudies?.meeting_date instanceof Date
-          ? selectedCaseStudies?.meeting_date.toISOString().split("T")[0]
-          : selectedCaseStudies?.meeting_date || "",
+      year: selectedCaseStudies?.year?.toString(),
+      meeting_date: getDateWithoutTime(selectedCaseStudies?.meeting_date) || "",
       primary_source: selectedCaseStudies?.primary_source,
       primary_source_link: selectedCaseStudies?.primary_source_link,
       page_reference: selectedCaseStudies?.page_reference,
@@ -97,9 +98,10 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     setApiDropdownOptions,
   } = useCaseStudyDropdowns();
 
-  useEffect(() => {}, [selectedCaseStudies?.company_name]);
-
   const esgTheme = watch("esg_themes");
+  const watchCompany = watch("company");
+  const watchCaspioCompanyName = watch("caspio_company_name");
+
   useEffect(() => {
     const fetchDropdownValues = async (params: { themes: string[] }) => {
       try {
@@ -130,6 +132,10 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
       company: data?.company?.value ?? selectedCaseStudies?.company,
+      caspio_company_name:
+        data?.caspio_company_name?.value ??
+        selectedCaseStudies?.caspio_company_name,
+
       esg_themes:
         Array.isArray(data.esg_themes) && data.esg_themes.length > 0
           ? data.esg_themes.join(",")
@@ -244,33 +250,64 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   </div>
                 </div>
 
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Company Name
-                  </FormCheck.Label>
-                  <Controller
-                    name="company"
-                    control={control}
-                    rules={{ required: "Company Name is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <CompanySelect
-                        setDefaultValue={field.value}
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        {...(error && (
-                          <Error className="text-red-600 ">
-                            {error.message}
-                          </Error>
-                        ))}
-                      />
-                    )}
-                  />
-                </div>
+                {!watchCaspioCompanyName && (
+                  <div className="w-full flex-1">
+                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                      Company Name
+                    </FormCheck.Label>
+                    <Controller
+                      name="company"
+                      control={control}
+                      rules={{ required: "Company Name is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <CompanySelect
+                          setDefaultValue={field.value}
+                          value={field.value}
+                          isClearable={true}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          {...(error && (
+                            <Error className="text-red-600 ">
+                              {error.message}
+                            </Error>
+                          ))}
+                        />
+                      )}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                {!watchCompany && (
+                  <div className="w-full flex-1">
+                    <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                      Alternate Company Name
+                    </FormCheck.Label>
+                    <Controller
+                      name="caspio_company_name"
+                      control={control}
+                      rules={{ required: "Alternate Company Name is required" }}
+                      render={({ field, fieldState: { error } }) => (
+                        <CompanySelect
+                          setDefaultValue={field.value}
+                          placeholder="Select Alternate Company Name"
+                          value={field.value}
+                          isClearable={true}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          {...(error && (
+                            <Error className="text-red-600 ">
+                              {error.message}
+                            </Error>
+                          ))}
+                        />
+                      )}
+                    />
+                  </div>
+                )}
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Holding Type
@@ -305,7 +342,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     />
                   </div>
                 </div>
+              </div>
 
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Year
@@ -319,7 +358,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
-                            value={field.value ?? ""}
+                            value={field.value || ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                             }}
@@ -337,23 +376,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     />
                   </div>
                 </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                {/* <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Industry
-                  </FormCheck.Label>
-                  <Controller
-                    name="industry"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput placeholder="Enter Industry" {...field} />
-                      </>
-                    )}
-                  />
-                </div> */}
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Meeting Date
@@ -389,6 +411,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Proposal Type
@@ -420,9 +445,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     />
                   </div>
                 </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                     Resolution / Engagement Topic
@@ -444,7 +466,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     </Error>
                   )}
                 </div>
+              </div>
 
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     ESG Themes
@@ -473,9 +497,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     />
                   </div>
                 </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Category

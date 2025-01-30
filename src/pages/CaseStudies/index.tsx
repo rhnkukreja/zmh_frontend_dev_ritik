@@ -44,12 +44,13 @@ interface CaseStudyFilter {
   sector: string[];
   year: string[];
   institution_name?: string[];
-  global_search?: string[];
+  global_search?: any[];
   themes: string[];
   proposal_type: string[];
   vote: string[];
   company_name?: string[];
   approval_status: string;
+  caspio_company_name: any[];
   [key: string]: any;
 }
 function CaseStudies() {
@@ -117,6 +118,11 @@ function CaseStudies() {
       proposal_type: filters?.proposal_type,
       vote: filters?.vote,
       approval_status: filters?.approval_status,
+      caspio_company_name:
+        filters?.caspio_company_name?.map((item: string) => ({
+          value: item,
+          label: item,
+        })) || [],
     },
   });
 
@@ -130,6 +136,7 @@ function CaseStudies() {
     setValue("proposal_type", []);
     setValue("vote", []);
     setValue("approval_status", "");
+    setValue("caspio_company_name", []);
   };
 
   useEffect(() => {
@@ -223,6 +230,12 @@ function CaseStudies() {
       setAllFilters({
         ...caseStudyFilters,
         institution_name: searchTerms,
+        caspio_company_name:
+          caseStudyFilters?.caspio_company_name.length > 0
+            ? caseStudyFilters?.caspio_company_name.map(
+                (item: any) => item.label
+              )
+            : [],
         global_search: isAllCompanySelected
           ? Array.isArray(caseStudyFilters?.global_search) &&
             caseStudyFilters?.global_search.length > 0
@@ -246,6 +259,7 @@ function CaseStudies() {
       setValue("year", savedSearch?.year || []);
       setValue("themes", savedSearch.themes || []);
       setValue("approval_status", savedSearch.approval_status || "");
+      setValue("caspio_company_name", savedSearch?.caspio_company_name || []);
 
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
@@ -257,6 +271,7 @@ function CaseStudies() {
           year: savedSearch?.year || [],
           themes: savedSearch?.themes || [],
           approval_status: savedSearch?.approval_status || "",
+          caspio_company_name: savedSearch?.caspio_company_name || [],
 
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
@@ -274,7 +289,8 @@ function CaseStudies() {
       market: filters.market || [],
       sector: filters.sector || [],
       themes: filters.themes || [],
-      approval_status: filters.approval_status || [],
+      approval_status: filters.approval_status || "",
+      caspio_company_name: filters.caspio_company_name || [],
       proposal_type: filters.proposal_type || [],
       vote: filters.vote || [],
       year: filters.year || [],
@@ -290,7 +306,8 @@ function CaseStudies() {
             market: filters.market || [],
             sector: filters.sector || [],
             themes: filters.themes || [],
-            approval_status: filters.approval_status || [],
+            approval_status: filters.approval_status || "",
+            caspio_company_name: filters.caspio_company_name || [],
             proposal_type: filters.proposal_type || [],
             vote: filters.vote || [],
             year: filters.year || [],
@@ -726,81 +743,106 @@ function CaseStudies() {
                         />
                       </div>
 
-                      {user.user_type === "Admin" && (
+                      {user?.user_type === "Admin" && (
                         <div className="mx-2">
-                          <div className="flex-1 w-full text-slate-500">
-                            Approval Status
-                            <div className="mt-2 flex flex-col sm:flex-row">
+                          <div className="w-full">
+                            <div className="text-left text-slate-500 ">
+                              Alternate Companies
+                            </div>
+                            <div className=" mt-1">
                               <Controller
-                                name="approval_status"
+                                name="caspio_company_name"
                                 control={control}
-                                rules={{
-                                  required: "Approval Status is required",
-                                }}
                                 render={({ field }) => (
-                                  <>
-                                    <FormCheck className="flex items-center mr-2">
-                                      <FormCheck.Input
-                                        id="radio-switch-4"
-                                        type="radio"
-                                        {...field}
-                                        value="Approved"
-                                        checked={field.value === "Approved"}
-                                        onChange={(e) =>
-                                          field.onChange("Approved")
-                                        }
-                                      />
-                                      <FormCheck.Label
-                                        htmlFor="radio-switch-4"
-                                        className="ml-2"
-                                      >
-                                        Approved
-                                      </FormCheck.Label>
-                                    </FormCheck>
-                                    <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
-                                      <FormCheck.Input
-                                        id="radio-switch-5"
-                                        type="radio"
-                                        {...field}
-                                        value="Pending"
-                                        checked={field.value === "Pending"}
-                                        onChange={(e) =>
-                                          field.onChange("Pending")
-                                        }
-                                      />
-                                      <FormCheck.Label
-                                        htmlFor="radio-switch-5"
-                                        className="ml-2"
-                                      >
-                                        Pending
-                                      </FormCheck.Label>
-                                    </FormCheck>
-                                    <FormCheck className="flex items-center mt-2 sm:mt-0">
-                                      <FormCheck.Input
-                                        id="radio-switch-5"
-                                        type="radio"
-                                        {...field}
-                                        value="Return To Analyst"
-                                        checked={
-                                          field.value === "Return To Analyst"
-                                        }
-                                        onChange={(e) =>
-                                          field.onChange("Return To Analyst")
-                                        }
-                                      />
-                                      <FormCheck.Label
-                                        htmlFor="radio-switch-5"
-                                        className="ml-2"
-                                      >
-                                        Returned to Analyst
-                                      </FormCheck.Label>
-                                    </FormCheck>
-                                  </>
+                                  <CompanySelect
+                                    placeholder="Select Alternate Company"
+                                    value={field.value}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                    isMulti={true}
+                                  />
                                 )}
                               />
                             </div>
                           </div>
                         </div>
+                      )}
+
+                      {user.user_type === "Admin" && (
+                        <>
+                          <div className="mx-2">
+                            <div className="flex-1 w-full text-slate-500">
+                              Approval Status
+                              <div className="mt-2 flex flex-col sm:flex-row">
+                                <Controller
+                                  name="approval_status"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <>
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="radio-switch-4"
+                                          type="radio"
+                                          {...field}
+                                          value="Approved"
+                                          checked={field.value === "Approved"}
+                                          onChange={(e) =>
+                                            field.onChange("Approved")
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="radio-switch-4"
+                                          className="ml-2"
+                                        >
+                                          Approved
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                      <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
+                                        <FormCheck.Input
+                                          id="radio-switch-5"
+                                          type="radio"
+                                          {...field}
+                                          value="Pending"
+                                          checked={field.value === "Pending"}
+                                          onChange={(e) =>
+                                            field.onChange("Pending")
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="radio-switch-5"
+                                          className="ml-2"
+                                        >
+                                          Pending
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                      <FormCheck className="flex items-center mt-2 sm:mt-0">
+                                        <FormCheck.Input
+                                          id="radio-switch-5"
+                                          type="radio"
+                                          {...field}
+                                          value="Return To Analyst"
+                                          checked={
+                                            field.value === "Return To Analyst"
+                                          }
+                                          onChange={(e) =>
+                                            field.onChange("Return To Analyst")
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="radio-switch-5"
+                                          className="ml-2"
+                                        >
+                                          Returned to Analyst
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                    </>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
