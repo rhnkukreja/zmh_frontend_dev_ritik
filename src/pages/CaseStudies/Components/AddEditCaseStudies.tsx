@@ -51,7 +51,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   const {
     handleSubmit,
     control,
-    setValue,
     watch,
     formState: { errors },
   } = useForm<any>({
@@ -132,9 +131,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
       company: data?.company?.value ?? selectedCaseStudies?.company,
-      caspio_company_name:
-        data?.caspio_company_name?.value ??
-        selectedCaseStudies?.caspio_company_name,
 
       esg_themes:
         Array.isArray(data.esg_themes) && data.esg_themes.length > 0
@@ -261,7 +257,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                       rules={{ required: "Company Name is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <CompanySelect
-                          setDefaultValue={field.value}
                           value={field.value}
                           isClearable={true}
                           onChange={(value) => {
@@ -288,21 +283,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="caspio_company_name"
                       control={control}
-                      rules={{ required: "Alternate Company Name is required" }}
+                      // rules={{ required: "Alternate Company Name is required" }}
                       render={({ field, fieldState: { error } }) => (
-                        <CompanySelect
-                          setDefaultValue={field.value}
-                          placeholder="Select Alternate Company Name"
-                          value={field.value}
-                          isClearable={true}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                          {...(error && (
-                            <Error className="text-red-600 ">
-                              {error.message}
-                            </Error>
-                          ))}
+                        <FormInput
+                          placeholder="Enter Alternate Company Name"
+                          {...field}
                         />
                       )}
                     />
@@ -316,28 +301,34 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="investment_type"
                       control={control}
-                      // rules={{ required: "Year is required" }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <div className="w-full">
                           <TomSelect
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
+                            value={field.value || ""}
+                            onChange={(value) => {
+                              field.onChange(value);
                             }}
+                            onBlur={field.onBlur}
                             options={{
                               placeholder: "Select Holding Type",
                             }}
-                            className="w-full text-left"
+                            className={`w-full text-left `}
                           >
                             {[
                               "Equity",
                               "Debt/fixed income",
                               "Private company",
-                            ].map((item: string) => {
-                              return <option value={item}>{item}</option>;
-                            })}
+                            ].map((item) => (
+                              <option key={item} value={item}>
+                                {item}
+                              </option>
+                            ))}
                           </TomSelect>
-                        </>
+                          {errors.investment_type && (
+                            <Error className="w-full ">Holding Type</Error>
+                          )}
+                        </div>
                       )}
                     />
                   </div>
@@ -461,7 +452,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     )}
                   />
                   {errors.resolution_engagement_topic && (
-                    <Error className="lg:max-w-[50%] ">
+                    <Error className="w-full ">
                       Resolution Engagement Topic
                     </Error>
                   )}
