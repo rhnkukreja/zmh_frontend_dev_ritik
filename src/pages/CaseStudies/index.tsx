@@ -50,7 +50,7 @@ interface CaseStudyFilter {
   vote: string[];
   company_name?: string[];
   approval_status: string;
-  caspio_company_name: any[];
+  caspio_company_name: string;
   [key: string]: any;
 }
 function CaseStudies() {
@@ -118,11 +118,7 @@ function CaseStudies() {
       proposal_type: filters?.proposal_type,
       vote: filters?.vote,
       approval_status: filters?.approval_status,
-      caspio_company_name:
-        filters?.caspio_company_name?.map((item: string) => ({
-          value: item,
-          label: item,
-        })) || [],
+      caspio_company_name: filters?.caspio_company_name,
     },
   });
 
@@ -136,7 +132,7 @@ function CaseStudies() {
     setValue("proposal_type", []);
     setValue("vote", []);
     setValue("approval_status", "");
-    setValue("caspio_company_name", []);
+    setValue("caspio_company_name", "");
   };
 
   useEffect(() => {
@@ -230,12 +226,6 @@ function CaseStudies() {
       setAllFilters({
         ...caseStudyFilters,
         institution_name: searchTerms,
-        caspio_company_name:
-          caseStudyFilters?.caspio_company_name.length > 0
-            ? caseStudyFilters?.caspio_company_name.map(
-                (item: any) => item.label
-              )
-            : [],
         global_search: isAllCompanySelected
           ? Array.isArray(caseStudyFilters?.global_search) &&
             caseStudyFilters?.global_search.length > 0
@@ -259,7 +249,7 @@ function CaseStudies() {
       setValue("year", savedSearch?.year || []);
       setValue("themes", savedSearch.themes || []);
       setValue("approval_status", savedSearch.approval_status || "");
-      setValue("caspio_company_name", savedSearch?.caspio_company_name || []);
+      setValue("caspio_company_name", savedSearch?.caspio_company_name || "");
 
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
@@ -271,7 +261,7 @@ function CaseStudies() {
           year: savedSearch?.year || [],
           themes: savedSearch?.themes || [],
           approval_status: savedSearch?.approval_status || "",
-          caspio_company_name: savedSearch?.caspio_company_name || [],
+          caspio_company_name: savedSearch?.caspio_company_name || "",
 
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
@@ -290,7 +280,7 @@ function CaseStudies() {
       sector: filters.sector || [],
       themes: filters.themes || [],
       approval_status: filters.approval_status || "",
-      caspio_company_name: filters.caspio_company_name || [],
+      caspio_company_name: filters.caspio_company_name || "",
       proposal_type: filters.proposal_type || [],
       vote: filters.vote || [],
       year: filters.year || [],
@@ -307,7 +297,7 @@ function CaseStudies() {
             sector: filters.sector || [],
             themes: filters.themes || [],
             approval_status: filters.approval_status || "",
-            caspio_company_name: filters.caspio_company_name || [],
+            caspio_company_name: filters.caspio_company_name || "",
             proposal_type: filters.proposal_type || [],
             vote: filters.vote || [],
             year: filters.year || [],
@@ -754,13 +744,9 @@ function CaseStudies() {
                                 name="caspio_company_name"
                                 control={control}
                                 render={({ field }) => (
-                                  <CompanySelect
-                                    placeholder="Select Alternate Company"
-                                    value={field.value}
-                                    onChange={(value) => {
-                                      field.onChange(value);
-                                    }}
-                                    isMulti={true}
+                                  <FormInput
+                                    placeholder="Enter Alternate Company Name"
+                                    {...field}
                                   />
                                 )}
                               />

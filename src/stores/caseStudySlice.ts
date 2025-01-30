@@ -16,7 +16,7 @@ export interface CaseStudyFilter {
   vote: string[];
   company_name?: string[];
   approval_status: string;
-  caspio_company_name: string[];
+  caspio_company_name: string;
   [key: string]: any;
 }
 
@@ -52,7 +52,7 @@ const initialState: CaseStudies = {
     institution_name: [],
     global_search: [],
     approval_status: "",
-    caspio_company_name: [],
+    caspio_company_name: "",
   },
 };
 
