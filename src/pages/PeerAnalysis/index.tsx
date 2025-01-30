@@ -54,6 +54,7 @@ function PeerAnalysis() {
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
+  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<PeerAnalysisFilter>({
@@ -93,8 +94,14 @@ function PeerAnalysis() {
           label: item,
         })) || [],
       category: filters.category,
+      country: filters.country,
     },
   });
+
+  const handleCollapseFilter = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setIsFilterCollapse(!isFilterCollapse);
+  };
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -117,6 +124,7 @@ function PeerAnalysis() {
     setValue("year", []);
     setValue("sector", []);
     setValue("category", []);
+    setValue("country", []);
     setValue("global_search", []);
   };
 
@@ -203,14 +211,18 @@ function PeerAnalysis() {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
     setValue("year", user?.saved_search?.year || []);
     setValue("category", user?.saved_search?.category || []);
+    setValue("country", user?.saved_search?.country || []);
     setValue("sector", user?.saved_search?.sector || []);
     dispatch(
       setAllFilters({
         year: user?.saved_search?.year || [],
         category: user?.saved_search?.category || [],
+        country: user?.saved_search?.country || [],
         global_search: user?.saved_search?.global_search,
       })
     );
+    setIsFilterCollapse(true);
+
   };
 
   const saveSearch = async () => {
@@ -221,6 +233,7 @@ function PeerAnalysis() {
       year: watch("year") || [],
       sector: watch("sector") || [],
       category: watch("category") || [],
+      country: watch("country") || [],
     });
 
     if (res?.user_id) {
@@ -232,6 +245,7 @@ function PeerAnalysis() {
             global_search: filters["global_search"],
             year: watch("year") || [],
             category: watch("category") || [],
+            country: watch("country") || [],
             sector: watch("sector") || [],
           },
         })
@@ -253,6 +267,7 @@ function PeerAnalysis() {
           : [companyGlobalSearchName],
       })
     );
+    setIsFilterCollapse(!isFilterCollapse);
     dispatch(resetPage());
   };
 
@@ -371,7 +386,7 @@ function PeerAnalysis() {
                           as={Button}
                           variant="outline-secondary"
                           className="w-full sm:w-auto"
-                          // onClick={handleCollapseFilter}
+                          onClick={handleCollapseFilter}
                         >
                           <Lucide
                             icon="ArrowDownWideNarrow"
@@ -382,106 +397,107 @@ function PeerAnalysis() {
                             {filtersLength}
                           </div>
                         </Popover.Button>
-                        <Popover.Panel placement="bottom-end">
-                          <form onSubmit={handleSubmit(onSubmit)}>
-                            <div className="p-2">
-                              <div className="flex items-center mt-4">
-                                <Button
-                                  variant="secondary"
-                                  onClick={() => {
-                                    close();
-                                    onFilterClear();
-                                  }}
-                                  className="w-32 ml-auto"
-                                >
-                                  Clear
-                                </Button>
-                                <Button
-                                  variant="primary"
-                                  className="w-32 ml-2"
-                                  type="submit"
-                                  onClick={() => {
-                                    close();
-                                  }}
-                                >
-                                  Apply
-                                </Button>
-                              </div>
+                      </>
+                    )}
+                  </Popover>
+                </div>
+              </div>
 
-                              <div className="mt-3">
-                                <div className="w-full  my-2">
-                                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    Year
-                                    {apiDropdownOptions?.year?.length > 0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`year`}
-                                            checked={
-                                              apiDropdownOptions?.year
-                                                ?.length ===
-                                              watch("year")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "year",
-                                                  apiDropdownOptions?.year
-                                                );
-                                              } else {
-                                                setValue("year", []);
-                                              }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <Controller
-                                    name="year"
-                                    control={control}
-                                    defaultValue={[]}
-                                    render={({ field }) => (
-                                      <TomSelect
-                                        value={field.value || []}
-                                        onChange={(value) => {
-                                          field.onChange(value);
-                                        }}
-                                        options={{
-                                          placeholder: "Select Year",
-                                        }}
-                                        className="w-full"
-                                        multiple
-                                      >
-                                        {getDropdownLoader ? (
-                                          <option value="--" disabled>
-                                            Loading...
-                                          </option>
-                                        ) : (
-                                          <>
-                                            {apiDropdownOptions?.year?.map(
-                                              (year: string) => {
-                                                return (
-                                                  <option value={year}>
-                                                    {year}
-                                                  </option>
-                                                );
-                                              }
-                                            )}
-                                          </>
-                                        )}
-                                      </TomSelect>
-                                    )}
-                                  />
-                                </div>
+              {isFilterCollapse && (
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <div className="filter-section mb-5">
+                    <div className="flex items-center justify-end mt-2 mb-4">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          onFilterClear();
+                        }}
+                        className="w-32 mx-2"
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="w-32 mx-2"
+                        type="submit"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 md:grid-cols-2">
+                      <div className="mx-2">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          Year
+                          {apiDropdownOptions?.year?.length > 0 && (
+                            <div>
+                              <FormCheck className="mr-2">
+                                <FormCheck.Label>
+                                  Select All
+                                </FormCheck.Label>
+                                <FormCheck.Input
+                                  className="ml-1"
+                                  id={`year`}
+                                  checked={
+                                    apiDropdownOptions?.year
+                                      ?.length ===
+                                    watch("year")?.length
+                                  }
+                                  type="checkbox"
+                                  onChange={(e) => {
+                                    if (e.target.checked === true) {
+                                      setValue(
+                                        "year",
+                                        apiDropdownOptions?.year
+                                      );
+                                    } else {
+                                      setValue("year", []);
+                                    }
+                                  }}
+                                />
+                              </FormCheck>
+                            </div>
+                          )}
+                        </div>
+                        <Controller
+                          name="year"
+                          control={control}
+                          defaultValue={[]}
+                          render={({ field }) => (
+                            <TomSelect
+                              value={field.value || []}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                              options={{
+                                placeholder: "Select Year",
+                              }}
+                              className="w-full"
+                              multiple
+                            >
+                              {getDropdownLoader ? (
+                                <option value="--" disabled>
+                                  Loading...
+                                </option>
+                              ) : (
+                                <>
+                                  {apiDropdownOptions?.year?.map(
+                                    (year: string) => {
+                                      return (
+                                        <option value={year}>
+                                          {year}
+                                        </option>
+                                      );
+                                    }
+                                  )}
+                                </>
+                              )}
+                            </TomSelect>
+                          )}
+                        />
+                      </div>
 
-                                <div className="w-full  my-2">
-                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                      <div className="mx-2">
+                      <div className="text-left text-slate-500 flex justify-between mb-1">
                                     Category
                                     {apiDropdownOptions?.category?.length >
                                       0 && (
@@ -552,11 +568,86 @@ function PeerAnalysis() {
                                       </TomSelect>
                                     )}
                                   />
-                                </div>
+                      </div>
 
-                                {isAllCompanySelected === true && (
-                                  <div className="w-full  my-2">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                      <div className="mx-2">
+                      <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    Country
+                                    {apiDropdownOptions?.country?.length >
+                                      0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`country`}
+                                            checked={
+                                              apiDropdownOptions?.country
+                                                ?.length ===
+                                              watch("country")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "country",
+                                                  apiDropdownOptions?.country
+                                                );
+                                              } else {
+                                                setValue("country", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="country"
+                                    control={control}
+                                    defaultValue={[]}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select Country",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        {getDropdownLoader ? (
+                                          <option value="--" disabled>
+                                            Loading...
+                                          </option>
+                                        ) : (
+                                          <>
+                                            {apiDropdownOptions?.country
+                                              ?.length > 0 &&
+                                              apiDropdownOptions?.country?.map(
+                                                (country: string) => {
+                                                  return (
+                                                    <option value={country}>
+                                                      {country}
+                                                    </option>
+                                                  );
+                                                }
+                                              )}
+                                          </>
+                                        )}
+                                      </TomSelect>
+                                    )}
+                                  />
+                      </div>
+
+                     {
+                      isAllCompanySelected === true &&
+                      <div className="mx-2">
+                      <div className="text-left text-slate-500 flex justify-between mb-1">
                                       Sector
                                       {apiDropdownOptions?.sector?.length >
                                         0 && (
@@ -627,45 +718,12 @@ function PeerAnalysis() {
                                         </TomSelect>
                                       )}
                                     />
-                                  </div>
-                                )}
-
-                                {/* <div className="w-full  my-2">
-                                  {isAllCompanySelected === true && (
-                                    <div className="w-full ">
-                                      <div className="w-full mt-1">
-                                        <div className="text-left text-slate-500 ">
-                                          Select Comapnies
-                                        </div>
-                                        <div className=" mt-2">
-                                          <Controller
-                                            name="global_search"
-                                            control={control}
-                                            render={({ field }) => (
-                                              <CompanySelect
-                                                value={field.value}
-                                                onChange={(value: any) => {
-                                                  field.onChange(value);
-                                                }}
-                                                isMulti={true}
-                                                className="any"
-                                              />
-                                            )}
-                                          />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div> */}
-                              </div>
-                            </div>
-                          </form>
-                        </Popover.Panel>
-                      </>
-                    )}
-                  </Popover>
-                </div>
-              </div>
+                      </div>
+                     }
+                    </div>
+                  </div>
+                </form>
+              )} 
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>

@@ -66,6 +66,7 @@ type PeerAnalysisPayload = {
   institution: string[];
   year: string[];
   category: string[];
+  country: string[];
   sector: string[];
 };
 type GlobalSearchPayload = {
