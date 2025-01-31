@@ -331,7 +331,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       rules={{ required: "Year is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
-                          <select
+                          {/* <select
                             value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
@@ -354,7 +354,22 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                                 {year}
                               </option>
                             ))}
-                          </select>
+                          </select> */}
+
+                          <TomSelect
+                            value={field.value ?? ""}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Year",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.year?.map((year: string) => {
+                              return <option value={year}>{year}</option>;
+                            })}
+                          </TomSelect>
 
                           {error && (
                             <Error className="text-red-600 mt-2">
