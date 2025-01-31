@@ -50,10 +50,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     formState: { errors },
   } = useForm<any>({
     defaultValues: {
-      company: {
+      company:selectedCaseStudies?.company? {
         value: selectedCaseStudies?.company,
         label: selectedCaseStudies?.company_name,
-      },
+      }: null,
+      // company: null,
       institution: selectedCaseStudies?.institution,
       caspio_company_name: selectedCaseStudies?.caspio_company_name,
       caspio_company_ticker: selectedCaseStudies?.caspio_company_ticker,
@@ -278,7 +279,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                {!(watchCompany || watchCaspioCompanyName) && (
+                {(!watchCompany || watchCaspioCompanyName) && (
                   <div className="w-full flex-1">
                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                       Alternate Company Name
@@ -708,7 +709,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     Page Reference
                   </FormCheck.Label>
                   <Controller
-                    name="page_reference_link"
+                    name="page_reference"
                     control={control}
                     rules={{ required: "Page Reference is required" }}
                     render={({ field, fieldState: { error } }) => (
