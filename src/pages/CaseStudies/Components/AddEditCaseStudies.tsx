@@ -11,17 +11,10 @@ import {
   getDateWithoutTime,
 } from "@/utils/helper";
 import React, { useEffect, useState } from "react";
-import {
-  Controller,
-  FieldErrors,
-  SubmitErrorHandler,
-  useForm,
-} from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-
-import { shareHolderProposalService } from "@/services/shareholderProposal";
 
 import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
@@ -39,6 +32,8 @@ interface AddNewCaseStudiesProps {
   selectedCaseStudies: any | null;
 }
 
+const holdingTypesDropdown = ["Equity", "Debt/fixed income", "Private company"];
+
 const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   addNewCaseStudyModalVisible,
   setAddNewCaseStudyModalVisible,
@@ -55,7 +50,10 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     formState: { errors },
   } = useForm<any>({
     defaultValues: {
-      company: selectedCaseStudies?.company_name,
+      company: {
+        value: selectedCaseStudies?.company,
+        label: selectedCaseStudies?.company_name,
+      },
       institution: selectedCaseStudies?.institution,
       caspio_company_name: selectedCaseStudies?.caspio_company_name,
       caspio_company_ticker: selectedCaseStudies?.caspio_company_ticker,
@@ -66,7 +64,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         ? selectedCaseStudies?.esg_themes?.split(",")
         : [],
       engagement_details: selectedCaseStudies?.engagement_details,
-      proposal_type: selectedCaseStudies?.proposal_type || "  ",
+      proposal_type: selectedCaseStudies?.proposal_type || "",
       resolution_engagement_topic:
         selectedCaseStudies?.resolution_engagement_topic,
       vote: selectedCaseStudies?.vote || "  ",
@@ -80,12 +78,15 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       primary_source_link: selectedCaseStudies?.primary_source_link,
       page_reference: selectedCaseStudies?.page_reference,
       approval_status: selectedCaseStudies?.approval_status,
-      investment_type: selectedCaseStudies?.investment_type || "  ",
+      investment_type:
+        selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
       esg_category: selectedCaseStudies?.esg_category
         ? selectedCaseStudies?.esg_category?.split(",")
         : [],
     },
   });
+
+  console.log({ selectedCaseStudies });
 
   const { companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -246,7 +247,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   </div>
                 </div>
 
-                {!watchCaspioCompanyName && (
+                {(!watchCaspioCompanyName || watchCompany) && (
                   <div className="w-full flex-1">
                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                       Company Name
@@ -256,18 +257,20 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                       control={control}
                       rules={{ required: "Company Name is required" }}
                       render={({ field, fieldState: { error } }) => (
-                        <CompanySelect
-                          value={field.value}
-                          isClearable={true}
-                          onChange={(value) => {
-                            field.onChange(value);
-                          }}
-                          {...(error && (
+                        <>
+                          <CompanySelect
+                            value={field.value || ""}
+                            isClearable={true}
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
+                          />
+                          {error && (
                             <Error className="text-red-600 ">
                               {error.message}
                             </Error>
-                          ))}
-                        />
+                          )}
+                        </>
                       )}
                     />
                   </div>
@@ -275,7 +278,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                {!watchCompany && (
+                {!(watchCompany || watchCaspioCompanyName) && (
                   <div className="w-full flex-1">
                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                       Alternate Company Name
@@ -283,7 +286,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="caspio_company_name"
                       control={control}
-                      // rules={{ required: "Alternate Company Name is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <FormInput
                           placeholder="Enter Alternate Company Name"
@@ -301,32 +303,27 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="investment_type"
                       control={control}
-                      rules={{ required: true }}
-                      render={({ field }) => (
+                      rules={{ required: "Holding Type is required" }}
+                      render={({ field, fieldState: { error } }) => (
                         <div className="w-full">
                           <TomSelect
-                            value={field.value || ""}
-                            onChange={(value) => {
-                              field.onChange(value);
+                            value={field.value ?? ""}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
                             }}
-                            onBlur={field.onBlur}
                             options={{
                               placeholder: "Select Holding Type",
                             }}
                             className={`w-full text-left `}
                           >
-                            {[
-                              "Equity",
-                              "Debt/fixed income",
-                              "Private company",
-                            ].map((item) => (
-                              <option key={item} value={item}>
-                                {item}
-                              </option>
-                            ))}
+                            {holdingTypesDropdown?.map((item: string) => {
+                              return <option value={item}>{item}</option>;
+                            })}
                           </TomSelect>
-                          {errors.investment_type && (
-                            <Error className="w-full ">Holding Type</Error>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
                           )}
                         </div>
                       )}
@@ -345,7 +342,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="year"
                       control={control}
-                      // rules={{ required: "Year is required" }}
+                      rules={{ required: "Year is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -362,6 +359,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                               return <option value={year}>{year}</option>;
                             })}
                           </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
                         </>
                       )}
                     />
@@ -380,7 +382,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                       name="meeting_date"
                       control={control}
                       defaultValue=""
-                      rules={{ required: "Meeting Date is required" }}
                       render={({ field }) => (
                         <Litepicker
                           placeholder="Select Meeting Date"
@@ -413,6 +414,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="proposal_type"
                       control={control}
+                      rules={{ required: "Proposal Type is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -421,7 +423,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                               field.onChange(e.target.value);
                             }}
                             options={{
-                              placeholder: "Select Holding Type",
+                              placeholder: "Select Proposal Type",
                             }}
                             className="w-full text-left"
                           >
@@ -431,6 +433,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                               }
                             )}
                           </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
                         </>
                       )}
                     />
@@ -443,7 +450,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   <Controller
                     name="resolution_engagement_topic"
                     control={control}
-                    rules={{ required: true }}
+                    rules={{
+                      required: "Resolution Engagement Topic is requires",
+                    }}
                     render={({ field }) => (
                       <FormInput
                         placeholder="Enter Resolution / Engagement Topic"
@@ -468,6 +477,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="esg_themes"
                       control={control}
+                      rules={{
+                        required: " ESG Themes is requires",
+                      }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -483,6 +495,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                               return <option value={item}>{item}</option>;
                             })}
                           </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
                         </>
                       )}
                     />
@@ -496,6 +513,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="esg_category"
                       control={control}
+                      rules={{
+                        required: "Category is requires",
+                      }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -513,6 +533,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                               }
                             )}
                           </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
                         </>
                       )}
                     />
@@ -591,7 +616,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     />
                   )}
                 />
-                {errors.proposal_text && (
+                {errors?.proposal_text && (
                   <Error className="lg:max-w-[50%]">
                     Voting Rationale are required
                   </Error>
@@ -607,7 +632,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="vote"
                       control={control}
-                      // rules={{ required: "Year is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelect
@@ -636,12 +660,18 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   <Controller
                     name="primary_source"
                     control={control}
+                    rules={{ required: "Primary Source is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
                           placeholder="Enter Primary Source"
                           {...field}
                         />
+                        {error && (
+                          <Error className="text-red-600 mt-2">
+                            {error.message}
+                          </Error>
+                        )}
                       </>
                     )}
                   />
@@ -655,6 +685,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   </FormCheck.Label>
                   <Controller
                     name="primary_source_link"
+                    rules={{ required: "Primary Source Link is required" }}
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <>
@@ -662,6 +693,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                           placeholder="Enter Primary Source Link"
                           {...field}
                         />
+                        {error && (
+                          <Error className="text-red-600 mt-2">
+                            {error.message}
+                          </Error>
+                        )}
                       </>
                     )}
                   />
@@ -674,12 +710,18 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   <Controller
                     name="page_reference_link"
                     control={control}
+                    rules={{ required: "Page Reference is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         <FormInput
                           placeholder="Enter Page Reference"
                           {...field}
                         />
+                        {error && (
+                          <Error className="text-red-600 mt-2">
+                            {error.message}
+                          </Error>
+                        )}
                       </>
                     )}
                   />
@@ -720,7 +762,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     name="urls_8k"
                     control={control}
                     rules={{
-                      // required: "URL 8k is required",
                       pattern: {
                         value: /^https:\/\/.+$/i,
                         message: "The link must start with 'https://'",
@@ -750,64 +791,66 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     name="approval_status"
                     control={control}
                     rules={{ required: "Approval Status is required" }}
-                    render={({ field }) => (
-                      <>
-                        <FormCheck className="flex items-center mr-2">
-                          <FormCheck.Input
-                            id="radio-switch-4"
-                            type="radio"
-                            {...field}
-                            value="Approved"
-                            checked={field.value === "Approved"}
-                            onChange={(e) => field.onChange("Approved")}
-                          />
-                          <FormCheck.Label
-                            htmlFor="radio-switch-4"
-                            className="ml-2"
-                          >
-                            Approved
-                          </FormCheck.Label>
-                        </FormCheck>
-                        <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
-                          <FormCheck.Input
-                            id="radio-switch-5"
-                            type="radio"
-                            {...field}
-                            value="Pending"
-                            checked={field.value === "Pending"}
-                            onChange={(e) => field.onChange("Pending")}
-                          />
-                          <FormCheck.Label
-                            htmlFor="radio-switch-5"
-                            className="ml-2"
-                          >
-                            Pending
-                          </FormCheck.Label>
-                        </FormCheck>
-                        <FormCheck className="flex items-center mt-2 sm:mt-0">
-                          <FormCheck.Input
-                            id="radio-switch-5"
-                            type="radio"
-                            {...field}
-                            value="Return To Analyst"
-                            checked={field.value === "Return To Analyst"}
-                            onChange={(e) =>
-                              field.onChange("Return To Analyst")
-                            }
-                          />
-                          <FormCheck.Label
-                            htmlFor="radio-switch-5"
-                            className="ml-2"
-                          >
-                            Returned to Analyst
-                          </FormCheck.Label>
-                        </FormCheck>
-                        {/* {errors.approval_status && (
-                                                        <Error className="max-w-[100%] mt-6">
-                                                            {errors.approval_status?.message}
-                                                        </Error>
-                                                    )} */}
-                      </>
+                    render={({ field, fieldState: { error } }) => (
+                      <div className="flex flex-col">
+                        <div className="flex">
+                          <FormCheck className="flex items-center mr-2">
+                            <FormCheck.Input
+                              id="radio-switch-4"
+                              type="radio"
+                              {...field}
+                              value="Approved"
+                              checked={field.value === "Approved"}
+                              onChange={(e) => field.onChange("Approved")}
+                            />
+                            <FormCheck.Label
+                              htmlFor="radio-switch-4"
+                              className="ml-2"
+                            >
+                              Approved
+                            </FormCheck.Label>
+                          </FormCheck>
+                          <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
+                            <FormCheck.Input
+                              id="radio-switch-5"
+                              type="radio"
+                              {...field}
+                              value="Pending"
+                              checked={field.value === "Pending"}
+                              onChange={(e) => field.onChange("Pending")}
+                            />
+                            <FormCheck.Label
+                              htmlFor="radio-switch-5"
+                              className="ml-2"
+                            >
+                              Pending
+                            </FormCheck.Label>
+                          </FormCheck>
+                          <FormCheck className="flex items-center mt-2 sm:mt-0">
+                            <FormCheck.Input
+                              id="radio-switch-5"
+                              type="radio"
+                              {...field}
+                              value="Return To Analyst"
+                              checked={field.value === "Return To Analyst"}
+                              onChange={(e) =>
+                                field.onChange("Return To Analyst")
+                              }
+                            />
+                            <FormCheck.Label
+                              htmlFor="radio-switch-5"
+                              className="ml-2"
+                            >
+                              Returned to Analyst
+                            </FormCheck.Label>
+                          </FormCheck>
+                        </div>
+                        {error && (
+                          <Error className="text-red-600 mt-2">
+                            {error.message}
+                          </Error>
+                        )}
+                      </div>
                     )}
                   />
                 </div>

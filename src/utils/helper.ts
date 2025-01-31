@@ -284,7 +284,10 @@ const formatedDate = (dateString: string): string => {
   return fullDate.format("YYYY-MM-DDTHH:mm:ss");
 };
 
-const getDateWithoutTime = (datetimeString: string): string => {
+const getDateWithoutTime = (datetimeString?: string): string => {
+  if (!datetimeString || !dayjs(datetimeString).isValid()) {
+    return "";
+  }
   return dayjs(datetimeString).format("YYYY-MM-DD");
 };
 

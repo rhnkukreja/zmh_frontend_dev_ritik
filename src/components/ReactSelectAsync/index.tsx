@@ -119,7 +119,6 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
 
   return (
     <AsyncSelect
-      // cacheOptions
       styles={customStyles}
       isMulti={isMulti}
       loadOptions={loadOptions}
