@@ -3,8 +3,6 @@ import AsyncSelect from "react-select/async";
 import _ from "lodash";
 import { dashboardService } from "@/services/dashboard";
 import { MultiValue } from "react-select";
-import { RootState } from "@/stores/store";
-import { useAppSelector } from "@/stores/hooks";
 
 interface CompanyData {
   id: number;
@@ -21,16 +19,25 @@ interface CompanySelectProps {
   onChange: (selectedOption: OptionType | OptionType[] | null) => void;
   isMulti?: boolean;
   className?: string;
-  setDefaultValue?: any
+  setDefaultValue?: any;
   isInstitution?: boolean;
+  placeholder?: string;
   companyGlobalSearchName?: string;
+  isClearable?: boolean;
 }
 
-const fetchOptions = async (inputValue: string,  isInstitution?: boolean, companyGlobalSearchName?: string): Promise<OptionType[]> => {
+const fetchOptions = async (
+  inputValue: string,
+  isInstitution?: boolean,
+  companyGlobalSearchName?: string
+): Promise<OptionType[]> => {
   try {
     // const response = await dashboardService.fetchCompanyByName(inputValue);
     const response = isInstitution
-      ? await dashboardService.fetchInstitutionByName(inputValue, companyGlobalSearchName)
+      ? await dashboardService.fetchInstitutionByName(
+          inputValue,
+          companyGlobalSearchName
+        )
       : await dashboardService.fetchCompanyByName(inputValue);
 
     if (isInstitution) {
@@ -38,15 +45,12 @@ const fetchOptions = async (inputValue: string,  isInstitution?: boolean, compan
         value: institution,
         label: institution,
       }));
-    }
-    else {
+    } else {
       return response.results.map((company: CompanyData) => ({
         value: company.id,
         label: company.name,
       }));
     }
-
-    
   } catch (error) {
     console.error("Error fetching data:", error);
     return [];
@@ -60,17 +64,20 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   className,
   setDefaultValue,
   isInstitution = false,
-  companyGlobalSearchName = ''
-  
+  placeholder = "",
+  companyGlobalSearchName = "",
+  isClearable,
 }) => {
   const [inputValue, setInputValue] = useState("");
 
   const loadOptions = useCallback(
     _.debounce(
       (inputValue: string, callback: (options: OptionType[]) => void) => {
-        fetchOptions(inputValue, isInstitution, companyGlobalSearchName).then((options) => {
-          callback(options);
-        });
+        fetchOptions(inputValue, isInstitution, companyGlobalSearchName).then(
+          (options) => {
+            callback(options);
+          }
+        );
       },
       300
     ),
@@ -86,9 +93,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   };
 
   useEffect(() => {
-    handleInputChange(setDefaultValue?.label ?? setDefaultValue ?? '');
-  }, [setDefaultValue])
-  
+    handleInputChange(setDefaultValue?.label ?? setDefaultValue ?? "");
+  }, [setDefaultValue]);
 
   const customStyles = {
     multiValue: (provided: any) => ({
@@ -113,18 +119,24 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
 
   return (
     <AsyncSelect
-      // cacheOptions
       styles={customStyles}
       isMulti={isMulti}
       loadOptions={loadOptions}
       defaultOptions={false}
-      placeholder={isInstitution ? "Search Institution" : "Select Company"}
+      placeholder={
+        placeholder
+          ? placeholder
+          : isInstitution
+          ? "Search Institution"
+          : "Select Company"
+      }
       onInputChange={handleInputChange}
       inputValue={inputValue}
       value={value}
       className={className}
       onChange={onChangeSelect}
       menuPortalTarget={document.body}
+      isClearable={isClearable}
     />
   );
 };

@@ -25,6 +25,7 @@ const DetailCaseStudies = () => {
     navigate(`/case-studies`);
   };
 
+  console.log({ singleCaseStudy });
   return (
     <>
       <Button
@@ -54,19 +55,19 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Institution Name
                   </h3>
-                  <p>{singleCaseStudy.institution_name}</p>
+                  <p>{singleCaseStudy?.institution_name}</p>
                 </div>
               )}
               {singleCaseStudy?.esg_themes && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Theme</h3>
-                  <p>{singleCaseStudy.esg_themes}</p>
+                  <p>{singleCaseStudy?.esg_themes}</p>
                 </div>
               )}
               {singleCaseStudy?.industry && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Industry</h3>
-                  <p>{singleCaseStudy.industry}</p>
+                  <p>{singleCaseStudy?.industry}</p>
                 </div>
               )}
             </div>
@@ -75,7 +76,10 @@ const DetailCaseStudies = () => {
               {singleCaseStudy?.company_name && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Company</h3>
-                  <p>{singleCaseStudy.company_name}</p>
+                  <p>
+                    {singleCaseStudy?.company_name ||
+                      singleCaseStudy?.caspio_company_name}
+                  </p>
                 </div>
               )}
               {singleCaseStudy?.company_ticker && (
@@ -83,7 +87,7 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Company Ticker
                   </h3>
-                  <p>{singleCaseStudy.company_ticker}</p>
+                  <p>{singleCaseStudy?.company_ticker}</p>
                 </div>
               )}
               {singleCaseStudy?.company_sector && (
@@ -91,19 +95,19 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Company Sector
                   </h3>
-                  <p>{singleCaseStudy.company_sector}</p>
+                  <p>{singleCaseStudy?.company_sector}</p>
                 </div>
               )}
               {singleCaseStudy?.year && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Year</h3>
-                  <p>{singleCaseStudy.year}</p>
+                  <p>{singleCaseStudy?.year}</p>
                 </div>
               )}
               {singleCaseStudy?.market && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Market</h3>
-                  <p>{singleCaseStudy.market}</p>
+                  <p>{singleCaseStudy?.market}</p>
                 </div>
               )}
             </div>
@@ -114,7 +118,7 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Proponent
                   </h3>
-                  <p>{singleCaseStudy.proposal_type}</p>
+                  <p>{singleCaseStudy?.proposal_type}</p>
                 </div>
               )}
               {singleCaseStudy?.resolution_engagement_topic && (
@@ -122,13 +126,13 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Resolution
                   </h3>
-                  <p>{singleCaseStudy.resolution_engagement_topic}</p>
+                  <p>{singleCaseStudy?.resolution_engagement_topic}</p>
                 </div>
               )}
               {singleCaseStudy?.vote && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Vote</h3>
-                  <p className="text-destructive">{singleCaseStudy.vote}</p>
+                  <p className="text-destructive">{singleCaseStudy?.vote}</p>
                 </div>
               )}
             </div>
@@ -139,7 +143,7 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px]  mb-2">
                     Engagement/Voting Details
                   </h3>
-                  <p>{singleCaseStudy.engagement_details}</p>
+                  <p>{singleCaseStudy?.engagement_details}</p>
                 </div>
               )}
             </div>
@@ -150,13 +154,13 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Rationale
                   </h3>
-                  <p>{singleCaseStudy.voting_rationale}</p>
+                  <p>{singleCaseStudy?.voting_rationale}</p>
                 </div>
               )}
               {singleCaseStudy?.voting_details && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Details</h3>
-                  <p>{singleCaseStudy.voting_details}</p>
+                  <p>{singleCaseStudy?.voting_details}</p>
                 </div>
               )}
             </div>
@@ -168,12 +172,12 @@ const DetailCaseStudies = () => {
                     <h3 className="font-semibold">Proxy Statement</h3>
                     <p className="mb-4">
                       <a
-                        href={singleCaseStudy.urls_def14}
+                        href={singleCaseStudy?.urls_def14}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-500 underline"
                       >
-                        {singleCaseStudy.urls_def14}
+                        {singleCaseStudy?.urls_def14}
                       </a>
                     </p>
                   </div>
@@ -183,12 +187,12 @@ const DetailCaseStudies = () => {
                     <h3 className="font-semibold">Vote Report</h3>
                     <p className="mb-4">
                       <a
-                        href={singleCaseStudy.urls_8k}
+                        href={singleCaseStudy?.urls_8k}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-500 underline"
                       >
-                        {singleCaseStudy.urls_8k}
+                        {singleCaseStudy?.urls_8k}
                       </a>
                     </p>
                   </div>

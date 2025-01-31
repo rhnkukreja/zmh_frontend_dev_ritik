@@ -57,6 +57,7 @@ type CaseStudiesPayload = {
   year: string[];
   keyword: string;
   approval_status: string;
+  caspio_company_name: [];
 };
 
 type PeerAnalysisPayload = {
@@ -65,6 +66,7 @@ type PeerAnalysisPayload = {
   institution: string[];
   year: string[];
   category: string[];
+  country: string[];
   sector: string[];
 };
 type GlobalSearchPayload = {

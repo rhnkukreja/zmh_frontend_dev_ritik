@@ -44,12 +44,13 @@ interface CaseStudyFilter {
   sector: string[];
   year: string[];
   institution_name?: string[];
-  global_search?: string[];
+  global_search?: any[];
   themes: string[];
   proposal_type: string[];
   vote: string[];
   company_name?: string[];
   approval_status: string;
+  caspio_company_name: string;
   [key: string]: any;
 }
 function CaseStudies() {
@@ -117,6 +118,7 @@ function CaseStudies() {
       proposal_type: filters?.proposal_type,
       vote: filters?.vote,
       approval_status: filters?.approval_status,
+      caspio_company_name: filters?.caspio_company_name,
     },
   });
 
@@ -130,6 +132,7 @@ function CaseStudies() {
     setValue("proposal_type", []);
     setValue("vote", []);
     setValue("approval_status", "");
+    setValue("caspio_company_name", "");
   };
 
   useEffect(() => {
@@ -246,6 +249,7 @@ function CaseStudies() {
       setValue("year", savedSearch?.year || []);
       setValue("themes", savedSearch.themes || []);
       setValue("approval_status", savedSearch.approval_status || "");
+      setValue("caspio_company_name", savedSearch?.caspio_company_name || "");
 
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
@@ -257,6 +261,7 @@ function CaseStudies() {
           year: savedSearch?.year || [],
           themes: savedSearch?.themes || [],
           approval_status: savedSearch?.approval_status || "",
+          caspio_company_name: savedSearch?.caspio_company_name || "",
 
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
@@ -274,7 +279,8 @@ function CaseStudies() {
       market: filters.market || [],
       sector: filters.sector || [],
       themes: filters.themes || [],
-      approval_status: filters.approval_status || [],
+      approval_status: filters.approval_status || "",
+      caspio_company_name: filters.caspio_company_name || "",
       proposal_type: filters.proposal_type || [],
       vote: filters.vote || [],
       year: filters.year || [],
@@ -290,7 +296,8 @@ function CaseStudies() {
             market: filters.market || [],
             sector: filters.sector || [],
             themes: filters.themes || [],
-            approval_status: filters.approval_status || [],
+            approval_status: filters.approval_status || "",
+            caspio_company_name: filters.caspio_company_name || "",
             proposal_type: filters.proposal_type || [],
             vote: filters.vote || [],
             year: filters.year || [],
@@ -726,81 +733,102 @@ function CaseStudies() {
                         />
                       </div>
 
-                      {user.user_type === "Admin" && (
+                      {user?.user_type === "Admin" && (
                         <div className="mx-2">
-                          <div className="flex-1 w-full text-slate-500">
-                            Approval Status
-                            <div className="mt-2 flex flex-col sm:flex-row">
+                          <div className="w-full">
+                            <div className="text-left text-slate-500 ">
+                              Alternate Companies
+                            </div>
+                            <div className=" mt-1">
                               <Controller
-                                name="approval_status"
+                                name="caspio_company_name"
                                 control={control}
-                                rules={{
-                                  required: "Approval Status is required",
-                                }}
                                 render={({ field }) => (
-                                  <>
-                                    <FormCheck className="flex items-center mr-2">
-                                      <FormCheck.Input
-                                        id="radio-switch-4"
-                                        type="radio"
-                                        {...field}
-                                        value="Approved"
-                                        checked={field.value === "Approved"}
-                                        onChange={(e) =>
-                                          field.onChange("Approved")
-                                        }
-                                      />
-                                      <FormCheck.Label
-                                        htmlFor="radio-switch-4"
-                                        className="ml-2"
-                                      >
-                                        Approved
-                                      </FormCheck.Label>
-                                    </FormCheck>
-                                    <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
-                                      <FormCheck.Input
-                                        id="radio-switch-5"
-                                        type="radio"
-                                        {...field}
-                                        value="Pending"
-                                        checked={field.value === "Pending"}
-                                        onChange={(e) =>
-                                          field.onChange("Pending")
-                                        }
-                                      />
-                                      <FormCheck.Label
-                                        htmlFor="radio-switch-5"
-                                        className="ml-2"
-                                      >
-                                        Pending
-                                      </FormCheck.Label>
-                                    </FormCheck>
-                                    <FormCheck className="flex items-center mt-2 sm:mt-0">
-                                      <FormCheck.Input
-                                        id="radio-switch-5"
-                                        type="radio"
-                                        {...field}
-                                        value="Return To Analyst"
-                                        checked={
-                                          field.value === "Return To Analyst"
-                                        }
-                                        onChange={(e) =>
-                                          field.onChange("Return To Analyst")
-                                        }
-                                      />
-                                      <FormCheck.Label
-                                        htmlFor="radio-switch-5"
-                                        className="ml-2"
-                                      >
-                                        Returned to Analyst
-                                      </FormCheck.Label>
-                                    </FormCheck>
-                                  </>
+                                  <FormInput
+                                    placeholder="Enter Alternate Company Name"
+                                    {...field}
+                                  />
                                 )}
                               />
                             </div>
                           </div>
                         </div>
+                      )}
+
+                      {user.user_type === "Admin" && (
+                        <>
+                          <div className="mx-2">
+                            <div className="flex-1 w-full text-slate-500">
+                              Approval Status
+                              <div className="mt-2 flex flex-col sm:flex-row">
+                                <Controller
+                                  name="approval_status"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <>
+                                      <FormCheck className="flex items-center mr-2">
+                                        <FormCheck.Input
+                                          id="radio-switch-4"
+                                          type="radio"
+                                          {...field}
+                                          value="Approved"
+                                          checked={field.value === "Approved"}
+                                          onChange={(e) =>
+                                            field.onChange("Approved")
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="radio-switch-4"
+                                          className="ml-2"
+                                        >
+                                          Approved
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                      <FormCheck className="flex items-center mt-2 sm:mt-0 mr-2">
+                                        <FormCheck.Input
+                                          id="radio-switch-5"
+                                          type="radio"
+                                          {...field}
+                                          value="Pending"
+                                          checked={field.value === "Pending"}
+                                          onChange={(e) =>
+                                            field.onChange("Pending")
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="radio-switch-5"
+                                          className="ml-2"
+                                        >
+                                          Pending
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                      <FormCheck className="flex items-center mt-2 sm:mt-0">
+                                        <FormCheck.Input
+                                          id="radio-switch-5"
+                                          type="radio"
+                                          {...field}
+                                          value="Return To Analyst"
+                                          checked={
+                                            field.value === "Return To Analyst"
+                                          }
+                                          onChange={(e) =>
+                                            field.onChange("Return To Analyst")
+                                          }
+                                        />
+                                        <FormCheck.Label
+                                          htmlFor="radio-switch-5"
+                                          className="ml-2"
+                                        >
+                                          Returned to Analyst
+                                        </FormCheck.Label>
+                                      </FormCheck>
+                                    </>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -839,92 +867,97 @@ function CaseStudies() {
 
                       <Table.Tbody>
                         {caseStudies?.length > 0 &&
-                          caseStudies?.map((item: any) => (
-                            <Table.Tr
-                              key={item?.id}
-                              className="[&_td]:last:border-b-0"
-                            >
-                              <Table.Td>
-                                <div className="w-full flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                  {item?.institution_logo_url ? (
-                                    <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
+                          caseStudies?.map((item: any) => {
+                            return (
+                              <Table.Tr
+                                key={item?.id}
+                                className="[&_td]:last:border-b-0"
+                              >
+                                <Table.Td>
+                                  <div className="w-full flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
+                                    {item?.institution_logo_url ? (
+                                      <>
+                                        <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
+                                          <img
+                                            alt="Institution Logo"
+                                            className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                            src={item?.institution_logo_url}
+                                            content={
+                                              item?.institution_name || ""
+                                            }
+                                          />
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
                                         <img
-                                          alt="Institution Logo"
+                                          alt="ZMH Analytics"
                                           className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                          src={item?.institution_logo_url}
-                                          content={item?.institution_name || ""}
+                                          src={investorIcon}
                                         />
+                                        <a
+                                          href=""
+                                          className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
+                                        ></a>
                                       </div>
-                                    </>
-                                  ) : (
-                                    <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                      <img
-                                        alt="ZMH Analytics"
-                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                        src={investorIcon}
-                                      />
-                                      <a
-                                        href=""
-                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
-                                      ></a>
+                                    )}
+                                    <div className="ml-4 ">
+                                      <p className="font-medium whitespace-normal line-clamp-2">
+                                        {item?.institution_name}
+                                      </p>
                                     </div>
-                                  )}
-                                  <div className="ml-4 ">
-                                    <p className="font-medium whitespace-normal line-clamp-2">
-                                      {item?.institution_name}
-                                    </p>
                                   </div>
-                                </div>
-                              </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                {item?.year}
-                              </Table.Td>
-                              {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.company_name}
                                 </Table.Td>
-                              )}
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                {item?.esg_themes}
-                              </Table.Td>
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                  {item?.year}
+                                </Table.Td>
+                                {isAllCompanySelected && (
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                    {item?.company_name ||
+                                      item?.caspio_company_name}
+                                  </Table.Td>
+                                )}
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                  {item?.esg_themes}
+                                </Table.Td>
 
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                {item?.industry}
-                              </Table.Td>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
-                                <div className="flex gap-3 justify-center">
-                                  <Tippy
-                                    content="See Details"
-                                    options={{ theme: "light" }}
-                                  >
-                                    <Lucide
-                                      onClick={() => {
-                                        navigate(`/case-studies/${item?.id}`);
-                                      }}
-                                      icon="Eye"
-                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                    />
-                                  </Tippy>
-
-                                  {user?.user_type === "Admin" && (
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
+                                  {item?.industry}
+                                </Table.Td>
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
+                                  <div className="flex gap-3 justify-center">
                                     <Tippy
-                                      content="Edit"
+                                      content="See Details"
                                       options={{ theme: "light" }}
                                     >
                                       <Lucide
-                                        onClick={() =>
-                                          onEditCaseStudiesClickHandler(item)
-                                        }
-                                        icon="PenLine"
+                                        onClick={() => {
+                                          navigate(`/case-studies/${item?.id}`);
+                                        }}
+                                        icon="Eye"
                                         className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                       />
                                     </Tippy>
-                                  )}
-                                </div>
-                              </Table.Td>
-                            </Table.Tr>
-                          ))}
+
+                                    {user?.user_type === "Admin" && (
+                                      <Tippy
+                                        content="Edit"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() =>
+                                            onEditCaseStudiesClickHandler(item)
+                                          }
+                                          icon="PenLine"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </Tippy>
+                                    )}
+                                  </div>
+                                </Table.Td>
+                              </Table.Tr>
+                            );
+                          })}
                       </Table.Tbody>
                       {caseStudies?.length === 0 && (
                         <div className="w-full">

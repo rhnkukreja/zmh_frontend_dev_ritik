@@ -40,6 +40,8 @@ const withAuth = (WrappedComponent: ComponentType) => {
     }, [navigate]);
 
     if (!user?.token) {
+      sessionStorage.setItem('redirectPath', location.pathname + location.search);
+      console.log(location.pathname + location.search);
       return <Navigate to="/login" />;
     }
 

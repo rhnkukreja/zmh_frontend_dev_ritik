@@ -284,6 +284,13 @@ const formatedDate = (dateString: string): string => {
   return fullDate.format("YYYY-MM-DDTHH:mm:ss");
 };
 
+const getDateWithoutTime = (datetimeString?: string): string => {
+  if (!datetimeString || !dayjs(datetimeString).isValid()) {
+    return "";
+  }
+  return dayjs(datetimeString).format("YYYY-MM-DD");
+};
+
 const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   const userType = localStorage.getItem("userType")?.toLowerCase() || "";
   const filteredMenuItems = menuItems.filter((item, index, arr) => {
@@ -426,4 +433,5 @@ export {
   convertToTitleCase,
   createQueryParams,
   localStorageHelper,
+  getDateWithoutTime,
 };
