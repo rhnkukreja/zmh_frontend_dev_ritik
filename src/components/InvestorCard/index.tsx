@@ -253,9 +253,9 @@ const index = () => {
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Voted Against Directors
                             </Table.Td>
-                            {/* <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Voted Against Say on Pay
-                            </Table.Td> */}
+                            </Table.Td>
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -507,7 +507,7 @@ const index = () => {
                                           </div>
                                         )}
                                       </Table.Td>
-                                      {/* <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_say_on_pay ===
                                           true && (
                                           <div className="whitespace-nowrap flex items-center justify-center">
@@ -516,7 +516,7 @@ const index = () => {
                                             </div>
                                           </div>
                                         )}
-                                      </Table.Td> */}
+                                      </Table.Td>
                                     </>
                                   )}
                                 </Table.Tr>

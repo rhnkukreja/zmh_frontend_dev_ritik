@@ -6,7 +6,7 @@ import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Litepicker from "@/components/Base/Litepicker";
 import { AppDispatch } from "@/stores/store";
-import { bytesToMB, createDynamicURL } from "@/utils/helper";
+import { bytesToMB, createDynamicURL, formatedDate, getDateWithoutTime } from "@/utils/helper";
 import TomSelect from "@/components/Base/TomSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -73,11 +73,11 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       withdrawn: selectedShareholderNoAction?.withdrawn ? true : false,
       vote_outcome_formula: selectedShareholderNoAction?.vote_outcome_formula,
       approved: selectedShareholderNoAction?.approved ? true : false,
-      staff_response_date: selectedShareholderNoAction?.staff_response_date,
       reconsideration: selectedShareholderNoAction?.reconsideration,
       shareholder: selectedShareholderNoAction?.shareholder,
-      initial_date_for_submission:
-        selectedShareholderNoAction?.initial_date_for_submission,
+      initial_date_for_submission: getDateWithoutTime(selectedShareholderNoAction?.initial_date_for_submission) || "",
+      staff_response_date: getDateWithoutTime(selectedShareholderNoAction?.staff_response_date) || "",
+
     },
   });
 
@@ -148,6 +148,8 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       institution: data.institution ? Number(data.institution) : null,
       company:
         data?.company?.value ?? selectedShareholderNoAction?.company ?? 0,
+        initial_date_for_submission: formatedDate(data?.initial_date_for_submission),
+        staff_response_date: formatedDate(data?.staff_response_date),
     };
 
     try {
