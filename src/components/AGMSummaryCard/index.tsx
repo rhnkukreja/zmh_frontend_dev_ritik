@@ -229,8 +229,8 @@ const index = () => {
                                   key={headerIndex}
                                   // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
-                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
-                                    headerIndex === 0 && "text-left",
+                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-right",
+                                    headerIndex === 0 && "text-left w-[200px]",
                                   ])}
                                 >
                                   {nomineeHeader.header}
@@ -320,8 +320,8 @@ const index = () => {
                               <Table.Td
                                 key={headerIndex}
                                 className={clsx([
-                                  "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
-                                  headerIndex === 0 && "text-left",
+                                  "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-right",
+                                  headerIndex === 0 && "text-left w-[220px]",
                                 ])}
                               >
                                 {proposalHeader?.header}
