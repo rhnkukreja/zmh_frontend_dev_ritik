@@ -148,8 +148,8 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       institution: data.institution ? Number(data.institution) : null,
       company:
         data?.company?.value ?? selectedShareholderNoAction?.company ?? 0,
-        initial_date_for_submission: formatedDate(data?.initial_date_for_submission),
-        staff_response_date: formatedDate(data?.staff_response_date),
+        initial_date_for_submission: data?.initial_date_for_submission ? formatedDate(data?.initial_date_for_submission) : null,
+        staff_response_date: data?.staff_response_date ? formatedDate(data?.staff_response_date): null,
     };
 
     try {
@@ -643,7 +643,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="flex-1 w-full">
+                {/* <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Year
                   </FormCheck.Label>
@@ -679,7 +679,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
                       {errors?.year.message}
                     </Error>
                   )}
-                </div>
+                </div> */}
 
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">

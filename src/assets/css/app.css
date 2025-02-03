@@ -207,6 +207,11 @@ a.side-menu__link.side-menu__link--active svg {
 .css-13cymwt-control {
   background: #f7f7f7 !important;
 }
+
+.position-set{
+  top: -10px !important;
+  left: 12px !important; 
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives

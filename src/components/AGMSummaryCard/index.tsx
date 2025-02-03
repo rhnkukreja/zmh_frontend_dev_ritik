@@ -179,6 +179,16 @@ const index = () => {
                   }
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
+                  <div className="flex justify-between items-center gap-2">
+                    <h4 className="font-semibold cursor-pointer" onClick={() => {
+                      window.scrollBy({
+                        top: 350,
+                        behavior: "smooth",
+                      });
+                    }}>
+                      Quorum: {agmSummaryDetails?.Quorum}
+                    </h4>
+                  </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
                       className="box p-[5px] cursor-pointer"
@@ -278,6 +288,21 @@ const index = () => {
                     </Table>
                   </div>
                 </TableWrapper>
+
+
+                <footer className="!pt-3 flex items-start flex-col">
+                  <span className="!pt-3 flex items-center box p-2">
+                    <sup
+                      className="bold-sup cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      
+                    </sup>
+                    <p id="footnote " className="">
+                       [(For + Against + Withhold)/Shares Outstanding]
+                      </p>
+                  </span>
+                </footer>
 
                 <br />
                 <TableWrapper isLoading={loading}>

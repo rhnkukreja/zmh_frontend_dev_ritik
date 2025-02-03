@@ -55,14 +55,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       ? {
           company: selectedShareholderProposal?.company_name,
           link_to_filing: selectedShareholderProposal?.link_to_filing,
-          year: selectedShareholderProposal?.year,
+          year: selectedShareholderProposal?.year?.toString(),
         }
       : {
           institution: selectedShareholderProposal?.institution,
           category: selectedShareholderProposal?.category,
           company: selectedShareholderProposal?.company_name,
           link_to_filing: selectedShareholderProposal?.link_to_filing,
-          year: selectedShareholderProposal?.year,
+          year: selectedShareholderProposal?.year?.toString(),
           proposal_text: selectedShareholderProposal?.proposal_text,
           proposal_name: selectedShareholderProposal?.proposal_name,
           vote_outcome_formula:
@@ -331,7 +331,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       rules={{ required: "Year is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
-                          <select
+                          {/* <select
                             value={field.value ?? ""}
                             onChange={(e) => {
                               field.onChange(e.target.value);
@@ -354,7 +354,23 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                                 {year}
                               </option>
                             ))}
-                          </select>
+                          </select> */}
+
+                          <TomSelect
+                            value={field.value ?? ""}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            options={{
+                              placeholder: "Select Year",
+                            }}
+                            className="w-full text-left"
+                          >
+                            {apiDropdownOptions?.year?.map((year: string) => {
+                              return <option value={year?.toString()}>{year}</option>;
+                            })}
+                          </TomSelect>
+
 
                           {error && (
                             <Error className="text-red-600 mt-2">

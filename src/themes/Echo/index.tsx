@@ -19,7 +19,7 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
-import localStorageHelper, { filterMenu } from "@/utils/helper";
+import localStorageHelper, { createDynamicURL, filterMenu } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
 import { FilterX, Mail } from "lucide-react";
@@ -43,13 +43,15 @@ import { resetPeerAnalysis } from "@/stores/peerAnalysisSlice";
 import { resetCaseStudy } from "@/stores/caseStudySlice";
 import NotificationAlert from "@/components/NotificationAlert";
 
-import { subSidebarRoutes } from "@/constant";
+import { baseURL, subSidebarRoutes } from "@/constant";
 import useCompanySearch from "@/hooks/useCompanySearch";
 import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
 
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
+
 
   const tooltipRef = useRef<HTMLDivElement | null>(null);
 
@@ -263,6 +265,70 @@ function Main() {
     };
   }, []);
 
+  const {
+    loading,
+    shareHolderProposal,
+    page,
+    totalPages,
+    tab,
+    filters,
+    isAllCompanySelected,
+  } = useAppSelector((state) => state.sharedHolderNoAction);
+  
+  const [allShareholderCount, setAllShareholderCount] = useState<number>(0);
+
+
+  useEffect(() => {
+    getAllShareholderAPI();
+  }, [companyGlobalSearchName]);
+
+  const getAllShareholderAPI = async () => {
+    try {
+      const proposalResponse =
+        await shareHolderProposalService.getAllShareholderAPI(
+          createDynamicURL(
+            `${baseURL}/shareholder_proposal/def14a/`,
+            {global_search: [companyGlobalSearchName]},
+            undefined,
+            page
+          )
+        );
+      if (proposalResponse?.result) {
+        var proposalCount = proposalResponse?.result?.count > 0 ? proposalResponse?.result?.count : 0;
+      }
+
+      const noActionResponse =
+        await shareHolderProposalService.getAllShareholderAPI(
+          createDynamicURL(
+            `${baseURL}/shareholder_proposal/no_action/`,
+            {global_search: [companyGlobalSearchName]},
+            undefined,
+            page
+          )
+        );
+      if (noActionResponse?.result) {
+        var noActionCount = noActionResponse?.result?.count > 0 ? noActionResponse?.result?.count : 0;
+      }
+
+      const withdrawnResponse =
+        await shareHolderProposalService.getAllShareholderAPI(
+          createDynamicURL(
+            `${baseURL}/shareholder_proposal/withdrawn/`,
+            {global_search: [companyGlobalSearchName]},
+            undefined,
+            page
+          )
+        );
+      if (withdrawnResponse?.result) {
+        var withdrawnCount = withdrawnResponse?.result?.count > 0 ? withdrawnResponse?.result?.count : 0;
+      }
+
+      setAllShareholderCount(proposalCount + noActionCount + withdrawnCount);
+    } catch (error) {
+      return error;
+    }
+  };
+
   return (
     <div
       className={clsx([
@@ -400,6 +466,9 @@ function Main() {
                         )}
 
                         {menu.title === "Shareholder Proposals" && (
+                          <>
+                          <span className="relative">
+
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="24"
@@ -410,12 +479,22 @@ function Main() {
                             stroke-width="2"
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            className="lucide lucide-files side-menu__link__icon side-menu__link--active"
+                            className="lucide  lucide-files side-menu__link__icon side-menu__link--active"
                           >
                             <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
                             <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
                             <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
                           </svg>
+                           <span
+                           className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
+                             font-semibold text-white top-0 flex items-center justify-center position-set"
+                         >
+                           {allShareholderCount}
+                         </span>
+                         </span>
+
+                         </>
+
                         )}
                       </Tippy>
 
@@ -679,7 +758,7 @@ function Main() {
                     </Tippy>
                   </div> */}
 
-                  <a
+                  {/* <a
                     onClick={(event: React.MouseEvent) => {
                       event.preventDefault();
                       setNotificationModalVisible(true);
@@ -694,7 +773,7 @@ function Main() {
                         {2}
                       </span>
                     </div>
-                  </a>
+                  </a> */}
 
                   {/* <a
                     href=""
