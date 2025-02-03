@@ -649,7 +649,7 @@ function Main() {
               {/* BEGIN: Notification & User Menu */}
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
-                  <a
+                  {/* <a
                     href=""
                     // bg-gradient-to-b to-[#000000CC] from-[#9F1239]
                     className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
@@ -658,14 +658,14 @@ function Main() {
                       event.preventDefault();
                       setBasicModalPreview(true);
                     }}
-                  >
-                    <div className="flex items-center justify-center">
+                  > */}
+                    {/* <div className="flex items-center justify-center">
                       <img src={aiIcon} alt="ai icon" />
                       <span className="ml-3 font-semibold hidden xl:flex">
                         AI Assistant
                       </span>
-                    </div>
-                  </a>
+                    </div> */}
+                  {/* </a> */}
 
                   {/* <div className="flex items-center justify-center w-10 relative cursor-pointer">
                     <Tippy content="Notes" options={{ theme: "light" }}>

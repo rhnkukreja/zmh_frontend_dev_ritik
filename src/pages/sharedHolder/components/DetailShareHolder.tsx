@@ -217,17 +217,17 @@ const DetailShareHolder = () => {
                       </div>
                     )}
 
-                    {getSingleShareHolder?.staff_response_date && selectedTab === 'no-action' && (
+                    {getSingleShareHolder?.staff_response_date_display && selectedTab === 'no-action' && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">Staff Response Date</h3>
-                        <p>{getSingleShareHolder.staff_response_date}</p>
+                        <p>{getSingleShareHolder.staff_response_date_display}</p>
                       </div>
                     )}
 
-                    {getSingleShareHolder?.initial_date_for_submission && selectedTab === 'no-action' && (
+                    {getSingleShareHolder?.initial_date_for_submission_display && selectedTab === 'no-action' && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">Initial Date for Submission</h3>
-                        <p>{getSingleShareHolder.initial_date_for_submission}</p>
+                        <p>{getSingleShareHolder.initial_date_for_submission_display}</p>
                       </div>
                     )}
 
