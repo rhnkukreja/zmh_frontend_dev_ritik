@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
-import { Filer } from "@/types/dashboard";
+import { BoardDirectorMembers, Filer } from "@/types/dashboard";
 import { CompanyData } from "@/types/company";
 import { getPageNumbers } from "@/utils/helper";
 const name = "dashboard";
@@ -63,7 +63,7 @@ interface CompanySliceState {
   percent: string;
   notificationDetails: any | null;
   notificationLoading: boolean;
-  totalNotification: number,
+  totalNotification: number;
   instituteName: string | null;
   companySearchLoading: boolean;
   totalNPXCount: number;
@@ -76,6 +76,8 @@ interface CompanySliceState {
   agmSummaryAllProxyContest: any;
   caseStudiesAllProxy: any;
   totalCaseStudiesAllProxyPages: number;
+  getBoardDirectorMembersLoading: boolean;
+  boardDirectorMembers: BoardDirectorMembers[];
 }
 
 const initialState: CompanySliceState = {
@@ -122,6 +124,8 @@ const initialState: CompanySliceState = {
   agmSummaryAllProxyContest: "",
   caseStudiesAllProxy: "",
   totalCaseStudiesAllProxyPages: 0,
+  getBoardDirectorMembersLoading: false,
+  boardDirectorMembers: [],
 
   // {
   //   nominees: [],
@@ -139,7 +143,7 @@ export const fetchCompanyByName = createAsyncThunk<
 });
 
 export const fetchCompanyDashboard = createAsyncThunk<
-  { results: CompanyDashboard[], percent: string },
+  { results: CompanyDashboard[]; percent: string },
   string
 >(`${name}/fetchCompanyDashboard`, async (url: string) => {
   return await dashboardService.fetchCompanyDashboard(url);
@@ -152,14 +156,12 @@ export const fetchAGMSummaryDashboard = createAsyncThunk<
   return await dashboardService.fetchAGMSummaryDashboard(url);
 });
 
-
 export const fetchAGMProxyContestDashboard = createAsyncThunk<
   { results: any },
   string
 >(`${name}/fetchAGMProxyContestDashboard`, async (url: string) => {
   return await dashboardService.fetchAGMSummaryDashboard(url);
 });
-
 
 export const fetchCaseStudiesTopProxyContext = createAsyncThunk<
   { count: number; results: any[] },
@@ -174,7 +176,6 @@ export const fetchAGMProxyAllContestDashboard = createAsyncThunk<
 >(`${name}/fetchAGMProxyAllContestDashboard`, async (url: string) => {
   return await dashboardService.fetchAGMSummaryDashboard(url);
 });
-
 
 export const fetchCaseStudiesAllProxyContext = createAsyncThunk<
   { count: number; results: any[] },
@@ -205,7 +206,7 @@ export const fetchVdsProxyAllInvestor = createAsyncThunk<
 });
 
 export const fetchNpxProxyDashboard = createAsyncThunk<
-{ results: any, count: number },
+  { results: any; count: number },
   string
 >(`${name}/fetchNpxProxyDashboard`, async (url: string) => {
   return await dashboardService.fetchNpxProxyDashboard(url);
@@ -219,7 +220,7 @@ export const fetchInvestorProfileDetails = createAsyncThunk<
 });
 
 export const fetchWhatNewNotification = createAsyncThunk<
-  { results: any, count: number },
+  { results: any; count: number },
   string
 >(`${name}/fetchWhatNewNotification`, async (url: string) => {
   return await dashboardService.fetchWhatNewNotification(url);
@@ -237,6 +238,14 @@ export const fetchProxyTopFiveContestDashboard = createAsyncThunk<
   string
 >(`${name}/fetchProxyTopFiveContestDashboard`, async (url: string) => {
   return await dashboardService.fetchProxyTopFiveContestDashboard(url);
+});
+
+export const getBoardDirectorMembers = createAsyncThunk<
+  BoardDirectorMembers[],
+  string
+>(`${name}/getBoardDirectorMembers`, async (ticker: string) => {
+  const response = await dashboardService.getBoardDirectorMembers(ticker);
+  return response.result;
 });
 const companySlice = createSlice({
   name,
@@ -260,11 +269,6 @@ const companySlice = createSlice({
     ) {
       state.tab = action.payload;
     },
-
-    // setProxyContestFilter(state, action: any) {
-    //   // state.proxyContestinvestorFilter = action.payload;
-    //   // state.proxyContestinvestorFilter[action.payload.key] = action.payload.value as any;
-    // },
 
     setProxyContestInvestorFilter(
       state,
@@ -442,7 +446,9 @@ const companySlice = createSlice({
         ) => {
           state.loading = false;
           state.caseStudiesTopProxy = action.payload.results;
-          state.totalCaseStudiesTopProxyPages = getPageNumbers(action.payload.count);
+          state.totalCaseStudiesTopProxyPages = getPageNumbers(
+            action.payload.count
+          );
         }
       )
       .addCase(fetchCaseStudiesTopProxyContext.rejected, (state, action) => {
@@ -466,7 +472,9 @@ const companySlice = createSlice({
         ) => {
           state.loading = false;
           state.caseStudiesAllProxy = action.payload.results;
-          state.totalCaseStudiesAllProxyPages =  getPageNumbers(action.payload.count);
+          state.totalCaseStudiesAllProxyPages = getPageNumbers(
+            action.payload.count
+          );
           // state.totalPages = getPageNumbers(action.payload.count);
         }
       )
@@ -475,7 +483,6 @@ const companySlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch voting guidelines";
       })
-      
 
       .addCase(fetchAGMProxyAllContestDashboard.pending, (state) => {
         state.agmSummaryAllProxyContest = "";
@@ -584,9 +591,34 @@ const companySlice = createSlice({
         state.investorProfileLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
+      })
+
+      //director board memebers
+
+      .addCase(getBoardDirectorMembers.pending, (state) => {
+        state.getBoardDirectorMembersLoading = true;
+        state.error = null;
+      })
+      .addCase(getBoardDirectorMembers.fulfilled, (state, action) => {
+        state.getBoardDirectorMembersLoading = false;
+        state.boardDirectorMembers = action.payload;
+        state.error = null;
+      })
+      .addCase(getBoardDirectorMembers.rejected, (state, action) => {
+        state.investorProfileLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
       });
   },
 });
 
 export default companySlice;
-export const { setPage, resetPage, setTempSearch, setInstitution, setTabs, setProxyContestInvestorFilter , setProxyTopFilter} = companySlice.actions;
+export const {
+  setPage,
+  resetPage,
+  setTempSearch,
+  setInstitution,
+  setTabs,
+  setProxyContestInvestorFilter,
+  setProxyTopFilter,
+} = companySlice.actions;

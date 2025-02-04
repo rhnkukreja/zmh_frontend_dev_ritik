@@ -15,6 +15,7 @@ import InvestorCard from "@/components/InvestorCard";
 import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
+import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -23,27 +24,29 @@ function Main() {
   );
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
-  }, [isCompanySelected])
-  
+  }, [isCompanySelected]);
+
   return (
     <>
       {/* <Helmet>
         <title>Investor Dashboard - ZMH Analytics</title>
       </Helmet> */}
 
-    <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-      <div className="col-span-12 xl:col-span-12">
-         <InvestorCard />
-      </div>
+      <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+        <div className="col-span-12 xl:col-span-12">
+          <InvestorCard />
+        </div>
 
-      <div className="col-span-12 xl:col-span-12">
-         <AGMSummaryCard />
-      </div>
+        <BoardDirectorMembers />
 
-      <div className="col-span-12 xl:col-span-12">
-        <CaseStudiesCard />
+        <div className="col-span-12 xl:col-span-12">
+          <AGMSummaryCard />
+        </div>
+
+        <div className="col-span-12 xl:col-span-12">
+          <CaseStudiesCard />
+        </div>
       </div>
-    </div>
     </>
   );
 }
