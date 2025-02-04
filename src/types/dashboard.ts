@@ -26,3 +26,16 @@ export type CompanyData = {
   date_created: string;
   date_updated: string;
 };
+
+export type BoardDirectorMembers = {
+  name: string;
+  position: string;
+  age: number;
+  directorClass: string;
+  dateFirstElected: number;
+  isIndependent: boolean;
+  committeeMemberships: string[];
+  qualificationsAndExperience: string[];
+  tenure: string;
+  is_Color: boolean;
+};

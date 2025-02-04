@@ -1,16 +1,12 @@
-import Lucide from "../Base/Lucide";
 import TableWrapper from "../TableWrapper";
 import Table from "@/components/Base/Table";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
-import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
-import FormSelect from "../Base/Form/FormSelect";
 import Tippy from "../Base/Tippy";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 import { useEffect } from "react";
-import summary from "@/assets/json/brhc10049413_8k.json";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+
+import { useLocation } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -31,14 +27,13 @@ const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
     useAppSelector((state) => state.dashboard);
-  const [searchParams] = useSearchParams();
+
   const companyDetails = agmSummaryDetails?.company
     ? agmSummaryDetails?.company[0]
     : "";
   const companyName = Object.keys(companyDetails)[0];
   const meetingDetails = companyDetails[companyName];
   const meetingDate = meetingDetails?.split(" - ").pop();
-  const navigate = useNavigate();
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -91,9 +86,6 @@ const index = () => {
     downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchName}`);
   };
 
-  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
-  const searchTicker = searchParams.get("ticker");
-
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
       dispatch(
@@ -114,7 +106,7 @@ const index = () => {
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }, [companyGlobalSearchTicker, searchTicker]);
+  }, [companyGlobalSearchTicker]);
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     // event.preventDefault();
@@ -157,17 +149,18 @@ const index = () => {
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
 
-                  {dashboardDataList?.length >  0 && agmSummaryDetails?.Year !== "2023" && (
-                    <button
-                      onClick={(event: any) => handleViewMore(event)}
-                      className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
+                  {dashboardDataList?.length > 0 &&
+                    agmSummaryDetails?.Year !== "2023" && (
+                      <button
+                        onClick={(event: any) => handleViewMore(event)}
+                        className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                    >
-                      View More
-                    </button>
-                  )}
-                  {dashboardDataList?.length > 0 &&
+                      >
+                        View More
+                      </button>
+                    )}
+                  {dashboardDataList?.length > 0 && (
                     <button
                       onClick={(event: any) => handleViewNPX(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -176,9 +169,22 @@ const index = () => {
                     >
                       View N-PX
                     </button>
-                  }
+                  )}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
+                  <div className="flex justify-between items-center gap-2">
+                    <h4
+                      className="font-semibold cursor-pointer"
+                      onClick={() => {
+                        window.scrollBy({
+                          top: 350,
+                          behavior: "smooth",
+                        });
+                      }}
+                    >
+                      {/* Quorum: {agmSummaryDetails?.Quorum} */}
+                    </h4>
+                  </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
                       className="box p-[5px] cursor-pointer"
@@ -219,8 +225,8 @@ const index = () => {
                                   key={headerIndex}
                                   // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
-                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
-                                    headerIndex === 0 && "text-left",
+                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-right",
+                                    headerIndex === 0 && "text-left w-[200px]",
                                   ])}
                                 >
                                   {nomineeHeader.header}
@@ -279,6 +285,18 @@ const index = () => {
                   </div>
                 </TableWrapper>
 
+                {/* <footer className="!pt-3 flex items-start flex-col">
+                  <span className="!pt-3 flex items-center box p-2">
+                    <sup
+                      className="bold-sup cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    ></sup>
+                    <p id="footnote " className="">
+                      [(For + Against + Withhold)/Shares Outstanding]
+                    </p>
+                  </span>
+                </footer> */}
+
                 <br />
                 <TableWrapper isLoading={loading}>
                   <div
@@ -295,8 +313,8 @@ const index = () => {
                               <Table.Td
                                 key={headerIndex}
                                 className={clsx([
-                                  "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
-                                  headerIndex === 0 && "text-left",
+                                  "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-right",
+                                  headerIndex === 0 && "text-left w-[220px]",
                                 ])}
                               >
                                 {proposalHeader?.header}

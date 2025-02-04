@@ -206,7 +206,7 @@ const index = () => {
                     <div
                       className={clsx([
                         locationPathName === "/" &&
-                          "overflow-auto max-h-[400px]",
+                          "overflow-auto max-h-[600px]",
                       ])}
                     >
                       <Table className="table">
