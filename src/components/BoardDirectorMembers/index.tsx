@@ -76,7 +76,11 @@ const BoardDirectorMembers = () => {
                             <Table.Td className="py-2 border-dashed">
                               {member?.dateFirstElected}
                             </Table.Td>
-                            <Table.Td className="py-2 border-dashed text-nowrap">
+                            <Table.Td
+                              className={`py-2 border-dashed text-nowrap ${
+                                member?.is_Color ? "text-red-500" : ""
+                              }`}
+                            >
                               {member?.tenure}
                             </Table.Td>
                             <Table.Td className="py-2 border-dashed">
