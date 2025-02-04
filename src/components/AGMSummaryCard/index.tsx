@@ -182,7 +182,7 @@ const index = () => {
                         });
                       }}
                     >
-                      Quorum: {agmSummaryDetails?.Quorum}
+                      {/* Quorum: {agmSummaryDetails?.Quorum} */}
                     </h4>
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -285,7 +285,7 @@ const index = () => {
                   </div>
                 </TableWrapper>
 
-                <footer className="!pt-3 flex items-start flex-col">
+                {/* <footer className="!pt-3 flex items-start flex-col">
                   <span className="!pt-3 flex items-center box p-2">
                     <sup
                       className="bold-sup cursor-pointer ml-1"
@@ -295,7 +295,7 @@ const index = () => {
                       [(For + Against + Withhold)/Shares Outstanding]
                     </p>
                   </span>
-                </footer>
+                </footer> */}
 
                 <br />
                 <TableWrapper isLoading={loading}>
