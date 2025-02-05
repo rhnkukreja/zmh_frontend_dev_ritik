@@ -487,8 +487,8 @@ function Main() {
                           />
                               {
                                 menu.title === "Proxy Contest" && isProxyCompany &&
-                                <span className="bg-[#0DDE7B] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
-                             font-semibold text-white top-0 flex items-center justify-center position-set">&#10004;</span>
+                                <span className="bg-[#DC661F] absolute  rounded-2xl w-2 h-2 p-2 text-[10px]  
+                             font-semibold text-white top-0 flex items-center justify-center position-set"></span>
                               }
                           </span>
                          </>

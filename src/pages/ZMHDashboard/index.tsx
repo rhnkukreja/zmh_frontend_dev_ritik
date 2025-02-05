@@ -34,7 +34,7 @@ function Main() {
 
   return (
     <>
-      {
+      {/* {
         investorCardLoading && <div className=" h-96 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <LoadingIcon
             color="#800000"
@@ -44,8 +44,9 @@ function Main() {
         </div>
       }
       {
-        <>
-          <section className={investorCardLoading ? 'hidden' : 'block'}>
+        <> */}
+        
+          <section >
             <div className="grid grid-cols-12 gap-y-10 gap-x-6">
               <div className="col-span-12 xl:col-span-12">
                 <InvestorCard />
@@ -62,8 +63,8 @@ function Main() {
               </div>
             </div>
           </section>
-        </>
-      }
+        {/* </>
+      } */}
     </>
   );
 }
