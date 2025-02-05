@@ -52,7 +52,7 @@ function Main() {
                 <InvestorCard />
               </div>
 
-              <BoardDirectorMembers />
+              {/* <BoardDirectorMembers /> */}
 
               <div className="col-span-12 xl:col-span-12">
                 <AGMSummaryCard />
