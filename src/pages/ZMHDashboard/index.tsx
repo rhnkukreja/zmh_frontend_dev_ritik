@@ -4,6 +4,7 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyDashboard,
+  getBoardDirectorMembers,
   setPage,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -16,6 +17,7 @@ import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -26,27 +28,43 @@ function Main() {
     dispatch(setIsCompanySelected(false));
   }, [isCompanySelected]);
 
+  const { investorCardLoading } = useAppSelector((state) => state.dashboard);
+
+
+
   return (
     <>
-      {/* <Helmet>
-        <title>Investor Dashboard - ZMH Analytics</title>
-      </Helmet> */}
-
-      <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-        <div className="col-span-12 xl:col-span-12">
-          <InvestorCard />
+      {/* {
+        investorCardLoading && <div className=" h-96 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
         </div>
+      }
+      {
+        <> */}
+        
+          <section >
+            <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+              <div className="col-span-12 xl:col-span-12">
+                <InvestorCard />
+              </div>
 
-        <BoardDirectorMembers />
+              {/* <BoardDirectorMembers /> */}
 
-        <div className="col-span-12 xl:col-span-12">
-          <AGMSummaryCard />
-        </div>
+              <div className="col-span-12 xl:col-span-12">
+                <AGMSummaryCard />
+              </div>
 
-        <div className="col-span-12 xl:col-span-12">
-          <CaseStudiesCard />
-        </div>
-      </div>
+              <div className="col-span-12 xl:col-span-12">
+                <CaseStudiesCard />
+              </div>
+            </div>
+          </section>
+        {/* </>
+      } */}
     </>
   );
 }

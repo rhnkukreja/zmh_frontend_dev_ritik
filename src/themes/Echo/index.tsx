@@ -47,6 +47,7 @@ import { baseURL, subSidebarRoutes } from "@/constant";
 import useCompanySearch from "@/hooks/useCompanySearch";
 import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
+import { dashboardService } from "@/services/dashboard";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -276,10 +277,13 @@ function Main() {
   } = useAppSelector((state) => state.sharedHolderNoAction);
   
   const [allShareholderCount, setAllShareholderCount] = useState<number>(0);
+  const [isProxyCompany, setIsProxyCompany] = useState<boolean>(false);
+
 
 
   useEffect(() => {
     getAllShareholderAPI();
+    getAllCompaniesDropdown();
   }, [companyGlobalSearchName]);
 
   const getAllShareholderAPI = async () => {
@@ -328,6 +332,22 @@ function Main() {
       return error;
     }
   };
+
+  const getAllCompaniesDropdown = async (params?: any) => {
+          try {
+              const res = await dashboardService.getInstitution(params);
+              if (res.result?.company) {
+              const companies = res.result?.company;
+              const isCompany = companies?.includes(companyGlobalSearchName);
+              setIsProxyCompany(isCompany);
+              }
+          } catch (error) {
+              return error;
+          } finally {
+              // setGetDropdownLoader(false);
+          }
+      };
+
 
   return (
     <div
@@ -459,39 +479,52 @@ function Main() {
                     >
                       <Tippy content={menu.title} options={{ theme: "light" }}>
                         {menu.title !== "Shareholder Proposals" && (
+                         <>
+                          <span className="relative">
                           <Lucide
                             icon={menu?.icon}
                             className="side-menu__link__icon side-menu__link--active"
                           />
+                              {
+                                menu.title === "Proxy Contest" && isProxyCompany &&
+                                <span className="bg-[#DC661F] absolute  rounded-2xl w-2 h-2 p-2 text-[10px]  
+                             font-semibold text-white top-0 flex items-center justify-center position-set"></span>
+                              }
+                          </span>
+                         </>
+
                         )}
 
                         {menu.title === "Shareholder Proposals" && (
                           <>
                           <span className="relative">
 
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            className="lucide  lucide-files side-menu__link__icon side-menu__link--active"
-                          >
-                            <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
-                            <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
-                            <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
-                          </svg>
-                           <span
-                           className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  className="lucide  lucide-files side-menu__link__icon side-menu__link--active"
+                                >
+                                  <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                                  <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+                                  <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
+                                </svg>
+                                
+                                {allShareholderCount > 0 && <span
+                                  className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
                              font-semibold text-white top-0 flex items-center justify-center position-set"
-                         >
-                           {allShareholderCount}
-                         </span>
-                         </span>
+                                >
+                                  {allShareholderCount}
+                                </span>
+                                } 
+
+                              </span>
 
                          </>
 

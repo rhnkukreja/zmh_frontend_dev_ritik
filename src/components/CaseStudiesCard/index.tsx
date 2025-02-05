@@ -30,8 +30,8 @@ const index = () => {
     
             // Construct the URL based on the condition
             const url = hasKeywords
-                ? `https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q="${companyGlobalSearchName}" OR "${companyGlobalSearchNamev2}"&dateRestrict=y1&start=${pageNumber}`
-                : `https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q="${companyGlobalSearchName}"&dateRestrict=y1&start=${pageNumber}`;
+                ? `https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q="${companyGlobalSearchName}" OR "${companyGlobalSearchNamev2}"&dateRestrict=y1&start=${pageNumber}&sort=date`
+                : `https://www.googleapis.com/customsearch/v1?key=AIzaSyDoznJMDY10gGNzYtPIHipC2u6fpeyrcqA&cx=860f2a6398fa1457c&q="${companyGlobalSearchName}"&dateRestrict=y1&start=${pageNumber}&sort=date`;
     
             // Dispatch the action with the constructed URL
             dispatch(fetchCaseStudyDashboard(createDynamicURL(url)));
