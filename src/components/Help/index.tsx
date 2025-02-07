@@ -84,6 +84,15 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                     text-white  "
           >
             <h2 className="mr-auto text-md font-semibold">Help?</h2>
+            <div
+              onClick={() => {
+                reset();
+                setHelpFormVisible(false);
+              }}
+              className="absolute  top-0 right-0 mt-2 mr-3 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-6 h-6 text-white" />
+            </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
             <Tab.Group
@@ -115,7 +124,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                     }}
                   >
                     <div className="flex items-center justify-center ">
-                      Contact Us
+                      Contact Us / Feedback
                     </div>
                   </Tab.Button>
                 </Tab>
@@ -135,7 +144,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                               htmlFor="investmentName"
                               className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
                             >
-                              Enter Investor or Company Name
+                              Enter Investor or Company Name*
                             </label>
                             <FormInput
                               id="investmentName"
@@ -162,7 +171,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                         render={({ field }) => (
                           <>
                             <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                              Select Information Required
+                              Select Information Required*
                             </label>
                             {[
                               "Investor Profile",
@@ -236,12 +245,12 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                         htmlFor="oadditional_comments"
                         className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
                       >
-                        What would you like to discuss?
+                        What would you like to discuss?*
                       </label>
                       <Controller
                         name="issue"
                         control={control}
-                        rules={{ required: "Write your issue" }}
+                        rules={{ required: "Write your Feedback" }}
                         render={({ field }) => (
                           <FormTextarea
                             rows={5}
@@ -266,8 +275,10 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
           <Dialog.Footer className="flex flex-col sm:flex-row justify-center sm:justify-end gap-3 w-full px-4 py-3">
             <Button
               onClick={() => {
+                reset();
                 setHelpFormVisible(false);
               }}
+              type="button"
               variant="outline-secondary"
               className="w-full sm:w-auto border-danger  text-danger"
             >
@@ -281,6 +292,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
               {isLoading && (
                 <Lucide
                   icon="Loader"
+                  type="submit"
                   className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
                     isLoading ? "animate-spin" : ""
                   }`}

@@ -27,7 +27,7 @@ const BoardDirectorMembers = () => {
             <h1 className="text-lg font-bold mb-2">Board Director Members</h1>
 
             <TableWrapper isLoading={getBoardDirectorMembersLoading}>
-              <div className="overflow-auto max-h-[400px]">
+              <div className="overflow-auto max-h-[600px]">
                 <Table>
                   <Table.Thead>
                     <Table.Tr>
@@ -47,7 +47,7 @@ const BoardDirectorMembers = () => {
                         Board Tenure
                       </Table.Td>
                       <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
-                        Board Committees
+                        Board Committee(s)
                       </Table.Td>
                       <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                         Qualifications and Experience

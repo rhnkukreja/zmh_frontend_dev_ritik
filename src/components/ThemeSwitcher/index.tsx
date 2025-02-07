@@ -288,7 +288,7 @@ function Main() {
 
             <iframe
               className={`w-full h-full ${isFrameLoading || isError ? 'hidden' : ''}`}
-              src="https://app.korra.ai/zmhdashboard/globalsearchengine"
+              src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
               title="Embedded Dashboard"
               onLoad={handleLoad}
               onError={handleError}
