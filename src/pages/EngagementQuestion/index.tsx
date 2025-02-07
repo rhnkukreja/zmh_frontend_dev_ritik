@@ -329,7 +329,7 @@ function Main() {
                         as={Button}
                         variant="outline-secondary"
                         className="w-full sm:w-auto"
-                      // onClick={handleCollapseFilter}
+                        // onClick={handleCollapseFilter}
                       >
                         <Lucide
                           icon="ArrowDownWideNarrow"
@@ -374,34 +374,34 @@ function Main() {
                                   Year
                                   {engagementQuestionFilterOptions?.year
                                     ?.length > 0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`year`}
-                                            checked={
-                                              engagementQuestionFilterOptions
-                                                ?.year?.length ===
-                                              watch("year")?.length
+                                    <div>
+                                      <FormCheck className="mr-2">
+                                        <FormCheck.Label>
+                                          Select All
+                                        </FormCheck.Label>
+                                        <FormCheck.Input
+                                          className="ml-1"
+                                          id={`year`}
+                                          checked={
+                                            engagementQuestionFilterOptions
+                                              ?.year?.length ===
+                                            watch("year")?.length
+                                          }
+                                          type="checkbox"
+                                          onChange={(e) => {
+                                            if (e.target.checked === true) {
+                                              setValue(
+                                                "year",
+                                                engagementQuestionFilterOptions?.year
+                                              );
+                                            } else {
+                                              setValue("year", []);
                                             }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "year",
-                                                  engagementQuestionFilterOptions?.year
-                                                );
-                                              } else {
-                                                setValue("year", []);
-                                              }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                          }}
+                                        />
+                                      </FormCheck>
+                                    </div>
+                                  )}
                                 </div>
                                 <Controller
                                   name="year"
@@ -440,34 +440,34 @@ function Main() {
                                   Category
                                   {engagementQuestionFilterOptions?.category
                                     ?.length > 0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`category`}
-                                            checked={
-                                              engagementQuestionFilterOptions
-                                                .category.length ===
-                                              watch("category")?.length
+                                    <div>
+                                      <FormCheck className="mr-2">
+                                        <FormCheck.Label>
+                                          Select All
+                                        </FormCheck.Label>
+                                        <FormCheck.Input
+                                          className="ml-1"
+                                          id={`category`}
+                                          checked={
+                                            engagementQuestionFilterOptions
+                                              .category.length ===
+                                            watch("category")?.length
+                                          }
+                                          type="checkbox"
+                                          onChange={(e) => {
+                                            if (e.target.checked === true) {
+                                              setValue(
+                                                "category",
+                                                engagementQuestionFilterOptions.category
+                                              );
+                                            } else {
+                                              setValue("category", []);
                                             }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "category",
-                                                  engagementQuestionFilterOptions.category
-                                                );
-                                              } else {
-                                                setValue("category", []);
-                                              }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                          }}
+                                        />
+                                      </FormCheck>
+                                    </div>
+                                  )}
                                 </div>
                                 <Controller
                                   name="category"
@@ -621,10 +621,12 @@ function Main() {
 
                                       <Table.Td className="py-2 w-20 relative box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] border-x-0 dark:bg-darkmode-600">
                                         <div className="flex gap-3 justify-center">
-                                          <Tippy content="See Details"
+                                          <Tippy
+                                            content="See Details"
                                             options={{
                                               theme: "light",
-                                            }}>
+                                            }}
+                                          >
                                             <Lucide
                                               onClick={() =>
                                                 navigate(
@@ -637,10 +639,12 @@ function Main() {
                                           </Tippy>
 
                                           {user?.user_type === "Admin" && (
-                                            <Tippy content="Edit"
-                                            options={{
-                                              theme: "light",
-                                            }}>
+                                            <Tippy
+                                              content="Edit"
+                                              options={{
+                                                theme: "light",
+                                              }}
+                                            >
                                               <Lucide
                                                 onClick={() =>
                                                   onEditClickHandler(question)
@@ -688,12 +692,6 @@ function Main() {
                   handlePreviousPage={handlePreviousPage}
                 />
               )}
-              {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
-                <option>10</option>
-                <option>25</option>
-                <option>35</option>
-                <option>50</option>
-              </FormSelect> */}
             </div>
           </div>
         </div>

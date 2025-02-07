@@ -39,3 +39,9 @@ export type BoardDirectorMembers = {
   tenure: string;
   is_Color: boolean;
 };
+
+export type ProxyVotingRationale = {
+  investor_name: string;
+  proposal: string;
+  voting_rationale: string;
+};

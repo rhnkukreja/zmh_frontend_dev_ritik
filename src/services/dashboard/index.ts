@@ -2,7 +2,7 @@ import { CompanyData } from "@/types/company";
 import { axiosInstance } from "../index";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
-import { BoardDirectorMembers } from "@/types/dashboard";
+import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 
 class DashboardService {
   public async fetchCompanyByName(companyName?: string): Promise<{
@@ -170,11 +170,23 @@ class DashboardService {
     result: BoardDirectorMembers[];
   }> {
     const response = await axiosInstance.get(
-      createDynamicURL(`/board_members/?ticker=${ticker}`)
+      `/board_members/?ticker=${ticker}`
     );
     const result = response.data;
     return {
       result: result,
+    };
+  }
+
+  public async getProxyVotingRationale(url: string): Promise<{
+    result: ProxyVotingRationale[];
+    count: number;
+  }> {
+    const response = await axiosInstance.get(url);
+
+    return {
+      result: response.data.results,
+      count: response.data.count,
     };
   }
 }
