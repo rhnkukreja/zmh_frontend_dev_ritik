@@ -11,7 +11,10 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { createDynamicURL } from "@/utils/helper";
 import { useEffect, useState } from "react";
 
-const VotingRationale = () => {
+interface VotingRationaleProps {
+  filter?: any;
+}
+const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
   const dispatch = useAppDispatch();
   const { companyGlobalSearchTicker } = useAppSelector(
     (state) => state.authentiction
@@ -215,6 +218,31 @@ const VotingRationale = () => {
             />
           </div>
         </>
+      )}
+
+      {tab === "Top-20" &&
+        votingRationale?.length === 0 &&
+        !getProxyVotingRationaleLoading && (
+          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+            <h1 className="font-semibold">
+              Voting Rationale Records Not Found..
+            </h1>
+          </div>
+        )}
+
+      {votingRationale?.length === 0 && filter && filter?.length === 0 && (
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <h1 className="font-semibold"></h1>
+        </div>
+      )}
+
+      {votingRationale?.length === 0 && filter?.length > 0 && (
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <h1 className="font-semibold">
+            {" "}
+            Voting Rationale Records Not Found..
+          </h1>
+        </div>
       )}
     </div>
   );

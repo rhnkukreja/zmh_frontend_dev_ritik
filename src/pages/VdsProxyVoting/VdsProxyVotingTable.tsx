@@ -104,19 +104,6 @@ const VdsProxyVotingTable = () => {
             })
           )
         );
-        dispatch(
-          getProxyVotingRationale(
-            createDynamicURL(
-              `/vds_proxy_voting_rationale/`,
-              {
-                ticker: companyGlobalSearchTicker,
-                institution_name: filter,
-              },
-              undefined,
-              votingRationlePage
-            )
-          )
-        );
       } else {
         dispatch(
           fetchVdsProxyAllInvestor(
@@ -134,19 +121,6 @@ const VdsProxyVotingTable = () => {
           })
         )
       );
-      dispatch(
-        getProxyVotingRationale(
-          createDynamicURL(
-            `/vds_proxy_voting_rationale/`,
-            {
-              ticker: companyGlobalSearchTicker,
-              institution_name: filter,
-            },
-            undefined,
-            votingRationlePage
-          )
-        )
-      );
     } else {
       dispatch(
         fetchVdsProxyAllInvestor(
@@ -154,16 +128,37 @@ const VdsProxyVotingTable = () => {
         )
       );
     }
+  }, [filter, tab, companyGlobalSearchTicker]);
 
-    // return () => {
-    //   dispatch(
-    //     fetchVdsProxyDashboard(
-    //       createDynamicURL(
-    //         `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
-    //       )
-    //     )
-    //   );
-    // };
+  useEffect(() => {
+    if (tab === "All-Investor") {
+      if (filter?.length > 0) {
+        dispatch(
+          getProxyVotingRationale(
+            createDynamicURL(
+              `/vds_proxy_voting_rationale/`,
+              {
+                ticker: companyGlobalSearchTicker,
+                institution_name: filter,
+              },
+              undefined,
+              votingRationlePage
+            )
+          )
+        );
+      } else {
+        dispatch(
+          getProxyVotingRationale(
+            createDynamicURL(
+              `/vds_proxy_voting_rationale/`,
+              {},
+              undefined,
+              votingRationlePage
+            )
+          )
+        );
+      }
+    }
   }, [filter, tab, companyGlobalSearchTicker, votingRationlePage]);
 
   const isObject = (item: any) => {
@@ -276,6 +271,8 @@ const VdsProxyVotingTable = () => {
 
   const onFilterClear = () => {
     setFilter([]);
+    dispatch(resetVotingRationalePage());
+    dispatch(clearVotingRationale());
     reset();
   };
 
@@ -342,30 +339,32 @@ const VdsProxyVotingTable = () => {
               </Tab.List>
 
               <Tab.Panels className="mt-5">
-                <h1 className="text-lg font-bold">Proxy Voting</h1>
                 <Tab.Panel className="leading-relaxed">
-                  {tab === "Top-20" &&
-                    vdsProxyDetails?.vds_report_headers?.length > 0 && (
-                      <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
-                        <h1 className="text-md font-bold">
-                          Aggregate Ownership:{" "}
-                          {vdsProxyDetails?.total_percent_ownership}
-                        </h1>
-                        <Tippy
-                          content="Download Excel"
-                          options={{ theme: "light" }}
-                        >
-                          <div
-                            className="box p-[5px] cursor-pointer"
-                            onClick={() =>
-                              convertDivTableToCSV("Top-20-Proxy-voting")
-                            }
+                  <div className="flex justify-between  mt-1">
+                    <h1 className="text-lg font-bold">Proxy Voting</h1>
+                    {tab === "Top-20" &&
+                      vdsProxyDetails?.vds_report_headers?.length > 0 && (
+                        <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
+                          <h1 className="text-md font-bold">
+                            Aggregate Ownership:{" "}
+                            {vdsProxyDetails?.total_percent_ownership}
+                          </h1>
+                          <Tippy
+                            content="Download Excel"
+                            options={{ theme: "light" }}
                           >
-                            <img alt="download-icon" src={downloadIcon} />
-                          </div>
-                        </Tippy>
-                      </div>
-                    )}
+                            <div
+                              className="box p-[5px] cursor-pointer"
+                              onClick={() =>
+                                convertDivTableToCSV("Top-20-Proxy-voting")
+                              }
+                            >
+                              <img alt="download-icon" src={downloadIcon} />
+                            </div>
+                          </Tippy>
+                        </div>
+                      )}
+                  </div>
 
                   <TableWrapper>
                     <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
@@ -633,7 +632,9 @@ const VdsProxyVotingTable = () => {
                         </Button>
                       </div>
                     </div>
-
+                  </form>
+                  <div className="flex justify-between mb-4 mt-1">
+                    <h1 className="text-lg font-bold mt-4">Proxy Voting</h1>
                     {vdsProxyAllInvestorDetails?.vds_report?.length > 0 && (
                       <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
                         <Tippy
@@ -649,7 +650,7 @@ const VdsProxyVotingTable = () => {
                         </Tippy>
                       </div>
                     )}
-                  </form>
+                  </div>
 
                   <TableWrapper
                     isLoading={vdsProxyAllInvestorLoading && filter?.length > 0}
@@ -854,7 +855,7 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  <VotingRationale />
+                  <VotingRationale filter={filter} />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>
