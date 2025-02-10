@@ -396,7 +396,7 @@ const index = () => {
                       style={{ fontSize: "0.8em" }}
                     >*</sup>
                     <p id="footnote " className="">
-                      [(For + Against + Withhold)/Shares Outstanding]
+                    (For + Against or Withhold + Abstain)/Shares Outstanding
                     </p>
                   </span>
                 </footer>
