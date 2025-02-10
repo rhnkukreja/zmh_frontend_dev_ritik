@@ -1,6 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
-import { BoardDirectorMembers, Filer } from "@/types/dashboard";
+import {
+  BoardDirectorMembers,
+  Filer,
+  ProxyVotingRationale,
+} from "@/types/dashboard";
 import { CompanyData } from "@/types/company";
 import { getPageNumbers } from "@/utils/helper";
 const name = "dashboard";
@@ -29,6 +33,7 @@ export type CompanyDashboard = {
   institution_id: number;
   unpri_signatory: boolean;
   voted_against_say_on_pay: boolean;
+
   // percent_ownership: string;
 };
 
@@ -77,7 +82,11 @@ interface CompanySliceState {
   caseStudiesAllProxy: any;
   totalCaseStudiesAllProxyPages: number;
   getBoardDirectorMembersLoading: boolean;
+  getProxyVotingRationaleLoading: boolean;
   boardDirectorMembers: BoardDirectorMembers[];
+  votingRationale: any[];
+  votingRationlePage: number;
+  votingRationleTotalPage: number;
 }
 
 const initialState: CompanySliceState = {
@@ -125,7 +134,11 @@ const initialState: CompanySliceState = {
   caseStudiesAllProxy: "",
   totalCaseStudiesAllProxyPages: 0,
   getBoardDirectorMembersLoading: false,
+  getProxyVotingRationaleLoading: false,
   boardDirectorMembers: [],
+  votingRationale: [],
+  votingRationlePage: 1,
+  votingRationleTotalPage: 1,
 
   // {
   //   nominees: [],
@@ -247,6 +260,22 @@ export const getBoardDirectorMembers = createAsyncThunk<
   const response = await dashboardService.getBoardDirectorMembers(ticker);
   return response.result;
 });
+
+export const getProxyVotingRationale = createAsyncThunk<
+  { result: ProxyVotingRationale[]; count: number },
+  string
+>(`${name}/getProxyVotingRationale`, async (url: string) => {
+  const response = await dashboardService.getProxyVotingRationale(url);
+  return { result: response.result, count: response.count };
+});
+
+export const fetchVotingRationaleBasedOnInstitution = createAsyncThunk<
+  { results: any },
+  string
+>(`${name}/fetchVotingRationaleBasedOnInstitution`, async (url: string) => {
+  return await dashboardService.fetchVdsProxyAllInvestor(url);
+});
+
 const companySlice = createSlice({
   name,
   initialState,
@@ -256,6 +285,12 @@ const companySlice = createSlice({
     },
     resetPage(state) {
       state.page = 1;
+    },
+    setVotingRationalePage(state, action: PayloadAction<number>) {
+      state.votingRationlePage = action.payload;
+    },
+    resetVotingRationalePage(state) {
+      state.votingRationlePage = 1;
     },
     setTempSearch(state, action: PayloadAction<string>) {
       state.tempSearch = action.payload;
@@ -290,6 +325,11 @@ const companySlice = createSlice({
     ) {
       state.proxyContestTopFilter[action.payload.key] = action.payload
         .value as any;
+    },
+
+    clearVotingRationale(state) {
+      state.votingRationale = [];
+      state.votingRationleTotalPage = 1;
     },
   },
   extraReducers: (builder) => {
@@ -608,6 +648,24 @@ const companySlice = createSlice({
         state.investorProfileLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
+      })
+
+      //voting rationale
+
+      .addCase(getProxyVotingRationale.pending, (state) => {
+        state.getProxyVotingRationaleLoading = true;
+        state.error = null;
+      })
+      .addCase(getProxyVotingRationale.fulfilled, (state, action) => {
+        state.getProxyVotingRationaleLoading = false;
+        state.votingRationale = action.payload.result;
+        state.votingRationleTotalPage = getPageNumbers(action.payload.count);
+        state.error = null;
+      })
+      .addCase(getProxyVotingRationale.rejected, (state, action) => {
+        state.getProxyVotingRationaleLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch company dashboard";
       });
   },
 });
@@ -621,4 +679,7 @@ export const {
   setTabs,
   setProxyContestInvestorFilter,
   setProxyTopFilter,
+  setVotingRationalePage,
+  resetVotingRationalePage,
+  clearVotingRationale,
 } = companySlice.actions;
