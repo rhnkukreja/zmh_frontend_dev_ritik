@@ -569,7 +569,7 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  <VotingRationale />
+                  {/* <VotingRationale /> */}
                 </Tab.Panel>
               </Tab.Panels>
 
@@ -855,7 +855,7 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  <VotingRationale filter={filter} />
+                  {/* <VotingRationale filter={filter} /> */}
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>
