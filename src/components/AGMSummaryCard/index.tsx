@@ -4,7 +4,7 @@ import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import Tippy from "../Base/Tippy";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useLocation } from "react-router-dom";
 import clsx from "clsx";
@@ -16,6 +16,7 @@ import {
 import { baseURL } from "@/constant";
 import { AppDispatch } from "@/stores/store";
 import LoadingIcon from "../Base/LoadingIcon";
+import { dashboardService } from "@/services/dashboard";
 
 const index = () => {
   const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
@@ -134,6 +135,32 @@ const index = () => {
     );
   };
 
+  const [isInstitutionList, setIsInstitutionList] = useState<boolean>(false);
+
+
+  useEffect(() => {
+    getAllInstitutionDropdown();
+  }, [companyGlobalSearchTicker]);
+  
+   const getAllInstitutionDropdown = async () => {
+      try {
+        const res = await dashboardService.getInstitution({
+          company_name: [companyGlobalSearchName],
+        });
+        if (res.result?.institution?.length > 0) {
+          setIsInstitutionList(true);
+        }
+        else {
+          setIsInstitutionList(false);
+          
+        }
+      } catch (error) {
+        return error;
+      } finally {
+        // setGetDropdownLoader(false);
+      }
+    };
+
   return (
     <>
       {agmSummaryDetails?.Year && (
@@ -149,8 +176,10 @@ const index = () => {
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
 
-                  {dashboardDataList?.length > 0 &&
-                    agmSummaryDetails?.Year !== "2023" && (
+                  {
+                    // dashboardDataList?.length > 0 &&
+                    //   agmSummaryDetails?.Year !== "2023" &&
+                    dashboardDataList?.length > 0 && isInstitutionList && (
                       <button
                         onClick={(event: any) => handleViewMore(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -177,12 +206,12 @@ const index = () => {
                       className="font-semibold cursor-pointer"
                       onClick={() => {
                         window.scrollBy({
-                          top: 350,
+                          top: 650,
                           behavior: "smooth",
                         });
                       }}
                     >
-                      {/* Quorum: {agmSummaryDetails?.Quorum} */}
+                      *Quorum: {agmSummaryDetails?.Quorum}
                     </h4>
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -284,19 +313,6 @@ const index = () => {
                     </Table>
                   </div>
                 </TableWrapper>
-
-                {/* <footer className="!pt-3 flex items-start flex-col">
-                  <span className="!pt-3 flex items-center box p-2">
-                    <sup
-                      className="bold-sup cursor-pointer ml-1"
-                      style={{ fontSize: "0.8em" }}
-                    ></sup>
-                    <p id="footnote " className="">
-                      [(For + Against + Withhold)/Shares Outstanding]
-                    </p>
-                  </span>
-                </footer> */}
-
                 <br />
                 <TableWrapper isLoading={loading}>
                   <div
@@ -372,6 +388,18 @@ const index = () => {
                     </Table>
                   </div>
                 </TableWrapper>
+
+                 <footer className="!pt-3 flex items-start flex-col">
+                  <span className="!pt-3 flex items-center p-2">
+                    <sup
+                      className="bold-sup cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >*</sup>
+                    <p id="footnote " className="">
+                      [(For + Against + Withhold)/Shares Outstanding]
+                    </p>
+                  </span>
+                </footer>
               </div>
             </>
           </div>
