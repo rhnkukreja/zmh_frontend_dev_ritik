@@ -25,7 +25,6 @@ const DetailCaseStudies = () => {
     navigate(`/case-studies`);
   };
 
-  console.log({ singleCaseStudy });
   return (
     <>
       <Button

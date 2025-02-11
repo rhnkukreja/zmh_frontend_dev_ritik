@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
-import { ProxyVotingGuideline } from "@/types/proxyVotingGuideline";
+import { ProxyVotingGuideline, ProxyVotingSummaryType } from "@/types/proxyVotingGuideline";
 import { getPageNumbers } from "@/utils/helper";
 
 const name = "proxyVotingGuideline";
@@ -8,15 +8,23 @@ const name = "proxyVotingGuideline";
 interface ProxyVotingGuidelineFilters {
   institution_name: string[];
   year: string[];
+  category?: string[];
+  sub_category?: string[];
+  keyword?: string;
 }
 
 interface ProxyVotingGuidelineSlice {
   proxyVotingGuidelines: ProxyVotingGuideline[];
   totalProxyVotingGuidelines: number;
   loading: boolean;
+  proxyVotingSummary: ProxyVotingSummaryType[];
+  totalProxyVotingSummary: number;
+  summaryLoading: boolean;
   error: string | null;
   totalPages: number;
+  summaryTotalPages: number;
   page: number;
+  summaryPage: number;
   guidelineFilterOptions: {
     year: string[];
   };
@@ -27,9 +35,14 @@ const initialState: ProxyVotingGuidelineSlice = {
   proxyVotingGuidelines: [],
   totalProxyVotingGuidelines: 0,
   loading: false,
+  proxyVotingSummary: [],
+  totalProxyVotingSummary: 0,
+  summaryLoading: false,
   error: null,
   totalPages: 1,
+  summaryTotalPages: 1,
   page: 1,
+  summaryPage: 1,
   guidelineFilterOptions: {
     year: ["2025", "2024", "2023"],
   },
@@ -44,6 +57,13 @@ export const fetchProxyVotingGuidelines = createAsyncThunk<
   string
 >(`${name}/fetchProxyVotingGuidelines`, async (url: string) => {
   return await proxyVotingGuidelineService.getProxyVotingGuideline(url);
+});
+
+export const fetchProxyVotingSummary = createAsyncThunk<
+  { count: number; results: ProxyVotingSummaryType[] },
+  string
+>(`${name}/fetchProxyVotingSummary`, async (url: string) => {
+  return await proxyVotingGuidelineService.getProxyVotingSummary(url);
 });
 
 export const addEditProxyVotingGuideline = createAsyncThunk<
@@ -76,6 +96,12 @@ const proxyVotingGuidelineSlice = createSlice({
     },
     resetPage(state) {
       state.page = 1;
+    },
+    setSummaryPage(state, action: PayloadAction<number>) {
+      state.summaryPage = action.payload;
+    },
+    resetSummaryPage(state) {
+      state.summaryPage = 1;
     },
     setFilter(
       state,
@@ -129,6 +155,31 @@ const proxyVotingGuidelineSlice = createSlice({
           action.error.message || "Failed to fetch voting guidelines";
       })
 
+      .addCase(fetchProxyVotingSummary.pending, (state) => {
+        state.summaryLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchProxyVotingSummary.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            count: number;
+            results: ProxyVotingSummaryType[];
+          }>
+        ) => {
+          state.summaryLoading = false;
+          state.proxyVotingSummary = action.payload.results;
+          state.totalProxyVotingSummary = action.payload.count;
+          state.summaryTotalPages = getPageNumbers(action.payload.count);
+        }
+      )
+      .addCase(fetchProxyVotingSummary.rejected, (state, action) => {
+        state.summaryLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch voting guidelines";
+      })
+
       .addCase(addEditProxyVotingGuideline.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -167,4 +218,6 @@ export const {
   resetFilter,
   setAllFilters,
   resetProxyVotingGuidelines,
+  setSummaryPage,
+  resetSummaryPage,
 } = proxyVotingGuidelineSlice.actions;

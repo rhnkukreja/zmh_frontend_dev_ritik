@@ -34,6 +34,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import { FormCheck } from "@/components/Base/Form";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import { useNavigate } from "react-router-dom";
 
 interface ProxyGuidelineFilter {
   year: string[];
@@ -75,6 +76,8 @@ function ProxyGuideline() {
   const [currentPdfName, setCurrentPdfName] = useState<string>("");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -560,6 +563,24 @@ function ProxyGuideline() {
                                         />
                                       </a>
                                     </Tippy>
+
+                                    {guideline?.is_search
+                                      &&
+                                      <Tippy
+                                        content="Searchable"
+                                        options={{
+                                          theme: "light",
+                                        }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            navigate(`/proxy-voting-guideline/pdf-sumamry/${guideline?.id}`)
+                                          }}
+                                          icon="Search"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </Tippy>
+                                    }
                                   </div>
                                 </Table.Td>
                               </Table.Tr>

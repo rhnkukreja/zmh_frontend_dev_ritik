@@ -89,6 +89,7 @@ import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
 import ProxyContest from "@/pages/ProxyContest";
+import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
 
 function Router() {
   const TitleManager = () => {
@@ -372,6 +373,11 @@ function Router() {
           path: "proxy-voting-guideline",
           element: <ProxyVotingGuideline />,
           data: { titleName: "Voting Guidlines - ZMH Analytics" },
+        },
+        {
+          path: "proxy-voting-guideline/pdf-sumamry/:id",
+          element: <ProxyVotingSummary />,
+          data: { titleName: "Voting Guidlines Summary - ZMH Analytics" },
         },
         {
           path: "engagement-question/:id",

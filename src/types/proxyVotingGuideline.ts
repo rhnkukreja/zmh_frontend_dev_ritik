@@ -15,4 +15,19 @@ export type ProxyVotingGuideline = {
   date_updated: string;
   institution_logo_url: string;
   voting_guidelines_pdf_name: string;
+  is_search?: boolean;
+};
+
+export type ProxyVotingSummaryType = {
+  category: string;
+  created_by?: Date | null;
+  date_created?: Date | null;
+  date_updated?: Date | null;
+  id: number;
+  institution_name: string;
+  paragraph: string;
+  proxy_voting_guidelines: number;
+  sub_category: string;
+  updated_by?: Date | null;
+  year?: string;
 };
