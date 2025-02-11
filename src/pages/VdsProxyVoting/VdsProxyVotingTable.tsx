@@ -14,7 +14,6 @@ import {
   fetchVdsProxyAllInvestor,
   fetchVdsProxyDashboard,
   getProxyVotingRationale,
-  resetVotingRationalePage,
   setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
@@ -43,7 +42,7 @@ const VdsProxyVotingTable = () => {
     vdsProxyLoading,
     vdsProxyAllInvestorDetails,
     vdsProxyAllInvestorLoading,
-    votingRationlePage,
+
     tab,
   } = useAppSelector((state) => state.dashboard);
   const [searchParams] = useSearchParams();
@@ -104,6 +103,14 @@ const VdsProxyVotingTable = () => {
             })
           )
         );
+        dispatch(
+          getProxyVotingRationale(
+            createDynamicURL(`/vds_proxy_voting_rationale/`, {
+              ticker: companyGlobalSearchTicker,
+              institution_name: filter,
+            })
+          )
+        );
       } else {
         dispatch(
           fetchVdsProxyAllInvestor(
@@ -121,6 +128,15 @@ const VdsProxyVotingTable = () => {
           })
         )
       );
+
+      dispatch(
+        getProxyVotingRationale(
+          createDynamicURL(`/vds_proxy_voting_rationale/`, {
+            ticker: companyGlobalSearchTicker,
+            institution_name: filter,
+          })
+        )
+      );
     } else {
       dispatch(
         fetchVdsProxyAllInvestor(
@@ -129,37 +145,6 @@ const VdsProxyVotingTable = () => {
       );
     }
   }, [filter, tab, companyGlobalSearchTicker]);
-
-  useEffect(() => {
-    if (tab === "All-Investor") {
-      if (filter?.length > 0) {
-        dispatch(
-          getProxyVotingRationale(
-            createDynamicURL(
-              `/vds_proxy_voting_rationale/`,
-              {
-                ticker: companyGlobalSearchTicker,
-                institution_name: filter,
-              },
-              undefined,
-              votingRationlePage
-            )
-          )
-        );
-      } else {
-        dispatch(
-          getProxyVotingRationale(
-            createDynamicURL(
-              `/vds_proxy_voting_rationale/`,
-              {},
-              undefined,
-              votingRationlePage
-            )
-          )
-        );
-      }
-    }
-  }, [filter, tab, companyGlobalSearchTicker, votingRationlePage]);
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -271,7 +256,7 @@ const VdsProxyVotingTable = () => {
 
   const onFilterClear = () => {
     setFilter([]);
-    dispatch(resetVotingRationalePage());
+
     dispatch(clearVotingRationale());
     reset();
   };
@@ -282,7 +267,6 @@ const VdsProxyVotingTable = () => {
   };
 
   const onTabChange = () => {
-    dispatch(resetVotingRationalePage());
     dispatch(clearVotingRationale());
   };
   return (
@@ -569,7 +553,7 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  {/* <VotingRationale /> */}
+                  <VotingRationale />
                 </Tab.Panel>
               </Tab.Panels>
 
@@ -855,7 +839,7 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  {/* <VotingRationale filter={filter} /> */}
+                  <VotingRationale filter={filter} />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

@@ -1,15 +1,14 @@
+import LoadingIcon from "@/components/Base/LoadingIcon";
 import Lucide from "@/components/Base/Lucide";
 import Table from "@/components/Base/Table";
 import Tippy from "@/components/Base/Tippy";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import {
-  getProxyVotingRationale,
-  setVotingRationalePage,
-} from "@/stores/dashboardSlice";
+import { getProxyVotingRationale } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { createDynamicURL } from "@/utils/helper";
 import { useEffect, useState } from "react";
+import { Tooltip } from "react-tooltip";
 
 interface VotingRationaleProps {
   filter?: any;
@@ -20,13 +19,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
     (state) => state.authentiction
   );
 
-  const {
-    votingRationlePage,
-    votingRationleTotalPage,
-    getProxyVotingRationaleLoading,
-    votingRationale,
-    tab,
-  } = useAppSelector((state) => state.dashboard);
+  const { getProxyVotingRationaleLoading, votingRationale, tab } =
+    useAppSelector((state) => state.dashboard);
 
   const [groupVotingRationale, setGroupVotingRationale] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
@@ -51,7 +45,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
     if (groupVotingRationale) {
       const initialOpenGroups = Object.keys(groupVotingRationale).reduce(
         (acc, investorName) => {
-          acc[investorName] = openGroups[investorName] ?? true;
+          acc[investorName] = openGroups[investorName] ?? false;
           return acc;
         },
         {} as { [key: string]: boolean }
@@ -71,34 +65,14 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
     if (companyGlobalSearchTicker && tab === "Top-20") {
       dispatch(
         getProxyVotingRationale(
-          createDynamicURL(
-            `/vds_proxy_voting_rationale/`,
-            {
-              ticker: companyGlobalSearchTicker,
-            },
-            undefined,
-            votingRationlePage
-          )
+          createDynamicURL(`/vds_proxy_voting_rationale/`, {
+            ticker: companyGlobalSearchTicker,
+          })
         )
       );
     }
-  }, [companyGlobalSearchTicker, votingRationlePage, tab]);
+  }, [companyGlobalSearchTicker, tab]);
 
-  const handleNextPage = () => {
-    if (votingRationlePage < votingRationleTotalPage) {
-      dispatch(setVotingRationalePage(votingRationlePage + 1));
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (votingRationlePage > 1) {
-      dispatch(setVotingRationalePage(votingRationlePage - 1));
-    }
-  };
-
-  const handlePageChange = (newPage: number) => {
-    dispatch(setVotingRationalePage(newPage));
-  };
   return (
     <div className="mt-6">
       <h1 className="text-lg font-bold mb-6 ">Voting Rationale</h1>
@@ -132,7 +106,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
                         ]) => (
                           <>
                             <Table.Tr
-                              className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer"
+                              className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10"
                               onClick={() => toggleGroup(investorName)}
                             >
                               <Table.Td
@@ -141,17 +115,16 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
                               >
                                 <div className="flex flex-row justify-start items-center">
                                   {investorName}
-
                                   <button className="ml-2 text-blue-500">
                                     {openGroups[investorName] ? (
                                       <Lucide
                                         icon="ChevronUp"
-                                        className=" w-6 h-6 mr-2 "
+                                        className="w-6 h-6 mr-2"
                                       />
                                     ) : (
                                       <Lucide
                                         icon="ChevronDown"
-                                        className=" w-6 h-6 mr-2 "
+                                        className="w-6 h-6 mr-2"
                                       />
                                     )}
                                   </button>
@@ -168,19 +141,21 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
                                 >
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600  !w-[200px] "></Table.Td>
 
-                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 !min-w-[150px] ">
                                     {question?.proposal}
                                   </Table.Td>
 
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                    <Tippy
-                                      content={question?.voting_rationale}
-                                      options={{ theme: "light" }}
-                                    >
-                                      <div className="whitespace-normal capitalize  overflow-hidden text-ellipsis line-clamp-2">
-                                        {question?.voting_rationale}
-                                      </div>
-                                    </Tippy>
+                                    <div
+                                      dangerouslySetInnerHTML={{
+                                        __html: question?.voting_rationale,
+                                      }}
+                                      data-tooltip-id="tooltip-for-question"
+                                      data-tooltip-html={
+                                        question?.voting_rationale
+                                      }
+                                      className="whitespace-normal capitalize  overflow-hidden text-ellipsis line-clamp-2"
+                                    ></div>
                                   </Table.Td>
                                 </Table.Tr>
                               ))}
@@ -207,17 +182,26 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
               </Table>
             </div>
           </TableWrapper>
-
-          <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-            <CPagination
-              page={votingRationlePage}
-              totalPages={votingRationleTotalPage}
-              handleNextPage={handleNextPage}
-              handlePageChange={handlePageChange}
-              handlePreviousPage={handlePreviousPage}
-            />
-          </div>
         </>
+      )}
+
+      <Tooltip
+        id="tooltip-for-question"
+        className="!max-w-[700px] !bg-white !text-black"
+        place="top-start"
+        style={{
+          boxShadow: "2px 4px 6px rgba(0, 0, 0, 0.2)",
+        }}
+      />
+
+      {votingRationale?.length === 0 && getProxyVotingRationaleLoading && (
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
+        </div>
       )}
 
       {tab === "Top-20" &&

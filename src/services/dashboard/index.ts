@@ -180,13 +180,11 @@ class DashboardService {
 
   public async getProxyVotingRationale(url: string): Promise<{
     result: ProxyVotingRationale[];
-    count: number;
   }> {
     const response = await axiosInstance.get(url);
 
     return {
-      result: response.data.results,
-      count: response.data.count,
+      result: response.data,
     };
   }
 }
