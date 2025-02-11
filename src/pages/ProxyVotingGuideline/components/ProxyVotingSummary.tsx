@@ -258,7 +258,7 @@ const getAllProxyVotinSummaryDropdowns = async () => {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                             <div className="w-full">
                                                 <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                    Category
+                                                    <span className="font-semibold">Category</span>
                                                     {apiDropdownOptions.category?.length > 0 && (
                                                         <div>
                                                             <FormCheck className="mr-2">
@@ -319,7 +319,7 @@ const getAllProxyVotinSummaryDropdowns = async () => {
 
                                             <div className="w-full">
                                                 <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                    Sub Category
+                                                    <span className="font-semibold">Sub Category</span>
                                                     {apiSubCategoryDropdown.sub_category?.length > 0 && (
                                                         <div>
                                                             <FormCheck className="mr-2">
@@ -374,7 +374,7 @@ const getAllProxyVotinSummaryDropdowns = async () => {
                                             </div>
 
                                             <div className="w-full">
-                                                <div className="text-left text-slate-500">Keyword</div>
+                                                <div className="text-left text-slate-500 font-semibold">Keyword</div>
                                                 <Controller
                                                     name="keyword"
                                                     control={control}
