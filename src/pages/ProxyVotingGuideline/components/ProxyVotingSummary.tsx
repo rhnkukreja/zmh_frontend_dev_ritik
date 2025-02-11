@@ -59,6 +59,12 @@ function ProxyVotingSummary() {
             summaryPage
         );
         dispatch(fetchProxyVotingSummary(dynamicURL));
+
+        setFiltersLength(
+            countValidFilters(
+                filters
+            )
+        );
     }, [params.id, filters, summaryPage]);
 
     const { handleSubmit, reset, setValue, watch, control } =

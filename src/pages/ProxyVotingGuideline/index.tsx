@@ -420,7 +420,7 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                          <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="w-[150px] py-2 text-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Details
                           </Table.Td>
                         </Table.Tr>
@@ -503,8 +503,8 @@ function ProxyGuideline() {
                                   </Table.Td>
                                 )}
 
-                                <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                  <div className="flex gap-3 ">
+                                <Table.Td className=" py-2 relative w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                  <div className="flex gap-3 text-center">
                                     <Tippy
                                       content="See Details"
                                       options={{
