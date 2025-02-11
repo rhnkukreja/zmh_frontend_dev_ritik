@@ -36,6 +36,7 @@ import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { modifyRoute } from "@/stores/themeSlice";
 import { peerAnalysisService } from "@/services/peerAnalysis";
+import clsx from "clsx";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -424,10 +425,10 @@ function PeerAnalysis() {
                         Apply
                       </Button>
                     </div>
-                    <div className="grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 md:grid-cols-2">
+                    <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-4' : 'md:grid-cols-3'])}>
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Year
+                          <span className="font-semibold">Year</span>
                           {apiDropdownOptions?.year?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -498,7 +499,9 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    Category
+                      <span className="font-semibold">Category</span>
+
+                                    
                                     {apiDropdownOptions?.category?.length >
                                       0 && (
                                       <div>
@@ -572,7 +575,9 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    Country
+                      <span className=" font-semibold">Country</span>
+
+                                    
                                     {apiDropdownOptions?.country?.length >
                                       0 && (
                                       <div>
@@ -648,7 +653,7 @@ function PeerAnalysis() {
                       isAllCompanySelected === true &&
                       <div className="mx-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
-                                      Sector
+                      <span className="font-semibold">Sector</span>
                                       {apiDropdownOptions?.sector?.length >
                                         0 && (
                                         <div>

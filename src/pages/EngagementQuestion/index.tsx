@@ -369,7 +369,7 @@ function Main() {
                             </div>
 
                             <div className="mt-3">
-                              <div className="w-full  my-2">
+                              <div className="w-full my-2">
                                 <div className="text-left text-slate-500 flex justify-between mb-1">
                                   Year
                                   {engagementQuestionFilterOptions?.year

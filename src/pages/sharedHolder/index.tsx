@@ -715,10 +715,10 @@ function ShareHolderProposal() {
                         Apply
                       </Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                    <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 md:grid-cols-4"])}>
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Year
+                          <span className="font-semibold">Year</span>
                           {apiDropdownOptions?.year?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -770,29 +770,10 @@ function ShareHolderProposal() {
                         />
                       </div>
 
-                      {isAllCompanySelected && (
-                        <div className="w-full">
-                          <div className="text-left text-slate-500">
-                            Companies
-                          </div>
-                          <Controller
-                            name="global_search"
-                            control={control}
-                            render={({ field }) => (
-                              <CompanySelect
-                                value={field.value}
-                                onChange={field.onChange}
-                                isMulti
-                                className="mt-1"
-                              />
-                            )}
-                          />
-                        </div>
-                      )}
-
+                    
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Category
+                          <span className="font-semibold">Category</span>
                           {apiDropdownOptions.category?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -853,7 +834,7 @@ function ShareHolderProposal() {
 
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Sub Category
+                          <span className="font-semibold">Sub Category</span>
                           {apiSubCategoryDropdown.sub_category?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -909,7 +890,7 @@ function ShareHolderProposal() {
 
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Status
+                          <span className="font-semibold">Status</span>
                           {apiDropdownOptions.status?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -962,7 +943,8 @@ function ShareHolderProposal() {
                       </div>
 
                       <div className="w-full">
-                        <div className="text-left text-slate-500">Keyword</div>
+                        
+                        <div className="text-left text-slate-500 font-semibold">Keyword</div>
                         <Controller
                           name="keyword"
                           control={control}
@@ -979,11 +961,31 @@ function ShareHolderProposal() {
                         />
                       </div>
 
+                      {isAllCompanySelected && (
+                        <div className="w-full">
+                          <div className="text-left text-slate-500 font-semibold">
+                            Companies
+                          </div>
+                          <Controller
+                            name="global_search"
+                            control={control}
+                            render={({ field }) => (
+                              <CompanySelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                isMulti
+                                className="mt-1"
+                              />
+                            )}
+                          />
+                        </div>
+                      )}
+
                       {user?.user_type === "Admin" && (
                         <>
                           <div className="w-full">
                             <div className="text-left text-slate-500 flex justify-between mb-1">
-                              Month
+                          <span className="font-semibold">Month</span>
                             </div>
                             <Controller
                               name="month"
@@ -1022,7 +1024,7 @@ function ShareHolderProposal() {
                             tab === 'proposal' && 
                             <>
                           <div className="w-full">
-                            <div className="text-left text-slate-500">
+                            <div className="text-left text-slate-500 font-semibold">
                               Ready For Review
                             </div>
                             <Controller
@@ -1076,7 +1078,7 @@ function ShareHolderProposal() {
                           </div>
 
                           <div className="w-full">
-                            <div className="text-left text-slate-500">
+                            <div className="text-left text-slate-500 font-semibold">
                               Admin Status
                             </div>
                             <Controller
@@ -1130,7 +1132,7 @@ function ShareHolderProposal() {
                           </div>
 
                           <div className="w-full">
-                            <div className="text-left text-slate-500">
+                            <div className="text-left text-slate-500 font-semibold">
                               No Shareholder Proposal
                             </div>
                             <Controller
@@ -1184,7 +1186,7 @@ function ShareHolderProposal() {
                           </div>
 
                           <div className="w-full">
-                            <div className="text-left text-slate-500">
+                            <div className="text-left text-slate-500 font-semibold">
                               NL Exist
                             </div>
                             <Controller
@@ -1244,7 +1246,7 @@ function ShareHolderProposal() {
                             tab === 'no-action' && 
                             <>
                               <div className="w-full">
-                                <div className="text-left text-slate-500">
+                                <div className="text-left text-slate-500 font-semibold">
                                   Approved
                                 </div>
                                 <Controller
@@ -1300,7 +1302,7 @@ function ShareHolderProposal() {
                             
 
                               <div className="w-full">
-                                <div className="text-left text-slate-500">
+                                <div className="text-left text-slate-500 font-semibold">
                                   Is Correct
                                 </div>
                                 <Controller
@@ -1354,7 +1356,7 @@ function ShareHolderProposal() {
                               </div>
 
                               <div className="w-full">
-                                <div className="text-left text-slate-500">
+                                <div className="text-left text-slate-500 font-semibold">
                                   Company Status
                                 </div>
                                 <Controller
