@@ -154,7 +154,7 @@ function ProxyVotingSummary() {
 const getAllProxyVotinSummaryDropdowns = async () => {
     try {
       setGetDropdownLoader(true);
-      const res =await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues();
+      const res =await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues({proxy_voting_guidelines_id: params?.id});
       if (res.result) {
         setApiDropdownOptions({ ...res.result });
       }
@@ -166,7 +166,7 @@ const getAllProxyVotinSummaryDropdowns = async () => {
   };
     const getSubCategoryDropdown = async (value?: any) => {
         if (value !== "") {
-            const paramFilter = { category: value, };
+            const paramFilter = { category: value, proxy_voting_guidelines_id: params?.id};
             try {
                 const res =
                     await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues(

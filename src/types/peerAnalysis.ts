@@ -6,6 +6,7 @@ export interface TypesPeerAnalysis {
   caspio_company_name: string;
   caspio_company_sector: string;
   caspio_company_country: string;
+  company_country: string;
   institution_name: string;
   institution_logo_url: string;
   caspio_institution_name: string;
