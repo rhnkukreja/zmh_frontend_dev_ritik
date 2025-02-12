@@ -92,7 +92,7 @@ function Main() {
     setSearchTerms([]);
     reset();
     resetFormValues();
-    // dispatch(resetFilter());
+    dispatch(resetFilter());
     dispatch(resetPage());
   };
 

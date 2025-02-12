@@ -5,8 +5,9 @@ import Tippy from "@/components/Base/Tippy";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { getProxyVotingRationale } from "@/stores/dashboardSlice";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { createDynamicURL } from "@/utils/helper";
+import { createDynamicURL, downloadXlsxFile } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { Tooltip } from "react-tooltip";
 
@@ -75,7 +76,27 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
 
   return (
     <div className="mt-6">
-      <h1 className="text-lg font-bold mb-6 ">Voting Rationale</h1>
+      <div className="flex justify-between mb-4 mt-1">
+        <h1 className="text-lg font-bold mb-6 ">Voting Rationale</h1>
+        {votingRationale?.length > 0 && (
+          <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
+            <Tippy content="Download Excel" options={{ theme: "light" }}>
+              <div
+                className="box p-[5px] cursor-pointer"
+                onClick={() =>
+                  downloadXlsxFile({
+                    data: votingRationale,
+                    fileName: "Voting Rationale.xlsx",
+                  })
+                }
+              >
+                <img alt="download-icon" src={downloadIcon} />
+              </div>
+            </Tippy>
+          </div>
+        )}
+      </div>
+
       {votingRationale?.length > 0 && (
         <>
           <TableWrapper isLoading={getProxyVotingRationaleLoading}>
@@ -187,7 +208,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
 
       <Tooltip
         id="tooltip-for-question"
-        className="!max-w-[700px] !bg-white !text-black"
+        className="!max-w-[700px] !bg-white !text-black !text-lg"
         place="top-start"
         style={{
           boxShadow: "2px 4px 6px rgba(0, 0, 0, 0.2)",
