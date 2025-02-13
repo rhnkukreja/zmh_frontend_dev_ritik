@@ -92,7 +92,7 @@ function Main() {
     setSearchTerms([]);
     reset();
     resetFormValues();
-    // dispatch(resetFilter());
+    dispatch(resetFilter());
     dispatch(resetPage());
   };
 
@@ -366,10 +366,6 @@ function Main() {
                       return (
                         <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
                           <div className="ml-5 flex items-center">
-                            {/* <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center mr-3 text-xs">
-                                      {(page - 1) * 10 + index + 1}
-                                    </div> */}
-
                             {profile?.institution_logo_url &&
                             profile.institution_logo_url !== "null" ? (
                               <>
@@ -390,13 +386,7 @@ function Main() {
                                 />
                               </div>
                             )}
-                            {/* 
-                            <Tippy
-                              content={profile?.institution_name || ""}
-                              options={{
-                                theme: "light",
-                              }}
-                            > */}
+
                             <span
                               onClick={() => {
                                 gotoDetailPage(profile.id);

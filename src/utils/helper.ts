@@ -1,10 +1,11 @@
 import { characterColors, PAGE_SIZE } from "@/constant";
-import { Menu } from "@/stores/sideMenuSlice";
 import { FormattedMenu } from "@/themes/Echo/side-menu";
 import { FilterObject } from "@/types/common";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { parseColor } from "tailwindcss/lib/util/color";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 dayjs.extend(duration);
 
@@ -403,6 +404,35 @@ const createQueryParams = (params: Record<string, any>) => {
   return queryParams.toString();
 };
 
+const downloadXlsxFile = ({
+  data,
+  fileName = "data.xlsx",
+}: {
+  data: any[];
+  fileName: string;
+}) => {
+  // Transform each row so that the header keys are entirely in uppercase
+  const transformedData = data.map((row) => {
+    const newRow: Record<string, any> = {};
+    Object.keys(row).forEach((key) => {
+      const newKey = key.toUpperCase();
+      newRow[newKey] = row[key];
+    });
+    return newRow;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(transformedData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+  const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, fileName);
+};
+
+
 export default localStorageHelper;
 
 export {
@@ -434,4 +464,5 @@ export {
   createQueryParams,
   localStorageHelper,
   getDateWithoutTime,
+  downloadXlsxFile,
 };

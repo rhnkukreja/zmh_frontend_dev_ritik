@@ -64,3 +64,11 @@ export const no_header_company = [
 ];
 
 export const subSidebarRoutes = ["/notes"];
+
+export const pageTitles: Record<string, string | null> = {
+  "/proxy-contest": "Proxy Contest 2024 (Beta)",
+  "/notes": "Notes (Beta)",
+  "/investor-profile": null,
+  "/engagement-question": null,
+  "/proxy-voting-guideline": null,
+};

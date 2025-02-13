@@ -34,6 +34,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import { FormCheck } from "@/components/Base/Form";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import { useNavigate } from "react-router-dom";
 
 interface ProxyGuidelineFilter {
   year: string[];
@@ -75,6 +76,8 @@ function ProxyGuideline() {
   const [currentPdfName, setCurrentPdfName] = useState<string>("");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -417,7 +420,7 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                          <Table.Td className="w-[150px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Details
                           </Table.Td>
                         </Table.Tr>
@@ -500,8 +503,8 @@ function ProxyGuideline() {
                                   </Table.Td>
                                 )}
 
-                                <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                  <div className="flex gap-3 ">
+                                <Table.Td className=" py-2 relative w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                  <div className="flex gap-3 justify-center items-center">
                                     <Tippy
                                       content="See Details"
                                       options={{
@@ -560,6 +563,25 @@ function ProxyGuideline() {
                                         />
                                       </a>
                                     </Tippy>
+
+                                    {guideline?.is_search
+                                      ? 
+                                      <Tippy
+                                        content="Searchable"
+                                        options={{
+                                          theme: "light",
+                                        }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            navigate(`/proxy-voting-guideline/pdf-sumamry/${guideline?.id}`)
+                                          }}
+                                          icon="Search"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </Tippy> 
+                                      : <span className="w-4 h-4 mr-1.5 stroke-[1.3]"></span>
+                                    }
                                   </div>
                                 </Table.Td>
                               </Table.Tr>

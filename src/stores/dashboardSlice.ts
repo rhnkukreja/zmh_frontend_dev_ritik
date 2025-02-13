@@ -85,8 +85,6 @@ interface CompanySliceState {
   getProxyVotingRationaleLoading: boolean;
   boardDirectorMembers: BoardDirectorMembers[];
   votingRationale: any[];
-  votingRationlePage: number;
-  votingRationleTotalPage: number;
 }
 
 const initialState: CompanySliceState = {
@@ -137,8 +135,6 @@ const initialState: CompanySliceState = {
   getProxyVotingRationaleLoading: false,
   boardDirectorMembers: [],
   votingRationale: [],
-  votingRationlePage: 1,
-  votingRationleTotalPage: 1,
 
   // {
   //   nominees: [],
@@ -262,11 +258,11 @@ export const getBoardDirectorMembers = createAsyncThunk<
 });
 
 export const getProxyVotingRationale = createAsyncThunk<
-  { result: ProxyVotingRationale[]; count: number },
+  { result: ProxyVotingRationale[] },
   string
 >(`${name}/getProxyVotingRationale`, async (url: string) => {
   const response = await dashboardService.getProxyVotingRationale(url);
-  return { result: response.result, count: response.count };
+  return { result: response.result };
 });
 
 export const fetchVotingRationaleBasedOnInstitution = createAsyncThunk<
@@ -286,12 +282,12 @@ const companySlice = createSlice({
     resetPage(state) {
       state.page = 1;
     },
-    setVotingRationalePage(state, action: PayloadAction<number>) {
-      state.votingRationlePage = action.payload;
-    },
-    resetVotingRationalePage(state) {
-      state.votingRationlePage = 1;
-    },
+    // setVotingRationalePage(state, action: PayloadAction<number>) {
+    //   state.votingRationlePage = action.payload;
+    // },
+    // resetVotingRationalePage(state) {
+    //   state.votingRationlePage = 1;
+    // },
     setTempSearch(state, action: PayloadAction<string>) {
       state.tempSearch = action.payload;
     },
@@ -329,7 +325,6 @@ const companySlice = createSlice({
 
     clearVotingRationale(state) {
       state.votingRationale = [];
-      state.votingRationleTotalPage = 1;
     },
   },
   extraReducers: (builder) => {
@@ -659,7 +654,6 @@ const companySlice = createSlice({
       .addCase(getProxyVotingRationale.fulfilled, (state, action) => {
         state.getProxyVotingRationaleLoading = false;
         state.votingRationale = action.payload.result;
-        state.votingRationleTotalPage = getPageNumbers(action.payload.count);
         state.error = null;
       })
       .addCase(getProxyVotingRationale.rejected, (state, action) => {
@@ -679,7 +673,7 @@ export const {
   setTabs,
   setProxyContestInvestorFilter,
   setProxyTopFilter,
-  setVotingRationalePage,
-  resetVotingRationalePage,
+  // setVotingRationalePage,
+  // resetVotingRationalePage,
   clearVotingRationale,
 } = companySlice.actions;

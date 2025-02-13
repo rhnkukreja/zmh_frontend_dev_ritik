@@ -1,5 +1,6 @@
+import { createDynamicURL } from "@/utils/helper";
 import { axiosInstance } from "../index";
-import { ProxyVotingGuideline } from "@/types/proxyVotingGuideline";
+import { ProxyVotingGuideline, ProxyVotingSummaryType } from "@/types/proxyVotingGuideline";
 
 class ProxyVotingGuidelineService {
   public async getProxyVotingGuideline(url: string): Promise<{
@@ -11,6 +12,30 @@ class ProxyVotingGuidelineService {
     return {
       count,
       results,
+    };
+  }
+
+  public async getProxyVotingSummary(url: string): Promise<{
+    count: number;
+    results: ProxyVotingSummaryType[];
+  }> {
+    const response = await axiosInstance.get(url);
+    const { count, results } = response.data;
+    return {
+      count,
+      results,
+    };
+  }
+
+  public async getProxyVotingSumamryDropdownValues(paramFilter?: any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(
+      createDynamicURL(`/get_proxy_voting_guidelines_pdf_summary_dropdown_values/`, paramFilter)
+    );
+    const result = response.data;
+    return {
+      result: result,
     };
   }
 

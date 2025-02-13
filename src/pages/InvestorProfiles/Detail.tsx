@@ -137,23 +137,6 @@ function Main() {
     }
   }, [dropzoneSingleRef.current, isExpanded]);
 
-  // const formatVotingGuidelinesLink = useMemo(() => {
-  //   return singleInvesterProfile?.voting_guidelines_link
-  //     .split(";")
-  //     .filter((url: any) => url.trim())
-  //     .map(
-  //       (url: any) =>
-  //         `<a   href="${url.trim()}" target="_blank" rel="noopener noreferrer">${url.trim()}</a><br>`
-  //     );
-  // }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines_link]);
-
-  // const votingGuidelinesText = useMemo(() => {
-  //   return (
-  //     singleInvesterProfile?.voting_guidelines_summary
-  //       ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-  //       ?.replace(/\n/g, "<br />") || ""
-  //   );
-  // }, [singleInvesterProfile, singleInvesterProfile?.voting_guidelines]);
   const handleExportToPDF = async () => {
     const input = contentRef.current;
     setIsGeneratingPDF(true);
@@ -228,10 +211,9 @@ function Main() {
   );
 
   const backToPreviousPage = () => {
-    if(from) {
-    navigate(`/?ticker=${companyGlobalSearchTicker}`);
-    }
-    else {
+    if (from) {
+      navigate(`/?ticker=${companyGlobalSearchTicker}`);
+    } else {
       dispatch(setPage(currentPage));
       navigate(`/investor-profile`);
     }
@@ -269,18 +251,18 @@ function Main() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 ">
         <div className="flex flex-col justify-between	md:mt-0 md:h-10 md:items-center md:flex-row mb-4">
-            <Button
-              onClick={backToPreviousPage}
-              variant="primary"
-              className="bg-theme-2 border-bg-theme-2 "
-            >
-              <ChevronLeft
-                className="group-[.mode--light]:text-white text-white"
-                size={18}
-                strokeWidth={1.5}
-              />
-              Back
-            </Button>
+          <Button
+            onClick={backToPreviousPage}
+            variant="primary"
+            className="bg-theme-2 border-bg-theme-2 "
+          >
+            <ChevronLeft
+              className="group-[.mode--light]:text-white text-white"
+              size={18}
+              strokeWidth={1.5}
+            />
+            Back
+          </Button>
         </div>
 
         <div ref={contentRef}>
