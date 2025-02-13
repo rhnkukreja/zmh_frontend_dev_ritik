@@ -50,6 +50,7 @@ function ProxyVotingSummary() {
         filters,
     } = useAppSelector((state) => state.proxyVotingGuideline);
     const { user } = useAppSelector((state) => state.authentiction);
+    // console.log("sumaaryyy", proxyVotingSummary[0])
 
     useEffect(() => {
         const dynamicURL = createDynamicURL(
@@ -82,7 +83,7 @@ function ProxyVotingSummary() {
         setValue("sub_category", []);
     };
 
- 
+
     const [searchTerms, setSearchTerms] = useState<string[]>([]);
     const [filtersLength, setFiltersLength] = useState<number>(0);
 
@@ -121,7 +122,7 @@ function ProxyVotingSummary() {
 
     const onSubmit = async (ProxyGuideline: ProxySummaryFilter) => {
         dispatch(
-            setAllFilters({...ProxyGuideline})
+            setAllFilters({ ...ProxyGuideline })
         );
 
         dispatch(resetPage());
@@ -141,32 +142,32 @@ function ProxyVotingSummary() {
             sub_category: [],
         });
 
-        const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
-            sub_category: [],
-          });
+    const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
+        sub_category: [],
+    });
 
-          useEffect(() => {
-            getAllProxyVotinSummaryDropdowns();
-            getSubCategoryDropdown();
-          }, []);
-        
-        
-const getAllProxyVotinSummaryDropdowns = async () => {
-    try {
-      setGetDropdownLoader(true);
-      const res =await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues({proxy_voting_guidelines_id: params?.id});
-      if (res.result) {
-        setApiDropdownOptions({ ...res.result });
-      }
-    } catch (error) {
-      return error;
-    } finally {
-      setGetDropdownLoader(false);
-    }
-  };
+    useEffect(() => {
+        getAllProxyVotinSummaryDropdowns();
+        getSubCategoryDropdown();
+    }, []);
+
+
+    const getAllProxyVotinSummaryDropdowns = async () => {
+        try {
+            setGetDropdownLoader(true);
+            const res = await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues({ proxy_voting_guidelines_id: params?.id });
+            if (res.result) {
+                setApiDropdownOptions({ ...res.result });
+            }
+        } catch (error) {
+            return error;
+        } finally {
+            setGetDropdownLoader(false);
+        }
+    };
     const getSubCategoryDropdown = async (value?: any) => {
         if (value !== "") {
-            const paramFilter = { category: value, proxy_voting_guidelines_id: params?.id};
+            const paramFilter = { category: value, proxy_voting_guidelines_id: params?.id };
             try {
                 const res =
                     await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues(
@@ -184,7 +185,7 @@ const getAllProxyVotinSummaryDropdowns = async () => {
 
     const backToPreviousPage = () => {
         navigate(`/proxy-voting-guideline`);
-      };
+    };
     return (
         <>
             <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -204,9 +205,12 @@ const getAllProxyVotinSummaryDropdowns = async () => {
                     <div className="">
                         <div className="flex flex-col box box--stacked">
                             <div className="flex flex-col p-5 sm:flex-row gap-y-2">
-                            <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-                        <div className="font-semibold text-xl ">Voting Guidelines PDF Sumamry</div>
-                    </div>
+                                <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
+                                    <div className="font-semibold text-xl">
+                                        {proxyVotingSummary?.[0]?.institution_name} ({proxyVotingSummary?.[0]?.year})
+                                    </div>
+
+                                </div>
 
                                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                                     <Popover className="inline-block">
@@ -400,9 +404,9 @@ const getAllProxyVotinSummaryDropdowns = async () => {
                                         <Table>
                                             <Table.Thead>
                                                 <Table.Tr>
-                                                    <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                    {/* <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Investor
-                                                    </Table.Td>
+                                                    </Table.Td> */}
                                                     {/* {user?.user_type === "Admin" && ( */}
                                                     <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                                         Categories
@@ -429,29 +433,29 @@ const getAllProxyVotinSummaryDropdowns = async () => {
                                                                 key={summary?.id}
                                                                 className="[&_td]:last:border-b-0"
                                                             >
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                {/* <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                                     {summary?.institution_name}
 
+                                                                </Table.Td> */}
+                                                                {/* {user?.user_type === "Admin" && ( */}
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                    {summary?.category && (
+                                                                        <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
+                                                                            {summary?.category}
+                                                                        </div>
+                                                                    )}
                                                                 </Table.Td>
-                                                                {/* {user?.user_type === "Admin" && ( */}
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                        {summary?.category && (
-                                                                            <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
-                                                                                {summary?.category}
-                                                                            </div>
-                                                                        )}
-                                                                    </Table.Td>
                                                                 {/* )} */}
 
                                                                 {/* {user?.user_type === "Admin" && ( */}
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                        {summary?.sub_category && (
-                                                                            <>{summary?.sub_category}</>
-                                                                        )}
-                                                                    </Table.Td>
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                    {summary?.sub_category && (
+                                                                        <>{summary?.sub_category}</>
+                                                                    )}
+                                                                </Table.Td>
                                                                 {/* )} */}
 
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[650px]">
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[800px]">
                                                                     {summary?.paragraph && (
                                                                         <> {summary?.paragraph}</>
                                                                     )}
@@ -470,15 +474,15 @@ const getAllProxyVotinSummaryDropdowns = async () => {
                                 </TableWrapper>
                             </div>
                             {/* {summaryTotalPages > 1 && ( */}
-                                <div className="px-5 pb-5 mt-auto">
-                                    <CPagination
-                                        page={summaryPage}
-                                        totalPages={summaryTotalPages}
-                                        handleNextPage={handleNextPage}
-                                        handlePageChange={handlePageChange}
-                                        handlePreviousPage={handlePreviousPage}
-                                    />
-                                </div>
+                            <div className="px-5 pb-5 mt-auto">
+                                <CPagination
+                                    page={summaryPage}
+                                    totalPages={summaryTotalPages}
+                                    handleNextPage={handleNextPage}
+                                    handlePageChange={handlePageChange}
+                                    handlePreviousPage={handlePreviousPage}
+                                />
+                            </div>
                             {/* )} */}
                         </div>
                     </div>

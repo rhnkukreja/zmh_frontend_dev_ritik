@@ -922,7 +922,7 @@ function CaseStudies() {
                                 </Table.Td>
 
                                 <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.industry}
+                                  {item?.company_sector}
                                 </Table.Td>
                                 <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
                                   <div className="flex gap-3 justify-center">
