@@ -788,7 +788,8 @@ function Main() {
                       </span>
                     </div>
                   </a>
-
+                  <div className="h-8"></div>
+                  <div className="h-8"></div>
                   {/* <div className="flex items-center justify-center w-10 relative cursor-pointer">
                     <Tippy content="Notes" options={{ theme: "light" }}>
                       <Lucide

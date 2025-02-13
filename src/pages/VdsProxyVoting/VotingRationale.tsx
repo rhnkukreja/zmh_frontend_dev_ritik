@@ -86,7 +86,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
                 onClick={() =>
                   downloadXlsxFile({
                     data: votingRationale,
-                    fileName: "Voting Rationale.xlsx",
+                    fileName: `Voting_Rational_${companyGlobalSearchTicker}.xlsx`,
                   })
                 }
               >
@@ -208,7 +208,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
 
       <Tooltip
         id="tooltip-for-question"
-        className="!max-w-[700px] !bg-white !text-black !text-lg"
+        className="!max-w-[700px] !bg-white !text-black !text-sm"
         place="top-start"
         style={{
           boxShadow: "2px 4px 6px rgba(0, 0, 0, 0.2)",

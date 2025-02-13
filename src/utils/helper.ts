@@ -411,7 +411,17 @@ const downloadXlsxFile = ({
   data: any[];
   fileName: string;
 }) => {
-  const ws = XLSX.utils.json_to_sheet(data);
+  // Transform each row so that the header keys are entirely in uppercase
+  const transformedData = data.map((row) => {
+    const newRow: Record<string, any> = {};
+    Object.keys(row).forEach((key) => {
+      const newKey = key.toUpperCase();
+      newRow[newKey] = row[key];
+    });
+    return newRow;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(transformedData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
 
@@ -421,6 +431,7 @@ const downloadXlsxFile = ({
   });
   saveAs(blob, fileName);
 };
+
 
 export default localStorageHelper;
 
