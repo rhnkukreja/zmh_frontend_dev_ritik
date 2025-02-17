@@ -422,6 +422,11 @@ function ProxyVotingSummary() {
                                                         Extracted Paragraph
                                                     </Table.Td>
                                                     {/* )} */}
+                                                    {/* {user?.user_type === "Admin" && ( */}
+                                                    <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                    Mitigating Factors
+                                                    </Table.Td>
+                                                    {/* )} */}
 
                                                 </Table.Tr>
                                             </Table.Thead>
@@ -455,9 +460,14 @@ function ProxyVotingSummary() {
                                                                 </Table.Td>
                                                                 {/* )} */}
 
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[800px]">
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[500px]">
                                                                     {summary?.paragraph && (
                                                                         <> {summary?.paragraph}</>
+                                                                    )}
+                                                                </Table.Td>
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[350px]">
+                                                                    {summary?.mitigating_factors && (
+                                                                        <> {summary?.mitigating_factors}</>
                                                                     )}
                                                                 </Table.Td>
                                                             </Table.Tr>
