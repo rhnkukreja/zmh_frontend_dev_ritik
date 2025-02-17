@@ -84,26 +84,15 @@ const index: React.FC<AddUploadFile> = ({
         }
     
         const transformedData = {
-            proxy_id: proxyId
+            proxy_voting_guidelines_id: proxyId
         };
         const formData = new FormData();
 
         for (const [key, value] of Object.entries(transformedData)) {
             formData.append(key, value as any);
         }
-        // formData.append("file", fileUploadDetail, fileUploadDetail.name);
         formData.append("file", fileUploadDetail);
-
-            let response = await dispatch(
-                addEditProxyVotingGuideline({
-                    data: formData as unknown as Partial<ProxyVotingGuideline>,
-                    isFileUpload: true
-                })
-            ).unwrap();
-
-
          try {
-            // let response = await dispatch(uploadSummaryFile({ data: formData })).unwrap();
             let response = await dispatch(
                 addEditProxyVotingGuideline({
                     data: formData as unknown as Partial<ProxyVotingGuideline>,
@@ -120,18 +109,6 @@ const index: React.FC<AddUploadFile> = ({
             } finally {
               setUploadFileVisible(false);
             }
-    
-        // try {
-        //     let response = await dispatch(uploadSummaryFile({ data: formData })).unwrap();
-        //     toast.success("File Upload Successfully");
-    
-        //     const dynamicURL = createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, undefined, page);
-        //     dispatch(fetchProxyVotingGuidelines(dynamicURL));
-    
-        // } catch (error: any) {
-        //     toast.error(error.message);
-        //     console.error("Error submitting form:", error);
-        // }
     };
     
     const onError: SubmitErrorHandler<AddUploadFile> = () => {
