@@ -54,6 +54,21 @@ class ProxyVotingGuidelineService {
     };
   }
 
+  public async uploadSummaryFile(
+    data: Partial<ProxyVotingGuideline>
+  ): Promise<{
+    result: ProxyVotingGuideline;
+  }> {
+    const response = await axiosInstance.post(
+      "/proxy_voting_guidelines_pdf_summary_data_upload/",
+      data
+    );
+
+    return {
+      result: response.data,
+    };
+  }
+
   public async updateProxyVotingGuideline(
     id: number,
     data: Partial<ProxyVotingGuideline>
