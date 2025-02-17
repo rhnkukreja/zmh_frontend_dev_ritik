@@ -6,11 +6,12 @@ import { getPageNumbers } from "@/utils/helper";
 const name = "proxyVotingGuideline";
 
 interface ProxyVotingGuidelineFilters {
-  institution_name: string[];
-  year: string[];
+  institution_name?: string[];
+  year?: string[];
   category?: string[];
   sub_category?: string[];
   keyword?: string;
+  region?:string[];
 }
 
 interface ProxyVotingGuidelineSlice {
@@ -27,8 +28,11 @@ interface ProxyVotingGuidelineSlice {
   summaryPage: number;
   guidelineFilterOptions: {
     year: string[];
+    region: string[];
   };
   filters: ProxyVotingGuidelineFilters;
+  summaryFilters: ProxyVotingGuidelineFilters ;
+
 }
 
 const initialState: ProxyVotingGuidelineSlice = {
@@ -45,10 +49,20 @@ const initialState: ProxyVotingGuidelineSlice = {
   summaryPage: 1,
   guidelineFilterOptions: {
     year: ["2025", "2024", "2023"],
+    region: ["North America", "EMEA", "APAC"],
   },
+  
   filters: {
     year: [],
     institution_name: [],
+    region:[]
+  },
+  summaryFilters: {
+    year: [],
+    institution_name: [],
+    category: [],
+    sub_category: [],
+    keyword: '',
   },
 };
 
@@ -67,10 +81,15 @@ export const fetchProxyVotingSummary = createAsyncThunk<
 });
 
 export const addEditProxyVotingGuideline = createAsyncThunk<
-  { results: ProxyVotingGuideline; isEdit: boolean },
-  { id?: number; data: Partial<ProxyVotingGuideline> }
->(`${name}/addEditProxyVotingGuideline`, async ({ id, data }) => {
+  { results: ProxyVotingGuideline; isEdit: boolean, isFileUpload?:boolean },
+  { id?: number; isFileUpload?:boolean; data: Partial<ProxyVotingGuideline> }
+>(`${name}/addEditProxyVotingGuideline`, async ({ id, data, isFileUpload }) => {
   let response;
+  if(isFileUpload){
+    response = await proxyVotingGuidelineService.uploadSummaryFile(
+      data
+    );
+  }
   if (id) {
     response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
       id,
@@ -86,6 +105,42 @@ export const addEditProxyVotingGuideline = createAsyncThunk<
     isEdit: id ? true : false,
   };
 });
+
+export const uploadSummaryFile = createAsyncThunk<
+  { results: ProxyVotingGuideline; isEdit: boolean },
+  { id?: number; data: Partial<ProxyVotingGuideline> }
+>(`${name}/uploadSummaryFile`, async ({ id, data }) => {
+  let response;
+  if (id) {
+    response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
+      id,
+      data
+    );
+  } else {
+    response = await proxyVotingGuidelineService.uploadSummaryFile(
+      data
+    );
+  }
+  return {
+    results: response.result,
+    isEdit: id ? true : false,
+  };
+});
+
+
+// export const uploadSummaryFile = createAsyncThunk<
+//   { results: ProxyVotingGuideline},
+//   { id?: number; data: Partial<ProxyVotingGuideline> }
+// >(`${name}/addEditProxyVotingGuideline`, async ({ data }) => {
+//   let response;
+  
+//     response = await proxyVotingGuidelineService.uploadSummaryFile(
+//       data
+//     );
+//   return {
+//     results: response.result,
+//   };
+// });
 
 const proxyVotingGuidelineSlice = createSlice({
   name,
@@ -121,6 +176,18 @@ const proxyVotingGuidelineSlice = createSlice({
       action: PayloadAction<Partial<ProxyVotingGuidelineFilters>>
     ) {
       state.filters = { ...state.filters, ...action.payload };
+    },
+
+    
+    setSummaryFilters(
+      state,
+      action: PayloadAction<Partial<ProxyVotingGuidelineFilters>>
+    ) {
+      state.summaryFilters = { ...state.summaryFilters, ...action.payload };
+    },
+
+    resetSummaryFilter(state) {
+      state.summaryFilters = initialState.summaryFilters;
     },
 
     resetProxyVotingGuidelines(state) {
@@ -220,4 +287,6 @@ export const {
   resetProxyVotingGuidelines,
   setSummaryPage,
   resetSummaryPage,
+  resetSummaryFilter,
+  setSummaryFilters
 } = proxyVotingGuidelineSlice.actions;

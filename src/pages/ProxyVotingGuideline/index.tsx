@@ -35,9 +35,11 @@ import { Controller, useForm } from "react-hook-form";
 import { FormCheck } from "@/components/Base/Form";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { useNavigate } from "react-router-dom";
+import UploadFile from "@/components/UploadFile";
 
 interface ProxyGuidelineFilter {
   year: string[];
+  region: string[];
 }
 
 function ProxyGuideline() {
@@ -57,11 +59,14 @@ function ProxyGuideline() {
     useForm<ProxyGuidelineFilter>({
       defaultValues: {
         year: [...filters.year],
+        region: [...filters.region],
       },
     });
 
   const resetFormValues = () => {
     setValue("year", []);
+    setValue("region", []);
+
   };
 
   const [
@@ -72,6 +77,9 @@ function ProxyGuideline() {
     useState<ProxyVotingGuideline | null>(null);
 
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
+  const [uploadFileVisible, setUploadFileVisible] = useState<boolean>(false);
+  const [proxyId, setProxyId] = useState<number>(0);
+
   const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
   const [currentPdfName, setCurrentPdfName] = useState<string>("");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
@@ -151,11 +159,13 @@ function ProxyGuideline() {
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Voting Guidelines"]?.institution]);
     setValue("year", user?.saved_search?.year || []);
+    setValue("region", user?.saved_search?.region || []);
     dispatch(
       setFilter({
         key: "year",
         value: user?.saved_search["Voting Guidelines"]?.year,
-      })
+      },
+    )
     );
   };
 
@@ -164,6 +174,8 @@ function ProxyGuideline() {
       module: "Voting Guidelines",
       institution: searchTerms,
       year: filters["year"],
+      region: filters["region"],
+
     });
     if (res?.user_id) {
       dispatch(
@@ -172,6 +184,7 @@ function ProxyGuideline() {
           value: {
             institution: searchTerms,
             year: filters["year"],
+            // region: filters["region"],
           },
         })
       );
@@ -375,6 +388,72 @@ function ProxyGuideline() {
                                     )}
                                   />
                                 </div>
+                                <div className="w-full  my-2">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    Region
+                                    {guidelineFilterOptions?.region
+                                      ?.length > 0 && (
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`region`}
+                                            checked={
+                                              guidelineFilterOptions.region
+                                                .length ===
+                                              watch("region")?.length
+                                            }
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "region",
+                                                  guidelineFilterOptions.region
+                                                );
+                                              } else {
+                                                setValue("region", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Controller
+                                    name="region"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <TomSelect
+                                        value={field.value || []}
+                                        onChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                        options={{
+                                          placeholder: "Select region",
+                                        }}
+                                        className="w-full"
+                                        multiple
+                                      >
+                                        <>
+                                          {guidelineFilterOptions?.region
+                                            .length > 0 &&
+                                            guidelineFilterOptions?.region?.map(
+                                              (region: string) => {
+                                                return (
+                                                  <option value={region}>
+                                                    {region}
+                                                  </option>
+                                                );
+                                              }
+                                            )}
+                                        </>
+                                      </TomSelect>
+                                    )}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </form>
@@ -527,13 +606,32 @@ function ProxyGuideline() {
 
                                     {user?.user_type === "Admin" && (
                                       <Tippy
-                                        content="Edit"
+                                        content="Upload"
                                         options={{
                                           theme: "light",
                                         }}
                                       >
                                         <Lucide
                                           onClick={() => {
+                                            setUploadFileVisible(true);
+                                            setProxyId(guideline?.id);
+
+                                          }}
+                                          icon="Upload"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </Tippy>
+                                    )}
+
+                                    {user?.user_type === "Admin" && (
+                                      <Tippy
+                                        content="Edit"
+                                        options={{
+                                          theme: "light",
+                                        }}
+                                      >
+                                        <Lucide
+                                           onClick={() => {
                                             onEditClickHandler(guideline);
                                           }}
                                           icon="PenLine"
@@ -574,7 +672,8 @@ function ProxyGuideline() {
                                       >
                                         <Lucide
                                           onClick={() => {
-                                            navigate(`/proxy-voting-guideline/pdf-sumamry/${guideline?.id}`)
+                                            const data = {name: guideline?.institution_name, year: guideline?.year};
+                                            navigate(`/proxy-voting-guideline/pdf-sumamry/${guideline?.id}`, { state: data })
                                           }}
                                           icon="Search"
                                           className="w-4 h-4 mr-1.5 stroke-[1.3]"
@@ -628,6 +727,16 @@ function ProxyGuideline() {
               pdfVisible={pdfVisible}
               file={currentPdfDoc}
               file_name={currentPdfName}
+            />
+          )}
+
+          {uploadFileVisible && (
+            <UploadFile
+              setUploadFileVisible={setUploadFileVisible}
+              uploadFileVisible={uploadFileVisible}
+              proxyId = {proxyId}
+              // file={currentPdfDoc}
+              // file_name={currentPdfName}
             />
           )}
         </div>

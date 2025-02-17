@@ -18,6 +18,7 @@ type InvestorProfilePayload = BasePayload<"Investor Profile", string[]> & {
 
 type VotingGuidelinesPayload = BasePayload<"Voting Guidelines", string[]> & {
   year: string[];
+  region: string[];
 };
 
 type InstitutionPayload = BasePayload<"Institution", string[]> & {
