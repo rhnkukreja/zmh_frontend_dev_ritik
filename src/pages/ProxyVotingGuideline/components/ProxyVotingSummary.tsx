@@ -14,9 +14,10 @@ import {
     resetPage,
     setPage,
     setFilter,
-    setAllFilters,
+    setSummaryFilters,
     fetchProxyVotingSummary,
     setSummaryPage,
+    resetSummaryFilter,
 } from "@/stores/proxyVotingGuidelineSlice";
 import TomSelect from "@/components/Base/TomSelect";
 
@@ -28,7 +29,7 @@ import { baseURL } from "@/constant";
 import { ChevronLeft, FilterX, SaveAll } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { FormCheck, FormInput } from "@/components/Base/Form";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
 
 interface ProxySummaryFilter {
@@ -41,13 +42,15 @@ function ProxyVotingSummary() {
     const dispatch: AppDispatch = useAppDispatch();
 
     const params = useParams();
+    const location = useLocation();
+    const data = location.state;
 
     const {
         summaryLoading,
         proxyVotingSummary,
         summaryPage,
         summaryTotalPages,
-        filters,
+        summaryFilters,
     } = useAppSelector((state) => state.proxyVotingGuideline);
     const { user } = useAppSelector((state) => state.authentiction);
     // console.log("sumaaryyy", proxyVotingSummary[0])
@@ -55,7 +58,7 @@ function ProxyVotingSummary() {
     useEffect(() => {
         const dynamicURL = createDynamicURL(
             `${baseURL}/proxy_voting_guidelines_pdf_summary/`,
-            { proxy_voting_guidelines_id: params?.id, ...filters },
+            { proxy_voting_guidelines_id: params?.id, ...summaryFilters },
             undefined,
             summaryPage
         );
@@ -63,17 +66,17 @@ function ProxyVotingSummary() {
 
         setFiltersLength(
             countValidFilters(
-                filters
+                summaryFilters
             )
         );
-    }, [params.id, filters, summaryPage]);
+    }, [params.id, summaryFilters, summaryPage]);
 
     const { handleSubmit, reset, setValue, watch, control } =
         useForm<ProxySummaryFilter>({
             defaultValues: {
-                category: filters.category,
-                sub_category: filters.sub_category,
-                keyword: filters.keyword,
+                category: summaryFilters.category,
+                sub_category: summaryFilters.sub_category,
+                keyword: summaryFilters.keyword,
             },
         });
 
@@ -122,7 +125,7 @@ function ProxyVotingSummary() {
 
     const onSubmit = async (ProxyGuideline: ProxySummaryFilter) => {
         dispatch(
-            setAllFilters({ ...ProxyGuideline })
+            setSummaryFilters({ ...ProxyGuideline })
         );
 
         dispatch(resetPage());
@@ -185,6 +188,9 @@ function ProxyVotingSummary() {
 
     const backToPreviousPage = () => {
         navigate(`/proxy-voting-guideline`);
+        countValidFilters({});
+        onFilterClear();
+        dispatch(resetSummaryFilter());
     };
     return (
         <>
@@ -207,7 +213,7 @@ function ProxyVotingSummary() {
                             <div className="flex flex-col p-5 sm:flex-row gap-y-2">
                                 <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
                                     <div className="font-semibold text-xl">
-                                        {proxyVotingSummary?.[0]?.institution_name} ({proxyVotingSummary?.[0]?.year})
+                                        {data?.name} ({data?.year})
                                     </div>
 
                                 </div>
@@ -422,6 +428,11 @@ function ProxyVotingSummary() {
                                                         Extracted Paragraph
                                                     </Table.Td>
                                                     {/* )} */}
+                                                    {/* {user?.user_type === "Admin" && ( */}
+                                                    <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                                    Mitigating Factors
+                                                    </Table.Td>
+                                                    {/* )} */}
 
                                                 </Table.Tr>
                                             </Table.Thead>
@@ -455,9 +466,14 @@ function ProxyVotingSummary() {
                                                                 </Table.Td>
                                                                 {/* )} */}
 
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[800px]">
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[500px]">
                                                                     {summary?.paragraph && (
                                                                         <> {summary?.paragraph}</>
+                                                                    )}
+                                                                </Table.Td>
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[350px]">
+                                                                    {summary?.mitigating_factors && (
+                                                                        <> {summary?.mitigating_factors}</>
                                                                     )}
                                                                 </Table.Td>
                                                             </Table.Tr>
@@ -474,7 +490,7 @@ function ProxyVotingSummary() {
                                 </TableWrapper>
                             </div>
                             {/* {summaryTotalPages > 1 && ( */}
-                            <div className="px-5 pb-5 mt-auto">
+                            <div className="px-5 pb-5 mt-5">
                                 <CPagination
                                     page={summaryPage}
                                     totalPages={summaryTotalPages}

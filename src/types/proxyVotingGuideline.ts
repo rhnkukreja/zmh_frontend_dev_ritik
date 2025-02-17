@@ -26,6 +26,7 @@ export type ProxyVotingSummaryType = {
   id: number;
   institution_name: string;
   paragraph: string;
+  mitigating_factors: string;
   proxy_voting_guidelines: number;
   sub_category: string;
   updated_by?: Date | null;
