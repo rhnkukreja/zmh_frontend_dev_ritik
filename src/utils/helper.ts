@@ -204,10 +204,7 @@ const slideDown = (
   }, duration);
 };
 
-const getPageNumbers = (
-  totalCounts: number,
-  perPageCount = PAGE_SIZE
-): number => {
+const getPageNumbers = (totalCounts: number,perPageCount = PAGE_SIZE): number => {
   return Math.ceil(totalCounts / perPageCount);
 };
 
@@ -432,6 +429,17 @@ const downloadXlsxFile = ({
   saveAs(blob, fileName);
 };
 
+const downloadFileByServer = (blob: any, filename: string) => {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 
 export default localStorageHelper;
 
@@ -465,4 +473,5 @@ export {
   localStorageHelper,
   getDateWithoutTime,
   downloadXlsxFile,
+  downloadFileByServer
 };

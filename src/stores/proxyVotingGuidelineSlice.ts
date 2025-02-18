@@ -1,6 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
-import { ProxyVotingGuideline, ProxyVotingSummaryType } from "@/types/proxyVotingGuideline";
+import {
+  ProxyVotingGuideline,
+  ProxyVotingSummaryType,
+} from "@/types/proxyVotingGuideline";
 import { getPageNumbers } from "@/utils/helper";
 
 const name = "proxyVotingGuideline";
@@ -11,7 +14,7 @@ interface ProxyVotingGuidelineFilters {
   category?: string[];
   sub_category?: string[];
   keyword?: string;
-  region?:string[];
+  region?: string[];
 }
 
 interface ProxyVotingGuidelineSlice {
@@ -31,8 +34,7 @@ interface ProxyVotingGuidelineSlice {
     region: string[];
   };
   filters: ProxyVotingGuidelineFilters;
-  summaryFilters: ProxyVotingGuidelineFilters ;
-
+  summaryFilters: ProxyVotingGuidelineFilters;
 }
 
 const initialState: ProxyVotingGuidelineSlice = {
@@ -51,18 +53,18 @@ const initialState: ProxyVotingGuidelineSlice = {
     year: ["2025", "2024", "2023"],
     region: ["North America", "EMEA", "APAC"],
   },
-  
+
   filters: {
     year: [],
     institution_name: [],
-    region:[]
+    region: [],
   },
   summaryFilters: {
     year: [],
     institution_name: [],
     category: [],
     sub_category: [],
-    keyword: '',
+    keyword: "",
   },
 };
 
@@ -81,15 +83,10 @@ export const fetchProxyVotingSummary = createAsyncThunk<
 });
 
 export const addEditProxyVotingGuideline = createAsyncThunk<
-  { results: ProxyVotingGuideline; isEdit: boolean, isFileUpload?:boolean },
-  { id?: number; isFileUpload?:boolean; data: Partial<ProxyVotingGuideline> }
->(`${name}/addEditProxyVotingGuideline`, async ({ id, data, isFileUpload }) => {
+  { results: ProxyVotingGuideline; isEdit: boolean },
+  { id?: number; isFileUpload?: boolean; data: Partial<ProxyVotingGuideline> }
+>(`${name}/addEditProxyVotingGuideline`, async ({ id, data }) => {
   let response;
-  if(isFileUpload){
-    response = await proxyVotingGuidelineService.uploadSummaryFile(
-      data
-    );
-  }
   if (id) {
     response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
       id,
@@ -107,33 +104,22 @@ export const addEditProxyVotingGuideline = createAsyncThunk<
 });
 
 export const uploadSummaryFile = createAsyncThunk<
-  { results: ProxyVotingGuideline; isEdit: boolean },
-  { id?: number; data: Partial<ProxyVotingGuideline> }
->(`${name}/uploadSummaryFile`, async ({ id, data }) => {
+  { results: ProxyVotingGuideline },
+  { data: Partial<ProxyVotingGuideline> }
+>(`${name}/uploadSummaryFile`, async ({ data }) => {
   let response;
-  if (id) {
-    response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
-      id,
-      data
-    );
-  } else {
-    response = await proxyVotingGuidelineService.uploadSummaryFile(
-      data
-    );
-  }
+  response = await proxyVotingGuidelineService.uploadSummaryFile(data);
   return {
     results: response.result,
-    isEdit: id ? true : false,
   };
 });
-
 
 // export const uploadSummaryFile = createAsyncThunk<
 //   { results: ProxyVotingGuideline},
 //   { id?: number; data: Partial<ProxyVotingGuideline> }
 // >(`${name}/addEditProxyVotingGuideline`, async ({ data }) => {
 //   let response;
-  
+
 //     response = await proxyVotingGuidelineService.uploadSummaryFile(
 //       data
 //     );
@@ -178,7 +164,6 @@ const proxyVotingGuidelineSlice = createSlice({
       state.filters = { ...state.filters, ...action.payload };
     },
 
-    
     setSummaryFilters(
       state,
       action: PayloadAction<Partial<ProxyVotingGuidelineFilters>>
@@ -213,7 +198,7 @@ const proxyVotingGuidelineSlice = createSlice({
           state.loading = false;
           state.proxyVotingGuidelines = action.payload.results;
           state.totalProxyVotingGuidelines = action.payload.count;
-          state.totalPages = getPageNumbers(action.payload.count);
+          state.totalPages = getPageNumbers(action.payload.count, 20);
         }
       )
       .addCase(fetchProxyVotingGuidelines.rejected, (state, action) => {
@@ -238,7 +223,7 @@ const proxyVotingGuidelineSlice = createSlice({
           state.summaryLoading = false;
           state.proxyVotingSummary = action.payload.results;
           state.totalProxyVotingSummary = action.payload.count;
-          state.summaryTotalPages = getPageNumbers(action.payload.count);
+          state.summaryTotalPages = getPageNumbers(action.payload.count, 20);
         }
       )
       .addCase(fetchProxyVotingSummary.rejected, (state, action) => {
@@ -288,5 +273,5 @@ export const {
   setSummaryPage,
   resetSummaryPage,
   resetSummaryFilter,
-  setSummaryFilters
+  setSummaryFilters,
 } = proxyVotingGuidelineSlice.actions;

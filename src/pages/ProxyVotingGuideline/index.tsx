@@ -62,11 +62,9 @@ function ProxyGuideline() {
         region: [...filters.region],
       },
     });
-
   const resetFormValues = () => {
     setValue("year", []);
     setValue("region", []);
-
   };
 
   const [
@@ -84,7 +82,7 @@ function ProxyGuideline() {
   const [currentPdfName, setCurrentPdfName] = useState<string>("");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -134,7 +132,7 @@ function ProxyGuideline() {
     resetFormValues();
     dispatch(resetFilter());
     dispatch(resetPage());
-    reset();
+    // reset();
   };
 
   const handleClearAllFilter = () => {
@@ -142,7 +140,7 @@ function ProxyGuideline() {
     setSearchTerms([]);
     resetFormValues();
     dispatch(resetPage());
-    reset();
+    // reset();
   };
 
   useEffect(() => {
@@ -164,8 +162,7 @@ function ProxyGuideline() {
       setFilter({
         key: "year",
         value: user?.saved_search["Voting Guidelines"]?.year,
-      },
-    )
+      })
     );
   };
 
@@ -175,7 +172,6 @@ function ProxyGuideline() {
       institution: searchTerms,
       year: filters["year"],
       region: filters["region"],
-
     });
     if (res?.user_id) {
       dispatch(
@@ -391,8 +387,8 @@ function ProxyGuideline() {
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
                                     Region
-                                    {guidelineFilterOptions?.region
-                                      ?.length > 0 && (
+                                    {guidelineFilterOptions?.region?.length >
+                                      0 && (
                                       <div>
                                         <FormCheck className="mr-2">
                                           <FormCheck.Label>
@@ -432,7 +428,7 @@ function ProxyGuideline() {
                                           field.onChange(value);
                                         }}
                                         options={{
-                                          placeholder: "Select region",
+                                          placeholder: "Select Region",
                                         }}
                                         className="w-full"
                                         multiple
@@ -499,7 +495,7 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                          <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="py-2  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                             Details
                           </Table.Td>
                         </Table.Tr>
@@ -615,7 +611,6 @@ function ProxyGuideline() {
                                           onClick={() => {
                                             setUploadFileVisible(true);
                                             setProxyId(guideline?.id);
-
                                           }}
                                           icon="Upload"
                                           className="w-4 h-4 mr-1.5 stroke-[1.3]"
@@ -631,7 +626,7 @@ function ProxyGuideline() {
                                         }}
                                       >
                                         <Lucide
-                                           onClick={() => {
+                                          onClick={() => {
                                             onEditClickHandler(guideline);
                                           }}
                                           icon="PenLine"
@@ -662,8 +657,7 @@ function ProxyGuideline() {
                                       </a>
                                     </Tippy>
 
-                                    {guideline?.is_search
-                                      ? 
+                                    {guideline?.is_search ? (
                                       <Tippy
                                         content="Searchable"
                                         options={{
@@ -672,15 +666,22 @@ function ProxyGuideline() {
                                       >
                                         <Lucide
                                           onClick={() => {
-                                            const data = {name: guideline?.institution_name, year: guideline?.year};
-                                            navigate(`/proxy-voting-guideline/pdf-sumamry/${guideline?.id}`, { state: data })
+                                            const data = {
+                                              name: guideline?.institution_name,
+                                              year: guideline?.year,
+                                            };
+                                            navigate(
+                                              `/proxy-voting-guideline/pdf-sumamry/${guideline?.id}`,
+                                              { state: data }
+                                            );
                                           }}
                                           icon="Search"
                                           className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                         />
-                                      </Tippy> 
-                                      : <span className="w-4 h-4 mr-1.5 stroke-[1.3]"></span>
-                                    }
+                                      </Tippy>
+                                    ) : (
+                                      <span className="w-4 h-4 mr-1.5 stroke-[1.3]"></span>
+                                    )}
                                   </div>
                                 </Table.Td>
                               </Table.Tr>
@@ -734,7 +735,7 @@ function ProxyGuideline() {
             <UploadFile
               setUploadFileVisible={setUploadFileVisible}
               uploadFileVisible={uploadFileVisible}
-              proxyId = {proxyId}
+              proxyId={proxyId}
               // file={currentPdfDoc}
               // file_name={currentPdfName}
             />

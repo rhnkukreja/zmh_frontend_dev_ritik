@@ -323,7 +323,7 @@ function Main() {
                                         field.onChange(value);
                                       }}
                                       options={{
-                                        placeholder: "Select region",
+                                        placeholder: "Select Region",
                                       }}
                                       className="w-full"
                                       multiple
