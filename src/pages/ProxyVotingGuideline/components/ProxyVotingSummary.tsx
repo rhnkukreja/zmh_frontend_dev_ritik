@@ -25,7 +25,7 @@ import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { ProxyVotingSummaryType } from "@/types/proxyVotingGuideline";
-import { countValidFilters, createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, downloadFileByServer } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { ChevronLeft, FilterX, SaveAll } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
@@ -191,18 +191,10 @@ function ProxyVotingSummary() {
     dispatch(resetSummaryFilter());
   };
  
-  const downloadExcel = async () => {
+  const downloadSummary = async () => {
     try {
       const { blob, filename } = await proxyVotingGuidelineService.getSummaryDaata({proxy_voting_guidelines_id: params?.id}, data?.name + " " + data?.year);
-  
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename + '.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      downloadFileByServer(blob, filename);
     } catch (error) {
       console.error('Error downloading the file:', error);
     }
@@ -431,7 +423,7 @@ function ProxyVotingSummary() {
                   <div
                     className="box p-[5px] cursor-pointer"
                     onClick={() =>
-                      downloadExcel()
+                      downloadSummary()
                     }
                   >
                     <img alt="download-icon" src={downloadIcon} />
