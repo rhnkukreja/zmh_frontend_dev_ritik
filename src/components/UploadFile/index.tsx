@@ -36,36 +36,36 @@ const index: React.FC<AddUploadFile> = ({
 
     useEffect(() => {
         const elDropzoneSingleRef = dropzoneSingleRef.current;
-    
+
         if (elDropzoneSingleRef) {
             const dropzoneInstance = elDropzoneSingleRef.dropzone;
-    
+
             const handleComplete = (file: any) => {
                 if (file?.status === "added") {
                     const fileExtension = file?.name?.split(".").pop()?.toLowerCase();
-                    
+
                     if (!fileExtension || !["xlsx"].includes(fileExtension)) {
                         toast.error("Only Excel files (.xlsx) are allowed!");
                     } else {
                         setFileUploadDetail(file);
                     }
-                    
+
                     dropzoneInstance.removeFile(file);
                 }
-    
+
                 if (file?.status === "error") {
                     toast.error("Something went wrong during file upload!");
                 }
             };
-    
+
             dropzoneInstance.on("addedfile", handleComplete);
-    
+
             return () => {
                 dropzoneInstance.off("addedfile", handleComplete);
             };
         }
     }, [dropzoneSingleRef, uploadFileVisible, fileUploadDetail]);
-    
+
 
     const {
         control,
@@ -76,13 +76,13 @@ const index: React.FC<AddUploadFile> = ({
         },
     });
 
-   
+
     const onSubmit = async (data: any) => {
         if (!fileUploadDetail) {
             toast.error("No file selected");
             return;
         }
-    
+
         const transformedData = {
             proxy_voting_guidelines_id: proxyId
         };
@@ -92,25 +92,24 @@ const index: React.FC<AddUploadFile> = ({
             formData.append(key, value as any);
         }
         formData.append("file", fileUploadDetail);
-         try {
+        try {
             let response = await dispatch(
-                addEditProxyVotingGuideline({
+                uploadSummaryFile({
                     data: formData as unknown as Partial<ProxyVotingGuideline>,
-                    isFileUpload: true
                 })
             ).unwrap();
 
             toast.success("File Upload Successfully");
-    
+
             const dynamicURL = createDynamicURL(`${baseURL}/proxy_voting_guidelines/`, filters, undefined, page);
             dispatch(fetchProxyVotingGuidelines(dynamicURL));
-            } catch (error) {
-              console.error("Error submitting form:", error);
-            } finally {
-              setUploadFileVisible(false);
-            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+        } finally {
+            setUploadFileVisible(false);
+        }
     };
-    
+
     const onError: SubmitErrorHandler<AddUploadFile> = () => {
         if (!fileUploadDetail) {
             setShowRequiredStateErrors(true);

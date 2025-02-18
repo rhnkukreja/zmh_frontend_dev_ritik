@@ -81,15 +81,10 @@ export const fetchProxyVotingSummary = createAsyncThunk<
 });
 
 export const addEditProxyVotingGuideline = createAsyncThunk<
-  { results: ProxyVotingGuideline; isEdit: boolean, isFileUpload?:boolean },
-  { id?: number; isFileUpload?:boolean; data: Partial<ProxyVotingGuideline> }
->(`${name}/addEditProxyVotingGuideline`, async ({ id, data, isFileUpload }) => {
+  { results: ProxyVotingGuideline; isEdit: boolean },
+  { id?: number; isFileUpload?: boolean; data: Partial<ProxyVotingGuideline> }
+>(`${name}/addEditProxyVotingGuideline`, async ({ id, data }) => {
   let response;
-  if(isFileUpload){
-    response = await proxyVotingGuidelineService.uploadSummaryFile(
-      data
-    );
-  }
   if (id) {
     response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
       id,
@@ -107,23 +102,13 @@ export const addEditProxyVotingGuideline = createAsyncThunk<
 });
 
 export const uploadSummaryFile = createAsyncThunk<
-  { results: ProxyVotingGuideline; isEdit: boolean },
-  { id?: number; data: Partial<ProxyVotingGuideline> }
->(`${name}/uploadSummaryFile`, async ({ id, data }) => {
+  { results: ProxyVotingGuideline },
+  { data: Partial<ProxyVotingGuideline> }
+>(`${name}/uploadSummaryFile`, async ({ data }) => {
   let response;
-  if (id) {
-    response = await proxyVotingGuidelineService.updateProxyVotingGuideline(
-      id,
-      data
-    );
-  } else {
-    response = await proxyVotingGuidelineService.uploadSummaryFile(
-      data
-    );
-  }
+  response = await proxyVotingGuidelineService.uploadSummaryFile(data);
   return {
     results: response.result,
-    isEdit: id ? true : false,
   };
 });
 
