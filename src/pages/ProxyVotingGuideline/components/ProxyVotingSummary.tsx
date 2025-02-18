@@ -32,7 +32,7 @@ import { Controller, useForm } from "react-hook-form";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
-
+import downloadIcon from "../../../assets/images/zmh-images/download-icon.png";
 interface ProxySummaryFilter {
   category: string[];
   sub_category: string[];
@@ -189,6 +189,23 @@ function ProxyVotingSummary() {
     countValidFilters({});
     onFilterClear();
     dispatch(resetSummaryFilter());
+  };
+ 
+  const downloadExcel = async () => {
+    try {
+      const { blob, filename } = await proxyVotingGuidelineService.getSummaryDaata({proxy_voting_guidelines_id: params?.id}, data?.name + " " + data?.year);
+  
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename + '.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading the file:', error);
+    }
   };
   return (
     <>
@@ -409,6 +426,18 @@ function ProxyVotingSummary() {
                   </div>
                 </form>
               )}
+              <div className="flex justify-end items-center gap-4 mr-5 mb-4 xs:mt-4 md:mt-0">
+                <Tippy content="Download Excel" options={{ theme: "light" }}>
+                  <div
+                    className="box p-[5px] cursor-pointer"
+                    onClick={() =>
+                      downloadExcel()
+                    }
+                  >
+                    <img alt="download-icon" src={downloadIcon} />
+                  </div>
+                </Tippy>
+              </div>
               <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={summaryLoading}>
                   <div className="overflow-auto max-h-[400px]">

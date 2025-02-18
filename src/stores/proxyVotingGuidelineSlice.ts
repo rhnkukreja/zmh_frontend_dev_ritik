@@ -198,7 +198,7 @@ const proxyVotingGuidelineSlice = createSlice({
           state.loading = false;
           state.proxyVotingGuidelines = action.payload.results;
           state.totalProxyVotingGuidelines = action.payload.count;
-          state.totalPages = getPageNumbers(action.payload.count);
+          state.totalPages = getPageNumbers(action.payload.count, 20);
         }
       )
       .addCase(fetchProxyVotingGuidelines.rejected, (state, action) => {
@@ -223,7 +223,7 @@ const proxyVotingGuidelineSlice = createSlice({
           state.summaryLoading = false;
           state.proxyVotingSummary = action.payload.results;
           state.totalProxyVotingSummary = action.payload.count;
-          state.summaryTotalPages = getPageNumbers(action.payload.count);
+          state.summaryTotalPages = getPageNumbers(action.payload.count, 20);
         }
       )
       .addCase(fetchProxyVotingSummary.rejected, (state, action) => {

@@ -39,6 +39,14 @@ class ProxyVotingGuidelineService {
     };
   }
 
+  public async getSummaryDaata(paramFilter?: any, name?: string): Promise<{ blob: Blob; filename: string }> {
+    const response = await axiosInstance.get(createDynamicURL(`/download_data/`, paramFilter),{responseType: 'blob'});
+    // let name = filename; // Default filename
+    
+  
+    return { blob: response.data, filename: name ?? 'file' };
+  }
+
   public async createProxyVotingGuideline(
     data: Partial<ProxyVotingGuideline>
   ): Promise<{

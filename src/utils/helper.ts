@@ -204,10 +204,7 @@ const slideDown = (
   }, duration);
 };
 
-const getPageNumbers = (
-  totalCounts: number,
-  perPageCount = PAGE_SIZE
-): number => {
+const getPageNumbers = (totalCounts: number,perPageCount = PAGE_SIZE): number => {
   return Math.ceil(totalCounts / perPageCount);
 };
 
