@@ -1,6 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
-import { ProxyVotingGuideline, ProxyVotingSummaryType } from "@/types/proxyVotingGuideline";
+import {
+  ProxyVotingGuideline,
+  ProxyVotingSummaryType,
+} from "@/types/proxyVotingGuideline";
 import { getPageNumbers } from "@/utils/helper";
 
 const name = "proxyVotingGuideline";
@@ -11,7 +14,7 @@ interface ProxyVotingGuidelineFilters {
   category?: string[];
   sub_category?: string[];
   keyword?: string;
-  region?:string[];
+  region?: string[];
 }
 
 interface ProxyVotingGuidelineSlice {
@@ -31,8 +34,7 @@ interface ProxyVotingGuidelineSlice {
     region: string[];
   };
   filters: ProxyVotingGuidelineFilters;
-  summaryFilters: ProxyVotingGuidelineFilters ;
-
+  summaryFilters: ProxyVotingGuidelineFilters;
 }
 
 const initialState: ProxyVotingGuidelineSlice = {
@@ -51,18 +53,18 @@ const initialState: ProxyVotingGuidelineSlice = {
     year: ["2025", "2024", "2023"],
     region: ["North America", "EMEA", "APAC"],
   },
-  
+
   filters: {
     year: [],
     institution_name: [],
-    region:[]
+    region: [],
   },
   summaryFilters: {
     year: [],
     institution_name: [],
     category: [],
     sub_category: [],
-    keyword: '',
+    keyword: "",
   },
 };
 
@@ -112,13 +114,12 @@ export const uploadSummaryFile = createAsyncThunk<
   };
 });
 
-
 // export const uploadSummaryFile = createAsyncThunk<
 //   { results: ProxyVotingGuideline},
 //   { id?: number; data: Partial<ProxyVotingGuideline> }
 // >(`${name}/addEditProxyVotingGuideline`, async ({ data }) => {
 //   let response;
-  
+
 //     response = await proxyVotingGuidelineService.uploadSummaryFile(
 //       data
 //     );
@@ -163,7 +164,6 @@ const proxyVotingGuidelineSlice = createSlice({
       state.filters = { ...state.filters, ...action.payload };
     },
 
-    
     setSummaryFilters(
       state,
       action: PayloadAction<Partial<ProxyVotingGuidelineFilters>>
@@ -273,5 +273,5 @@ export const {
   setSummaryPage,
   resetSummaryPage,
   resetSummaryFilter,
-  setSummaryFilters
+  setSummaryFilters,
 } = proxyVotingGuidelineSlice.actions;
