@@ -18,6 +18,7 @@ import {
     fetchProxyVotingSummary,
     setSummaryPage,
     resetSummaryFilter,
+    resetSummaryPage,
 } from "@/stores/proxyVotingGuidelineSlice";
 import TomSelect from "@/components/Base/TomSelect";
 
@@ -119,7 +120,7 @@ function ProxyVotingSummary() {
     const onFilterClear = () => {
         resetFormValues();
         dispatch(resetFilter());
-        dispatch(resetPage());
+        dispatch(resetSummaryPage());
         reset();
     };
 
@@ -128,7 +129,7 @@ function ProxyVotingSummary() {
             setSummaryFilters({ ...ProxyGuideline })
         );
 
-        dispatch(resetPage());
+        dispatch(resetSummaryPage());
     };
 
     const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
