@@ -418,18 +418,23 @@ function ProxyVotingSummary() {
                   </div>
                 </form>
               )}
-              <div className="flex justify-end items-center gap-4 mr-5 mb-4 xs:mt-4 md:mt-0">
-                <Tippy content="Download Excel" options={{ theme: "light" }}>
-                  <div
-                    className="box p-[5px] cursor-pointer"
-                    onClick={() =>
-                      downloadSummary()
-                    }
-                  >
-                    <img alt="download-icon" src={downloadIcon} />
-                  </div>
-                </Tippy>
-              </div>
+
+              {
+                filtersLength === 0 &&
+                <div className="flex justify-end items-center gap-4 mr-5 mb-4 xs:mt-4 md:mt-0">
+                  <Tippy content="Download Excel" options={{ theme: "light" }}>
+                    <div
+                      className="box p-[5px] cursor-pointer"
+                      onClick={() =>
+                        downloadSummary()
+                      }
+                    >
+                      <img alt="download-icon" src={downloadIcon} />
+                    </div>
+                  </Tippy>
+                </div>
+              }
+              
               <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={summaryLoading}>
                   <div className="overflow-auto max-h-[400px]">
