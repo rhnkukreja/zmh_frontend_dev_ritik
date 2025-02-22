@@ -17,6 +17,7 @@ import { baseURL } from "@/constant";
 import { AppDispatch } from "@/stores/store";
 import LoadingIcon from "../Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
+import { Tab } from "@/components/Base/Headless";
 
 const index = () => {
   const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
@@ -35,6 +36,8 @@ const index = () => {
   const companyName = Object.keys(companyDetails)[0];
   const meetingDetails = companyDetails[companyName];
   const meetingDate = meetingDetails?.split(" - ").pop();
+
+  const [selectedYear, setSelectedYear] = useState<string>("");
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -89,25 +92,37 @@ const index = () => {
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
+      setSelectedYear("");
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
           )
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (companyGlobalSearchTicker !== tempSearch) {
+    } 
+    else if (companyGlobalSearchTicker !== tempSearch) {
+      setSelectedYear("");
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
           )
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }, [companyGlobalSearchTicker]);
+    else if(selectedYear) {
+      dispatch(
+        fetchAGMSummaryDashboard(
+          createDynamicURL(
+            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
+          )
+        )
+      );
+    }
+  }, [companyGlobalSearchTicker, selectedYear]);
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     // event.preventDefault();
@@ -161,6 +176,15 @@ const index = () => {
       }
     };
 
+    const handleAGMYearTab = (tab: string) =>{
+      setSelectedYear(tab);
+    }
+
+    const getSelectedTabIndex = () => {
+      const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (agmSummaryDetails?.Year.toString()));
+      return tabIndex;
+    };
+
   return (
     <>
       {agmSummaryDetails?.Year && (
@@ -177,9 +201,9 @@ const index = () => {
                   </span>
 
                   {
-                    // dashboardDataList?.length > 0 &&
-                    //   agmSummaryDetails?.Year !== "2023" &&
-                    dashboardDataList?.length > 0 && isInstitutionList && (
+                    dashboardDataList?.length > 0 && agmSummaryDetails?.Year?.toString() !== "2025" &&
+                      /* agmSummaryDetails?.Year !== "2023" &&
+                    dashboardDataList?.length > 0 && isInstitutionList && */ (
                       <button
                         onClick={(event: any) => handleViewMore(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -189,7 +213,7 @@ const index = () => {
                         View More
                       </button>
                     )}
-                  {dashboardDataList?.length > 0 && (
+                  {dashboardDataList?.length > 0 && agmSummaryDetails?.Year?.toString() !== "2025" && (
                     <button
                       onClick={(event: any) => handleViewNPX(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -235,14 +259,41 @@ const index = () => {
                   )}
                 </div>
               </div>
-
+              {
+                  agmSummaryDetails.total_year?.length > 1 &&
+            <div >
+              <Tab.Group selectedIndex={getSelectedTabIndex()}>
+              <Tab.List
+                variant="boxed-tabs"
+                className="w-[100px] border-none bg-transparent"
+              >
+               {
+                  agmSummaryDetails.total_year?.length > 1 &&
+                  agmSummaryDetails.total_year?.map((tab: any, index: number) => (
+                    <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
+                     last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
+                      <Tab.Button
+                        className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                        as="button"
+                        onClick={()=> handleAGMYearTab(tab)}>
+                        {tab}
+                      </Tab.Button>
+                    </Tab>
+                  ))
+                }
+               
+              </Tab.List>
+              </Tab.Group>
+              </div>
+               }
+              
+              
+              
               <div className="mt-5">
                 <TableWrapper isLoading={loading}>
                   <div
                     className={clsx([
-                      locationPathName === "/" &&
-                        " max-h-[400px] overflow-y-scroll",
-                    ])}
+                      locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}
                   >
                     <Table className="table_2 w-full">
                       <Table.Thead className="sticky top-0 z-10">
