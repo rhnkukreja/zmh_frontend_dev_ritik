@@ -87,7 +87,7 @@ const index = () => {
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchName}`);
+    downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchName}-${agmSummaryDetails?.Year}`);
   };
 
   useEffect(() => {
