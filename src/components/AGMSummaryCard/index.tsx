@@ -201,9 +201,9 @@ const index = () => {
                   </span>
 
                   {
-                    dashboardDataList?.length > 0 && agmSummaryDetails?.Year?.toString() !== "2025" &&
-                      /* agmSummaryDetails?.Year !== "2023" &&
-                    dashboardDataList?.length > 0 && isInstitutionList && */ (
+                    
+                    agmSummaryDetails?.Year !== "2025" &&
+                    dashboardDataList?.length > 0 && isInstitutionList && (
                       <button
                         onClick={(event: any) => handleViewMore(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
