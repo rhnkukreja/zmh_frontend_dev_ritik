@@ -202,7 +202,7 @@ const index = () => {
 
                   {
                     
-                    agmSummaryDetails?.Year !== "2025" &&
+                    agmSummaryDetails?.Year?.toString() !== "2025" &&
                     dashboardDataList?.length > 0 && isInstitutionList && (
                       <button
                         onClick={(event: any) => handleViewMore(event)}
