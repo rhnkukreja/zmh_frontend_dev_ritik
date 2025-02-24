@@ -95,10 +95,13 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                   <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                     {/* Year */}
                   </Table.Td>
+                  <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                    Year
+                  </Table.Td>
 
                   <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px] text-center  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]"></Table.Td>
                   <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px] text-center  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                    Download
+                    View
                   </Table.Td>
                 </Table.Tr>
               </Table.Thead>
@@ -117,6 +120,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                           />
                         </div>
                       </Table.Td>
+                      
                       <Table.Td className="px-0 py-3 border-b dark:border-darkmode-300 w-[300px]">
                         <div className="flex justify-between items-center ">
                           <div>
@@ -134,6 +138,8 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                           </div>
                         </div>
                       </Table.Td>
+                      
+                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">{document.year}</Table.Td>
                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600"></Table.Td>
                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                         <div className="flex justify-center items-center h-full">
