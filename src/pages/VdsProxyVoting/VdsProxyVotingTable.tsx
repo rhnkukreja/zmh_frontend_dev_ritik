@@ -226,6 +226,8 @@ const VdsProxyVotingTable = () => {
       .join(", ");
     return resultString;
   };
+  const [meetingDate, setMeetingDate] = useState('');
+
 
   const [apiDropdownOptions, setApiDropdownOptions] = useState<any>([]);
 
@@ -237,6 +239,7 @@ const VdsProxyVotingTable = () => {
       if (res.result?.institution) {
         setApiDropdownOptions(res.result?.institution);
       }
+      setMeetingDate(res.result?.meeting_date);
     } catch (error) {
       return error;
     } finally {
@@ -324,8 +327,14 @@ const VdsProxyVotingTable = () => {
 
               <Tab.Panels className="mt-5">
                 <Tab.Panel className="leading-relaxed">
-                  <div className="flex justify-between  mt-1">
-                    <h1 className="text-lg font-bold">Proxy Voting</h1>
+                  <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
+                   <span>
+                   <h1 className="text-lg font-bold">Proxy Voting</h1>
+                   {
+                         meetingDate &&
+                        <p className=" italic"> Meeting Date: {meetingDate} </p>
+                      }
+                   </span>
                     {tab === "Top-20" &&
                       vdsProxyDetails?.vds_report_headers?.length > 0 && (
                         <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
@@ -553,7 +562,7 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  <VotingRationale />
+                  <VotingRationale meetingDate={meetingDate}/>
                 </Tab.Panel>
               </Tab.Panels>
 
@@ -617,8 +626,15 @@ const VdsProxyVotingTable = () => {
                       </div>
                     </div>
                   </form>
-                  <div className="flex justify-between mb-4 mt-1">
-                    <h1 className="text-lg font-bold mt-4">Proxy Voting</h1>
+                  <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
+                    <span>
+                      <h1 className="text-lg font-bold mt-4">Proxy Voting</h1>
+                      {
+                         meetingDate &&
+                        <p className=" italic"> Meeting Date: {meetingDate} </p>
+                      }
+                    </span>
+
                     {vdsProxyAllInvestorDetails?.vds_report?.length > 0 && (
                       <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
                         <Tippy
@@ -839,7 +855,7 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  <VotingRationale filter={filter} />
+                  <VotingRationale meetingDate={meetingDate} filter={filter} />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

@@ -3,37 +3,25 @@ import Table from "@/components/Base/Table";
 import {
   convertToTitleCase,
   createDynamicURL,
-  downloadCSV,
 } from "@/utils/helper";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import clsx from "clsx";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
-  fetchAGMSummaryDashboard,
   fetchNpxProxyDashboard,
-  fetchVdsProxyDashboard,
   resetPage,
   setPage,
   setTempSearch,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
-import LoadingIcon from "../../components/Base/LoadingIcon";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
-import { ChevronLeft, FilterX } from "lucide-react";
-import Tippy from "@/components/Base/Tippy";
+import { ChevronLeft } from "lucide-react";
 import Lucide from "@/components/Base/Lucide";
-import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
-import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
-import MultiSearchBar from "@/components/MultiSearch";
-import { Menu, Popover, Tab } from "@/components/Base/Headless";
+import { Popover } from "@/components/Base/Headless";
 import { Controller, useForm } from "react-hook-form";
 import {
-  FormCheck,
   FormInput,
-  FormSelect,
-  FormSwitch,
 } from "@/components/Base/Form";
 import { dashboardService } from "@/services/dashboard";
 import TomSelect from "@/components/Base/TomSelect";
@@ -43,9 +31,8 @@ import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import CompanySelect from "@/components/ReactSelectAsync";
 
 const index = () => {
-  const location = useLocation();
+
   const navigate = useNavigate();
-  const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
   const { npxProxyDetails, npxProxyLoading, tempSearch, page, totalNPXCount } =
     useAppSelector((state) => state.dashboard);
@@ -62,7 +49,6 @@ const index = () => {
   const searchTicker = searchParams.get("ticker");
 
   const [filter, setFilter] = useState("");
-  const [institutionName, setInstitutionName] = useState("");
   const [allApplyFilter, setallApplyFilter] = useState<any>("");
   const [dropdownValues, setDropdownValues] = useState<any>({
     institution_name: [],
@@ -83,6 +69,8 @@ const index = () => {
   const [apiFundNameDropdown, setApiFundNameDropdown] = useState<any>({
     fund_name: [],
   });
+
+  const [meetingDate, setMeetingDate] = useState('');
 
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
@@ -117,6 +105,7 @@ const index = () => {
           paramFilter
         );
         if (res.result) {
+          setMeetingDate(res.result?.meeting_date);
           setShowFundName(res.result?.is_institution);
           setApiFundNameDropdown({ ...res.result });
         }
@@ -127,6 +116,27 @@ const index = () => {
       }
     }
   };
+
+  const getMeetingDateAPI = async () => {
+    const paramFilter = {
+      global_search: companyGlobalSearchName,
+    };
+    try {
+      const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+      if (res.result) {
+        setMeetingDate(res.result?.meeting_date);
+      }
+    } catch (error) {
+      return error;
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    setMeetingDate('');
+    getMeetingDateAPI();
+  }, [companyGlobalSearchName])
+  
 
   const getDependentDropdown = async () => {
     const paramFilter = {
@@ -154,24 +164,19 @@ const index = () => {
   };
 
   const handleDropdownChange = (key: string, value: any) => {
-    // if(value?.length > 0){
     setDropdownValues((prev: any) => ({
       ...prev,
       [key]: value,
     }));
-    // }
   };
 
   useEffect(() => {
-    // if(!isCompanySelected){
     getDependentDropdown();
-    // dispatch(setIsCompanySelected(false));
     // }
   }, [dropdownValues]);
 
   useEffect(() => {
     getAllInstitutionDropdown();
-    // dispatch(setIsCompanySelected(false));
   }, []);
 
   useEffect(() => {
@@ -189,33 +194,6 @@ const index = () => {
             )
           )
         );
-
-        // updatedFilter = { ...allApplyFilter, global_search: companyGlobalSearchName };
-        // updatedFilter.proposal = [];
-        // if (updatedFilter?.institution_name[0] !== '') {
-        //   getFundNameDependentDropdown(updatedFilter?.institution_name[0]);
-        // }
-        // getDependentDropdown();
-
-        // setTimeout(() => {
-        //   if (updatedFilter?.institution_name[0] !== '') {
-        //     setValue("institution_name", updatedFilter?.institution_name[0]);
-        //   }
-        //   setValue("fund_name", updatedFilter?.fund_name);
-        //   setValue("vote", updatedFilter?.vote);
-        //   // setValue("proposal", updatedFilter?.proposal);
-        //   setValue("vote_category", updatedFilter?.vote_category);
-        //   setValue("keyword", updatedFilter?.keyword);
-
-        //   dispatch(
-        //     fetchNpxProxyDashboard(
-        //       createDynamicURL(
-        //         `${baseURL}/npx/detail/`, updatedFilter, undefined, page)
-        //     )
-        //   );
-
-        // }, 1000);
-
         dispatch(setIsCompanySelected(false));
       } else {
         dispatch(
@@ -263,6 +241,7 @@ const index = () => {
       proposal: [],
       vote: [],
       vote_category: [],
+      meeting_date: ''
     },
   });
 
@@ -370,6 +349,10 @@ const index = () => {
           <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
             <span>
               <h1 className="text-lg font-bold">N-PX Voting 2024 (Beta)</h1>
+              {
+                meetingDate &&
+                <p className=" italic"> Meeting Date: {meetingDate} </p>
+              }
             </span>
           </div>
           {/* <div className="flex">
