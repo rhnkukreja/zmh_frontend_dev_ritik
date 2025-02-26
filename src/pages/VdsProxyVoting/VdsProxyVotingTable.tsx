@@ -562,7 +562,7 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  <VotingRationale />
+                  <VotingRationale meetingDate={meetingDate}/>
                 </Tab.Panel>
               </Tab.Panels>
 

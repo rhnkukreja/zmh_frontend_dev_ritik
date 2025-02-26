@@ -13,8 +13,9 @@ import { Tooltip } from "react-tooltip";
 
 interface VotingRationaleProps {
   filter?: any;
+  meetingDate?: string;
 }
-const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
+const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }) => {
   const dispatch = useAppDispatch();
   const { companyGlobalSearchTicker } = useAppSelector(
     (state) => state.authentiction
@@ -74,10 +75,19 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter }) => {
     }
   }, [companyGlobalSearchTicker, tab]);
 
+
   return (
     <div className="mt-6">
       <div className="flex justify-between mb-4 mt-1">
-        <h1 className="text-lg font-bold mb-6 ">Voting Rationale</h1>
+        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+          <span>
+            <h1 className="text-lg font-bold">Voting Rationale</h1>
+            {
+              meetingDate &&
+              <p className=" italic"> Meeting Date: {meetingDate} </p>
+            }
+          </span>
+        </div>
         {votingRationale?.length > 0 && (
           <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
             <Tippy content="Download Excel" options={{ theme: "light" }}>
