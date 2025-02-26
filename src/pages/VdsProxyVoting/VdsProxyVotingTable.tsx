@@ -855,7 +855,7 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  <VotingRationale filter={filter} />
+                  <VotingRationale meetingDate={meetingDate} filter={filter} />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>
