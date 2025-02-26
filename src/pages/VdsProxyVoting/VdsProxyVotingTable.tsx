@@ -330,10 +330,10 @@ const VdsProxyVotingTable = () => {
                   <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
                    <span>
                    <h1 className="text-lg font-bold">Proxy Voting</h1>
-                    {
-                      vdsProxyDetails?.meeting_date &&
-                      <p className=" italic"> Meeting Date: {vdsProxyDetails?.meeting_date}</p>
-                    }
+                   {
+                         meetingDate &&
+                        <p className=" italic"> Meeting Date: {meetingDate} </p>
+                      }
                    </span>
                     {tab === "Top-20" &&
                       vdsProxyDetails?.vds_report_headers?.length > 0 && (

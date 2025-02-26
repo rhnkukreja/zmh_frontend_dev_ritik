@@ -117,6 +117,27 @@ const index = () => {
     }
   };
 
+  const getMeetingDateAPI = async () => {
+    const paramFilter = {
+      global_search: companyGlobalSearchName,
+    };
+    try {
+      const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+      if (res.result) {
+        setMeetingDate(res.result?.meeting_date);
+      }
+    } catch (error) {
+      return error;
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    setMeetingDate('');
+    getMeetingDateAPI();
+  }, [companyGlobalSearchName])
+  
+
   const getDependentDropdown = async () => {
     const paramFilter = {
       global_search: companyGlobalSearchName,
