@@ -1,6 +1,5 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Dialog } from "@/components/Base/Headless";
-import { useAppDispatch } from "@/stores/hooks";
 import CreateAndSelectFolder from "./CreateAndSelectFolder";
 import Lucide from "@/components/Base/Lucide";
 
@@ -15,7 +14,8 @@ const GlobalCreateNoteModal = ({
   setGlobalCreateNoteModalVisible,
   selectedText,
 }: GlobalCreateNoteModalProps) => {
-  console.log({ selectedText });
+  const [noteTitle, setNoteTitle] = useState<string>("Create Note");
+
   return (
     <Dialog
       size="md"
@@ -24,7 +24,7 @@ const GlobalCreateNoteModal = ({
     >
       <Dialog.Panel>
         <Dialog.Title>
-          <h2 className="text-xl font-semibold">Create Note</h2>
+          <h2 className="text-xl font-semibold">{noteTitle}</h2>
           <div
             onClick={() => setGlobalCreateNoteModalVisible(false)}
             className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
@@ -36,6 +36,7 @@ const GlobalCreateNoteModal = ({
           <CreateAndSelectFolder
             selectedText={selectedText}
             setGlobalCreateNoteModalVisible={setGlobalCreateNoteModalVisible}
+            setNoteTitle={setNoteTitle}
           />
         </Dialog.Description>
       </Dialog.Panel>
