@@ -210,7 +210,7 @@ function Main() {
       const container = document.createElement("div");
       container.appendChild(range.cloneContents());
       const selectedHtml = container.innerHTML.trim();
-      if (selectedHtml) {
+      if (selectedHtml && selectedHtml?.length > 50) {
         const rect = range.getBoundingClientRect();
         setSelectedText(selectedHtml);
         setTooltipPosition({
