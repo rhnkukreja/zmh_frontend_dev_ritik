@@ -202,8 +202,8 @@ const index = () => {
 
                   {
                     
-                    agmSummaryDetails?.Year?.toString() !== "2025" &&
-                    dashboardDataList?.length > 0 && isInstitutionList && (
+                    agmSummaryDetails?.vds_check &&
+                    dashboardDataList?.length > 0 && (
                       <button
                         onClick={(event: any) => handleViewMore(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -213,7 +213,7 @@ const index = () => {
                         View More
                       </button>
                     )}
-                  {dashboardDataList?.length > 0 && agmSummaryDetails?.Year?.toString() !== "2025" && (
+                  {dashboardDataList?.length > 0 && agmSummaryDetails?.npx_check && (
                     <button
                       onClick={(event: any) => handleViewNPX(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 

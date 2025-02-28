@@ -278,82 +278,22 @@ function Main() {
     isAllCompanySelected,
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
-  const [allShareholderCount, setAllShareholderCount] = useState<number>(0);
-  const [isProxyCompany, setIsProxyCompany] = useState<boolean>(false);
+  const [modulesData, setModulesData] = useState<any>({});
 
   useEffect(() => {
-    getAllShareholderAPI();
-    getAllCompaniesDropdown();
+    getModulesCount();
   }, [companyGlobalSearchName]);
 
-  const getAllShareholderAPI = async () => {
+
+  const getModulesCount = async () => {
     try {
-      const proposalResponse =
-        await shareHolderProposalService.getAllShareholderAPI(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/def14a/`,
-            { global_search: [companyGlobalSearchName] },
-            undefined,
-            page
-          )
-        );
-      if (proposalResponse?.result) {
-        var proposalCount =
-          proposalResponse?.result?.count > 0
-            ? proposalResponse?.result?.count
-            : 0;
-      }
-
-      const noActionResponse =
-        await shareHolderProposalService.getAllShareholderAPI(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/no_action/`,
-            { global_search: [companyGlobalSearchName] },
-            undefined,
-            page
-          )
-        );
-      if (noActionResponse?.result) {
-        var noActionCount =
-          noActionResponse?.result?.count > 0
-            ? noActionResponse?.result?.count
-            : 0;
-      }
-
-      const withdrawnResponse =
-        await shareHolderProposalService.getAllShareholderAPI(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/withdrawn/`,
-            { global_search: [companyGlobalSearchName] },
-            undefined,
-            page
-          )
-        );
-      if (withdrawnResponse?.result) {
-        var withdrawnCount =
-          withdrawnResponse?.result?.count > 0
-            ? withdrawnResponse?.result?.count
-            : 0;
-      }
-
-      setAllShareholderCount(proposalCount + noActionCount + withdrawnCount);
-    } catch (error) {
-      return error;
-    }
-  };
-
-  const getAllCompaniesDropdown = async (params?: any) => {
-    try {
-      const res = await dashboardService.getInstitution(params);
-      if (res.result?.company) {
-        const companies = res.result?.company;
-        const isCompany = companies?.includes(companyGlobalSearchName);
-        setIsProxyCompany(isCompany);
+      const res = await dashboardService.getModulesCount({global_search:companyGlobalSearchName});
+      if (res?.result) {
+        setModulesData(res?.result);
       }
     } catch (error) {
       return error;
     } finally {
-      // setGetDropdownLoader(false);
     }
   };
 
@@ -494,12 +434,22 @@ function Main() {
                                 className="side-menu__link__icon side-menu__link--active"
                               />
                               {menu.title === "Proxy Contest" &&
-                                isProxyCompany && (
+                                modulesData?.proxy_contest && (
                                   <span
                                     className="bg-[#DC661F] absolute  rounded-2xl w-2 h-2 p-2 text-[10px]  
                              font-semibold text-white top-0 flex items-center justify-center position-set"
                                   ></span>
                                 )}
+
+                                {menu.title === "Case Studies" &&
+                                  modulesData?.case_studies > 0 && (
+                                    <span
+                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
+                               font-semibold text-white top-0 flex items-center justify-center position-set"
+                                  >
+                                    {modulesData?.case_studies}
+                                  </span>
+                                  )}
                             </span>
                           </>
                         )}
@@ -524,12 +474,12 @@ function Main() {
                                 <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
                               </svg>
 
-                              {allShareholderCount > 0 && (
+                              {modulesData?.shareholder_proposal > 0 && (
                                 <span
                                   className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
                              font-semibold text-white top-0 flex items-center justify-center position-set"
                                 >
-                                  {allShareholderCount}
+                                  {modulesData?.shareholder_proposal}
                                 </span>
                               )}
                             </span>

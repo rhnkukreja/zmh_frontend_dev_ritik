@@ -82,6 +82,37 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
     setCurrentPdfName(pdf_name);
   };
 
+  const getModulesCount = async () => {
+    try {
+      const res = await dashboardService.getModulesCount({global_search:companyGlobalSearchName});
+      if (res?.result) {
+          if (res?.result?.proxy_contest) {
+            setValue("company_name", companyGlobalSearchName);
+            const applyFilter = { company_name: [companyGlobalSearchName], top: 'true', institution_clear: false  };
+            Object.entries(applyFilter).forEach(([key, value]) => {
+                dispatch(setProxyTopFilter({ key: key as any, value }));
+            });
+          }
+        
+      }
+    } catch (error) {
+      return error;
+    } finally {
+    }
+  };
+
+ 
+    useEffect(() => {
+        getModulesCount();
+        return () => {
+            setValue("company_name", []);
+            const applyFilter = { company_name: [], top: 'true', institution_clear: false };
+            Object.entries(applyFilter).forEach(([key, value]) => {
+                dispatch(setProxyTopFilter({ key: key as any, value }));
+            });
+        }
+    }, [])
+
     useEffect(() => {
 
         // if (tab === 'Top-20') {

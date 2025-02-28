@@ -154,6 +154,18 @@ class DashboardService {
     };
   }
 
+  public async getModulesCount(paramFilter?: any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(
+      createDynamicURL(`/get_modules_count/`, paramFilter)
+    );
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
   public async getDynamicNPXDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
