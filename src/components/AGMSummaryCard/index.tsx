@@ -92,37 +92,43 @@ const index = () => {
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
-      setSelectedYear("");
+      // setSelectedYear("");
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
+            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker}
           )
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     } 
     else if (companyGlobalSearchTicker !== tempSearch) {
-      setSelectedYear("");
+      // setSelectedYear("");
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
+            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker}
           )
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-    else if(selectedYear) {
+    
+    
+  }, [companyGlobalSearchTicker]);
+
+  useEffect(() => {
+    if (selectedYear) {
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
+            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker, year: selectedYear }
           )
         )
       );
     }
-  }, [companyGlobalSearchTicker, selectedYear]);
+  }, [selectedYear])
+  
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     // event.preventDefault();
@@ -154,7 +160,7 @@ const index = () => {
 
 
   useEffect(() => {
-    getAllInstitutionDropdown();
+    // getAllInstitutionDropdown();
   }, [companyGlobalSearchTicker]);
   
    const getAllInstitutionDropdown = async () => {
@@ -181,8 +187,9 @@ const index = () => {
     }
 
     const getSelectedTabIndex = () => {
+      // const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString()));
       const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (agmSummaryDetails?.Year.toString()));
-      return tabIndex;
+      return tabIndex || 0;
     };
 
   return (
@@ -262,7 +269,7 @@ const index = () => {
               {
                   agmSummaryDetails.total_year?.length > 1 &&
             <div >
-              <Tab.Group selectedIndex={getSelectedTabIndex()}>
+              <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
               <Tab.List
                 variant="boxed-tabs"
                 className="w-[100px] border-none bg-transparent"
