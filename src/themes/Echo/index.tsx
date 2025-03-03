@@ -925,7 +925,7 @@ function Main() {
         />
       )}
 
-      <Dialog size="xl" open={basicModalPreview} onClose={handleCloseModal}>
+      <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
         <Dialog.Panel className="p-10 text-center h-full">
           <Dialog.Title>
             {/* <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2> */}

@@ -217,7 +217,7 @@ const index = () => {
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                       >
-                        View More
+                        {agmSummaryDetails?.Year == "2025" ? "YT 2025" : "View More"}
                       </button>
                     )}
                   {dashboardDataList?.length > 0 && agmSummaryDetails?.npx_check && (
