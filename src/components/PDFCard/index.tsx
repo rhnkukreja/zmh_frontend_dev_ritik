@@ -1,6 +1,6 @@
 import TableWrapper from "../TableWrapper";
 import Table from "@/components/Base/Table";
-import documentImage from "../../assets/images/zmh-images/document.jpg";
+import documentImage from "../../assets/images/zmh-images/document (2).png";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../Base/Button";
@@ -113,7 +113,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                       className="row [&_td]:last:border-b-0"
                     >
                       <Table.Td className="px-0 py-3 border-b dark:border-darkmode-300 w-[50px]">
-                        <div className=" w-12 h-12 ml-5 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                        <div className=" w-10 h-10 ml-5 overflow-hidden rounded-full image-fit-auto border-[3px] border-slate-200/70">
                           <img
                             alt="ZMH Analytics"
                             src={validImages[document.name]}

@@ -241,6 +241,7 @@ const VdsProxyVotingTable = () => {
     try {
       const res = await dashboardService.getInstitution({
         company_name: [companyGlobalSearchName],
+        year: yearTicker!,
       });
       if (res.result?.institution) {
         setApiDropdownOptions(res.result?.institution);

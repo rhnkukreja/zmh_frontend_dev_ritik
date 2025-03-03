@@ -7,7 +7,7 @@ interface ChildProps {
 
 const index: React.FC<ChildProps> = ({ logoUrl, companyName }) => {
     return (
-        <div className="bg-gradient-to-b rounded-2xl to-[#000000CC] from-[#9F1239] background text-white p-5 ">
+        <div className="bg-gradient-to-b rounded-2xl to-[#000000CC] from-[#9F1239] background text-white p-3 ">
             <div className='flex items-center justify-between'>
                 <div className="flex items-center flex-row justify-center">
                     <div className=" w-20 bg-white p-2 rounded-xl">
