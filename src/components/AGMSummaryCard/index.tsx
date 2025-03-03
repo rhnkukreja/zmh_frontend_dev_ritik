@@ -103,7 +103,7 @@ const index = () => {
       dispatch(setTempSearch(companyGlobalSearchTicker));
     } 
     else if (companyGlobalSearchTicker !== tempSearch) {
-      // setSelectedYear("");
+      setSelectedYear("");
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
@@ -138,7 +138,7 @@ const index = () => {
     //       },
     // })
     window.open(
-      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year}`,
       "_blank"
     );
   };
@@ -151,7 +151,7 @@ const index = () => {
     //       },
     // })
     window.open(
-      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year}`,
       "_blank"
     );
   };
@@ -188,7 +188,7 @@ const index = () => {
 
     const getSelectedTabIndex = () => {
       // const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString()));
-      const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (agmSummaryDetails?.Year.toString()));
+      const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ? selectedYear?.toString() : agmSummaryDetails?.Year.toString()));
       return tabIndex || 0;
     };
 

@@ -1,6 +1,6 @@
 import TableWrapper from "../TableWrapper";
 import Table from "@/components/Base/Table";
-import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
+import documentImage from "../../assets/images/zmh-images/document.jpg";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../Base/Button";
@@ -58,7 +58,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
         const isValid = await checkImageUrl(document?.image);
         tempValidImages[document?.name] = isValid
           ? document?.image
-          : userLinkedinImage;
+          : documentImage;
       }
 
       setValidImages(tempValidImages);
@@ -83,7 +83,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
         </Button>
       </div>
 
-      <div className="w-full h-[250px] pr-6 overflow-y-scroll">
+      <div className="w-full h-[310px] pr-6 overflow-y-scroll">
         <TableWrapper isLoading={false}>
           <div>
             <Table className="table">

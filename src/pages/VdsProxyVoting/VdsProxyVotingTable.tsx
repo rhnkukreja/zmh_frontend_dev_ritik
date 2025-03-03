@@ -54,6 +54,8 @@ const VdsProxyVotingTable = () => {
   } = useAppSelector((state: RootState) => state.authentiction);
 
   const searchTicker = searchParams.get("ticker");
+  const yearTicker = searchParams.get("year");
+
   const [filter, setFilter] = useState<any>([]);
 
   const { handleSubmit, control, reset } = useForm<any>({
@@ -67,7 +69,7 @@ const VdsProxyVotingTable = () => {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
           )
         )
       );
@@ -77,7 +79,7 @@ const VdsProxyVotingTable = () => {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
           )
         )
       );
@@ -85,7 +87,7 @@ const VdsProxyVotingTable = () => {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
           )
         )
       );
@@ -99,6 +101,7 @@ const VdsProxyVotingTable = () => {
           fetchVdsProxyAllInvestor(
             createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
               ticker: companyGlobalSearchTicker,
+              year: yearTicker!,
               institution_name: filter,
             })
           )
@@ -107,6 +110,7 @@ const VdsProxyVotingTable = () => {
           getProxyVotingRationale(
             createDynamicURL(`/vds_proxy_voting_rationale/`, {
               ticker: companyGlobalSearchTicker,
+              year: yearTicker!,
               institution_name: filter,
             })
           )
@@ -124,6 +128,7 @@ const VdsProxyVotingTable = () => {
         fetchVdsProxyAllInvestor(
           createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
             ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
             institution_name: filter,
           })
         )
@@ -133,6 +138,7 @@ const VdsProxyVotingTable = () => {
         getProxyVotingRationale(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
             institution_name: filter,
           })
         )
