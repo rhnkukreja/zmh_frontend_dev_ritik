@@ -137,7 +137,7 @@ const index = () => {
 
   const redirectCaseStudy = (institution_name: string) => {
     // window.open(`/case-studies`, "_blank");
-    navigate(`/case-studies?institution_name=${institution_name}`);
+    navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
   };
 
   return (
