@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { createDynamicURL, downloadXlsxFile } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { Tooltip } from "react-tooltip";
+import { useSearchParams } from "react-router-dom";
 
 interface VotingRationaleProps {
   filter?: any;
@@ -23,9 +24,10 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
 
   const { getProxyVotingRationaleLoading, votingRationale, tab } =
     useAppSelector((state) => state.dashboard);
-
+  const [searchParams] = useSearchParams();
   const [groupVotingRationale, setGroupVotingRationale] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+  const yearTicker = searchParams.get("year");
 
   useEffect(() => {
     const groupedQuestions = votingRationale?.reduce(
@@ -69,6 +71,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
         getProxyVotingRationale(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
           })
         )
       );

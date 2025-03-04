@@ -9,4 +9,16 @@
       height: 100%;
     }
   }
+
+  .image-fit-auto {
+    position: relative;
+    & > img {
+      position: absolute;
+      object-fit: contain;
+      top: 7px;
+      left: 7px;
+      width: 60%;
+      height: 60%;
+    }
+  }
 }

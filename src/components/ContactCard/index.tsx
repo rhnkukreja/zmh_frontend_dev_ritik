@@ -69,7 +69,7 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
                 </ul>
             </div> */}
 
-      <div className="w-full h-[250px] pr-6 overflow-y-scroll">
+      <div className="w-full h-[390px] pr-6 overflow-y-scroll">
         <TableWrapper>
           <div>
             <Table className="table">

@@ -92,11 +92,11 @@ const index = () => {
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
-      setSelectedYear("");
+      // setSelectedYear("");
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
+            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker}
           )
         )
       );
@@ -107,22 +107,28 @@ const index = () => {
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
+            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker}
           )
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-    else if(selectedYear) {
+    
+    
+  }, [companyGlobalSearchTicker]);
+
+  useEffect(() => {
+    if (selectedYear) {
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker, year: selectedYear}
+            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker, year: selectedYear }
           )
         )
       );
     }
-  }, [companyGlobalSearchTicker, selectedYear]);
+  }, [selectedYear])
+  
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     // event.preventDefault();
@@ -132,7 +138,7 @@ const index = () => {
     //       },
     // })
     window.open(
-      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year}`,
       "_blank"
     );
   };
@@ -145,7 +151,7 @@ const index = () => {
     //       },
     // })
     window.open(
-      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`,
+      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year}`,
       "_blank"
     );
   };
@@ -154,7 +160,7 @@ const index = () => {
 
 
   useEffect(() => {
-    getAllInstitutionDropdown();
+    // getAllInstitutionDropdown();
   }, [companyGlobalSearchTicker]);
   
    const getAllInstitutionDropdown = async () => {
@@ -181,8 +187,9 @@ const index = () => {
     }
 
     const getSelectedTabIndex = () => {
-      const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (agmSummaryDetails?.Year.toString()));
-      return tabIndex;
+      // const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString()));
+      const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ? selectedYear?.toString() : agmSummaryDetails?.Year.toString()));
+      return tabIndex || 0;
     };
 
   return (
@@ -202,18 +209,18 @@ const index = () => {
 
                   {
                     
-                    agmSummaryDetails?.Year?.toString() !== "2025" &&
-                    dashboardDataList?.length > 0 && isInstitutionList && (
+                    agmSummaryDetails?.vds_check &&
+                    dashboardDataList?.length > 0 && (
                       <button
                         onClick={(event: any) => handleViewMore(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                       >
-                        View More
+                        {agmSummaryDetails?.Year == "2025" ? "Real-Time 2025" : "View More"}
                       </button>
                     )}
-                  {dashboardDataList?.length > 0 && agmSummaryDetails?.Year?.toString() !== "2025" && (
+                  {dashboardDataList?.length > 0 && agmSummaryDetails?.npx_check && (
                     <button
                       onClick={(event: any) => handleViewNPX(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -235,7 +242,7 @@ const index = () => {
                         });
                       }}
                     >
-                      {/* *Quorum: {agmSummaryDetails?.Quorum} */}
+                      *Quorum: {agmSummaryDetails?.Quorum}
                     </h4>
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -262,7 +269,7 @@ const index = () => {
               {
                   agmSummaryDetails.total_year?.length > 1 &&
             <div >
-              <Tab.Group selectedIndex={getSelectedTabIndex()}>
+              <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
               <Tab.List
                 variant="boxed-tabs"
                 className="w-[100px] border-none bg-transparent"
@@ -440,17 +447,17 @@ const index = () => {
                   </div>
                 </TableWrapper>
 
-                 {/* <footer className="!pt-3 flex items-start flex-col">
+                 <footer className="!pt-3 flex items-start flex-col">
                   <span className="!pt-3 flex items-center p-2">
                     <sup
                       className="bold-sup cursor-pointer ml-1"
                       style={{ fontSize: "0.8em" }}
                     >*</sup>
                     <p id="footnote " className="">
-                    (For + Against or Withhold + Abstain)/Shares Outstanding
+                    [(For + Against or Withhold + Abstain)/Shares Outstanding] (Based on Class A shares only for dual-class companies)
                     </p>
                   </span>
-                </footer> */}
+                </footer>
               </div>
             </>
           </div>

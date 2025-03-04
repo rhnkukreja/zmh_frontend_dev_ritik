@@ -22,6 +22,7 @@ import _ from "lodash";
 interface CreateAndSelectFolderProps {
   setGlobalCreateNoteModalVisible: Dispatch<SetStateAction<boolean>>;
   selectedText: string;
+  setNoteTitle: Dispatch<SetStateAction<string>>;
 }
 
 const StepOne: React.FC<{
@@ -168,6 +169,7 @@ const StepThree: React.FC<{
 const CreateAndSelectFolder: React.FC<CreateAndSelectFolderProps> = ({
   selectedText,
   setGlobalCreateNoteModalVisible,
+  setNoteTitle,
 }) => {
   const dispatch = useAppDispatch();
   const { notesLoading, selectedNote, notes } = useAppSelector(
@@ -239,6 +241,16 @@ const CreateAndSelectFolder: React.FC<CreateAndSelectFolderProps> = ({
   useEffect(() => {
     if (newCreatedFolder) setValue("folder", newCreatedFolder);
   }, [newCreatedFolder]);
+
+  useEffect(() => {
+    if (selectedNote && step === 3) {
+      setNoteTitle(selectedNote?.name);
+    } else if (noteValue && step === 3) {
+      setNoteTitle(noteValue);
+    } else {
+      setNoteTitle("Create Note");
+    }
+  }, [noteValue, step, selectedNote?.name]);
 
   return (
     <div>

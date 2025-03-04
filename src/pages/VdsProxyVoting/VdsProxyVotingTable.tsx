@@ -54,6 +54,8 @@ const VdsProxyVotingTable = () => {
   } = useAppSelector((state: RootState) => state.authentiction);
 
   const searchTicker = searchParams.get("ticker");
+  const yearTicker = searchParams.get("year")!;
+
   const [filter, setFilter] = useState<any>([]);
 
   const { handleSubmit, control, reset } = useForm<any>({
@@ -67,7 +69,7 @@ const VdsProxyVotingTable = () => {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
           )
         )
       );
@@ -77,7 +79,7 @@ const VdsProxyVotingTable = () => {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
           )
         )
       );
@@ -85,7 +87,7 @@ const VdsProxyVotingTable = () => {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}`
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
           )
         )
       );
@@ -99,6 +101,7 @@ const VdsProxyVotingTable = () => {
           fetchVdsProxyAllInvestor(
             createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
               ticker: companyGlobalSearchTicker,
+              year: yearTicker!,
               institution_name: filter,
             })
           )
@@ -107,6 +110,7 @@ const VdsProxyVotingTable = () => {
           getProxyVotingRationale(
             createDynamicURL(`/vds_proxy_voting_rationale/`, {
               ticker: companyGlobalSearchTicker,
+              year: yearTicker!,
               institution_name: filter,
             })
           )
@@ -124,6 +128,7 @@ const VdsProxyVotingTable = () => {
         fetchVdsProxyAllInvestor(
           createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
             ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
             institution_name: filter,
           })
         )
@@ -133,6 +138,7 @@ const VdsProxyVotingTable = () => {
         getProxyVotingRationale(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
             institution_name: filter,
           })
         )
@@ -235,6 +241,7 @@ const VdsProxyVotingTable = () => {
     try {
       const res = await dashboardService.getInstitution({
         company_name: [companyGlobalSearchName],
+        year: yearTicker!,
       });
       if (res.result?.institution) {
         setApiDropdownOptions(res.result?.institution);
@@ -304,25 +311,28 @@ const VdsProxyVotingTable = () => {
                     }}
                   >
                     <div className="flex items-center justify-center ">
-                      Top 20
+                      {yearTicker === "2025" ? 'All Investor Data' : 'Top 20'}
                     </div>
                   </Tab.Button>
                 </Tab>
 
-                <Tab>
-                  <Tab.Button
-                    className="w-full py-2"
-                    as="button"
-                    onClick={() => {
-                      dispatch(setTabs("All-Investor"));
-                      onTabChange();
-                    }}
-                  >
-                    <div className="flex items-center justify-center ">
-                      All Investors
-                    </div>
-                  </Tab.Button>
-                </Tab>
+                {
+                  yearTicker !== "2025" &&
+                  <Tab>
+                    <Tab.Button
+                      className="w-full py-2"
+                      as="button"
+                      onClick={() => {
+                        dispatch(setTabs("All-Investor"));
+                        onTabChange();
+                      }}
+                    >
+                      <div className="flex items-center justify-center ">
+                        All Investors
+                      </div>
+                    </Tab.Button>
+                  </Tab>
+                }
               </Tab.List>
 
               <Tab.Panels className="mt-5">
@@ -338,10 +348,13 @@ const VdsProxyVotingTable = () => {
                     {tab === "Top-20" &&
                       vdsProxyDetails?.vds_report_headers?.length > 0 && (
                         <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
+                          {
+                            yearTicker !== "2025" &&
                           <h1 className="text-md font-bold">
                             Aggregate Ownership:{" "}
                             {vdsProxyDetails?.total_percent_ownership}
                           </h1>
+                          }
                           <Tippy
                             content="Download Excel"
                             options={{ theme: "light" }}
