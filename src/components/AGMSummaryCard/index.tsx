@@ -217,7 +217,7 @@ const index = () => {
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                       >
-                        {agmSummaryDetails?.Year == "2025" ? "YT 2025" : "View More"}
+                        {agmSummaryDetails?.Year == "2025" ? "Real-Time 2025" : "View More"}
                       </button>
                     )}
                   {dashboardDataList?.length > 0 && agmSummaryDetails?.npx_check && (
@@ -242,7 +242,7 @@ const index = () => {
                         });
                       }}
                     >
-                      {/* *Quorum: {agmSummaryDetails?.Quorum} */}
+                      *Quorum: {agmSummaryDetails?.Quorum}
                     </h4>
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -447,17 +447,17 @@ const index = () => {
                   </div>
                 </TableWrapper>
 
-                 {/* <footer className="!pt-3 flex items-start flex-col">
+                 <footer className="!pt-3 flex items-start flex-col">
                   <span className="!pt-3 flex items-center p-2">
                     <sup
                       className="bold-sup cursor-pointer ml-1"
                       style={{ fontSize: "0.8em" }}
                     >*</sup>
                     <p id="footnote " className="">
-                    (For + Against or Withhold + Abstain)/Shares Outstanding
+                    [(For + Against or Withhold + Abstain)/Shares Outstanding] (Based on Class A shares only for dual-class companies)
                     </p>
                   </span>
-                </footer> */}
+                </footer>
               </div>
             </>
           </div>

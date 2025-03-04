@@ -83,7 +83,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
         </Button>
       </div>
 
-      <div className="w-full h-[310px] pr-6 overflow-y-scroll">
+      <div className="w-full h-[380px] pr-6 overflow-y-scroll">
         <TableWrapper isLoading={false}>
           <div>
             <Table className="table">

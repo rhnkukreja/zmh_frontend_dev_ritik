@@ -287,7 +287,7 @@ function Main() {
 
   const getModulesCount = async () => {
     try {
-      const res = await dashboardService.getModulesCount({global_search:companyGlobalSearchName});
+      const res = await dashboardService.getModulesCount({ global_search: companyGlobalSearchName });
       if (res?.result) {
         setModulesData(res?.result);
       }
@@ -394,7 +394,7 @@ function Main() {
                     {user.user_type === "Admin" ? (
                       <>{menu}</>
                     ) : user.user_type !== "Admin" && menu === "Admin" ? (
-                      <>{}</>
+                      <>{ }</>
                     ) : (
                       <>{menu}</>
                     )}
@@ -441,15 +441,25 @@ function Main() {
                                   ></span>
                                 )}
 
-                                {menu.title === "Case Studies" &&
-                                  modulesData?.case_studies > 0 && (
-                                    <span
+                              {menu.title === "Case Studies" &&
+                                modulesData?.case_studies > 0 && (
+                                  <span
                                     className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
                                font-semibold text-white top-0 flex items-center justify-center position-set"
                                   >
                                     {modulesData?.case_studies}
                                   </span>
-                                  )}
+                                )}
+
+                              {menu.title === "Engagement Details" &&
+                                modulesData?.engagement_details > 0 && (
+                                  <span
+                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
+                               font-semibold text-white top-0 flex items-center justify-center position-set"
+                                  >
+                                    {modulesData?.engagement_details}
+                                  </span>
+                                )}
                             </span>
                           </>
                         )}
@@ -957,9 +967,8 @@ function Main() {
             )}
 
             <iframe
-              className={`w-full h-full ${
-                isFrameLoading || isError ? "hidden" : ""
-              }`}
+              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
+                }`}
               src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
               title="Embedded Dashboard"
               onLoad={handleLoad}

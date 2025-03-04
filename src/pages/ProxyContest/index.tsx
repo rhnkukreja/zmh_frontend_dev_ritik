@@ -1176,7 +1176,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                                         <span>
                                                             <h1 className="text-lg font-bold">
                                                                 {/* Proxy Contest */}
-                                                                Voting Details 
+                                                                Director Voting Details 
                                                                 {proxyContestTopFilter?.institution_name?.length > 0 ? "" : ' (Top 5)'}
                                                             </h1>
                                                             
