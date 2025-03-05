@@ -897,7 +897,7 @@ function ShareHolderProposal() {
                         />
                       </div>
 
-                      <div className="w-full">
+                      {/* <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           <span className="font-semibold">Status</span>
                           {apiDropdownOptions.status?.length > 0 && (
@@ -949,7 +949,7 @@ function ShareHolderProposal() {
                             </TomSelect>
                           )}
                         />
-                      </div>
+                      </div> */}
 
                       <div className="w-full">
                         <div className="text-left text-slate-500 font-semibold">
@@ -1566,7 +1566,7 @@ function ShareHolderProposal() {
                                 )}
 
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Outcome/Percentage for
+                                % Support 
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Vote Details
