@@ -48,6 +48,7 @@ function ProxyGuideline() {
   const {
     loading,
     proxyVotingGuidelines,
+    count,
     page,
     totalPages,
     filters,
@@ -268,6 +269,38 @@ function ProxyGuideline() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+
+                <div className="flex items-start">
+                  <a
+                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
+                   border-white border-2 text-white rounded-md "
+
+                   onClick={() => {
+                    gotoDetailPage(
+                      'https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Overboarding_Document/Overboarding Policy for Top Investors (Updated)_Overboarding_Document.pdf',
+                      'Overboarding Document'
+                    );
+
+                    setPdfVisible(true);
+                  }}
+                    // onClick={(event: React.MouseEvent) => {
+                    //   event.preventDefault();
+                    //   window.open('')
+                    // }}
+                  >
+                      
+                    <div className="flex items-center justify-center cursor-pointer" >
+                    <Lucide
+                        icon="File"
+                        className="stroke-[2] w-4 h-4 text-white "
+                      />
+                      <span className="ml-2 font-semibold hidden xl:flex">
+                      Overboarding Document
+                      </span>
+                    </div>
+                  </a>
+                </div>
+
                   {user?.saved_search?.["Voting Guidelines"] !== undefined && (
                     <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
@@ -460,6 +493,7 @@ function ProxyGuideline() {
                 </div>
               </div>
               <div className="overflow-auto xl:overflow-visible px-5">
+                {count > 0 && <h2 className="flex items-end justify-end my-2 text-[15px]">Total Records are: <span className="text-[#9F1239] ml-1 font-bold ">({count})</span></h2>}
                 <TableWrapper isLoading={loading}>
                   <div className="overflow-auto max-h-[400px]">
                     <Table>

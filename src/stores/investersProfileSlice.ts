@@ -15,6 +15,7 @@ interface nvestersProfileSlice {
   investersProfile: InvestersProfile[];
   singleInvesterProfile: InvestersProfile | null;
   totalInvestersProfile: number;
+  count: number;
   loading: boolean;
   error: string | null;
   totalPages: number;
@@ -43,6 +44,8 @@ const initialState: nvestersProfileSlice = {
     region: [],
     institution_name: [],
   },
+  count: 0
+
 };
 
 export const fetchInvestersProfiles = createAsyncThunk<
@@ -131,6 +134,7 @@ const investersProfileSlice = createSlice({
           state.loading = false;
           state.investersProfile = action.payload.results;
           state.totalInvestersProfile = action.payload.count;
+          state.count = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
         }
       )

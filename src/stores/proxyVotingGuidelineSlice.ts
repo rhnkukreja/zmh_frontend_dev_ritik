@@ -26,6 +26,7 @@ interface ProxyVotingGuidelineSlice {
   summaryLoading: boolean;
   error: string | null;
   totalPages: number;
+  count: number;
   summaryTotalPages: number;
   page: number;
   summaryPage: number;
@@ -66,6 +67,7 @@ const initialState: ProxyVotingGuidelineSlice = {
     sub_category: [],
     keyword: "",
   },
+  count: 0
 };
 
 export const fetchProxyVotingGuidelines = createAsyncThunk<
@@ -199,6 +201,8 @@ const proxyVotingGuidelineSlice = createSlice({
           state.proxyVotingGuidelines = action.payload.results;
           state.totalProxyVotingGuidelines = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count, 20);
+          state.count = action.payload.count;
+
         }
       )
       .addCase(fetchProxyVotingGuidelines.rejected, (state, action) => {

@@ -1565,8 +1565,15 @@ function ShareHolderProposal() {
                                   </Table.Td>
                                 )}
 
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                % Support 
+                                <Table.Td 
+                                  onClick={() => {
+                                    window.scrollBy({
+                                      top: 650,
+                                      behavior: "smooth",
+                                    });
+                                  }}
+                                className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                               % Support*
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Vote Details
@@ -1713,6 +1720,17 @@ function ShareHolderProposal() {
                           </Table>
                         </div>
                       </TableWrapper>
+                      <footer className="!pt-3 flex items-start flex-col">
+                        <span className="!pt-3 flex items-center p-2">
+                          <sup
+                            className="bold-sup cursor-pointer ml-1"
+                            style={{ fontSize: "0.8em" }}
+                          >*</sup>
+                          <p id="footnote " className="">
+                            [(For + Against or Withhold + Abstain)/Shares Outstanding]
+                          </p>
+                        </span>
+                      </footer>
                     </Tab.Panel>
                   </Tab.Panels>
 

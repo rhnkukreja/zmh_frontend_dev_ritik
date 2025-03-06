@@ -48,6 +48,7 @@ function Main() {
     questions,
     loading,
     page,
+    count,
     totalPages,
     engagementQuestionFilterOptions,
     filters,
@@ -512,6 +513,7 @@ function Main() {
               </div>
             </div>
             <div className=" xl:overflow-auto px-5 ">
+            {count > 0 && <h2 className="flex items-end justify-end my-2 text-[15px]">Total Records are: <span className="text-[#9F1239] ml-1 font-bold ">({count})</span></h2>}
               <TableWrapper isLoading={loading}>
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
