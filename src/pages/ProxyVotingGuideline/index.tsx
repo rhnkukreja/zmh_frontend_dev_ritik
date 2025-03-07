@@ -201,7 +201,8 @@ function ProxyGuideline() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Voting Guidelines</div>
+            <div className="font-semibold text-xl">Voting Guidelines</div>
+
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -211,15 +212,19 @@ function ProxyGuideline() {
                   variant="primary"
                   className="bg-theme-2 border-bg-theme-2"
                 >
-                  <Lucide
-                    icon="PenLine"
-                    className="stroke-[1.3] w-4 h-4 mr-2"
-                  />{" "}
+                  <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
                   Add New Proxy Voting Guideline
                 </Button>
               </div>
             )}
+
+            {count > 0 && (
+              <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto">
+                Total Voting Guidelines: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
+              </h2>
+            )}
           </div>
+
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5  sm:flex-row gap-y-2">
@@ -270,36 +275,36 @@ function ProxyGuideline() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
 
-                <div className="flex items-start">
-                  <a
-                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
+                  <div className="flex items-start">
+                    <a
+                      className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
                    border-white border-2 text-white rounded-md "
 
-                   onClick={() => {
-                    gotoDetailPage(
-                      'https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Overboarding_Document/Overboarding Policy for Top Investors (Updated)_Overboarding_Document.pdf',
-                      'Overboarding Document'
-                    );
+                      onClick={() => {
+                        gotoDetailPage(
+                          'https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Overboarding_Document/Overboarding Policy for Top Investors (Updated)_Overboarding_Document.pdf',
+                          'Overboarding Document'
+                        );
 
-                    setPdfVisible(true);
-                  }}
+                        setPdfVisible(true);
+                      }}
                     // onClick={(event: React.MouseEvent) => {
                     //   event.preventDefault();
                     //   window.open('')
                     // }}
-                  >
-                      
-                    <div className="flex items-center justify-center cursor-pointer" >
-                    <Lucide
-                        icon="File"
-                        className="stroke-[2] w-4 h-4 text-white "
-                      />
-                      <span className="ml-2 font-semibold hidden xl:flex">
-                      Overboarding Document
-                      </span>
-                    </div>
-                  </a>
-                </div>
+                    >
+
+                      <div className="flex items-center justify-center cursor-pointer" >
+                        <Lucide
+                          icon="File"
+                          className="stroke-[2] w-4 h-4 text-white "
+                        />
+                        <span className="ml-2 font-semibold hidden xl:flex">
+                          Overboarding Document
+                        </span>
+                      </div>
+                    </a>
+                  </div>
 
                   {user?.saved_search?.["Voting Guidelines"] !== undefined && (
                     <div className="hover:bg-slate-50 ">
@@ -357,34 +362,34 @@ function ProxyGuideline() {
                                     Year
                                     {guidelineFilterOptions?.year?.length >
                                       0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`year`}
-                                            checked={
-                                              guidelineFilterOptions?.year
-                                                ?.length ===
-                                              watch("year")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "year",
-                                                  guidelineFilterOptions?.year
-                                                );
-                                              } else {
-                                                setValue("year", []);
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`year`}
+                                              checked={
+                                                guidelineFilterOptions?.year
+                                                  ?.length ===
+                                                watch("year")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "year",
+                                                    guidelineFilterOptions?.year
+                                                  );
+                                                } else {
+                                                  setValue("year", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
                                   </div>
                                   <Controller
                                     name="year"
@@ -422,34 +427,34 @@ function ProxyGuideline() {
                                     Region
                                     {guidelineFilterOptions?.region?.length >
                                       0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`region`}
-                                            checked={
-                                              guidelineFilterOptions.region
-                                                .length ===
-                                              watch("region")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "region",
-                                                  guidelineFilterOptions.region
-                                                );
-                                              } else {
-                                                setValue("region", []);
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`region`}
+                                              checked={
+                                                guidelineFilterOptions.region
+                                                  .length ===
+                                                watch("region")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "region",
+                                                    guidelineFilterOptions.region
+                                                  );
+                                                } else {
+                                                  setValue("region", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
                                   </div>
                                   <Controller
                                     name="region"
@@ -493,7 +498,7 @@ function ProxyGuideline() {
                 </div>
               </div>
               <div className="overflow-auto xl:overflow-visible px-5">
-                {count > 0 && <h2 className="flex items-end justify-end my-2 text-[15px]">Total Records are: <span className="text-[#9F1239] ml-1 font-bold ">({count})</span></h2>}
+
                 <TableWrapper isLoading={loading}>
                   <div className="overflow-auto max-h-[400px]">
                     <Table>
@@ -770,8 +775,8 @@ function ProxyGuideline() {
               setUploadFileVisible={setUploadFileVisible}
               uploadFileVisible={uploadFileVisible}
               proxyId={proxyId}
-              // file={currentPdfDoc}
-              // file_name={currentPdfName}
+            // file={currentPdfDoc}
+            // file_name={currentPdfName}
             />
           )}
         </div>

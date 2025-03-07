@@ -165,7 +165,8 @@ function Main() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Investor Profile</div>
+            <div className="font-semibold text-xl">Investor Profile</div>
+
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -173,17 +174,21 @@ function Main() {
                     setAddNewInvesterModalVisible(true);
                   }}
                   variant="primary"
-                  className="bg-theme-2 border-bg-theme-2 "
+                  className="bg-theme-2 border-bg-theme-2"
                 >
-                  <Lucide
-                    icon="PenLine"
-                    className="stroke-[1.3] w-4 h-4 mr-2"
-                  />{" "}
+                  <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
                   Add New Investor
                 </Button>
               </div>
             )}
+
+            {count > 0 && investersProfile?.length > 0 && (
+              <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto">
+                Total Investor Profiles: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
+              </h2>
+            )}
           </div>
+
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col p-5  sm:flex-row gap-y-2">
@@ -289,34 +294,34 @@ function Main() {
                                     Region
                                     {investerProfileFilterOption?.region
                                       ?.length > 0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`region`}
-                                            checked={
-                                              investerProfileFilterOption.region
-                                                .length ===
-                                              watch("region")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "region",
-                                                  investerProfileFilterOption.region
-                                                );
-                                              } else {
-                                                setValue("region", []);
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`region`}
+                                              checked={
+                                                investerProfileFilterOption.region
+                                                  .length ===
+                                                watch("region")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "region",
+                                                    investerProfileFilterOption.region
+                                                  );
+                                                } else {
+                                                  setValue("region", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
                                   </div>
                                   <Controller
                                     name="region"
@@ -361,7 +366,6 @@ function Main() {
               </div>
 
               <div className="overflow-auto xl:overflow-visible px-5">
-              {count > 0 && investersProfile?.length > 0 && <h2 className="flex items-end justify-end my-2 text-[15px]">Total Records are: <span className="text-[#9F1239] ml-1 font-bold ">({count})</span></h2>}
                 <TableWrapper isLoading={loading}>
                   {investersProfile?.length > 0 &&
                     investersProfile.map((profile: InvestersProfile) => {
@@ -369,7 +373,7 @@ function Main() {
                         <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
                           <div className="ml-5 flex items-center">
                             {profile?.institution_logo_url &&
-                            profile.institution_logo_url !== "null" ? (
+                              profile.institution_logo_url !== "null" ? (
                               <>
                                 <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
                                   <img
