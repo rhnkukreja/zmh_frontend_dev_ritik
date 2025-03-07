@@ -441,10 +441,10 @@ function ShareHolderProposal() {
       tab === "proposal"
         ? 0
         : tab === "no-action"
-        ? 1
-        : tab === "withdrawn"
-        ? 2
-        : -1;
+          ? 1
+          : tab === "withdrawn"
+            ? 2
+            : -1;
     return tabIndex;
   };
 
@@ -550,9 +550,8 @@ function ShareHolderProposal() {
     if (isAllCompanySelected) {
       return baseUrls.map((baseUrl) => baseUrl);
     } else {
-      const queryParam = `?global_search=${
-        companyGlobalSearchName || filters?.global_search?.[0]
-      }`;
+      const queryParam = `?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
+        }`;
       return baseUrls.map((baseUrl) => `${baseUrl}${queryParam}`);
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
@@ -612,7 +611,7 @@ function ShareHolderProposal() {
                               type: e.target.checked,
                             })
                           );
-                        } catch (error) {}
+                        } catch (error) { }
                       }}
                     />
                     <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
@@ -669,12 +668,12 @@ function ShareHolderProposal() {
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                    <div className="hover:bg-slate-50 ">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
-                  )}
+                      <div className="hover:bg-slate-50 ">
+                        <Button onClick={getSavedSearches}>
+                          Previous Search
+                        </Button>
+                      </div>
+                    )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -1565,15 +1564,15 @@ function ShareHolderProposal() {
                                   </Table.Td>
                                 )}
 
-                                <Table.Td 
+                                <Table.Td
                                   onClick={() => {
                                     window.scrollBy({
                                       top: 650,
                                       behavior: "smooth",
                                     });
                                   }}
-                                className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                               % Support*
+                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  % Support*
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Vote Details
@@ -1634,15 +1633,15 @@ function ShareHolderProposal() {
                                       className={clsx([
                                         "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                         noAction?.nl_exist &&
-                                          "text-blue-600 underline cursor-pointer",
+                                        "text-blue-600 underline cursor-pointer",
                                       ])}
                                       onClick={() => {
                                         const id =
                                           noAction?.nl_exist === true
                                             ? noAction?.no_action_link
-                                                ?.split("/")
-                                                .filter(Boolean)
-                                                .pop()
+                                              ?.split("/")
+                                              .filter(Boolean)
+                                              .pop()
                                             : 0;
                                         noAction?.nl_exist === true &&
                                           navigate(
@@ -1720,17 +1719,7 @@ function ShareHolderProposal() {
                           </Table>
                         </div>
                       </TableWrapper>
-                      <footer className="!pt-3 flex items-start flex-col">
-                        <span className="!pt-3 flex items-center p-2">
-                          <sup
-                            className="bold-sup cursor-pointer ml-1"
-                            style={{ fontSize: "0.8em" }}
-                          >*</sup>
-                          <p id="footnote " className="">
-                            [(For + Against or Withhold + Abstain)/Shares Outstanding]
-                          </p>
-                        </span>
-                      </footer>
+
                     </Tab.Panel>
                   </Tab.Panels>
 
@@ -1964,6 +1953,17 @@ function ShareHolderProposal() {
                   handlePreviousPage={handlePreviousPage}
                 />
               </div>
+              <footer className="!pt-3 flex items-start flex-col">
+                <span className="!pt-3 flex items-center p-2">
+                  <sup
+                    className="bold-sup cursor-pointer ml-1"
+                    style={{ fontSize: "0.8em" }}
+                  >*</sup>
+                  <p id="footnote " className="">
+                    [(For + Against or Withhold + Abstain)/Shares Outstanding]
+                  </p>
+                </span>
+              </footer>
             </div>
           </div>
           {addNewShareholderModalVisible && (
