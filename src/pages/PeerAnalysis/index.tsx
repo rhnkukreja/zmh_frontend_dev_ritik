@@ -45,6 +45,7 @@ interface PeerAnalysisFilter {
   global_search?: string[];
   country: string[];
   sector: string[];
+  institutes?: any[];
 }
 
 function PeerAnalysis() {
@@ -63,6 +64,7 @@ function PeerAnalysis() {
       year: [],
       country: [],
       sector: [],
+      institutes: []
     });
 
   const {
@@ -96,6 +98,7 @@ function PeerAnalysis() {
         })) || [],
       category: filters.category,
       country: filters.country,
+      institutes: filters?.institutes
     },
   });
 
@@ -127,6 +130,7 @@ function PeerAnalysis() {
     setValue("category", []);
     setValue("country", []);
     setValue("global_search", []);
+    setValue("institutes", []);
   };
 
   useEffect(() => {
@@ -214,12 +218,15 @@ function PeerAnalysis() {
     setValue("category", user?.saved_search?.category || []);
     setValue("country", user?.saved_search?.country || []);
     setValue("sector", user?.saved_search?.sector || []);
+    setValue("institutes", user?.saved_search?.institutes || []);
+
     dispatch(
       setAllFilters({
         year: user?.saved_search?.year || [],
         category: user?.saved_search?.category || [],
         country: user?.saved_search?.country || [],
         global_search: user?.saved_search?.global_search,
+        institutes: user?.saved_search?.institutes,
       })
     );
     setIsFilterCollapse(true);
@@ -425,7 +432,50 @@ function PeerAnalysis() {
                         Apply
                       </Button>
                     </div>
-                    <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-4' : 'md:grid-cols-3'])}>
+                    <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-5' : 'md:grid-cols-3'])}>
+                    <div className="mx-2">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          <span className="font-semibold">Institution</span>
+                        </div>
+                        <Controller
+                          name="institutes"
+                          control={control}
+                          defaultValue={[]}
+                          render={({ field }) => (
+                            <TomSelect
+                              value={field.value || []}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                              options={{
+                                placeholder: "Select Institution",
+                              }}
+                              className="w-full"
+                              multiple
+                            >
+                              {getDropdownLoader ? (
+                                <option value="--" disabled>
+                                  Loading...
+                                </option>
+                              ) : (
+                                <>
+                                  {apiDropdownOptions?.institutes?.map(
+                                    (institutes: any) => {
+                                      return (
+                                        <option value={institutes?.institution_name} disabled={institutes?.label}>
+                                          <span>{institutes?.institution_name}</span>
+                                          {institutes?.label && <span className="text-red-600 bg-red-600">*</span>}
+                                        </option>
+                                      );
+                                    }
+                                  )}
+                                </>
+                              )}
+                            </TomSelect>
+                          )}
+                        />
+                      </div>
+                     
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           <span className="font-semibold">Year</span>

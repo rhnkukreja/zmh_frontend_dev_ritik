@@ -10,8 +10,8 @@ export interface PeerAnalysisFilter {
   sector: string[];
   institution_name?: string[];
   global_search?: any[];
-
   category?: string[];
+  institutes?: any[];
   [key: string]: any;
 }
 
