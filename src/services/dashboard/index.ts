@@ -41,15 +41,11 @@ class DashboardService {
   }
 
   public async fetchCompanyDashboard(url: string): Promise<{
-    results: CompanyDashboard[];
-    percent: string;
+    results: any;
   }> {
     const response = await axiosInstance.get(url);
-    const { holdings_data, total_percent_ownership } = response.data;
-    return {
-      results: holdings_data,
-      percent: total_percent_ownership,
-    };
+    const results = response.data;
+    return { results };
   }
 
   public async fetchAGMSummaryDashboard(

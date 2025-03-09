@@ -30,6 +30,7 @@ export interface CaseStudies {
   page: number;
   isAllCompanySelected: boolean;
   filters: CaseStudyFilter;
+  count: number;
 }
 
 const initialState: CaseStudies = {
@@ -41,6 +42,7 @@ const initialState: CaseStudies = {
   totalPages: 1,
   page: 1,
   isAllCompanySelected: false,
+  count: 0,
   filters: {
     keyword: "",
     market: [],
@@ -142,6 +144,7 @@ const caseStudies = createSlice({
           state.loading = false;
           state.caseStudies = action.payload.results;
           state.totalCaseStudies = action.payload.count;
+          state.count = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
         }
       )

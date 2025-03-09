@@ -52,6 +52,7 @@ interface CaseStudyFilter {
   approval_status: string;
   caspio_company_name: string;
   [key: string]: any;
+  company_category?: string;
 }
 function CaseStudies() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -63,6 +64,7 @@ function CaseStudies() {
     page,
     totalPages,
     filters,
+    count,
     isAllCompanySelected,
   } = useAppSelector((state) => state.caseStudies);
 
@@ -119,6 +121,7 @@ function CaseStudies() {
       vote: filters?.vote,
       approval_status: filters?.approval_status,
       caspio_company_name: filters?.caspio_company_name,
+      company_category: filters?.company_category ?? " "
     },
   });
 
@@ -133,6 +136,7 @@ function CaseStudies() {
     setValue("vote", []);
     setValue("approval_status", "");
     setValue("caspio_company_name", "");
+    setValue("company_category", " ");
   };
 
   useEffect(() => {
@@ -250,9 +254,9 @@ function CaseStudies() {
       setValue("themes", savedSearch.themes || []);
       setValue("approval_status", savedSearch.approval_status || "");
       setValue("caspio_company_name", savedSearch?.caspio_company_name || "");
-
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
+      setValue("company_category", user?.saved_search?.company_category || "");
       dispatch(
         setAllFilters({
           keyword: savedSearch?.keyword || "",
@@ -262,10 +266,11 @@ function CaseStudies() {
           themes: savedSearch?.themes || [],
           approval_status: savedSearch?.approval_status || "",
           caspio_company_name: savedSearch?.caspio_company_name || "",
-
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
           global_search: savedSearch?.global_search,
+        company_category: user?.saved_search?.company_category,
+
         })
       );
       setIsFilterCollapse(true);
@@ -286,6 +291,8 @@ function CaseStudies() {
       year: filters.year || [],
       keyword: filters.keyword || "",
       global_search: [companyGlobalSearchName],
+      company_category: filters.company_category || "",
+
     });
     if (res?.user_id) {
       dispatch(
@@ -302,11 +309,12 @@ function CaseStudies() {
             vote: filters.vote || [],
             year: filters.year || [],
             keyword: filters.keyword || "",
+            company_category: filters.company_category || "",
             global_search: [companyGlobalSearchName],
           },
         })
       );
-      toast.success("Searched saved successfully");
+      // toast.success("Searched saved successfully");
     }
   };
 
@@ -386,7 +394,7 @@ function CaseStudies() {
           </div>
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-4  sm:flex-row gap-y-2">
+              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2">
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -463,6 +471,12 @@ function CaseStudies() {
                 </div>
               </div>
 
+              {count > 0 && (
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
+                  No. of Records: <span className="text-[#9F1239] ml-1 font-bold">({count})</span>
+                </h2>
+              )}
+              
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
@@ -541,6 +555,50 @@ function CaseStudies() {
                           )}
                         />
                       </div>
+
+                      <div className="mx-2">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          <span className="font-semibold">Company Category</span>
+                        </div>
+                        <Controller
+                          name="company_category"
+                          control={control}
+                          defaultValue={""}
+                          render={({ field }) => (
+                            <TomSelect
+                              value={field.value || ""}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                              options={{
+                                placeholder: "Select Company Category",
+                              }}
+                              className="w-full"
+                              multiple={false}
+                            >
+                              {getDropdownLoader ? (
+                                <option value="--" disabled>
+                                  Loading...
+                                </option>
+                              ) : (
+                                <>
+                                  {apiDropdownOptions?.company_category?.map(
+                                    (company_category: string) => {
+                                      return (
+                                        <option value={company_category}>
+                                          {company_category}
+                                        </option>
+                                      );
+                                    }
+                                  )}
+                                </>
+                              )}
+                            </TomSelect>
+                          )}
+                        />
+                      </div>
+
+                      
 
                       {isAllCompanySelected === true && (
                         <div className="w-full mx-2">
@@ -830,10 +888,14 @@ function CaseStudies() {
                           </div>
                         </>
                       )}
+
+
                     </div>
                   </div>
                 </form>
               )}
+
+              
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>

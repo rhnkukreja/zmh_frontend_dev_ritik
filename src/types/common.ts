@@ -44,6 +44,7 @@ export type ShareholderProposalPayload = {
   is_correct: boolean;
   company_status: boolean;
   nl_exist: boolean;
+  company_category: string;
 };
 
 type CaseStudiesPayload = {
@@ -59,6 +60,7 @@ type CaseStudiesPayload = {
   keyword: string;
   approval_status: string;
   caspio_company_name: [];
+  company_category: string;
 };
 
 type PeerAnalysisPayload = {
@@ -69,6 +71,7 @@ type PeerAnalysisPayload = {
   category: string[];
   country: string[];
   sector: string[];
+  company_category: string;
 };
 type GlobalSearchPayload = {
   module: "Global Search";

@@ -29,6 +29,7 @@ export interface PeerAnalysis {
     category: string[];
     year: string[];
   };
+  count: number;
 }
 
 const initialState: PeerAnalysis = {
@@ -52,6 +53,8 @@ const initialState: PeerAnalysis = {
     category: ["Social", "Governance", "Environment"],
     year: ["2023", "2024"],
   },
+  count: 0,
+
 };
 
 export const fetchPeerAnalysis = createAsyncThunk<
@@ -120,6 +123,7 @@ const peerAnalysisSlice = createSlice({
           state.loading = false;
           state.peerAnalysisData = action.payload.results;
           state.totalPeerAnalysisNoAction = action.payload.count;
+          state.count = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
         }
       )

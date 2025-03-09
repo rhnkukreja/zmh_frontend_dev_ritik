@@ -46,6 +46,7 @@ interface PeerAnalysisFilter {
   country: string[];
   sector: string[];
   institutes?: any[];
+  company_category?: string;
 }
 
 function PeerAnalysis() {
@@ -59,12 +60,13 @@ function PeerAnalysis() {
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
-    useState<PeerAnalysisFilter>({
+    useState<any>({
       category: ["Social", "Governance", "Environment"],
       year: [],
       country: [],
       sector: [],
-      institutes: []
+      institutes: [],
+      company_category: []
     });
 
   const {
@@ -73,6 +75,7 @@ function PeerAnalysis() {
     page,
     totalPages,
     filters,
+    count,
     isAllCompanySelected,
   } = useAppSelector((state) => state.peerAnalysis);
   const { user, companyGlobalSearchName } = useAppSelector(
@@ -98,7 +101,9 @@ function PeerAnalysis() {
         })) || [],
       category: filters.category,
       country: filters.country,
-      institutes: filters?.institutes
+      institutes: filters?.institutes,
+      company_category: filters?.company_category ?? " "
+
     },
   });
 
@@ -132,6 +137,7 @@ function PeerAnalysis() {
     setValue("country", []);
     setValue("global_search", []);
     setValue("institutes", []);
+    setValue("company_category", " ");
   };
 
   useEffect(() => {
@@ -223,6 +229,8 @@ function PeerAnalysis() {
     setValue("country", user?.saved_search?.country || []);
     setValue("sector", user?.saved_search?.sector || []);
     setValue("institutes", user?.saved_search?.institutes || []);
+    setValue("company_category", user?.saved_search?.company_category || "");
+
 
     dispatch(
       setAllFilters({
@@ -231,6 +239,7 @@ function PeerAnalysis() {
         country: user?.saved_search?.country || [],
         global_search: user?.saved_search?.global_search,
         institutes: user?.saved_search?.institutes,
+        company_category: user?.saved_search?.company_category,
       })
     );
     setIsFilterCollapse(true);
@@ -246,6 +255,7 @@ function PeerAnalysis() {
       sector: watch("sector") || [],
       category: watch("category") || [],
       country: watch("country") || [],
+      company_category: watch("company_category") || "",
     });
 
     if (res?.user_id) {
@@ -259,6 +269,7 @@ function PeerAnalysis() {
             category: watch("category") || [],
             country: watch("country") || [],
             sector: watch("sector") || [],
+            company_category: watch("company_category") || "",
           },
         })
       );
@@ -346,9 +357,12 @@ function PeerAnalysis() {
                     options={{ placeholder: "Select Institution", closeAfterSelect: true,
                       render: {
                         option: (data: any, escape: any) => {
+                          // text-red-600
+                          // ${escape(data.value)} ${data.label ? '*' : ''}
                           return `
-                            <div class="p-2 ${data.label ? 'text-red-600' : 'font-bold'}">
-                              ${escape(data.value)} ${data.label ? '*' : ''}
+                            <div class="p-2 ${data.label ? '' : 'font-bold'}">
+                              ${escape(data.value)} 
+                              <span class=" ${data.label ? 'text-red-600 font-bold' : ''}">${data.label ? '*' : ''}<span/>
                             </div>
                           `;
                         }
@@ -371,9 +385,16 @@ function PeerAnalysis() {
                                 value={inst?.institution_name}
                                 disabled={inst?.label}
                                 data-label={inst?.label ? "*" : ""}
-                                className={inst?.label ? "text-red-600" : ""}
+                                className={inst?.label ? "" : ""}
+                                onClick={() => { inst?.label ? 
+                                  window.scrollBy({
+                                    top: 350,
+                                    behavior: "smooth",
+                                  }) : "";
+                                }}
                               >
                                 {inst?.institution_name} {inst?.label ? "*" : ""}
+                                
                               </option>
                             );
                           }
@@ -382,7 +403,7 @@ function PeerAnalysis() {
                     )}
                   </TomSelect>
                 </div>
-                <div className="flex  ">
+                <div className="flex">
                   {/* <MultiSearchBar
                     onSearch={handleSearch}
                     onSearchSelect={() => {
@@ -460,6 +481,12 @@ function PeerAnalysis() {
                   </Popover>
                 </div>
               </div>
+              {count > 0 && (
+              <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
+                No. of Records: <span className="text-[#9F1239] ml-1 font-bold">({count})</span>
+              </h2>
+            )}
+
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -482,7 +509,7 @@ function PeerAnalysis() {
                         Apply
                       </Button>
                     </div>
-                    <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-5' : 'md:grid-cols-3'])}>
+                    <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-3' : 'md:grid-cols-3'])}>
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           <span className="font-semibold">Year</span>
@@ -706,6 +733,47 @@ function PeerAnalysis() {
                         />
                       </div>
 
+                      <div className="mx-2">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          <span className="font-semibold">Company Category</span>
+                        </div>
+                        <Controller
+                          name="company_category"
+                          control={control}
+                          defaultValue={""}
+                          render={({ field }) => (
+                            <TomSelect
+                              value={field.value || ""}
+                              onChange={(value) => {
+                                field.onChange(value);
+                              }}
+                              options={{
+                                placeholder: "Select Company Category",
+                              }}
+                              className="w-full"
+                              multiple={false}
+                            >
+                              {getDropdownLoader ? (
+                                <option value="--" disabled>
+                                  Loading...
+                                </option>
+                              ) : (
+                                <>
+                                  {apiDropdownOptions?.company_category?.map(
+                                    (company_category: string) => {
+                                      return (
+                                        <option value={company_category}>
+                                          {company_category}
+                                        </option>
+                                      );
+                                    }
+                                  )}
+                                </>
+                              )}
+                            </TomSelect>
+                          )}
+                        />
+                      </div>
                       {
                         isAllCompanySelected === true &&
                         <div className="mx-2">
@@ -786,6 +854,7 @@ function PeerAnalysis() {
                   </div>
                 </form>
               )}
+
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
@@ -903,6 +972,20 @@ function PeerAnalysis() {
                   handlePreviousPage={handlePreviousPage}
                 />
 
+                <footer className="!pt-3 flex items-start flex-col">
+                  <span className="!pt-3 flex items-center relative">
+                    <sup
+                      className="bold-sup cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      *
+                    </sup>
+                    <p id="footnote" className="">
+                      Investor does not disclose engagement details
+                    </p>
+                  </span>
+                </footer>
+
                 {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>
                 <option>25</option>
@@ -912,6 +995,8 @@ function PeerAnalysis() {
               </div>
             </div>
           </div>
+
+          
           {addNewInvesterModalVisible && (
             <AddNewInvesterProfile
               addNewInvesterModalVisible={addNewInvesterModalVisible}

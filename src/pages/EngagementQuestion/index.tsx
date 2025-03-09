@@ -271,17 +271,11 @@ function Main() {
               </Button>
             </div>
           )}
-
-          {count > 0 && (
-            <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto">
-              Total Engagement Questions: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
-            </h2>
-          )}
         </div>
 
         <div className="mt-3.5">
           <div className="flex flex-col box box--stacked">
-            <div className="flex flex-col p-5 sm:flex-row gap-y-2">
+            <div className="flex flex-col px-5 pt-5  sm:flex-row gap-y-2">
               <div className="flex  ">
                 <MultiSearchBar
                   onSearch={handleSearch}
@@ -520,6 +514,11 @@ function Main() {
                 </Popover>
               </div>
             </div>
+            {count > 0 && (
+              <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
+                No. of Records: <span className="text-[#9F1239] ml-1 font-bold">({count})</span>
+              </h2>
+            )}
             <div className=" xl:overflow-auto px-5 ">
 
               <TableWrapper isLoading={loading}>

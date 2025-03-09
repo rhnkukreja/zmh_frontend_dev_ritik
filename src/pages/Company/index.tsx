@@ -165,7 +165,7 @@ function CompanyList() {
           },
         })
       );
-      toast.success("Searched saved successfully");
+      // toast.success("Searched saved successfully");
     }
   };
 

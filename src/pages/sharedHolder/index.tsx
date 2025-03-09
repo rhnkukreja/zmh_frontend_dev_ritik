@@ -135,6 +135,7 @@ function ShareHolderProposal() {
       category: [],
       sub_category: [],
       year: [],
+      company_category: [],
     });
 
   const [monthDropdownOption, setMonthDropdownOption] = useState<any>(month);
@@ -187,6 +188,7 @@ function ShareHolderProposal() {
       is_correct: filters?.is_correct,
       company_status: filters?.company_status,
       nl_exist: filters?.nl_exist,
+      company_category: filters?.company_category ?? " ",
       global_search:
         filters?.global_search?.map((item: string) => ({
           value: item,
@@ -209,6 +211,7 @@ function ShareHolderProposal() {
     setValue("is_correct", null);
     setValue("company_status", null);
     setValue("nl_exist", null);
+    setValue("company_category", " ");
   };
 
   const navigate = useNavigate();
@@ -485,6 +488,7 @@ function ShareHolderProposal() {
       setValue("sub_category", savedSearch.sub_category || []);
       setValue("year", savedSearch.year || []);
       setValue("status", savedSearch.status || []);
+      setValue("company_category", savedSearch?.company_category || "");
       dispatch(
         setAllFilters({
           proponent_name: savedSearch.proponent_name || [],
@@ -493,6 +497,7 @@ function ShareHolderProposal() {
           sub_category: savedSearch.sub_category || [],
           year: savedSearch.year || [],
           status: savedSearch.status || [],
+          company_category: savedSearch.company_category || "",
           global_search: savedSearch?.global_search,
         })
       );
@@ -515,6 +520,7 @@ function ShareHolderProposal() {
       is_correct: filters?.is_correct,
       company_status: filters?.company_status,
       nl_exist: filters?.nl_exist,
+      company_category: filters?.company_category,
     });
     if (res?.user_id) {
       dispatch(
@@ -527,11 +533,12 @@ function ShareHolderProposal() {
             year: filters?.year || [],
             status: filters?.status || [],
             keyword: filters?.keyword || "",
+            company_category: filters?.company_category || "",
             global_search: filters?.global_search,
           },
         })
       );
-      toast.success("Searched saved successfully");
+      // toast.success("Searched saved successfully");
     }
   };
 
@@ -1034,6 +1041,52 @@ function ShareHolderProposal() {
                               )}
                             />
                           </div>
+
+                          {
+                            tab === "proposal" && (
+                              <div className="mx-2">
+                              <div className="text-left text-slate-500 flex justify-between mb-1">
+                                <span className="font-semibold">Company Category</span>
+                              </div>
+                              <Controller
+                                name="company_category"
+                                control={control}
+                                defaultValue={""}
+                                render={({ field }) => (
+                                  <TomSelect
+                                    value={field.value || ""}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                    options={{
+                                      placeholder: "Select Company Category",
+                                    }}
+                                    className="w-full"
+                                    multiple={false}
+                                  >
+                                    {getDropdownLoader ? (
+                                      <option value="--" disabled>
+                                        Loading...
+                                      </option>
+                                    ) : (
+                                      <>
+                                        {apiDropdownOptions?.company_category?.map(
+                                          (company_category: string) => {
+                                            return (
+                                              <option value={company_category}>
+                                                {company_category}
+                                              </option>
+                                            );
+                                          }
+                                        )}
+                                      </>
+                                    )}
+                                  </TomSelect>
+                                )}
+                              />
+                            </div>
+                            )
+                          }
 
                           {tab === "proposal" && (
                             <>
@@ -1555,7 +1608,7 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 text-center w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
@@ -1571,7 +1624,7 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-right bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   % Support*
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -1596,7 +1649,7 @@ function ShareHolderProposal() {
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                       {noAction?.proponent}
                                     </Table.Td>
-                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
                                     {isAllCompanySelected && (
@@ -1606,7 +1659,7 @@ function ShareHolderProposal() {
                                     )}
 
                                     <Table.Td
-                                      className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name}`])}>
+                                      className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-right`])}>
                                       {noAction?.outcome_percentage}
                                     </Table.Td>
                                     <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">

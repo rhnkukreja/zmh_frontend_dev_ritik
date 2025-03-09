@@ -22,7 +22,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "../Base/Tippy";
@@ -32,6 +32,7 @@ import Button from "../Base/Button";
 import { ChevronLeft } from "lucide-react";
 
 import Lucide from "../Base/Lucide";
+import { Tab } from "../Base/Headless";
 
 const index = () => {
   const location = useLocation();
@@ -62,6 +63,7 @@ const index = () => {
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     } else if (companyGlobalSearchTicker !== tempSearch) {
+      setSelectedYear("");
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -84,11 +86,12 @@ const index = () => {
   };
 
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   useEffect(() => {
     const validateImages = async () => {
       const tempValidImages: { [key: string]: string } = {};
-      for (const dashbboard of dashboardDataList || []) {
+      for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
         const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
         tempValidImages[dashbboard?.institution_name] = isValid
           ? dashbboard?.institution_logo_url
@@ -140,6 +143,29 @@ const index = () => {
     navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
   };
 
+  const [selectedYear, setSelectedYear] = useState<string>("");
+
+  
+  const handleAGMYearTab = (tab: string, index:number) =>{
+    setSelectedIndex(index);
+    setSelectedYear(tab);
+  }
+
+
+
+  const getSelectedTabIndex = () => {
+    const tabIndex = dashboardDataList?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ?
+     selectedYear?.toString() : dashboardDataList?.all_year_data[0]?.year?.toString()));
+    // setSelectedIndex(tabIndex);
+    return tabIndex || 0;
+  };
+
+  useEffect(() => {
+    const index = getSelectedTabIndex();
+    setSelectedIndex(index);
+  }, [selectedYear])
+
+
   return (
     <>
       {location.pathname !== "/" && (
@@ -166,7 +192,7 @@ const index = () => {
                 <h1 className="text-lg font-bold">
                   Top {dashboardDataList?.length || 20} Investor{" "}
                   <span className="text-base font-bold">
-                    ({percent} of shares outstanding)
+                    ({dashboardDataList?.total_percent_ownership} of shares outstanding)
                   </span>
                 </h1>
                 <div className="flex justify-between items-center gap-4 sm:flex-row">
@@ -198,7 +224,35 @@ const index = () => {
                   )}
                 </div>
               </div>
-              {/* } */}
+
+              {
+                dashboardDataList?.total_year?.length > 1 &&
+                <div >
+                  <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
+                    <Tab.List
+                      variant="boxed-tabs"
+                      className="w-[100px] border-none bg-transparent"
+                    >
+                      {
+                        dashboardDataList?.total_year?.length > 1 &&
+                        dashboardDataList?.total_year?.map((tab: any, index: number) => (
+                          <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
+                                   last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
+                            <Tab.Button
+                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                              as="button"
+                              onClick={() => handleAGMYearTab(tab, getSelectedTabIndex())}>
+                              {tab}
+                            </Tab.Button>
+                          </Tab>
+                        ))
+                      }
+
+                    </Tab.List>
+                  </Tab.Group>
+                </div>
+              }
+
 
               <div className="mt-5">
                 <div>
@@ -206,7 +260,7 @@ const index = () => {
                     <div
                       className={clsx([
                         locationPathName === "/" &&
-                          "overflow-auto max-h-[600px]",
+                        "overflow-auto max-h-[600px]",
                       ])}
                     >
                       <Table className="table">
@@ -225,7 +279,7 @@ const index = () => {
                               Proxy Advisory Influence
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                            UN PRI Signatory
+                              UN PRI Signatory
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <span
@@ -237,11 +291,11 @@ const index = () => {
                                     behavior: "smooth",
                                   });
                                 }}
-                                >
-                              Engaged with Company
+                              >
+                                Engaged with Company
                                 <sup
                                   className="bold-sup cursor-pointer ml-1"
-                                  style={{  fontSize: "0.8em" }}
+                                  style={{ fontSize: "0.8em" }}
                                 >
                                   i
                                 </sup>
@@ -259,8 +313,8 @@ const index = () => {
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
-                          {dashboardDataList?.length > 0 &&
-                            dashboardDataList.map(
+                          {dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
+                            dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.map(
                               (dashboard: CompanyDashboard, index: number) => (
                                 <Table.Tr
                                   key={dashboard.filer_id}
@@ -293,12 +347,8 @@ const index = () => {
                                           <img
                                             alt="ZMH Analytics"
                                             src={
-                                              validImages[
-                                                dashboard.institution_name
-                                              ] || investorIcon
+                                              validImages[dashboard?.institution_name] || investorIcon
                                             }
-
-                                            // {dashboard?.institution_logo_url ?? userLinkedinImage}
                                           />
                                         </div>
 
@@ -315,7 +365,7 @@ const index = () => {
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize max-w-[150px] text-wrap",
                                                 dashboard?.investor_profile_id &&
-                                                  "cursor-pointer underline",
+                                                "cursor-pointer underline",
                                               ])}
                                             >
                                               {dashboard?.institution_name}
@@ -328,47 +378,6 @@ const index = () => {
                                               />
                                             )}
                                           </div>
-                                          {/* {dashboard?.investor_profile_id && (
-                                            <Tippy
-                                              content="Investor Profile"
-                                              options={{ theme: "light" }}
-                                              className=" w-5 h-5 -mt-2 -mr-2  "
-                                              onClick={() =>
-                                                window.open(
-                                                  `/investor-profile/investor/${dashboard?.investor_profile_id}`,
-                                                  "_blank"
-                                                )
-                                              }
-                                            >
-                                              <div className="flex items-center justify-center w-full h-full  text-primary ">
-                                                <Lucide
-                                                  icon="FileText"
-                                                  className="w-4 h-4 stroke-[1.3]"
-                                                />
-                                              </div>
-                                            </Tippy>
-                                          )}
-                                          { dashboard?.case_studies_id && (
-                                            <Tippy
-                                              content="Case Studies"
-                                              options={{ theme: "light" }}
-                                              className=" w-5 h-5 -mt-2 -mr-2  "
-                                              onClick={() =>
-                                                window.open(
-                                                  `/case-studies`,
-                                                  "_blank"
-                                                )
-                                              }
-                                            >
-                                              <div className="flex items-center justify-center w-full h-full  text-primary ">
-                                                <Lucide
-                                                  icon="FileSearch2"
-                                                  className="w-4 h-4 stroke-[1.5]"
-                                                />
-                                              </div>
-                                            </Tippy>
-                                          )} */}
-
                                           <div className="flex items-center gap-x-2 w-[60px]">
                                             {dashboard?.investor_profile_id ? (
                                               <Tippy
@@ -382,7 +391,6 @@ const index = () => {
                                                 }
                                               >
                                                 <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                                  {/* <img src={investorIcon} alt="investor Icon" className="w-full" /> */}
                                                   <Lucide
                                                     icon="FileText"
                                                     className="w-4 h-4 stroke-[1.3]"
@@ -409,34 +417,12 @@ const index = () => {
                                                     icon="FileSearch2"
                                                     className="w-4 h-4 stroke-[1.5]"
                                                   />
-                                                  {/* <img src={caseStudiesIcon} alt="Case Studies Icon" className="w-full" /> */}
                                                 </div>
                                               </Tippy>
                                             ) : (
                                               <div className="w-5 h-5" />
                                             )}
                                           </div>
-
-                                          {/* {dashboard?.case_studies_id && (
-                                            <Tippy
-                                              content="View Case Studies"
-                                              options={{ theme: "light" }}
-                                              className=" w-5 h-5 -mt-2 -mr-2  "
-                                              onClick={() =>
-                                                window.open(
-                                                  `/case-studies/${dashboard?.case_studies_id}`,
-                                                  "_blank"
-                                                )
-                                              }
-                                            >
-                                              <div className="flex items-center justify-center w-full h-full text-black ">
-                                                <Lucide
-                                                  icon="FileSearch2"
-                                                  className="w-4 h-4 stroke-[1.5]"
-                                                />
-                                              </div>
-                                            </Tippy>
-                                          )} */}
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
@@ -454,24 +440,24 @@ const index = () => {
                                         <div className="whitespace-nowrap ">
                                           {dashboard?.unpri_signatory ===
                                             true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                &#10004;
+                                              <div className="whitespace-nowrap flex items-center justify-center">
+                                                <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                  &#10004;
+                                                </div>
                                               </div>
-                                            </div>
-                                          )}
+                                            )}
                                         </div>
                                       </Table.Td>
 
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.company_engaged ===
                                           true && (
-                                          <div className="whitespace-nowrap flex items-center justify-center">
-                                            <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              &#10004;
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                &#10004;
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 ">
                                         <div className="whitespace-nowrap flex items-center justify-center">
@@ -483,11 +469,11 @@ const index = () => {
                                                   key={index}
                                                   className={clsx([
                                                     char.toLowerCase() ===
-                                                      "s" && "bg-[#F5A623]",
+                                                    "s" && "bg-[#F5A623]",
                                                     char.toLowerCase() ===
-                                                      "e" && "bg-[#05703E]",
+                                                    "e" && "bg-[#05703E]",
                                                     char.toLowerCase() ===
-                                                      "g" && "bg-[#115096]",
+                                                    "g" && "bg-[#115096]",
                                                     "font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white",
                                                   ])}
                                                 >
@@ -500,22 +486,22 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_directors ===
                                           true && (
-                                          <div className="whitespace-nowrap flex items-center justify-center">
-                                            <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              &#10004;
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                &#10004;
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_say_on_pay ===
                                           true && (
-                                          <div className="whitespace-nowrap flex items-center justify-center">
-                                            <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                              &#10004;
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                &#10004;
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
                                       </Table.Td>
                                     </>
                                   )}

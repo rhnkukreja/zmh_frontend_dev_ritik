@@ -185,7 +185,7 @@ function ProxyGuideline() {
           },
         })
       );
-      toast.success("Searched saved successfully");
+      // toast.success("Searched saved successfully");
     }
   };
 
@@ -217,17 +217,11 @@ function ProxyGuideline() {
                 </Button>
               </div>
             )}
-
-            {count > 0 && (
-              <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto">
-                Total Voting Guidelines: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
-              </h2>
-            )}
           </div>
 
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2">
+              <div className="flex flex-col px-5 pt-5  sm:flex-row gap-y-2">
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -277,7 +271,7 @@ function ProxyGuideline() {
 
                   <div className="flex items-start">
                     <a
-                      className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
+                      className="p-2 bg-gray-700
                    border-white border-2 text-white rounded-md "
 
                       onClick={() => {
@@ -330,7 +324,9 @@ function ProxyGuideline() {
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
                             {filtersLength}
                           </div>
+                         
                         </Popover.Button>
+                       
                         <Popover.Panel placement="bottom-end">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="p-2">
@@ -492,11 +488,19 @@ function ProxyGuideline() {
                             </div>
                           </form>
                         </Popover.Panel>
+                        
                       </>
                     )}
                   </Popover>
+                  
                 </div>
+               
               </div>
+              {count > 0 && (
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
+                  No. of Records: <span className="text-[#9F1239] ml-1 font-bold">({count})</span>
+                </h2>
+              )}
               <div className="overflow-auto xl:overflow-visible px-5">
 
                 <TableWrapper isLoading={loading}>

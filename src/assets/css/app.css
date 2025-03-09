@@ -212,6 +212,11 @@ a.side-menu__link.side-menu__link--active svg {
   top: -10px !important;
   left: 12px !important; 
 }
+
+option[data-label="*"] {
+  color: red !important;
+  font-weight: bold;
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
