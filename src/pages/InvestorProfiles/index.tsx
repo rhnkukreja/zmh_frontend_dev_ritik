@@ -287,7 +287,7 @@ function Main() {
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    Region
+                                  <span className="font-semibold">Region</span>
                                     {investerProfileFilterOption?.region
                                       ?.length > 0 && (
                                         <div>
@@ -363,7 +363,7 @@ function Main() {
 
               {count > 0 && (
               <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
-                No. of Records: <span className="text-[#9F1239] ml-1 font-bold">({count})</span>
+                No. of Records: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
               </h2>
             )}
 

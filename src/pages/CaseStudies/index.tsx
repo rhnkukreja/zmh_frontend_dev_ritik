@@ -473,7 +473,7 @@ function CaseStudies() {
 
               {count > 0 && (
                 <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
-                  No. of Records: <span className="text-[#9F1239] ml-1 font-bold">({count})</span>
+                  No. of Records: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
                 </h2>
               )}
               
@@ -507,7 +507,8 @@ function CaseStudies() {
                     >
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Year
+                        <span className="font-semibold">Year</span>
+                          
                           {apiDropdownOptions.year.length > 0 && (
                             <FormCheck className="mr-2">
                               <FormCheck.Label>Select All</FormCheck.Label>
@@ -604,7 +605,7 @@ function CaseStudies() {
                         <div className="w-full mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                              Select Companies
+                            <span className="font-semibold">Select Companies</span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -628,7 +629,7 @@ function CaseStudies() {
                       {isAllCompanySelected && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            Country
+                          <span className="font-semibold">Country</span>
                             {apiDropdownOptions.market.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -684,7 +685,7 @@ function CaseStudies() {
                       {isAllCompanySelected === true && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            Sector
+                          <span className="font-semibold">Sector</span>
                             {apiDropdownOptions.sector.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -739,7 +740,7 @@ function CaseStudies() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Themes
+                          <span className="font-semibold">Themes</span>
                           {apiDropdownOptions.themes.length > 0 && (
                             <FormCheck className="mr-2">
                               <FormCheck.Label>Select All</FormCheck.Label>
@@ -795,7 +796,7 @@ function CaseStudies() {
                         <div className="mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                              Alternate Companies
+                          <span className="font-semibold">Alternate Companies</span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -817,7 +818,7 @@ function CaseStudies() {
                         <>
                           <div className="mx-2">
                             <div className="flex-1 w-full text-slate-500">
-                              Approval Status
+                          <span className="font-semibold">Approval Status</span>
                               <div className="mt-2 flex flex-col sm:flex-row">
                                 <Controller
                                   name="approval_status"

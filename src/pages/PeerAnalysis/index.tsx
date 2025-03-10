@@ -362,7 +362,7 @@ function PeerAnalysis() {
                           return `
                             <div class="p-2 ${data.label ? '' : 'font-bold'}">
                               ${escape(data.value)} 
-                              <span class=" ${data.label ? 'text-red-600 font-bold' : ''}">${data.label ? '*' : ''}<span/>
+                              <span class=" ${data.label ? 'text-black font-bold' : ''}">${data.label ? '*' : ''}<span/>
                             </div>
                           `;
                         }
@@ -483,7 +483,7 @@ function PeerAnalysis() {
               </div>
               {count > 0 && (
               <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
-                No. of Records: <span className="text-[#9F1239] ml-1 font-bold">({count})</span>
+                No. of Records: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
               </h2>
             )}
 
