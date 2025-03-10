@@ -277,7 +277,7 @@ function ProxyGuideline() {
                       onClick={() => {
                         gotoDetailPage(
                           'https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Overboarding_Document/Overboarding Policy for Top Investors (Updated)_Overboarding_Document.pdf',
-                          'Overboarding Document'
+                          'Key Overboarding Policies'
                         );
 
                         setPdfVisible(true);
@@ -294,7 +294,7 @@ function ProxyGuideline() {
                           className="stroke-[2] w-4 h-4 text-white "
                         />
                         <span className="ml-2 font-semibold hidden xl:flex">
-                          Overboarding Document
+                        Key Overboarding Policies
                         </span>
                       </div>
                     </a>
