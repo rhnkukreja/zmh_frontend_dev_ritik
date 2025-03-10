@@ -21,6 +21,7 @@ interface EngagementQuestionsState {
   totalPages: number;
   loading: boolean;
   page: number;
+  count: number;
   error: string | null;
   engagementQuestionFilterOptions: {
     category: string[];
@@ -46,6 +47,7 @@ const initialState: EngagementQuestionsState = {
     category: [],
     year: [],
   },
+  count: 0
 };
 
 export const fetchEngagementQuestions = createAsyncThunk<
@@ -135,6 +137,7 @@ const engagementQuestionsSlice = createSlice({
           state.loading = false;
           state.questions = action.payload.results;
           state.totalQuestions = action.payload.count;
+          state.count = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count, 50);
         }
       )

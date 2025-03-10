@@ -156,7 +156,7 @@ function Main() {
           },
         })
       );
-      toast.success("Searched saved successfully");
+      // toast.success("Searched saved successfully");
     }
   };
 
@@ -281,7 +281,7 @@ function Main() {
                             <div className="mt-3">
                               <div className="w-full  my-2">
                                 <div className="text-left text-slate-500 flex justify-between mb-1">
-                                  region
+                                <span className="font-semibold">Region</span>
                                   {institutionFilterOptions?.region?.length >
                                     0 && (
                                     <div>

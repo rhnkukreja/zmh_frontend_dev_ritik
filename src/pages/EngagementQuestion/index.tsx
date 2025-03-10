@@ -48,6 +48,7 @@ function Main() {
     questions,
     loading,
     page,
+    count,
     totalPages,
     engagementQuestionFilterOptions,
     filters,
@@ -254,7 +255,8 @@ function Main() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="font-semibold text-xl ">Engagement Questions</div>
+          <div className="font-semibold text-xl">Engagement Questions</div>
+
           {user?.user_type === "Admin" && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
@@ -264,15 +266,16 @@ function Main() {
                 variant="primary"
                 className="bg-theme-2 border-bg-theme-2"
               >
-                <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
+                <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
                 Add New Engagement Question
               </Button>
             </div>
           )}
         </div>
+
         <div className="mt-3.5">
           <div className="flex flex-col box box--stacked">
-            <div className="flex flex-col p-5 sm:flex-row gap-y-2">
+            <div className="flex flex-col px-5 pt-5  sm:flex-row gap-y-2">
               <div className="flex  ">
                 <MultiSearchBar
                   onSearch={handleSearch}
@@ -329,7 +332,7 @@ function Main() {
                         as={Button}
                         variant="outline-secondary"
                         className="w-full sm:w-auto"
-                        // onClick={handleCollapseFilter}
+                      // onClick={handleCollapseFilter}
                       >
                         <Lucide
                           icon="ArrowDownWideNarrow"
@@ -371,37 +374,37 @@ function Main() {
                             <div className="mt-3">
                               <div className="w-full my-2">
                                 <div className="text-left text-slate-500 flex justify-between mb-1">
-                                  Year
+                                <span className="font-semibold">Year</span>
                                   {engagementQuestionFilterOptions?.year
                                     ?.length > 0 && (
-                                    <div>
-                                      <FormCheck className="mr-2">
-                                        <FormCheck.Label>
-                                          Select All
-                                        </FormCheck.Label>
-                                        <FormCheck.Input
-                                          className="ml-1"
-                                          id={`year`}
-                                          checked={
-                                            engagementQuestionFilterOptions
-                                              ?.year?.length ===
-                                            watch("year")?.length
-                                          }
-                                          type="checkbox"
-                                          onChange={(e) => {
-                                            if (e.target.checked === true) {
-                                              setValue(
-                                                "year",
-                                                engagementQuestionFilterOptions?.year
-                                              );
-                                            } else {
-                                              setValue("year", []);
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`year`}
+                                            checked={
+                                              engagementQuestionFilterOptions
+                                                ?.year?.length ===
+                                              watch("year")?.length
                                             }
-                                          }}
-                                        />
-                                      </FormCheck>
-                                    </div>
-                                  )}
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "year",
+                                                  engagementQuestionFilterOptions?.year
+                                                );
+                                              } else {
+                                                setValue("year", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
                                 </div>
                                 <Controller
                                   name="year"
@@ -437,37 +440,37 @@ function Main() {
 
                               <div className="w-full  my-2">
                                 <div className="text-left text-slate-500 flex justify-between mb-1">
-                                  Category
+                                <span className="font-semibold">Category</span>
                                   {engagementQuestionFilterOptions?.category
                                     ?.length > 0 && (
-                                    <div>
-                                      <FormCheck className="mr-2">
-                                        <FormCheck.Label>
-                                          Select All
-                                        </FormCheck.Label>
-                                        <FormCheck.Input
-                                          className="ml-1"
-                                          id={`category`}
-                                          checked={
-                                            engagementQuestionFilterOptions
-                                              .category.length ===
-                                            watch("category")?.length
-                                          }
-                                          type="checkbox"
-                                          onChange={(e) => {
-                                            if (e.target.checked === true) {
-                                              setValue(
-                                                "category",
-                                                engagementQuestionFilterOptions.category
-                                              );
-                                            } else {
-                                              setValue("category", []);
+                                      <div>
+                                        <FormCheck className="mr-2">
+                                          <FormCheck.Label>
+                                            Select All
+                                          </FormCheck.Label>
+                                          <FormCheck.Input
+                                            className="ml-1"
+                                            id={`category`}
+                                            checked={
+                                              engagementQuestionFilterOptions
+                                                .category.length ===
+                                              watch("category")?.length
                                             }
-                                          }}
-                                        />
-                                      </FormCheck>
-                                    </div>
-                                  )}
+                                            type="checkbox"
+                                            onChange={(e) => {
+                                              if (e.target.checked === true) {
+                                                setValue(
+                                                  "category",
+                                                  engagementQuestionFilterOptions.category
+                                                );
+                                              } else {
+                                                setValue("category", []);
+                                              }
+                                            }}
+                                          />
+                                        </FormCheck>
+                                      </div>
+                                    )}
                                 </div>
                                 <Controller
                                   name="category"
@@ -511,7 +514,13 @@ function Main() {
                 </Popover>
               </div>
             </div>
+            {count > 0 && (
+              <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
+                No. of Records: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
+              </h2>
+            )}
             <div className=" xl:overflow-auto px-5 ">
+
               <TableWrapper isLoading={loading}>
                 <div className="overflow-auto max-h-[400px]">
                   <Table>

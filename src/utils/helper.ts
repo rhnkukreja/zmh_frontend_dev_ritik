@@ -222,7 +222,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
         if (value.length > 0) {
           queryParams.append(key, JSON.stringify(value));
         }
-      } else if (value !== null && value !== undefined && value !== "") {
+      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
         queryParams.append(key, value);
       }
     }
@@ -342,7 +342,7 @@ function countValidFilters(filters: FilterObject): number {
     const value = filters[key];
     return Array.isArray(value)
       ? value.length !== 0
-      : value !== undefined && value !== "" && value !== null;
+      : value !== undefined && value !== "" && value !== " " && value !== null;
   }).length;
 }
 

@@ -48,6 +48,7 @@ function ProxyGuideline() {
   const {
     loading,
     proxyVotingGuidelines,
+    count,
     page,
     totalPages,
     filters,
@@ -184,7 +185,7 @@ function ProxyGuideline() {
           },
         })
       );
-      toast.success("Searched saved successfully");
+      // toast.success("Searched saved successfully");
     }
   };
 
@@ -200,7 +201,8 @@ function ProxyGuideline() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl ">Voting Guidelines</div>
+            <div className="font-semibold text-xl">Voting Guidelines</div>
+
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -210,18 +212,16 @@ function ProxyGuideline() {
                   variant="primary"
                   className="bg-theme-2 border-bg-theme-2"
                 >
-                  <Lucide
-                    icon="PenLine"
-                    className="stroke-[1.3] w-4 h-4 mr-2"
-                  />{" "}
+                  <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
                   Add New Proxy Voting Guideline
                 </Button>
               </div>
             )}
           </div>
+
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2">
+              <div className="flex flex-col px-5 pt-5  sm:flex-row gap-y-2">
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -268,6 +268,38 @@ function ProxyGuideline() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+
+                  <div className="flex items-start">
+                    <a
+                      className="p-2 bg-blue-600
+                   border-white border-2 text-white rounded-md "
+
+                      onClick={() => {
+                        gotoDetailPage(
+                          'https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Overboarding_Document/Overboarding Policy for Top Investors (Updated)_Overboarding_Document.pdf',
+                          'Key Overboarding Policies'
+                        );
+
+                        setPdfVisible(true);
+                      }}
+                    // onClick={(event: React.MouseEvent) => {
+                    //   event.preventDefault();
+                    //   window.open('')
+                    // }}
+                    >
+
+                      <div className="flex items-center justify-center cursor-pointer" >
+                        <Lucide
+                          icon="File"
+                          className="stroke-[2] w-4 h-4 text-white "
+                        />
+                        <span className="ml-2 font-semibold hidden xl:flex">
+                        Key Overboarding Policies
+                        </span>
+                      </div>
+                    </a>
+                  </div>
+
                   {user?.saved_search?.["Voting Guidelines"] !== undefined && (
                     <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
@@ -292,7 +324,9 @@ function ProxyGuideline() {
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
                             {filtersLength}
                           </div>
+                         
                         </Popover.Button>
+                       
                         <Popover.Panel placement="bottom-end">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="p-2">
@@ -321,37 +355,37 @@ function ProxyGuideline() {
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    Year
+                                <span className="font-semibold">Year</span>
                                     {guidelineFilterOptions?.year?.length >
                                       0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`year`}
-                                            checked={
-                                              guidelineFilterOptions?.year
-                                                ?.length ===
-                                              watch("year")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "year",
-                                                  guidelineFilterOptions?.year
-                                                );
-                                              } else {
-                                                setValue("year", []);
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`year`}
+                                              checked={
+                                                guidelineFilterOptions?.year
+                                                  ?.length ===
+                                                watch("year")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "year",
+                                                    guidelineFilterOptions?.year
+                                                  );
+                                                } else {
+                                                  setValue("year", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
                                   </div>
                                   <Controller
                                     name="year"
@@ -386,37 +420,37 @@ function ProxyGuideline() {
                                 </div>
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    Region
+                                <span className="font-semibold">Region</span>
                                     {guidelineFilterOptions?.region?.length >
                                       0 && (
-                                      <div>
-                                        <FormCheck className="mr-2">
-                                          <FormCheck.Label>
-                                            Select All
-                                          </FormCheck.Label>
-                                          <FormCheck.Input
-                                            className="ml-1"
-                                            id={`region`}
-                                            checked={
-                                              guidelineFilterOptions.region
-                                                .length ===
-                                              watch("region")?.length
-                                            }
-                                            type="checkbox"
-                                            onChange={(e) => {
-                                              if (e.target.checked === true) {
-                                                setValue(
-                                                  "region",
-                                                  guidelineFilterOptions.region
-                                                );
-                                              } else {
-                                                setValue("region", []);
+                                        <div>
+                                          <FormCheck className="mr-2">
+                                            <FormCheck.Label>
+                                              Select All
+                                            </FormCheck.Label>
+                                            <FormCheck.Input
+                                              className="ml-1"
+                                              id={`region`}
+                                              checked={
+                                                guidelineFilterOptions.region
+                                                  .length ===
+                                                watch("region")?.length
                                               }
-                                            }}
-                                          />
-                                        </FormCheck>
-                                      </div>
-                                    )}
+                                              type="checkbox"
+                                              onChange={(e) => {
+                                                if (e.target.checked === true) {
+                                                  setValue(
+                                                    "region",
+                                                    guidelineFilterOptions.region
+                                                  );
+                                                } else {
+                                                  setValue("region", []);
+                                                }
+                                              }}
+                                            />
+                                          </FormCheck>
+                                        </div>
+                                      )}
                                   </div>
                                   <Controller
                                     name="region"
@@ -454,12 +488,21 @@ function ProxyGuideline() {
                             </div>
                           </form>
                         </Popover.Panel>
+                        
                       </>
                     )}
                   </Popover>
+                  
                 </div>
+               
               </div>
+              {count > 0 && (
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
+                  No. of Records: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
+                </h2>
+              )}
               <div className="overflow-auto xl:overflow-visible px-5">
+
                 <TableWrapper isLoading={loading}>
                   <div className="overflow-auto max-h-[400px]">
                     <Table>
@@ -736,8 +779,8 @@ function ProxyGuideline() {
               setUploadFileVisible={setUploadFileVisible}
               uploadFileVisible={uploadFileVisible}
               proxyId={proxyId}
-              // file={currentPdfDoc}
-              // file_name={currentPdfName}
+            // file={currentPdfDoc}
+            // file_name={currentPdfName}
             />
           )}
         </div>

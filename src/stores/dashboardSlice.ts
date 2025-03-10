@@ -152,7 +152,7 @@ export const fetchCompanyByName = createAsyncThunk<
 });
 
 export const fetchCompanyDashboard = createAsyncThunk<
-  { results: CompanyDashboard[]; percent: string },
+  { results: any },
   string
 >(`${name}/fetchCompanyDashboard`, async (url: string) => {
   return await dashboardService.fetchCompanyDashboard(url);
@@ -363,12 +363,11 @@ const companySlice = createSlice({
         (
           state,
           action: PayloadAction<{
-            results: CompanyDashboard[];
-            percent: string;
+            results: any[];
           }>
         ) => {
           state.dashboardDataList = action.payload.results;
-          state.percent = action.payload.percent;
+          // state.percent = action.payload.percent;
           state.investorCardLoading = false;
         }
       )

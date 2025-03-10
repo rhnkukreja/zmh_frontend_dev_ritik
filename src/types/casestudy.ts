@@ -8,4 +8,5 @@ export interface FilterDropdown {
   year: string[];
   category: string[];
   sub_category: string[];
+  company_category: string[];
 }
