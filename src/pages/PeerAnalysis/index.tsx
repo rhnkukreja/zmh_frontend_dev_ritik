@@ -302,6 +302,35 @@ function PeerAnalysis() {
         }`;
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
+
+   const handleViewAllChange = async (event: any) => {
+      if(event?.target?.checked){
+        setValue("year", ["2024"]);
+        setValue("country", ["USA"]); 
+        dispatch(
+          setAllFilters({
+            year: [2024],
+            country: ["USA"],
+          })
+        );
+        
+      }
+      else {
+        setValue("year", []);
+        setValue("country", []); 
+        dispatch(
+          setAllFilters({
+            country: [],
+            year: [],
+            global_search: [],
+          })
+        );
+
+      }
+      try {
+        dispatch( selectUnSelectAllCompany(!isAllCompanySelected));
+      } catch (error) {}
+    }
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -332,11 +361,8 @@ function PeerAnalysis() {
                       type="checkbox"
                       checked={isAllCompanySelected}
                       onChange={async (e) => {
-                        try {
-                          dispatch(
-                            selectUnSelectAllCompany(!isAllCompanySelected)
-                          );
-                        } catch (error) { }
+                        
+                        handleViewAllChange(e);
                       }}
                     />
                     <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>

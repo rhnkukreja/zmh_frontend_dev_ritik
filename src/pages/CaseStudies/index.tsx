@@ -333,6 +333,34 @@ function CaseStudies() {
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
+  const handleViewAllChange = async (event: any) => {
+    if(event?.target?.checked){
+      setValue("year", ["2025"]);
+      setValue("market", ["USA"]); 
+      dispatch(
+        setAllFilters({
+          year: [2025],
+          market: ["USA"],
+        })
+      );
+      
+    }
+    else {
+      setValue("year", []);
+      setValue("market", []); 
+      dispatch(
+        setAllFilters({
+          market: [],
+          year: [],
+          global_search: [],
+        })
+      );
+    }
+    try {
+      dispatch( selectUnSelectAllCompany(!isAllCompanySelected));
+    } catch (error) {}
+  }
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -361,11 +389,7 @@ function CaseStudies() {
                       type="checkbox"
                       checked={isAllCompanySelected}
                       onChange={async (e) => {
-                        try {
-                          dispatch(
-                            selectUnSelectAllCompany(!isAllCompanySelected)
-                          );
-                        } catch (error) {}
+                        handleViewAllChange(e)
                       }}
                     />
                     <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
