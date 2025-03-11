@@ -494,31 +494,14 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
-                                          {/* {dashboard?.voted_against_directors ===
+                                         {dashboard?.voted_against_say_on_pay ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                            <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
                                             <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                            <CircleSlash2 size={18} strokeWidth={2} absoluteStrokeWidth color="#b87d00"/>
+                                                <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth/>
                                             </Tippy>
-                                            </div>
-                                            </div>
-                                          )}
-                                            #fad900  YELLOW COLOR */}
-
-
-                                        {dashboard?.voted_against_directors ===
-                                          'ND' && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                <span
-                                                  className="bg-[#ab123d] rounded-full h-7 w-7 p-3 
-                          font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center"
-                                                >
-                                                  ND
-                                                </span>
-                                              </Tippy>
+                                              </div>
                                             </div>
                                           )}
 
@@ -533,7 +516,7 @@ const index = () => {
                                             </div>
                                           )}
 
-                                        {/* {dashboard?.voted_against_say_on_pay ===
+                                        {dashboard?.voted_against_say_on_pay ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
@@ -542,22 +525,8 @@ const index = () => {
                                             </Tippy>
                                               </div>
                                             </div>
-                                          )} */}
-
-{dashboard?.voted_against_directors ===
-                                          'ND' && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                <span
-                                                  className="bg-[#ab123d] rounded-full h-7 w-7 p-3 
-                          font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center"
-                                                >
-                                                  ND
-                                                </span>
-                                              </Tippy>
-                                            </div>
                                           )}
+
                                       </Table.Td>
                                     </>
                                   )}
