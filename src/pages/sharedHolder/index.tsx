@@ -1003,46 +1003,7 @@ function ShareHolderProposal() {
                         </div>
                       )}
 
-                      {user?.user_type === "Admin" && (
-                        <>
-                          <div className="w-full">
-                            <div className="text-left text-slate-500 flex justify-between mb-1">
-                              <span className="font-semibold">Month</span>
-                            </div>
-                            <Controller
-                              name="month"
-                              control={control}
-                              defaultValue={[]}
-                              render={({ field }) => (
-                                <TomSelect
-                                  value={field.value || []}
-                                  onChange={(event) => {
-                                    const values = event.target.value;
-                                    field.onChange(
-                                      values.map((value: string) =>
-                                        parseInt(value, 10)
-                                      )
-                                    );
-                                  }}
-                                  options={{ placeholder: "Select Month" }}
-                                  className="w-full"
-                                  multiple
-                                >
-                                  {getDropdownLoader ? (
-                                    <option disabled>Loading...</option>
-                                  ) : (
-                                    monthDropdownOption?.map((item: any) => (
-                                      <option key={item?.id} value={item?.id}>
-                                        {item?.month}
-                                      </option>
-                                    ))
-                                  )}
-                                </TomSelect>
-                              )}
-                            />
-                          </div>
-
-                          {
+{
                             tab === "proposal" && (
                               <div className="mx-2">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
@@ -1087,6 +1048,47 @@ function ShareHolderProposal() {
                             </div>
                             )
                           }
+
+                      {user?.user_type === "Admin" && (
+                        <>
+                          <div className="w-full">
+                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                              <span className="font-semibold">Month</span>
+                            </div>
+                            <Controller
+                              name="month"
+                              control={control}
+                              defaultValue={[]}
+                              render={({ field }) => (
+                                <TomSelect
+                                  value={field.value || []}
+                                  onChange={(event) => {
+                                    const values = event.target.value;
+                                    field.onChange(
+                                      values.map((value: string) =>
+                                        parseInt(value, 10)
+                                      )
+                                    );
+                                  }}
+                                  options={{ placeholder: "Select Month" }}
+                                  className="w-full"
+                                  multiple
+                                >
+                                  {getDropdownLoader ? (
+                                    <option disabled>Loading...</option>
+                                  ) : (
+                                    monthDropdownOption?.map((item: any) => (
+                                      <option key={item?.id} value={item?.id}>
+                                        {item?.month}
+                                      </option>
+                                    ))
+                                  )}
+                                </TomSelect>
+                              )}
+                            />
+                          </div>
+
+                          
 
                           {tab === "proposal" && (
                             <>
