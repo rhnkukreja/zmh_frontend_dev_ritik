@@ -6,6 +6,8 @@ import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import { MegaphoneOff } from 'lucide-react';
+import { CircleSlash2 } from 'lucide-react';
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -492,6 +494,17 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
+                                         {dashboard?.voted_against_say_on_pay ===
+                                          'ND' && (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                                <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth/>
+                                            </Tippy>
+                                              </div>
+                                            </div>
+                                          )}
+
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_say_on_pay ===
@@ -502,6 +515,18 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
+
+                                        {dashboard?.voted_against_say_on_pay ===
+                                          'ND' && (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                                <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth/>
+                                            </Tippy>
+                                              </div>
+                                            </div>
+                                          )}
+
                                       </Table.Td>
                                     </>
                                   )}

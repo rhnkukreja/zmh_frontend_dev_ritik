@@ -28,7 +28,7 @@ class DashboardService {
   ): Promise<{
     results: CompanyData[];
   }> {
-    let results = [];
+    let results = {institution: []};
     if (institutionValue !== "") {
       const url = `/get_npx_dropdown_values/?global_search=${companyGlobalSearchName}&institution_name=${institutionValue}`;
       const response = await axiosInstance.get(url);
@@ -36,7 +36,7 @@ class DashboardService {
     }
 
     return {
-      results: results,
+      results: results?.institution,
     };
   }
 

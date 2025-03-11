@@ -27,12 +27,12 @@ export type CompanyDashboard = {
   company_engaged: boolean;
   flag_13d: boolean;
   engagement_topic: string;
-  voted_against_directors: boolean;
+  voted_against_directors: any;
   investor_profile_id: number;
   case_studies_id: number;
   institution_id: number;
   unpri_signatory: boolean;
-  voted_against_say_on_pay: boolean;
+  voted_against_say_on_pay: any;
 
   // percent_ownership: string;
 };

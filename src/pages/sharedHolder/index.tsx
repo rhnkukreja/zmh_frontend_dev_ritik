@@ -1003,6 +1003,52 @@ function ShareHolderProposal() {
                         </div>
                       )}
 
+{
+                            tab === "proposal" && (
+                              <div className="mx-2">
+                              <div className="text-left text-slate-500 flex justify-between mb-1">
+                                <span className="font-semibold">Index</span>
+                              </div>
+                              <Controller
+                                name="company_category"
+                                control={control}
+                                defaultValue={""}
+                                render={({ field }) => (
+                                  <TomSelect
+                                    value={field.value || ""}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                    options={{
+                                      placeholder: "Select Index",
+                                    }}
+                                    className="w-full"
+                                    multiple={false}
+                                  >
+                                    {getDropdownLoader ? (
+                                      <option value="--" disabled>
+                                        Loading...
+                                      </option>
+                                    ) : (
+                                      <>
+                                        {apiDropdownOptions?.company_category?.map(
+                                          (company_category: string) => {
+                                            return (
+                                              <option value={company_category}>
+                                                {company_category}
+                                              </option>
+                                            );
+                                          }
+                                        )}
+                                      </>
+                                    )}
+                                  </TomSelect>
+                                )}
+                              />
+                            </div>
+                            )
+                          }
+
                       {user?.user_type === "Admin" && (
                         <>
                           <div className="w-full">
@@ -1042,51 +1088,7 @@ function ShareHolderProposal() {
                             />
                           </div>
 
-                          {
-                            tab === "proposal" && (
-                              <div className="mx-2">
-                              <div className="text-left text-slate-500 flex justify-between mb-1">
-                                <span className="font-semibold">Company Category</span>
-                              </div>
-                              <Controller
-                                name="company_category"
-                                control={control}
-                                defaultValue={""}
-                                render={({ field }) => (
-                                  <TomSelect
-                                    value={field.value || ""}
-                                    onChange={(value) => {
-                                      field.onChange(value);
-                                    }}
-                                    options={{
-                                      placeholder: "Select Company Category",
-                                    }}
-                                    className="w-full"
-                                    multiple={false}
-                                  >
-                                    {getDropdownLoader ? (
-                                      <option value="--" disabled>
-                                        Loading...
-                                      </option>
-                                    ) : (
-                                      <>
-                                        {apiDropdownOptions?.company_category?.map(
-                                          (company_category: string) => {
-                                            return (
-                                              <option value={company_category}>
-                                                {company_category}
-                                              </option>
-                                            );
-                                          }
-                                        )}
-                                      </>
-                                    )}
-                                  </TomSelect>
-                                )}
-                              />
-                            </div>
-                            )
-                          }
+                          
 
                           {tab === "proposal" && (
                             <>

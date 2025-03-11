@@ -761,7 +761,7 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Company Category</span>
+                          <span className="font-semibold">Index</span>
                         </div>
                         <Controller
                           name="company_category"
@@ -774,7 +774,7 @@ function PeerAnalysis() {
                                 field.onChange(value);
                               }}
                               options={{
-                                placeholder: "Select Company Category",
+                                placeholder: "Select Index",
                               }}
                               className="w-full"
                               multiple={false}
