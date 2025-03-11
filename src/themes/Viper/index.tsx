@@ -379,12 +379,12 @@ function Main() {
                       </a>
                       {/* BEGIN: Second Child */}
                       {menu.subMenu && (
-                        <Transition
-                          in={menu.activeDropdown}
-                          onEnter={enter}
-                          onExit={leave}
-                          timeout={300}
-                        >
+                        // <Transition
+                        //   in={menu.activeDropdown}
+                        //   onEnter={enter}
+                        //   onExit={leave}
+                        //   timeout={300}
+                        // >
                           <ul
                             className={clsx([
                               "",
@@ -433,12 +433,12 @@ function Main() {
                                 </a>
                                 {/* BEGIN: Third Child */}
                                 {subMenu.subMenu && (
-                                  <Transition
-                                    in={subMenu.activeDropdown}
-                                    onEnter={enter}
-                                    onExit={leave}
-                                    timeout={300}
-                                  >
+                                  // <Transition
+                                  //   in={subMenu.activeDropdown}
+                                  //   onEnter={enter}
+                                  //   onExit={leave}
+                                  //   timeout={300}
+                                  // >
                                     <ul
                                       className={clsx([
                                         "",
@@ -491,13 +491,13 @@ function Main() {
                                         )
                                       )}
                                     </ul>
-                                  </Transition>
+                                  // </Transition>
                                 )}
                                 {/* END: Third Child */}
                               </li>
                             ))}
                           </ul>
-                        </Transition>
+                        // </Transition>
                       )}
                       {/* END: Second Child */}
                     </li>

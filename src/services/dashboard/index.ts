@@ -36,7 +36,7 @@ class DashboardService {
     }
 
     return {
-      results: results?.institution,
+      results: results,
     };
   }
 

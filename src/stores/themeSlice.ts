@@ -1,62 +1,62 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "./store";
-import Hurricane from "../themes/Hurricane";
-import Ravage from "../themes/Ravage";
+// import Hurricane from "../themes/Hurricane";
+// import Ravage from "../themes/Ravage";
 import Echo from "../themes/Echo";
-import Hook from "../themes/Hook";
-import Razor from "../themes/Razor";
-import Havoc from "../themes/Havoc";
-import Dagger from "../themes/Dagger";
-import Shuriken from "../themes/Shuriken";
-import Raze from "../themes/Raze";
-import Exort from "../themes/Exort";
-import Viper from "../themes/Viper";
+// import Hook from "../themes/Hook";
+// import Razor from "../themes/Razor";
+// import Havoc from "../themes/Havoc";
+// import Dagger from "../themes/Dagger";
+// import Shuriken from "../themes/Shuriken";
+// import Raze from "../themes/Raze";
+// import Exort from "../themes/Exort";
+// import Viper from "../themes/Viper";
 
 export const themes = [
   {
     name: "echo",
     component: Echo,
   },
-  {
-    name: "hurricane",
-    component: Hurricane,
-  },
-  {
-    name: "ravage",
-    component: Ravage,
-  },
-  {
-    name: "hook",
-    component: Hook,
-  },
-  {
-    name: "razor",
-    component: Razor,
-  },
-  {
-    name: "havoc",
-    component: Havoc,
-  },
-  {
-    name: "dagger",
-    component: Dagger,
-  },
-  {
-    name: "shuriken",
-    component: Shuriken,
-  },
-  {
-    name: "raze",
-    component: Raze,
-  },
-  {
-    name: "exort",
-    component: Exort,
-  },
-  {
-    name: "viper",
-    component: Viper,
-  },
+  // {
+  //   name: "hurricane",
+  //   component: Hurricane,
+  // },
+  // {
+  //   name: "ravage",
+  //   component: Ravage,
+  // },
+  // {
+  //   name: "hook",
+  //   component: Hook,
+  // },
+  // {
+  //   name: "razor",
+  //   component: Razor,
+  // },
+  // {
+  //   name: "havoc",
+  //   component: Havoc,
+  // },
+  // {
+  //   name: "dagger",
+  //   component: Dagger,
+  // },
+  // {
+  //   name: "shuriken",
+  //   component: Shuriken,
+  // },
+  // {
+  //   name: "raze",
+  //   component: Raze,
+  // },
+  // {
+  //   name: "exort",
+  //   component: Exort,
+  // },
+  // {
+  //   name: "viper",
+  //   component: Viper,
+  // },
 ] as const;
 
 export type Themes = (typeof themes)[number];
