@@ -210,7 +210,7 @@ const index = () => {
                   {
                     
                     agmSummaryDetails?.vds_check &&
-                    dashboardDataList?.length > 0 && (
+                    dashboardDataList?.total_year?.length > 0 && (
                       <button
                         onClick={(event: any) => handleViewMore(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -220,7 +220,7 @@ const index = () => {
                         {agmSummaryDetails?.Year == "2025" ? "Real-Time 2025" : "View More"}
                       </button>
                     )}
-                  {dashboardDataList?.length > 0 && agmSummaryDetails?.npx_check && (
+                  {dashboardDataList?.total_year?.length > 0 && agmSummaryDetails?.npx_check && (
                     <button
                       onClick={(event: any) => handleViewNPX(event)}
                       className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
