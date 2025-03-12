@@ -364,6 +364,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             options={{
                               placeholder: "Select Year",
                             }}
+                            
                             className="w-full text-left"
                           >
                             {apiDropdownOptions?.year?.map((year: string) => {
@@ -898,11 +899,20 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                           <TomSelect
                             value={field.value ?? ""}
                             onChange={(e) => field.onChange(e.target.value)}
-                            options={{
-                              placeholder: "Select No Action ID Match",
+                            // options={{
+                            //   placeholder: "Select No Action ID Match",
                               
+                            // }}
+                            options={{
+                              placeholder: "Select No Action Year",
+                              allowEmptyOption: true,
+                              plugins: {
+                                clear_button: {
+                                  title: "Clear selection", 
+                                },
+                              },
                             }}
-                            className="w-full text-left"
+                            className="w-full text-left relative"
                             
                           >
                             {apiNoActionDropdown?.proposals?.map(
