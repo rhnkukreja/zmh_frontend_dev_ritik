@@ -48,7 +48,7 @@ function Main(props: MainProps) {
                   <div>
                     <div className="overflow-hidden border-2 rounded-full w-11 h-11 image-fit border-slate-200/70">
                       <img
-                        alt="Tailwise - Admin Dashboard Template"
+                        alt="ZMH Analytics"
                         src={users.fakeUsers()[0].photo}
                       />
                     </div>
@@ -62,22 +62,13 @@ function Main(props: MainProps) {
                       <div className="w-40 sm:w-56 my-3.5 p-1 border rounded-[0.6rem] bg-slate-50/80">
                         <div className="grid grid-cols-3 overflow-hidden rounded-[0.6rem]">
                           <div className="h-12 sm:h-16 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
-                            <img
-                              alt="Tailwise - Admin Dashboard Template"
-                              src={faker.images[0]}
-                            />
+                            <img alt="ZMH Analytics" src={faker.images[0]} />
                           </div>
                           <div className="h-12 sm:h-16 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
-                            <img
-                              alt="Tailwise - Admin Dashboard Template"
-                              src={faker.images[1]}
-                            />
+                            <img alt="ZMH Analytics" src={faker.images[1]} />
                           </div>
                           <div className="h-12 sm:h-16 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
-                            <img
-                              alt="Tailwise - Admin Dashboard Template"
-                              src={faker.images[2]}
-                            />
+                            <img alt="ZMH Analytics" src={faker.images[2]} />
                           </div>
                         </div>
                       </div>

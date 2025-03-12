@@ -1,25 +1,25 @@
 // services/UserService.ts
+import { Login, Register } from "@/types/users";
 import { axiosInstance } from "../index";
-import {LoginRequestDTO ,  SignUpRequestDTO } from "./auth.type";
-import { UserResponseDTO } from "./auth.type";
+import { LoginRequestDTO, SignUpRequestDTO } from "./auth.type";
 
 class UserService {
-  public async signUp(user: SignUpRequestDTO): Promise<UserResponseDTO> {
-    const response = await axiosInstance.post("/user/register", user);
-    return new UserResponseDTO(
-      response.data.id,
-      response.data.name,
-      response.data.email
-    );
+  public async signUp(user: SignUpRequestDTO): Promise<any> {
+    try {
+      const response = await axiosInstance.post("/user/register/", user);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
   }
 
-  public async login(user: LoginRequestDTO): Promise<UserResponseDTO> {
-    const response = await axiosInstance.post("/user/login/", user);
-    return new UserResponseDTO(
-      response.data.id,
-      response.data.name,
-      response.data.email
-    );
+  public async login(user: LoginRequestDTO): Promise<any> {
+    try {
+      const response = await axiosInstance.post("/user/login/", user);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
   }
 }
 

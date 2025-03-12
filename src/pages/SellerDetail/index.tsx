@@ -433,7 +433,7 @@ function Main() {
                                   <div className="w-10 h-10 image-fit zoom-in">
                                     <Tippy
                                       as="img"
-                                      alt="Tailwise - Admin Dashboard Template"
+                                      alt="ZMH Analytics"
                                       className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                       src={faker.images[0].path}
                                       content={`Uploaded at ${faker.images[0].uploadDate}`}

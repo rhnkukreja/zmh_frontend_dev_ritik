@@ -331,7 +331,7 @@ function Main() {
                                 <div className="relative flex items-center px-1 py-2">
                                   <div className="w-10 h-10 image-fit">
                                     <img
-                                      alt="Tailwise - Admin Dashboard Template"
+                                      alt="ZMH Analytics"
                                       className="rounded-full"
                                       src={users.fakeUsers()[0].photo}
                                     />
@@ -368,7 +368,7 @@ function Main() {
                   <div className="relative flex items-center px-1 py-2">
                     <div className="w-10 h-10 image-fit">
                       <img
-                        alt="Tailwise - Admin Dashboard Template"
+                        alt="ZMH Analytics"
                         className="rounded-full"
                         src={users.fakeUsers()[0].photo}
                       />

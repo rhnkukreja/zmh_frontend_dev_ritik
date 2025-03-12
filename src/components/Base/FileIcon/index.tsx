@@ -25,11 +25,7 @@ function FileIcon({ variant, type, src, className, ...props }: FileIconProps) {
         )}
         {variant == "image" && (
           <div className="absolute top-0 left-0 w-full h-full image-fit">
-            <img
-              className="rounded-md"
-              alt="Tailwise - Admin Dashboard Template"
-              src={src}
-            />
+            <img className="rounded-md" alt="ZMH Analytics" src={src} />
           </div>
         )}
       </div>

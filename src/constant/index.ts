@@ -1,1 +1,74 @@
-export const  baseURL = `https://worknordic-backend-ab807ea23d11.herokuapp.com`;
+export const baseURL = `https://zmh-backend-prod-06c2601b6e50.herokuapp.com`;
+// export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
+// export const baseURL = `http://127.0.0.1:8000`;
+
+export const PAGE_SIZE = 10;
+export const characterColors: {
+  [key: string]: string;
+} = {
+  A: "#8B0000",
+  B: "#006400",
+  C: "#00008B",
+  D: "#8B008B",
+  E: "#4B0082",
+  F: "#008B8B",
+  G: "#8B4513",
+  H: "#8B0000",
+  I: "#556B2F",
+  J: "#483D8B",
+  K: "#8B3A3A",
+  L: "#4B0082",
+  M: "#006400",
+  N: "#8B0000",
+  O: "#8B0000",
+  P: "#006400",
+  Q: "#00008B",
+  R: "#8B008B",
+  S: "#4B0082",
+  T: "#008B8B",
+  U: "#8B4513",
+  V: "#8B0000",
+  W: "#2F4F4F",
+  X: "#483D8B",
+  Y: "#8B3A3A",
+  Z: "#4B0082",
+};
+
+export const adminRoutes = ["Company", "Institutions"];
+
+export const investorProfileEditableSectionsInvestors = {
+  summary: { value: "Summary", type: "investor" },
+  engagement_priorities: { value: "Engagement Priorities", type: "investor" },
+  reporting_expectations: { value: "Reporting Expectations", type: "investor" },
+  esg_integration_process: {
+    value: "ESG Integration Process",
+    type: "investor",
+  },
+  voting_guidelines: { value: "Voting Guidelines", type: "investor" },
+  references: { value: "References", type: "investor" },
+};
+export const investorProfileEditableSectionsEquity = {
+  equity_firm_name: { value: "Equity Firm Name", type: "equity" },
+  specific_expectations: { value: "Specific Expectations", type: "equity" },
+  checklist: {
+    value: "Checklist",
+    type: "equity",
+  },
+  other: { value: "Other", type: "equity" },
+};
+
+export const no_header_company = [
+  "investor-profile",
+  "engagement-question",
+  "proxy-voting-guideline",
+];
+
+export const subSidebarRoutes = ["/notes"];
+
+export const pageTitles: Record<string, string | null> = {
+  "/proxy-contest": "Proxy Contest 2024 (Beta)",
+  "/notes": "Notes (Beta)",
+  "/investor-profile": null,
+  "/engagement-question": null,
+  "/proxy-voting-guideline": null,
+};

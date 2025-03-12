@@ -77,6 +77,7 @@ Table.Thead = ({ className, ...props }: TheadProps) => {
     >
       <thead
         className={twMerge([
+          "sticky-table", // {{ edit_1 }} Add sticky-table class
           props.variant === "light" && "bg-slate-200/60 dark:bg-slate-200",
           props.variant === "dark" && "bg-dark text-white dark:bg-black/30",
           className,
@@ -94,7 +95,7 @@ type TbodyProps = React.PropsWithChildren<
 >;
 
 Table.Tbody = ({ className, ...props }: TbodyProps) => {
-  return <thead className={className}>{props.children}</thead>;
+  return <thead className={`${className}`}>{props.children}</thead>;
 };
 
 type TrProps = React.PropsWithChildren & React.ComponentPropsWithoutRef<"tr">;

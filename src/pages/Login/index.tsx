@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 import { RootState, AppDispatch } from "../../stores/store";
@@ -9,11 +9,19 @@ import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
 
 import clsx from "clsx";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
-import { Link } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
+import logo from "../../assets/images/logo/zmh-logo.jpg";
+import CompanyAdvertisement from "@/components/CompanyAdvertisement";
+import { Eye, EyeOff } from "lucide-react";
+import { Helmet } from "react-helmet-async";
+import {
+  setDashboardGlobalSearch,
+  setFinhub,
+} from "@/stores/authenticationSlice";
 
 interface LoginFormInputs {
   email: string;
@@ -21,7 +29,9 @@ interface LoginFormInputs {
 }
 
 const Main: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
+  const [showPassword, setShowPassword] = useState(false);
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
 
   const {
@@ -32,20 +42,49 @@ const Main: React.FC = () => {
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
-      
       const response = await dispatch(
         login({
-          username: data.email,
+          email: data.email,
           password: data.password,
         })
       ).unwrap();
 
-      console.log("response: ", response);
+      if (response.token) {
+        localStorage.setItem("User", JSON.stringify(response));
+        localStorage.setItem("token", response.token);
+      }
+      if (response?.company_id && response.company_name) {
+        dispatch(
+          setDashboardGlobalSearch({
+            id: response?.company_id,
+            ticker: response?.company_ticker!,
+            name: response?.company_name,
+          })
+        );
+        // toast.success("Logged In Successfully!");
+      }
+      if (response?.finnhub) {
+        dispatch(setFinhub(response?.finnhub));
+      }
+
+      const redirectPath = sessionStorage.getItem('redirectPath') || '/';
+      sessionStorage.removeItem('redirectPath');
+
+      if (redirectPath) {
+        navigate(redirectPath);
+      }
+      else {
+        navigate(`/?ticker=${response?.company_ticker}`);
+      }
+
     } catch (error) {}
   };
 
   return (
     <>
+      <Helmet>
+        <title>ZMH Analytics - ZMH Advisors</title>
+      </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
           className={clsx([
@@ -54,20 +93,18 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
-            <div className="rounded-[0.8rem] w-[55px] h-[55px] border border-primary/30 flex items-center justify-center">
-              <div className="relative flex items-center justify-center w-[50px] rounded-[0.6rem] h-[50px] bg-gradient-to-b from-theme-1/90 to-theme-2/90 bg-white">
-                <div className="w-[26px] h-[26px] relative -rotate-45 [&_div]:bg-white">
-                  <div className="absolute w-[20%] left-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                  <div className="absolute w-[20%] inset-0 m-auto h-[120%] rounded-full"></div>
-                  <div className="absolute w-[20%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
+            <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
+              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
+                <div className="w-full h-full overflow-hidden    image-fit">
+                  <img alt="Logo" src={logo} />
                 </div>
               </div>
             </div>
             <div className="mt-10">
               <div className="text-2xl font-medium">Sign In</div>
               <div className="mt-2.5 text-slate-600">
-                Don't have an account?{" "}
-                <Link className="font-medium text-primary" to="/register">
+                Don't have an account?
+                <Link className="ml-2 font-medium text-primary" to="/register">
                   Sign Up
                 </Link>
               </div>
@@ -78,21 +115,40 @@ const Main: React.FC = () => {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder={users.fakeUsers()[0].email}
+                    placeholder="Enter Email"
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (
                     <p className="text-red-500">{errors.email.message}</p>
                   )}
                   <FormLabel className="mt-4">Password*</FormLabel>
-                  <FormInput
-                    type="password"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="************"
-                    {...register("password", {
-                      required: "Password is required",
-                    })}
-                  />
+                  <div className="relative">
+                    <FormInput
+                      type={showPassword ? "text" : "password"}
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter your password"
+                      {...register("password", {
+                        required: "Password is required",
+                      })}
+                    />
+                    <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                      {showPassword && (
+                        <Eye
+                          onClick={() => setShowPassword(!showPassword)}
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
+                      {!showPassword && (
+                        <EyeOff
+                          onClick={() => setShowPassword(!showPassword)}
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
+                    </span>
+                  </div>
+
                   {errors.password && (
                     <p className="text-red-500">{errors.password.message}</p>
                   )}
@@ -153,62 +209,11 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="sticky top-0 z-10 flex-col justify-center hidden h-screen ml-16 lg:flex xl:ml-28 2xl:ml-36">
-            <div className="leading-[1.4] text-[2.6rem] xl:text-5xl font-medium xl:leading-[1.2] text-white">
-              Embrace Excellence <br /> in Dashboard Development
-            </div>
-            <div className="mt-5 text-base leading-relaxed xl:text-lg text-white/70">
-              Unlock the potential of Tailwise, where developers craft
-              meticulously structured, visually stunning dashboards with
-              feature-rich modules. Join us today to shape the future of your
-              application development.
-            </div>
-            <div className="flex flex-col gap-3 mt-10 xl:items-center xl:flex-row">
-              <div className="flex items-center">
-                <div className="w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-              </div>
-              <div className="text-base xl:ml-2 2xl:ml-3 text-white/70">
-                Over 7k+ strong and growing! Your journey begins here.
-              </div>
-            </div>
+            <CompanyAdvertisement />
           </div>
         </div>
       </div>
-      <ThemeSwitcher />
+      {/* <ThemeSwitcher /> */}
     </>
   );
 };

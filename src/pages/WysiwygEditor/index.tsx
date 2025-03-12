@@ -74,10 +74,10 @@ function Main() {
                           <Source>
                             <Highlight>
                               {`
-              <ClassicEditor
-                value={editorData}
-                onChange={setEditorData}
-              />
+                            <ClassicEditor
+                             value={editorData}
+                            onChange={setEditorData}
+                                   />
               `}
                             </Highlight>
                           </Source>

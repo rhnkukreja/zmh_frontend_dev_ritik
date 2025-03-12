@@ -3,8 +3,9 @@
     box-shadow: 0px 3px 5px #0000000b;
     background-color: white;
     border: 1px solid theme("colors.slate.200");
-    border-radius: 0.6rem;
+    border-radius: 0.4rem;
     position: relative;
+
     &--stacked:before {
       content: "";
       z-index: -1;
@@ -21,14 +22,23 @@
     }
   }
 
-  .dark {
-    .box {
-      background-color: theme("backgroundColor.darkmode.600");
-      border-color: theme("colors.darkmode.500");
-      &--stacked:before {
-        background-color: theme("colors.darkmode.600" / 70%);
-        border-color: theme("colors.slate.500" / 60%);
-      }
+  .dark .box {
+    background-color: theme("backgroundColor.darkmode.600");
+    border-color: theme("colors.darkmode.500");
+
+    &--stacked:before {
+      background-color: theme("colors.darkmode.600" / 70%);
+      border-color: theme("colors.slate.500" / 60%);
+    }
+  }
+
+  .box--no-border-shadow {
+    border: none;
+    box-shadow: none;
+
+    &--stacked:before {
+      border: none;
+      box-shadow: none;
     }
   }
 }

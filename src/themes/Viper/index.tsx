@@ -20,6 +20,8 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
+import { filterMenu } from "@/utils/helper";
+import { logout } from "@/stores/authenticationSlice";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -66,7 +68,7 @@ function Main() {
       new SimpleBar(scrollableRef.current);
     }
 
-    setFormattedMenu(sideMenu());
+    setFormattedMenu(filterMenu(sideMenu()));
     compactLayout();
 
     window.onresize = () => {
@@ -214,10 +216,7 @@ function Main() {
                 </div>
                 <Menu className="ml-5">
                   <Menu.Button className="overflow-hidden rounded-full w-[36px] h-[36px] border-[3px] border-slate-200/70 image-fit">
-                    <img
-                      alt="Tailwise - Admin Dashboard Template"
-                      src={users.fakeUsers()[0].photo}
-                    />
+                    <img alt="ZMH Analytics" src={users.fakeUsers()[0].photo} />
                   </Menu.Button>
                   <Menu.Items className="w-56 mt-1">
                     <Menu.Item
@@ -265,6 +264,7 @@ function Main() {
                     <Menu.Item
                       onClick={() => {
                         navigate("login");
+                        dispatch(logout());
                       }}
                     >
                       <Lucide icon="Power" className="w-4 h-4 mr-2" />
@@ -379,12 +379,12 @@ function Main() {
                       </a>
                       {/* BEGIN: Second Child */}
                       {menu.subMenu && (
-                        <Transition
-                          in={menu.activeDropdown}
-                          onEnter={enter}
-                          onExit={leave}
-                          timeout={300}
-                        >
+                        // <Transition
+                        //   in={menu.activeDropdown}
+                        //   onEnter={enter}
+                        //   onExit={leave}
+                        //   timeout={300}
+                        // >
                           <ul
                             className={clsx([
                               "",
@@ -433,12 +433,12 @@ function Main() {
                                 </a>
                                 {/* BEGIN: Third Child */}
                                 {subMenu.subMenu && (
-                                  <Transition
-                                    in={subMenu.activeDropdown}
-                                    onEnter={enter}
-                                    onExit={leave}
-                                    timeout={300}
-                                  >
+                                  // <Transition
+                                  //   in={subMenu.activeDropdown}
+                                  //   onEnter={enter}
+                                  //   onExit={leave}
+                                  //   timeout={300}
+                                  // >
                                     <ul
                                       className={clsx([
                                         "",
@@ -491,13 +491,13 @@ function Main() {
                                         )
                                       )}
                                     </ul>
-                                  </Transition>
+                                  // </Transition>
                                 )}
                                 {/* END: Third Child */}
                               </li>
                             ))}
                           </ul>
-                        </Transition>
+                        // </Transition>
                       )}
                       {/* END: Second Child */}
                     </li>

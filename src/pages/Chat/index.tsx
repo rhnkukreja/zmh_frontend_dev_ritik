@@ -114,7 +114,7 @@ function Main() {
                             <div className="relative">
                               <div className="w-12 h-12 overflow-hidden border-2 rounded-full image-fit border-slate-200/70">
                                 <img
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={faker.sender.photo}
                                 />
                               </div>
@@ -174,10 +174,7 @@ function Main() {
               <div className="flex items-center gap-3.5 border-b border-dashed pb-5">
                 <div>
                   <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                    <img
-                      alt="Tailwise - Admin Dashboard Template"
-                      src={users.fakeUsers()[0].photo}
-                    />
+                    <img alt="ZMH Analytics" src={users.fakeUsers()[0].photo} />
                   </div>
                 </div>
                 <div>
@@ -230,7 +227,7 @@ function Main() {
                       <div className="hidden sm:block">
                         <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                           <img
-                            alt="Tailwise - Admin Dashboard Template"
+                            alt="ZMH Analytics"
                             src={users.fakeUsers()[0].photo}
                           />
                         </div>
@@ -300,7 +297,7 @@ function Main() {
                           ) : (
                             <div className="mt-3 mb-4 w-64 h-32 overflow-hidden rounded-lg image-fit group-[.right]:ml-auto">
                               <ImageZoom
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="p-0.5 border rounded-lg saturate-150"
                                 src={
                                   projectDetails.fakeProjectDetails()[0].image
@@ -327,7 +324,7 @@ function Main() {
                             <div className="w-5 h-5 image-fit zoom-in">
                               <Tippy
                                 as="img"
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                 src={users.fakeUsers()[0].photo}
                                 content={users.fakeUsers()[0].name}
@@ -336,7 +333,7 @@ function Main() {
                             <div className="w-5 h-5 -ml-0.5 image-fit zoom-in">
                               <Tippy
                                 as="img"
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                 src={users.fakeUsers()[1].photo}
                                 content={users.fakeUsers()[1].name}
@@ -345,7 +342,7 @@ function Main() {
                             <div className="w-5 h-5 -ml-0.5 image-fit zoom-in">
                               <Tippy
                                 as="img"
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                 src={users.fakeUsers()[2].photo}
                                 content={users.fakeUsers()[2].name}

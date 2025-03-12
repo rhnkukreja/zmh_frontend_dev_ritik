@@ -103,9 +103,9 @@ function Main() {
                         <div className="px-5 py-2 mt-4 flex flex-col gap-3.5">
                           <Preview>
                             <Dropzone
-                              getRef={(el) => {
-                                dropzoneSingleRef.current = el;
-                              }}
+                              // getRef={(el) => {
+                              //   dropzoneSingleRef.current = el;
+                              // }}
                               options={{
                                 url: "https://httpbin.org/post",
                                 thumbnailWidth: 150,
@@ -213,9 +213,9 @@ function Main() {
                         <div className="px-5 py-2 mt-4 flex flex-col gap-3.5">
                           <Preview>
                             <Dropzone
-                              getRef={(el) => {
-                                dropzoneMultipleRef.current = el;
-                              }}
+                              // getRef={(el) => {
+                              //   dropzoneMultipleRef.current = el;
+                              // }}
                               options={{
                                 url: "https://httpbin.org/post",
                                 thumbnailWidth: 150,
@@ -322,9 +322,9 @@ function Main() {
                         <div className="px-5 py-2 mt-4 flex flex-col gap-3.5">
                           <Preview>
                             <Dropzone
-                              getRef={(el) => {
-                                dropzoneValidationRef.current = el;
-                              }}
+                              // getRef={(el) => {
+                              //   dropzoneValidationRef.current = el;
+                              // }}
                               options={{
                                 url: "https://httpbin.org/post",
                                 thumbnailWidth: 150,

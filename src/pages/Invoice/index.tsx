@@ -119,7 +119,7 @@ function Main() {
                             <div className="flex items-center">
                               <div className="w-6 h-6 mr-2.5 overflow-hidden border-2 rounded-full image-fit zoom-in border-slate-200/70 box">
                                 <img
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={faker.images[0].path}
                                 />
                               </div>

@@ -1,6 +1,7 @@
 import { NavigateFunction } from "react-router-dom";
 import { Menu } from "@/stores/sideMenuSlice";
 import { slideUp, slideDown } from "@/utils/helper";
+import { adminRoutes } from "@/constant";
 
 interface Location {
   pathname: string;
@@ -44,6 +45,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         pathname: item.pathname,
         subMenu: item.subMenu,
         ignore: item.ignore,
+        isAdmin: item.isAdmin,
       };
       menuItem.active =
         ((location.forceActiveMenu !== undefined &&
@@ -72,7 +74,6 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
 
   return formattedMenu;
 };
-
 const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;

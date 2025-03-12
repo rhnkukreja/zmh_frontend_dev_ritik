@@ -1,8 +1,7 @@
 import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
-import Breadcrumb from "@/components/Base/Breadcrumb";
-import { useState, useEffect, createRef } from "react";
+import { useState, useEffect, createRef, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
 import {
@@ -12,7 +11,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import Lucide from "@/components/Base/Lucide";
-import users from "@/fakers/users";
+import { Dialog } from "@/components/Base/Headless";
 import clsx from "clsx";
 import SimpleBar from "simplebar";
 import { Menu } from "@/components/Base/Headless";
@@ -20,14 +19,64 @@ import QuickSearch from "@/components/QuickSearch";
 import SwitchAccount from "@/components/SwitchAccount";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import ActivitiesPanel from "@/components/ActivitiesPanel";
+import localStorageHelper, {
+  createDynamicURL,
+  filterMenu,
+} from "@/utils/helper";
+import logo from "../../assets/images/logo/zmh-logo.jpg";
+import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
+import { FilterX, Mail } from "lucide-react";
+import { persistor, RootState } from "@/stores/store";
+
+import LoadingIcon from "@/components/Base/LoadingIcon";
+import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
+import notificationIcon from "@/assets/images/zmh-images/notification_icon.png";
+
+import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
+import Tippy from "@/components/Base/Tippy";
+import CountryInfoHeader from "./components/countryHeader";
+import GetHelp from "@/components/Help";
+import { resetInvestorProfiles } from "@/stores/investersProfileSlice";
+import { resetCompany } from "@/stores/companySlice";
+import { resetInstitution } from "@/stores/institutionSlice";
+import { resetShareholderProposal } from "@/stores/shareholderProposalSlice";
+import { resetProxyVotingGuidelines } from "@/stores/proxyVotingGuidelineSlice";
+import { resetEngagementQuestions } from "@/stores/engagementQuestionSlice";
+import { resetPeerAnalysis } from "@/stores/peerAnalysisSlice";
+import { resetCaseStudy } from "@/stores/caseStudySlice";
+import NotificationAlert from "@/components/NotificationAlert";
+
+import { baseURL, pageTitles, subSidebarRoutes } from "@/constant";
+import useCompanySearch from "@/hooks/useCompanySearch";
+import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
+import { dashboardService } from "@/services/dashboard";
 
 function Main() {
   const dispatch = useAppDispatch();
+  const { user, finhub } = useAppSelector((state) => state.authentiction);
+
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+
+  const { companySearchAndUpdate } = useCompanySearch();
+
+  const { noCompanyHeaderRoutes } = useAppSelector((state) => state.theme);
+
   const compactMenu = useAppSelector(selectCompactMenu);
   const setCompactMenu = (val: boolean) => {
     localStorage.setItem("compactMenu", val.toString());
     dispatch(setCompactMenuStore(val));
   };
+
+  const [selectedText, setSelectedText] = useState<string>("");
+  const [noteText, setNoteText] = useState<string>("");
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
+
+  const [globalCreateNoteModalVisible, setGlobalCreateNoteModalVisible] =
+    useState<boolean>(false);
   const [quickSearch, setQuickSearch] = useState(false);
   const [switchAccount, setSwitchAccount] = useState(false);
   const [notificationsPanel, setNotificationsPanel] = useState(false);
@@ -42,13 +91,26 @@ function Main() {
   const sideMenuStore = useAppSelector(selectSideMenu);
   const sideMenu = () => nestedMenu(sideMenuStore, location);
   const scrollableRef = createRef<HTMLDivElement>();
+  const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
 
   const [topBarActive, setTopBarActive] = useState(false);
+
+  const [basicModalPreview, setBasicModalPreview] = useState(false);
+  const [notificationModalVisible, setNotificationModalVisible] =
+    useState(false);
+
+  const [isFrameLoading, setIsFrameLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
 
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
+    // setCompactMenuOnHover(!compactMenuOnHover)
   };
+  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
 
   const compactLayout = () => {
     if (window.innerWidth <= 1600) {
@@ -68,7 +130,7 @@ function Main() {
       new SimpleBar(scrollableRef.current);
     }
 
-    setFormattedMenu(sideMenu());
+    setFormattedMenu(filterMenu(sideMenu()));
     compactLayout();
 
     window.onresize = () => {
@@ -85,28 +147,179 @@ function Main() {
     }
   };
 
+  const handleToggleMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setCompactMenu(!compactMenu);
+  };
+
+  const handleLoad = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(false);
+  };
+
+  const handleError = () => {
+    setTimeout(() => {
+      setIsFrameLoading(false);
+    }, 2000);
+    setIsError(true);
+  };
+
+  const handleCloseModal = () => {
+    setBasicModalPreview(false);
+    setIsFrameLoading(true);
+    setIsError(false);
+  };
+
+  const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
+    location.pathname.includes(route)
+  );
+
+  useEffect(() => {
+    if (!location.pathname.includes("/case-studies")) {
+      dispatch(resetCaseStudy());
+    }
+    if (!location.pathname.includes("/engagement-question")) {
+      dispatch(resetEngagementQuestions());
+    }
+    if (!location.pathname.includes("/peer-analysis")) {
+      dispatch(resetPeerAnalysis());
+    }
+    if (!location.pathname.includes("/proxy-voting-guideline")) {
+      dispatch(resetProxyVotingGuidelines());
+    }
+    if (!location.pathname.includes("/share-holder-proposal")) {
+      dispatch(resetShareholderProposal());
+    }
+    if (!location.pathname.includes("/institution")) {
+      dispatch(resetInstitution());
+    }
+    if (!location.pathname.includes("/company")) {
+      dispatch(resetCompany());
+    }
+    if (!location.pathname.includes("/investor-profile")) {
+      dispatch(resetInvestorProfiles());
+    }
+  }, [location.pathname]);
+
+  const handleSelectionChange = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const container = document.createElement("div");
+      container.appendChild(range.cloneContents());
+      const selectedHtml = container.innerHTML.trim();
+      if (selectedHtml && selectedHtml?.length > 50) {
+        const rect = range.getBoundingClientRect();
+        setSelectedText(selectedHtml);
+        setTooltipPosition({
+          x: rect.left + window.scrollX,
+          y: rect.top + window.scrollY - 30,
+        });
+      } else {
+        setSelectedText("");
+      }
+    } else if (!globalCreateNoteModalVisible) {
+      setSelectedText("");
+    }
+  };
+
+  const handleCreateNote = () => {
+    if (selectedText) {
+      setNoteText(selectedText);
+      setSelectedText("");
+      setGlobalCreateNoteModalVisible(true);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        tooltipRef.current &&
+        !tooltipRef.current.contains(e.target as Node) &&
+        !globalCreateNoteModalVisible
+      ) {
+        setSelectedText("");
+      }
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [globalCreateNoteModalVisible]);
+
+  useEffect(() => {
+    const handleStorageChange = async (event: StorageEvent) => {
+      if (event.key === "searchCompanyData") {
+        const companyData = localStorageHelper.getItem("searchCompanyData");
+        if (companyData?.id !== finhub?.id) {
+          await companySearchAndUpdate(companyData);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
+  const {
+    loading,
+    shareHolderProposal,
+    page,
+    totalPages,
+    tab,
+    filters,
+    isAllCompanySelected,
+  } = useAppSelector((state) => state.sharedHolderNoAction);
+
+  const [modulesData, setModulesData] = useState<any>({});
+
+  useEffect(() => {
+    getModulesCount();
+  }, [companyGlobalSearchName]);
+
+
+  const getModulesCount = async () => {
+    try {
+      const res = await dashboardService.getModulesCount({ global_search: companyGlobalSearchName });
+      if (res?.result) {
+        setModulesData(res?.result);
+      }
+    } catch (error) {
+      return error;
+    } finally {
+    }
+  };
+
   return (
     <div
       className={clsx([
-        "echo group bg-gradient-to-b from-slate-200/70 to-slate-50 background relative min-h-screen",
-        "before:content-[''] before:h-[370px] before:w-screen before:bg-gradient-to-t before:from-theme-1/80 before:to-theme-2 [&.background--hidden]:before:opacity-0 before:transition-[opacity,height] before:ease-in-out before:duration-300 before:top-0 before:fixed",
+        "echo group  h-full",
+        "before:content-[''] before:h-[370px] before:w-screen  h-7 [&.background--hidden]:before:opacity-0 before:transition-[opacity,height] before:ease-in-out before:duration-300 before:top-0 before:fixed",
         "after:content-[''] after:h-[370px] after:w-screen [&.background--hidden]:after:opacity-0 after:transition-[opacity,height] after:ease-in-out after:duration-300 after:top-0 after:fixed after:bg-texture-white after:bg-contain after:bg-fixed after:bg-[center_-13rem] after:bg-no-repeat",
         topBarActive && "background--hidden",
+        "",
       ])}
     >
       <div
         className={clsx([
-          "xl:ml-0 shadow-xl transition-[margin,padding] duration-300 xl:shadow-none fixed top-0 left-0 z-50 side-menu group inset-y-0 xl:py-3.5 xl:pl-3.5",
+          "xl:ml-0 shadow-xl transition-[margin,padding] duration-300 xl:shadow-none fixed top-0 left-0 z-50 side-menu group inset-y-0",
           "after:content-[''] after:fixed after:inset-0 after:bg-black/80 after:xl:hidden",
           { "side-menu--collapsed": compactMenu },
           { "side-menu--on-hover": compactMenuOnHover },
           { "ml-0 after:block": activeMobileMenu },
-          { "-ml-[275px] after:hidden": !activeMobileMenu },
+          { "-ml-[280px] after:hidden": !activeMobileMenu },
         ])}
       >
         <div
           className={clsx([
-            "fixed ml-[275px] w-10 h-10 items-center justify-center xl:hidden z-50",
+            "fixed ml-[280px] w-10 h-10 items-center justify-center xl:hidden z-50",
             { flex: activeMobileMenu },
             { hidden: !activeMobileMenu },
           ])}
@@ -124,45 +337,48 @@ function Main() {
         </div>
         <div
           className={clsx([
-            "h-full box bg-white/[0.95] rounded-none xl:rounded-xl z-20 relative w-[275px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[275px] overflow-hidden flex flex-col",
+            "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[280px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
-          onMouseOver={(event) => {
-            event.preventDefault();
-            setCompactMenuOnHover(true);
-          }}
-          onMouseLeave={(event) => {
-            event.preventDefault();
-            setCompactMenuOnHover(false);
-          }}
         >
           <div
             className={clsx([
-              "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[275px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[275px]",
+              "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
             ])}
           >
-            <a
-              href=""
-              className="flex items-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
-            >
-              <div className="flex items-center justify-center w-[34px] rounded-lg h-[34px] bg-gradient-to-b from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-180">
-                <div className="w-[16px] h-[16px] relative -rotate-45 [&_div]:bg-white">
-                  <div className="absolute w-[21%] left-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                  <div className="absolute w-[21%] inset-0 m-auto h-[120%] rounded-full"></div>
-                  <div className="absolute w-[21%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
+            {compactMenu && (
+              <a
+                href=""
+                className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
+              >
+                <div onClick={handleToggleMenu}>
+                  <img className=" w-8" src={sideBarIcon} />
+                  {/* <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3] text-white" /> */}
                 </div>
-              </div>
-              <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
-                ECHO
-              </div>
-            </a>
-            <a
-              href=""
-              onClick={toggleCompactMenu}
-              className="hidden group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center w-[20px] h-[20px] ml-auto border rounded-full border-slate-600/40 hover:bg-slate-600/5"
-            >
-              <Lucide icon="ArrowLeft" className="w-3.5 h-3.5 stroke-[1.3]" />
-            </a>
+              </a>
+            )}
+            {!compactMenu && (
+              <a
+                href=""
+                onClick={handleToggleMenu}
+                className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center  ml-auto "
+              >
+                <img className=" w-8 rotate-180" src={sideBarIcon} />
+              </a>
+            )}
           </div>
+
+          <a className="mt-5 flex items-center justify-center transition-[margin] duration-700">
+            <div className="flex items-center justify-center w-auto h-[80px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
+              <div className="w-full h-full overflow-hidden transition-transform duration-700 ease-in">
+                <img
+                  alt="Logo"
+                  src={logo}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          </a>
+
           <div
             ref={scrollableRef}
             className={clsx([
@@ -175,7 +391,13 @@ function Main() {
               {formattedMenu.map((menu, menuKey) =>
                 typeof menu == "string" ? (
                   <li className="side-menu__divider" key={menuKey}>
-                    {menu}
+                    {user.user_type === "Admin" ? (
+                      <>{menu}</>
+                    ) : user.user_type !== "Admin" && menu === "Admin" ? (
+                      <>{ }</>
+                    ) : (
+                      <>{menu}</>
+                    )}
                   </li>
                 ) : (
                   <li key={menuKey}>
@@ -191,15 +413,99 @@ function Main() {
                       ])}
                       onClick={(event: React.MouseEvent) => {
                         event.preventDefault();
-                        linkTo(menu, navigate);
+                        if (menu.title === "Help") {
+                          setHelpFormVisible(true);
+                        } else if (menu.title === "Company Search") {
+                          // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
+                          menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
+                          linkTo(menu, navigate);
+                        } else {
+                          linkTo(menu, navigate);
+                        }
                         setFormattedMenu([...formattedMenu]);
                       }}
                     >
-                      <Lucide
-                        icon={menu.icon}
-                        className="side-menu__link__icon"
-                      />
-                      <div className="side-menu__link__title">{menu.title}</div>
+                      <Tippy content={menu.title} options={{ theme: "light" }}>
+                        {menu.title !== "Shareholder Proposals" && (
+                          <>
+                            <span className="relative">
+                              <Lucide
+                                icon={menu?.icon}
+                                className="side-menu__link__icon side-menu__link--active"
+                              />
+                              {menu.title === "Proxy Contest" &&
+                                modulesData?.proxy_contest && (
+                                  <span
+                                    className="bg-[#DC661F] absolute  rounded-2xl w-2 h-2 p-2 text-[10px]  
+                             font-semibold text-white top-0 flex items-center justify-center position-set"
+                                  ></span>
+                                )}
+
+                              {menu.title === "Case Studies" &&
+                                modulesData?.case_studies > 0 && (
+                                  <span
+                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
+                               font-semibold text-white top-0 flex items-center justify-center position-set"
+                                  >
+                                    {modulesData?.case_studies}
+                                  </span>
+                                )}
+
+                              {menu.title === "Engagement Details" &&
+                                modulesData?.engagement_details > 0 && (
+                                  <span
+                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
+                               font-semibold text-white top-0 flex items-center justify-center position-set"
+                                  >
+                                    {modulesData?.engagement_details}
+                                  </span>
+                                )}
+                            </span>
+                          </>
+                        )}
+
+                        {menu.title === "Shareholder Proposals" && (
+                          <>
+                            <span className="relative">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                className="lucide  lucide-files side-menu__link__icon side-menu__link--active"
+                              >
+                                <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                                <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+                                <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
+                              </svg>
+
+                              {modulesData?.shareholder_proposal > 0 && (
+                                <span
+                                  className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
+                             font-semibold text-white top-0 flex items-center justify-center position-set"
+                                >
+                                  {modulesData?.shareholder_proposal}
+                                </span>
+                              )}
+                            </span>
+                          </>
+                        )}
+                      </Tippy>
+
+                      {menu?.title !== "Help" ? (
+                        <div className="side-menu__link__title link_color">
+                          {menu?.title}
+                        </div>
+                      ) : (
+                        <div className="side-menu__link__title link_color">
+                          {menu?.title}
+                        </div>
+                      )}
                       {menu.badge && (
                         <div className="side-menu__link__badge">
                           {menu.badge}
@@ -214,12 +520,12 @@ function Main() {
                     </a>
                     {/* BEGIN: Second Child */}
                     {menu.subMenu && (
-                      <Transition
-                        in={menu.activeDropdown}
-                        onEnter={enter}
-                        onExit={leave}
-                        timeout={300}
-                      >
+                      // <Transition
+                      //   in={menu.activeDropdown}
+                      //   onEnter={enter}
+                      //   onExit={leave}
+                      //   timeout={300}
+                      // >
                         <ul
                           className={clsx([
                             "",
@@ -249,7 +555,7 @@ function Main() {
                                   icon={subMenu.icon}
                                   className="side-menu__link__icon"
                                 />
-                                <div className="side-menu__link__title">
+                                <div className="side-menu__link__title link_color">
                                   {subMenu.title}
                                 </div>
                                 {subMenu.badge && (
@@ -266,12 +572,12 @@ function Main() {
                               </a>
                               {/* BEGIN: Third Child */}
                               {subMenu.subMenu && (
-                                <Transition
-                                  in={subMenu.activeDropdown}
-                                  onEnter={enter}
-                                  onExit={leave}
-                                  timeout={300}
-                                >
+                                // <Transition
+                                //   in={subMenu.activeDropdown}
+                                //   onEnter={enter}
+                                //   onExit={leave}
+                                //   timeout={300}
+                                // >
                                   <ul
                                     className={clsx([
                                       "",
@@ -311,7 +617,7 @@ function Main() {
                                               icon={lastSubMenu.icon}
                                               className="side-menu__link__icon"
                                             />
-                                            <div className="side-menu__link__title">
+                                            <div className="side-menu__link__title link_color">
                                               {lastSubMenu.title}
                                             </div>
                                             {lastSubMenu.badge && (
@@ -324,13 +630,13 @@ function Main() {
                                       )
                                     )}
                                   </ul>
-                                </Transition>
+                                // </Transition>
                               )}
                               {/* END: Third Child */}
                             </li>
                           ))}
                         </ul>
-                      </Transition>
+                      // </Transition>
                     )}
                     {/* END: Second Child */}
                   </li>
@@ -339,8 +645,12 @@ function Main() {
               {/* END: First Child */}
             </ul>
           </div>
+          <GetHelp
+            helpFormVisible={helpFormVisible}
+            setHelpFormVisible={setHelpFormVisible}
+          />
         </div>
-        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[275px] group-[.side-menu--collapsed]:xl:ml-[90px] mt-3.5 inset-x-0 top-0">
+        <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] bg-white inset-x-0 top-0">
           <div
             className={clsx([
               "top-bar absolute left-0 xl:left-3.5 right-0 h-full mx-5 group",
@@ -351,8 +661,7 @@ function Main() {
             <div
               className="
                 container flex items-center w-full h-full transition-[padding,background-color,border-color] ease-in-out duration-300 box bg-transparent border-transparent shadow-none 
-                group-[.top-bar--active]:box group-[.top-bar--active]:px-5
-                group-[.top-bar--active]:bg-transparent group-[.top-bar--active]:border-transparent group-[.top-bar--active]:bg-gradient-to-r group-[.top-bar--active]:from-theme-1 group-[.top-bar--active]:to-theme-2
+                
               "
             >
               <div className="flex items-center gap-1 xl:hidden">
@@ -362,13 +671,16 @@ function Main() {
                     event.preventDefault();
                     setActiveMobileMenu(true);
                   }}
-                  className="p-2 text-white rounded-full hover:bg-white/5"
+                  className="p-2 text-[#545454] rounded-full bg-[#D9D9D926]"
                 >
                   <Lucide icon="AlignJustify" className="w-[18px] h-[18px]" />
                 </a>
+              </div>
+
+              <div className="md:hidden flex items-center ml-2">
                 <a
                   href=""
-                  className="p-2 text-white rounded-full hover:bg-white/5"
+                  className="p-2 lg:hidden text-[#545454] rounded-full bg-[#D9D9D926]"
                   onClick={(e) => {
                     e.preventDefault();
                     setQuickSearch(true);
@@ -377,26 +689,40 @@ function Main() {
                   <Lucide icon="Search" className="w-[18px] h-[18px]" />
                 </a>
               </div>
-              {/* BEGIN: Breadcrumb */}
-              <Breadcrumb light className="flex-1 hidden xl:block">
-                <Breadcrumb.Link to="/">App</Breadcrumb.Link>
-                <Breadcrumb.Link to="/">Dashboards</Breadcrumb.Link>
-                <Breadcrumb.Link to="/" active={true}>
-                  Analytics
-                </Breadcrumb.Link>
-              </Breadcrumb>
-              {/* END: Breadcrumb */}
-              {/* BEGIN: Search */}
-              <div
-                className="relative justify-center flex-1 hidden xl:flex"
-                onClick={() => setQuickSearch(true)}
-              >
-                <div className="bg-white/[0.12] border-transparent border w-[350px] flex items-center py-2 px-3.5 rounded-[0.5rem] text-white/60 cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100">
-                  <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">Quick search...</div>
-                  <div>⌘K</div>
-                </div>
-              </div>
+
+              <>
+                {[
+                  "/notes",
+                  "/proxy-contest",
+                  "/investor-profile",
+                  "/engagement-question",
+                  "/proxy-voting-guideline",
+                ]?.includes(location.pathname) ? (
+                  <h1 className="font-semibold text-2xl">
+                    {pageTitles[location.pathname]}
+                  </h1>
+                ) : (
+                  <div
+                    className="relative justify-center hidden md:flex md:ml-2"
+                    onClick={() => setQuickSearch(true)}
+                  >
+                    <div
+                      className={clsx([
+                        "bg-[#D9D9D926] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
+                        companyGlobalSearchName !== ""
+                          ? "text-[#545454]"
+                          : "text-[#545454]",
+                      ])}
+                    >
+                      <Lucide icon="Search" className="w-[18px] h-[18px]" />
+                      <div className="ml-2.5 mr-auto">
+                        {"Search by company name, ticker, or symbol"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+
               <QuickSearch
                 quickSearch={quickSearch}
                 setQuickSearch={setQuickSearch}
@@ -407,50 +733,81 @@ function Main() {
                 <div className="flex items-center gap-1 ml-auto">
                   <a
                     href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setActivitiesPanel(true);
+                    // bg-gradient-to-b to-[#000000CC] from-[#9F1239]
+                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
+                   border-white border-2 text-white rounded-md "
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      setBasicModalPreview(true);
                     }}
                   >
-                    <Lucide icon="LayoutGrid" className="w-[18px] h-[18px]" />
+                    <div className="flex items-center justify-center">
+                      <img src={aiIcon} alt="ai icon" />
+                      <span className="ml-3 font-semibold hidden xl:flex">
+                        AI Assistant
+                      </span>
+                    </div>
                   </a>
+                  <div className="h-8"></div>
+                  <div className="h-8"></div>
+                  {/* <div className="flex items-center justify-center w-10 relative cursor-pointer">
+                    <Tippy content="Notes" options={{ theme: "light" }}>
+                      <Lucide
+                        onClick={() => {
+                          navigate("/notes");
+                        }}
+                        icon="FileText"
+                        className="w-8 h-8 text-gray-400 shadow-sm"
+                      />
+                    </Tippy>
+                  </div> */}
+
+                  {/* <a
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      setNotificationModalVisible(true);
+                    }}
+                  >
+                    <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
+                      <img src={notificationIcon} alt="ai icon" />
+                      <span
+                        className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[11px]  
+                          font-semibold text-white top-0 flex items-center justify-center left-[25px]"
+                      >
+                        {2}
+                      </span>
+                    </div>
+                  </a> */}
+
                   {/* <a
                     href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
-                  >
-                    <Lucide icon="Moon" className="w-[18px] h-[18px]" />
-                  </a> */}
-                  <a
-                    href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
+                    className="p-2 text-[#000000] rounded-full hover:bg-white/5"
                     onClick={(e) => {
                       e.preventDefault();
                       requestFullscreen();
                     }}
                   >
                     <Lucide icon="Expand" className="w-[18px] h-[18px]" />
-                  </a>
-                  <a
-                    href=""
-                    className="p-2 text-white rounded-full hover:bg-white/5"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setNotificationsPanel(true);
+                  </a> */}
+                </div>
+
+                <h1 className="ml-3 mr-3 text-[#000000] font-bold">
+                  Hi, {user?.first_name}
+                </h1>
+                <Menu className="">
+                  <Menu.Button
+                    className="overflow-hidden rounded-full w-[42px] h-[42px] border-[3px] border-white/[0.15]  image-fit"
+                    style={{
+                      backgroundColor: "#800000",
                     }}
                   >
-                    <Lucide icon="Bell" className="w-[18px] h-[18px]" />
-                  </a>
-                </div>
-                <Menu className="ml-5">
-                  <Menu.Button className="overflow-hidden rounded-full w-[36px] h-[36px] border-[3px] border-white/[0.15] image-fit">
-                    <img
-                      alt="Tailwise - Admin Dashboard Template"
-                      src={users.fakeUsers()[0].photo}
-                    />
+                    <h4 className="text-white md:text-xl ">
+                      {user?.user_name?.[0].toUpperCase() || ""}
+                    </h4>
                   </Menu.Button>
-                  <Menu.Items className="w-56 mt-1">
-                    <Menu.Item
+
+                  <Menu.Items className="w-auto mt-1">
+                    {/* <Menu.Item
                       onClick={() => {
                         setSwitchAccount(true);
                       }}
@@ -474,27 +831,29 @@ function Main() {
                     >
                       <Lucide icon="Inbox" className="w-4 h-4 mr-2" />
                       Email Settings
-                    </Menu.Item>
-                    <Menu.Item
+                    </Menu.Item> */}
+                    {user?.email && (
+                      <>
+                        <Menu.Item>
+                          <Mail strokeWidth={1} className="w-4 h-4 mr-2" />
+                          <h2 className="text-[14px]">{user?.email}</h2>
+                        </Menu.Item>
+                        <Menu.Divider />
+                      </>
+                    )}
+                    {/* <Menu.Item
                       onClick={() => {
                         navigate("settings?page=security");
                       }}
                     >
                       <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("settings");
-                      }}
-                    >
-                      <Lucide icon="Users" className="w-4 h-4 mr-2" />
-                      Profile Info
-                    </Menu.Item>
+                    </Menu.Item> */}
                     <Menu.Item
                       onClick={() => {
                         navigate("login");
+                        dispatch(logout());
+                        persistor.purge();
                       }}
                     >
                       <Lucide icon="Power" className="w-4 h-4 mr-2" />
@@ -515,25 +874,114 @@ function Main() {
                 switchAccount={switchAccount}
                 setSwitchAccount={setSwitchAccount}
               />
+              <NotificationAlert
+                notificationModalVisible={notificationModalVisible}
+                setNotificationModalVisible={setNotificationModalVisible}
+              />
               {/* END: Notification & User Menu */}
             </div>
           </div>
         </div>
       </div>
+
+      <>
+        {selectedText && (
+          <div
+            ref={tooltipRef}
+            className="absolute bg-white shadow-lg rounded-lg px-4 py-2 cursor-pointer z-50 transform transition-transform hover:scale-105"
+            style={{
+              top: tooltipPosition.y,
+              left: tooltipPosition.x,
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
+            onClick={handleCreateNote}
+          >
+            <span className="text-sm font-medium text-primary flex justify-center items-center">
+              <Lucide icon="Pen" className="w-4 h-4 stroke-[1.3] mr-1.5" />
+              Create Note
+            </span>
+          </div>
+        )}
+      </>
+
       <div
         className={clsx([
-          "transition-[margin,width] duration-100 xl:pl-3.5 pt-[54px] pb-16 relative z-10 group mode",
-          { "xl:ml-[275px]": !compactMenu },
+          "transition-[margin,width] duration-100 pt-[54px] pb-8 relative z-10 group mode",
+          { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
         ])}
       >
-        <div className="px-5 mt-16">
-          <div className="container">
-            <Outlet />
+        <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
+          <div className="px-5 mt-10 w-full">
+            <div className={clsx({ container: !shouldShowSidebar })}>
+              <div className="sticky z-10" style={{ top: "4rem" }}>
+                {!shouldHideHeader && <CountryInfoHeader />}
+              </div>
+
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>
+
+      {globalCreateNoteModalVisible && (
+        <GlobalCreateNoteModal
+          globalCreateNoteModalVisible={globalCreateNoteModalVisible}
+          setGlobalCreateNoteModalVisible={setGlobalCreateNoteModalVisible}
+          selectedText={noteText}
+        />
+      )}
+
+      <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
+        <Dialog.Panel className="p-10 text-center h-full">
+          <Dialog.Title>
+            {/* <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2> */}
+            <div
+              onClick={handleCloseModal}
+              className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+          {/* <Dialog.Description > */}
+          <div className="relative w-full h-full">
+            {isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white">
+                <LoadingIcon
+                  color="#800000"
+                  icon="three-dots"
+                  className="w-16 h-16"
+                />
+              </div>
+            )}
+
+            {isError && !isFrameLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
+                <p>
+                  Failed to load the embedded content. Please try again later.
+                </p>
+              </div>
+            )}
+
+            <iframe
+              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
+                }`}
+              src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
+              title="Embedded Dashboard"
+              onLoad={handleLoad}
+              onError={handleError}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+          {/* </Dialog.Description> */}
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* AI Bot Modal & Button */}
     </div>
   );
 }

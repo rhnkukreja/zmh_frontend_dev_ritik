@@ -1,17 +1,44 @@
 import { baseURL } from "@/constant";
+import { persistor } from "@/stores/store";
 import axios, {
   AxiosError,
   AxiosInstance as AxiosInstanceType,
-  
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
 import { toast } from "react-toastify";
 
+const multipartFormDataUrls = [
+  "/investor_profile/",
+  "/proxy_voting_guidelines/",
+  "/institute/",
+  "/company/",
+  "proxy_voting_guidelines_pdf_summary_data_upload"
+];
 
-function APIErrors(message : string) {
-  toast.error(message);
+const logout = () => {
+  localStorage.clear();
+  persistor.purge();
+  window.location.replace("/");
+};
+
+function APIErrors(message: string) {
+  if (
+    message &&
+    message
+      ?.toLowerCase()
+      .includes(
+        "Signature has expired".toLowerCase() ||
+          "signature has expired.".toLowerCase() ||
+          "Authentication credentials were not provided".toLowerCase()
+      )
+  ) {
+    return logout();
+  } else {
+    toast.error(message);
+  }
 }
+
 class AxiosServiceConfig {
   private static instance: AxiosInstanceType;
 
@@ -25,9 +52,24 @@ class AxiosServiceConfig {
       AxiosServiceConfig.instance.interceptors.request.use(
         (config: InternalAxiosRequestConfig) => {
           const token = localStorage.getItem("token");
+
           if (token) {
-            config.headers["Authorization"] = `Bearer ${token}`;
+            config.headers["Authorization"] = `JWT ${token}`;
           }
+
+          const isMultipartFormData = multipartFormDataUrls.some((urlPattern) =>
+            config?.url?.includes(urlPattern)
+          );
+
+          if (
+            (isMultipartFormData && config.method === "post") ||
+            config.method === "put"
+          ) {
+            config.headers["Content-Type"] = `multipart/form-data`;
+          } else {
+            config.headers["Content-Type"] = `application/json`;
+          }
+
           return config;
         },
         (error: AxiosError) => {
@@ -41,7 +83,6 @@ class AxiosServiceConfig {
         },
         (error: AxiosError) => {
           let errorMessage = "";
-
 
           if (error.response) {
             const { data } = error.response as any;
@@ -64,12 +105,19 @@ class AxiosServiceConfig {
             }
           } else if (error.request) {
             errorMessage = "No response received from server";
+
           } else {
             errorMessage = error.message;
           }
 
-          APIErrors(errorMessage)
+          APIErrors(errorMessage);
+
+          if(error?.status === 401){
+            logout();
+          }
+          
           return Promise.reject(new Error(errorMessage));
+          
         }
       );
     }

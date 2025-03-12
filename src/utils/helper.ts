@@ -1,6 +1,11 @@
+import { characterColors, PAGE_SIZE } from "@/constant";
+import { FormattedMenu } from "@/themes/Echo/side-menu";
+import { FilterObject } from "@/types/common";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { parseColor } from "tailwindcss/lib/util/color";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 dayjs.extend(duration);
 
@@ -199,6 +204,245 @@ const slideDown = (
   }, duration);
 };
 
+const getPageNumbers = (totalCounts: number,perPageCount = PAGE_SIZE): number => {
+  return Math.ceil(totalCounts / perPageCount);
+};
+
+function createDynamicURL<T extends Record<string, string | string[]>>(
+  baseURL: string,
+  filters?: T,
+  extraPrams?: Record<string, string | string[]> | undefined,
+  page?: number
+): string {
+  const queryParams = new URLSearchParams();
+  if (extraPrams) {
+    for (const key in extraPrams) {
+      const value = extraPrams[key];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          queryParams.append(key, JSON.stringify(value));
+        }
+      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
+        queryParams.append(key, value);
+      }
+    }
+  }
+
+  if (filters) {
+    for (const key in filters) {
+      const value = filters[key];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          queryParams.append(key, JSON.stringify(value));
+        }
+      } else if (value !== null && value !== undefined && value !== "") {
+        queryParams.append(key, value);
+      }
+    }
+  }
+
+  const queryString = queryParams.toString();
+  if (page && queryString) {
+    return `${baseURL}?${queryString}&page=${page}`;
+  } else if (queryString) {
+    return `${baseURL}?${queryString}`;
+  } else if (page) {
+    return `${baseURL}?page=${page}`;
+  } else {
+    return baseURL;
+  }
+}
+
+const getColorForCharacter = (char: string) => {
+  return characterColors[char.toUpperCase()] || "#FFFFFF";
+};
+
+function bytesToMB(bytes: number): number {
+  return parseFloat((bytes / (1024 * 1024)).toFixed(2));
+}
+
+const getYearRange = (range: number): string[] => {
+  const now = new Date().getUTCFullYear();
+  return Array(now - (now - range))
+    .fill("")
+    .map((v, idx) => now - idx)
+    .map(String);
+};
+
+const formatedDate = (dateString: string): string => {
+  const parsedDate = dayjs(dateString, "D MMM, YYYY");
+
+  const now = dayjs();
+  const fullDate = parsedDate
+    .set("hour", now.hour())
+    .set("minute", now.minute())
+    .set("second", now.second())
+    .set("millisecond", now.millisecond());
+
+  return fullDate.format("YYYY-MM-DDTHH:mm:ss");
+};
+
+const getDateWithoutTime = (datetimeString?: string): string => {
+  if (!datetimeString || !dayjs(datetimeString).isValid()) {
+    return "";
+  }
+  return dayjs(datetimeString).format("YYYY-MM-DD");
+};
+
+const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
+  const userType = localStorage.getItem("userType")?.toLowerCase() || "";
+  const filteredMenuItems = menuItems.filter((item, index, arr) => {
+    if (userType !== "admin") {
+      if (typeof item === "string" && item.toLowerCase() === "Additional") {
+        let i = index + 1;
+        while (
+          i < arr.length &&
+          typeof arr[i] === "object" &&
+          (arr[i] as FormattedMenu).isAdmin === true
+        ) {
+          i++;
+        }
+        return false;
+      }
+      if (typeof item === "object" && item.isAdmin) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  return filteredMenuItems;
+};
+
+// const downloadCSV = (csvContent: any, name: string) => {
+//   const blob = new Blob([csvContent], { type: "text/csv" });
+//   const url = window.URL.createObjectURL(blob);
+//   const a = document.createElement("a");
+//   a.setAttribute("href", url);
+//   a.setAttribute("download", `${name}.csv`);
+//   document.body.appendChild(a);
+//   a.click();
+//   document.body.removeChild(a);
+// };
+
+const downloadCSV = (csvContent: any, name: string) => {
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${name}.csv`);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+function countValidFilters(filters: FilterObject): number {
+  return Object.keys(filters).filter((key) => {
+    const value = filters[key];
+    return Array.isArray(value)
+      ? value.length !== 0
+      : value !== undefined && value !== "" && value !== " " && value !== null;
+  }).length;
+}
+
+function convertToTitleCase(str: string): string {
+  if (!str) {
+    return "";
+  }
+  return str
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/'\w/g, (match) => match.toLowerCase());
+}
+
+function updateQueryParams(params: { [key: string]: string }) {
+  const url = new URL(window.location.href);
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  window.history.replaceState({}, "", url.toString());
+}
+
+const localStorageHelper = {
+  setItem: (key: string, value: any) => {
+    if (typeof value === "object") {
+      localStorage.setItem(key, JSON.stringify(value));
+    } else {
+      localStorage.setItem(key, value);
+    }
+  },
+  getItem: (key: string) => {
+    const value = localStorage.getItem(key);
+    try {
+      return JSON.parse(value as any);
+    } catch {
+      return value;
+    }
+  },
+  removeItem: (key: string) => {
+    localStorage.removeItem(key);
+  },
+};
+
+const createQueryParams = (params: Record<string, any>) => {
+  const queryParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        queryParams.append(key, JSON.stringify(value));
+      }
+    } else if (value !== null && value !== undefined && value !== "") {
+      queryParams.append(key, value.toString());
+    }
+  });
+
+  return queryParams.toString();
+};
+
+const downloadXlsxFile = ({
+  data,
+  fileName = "data.xlsx",
+}: {
+  data: any[];
+  fileName: string;
+}) => {
+  // Transform each row so that the header keys are entirely in uppercase
+  const transformedData = data.map((row) => {
+    const newRow: Record<string, any> = {};
+    Object.keys(row).forEach((key) => {
+      const newKey = key.toUpperCase();
+      newRow[newKey] = row[key];
+    });
+    return newRow;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(transformedData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+  const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, fileName);
+};
+
+const downloadFileByServer = (blob: any, filename: string) => {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
+
+export default localStorageHelper;
+
 export {
   cutText,
   formatDate,
@@ -214,4 +458,20 @@ export {
   stringToHTML,
   slideUp,
   slideDown,
+  getPageNumbers,
+  createDynamicURL,
+  getColorForCharacter,
+  bytesToMB,
+  getYearRange,
+  formatedDate,
+  filterMenu,
+  downloadCSV,
+  countValidFilters,
+  updateQueryParams,
+  convertToTitleCase,
+  createQueryParams,
+  localStorageHelper,
+  getDateWithoutTime,
+  downloadXlsxFile,
+  downloadFileByServer
 };

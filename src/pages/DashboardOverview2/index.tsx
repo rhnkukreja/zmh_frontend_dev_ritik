@@ -233,10 +233,7 @@ function Main() {
           <div className="p-5 mt-3.5 box box--stacked">
             <div className="flex flex-col items-center pb-5 mb-5 border-b border-dashed gap-y-2 sm:flex-row border-slate-300/70">
               <div className="overflow-hidden rounded-full w-14 h-14 image-fit border-[3px] border-slate-200/70">
-                <img
-                  alt="Tailwise - Admin Dashboard Template"
-                  src={users.fakeUsers()[0].photo}
-                />
+                <img alt="ZMH Analytics" src={users.fakeUsers()[0].photo} />
               </div>
               <div className="text-center sm:text-left sm:ml-4">
                 <div className="text-base font-medium">
@@ -316,10 +313,7 @@ function Main() {
                 <div className="flex items-center gap-3.5" key={fakerKey}>
                   <div>
                     <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                      <img
-                        alt="Tailwise - Admin Dashboard Template"
-                        src={faker.photo}
-                      />
+                      <img alt="ZMH Analytics" src={faker.photo} />
                     </div>
                   </div>
                   <div className="flex flex-col w-full sm:items-center gap-y-2.5 sm:flex-row">
@@ -397,7 +391,7 @@ function Main() {
                   <div className="flex items-center h-5 sm:ml-5">
                     <div className="w-6 h-6 overflow-hidden border-2 rounded-full image-fit zoom-in border-slate-200/70 box">
                       <img
-                        alt="Tailwise - Admin Dashboard Template"
+                        alt="ZMH Analytics"
                         src={projects.fakeProjects()[0].projectManager.photo}
                       />
                     </div>
@@ -413,7 +407,7 @@ function Main() {
                   <div className="flex items-center sm:ml-5 sm:h-7">
                     <div className="w-6 h-6 overflow-hidden border-2 rounded-full image-fit zoom-in border-slate-200/70 box">
                       <img
-                        alt="Tailwise - Admin Dashboard Template"
+                        alt="ZMH Analytics"
                         src={projects.fakeProjects()[1].projectManager.photo}
                       />
                     </div>
@@ -467,7 +461,7 @@ function Main() {
                       <div>
                         <div className="w-40 h-24 rounded-md image-fit border-[3px] border-slate-200/70">
                           <img
-                            alt="Tailwise - Admin Dashboard Template"
+                            alt="ZMH Analytics"
                             className="rounded-md saturate-[0.7]"
                             src={faker.image}
                           />
@@ -497,7 +491,7 @@ function Main() {
                             <div className="w-6 h-6 image-fit zoom-in">
                               <Tippy
                                 as="img"
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                 src={faker.contributors[0].photo}
                                 content={faker.contributors[0].name}
@@ -506,7 +500,7 @@ function Main() {
                             <div className="w-6 h-6 -ml-2.5 image-fit zoom-in">
                               <Tippy
                                 as="img"
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                 src={faker.contributors[1].photo}
                                 content={faker.contributors[1].name}
@@ -515,7 +509,7 @@ function Main() {
                             <div className="w-6 h-6 -ml-2.5 image-fit zoom-in">
                               <Tippy
                                 as="img"
-                                alt="Tailwise - Admin Dashboard Template"
+                                alt="ZMH Analytics"
                                 className="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                 src={faker.contributors[2].photo}
                                 content={faker.contributors[2].name}

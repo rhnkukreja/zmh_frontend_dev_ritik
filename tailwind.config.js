@@ -14,14 +14,36 @@ module.exports = {
   theme: {
     container: {
       screens: {
-        "2xl": "1320px",
+        xs: "350px", // Adds a custom 'xs' breakpoint at 400px
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1536px",
+        "2xl": "2400px",
       },
     },
     extend: {
+      keyframes: {
+        spinOnce: {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+      },
+      animation: {
+        spinOnce: "spinOnce 1s ease-in-out 1",
+      },
       screens: {
+        xs: "350px", // Adds a custom 'xs' breakpoint at 400px
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1536px",
         "3xl": "1600px",
       },
       colors: {
+        header: "#f2f2f2",
         theme: {
           1: "rgb(var(--color-theme-1) / <alpha-value>)",
           2: "rgb(var(--color-theme-2) / <alpha-value>)",
@@ -49,8 +71,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        "public-sans": ["Public Sans"],
-        "dm-sans": ["DM Sans"],
+        // "public-sans": ["Public Sans"],
+        // "dm-sans": ["DM Sans"],
       },
       backgroundImage: {
         "texture-black":
@@ -68,13 +90,15 @@ module.exports = {
     },
   },
   plugins: [
+    require("@tailwindcss/typography"),
     require("@tailwindcss/forms"),
+    require("@tailwindcss/line-clamp"),
     plugin(function ({ addBase, matchUtilities }) {
       addBase({
         // Default colors
         ":root": {
-          "--color-theme-1": toRGB("#03045e"),
-          "--color-theme-2": toRGB("#0c4a6e"),
+          "--color-theme-1": toRGB("#000000"),
+          "--color-theme-2": toRGB("#9f1239"),
           "--color-primary": toRGB("#03045e"),
           "--color-secondary": toRGB(colors.slate["200"]),
           "--color-success": toRGB(colors.teal["600"]),
@@ -152,9 +176,9 @@ module.exports = {
         },
         // Theme 4 colors
         ".theme-4": {
-          "--color-theme-1": toRGB(colors.sky["700"]),
+          "--color-theme-1": toRGB(colors.black),
           "--color-theme-2": toRGB(colors.rose["800"]),
-          "--color-primary": toRGB(colors.sky["700"]),
+          "--color-primary": toRGB(colors.rose["800"]),
           "--color-secondary": toRGB(colors.slate["200"]),
           "--color-success": toRGB(colors.teal["600"]),
           "--color-info": toRGB(colors.cyan["600"]),

@@ -32,10 +32,7 @@ function Main(props: MainProps) {
                 key={fakerKey}
               >
                 <div className="overflow-hidden rounded-full w-11 h-11 image-fit border-[3px] border-slate-200/70">
-                  <img
-                    alt="Tailwise - Admin Dashboard Template"
-                    src={faker.photo}
-                  />
+                  <img alt="ZMH Analytics" src={faker.photo} />
                 </div>
                 <div className="ml-3.5">
                   <div className="font-medium">{faker.name}</div>

@@ -2,36 +2,58 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
   LoginRequestDTO,
-  UserResponseDTO,
-  SignUpRequestDTO
+  SignUpRequestDTO,
 } from "../services/authentiction/auth.type";
 import { userService } from "../services/authentiction";
+import { Login, Register } from "@/types/users";
+import { persistor } from "./store";
 
 const name = "authentication";
 
+export interface Finhub {
+  name: string;
+  ticker: string;
+  country: string;
+  exchange: string;
+  finnhub_industry: string;
+  share_outstanding: number;
+  phone: string;
+  logo: string;
+}
+
 interface AuthState {
-  user: UserResponseDTO | null;
+  user: Login | null;
   loading: boolean;
   error: string | null;
+  companyGlobalSearchName: string;
+  companyGlobalSearchId: number | undefined;
+  companyGlobalSearchTicker: string | undefined;
+  finhub: Finhub | null;
+  isCompanySelected: boolean
 }
 
 const initialState: AuthState = {
   user: null,
   loading: false,
+  companyGlobalSearchName: "",
+  companyGlobalSearchId: undefined,
+  companyGlobalSearchTicker: undefined,
   error: null,
+  finhub: null,
+  isCompanySelected: false
 };
 
-export const signUp = createAsyncThunk<UserResponseDTO, SignUpRequestDTO>(
+export const signUp = createAsyncThunk<Register, SignUpRequestDTO>(
   `${name}/signUp`,
   async (userRequest: SignUpRequestDTO) => {
-    return await userService.signUp(userRequest);
+    return (await userService.signUp(userRequest)) as Register;
   }
 );
 
-export const login = createAsyncThunk<UserResponseDTO, LoginRequestDTO>(
+export const login = createAsyncThunk<Login, LoginRequestDTO>(
   `${name}/login`,
   async (userRequest: LoginRequestDTO) => {
-    return await userService.login(userRequest);
+    return (await userService.login(userRequest)) as Login;
   }
 );
 
@@ -39,11 +61,41 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    setDashboardGlobalSearch(
+      state,
+      action: PayloadAction<{
+        name: string;
+        id: number;
+        ticker: string;
+      }>
+    ) {
+      state.companyGlobalSearchName = action.payload.name;
+      state.companyGlobalSearchId = action.payload.id;
+      state.companyGlobalSearchTicker = action.payload.ticker;
+    },
+    setFinhub(state, action: PayloadAction<Finhub>) {
+      state.finhub = action.payload;
+    },
+    setIsCompanySelected(state, action: PayloadAction<boolean>) {
+      state.isCompanySelected = action.payload;
+    },
     logout(state) {
       state.user = null;
       state.loading = false;
       state.error = null;
       localStorage.removeItem("token");
+      localStorage.clear();
+      persistor.purge();
+    },
+
+    setSavedSearch(state, action: PayloadAction<{ key: string; value: any }>) {
+      if (state?.user) {
+        const updatedSearch = {
+          ...state.user.saved_search,
+          [action.payload.key]: action.payload.value,
+        };
+        state.user.saved_search = updatedSearch;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -52,13 +104,10 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        signUp.fulfilled,
-        (state, action: PayloadAction<UserResponseDTO>) => {
-          state.loading = false;
-          state.user = action.payload;
-        }
-      )
+      .addCase(signUp.fulfilled, (state, action: PayloadAction<Register>) => {
+        state.loading = false;
+        localStorage.setItem("userType", action.payload.user_type);
+      })
       .addCase(signUp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to sign up";
@@ -67,13 +116,11 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        login.fulfilled,
-        (state, action: PayloadAction<UserResponseDTO>) => {
-          state.loading = false;
-          state.user = action.payload;
-        }
-      )
+      .addCase(login.fulfilled, (state, action: PayloadAction<Login>) => {
+        state.loading = false;
+        state.user = action.payload;
+        localStorage.setItem("userType", action.payload.user_type);
+      })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to log in";
@@ -81,6 +128,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setSavedSearch, setDashboardGlobalSearch, setFinhub, setIsCompanySelected } =
+  authSlice.actions;
 
-export default authSlice.reducer;
+export default authSlice;

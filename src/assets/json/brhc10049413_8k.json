@@ -1,0 +1,183 @@
+
+{
+    "company": [
+        {
+            "Apple Inc.": "Annual Meeting - 10 March, 2023"
+        }
+    ],
+    "nominees_headers": [
+        {
+            "field": "Nominee",
+            "header": "Nominee Name etc"
+        },
+        {
+            "field": "For",
+            "header": "For"
+        },
+        {
+            "field": "Against",
+            "header": "Against"
+        },
+        {
+            "field": "Abstained",
+            "header": "Abstained"
+        },
+        {
+            "field": "Broker_non",
+            "header": "Broker Non-Vote"
+        }
+    ],
+    "nominees": [
+        {
+            "id": 1,
+            "Nominee": "James Bell",
+            "For": 9465679895,
+            "Against": 66756373,
+            "Abstained": 27788697,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Tim Cook",
+            "For": 9384013653,
+            "Against": 154755524,
+            "Abstained": 21455788,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Al Gore",
+            "For": 8717788168,
+            "Against": 754211726,
+            "Abstained": 88225071,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Alex Gorsky",
+            "For": 9345154817,
+            "Against": 185107464,
+            "Abstained": 29962684,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Andrea Jung",
+            "For": 8886421911,
+            "Against": 638629879,
+            "Abstained": 35173175,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Art Levinson",
+            "For": 8982747341,
+            "Against": 549024146,
+            "Abstained": 28453478,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Monica Lozano",
+            "For": 9470339256,
+            "Against": 61625010,
+            "Abstained": 28260699,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Ron Sugar",
+            "For": 8935381470,
+            "Against": 595179126,
+            "Abstained": 29664369,
+            "Broker_non": 3199709505
+        },
+        {
+            "Nominee": "Sue Wagner",
+            "For": 9172832824,
+            "Against": 360662024,
+            "Abstained": 26730117,
+            "Broker_non": 3199709505
+        }
+    ],
+    "proposal_headers": [
+        {
+            "field": "Proposal",
+            "header": "Proposal"
+        },
+        {
+            "field": "For",
+            "header": "For"
+        },
+        {
+            "field": "Against",
+            "header": "Against"
+        },
+        {
+            "field": "Abstained",
+            "header": "Abstained"
+        },
+        {
+            "field": "Year_1",
+            "header": "1 Year"
+        },
+        {
+            "field": "Year_2",
+            "header": "2 Year"
+        },
+        {
+            "field": "Year_3",
+            "header": "3 Year"
+        }
+    ],
+    "proposals": [
+        {
+            "Proposal": "Ratification of Ernst & Young LLP as independent registered public accounting firm for fiscal year 2023",
+            "For": 12569833138,
+            "Against": 154378601,
+            "Abstained": 35722731
+        },
+        {
+            "Proposal": "Advisory resolution to approve executive compensation",
+            "For": 8450622819,
+            "Against": 1037238044,
+            "Abstained": 72364102,
+            "Broker_non": 3199709505
+        },
+        {
+            "Proposal": "Advisory vote on the frequency of advisory votes on executive compensation",
+            "Year_1": 9373118972,
+            "Year_2": 30603953,
+            "Year_3": 122956354,
+            "Abstained": 33545686
+        },
+        {
+            "Proposal": "Civil Rights and Non-Discrimination Audit Proposal",
+            "For": 132449397,
+            "Against": 9322879571,
+            "Abstained": 104895997,
+            "Broker_non": 3199709505
+        },
+        {
+            "Proposal": "Communist China Audit",
+            "For": 413232649,
+            "Against": 9001346586,
+            "Abstained": 145645730,
+            "Broker_non": 3199709505
+        },
+        {
+            "Proposal": "Board policy for communication with shareholder proponents",
+            "For": 611602995,
+            "Against": 8865309276,
+            "Abstained": 83312694,
+            "Broker_non": 3199709505
+        },
+        {
+            "Proposal": "Racial and Gender Pay Gaps",
+            "For": 3186369941,
+            "Against": 6227476677,
+            "Abstained": 146378347,
+            "Broker_non": 3199709505
+        },
+        {
+            "Proposal": "Shareholder Proxy Access Amendments",
+            "For": 2934328973,
+            "Against": 6535240600,
+            "Abstained": 90655392,
+            "Broker_non": 3199709505
+        }
+    ]
+}

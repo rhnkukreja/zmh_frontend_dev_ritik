@@ -52,6 +52,7 @@ function TomSelect<T extends string | string[]>({
   onChange = () => {},
   getRef = () => {},
   children,
+
   ...computedProps
 }: TomSelectProps<T>) {
   const props = {
@@ -80,13 +81,7 @@ function TomSelect<T extends string | string[]>({
         persist: false,
         create: true,
         onDelete: function (values: string[]) {
-          return confirm(
-            values.length > 1
-              ? "Are you sure you want to remove these " +
-                  values.length +
-                  " items?"
-              : 'Are you sure you want to remove "' + values[0] + '"?'
-          );
+          return true;
         },
         ...options,
         plugins: {

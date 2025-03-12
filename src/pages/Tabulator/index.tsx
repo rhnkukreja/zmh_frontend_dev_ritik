@@ -88,17 +88,17 @@ function Main() {
               return response.images
                 ? `<div class="flex lg:justify-center">
                     <div class="w-9 h-9 image-fit">
-                      <img alt="Tailwise - Admin Dashboard Template" class="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]" src="${
+                      <img alt="ZMH Analytics" class="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]" src="${
                         products.fakeProducts()[0].images[0].path
                       }">
                     </div>
                     <div class="w-9 h-9 -ml-4 image-fit">
-                      <img alt="Tailwise - Admin Dashboard Template" class="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]" src="${
+                      <img alt="ZMH Analytics" class="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]" src="${
                         products.fakeProducts()[0].images[1].path
                       }">
                     </div>
                     <div class="w-9 h-9 -ml-4 image-fit">
-                      <img alt="Tailwise - Admin Dashboard Template" class="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]" src="${
+                      <img alt="ZMH Analytics" class="rounded-full shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]" src="${
                         products.fakeProducts()[0].images[2].path
                       }">
                     </div>
