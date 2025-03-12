@@ -496,10 +496,10 @@ function CaseStudies() {
               </div>
 
               {count > 0 && (
-                <h2 className="flex items-end font-semibold justify-end my-2 text-[15px] md:ml-auto mx-5 mb-1">
-                  No. of Records: <span className="text-[#9F1239] ml-1 font-bold">{count}</span>
-                </h2>
-              )}
+              <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                Count: {count}
+              </h2>
+            )}
               
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>

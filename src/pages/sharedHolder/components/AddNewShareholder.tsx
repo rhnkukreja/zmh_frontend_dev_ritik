@@ -900,8 +900,10 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             onChange={(e) => field.onChange(e.target.value)}
                             options={{
                               placeholder: "Select No Action ID Match",
+                              
                             }}
                             className="w-full text-left"
+                            
                           >
                             {apiNoActionDropdown?.proposals?.map(
                               (proposals: any) => {
