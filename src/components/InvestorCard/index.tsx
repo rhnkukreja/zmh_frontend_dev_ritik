@@ -494,7 +494,7 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
-                                         {dashboard?.voted_against_say_on_pay ===
+                                         {dashboard?.voted_against_directors ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
