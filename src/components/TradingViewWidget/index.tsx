@@ -27,7 +27,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
         "style": "2",
         "locale": "en",
         "range": "${selectedRange}",
-        "allow_symbol_change": true,
+        "allow_symbol_change": false,
         "compareSymbols": [
           {
             "symbol": "NASDAQ:NDX",
@@ -47,7 +47,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
   }, [symbol, selectedRange]); // Re-run effect when symbol or range changes
 
   return (
-    <div className="tradingview-widget-container" style={{ height: "%", width: "100%" }}>
+    <div className="tradingview-widget-container" style={{ height: "90%", width: "100%" }}>
       {/* Time Range Selection Buttons */}
       <div className="flex justify-center gap-4 mb-2">
         {["12M", "36M", "60M"].map((range) => (
