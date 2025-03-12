@@ -147,7 +147,7 @@ const index = () => {
 
   const [selectedYear, setSelectedYear] = useState<string>("");
 
-  
+
   const handleAGMYearTab = (tab: string, index:number) =>{
     setSelectedIndex(index);
     setSelectedYear(tab);
@@ -275,7 +275,7 @@ const index = () => {
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              % Ownership
+                              Ownership
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Proxy Advisory Influence
@@ -309,7 +309,7 @@ const index = () => {
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Voted Against Directors
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Voted Against Say on Pay
                             </Table.Td>
                           </Table.Tr>
@@ -330,7 +330,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="flex items-center relative">
+                                      <Table.Td className="relative w-full px-4 py-2">
                                         {!dashboard.institution_id && (
                                           <h1
                                             className="cursor-pointer text-lg absolute left-3"
@@ -344,18 +344,8 @@ const index = () => {
                                             *
                                           </h1>
                                         )}
-
-                                        <div className="w-9 h-9 ml-1 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                          <img
-                                            alt="ZMH Analytics"
-                                            src={
-                                              validImages[dashboard?.institution_name] || investorIcon
-                                            }
-                                          />
-                                        </div>
-
-                                        <div className="flex justify-between items-center w-[220px]">
-                                          <div className="flex items-center font-semibold ">
+                                        <div className="flex justify-between items-center w-full">
+                                          <div className="flex items-center font-semibold whitespace-nowrap">
                                             <h1
                                               onClick={() =>
                                                 dashboard?.investor_profile_id &&
@@ -365,7 +355,7 @@ const index = () => {
                                                 )
                                               }
                                               className={clsx([
-                                                "cell whitespace-nowrap capitalize max-w-[150px] text-wrap",
+                                                "cell whitespace-nowrap capitalize text-wrap",
                                                 dashboard?.investor_profile_id &&
                                                 "cursor-pointer underline",
                                               ])}
@@ -380,19 +370,19 @@ const index = () => {
                                               />
                                             )}
                                           </div>
-                                          <div className="flex items-center gap-x-2 w-[60px]">
+                                          <div className="flex items-center gap-x-2">
                                             {dashboard?.investor_profile_id ? (
                                               <Tippy
                                                 content="Investor Profile"
                                                 options={{ theme: "light" }}
-                                                className="w-5 h-5 -mt-2"
+                                                className="w-5 h-5"
                                                 onClick={() =>
                                                   navigate(
                                                     `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
                                                   )
                                                 }
                                               >
-                                                <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
                                                   <Lucide
                                                     icon="FileText"
                                                     className="w-4 h-4 stroke-[1.3]"
@@ -400,21 +390,21 @@ const index = () => {
                                                 </div>
                                               </Tippy>
                                             ) : (
-                                              <div className="w-5 h-5" />
+                                              <div className="w-6 h-6" />
                                             )}
 
                                             {dashboard?.case_studies_id ? (
                                               <Tippy
                                                 content="Case Studies"
                                                 options={{ theme: "light" }}
-                                                className="w-4 h-4 -mt-2"
+                                                className="w-6 h-6"
                                                 onClick={() =>
                                                   redirectCaseStudy(
                                                     dashboard?.institution_name
                                                   )
                                                 }
                                               >
-                                                <div className="flex items-center justify-center w-full h-full text-primary">
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
                                                   <Lucide
                                                     icon="FileSearch2"
                                                     className="w-4 h-4 stroke-[1.5]"
@@ -422,14 +412,14 @@ const index = () => {
                                                 </div>
                                               </Tippy>
                                             ) : (
-                                              <div className="w-5 h-5" />
+                                              <div className="w-6 h-6" />
                                             )}
                                           </div>
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="whitespace-nowrap flex items-center justify-center">
-                                          {dashboard?.percent_ownership}
+                                          {dashboard?.percent_ownership}%
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
