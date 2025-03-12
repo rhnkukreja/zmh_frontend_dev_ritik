@@ -333,7 +333,7 @@ const index = () => {
                                       <Table.Td className="relative w-full px-4 py-2">
                                         {!dashboard.institution_id && (
                                           <h1
-                                            className="cursor-pointer text-lg absolute left-3"
+                                            className="cursor-pointer text-lg absolute left-2"
                                             onClick={() => {
                                               window.scrollBy({
                                                 top: 350,

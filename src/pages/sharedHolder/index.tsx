@@ -2015,7 +2015,7 @@ function ShareHolderProposal() {
                     style={{ fontSize: "0.8em" }}
                   >*</sup>
                   <p id="footnote " className="">
-                    [(For + Against or Withhold + Abstain)/Shares Outstanding]
+                    [For/(For + Against or Withhold + Abstain)]
                   </p>
                 </span>
               </footer>
