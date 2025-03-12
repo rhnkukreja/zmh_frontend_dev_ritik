@@ -275,7 +275,7 @@ const index = () => {
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              % Ownership
+                              Ownership
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Proxy Advisory Influence
@@ -419,7 +419,7 @@ const index = () => {
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="whitespace-nowrap flex items-center justify-center">
-                                          {dashboard?.percent_ownership}
+                                          {dashboard?.percent_ownership}%
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
