@@ -323,9 +323,12 @@ function Main() {
           </div>
           <div className="mt-2 flex flex-col lg:flex-row  gap-x-2">
             <div
-              className={`flex flex-col w-full ${
-                params?.type! === "investor" ? "lg:w-[60%] 2xl:w-[75rem]" : ""
-              } gap-y-2`}
+              className=
+                {clsx(
+                  "flex flex-col w-full gap-y-2",
+                  params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[75rem]", 
+                  params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[80rem]"
+                )}
             >
               {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors)?.map(
@@ -403,7 +406,7 @@ function Main() {
                 )}
             </div>
 
-            {params?.type! === "investor" && (
+            {params?.type! === "investor" && ((user?.user_type === "Admin") || (user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts?.length > 0)) && (
               <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
                 <div className="flex flex-col box">
                   <div
