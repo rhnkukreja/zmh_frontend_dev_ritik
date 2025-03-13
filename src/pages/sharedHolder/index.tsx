@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { countValidFilters, createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, Fullscreen, Grid3X3, SaveAll } from "lucide-react";
+import { FilterX, Fullscreen, Grid3X3, MegaphoneOff, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -1677,10 +1677,17 @@ function ShareHolderProposal() {
                                               }
                                             />
                                           </div>
-                                          {/* <Grid2x2 onClick={() =>
-                                            onVisibleDetail(noAction)
-                                          } /> */}
                                         </Tippy>
+                                      )}
+
+                                      {!noAction?.vote_details && noAction?.year?.toString() === "2025" && (
+                                         <div className="whitespace-nowrap flex items-center justify-center">
+                                         <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                       <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                           <MegaphoneOff size={22} strokeWidth={1.2} absoluteStrokeWidth/>
+                                       </Tippy>
+                                         </div>
+                                       </div>
                                       )}
                                     </Table.Td>
                                     <Table.Td

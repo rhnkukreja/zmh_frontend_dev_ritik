@@ -53,6 +53,7 @@ const index = () => {
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
+  const [todayDate, setTodayDate] = useState("");
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
@@ -89,6 +90,13 @@ const index = () => {
 
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+
+  useEffect(() => {
+    // Get today's date and format it
+    const today = new Date();
+    const formattedDate = today.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+    setTodayDate(formattedDate);
+  }, []);
 
   useEffect(() => {
     const validateImages = async () => {
@@ -275,7 +283,24 @@ const index = () => {
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Ownership
+                            <span
+                                id="footnote-1"
+                                className="cursor-pointer"
+                                onClick={() => {
+                                  window.scrollBy({
+                                    top: 350,
+                                    behavior: "smooth",
+                                  });
+                                }}
+                              >
+                               Ownership
+                                <sup
+                                  className="bold-sup cursor-pointer ml-1"
+                                  style={{ fontSize: "0.8em" }}
+                                >
+                                  #
+                                </sup>
+                              </span>
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Proxy Advisory Influence
@@ -561,6 +586,19 @@ const index = () => {
                 <p id="footnote" className="">
                   Not in ZMH coverage universe.
 
+                </p>
+              </span>
+
+              <span className="!pt-3 flex items-center relative">
+
+                <sup
+                  className="bold-sup cursor-pointer ml-1"
+                  style={{ fontSize: "0.8em" }}
+                >
+                  #
+                </sup>
+                <p id="footnote" className="">
+                Source: Whalewisdom. Data as of {todayDate}
                 </p>
               </span>
             </footer>
