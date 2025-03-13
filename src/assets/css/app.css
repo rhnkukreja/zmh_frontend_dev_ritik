@@ -217,6 +217,22 @@ option[data-label="*"] {
   color: red !important;
   font-weight: bold;
 }
+
+/* .ts-wrapper .ts-control .ts-dropdown .clear-button {
+  left: 350px !important;
+  font-size: 19px !important;
+  position: absolute !important; 
+} */
+
+.plugin-clear_button .clear-button{
+  left: 800px !important;
+  font-size: 25px !important;
+  position: absolute !important; /* Ensure it's positioned correctly */
+}
+
+.tom-select .items {
+  width: 48rem !important;
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
