@@ -323,9 +323,12 @@ function Main() {
           </div>
           <div className="mt-2 flex flex-col lg:flex-row  gap-x-2">
             <div
-              className={`flex flex-col w-full ${
-                params?.type! === "investor" ? "lg:w-[60%] 2xl:w-[75rem]" : ""
-              } gap-y-2`}
+              className=
+                {clsx(
+                  "flex flex-col w-full gap-y-2",
+                  params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[75rem]", 
+                  params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[80rem]"
+                )}
             >
               {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors)?.map(
@@ -403,17 +406,18 @@ function Main() {
                 )}
             </div>
 
-            {params?.type! === "investor" && (
+            {params?.type! === "investor" && ((user?.user_type === "Admin") || (user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts?.length > 0)) && (
               <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
                 <div className="flex flex-col box">
                   <div
                     className={clsx(
                       "relative flex border-b-2 border-gray-100 flex-col px-4  sm:px-2 items-center  transition-all duration-300 ease-in-out overflow-hidden",
                       isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
-                      user?.user_type?.toLowerCase() === "admin"
-                        ? "h-[62px]"
-                        : "h-[52px]"
+                      !singleInvesterProfile?.key_contacts && "h-[120px]"
                     )}
+                    // user?.user_type?.toLowerCase() === "admin"
+                    //     ? "h-[70px] mt-4"
+                    //     : "h-[70px] mt-4"
                   >
                     <div className="flex items-center justify-between  w-full h-full ">
                       <h4 className="text-[18px]  font-semibold text-left ml-2 leading-none ">
@@ -431,8 +435,10 @@ function Main() {
                           Upload
                         </div>
                       )}
-                    </div>
+                      
+                      
 
+                    </div>
                     {isExpanded && (
                       <div className="w-full mt-3 max-h-[180px] exclude-from-pdf">
                         <Dropzone
@@ -479,6 +485,13 @@ function Main() {
                         </Dropzone>
                       </div>
                     )}
+
+                    {(!singleInvesterProfile?.key_contacts || singleInvesterProfile?.key_contacts?.length === 0) && !loading &&
+                      <div className="p-5 flex items-center justify-center">
+                        <h1 className="">No Key Contacts Available</h1>
+                      </div>
+
+                    }
                   </div>
                   <div className="max-h-auto">
                     {loading ? (

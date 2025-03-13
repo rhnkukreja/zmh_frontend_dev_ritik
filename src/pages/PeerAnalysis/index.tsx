@@ -136,7 +136,7 @@ function PeerAnalysis() {
     setValue("category", []);
     setValue("country", []);
     setValue("global_search", []);
-    setValue("institutes", []);
+    // setValue("institutes", []);
     setValue("company_category", " ");
   };
 
@@ -161,6 +161,33 @@ function PeerAnalysis() {
       return;
     }
 
+    if (isAllCompanySelected === true && filters?.global_search.length > 0) {
+
+      if(filters?.institution_name?.length !== 0){
+        return;
+      }
+      else {
+        const { institution_name, global_search, ...restFilters } = filters;
+        const dynamicURL = createDynamicURL(
+          `${baseURL}/peer_analysis/`,
+          restFilters,
+          undefined,
+          page
+        );
+        dispatch(fetchPeerAnalysis(dynamicURL));
+
+        setFiltersLength(
+          countValidFilters(
+            isAllCompanySelected === false
+              ? restFilters
+              : { ...restFilters }
+          )
+        );
+
+        return;
+      }
+    }
+    const { institution_name, global_search, ...restFilters } = filters;
     const dynamicURL = createDynamicURL(
       `${baseURL}/peer_analysis/`,
       filters,
@@ -168,15 +195,17 @@ function PeerAnalysis() {
       page
     );
     dispatch(fetchPeerAnalysis(dynamicURL));
-    const { institution_name, global_search, ...restFilters } = filters;
+    
     setFiltersLength(
       countValidFilters(
         isAllCompanySelected === false
           ? restFilters
-          : { ...restFilters, global_search: filters.global_search }
+          : { ...restFilters }
       )
     );
   }, [page, filters]);
+
+  
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -196,25 +225,41 @@ function PeerAnalysis() {
 
   const onFilterClear = () => {
     reset();
-    setSelectedInstitution([""]);
+    // setSelectedInstitution([""]);
     resetFormValues();
     dispatch(resetFilter());
-    dispatch(
-      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
-    );
     dispatch(resetPage());
+    setValue("institution_name", filters?.institution_name);
+    setTimeout(() => {
+      dispatch(
+        setAllFilters({
+          institution_name: filters?.institution_name,
+        })
+      );
+    }, 1000);
+    
   };
 
   const handleClearAllFilter = () => {
-    dispatch(resetFilter());
-    resetFormValues();
+    // dispatch(resetFilter());
+    // resetFormValues();
     setSelectedInstitution([""]);
-    reset();
+    // reset();
     setSearchTerms([]);
     dispatch(
       setFilter({ key: "global_search", value: [companyGlobalSearchName] })
     );
     dispatch(resetPage());
+
+    setValue("institution_name", []);
+    setTimeout(() => {
+      dispatch(
+        setAllFilters({
+          institution_name: [],
+        })
+      );
+    }, 1000);
+    // dispatch(selectUnSelectAllCompany(!isAllCompanySelected))
   };
 
   const handleSearch = (searchTerms: string[]) => {
@@ -328,7 +373,7 @@ function PeerAnalysis() {
 
       }
       try {
-        dispatch( selectUnSelectAllCompany(!isAllCompanySelected));
+        dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
       } catch (error) {}
     }
   return (

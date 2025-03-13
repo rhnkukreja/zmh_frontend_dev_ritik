@@ -1004,7 +1004,7 @@ function ShareHolderProposal() {
                       )}
 
 {
-                            tab === "proposal" && (
+                            tab === "proposal" || tab === "no-action" && (
                               <div className="mx-2">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
                                 <span className="font-semibold">Index</span>
@@ -1607,18 +1607,17 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Proponent
-                                </Table.Td>
-                                <Table.Td className="py-2 text-center w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Year
-                                </Table.Td>
-                                {isAllCompanySelected && (
+                              {isAllCompanySelected && (
                                   <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                     Company
                                   </Table.Td>
                                 )}
-
+                                 <Table.Td className="py-2 text-center w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Year
+                                </Table.Td>
+                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
+                                </Table.Td>
                                 <Table.Td
                                   onClick={() => {
                                     window.scrollBy({
@@ -1648,18 +1647,18 @@ function ShareHolderProposal() {
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
                                   >
-                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                      {noAction?.proponent}
-                                    </Table.Td>
-                                    <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
-                                      {noAction?.year}
-                                    </Table.Td>
                                     {isAllCompanySelected && (
                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                         {noAction?.company_name}
                                       </Table.Td>
                                     )}
-
+                                    <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
+                                      {noAction?.proponent}
+                                    </Table.Td>
+                                    
                                     <Table.Td
                                       className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-right`])}>
                                       {noAction?.outcome_percentage}
@@ -1803,11 +1802,16 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2  w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Proponent
-                                </Table.Td>
+                              {isAllCompanySelected && (
+                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                    Company
+                                  </Table.Td>
+                                )}
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
+                                </Table.Td>
+                                <Table.Td className="py-2  w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Category
@@ -1830,12 +1834,16 @@ function ShareHolderProposal() {
                                   <Table.Tr
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
-                                  >
-                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.proponent || "-"}
+                                  >{isAllCompanySelected && (
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                      {noAction?.company_name}
                                     </Table.Td>
+                                  )}
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.proponent || "-"}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.category}
