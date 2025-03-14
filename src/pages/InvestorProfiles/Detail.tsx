@@ -327,7 +327,7 @@ function Main() {
                 {clsx(
                   "flex flex-col w-full gap-y-2",
                   params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[75rem]", 
-                  params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[80rem]"
+                  params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]"
                 )}
             >
               {params?.type === "investor" &&
