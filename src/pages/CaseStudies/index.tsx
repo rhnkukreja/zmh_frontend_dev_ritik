@@ -9,7 +9,7 @@ import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { countValidFilters, createDynamicURL } from "@/utils/helper";
+import { convertToTitleCase, countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -37,6 +37,7 @@ import AddNewCaseStudies from "./Components/AddEditCaseStudies";
 import { setInstitution } from "@/stores/dashboardSlice";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
+import clsx from "clsx";
 
 interface CaseStudyFilter {
   keyword: string;
@@ -96,6 +97,8 @@ function CaseStudies() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [addNewCaseStudyModalVisible, setAddNewCaseStudyModalVisible] =
     useState<boolean>(false);
+
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
 
   const {
     handleSubmit,
@@ -176,6 +179,10 @@ function CaseStudies() {
           : { ...restFilters, global_search: filters.global_search }
       )
     );
+
+    // const selectedChips = generateFilterChips(restFilters);
+    setSelectedChipFilters(generateFilterChips(restFilters));
+
   }, [page, filters, InstituteName]);
 
   const handleNextPage = () => {
@@ -361,6 +368,28 @@ function CaseStudies() {
     } catch (error) {}
   }
 
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    const updatedFilters = { ...filters };
+
+    if (Array.isArray(updatedFilters[removeKey])) {
+      updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+        (item) => item !== removeValue
+      );
+    } else if (updatedFilters[removeKey] === removeValue) {
+      updatedFilters[removeKey] = "";
+    }
+
+    setValue(removeKey, updatedFilters[removeKey]);
+    dispatch(setAllFilters(updatedFilters));
+  }
+
+  const handleFieldChange = (event, field) => {
+    // let updatedFilters = { ...filters };
+    // updatedFilters[field.name] = event?.target?.value;
+    // dispatch(setAllFilters(updatedFilters));
+    return field.onChange(event);
+  }
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -419,7 +448,7 @@ function CaseStudies() {
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2">
-                <div className="flex  ">
+                <div className="flex">
                   <MultiSearchBar
                     onSearch={handleSearch}
                     onSearchSelect={() => {
@@ -495,11 +524,30 @@ function CaseStudies() {
                 </div>
               </div>
 
-              {count > 0 && (
-              <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
-                Count: {count}
-              </h2>
-            )}
+            {
+              selectedChipFilters?.length > 0 &&
+              <div className="flex flex-wrap gap-2.5 px-5 py-2">
+                {selectedChipFilters?.map((filter, index) => (
+                  <a
+                    key={index}
+                    className={clsx([
+                      "flex gap-2.5 items-center px-3.5 py-1.5 border rounded-lg border-slate-300 bg-slate-50/70 [&.active]:bg-primary/5 [&.active]:border-primary/50 [&.active]:text-primary [&:not(.active)_a]:hidden",
+                    ])}
+                  >
+                   <span className=" font-semibold text-gray-600 ">{convertToTitleCase(filter.key)}:</span> <span className="font-bold">{filter.value}</span>
+                    <Lucide icon="X" className="w-4 h-4 text-red-500 -mr-1 cursor-pointer" onClick={() => handleRemoveChip(filter.key, filter.value)}/>
+                  </a>
+                ))}
+              </div>
+            }
+
+            {/* Selected Filter Chips */}
+
+            {count > 0 && (
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                  Count: {count}
+                </h2>
+              )}
               
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -560,10 +608,11 @@ function CaseStudies() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={(value) => field.onChange(value)}
+                              onChange={(value) => handleFieldChange(value, field)}
                               options={{ placeholder: "Select Year" }}
                               className="w-full"
                               multiple
+                            
                             >
                               {getDropdownLoader ? (
                                 <option value="--" disabled>
@@ -684,7 +733,8 @@ function CaseStudies() {
                             render={({ field }) => (
                               <TomSelect
                                 value={field.value || []}
-                                onChange={(value) => field.onChange(value)}
+                                // onChange={(value) => field.onChange(value)}
+                                onChange={(value) => handleFieldChange(value, field)}
                                 options={{ placeholder: "Select Country" }}
                                 className="w-full"
                                 multiple
@@ -740,7 +790,8 @@ function CaseStudies() {
                             render={({ field }) => (
                               <TomSelect
                                 value={field.value || []}
-                                onChange={(value) => field.onChange(value)}
+                                // onChange={(value) => field.onChange(value)}
+                                onChange={(value) => handleFieldChange(value, field)}
                                 options={{ placeholder: "Select Sector" }}
                                 className="w-full"
                                 multiple
@@ -795,7 +846,8 @@ function CaseStudies() {
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
-                              onChange={(value) => field.onChange(value)}
+                              // onChange={(value) => field.onChange(value)}
+                              onChange={(value) => handleFieldChange(value, field)}
                               options={{ placeholder: "Select Themes" }}
                               className="w-full"
                               multiple

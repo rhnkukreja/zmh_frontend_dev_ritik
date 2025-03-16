@@ -346,6 +346,20 @@ function countValidFilters(filters: FilterObject): number {
   }).length;
 }
 
+
+function generateFilterChips(filterData: any){
+  const selectedFilters = [];
+  Object.entries(filterData).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach(item => selectedFilters.push({ key, value: item }));
+    } else if (value !== undefined && value !== "" && value !== " " && value !== null) {
+      selectedFilters.push({ key, value });
+    }
+  });
+
+  return selectedFilters;
+}
+
 function convertToTitleCase(str: string): string {
   if (!str) {
     return "";
@@ -473,5 +487,6 @@ export {
   localStorageHelper,
   getDateWithoutTime,
   downloadXlsxFile,
-  downloadFileByServer
+  downloadFileByServer,
+  generateFilterChips
 };
