@@ -16,7 +16,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { useNavigate } from "react-router-dom";
-import { countValidFilters, createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, Fullscreen, Grid3X3, MegaphoneOff, SaveAll } from "lucide-react";
@@ -53,6 +53,7 @@ import AddNewNoAction from "./components/AddNewNoAction";
 import CompanySelect from "@/components/ReactSelectAsync";
 import DetailDialog from "./components/DetailDialog";
 import { modifyRoute } from "@/stores/themeSlice";
+import FilterChips from "@/components/FilterChips";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -126,7 +127,7 @@ function ShareHolderProposal() {
   ];
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
-
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -289,6 +290,8 @@ function ShareHolderProposal() {
           : { ...restFilters, global_search: filters.global_search }
       )
     );
+    setSelectedChipFilters(generateFilterChips(restFilters));
+
   }, [page, tab, filters]);
 
   useEffect(() => {
@@ -578,6 +581,21 @@ function ShareHolderProposal() {
     );
   };
 
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+      const updatedFilters = { ...filters };
+  
+      if (Array.isArray(updatedFilters[removeKey])) {
+        updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+          (item) => item !== removeValue
+        );
+      } else if (updatedFilters[removeKey] === removeValue) {
+        updatedFilters[removeKey] = "";
+      }
+  
+      setValue(removeKey, updatedFilters[removeKey]);
+      dispatch(setAllFilters(updatedFilters));
+    }
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -704,6 +722,13 @@ function ShareHolderProposal() {
                   </Popover>
                 </div>
               </div>
+
+              {
+                selectedChipFilters?.length > 0 &&
+                <>
+                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                </>
+              }
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>

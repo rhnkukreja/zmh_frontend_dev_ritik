@@ -347,13 +347,13 @@ function countValidFilters(filters: FilterObject): number {
 }
 
 
-function generateFilterChips(filterData: any){
-  const selectedFilters = [];
+function generateFilterChips(filterData: any) {
+  const selectedFilters: { key: string; value: any }[] = [];
   Object.entries(filterData).forEach(([key, value]) => {
     if (Array.isArray(value)) {
-      value.forEach(item => selectedFilters.push({ key, value: item }));
+      value.forEach((item) => selectedFilters.push({ key, value: item }));
     } else if (value !== undefined && value !== "" && value !== " " && value !== null) {
-      selectedFilters.push({ key, value });
+      selectedFilters.push({ key, value: typeof value === "boolean" ? value.toString() : value });
     }
   });
 

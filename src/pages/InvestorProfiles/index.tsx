@@ -20,7 +20,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
 import { useNavigate } from "react-router-dom";
 
-import { countValidFilters, createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import Tippy from "@/components/Base/Tippy";
@@ -32,6 +32,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import FilterChips from "@/components/FilterChips";
 
 interface InvestorProfileFilter {
   region: string[];
@@ -56,7 +57,7 @@ function Main() {
     filters?.institution_name?.length > 0 ? filters?.institution_name : []
   );
   const [filtersLength, setFiltersLength] = useState<number>(0);
-
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const { user } = useAppSelector((state) => state.authentiction);
 
   const { handleSubmit, control, reset, setValue, watch } =
@@ -81,6 +82,7 @@ function Main() {
     dispatch(fetchInvestersProfiles(dynamicURL));
     const { institution_name, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
+    setSelectedChipFilters(generateFilterChips(restFilters));
   }, [page, filters, tab]);
 
   const onFilterClear = () => {
@@ -159,6 +161,23 @@ function Main() {
       // toast.success("Searched saved successfully");
     }
   };
+
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    const updatedFilters: InvestorProfileFilter = { ...filters };
+    if (Array.isArray(updatedFilters[removeKey])) {
+      updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+        (item) => item !== removeValue
+      );
+    } else if (updatedFilters[removeKey] === removeValue) {
+      updatedFilters[removeKey] = "";
+    }
+
+    setValue(removeKey, updatedFilters[removeKey]);
+    Object.entries(updatedFilters).forEach(([key, value]) => {
+      dispatch(setFilter({ key: key as any, value }));
+    });
+  }
+
 
   return (
     <>
@@ -361,6 +380,12 @@ function Main() {
                 </div>
               </div>
 
+              {
+                selectedChipFilters?.length > 0 &&
+                <>
+                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                </>
+              }
               {count > 0 && (
               <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
                 Count: {count}

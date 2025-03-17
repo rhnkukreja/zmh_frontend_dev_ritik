@@ -15,7 +15,7 @@ import {
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { countValidFilters, createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -37,6 +37,7 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { modifyRoute } from "@/stores/themeSlice";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import clsx from "clsx";
+import FilterChips from "@/components/FilterChips";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -106,6 +107,7 @@ function PeerAnalysis() {
 
     },
   });
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -163,7 +165,7 @@ function PeerAnalysis() {
 
     if (isAllCompanySelected === true && filters?.global_search.length > 0) {
 
-      if(filters?.institution_name?.length !== 0){
+      if (filters?.institution_name?.length !== 0) {
         return;
       }
       else {
@@ -183,7 +185,7 @@ function PeerAnalysis() {
               : { ...restFilters }
           )
         );
-
+        setSelectedChipFilters(generateFilterChips(restFilters));
         return;
       }
     }
@@ -195,7 +197,7 @@ function PeerAnalysis() {
       page
     );
     dispatch(fetchPeerAnalysis(dynamicURL));
-    
+
     setFiltersLength(
       countValidFilters(
         isAllCompanySelected === false
@@ -203,9 +205,14 @@ function PeerAnalysis() {
           : { ...restFilters }
       )
     );
+
+    setSelectedChipFilters(generateFilterChips(restFilters));
+
+
+
   }, [page, filters]);
 
-  
+
 
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -237,7 +244,7 @@ function PeerAnalysis() {
         })
       );
     }, 1000);
-    
+
   };
 
   const handleClearAllFilter = () => {
@@ -348,34 +355,51 @@ function PeerAnalysis() {
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
-   const handleViewAllChange = async (event: any) => {
-      if(event?.target?.checked){
-        setValue("year", ["2024"]);
-        setValue("country", ["USA"]); 
-        dispatch(
-          setAllFilters({
-            year: [2024],
-            country: ["USA"],
-          })
-        );
-        
-      }
-      else {
-        setValue("year", []);
-        setValue("country", []); 
-        dispatch(
-          setAllFilters({
-            country: [],
-            year: [],
-            global_search: [],
-          })
-        );
+  const handleViewAllChange = async (event: any) => {
+    if (event?.target?.checked) {
+      setValue("year", ["2024"]);
+      setValue("country", ["USA"]);
+      dispatch(
+        setAllFilters({
+          year: [2024],
+          country: ["USA"],
+        })
+      );
 
-      }
-      try {
-        dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
-      } catch (error) {}
     }
+    else {
+      setValue("year", []);
+      setValue("country", []);
+      dispatch(
+        setAllFilters({
+          country: [],
+          year: [],
+          global_search: [],
+        })
+      );
+
+    }
+    try {
+      dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
+    } catch (error) { }
+  }
+
+
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    const updatedFilters = { ...filters };
+
+    if (Array.isArray(updatedFilters[removeKey])) {
+      updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+        (item) => item !== removeValue
+      );
+    } else if (updatedFilters[removeKey] === removeValue) {
+      updatedFilters[removeKey] = "";
+    }
+
+    setValue(removeKey, updatedFilters[removeKey]);
+    dispatch(setAllFilters(updatedFilters));
+  }
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -406,7 +430,7 @@ function PeerAnalysis() {
                       type="checkbox"
                       checked={isAllCompanySelected}
                       onChange={async (e) => {
-                        
+
                         handleViewAllChange(e);
                       }}
                     />
@@ -425,7 +449,8 @@ function PeerAnalysis() {
                   <TomSelect
                     value={selectedInstitution}
                     onChange={(event: any) => handleSearch(event?.target?.value)}
-                    options={{ placeholder: "Select Institution", closeAfterSelect: true,
+                    options={{
+                      placeholder: "Select Institution", closeAfterSelect: true,
                       render: {
                         option: (data: any, escape: any) => {
                           // text-red-600
@@ -438,7 +463,7 @@ function PeerAnalysis() {
                           `;
                         }
                       }
-                     }}
+                    }}
                     className="w-full"
                     multiple
                   >
@@ -457,7 +482,8 @@ function PeerAnalysis() {
                                 disabled={inst?.label}
                                 data-label={inst?.label ? "*" : ""}
                                 className={inst?.label ? "" : ""}
-                                onClick={() => { inst?.label ? 
+                                onClick={() => {
+                                  inst?.label ?
                                   window.scrollBy({
                                     top: 350,
                                     behavior: "smooth",
@@ -465,7 +491,7 @@ function PeerAnalysis() {
                                 }}
                               >
                                 {inst?.institution_name} {inst?.label ? "*" : ""}
-                                
+
                               </option>
                             );
                           }
@@ -552,11 +578,19 @@ function PeerAnalysis() {
                   </Popover>
                 </div>
               </div>
+
+              {
+                selectedChipFilters?.length > 0 &&
+                <>
+                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                </>
+              }
+
               {count > 0 && (
-              <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
-                Count: {count}
-              </h2>
-            )}
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                  Count: {count}
+                </h2>
+              )}
 
 
               {isFilterCollapse && (
@@ -1067,7 +1101,7 @@ function PeerAnalysis() {
             </div>
           </div>
 
-          
+
           {addNewInvesterModalVisible && (
             <AddNewInvesterProfile
               addNewInvesterModalVisible={addNewInvesterModalVisible}

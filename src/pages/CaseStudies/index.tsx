@@ -38,6 +38,7 @@ import { setInstitution } from "@/stores/dashboardSlice";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 import clsx from "clsx";
+import FilterChips from "@/components/FilterChips";
 
 interface CaseStudyFilter {
   keyword: string;
@@ -524,24 +525,12 @@ function CaseStudies() {
                 </div>
               </div>
 
-            {
-              selectedChipFilters?.length > 0 &&
-              <div className="flex flex-wrap gap-2.5 px-5 py-2">
-                {selectedChipFilters?.map((filter, index) => (
-                  <a
-                    key={index}
-                    className={clsx([
-                      "flex gap-2.5 items-center px-3.5 py-1.5 border rounded-lg border-slate-300 bg-slate-50/70 [&.active]:bg-primary/5 [&.active]:border-primary/50 [&.active]:text-primary [&:not(.active)_a]:hidden",
-                    ])}
-                  >
-                   <span className=" font-semibold text-gray-600 ">{convertToTitleCase(filter.key)}:</span> <span className="font-bold">{filter.value}</span>
-                    <Lucide icon="X" className="w-4 h-4 text-red-500 -mr-1 cursor-pointer" onClick={() => handleRemoveChip(filter.key, filter.value)}/>
-                  </a>
-                ))}
-              </div>
-            }
-
-            {/* Selected Filter Chips */}
+              {
+                selectedChipFilters?.length > 0 &&
+                <>
+                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                </>
+              }
 
             {count > 0 && (
                 <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
