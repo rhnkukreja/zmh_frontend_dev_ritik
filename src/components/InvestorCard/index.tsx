@@ -98,21 +98,22 @@ const index = () => {
     setTodayDate(formattedDate);
   }, []);
 
-  useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
-        const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
-        tempValidImages[dashbboard?.institution_name] = isValid
-          ? dashbboard?.institution_logo_url
-          : investorIcon;
-      }
+  // useEffect(() => {
+  //   const validateImages = async () => {
+  //     const tempValidImages: { [key: string]: string } = {};
+  //     if(dashboardDataList?.all_year_data?.length > 0) {
+  //       for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
+  //         const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
+  //         tempValidImages[dashbboard?.institution_name] = isValid
+  //           ? dashbboard?.institution_logo_url
+  //           : investorIcon;
+  //       }
+  //       setValidImages(tempValidImages);
+  //     }
+  //   };
 
-      setValidImages(tempValidImages);
-    };
-
-    validateImages();
-  }, [dashboardDataList]);
+  //   validateImages();
+  // }, [dashboardDataList]);
 
   const convertDivTableToCSV = () => {
     // Get the table element
@@ -221,7 +222,7 @@ const index = () => {
                     </div>
                   </Tippy>
                   {locationPathName === "/" && (
-                    <Tippy content="Expand" options={{ theme: "light" }}>
+                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
                         onClick={() =>
@@ -298,7 +299,7 @@ const index = () => {
                                   className="bold-sup cursor-pointer ml-1"
                                   style={{ fontSize: "0.8em" }}
                                 >
-                                  #
+                                  1
                                 </sup>
                               </span>
                             </Table.Td>
@@ -324,7 +325,7 @@ const index = () => {
                                   className="bold-sup cursor-pointer ml-1"
                                   style={{ fontSize: "0.8em" }}
                                 >
-                                  i
+                                  2
                                 </sup>
                               </span>
                             </Table.Td>
@@ -556,51 +557,54 @@ const index = () => {
               </div>
             </div>
 
-            <footer className="!pt-3 flex items-start flex-col">
-              <span className="!pt-3 flex items-center">
-                <sup
-                  className="bold-sup cursor-pointer ml-1"
-                  style={{ fontSize: "0.8em" }}
-                >
-                  i
-                </sup>
-                <p id="footnote">
-                  As disclosed by the investor in the last three years.
-                </p>
-                {/* <span className="bold-sup cursor-pointer mr-1"
-                  style={{ verticalAlign: "text-bottom", fontSize: "1em" }}>
-                  i</span>
-                <p id="footnote">
-                  As disclosed by the investor in the last three years.
-                </p> */}
-              </span>
+            <footer className="!pt-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="!pt-3 flex items-center relative">
 
-              <span className="!pt-3 flex items-center relative">
+                    <sup
+                      className="bold-sup cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      1
+                    </sup>
+                    <p id="footnote" className="">
+                      Source: Whalewisdom. Data as of {todayDate}
+                    </p>
+                  </span>
+                  <span className="!pt-3 flex items-center ">
+                    <sup
+                      className="bold-sup cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      2
+                    </sup>
+                    <p id="footnote">
+                      As disclosed by the investor in the last three years.
+                    </p>
+                  </span>
+                </div>
 
-                <sup
-                  className="bold-sup cursor-pointer ml-1"
-                  style={{ fontSize: "0.8em" }}
-                >
-                  *
-                </sup>
-                <p id="footnote" className="">
-                  Not in ZMH coverage universe.
+                <div>
+                <span className="!pt-3 flex items-center relative justify-end">
 
-                </p>
-              </span>
+<sup
+  className="bold-sup cursor-pointer ml-1"
+  style={{ fontSize: "0.8em" }}
+>
+  *
+</sup>
+<p id="footnote" className="">
+  Not in ZMH coverage universe.
 
-              <span className="!pt-3 flex items-center relative">
+</p>
+</span>
+                </div>
+              </div>
 
-                <sup
-                  className="bold-sup cursor-pointer ml-1"
-                  style={{ fontSize: "0.8em" }}
-                >
-                  #
-                </sup>
-                <p id="footnote" className="">
-                Source: Whalewisdom. Data as of {todayDate}
-                </p>
-              </span>
+             
+
+              
             </footer>
           </div>
         </>

@@ -18,6 +18,7 @@ interface InstitutionsState {
   loading: boolean;
   page: number;
   error: string | null;
+  count: number;
   institutionFilterOptions: {
     region: string[];
   };
@@ -32,6 +33,7 @@ const initialState: InstitutionsState = {
   loading: false,
   page: 1,
   error: null,
+  count: 0,
   institutionFilterOptions: {
     region: ["North America", "EMEA", "APAC"],
   },
@@ -119,6 +121,7 @@ const institutionsSlice = createSlice({
           state.loading = false;
           state.institutions = action.payload.results;
           state.totalInstitutions = action.payload.count;
+          state.count = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
         }
       )

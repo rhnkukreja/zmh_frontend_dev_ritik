@@ -587,23 +587,24 @@ const VdsProxyVotingTable = () => {
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           Select Institution*
                         </div>
+                        
+
                         <Controller
                           name="institution"
                           control={control}
+                          defaultValue={[]}
                           render={({ field }) => (
                             <TomSelect
+
                               value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
+                              onChange={(event) => {
+                                field.onChange(event);
                               }}
-                              options={{
-                                placeholder: "Institution",
-                              }}
+                              options={{ placeholder: "Institution" }}
                               className="w-full"
                               multiple
                             >
-                              <>
-                                {apiDropdownOptions.length > 0 &&
+                              {apiDropdownOptions.length > 0 &&
                                   apiDropdownOptions?.map(
                                     (institution: string) => {
                                       return (
@@ -613,7 +614,6 @@ const VdsProxyVotingTable = () => {
                                       );
                                     }
                                   )}
-                              </>
                             </TomSelect>
                           )}
                         />

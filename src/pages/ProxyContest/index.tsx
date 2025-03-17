@@ -427,7 +427,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
 
     return (
         <>
-            <Button
+            {/* <Button
                 onClick={() => {
                     navigate("/");
                 }}
@@ -440,7 +440,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                     strokeWidth={1.5}
                 />
                 Back
-            </Button>
+            </Button> */}
 
             <div className="p-5 mt-1 box">
 
