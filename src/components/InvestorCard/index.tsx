@@ -92,9 +92,11 @@ const index = () => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   useEffect(() => {
-    // Get today's date and format it
     const today = new Date();
-    const formattedDate = today.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+    const day = today.getDate();
+    const month = today.toLocaleString("en-US", { month: "long" });
+    const year = today.getFullYear();
+    const formattedDate = `${day} ${month}, ${year}`;
     setTodayDate(formattedDate);
   }, []);
 
@@ -157,7 +159,7 @@ const index = () => {
   const [selectedYear, setSelectedYear] = useState<string>("");
 
 
-  const handleAGMYearTab = (tab: string, index:number) =>{
+  const handleAGMYearTab = (tab: string, index: number) => {
     setSelectedIndex(index);
     setSelectedYear(tab);
   }
@@ -166,7 +168,7 @@ const index = () => {
 
   const getSelectedTabIndex = () => {
     const tabIndex = dashboardDataList?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ?
-     selectedYear?.toString() : dashboardDataList?.all_year_data[0]?.year?.toString()));
+      selectedYear?.toString() : dashboardDataList?.all_year_data[0]?.year?.toString()));
     // setSelectedIndex(tabIndex);
     return tabIndex || 0;
   };
@@ -284,7 +286,7 @@ const index = () => {
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                            <span
+                              <span
                                 id="footnote-1"
                                 className="cursor-pointer"
                                 onClick={() => {
@@ -294,9 +296,9 @@ const index = () => {
                                   });
                                 }}
                               >
-                               Ownership
+                                Ownership
                                 <sup
-                                  className="bold-sup cursor-pointer ml-1"
+                                  className="bold-sup cursor-pointer"
                                   style={{ fontSize: "0.8em" }}
                                 >
                                   1
@@ -322,7 +324,7 @@ const index = () => {
                               >
                                 Engaged with Company
                                 <sup
-                                  className="bold-sup cursor-pointer ml-1"
+                                  className="bold-sup cursor-pointer"
                                   style={{ fontSize: "0.8em" }}
                                 >
                                   2
@@ -510,13 +512,13 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
-                                         {dashboard?.voted_against_directors ===
+                                        {dashboard?.voted_against_directors ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth/>
-                                            </Tippy>
+                                                <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                                  <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                </Tippy>
                                               </div>
                                             </div>
                                           )}
@@ -536,9 +538,9 @@ const index = () => {
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth/>
-                                            </Tippy>
+                                                <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                                  <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                </Tippy>
                                               </div>
                                             </div>
                                           )}
@@ -563,7 +565,7 @@ const index = () => {
                   <span className="!pt-3 flex items-center relative">
 
                     <sup
-                      className="bold-sup cursor-pointer ml-1"
+                      className="cursor-pointer ml-1"
                       style={{ fontSize: "0.8em" }}
                     >
                       1
@@ -574,7 +576,7 @@ const index = () => {
                   </span>
                   <span className="!pt-3 flex items-center ">
                     <sup
-                      className="bold-sup cursor-pointer ml-1"
+                      className="cursor-pointer ml-1"
                       style={{ fontSize: "0.8em" }}
                     >
                       2
@@ -586,25 +588,25 @@ const index = () => {
                 </div>
 
                 <div>
-                <span className="!pt-3 flex items-center relative justify-end">
+                  <span className="!pt-3 flex items-center relative justify-end">
 
-<sup
-  className="bold-sup cursor-pointer ml-1"
-  style={{ fontSize: "0.8em" }}
->
-  *
-</sup>
-<p id="footnote" className="">
-  Not in ZMH coverage universe.
+                    <sup
+                      className="cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      *
+                    </sup>
+                    <p id="footnote" className="">
+                      Not in ZMH coverage universe.
 
-</p>
-</span>
+                    </p>
+                  </span>
                 </div>
               </div>
 
-             
 
-              
+
+
             </footer>
           </div>
         </>
