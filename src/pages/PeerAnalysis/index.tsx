@@ -37,6 +37,7 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { modifyRoute } from "@/stores/themeSlice";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import clsx from "clsx";
+import ChartComponent from "@/components/EnagementDetailsDialog";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -58,6 +59,8 @@ function PeerAnalysis() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
+  const [viewAll, setViewAll] = useState<boolean>(false);
+  const [isViewAnalysis, setIsViewAnalysis] = useState(false);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
@@ -72,6 +75,9 @@ function PeerAnalysis() {
   const {
     loading,
     peerAnalysisData,
+    investorData,
+    pieChartDataPeerAnalysis,
+    topEngagementTopics,
     page,
     totalPages,
     filters,
@@ -303,34 +309,36 @@ function PeerAnalysis() {
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
-   const handleViewAllChange = async (event: any) => {
-      if(event?.target?.checked){
-        setValue("year", ["2024"]);
-        setValue("country", ["USA"]); 
-        dispatch(
-          setAllFilters({
-            year: [2024],
-            country: ["USA"],
-          })
-        );
-        
-      }
-      else {
-        setValue("year", []);
-        setValue("country", []); 
-        dispatch(
-          setAllFilters({
-            country: [],
-            year: [],
-            global_search: [],
-          })
-        );
+  const handleViewAllChange = async (event: any) => {
+    if(event?.target?.checked){
+      setViewAll(true)
+      setValue("year", ["2024"]);
+      setValue("country", ["USA"]); 
+      dispatch(
+        setAllFilters({
+          year: [2024],
+          country: ["USA"],
+        })
+      );
 
-      }
-      try {
-        dispatch( selectUnSelectAllCompany(!isAllCompanySelected));
-      } catch (error) {}
     }
+    else {
+      setViewAll(false)
+      setValue("year", []);
+      setValue("country", []);
+      dispatch(
+        setAllFilters({
+          country: [],
+          year: [],
+          global_search: [],
+        })
+      );
+
+    }
+    try {
+      dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
+    } catch (error) { }
+  }
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -361,7 +369,6 @@ function PeerAnalysis() {
                       type="checkbox"
                       checked={isAllCompanySelected}
                       onChange={async (e) => {
-                        
                         handleViewAllChange(e);
                       }}
                     />
@@ -380,7 +387,8 @@ function PeerAnalysis() {
                   <TomSelect
                     value={selectedInstitution}
                     onChange={(event: any) => handleSearch(event?.target?.value)}
-                    options={{ placeholder: "Select Institution", closeAfterSelect: true,
+                    options={{
+                      placeholder: "Select Institution", closeAfterSelect: true,
                       render: {
                         option: (data: any, escape: any) => {
                           // text-red-600
@@ -393,7 +401,7 @@ function PeerAnalysis() {
                           `;
                         }
                       }
-                     }}
+                    }}
                     className="w-full"
                     multiple
                   >
@@ -403,7 +411,7 @@ function PeerAnalysis() {
                       </option>
                     ) : (
                       <>
-                        {apiDropdownOptions?.institutes?.map(
+                        {apiDropdownOptions?.institutes?.filter((inst: any) => inst?.label == "").map(
                           (inst: any) => {
                             return (
                               <option
@@ -412,15 +420,16 @@ function PeerAnalysis() {
                                 disabled={inst?.label}
                                 data-label={inst?.label ? "*" : ""}
                                 className={inst?.label ? "" : ""}
-                                onClick={() => { inst?.label ? 
-                                  window.scrollBy({
-                                    top: 350,
-                                    behavior: "smooth",
-                                  }) : "";
+                                onClick={() => {
+                                  inst?.label ?
+                                    window.scrollBy({
+                                      top: 350,
+                                      behavior: "smooth",
+                                    }) : "";
                                 }}
                               >
-                                {inst?.institution_name} {inst?.label ? "*" : ""}
-                                
+                                {inst?.institution_name}
+
                               </option>
                             );
                           }
@@ -477,12 +486,17 @@ function PeerAnalysis() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  {user?.saved_search?.["Peer Analysis"] !== undefined && (
-                    <div className="hover:bg-slate-50 ">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
+                  {viewAll && selectedInstitution.length > 0 && selectedInstitution[0] != "" && (
+                    <FormSwitch>
+                      <label className="text-md mr-3 font-semibold">Analytics</label>
+                      <FormSwitch.Input
+                        id="view-analysis-switch"
+                        type="checkbox"
+                        checked={isViewAnalysis}
+                        onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                      />
+                      <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+                    </FormSwitch>
                   )}
                   <Popover className="inline-block">
                     {({ close }) => (
@@ -881,6 +895,7 @@ function PeerAnalysis() {
                 </form>
               )}
 
+              {isViewAnalysis && <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />}
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>

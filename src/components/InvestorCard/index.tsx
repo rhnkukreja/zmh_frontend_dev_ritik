@@ -148,7 +148,7 @@ const index = () => {
   const [selectedYear, setSelectedYear] = useState<string>("");
 
 
-  const handleAGMYearTab = (tab: string, index:number) =>{
+  const handleAGMYearTab = (tab: string, index: number) => {
     setSelectedIndex(index);
     setSelectedYear(tab);
   }
@@ -157,7 +157,7 @@ const index = () => {
 
   const getSelectedTabIndex = () => {
     const tabIndex = dashboardDataList?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ?
-     selectedYear?.toString() : dashboardDataList?.all_year_data[0]?.year?.toString()));
+      selectedYear?.toString() : dashboardDataList?.all_year_data[0]?.year?.toString()));
     // setSelectedIndex(tabIndex);
     return tabIndex || 0;
   };
@@ -275,7 +275,25 @@ const index = () => {
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Ownership
+                              <span
+                                id="footnote-1"
+                                className="cursor-pointer"
+                                onClick={() => {
+                                  window.scrollBy({
+                                    top: 350,
+                                    behavior: "smooth",
+                                  });
+                                }}
+                              >
+                                Ownership
+                                <sup
+                                  className="bold-sup cursor-pointer ml-1"
+                                  style={{ fontSize: "0.8em" }}
+                                >
+                                  1
+                                </sup>
+                              </span>
+
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Proxy Advisory Influence
@@ -299,7 +317,7 @@ const index = () => {
                                   className="bold-sup cursor-pointer ml-1"
                                   style={{ fontSize: "0.8em" }}
                                 >
-                                  i
+                                  2
                                 </sup>
                               </span>
                             </Table.Td>
@@ -331,19 +349,7 @@ const index = () => {
                                       </Table.Td>
 
                                       <Table.Td className="relative w-full px-4 py-2">
-                                        {!dashboard.institution_id && (
-                                          <h1
-                                            className="cursor-pointer text-lg absolute left-2"
-                                            onClick={() => {
-                                              window.scrollBy({
-                                                top: 350,
-                                                behavior: "smooth",
-                                              });
-                                            }}
-                                          >
-                                            *
-                                          </h1>
-                                        )}
+
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center font-semibold whitespace-nowrap">
                                             <h1
@@ -356,18 +362,28 @@ const index = () => {
                                               }
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize text-wrap",
-                                                dashboard?.investor_profile_id &&
-                                                "cursor-pointer underline",
+                                                dashboard?.investor_profile_id && "cursor-pointer underline",
                                               ])}
                                             >
                                               {dashboard?.institution_name}
+
+                                              {!dashboard.institution_id && (
+                                                <sup
+                                                  className="cursor-pointer text-lg"
+                                                  onClick={() => {
+                                                    window.scrollBy({
+                                                      top: 350,
+                                                      behavior: "smooth",
+                                                    });
+                                                  }}
+                                                  style={{ fontSize: "1em" }}
+                                                >
+                                                  *
+                                                </sup>
+                                              )}
                                             </h1>
                                             {dashboard?.flag_13d === true && (
-                                              <img
-                                                className="w-3 ml-2"
-                                                alt="flag-icon"
-                                                src={flagIcon}
-                                              />
+                                              <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
                                             )}
                                           </div>
                                           <div className="flex items-center gap-x-2">
@@ -484,13 +500,13 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
-                                         {dashboard?.voted_against_say_on_pay ===
+                                        {dashboard?.voted_against_say_on_pay ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth/>
-                                            </Tippy>
+                                                <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                                  <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                </Tippy>
                                               </div>
                                             </div>
                                           )}
@@ -510,9 +526,9 @@ const index = () => {
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth/>
-                                            </Tippy>
+                                                <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                                  <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                </Tippy>
                                               </div>
                                             </div>
                                           )}
@@ -531,39 +547,35 @@ const index = () => {
               </div>
             </div>
 
-            <footer className="!pt-3 flex items-start flex-col">
-              <span className="!pt-3 flex items-center">
-                <sup
-                  className="bold-sup cursor-pointer ml-1"
-                  style={{ fontSize: "0.8em" }}
-                >
-                  i
-                </sup>
-                <p id="footnote">
-                  As disclosed by the investor in the last three years.
-                </p>
-                {/* <span className="bold-sup cursor-pointer mr-1"
-                  style={{ verticalAlign: "text-bottom", fontSize: "1em" }}>
-                  i</span>
-                <p id="footnote">
-                  As disclosed by the investor in the last three years.
-                </p> */}
-              </span>
+            <footer className="!pt-5 flex flex-col w-full">
+              <div className="flex justify-between w-full">
+                {/* Left-aligned footnotes */}
+                <div className="flex flex-col items-start">
+                  <span className="!pt-3 flex items-center">
+                    <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>1</sup>
+                    <p id="footnote">
+                      Source: Whalewisdom. Data as of {new Date().toLocaleDateString()}
+                    </p>
 
-              <span className="!pt-3 flex items-center relative">
+                  </span>
 
-                <sup
-                  className="bold-sup cursor-pointer ml-1"
-                  style={{ fontSize: "0.8em" }}
-                >
-                  *
-                </sup>
-                <p id="footnote" className="">
-                  Not in ZMH coverage universe.
+                  <span className="!pt-3 flex items-center">
+                    <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>2</sup>
+                    <p id="footnote">As disclosed by the investor in the last three years.</p>
+                  </span>
+                </div>
 
-                </p>
-              </span>
+                {/* Right-aligned footnote */}
+                <div className="!pt-3 flex items-end">
+                  <span className="flex items-center">
+                    <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>*</sup>
+                    <p id="footnote">Not in ZMH coverage universe.</p>
+                  </span>
+                </div>
+              </div>
             </footer>
+
+
           </div>
         </>
       )}

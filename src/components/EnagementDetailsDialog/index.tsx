@@ -1,0 +1,168 @@
+import { TopEngagementTopics } from "@/types/peerAnalysis";
+import React from "react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+
+interface ChartComponentProps {
+    investorData: {
+        institution__institution: string;
+        unique_companies: number;
+        environmental: number;
+        social: number;
+        governance: number;
+    }[];
+    pieChartDataPeerAnalysis: {
+        name: string;
+        value: number;
+    }[];
+    handleSearch: (searchTerms: string[]) => void;
+    topEngagementTopics: TopEngagementTopics;
+}
+
+const COLORS = ["#00C49F", "#FF6F00", "#0088FE"];
+
+const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics }) => {
+    const isInvestorDataAvailable = investorData && investorData.length > 0;
+
+    if (!investorData) {
+        <h2 className="text-xl font-semibold mb-4">No Analytics available</h2>
+        return
+    }
+
+    return (
+        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl max-h-screen min-h-[50vh] flex flex-col mb-5">
+            <h2 className="text-xl font-semibold mb-4">Analytics</h2>
+            {!isInvestorDataAvailable ? (
+                <p className="text-center text-gray-500 text-lg">No Analytics available</p>
+            ) : (
+                <>
+                    <div className="flex gap-6">
+                        {/* Investor Data Table */}
+                        <div className="w-3/5 overflow-auto max-h-80">
+                            <table className="w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr className="bg-gray-100 text-gray-700">
+                                        <th className="border p-2 text-left">Institution Name</th>
+                                        <th className="border p-2">Unique Companies</th>
+                                        <th className="border p-2">Environmental</th>
+                                        <th className="border p-2">Social</th>
+                                        <th className="border p-2">Governance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {investorData.map((investor, index) => (
+                                        <tr key={index} className="text-center">
+                                            <td
+                                                className="border p-2 text-left text-blue-600 cursor-pointer hover:underline"
+                                                onClick={() => handleSearch([investor.institution__institution])}
+                                            >
+                                                {investor.institution__institution}
+                                            </td>
+                                            <td className="border p-2">{investor.unique_companies}</td>
+                                            <td className="border p-2">{investor.environmental}</td>
+                                            <td className="border p-2">{investor.social}</td>
+                                            <td className="border p-2">{investor.governance}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pie Chart */}
+                        <div className="w-2/5 flex items-center justify-center bg-gray-100 rounded-lg py-4">
+                            {pieChartDataPeerAnalysis.length > 0 ? (
+                                <ResponsiveContainer width="120%" height={270} className="ml-[-15%]" >
+                                    <PieChart>
+                                        <Pie
+                                            data={pieChartDataPeerAnalysis}
+                                            dataKey="total"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={100}
+                                            label={({ name, total }) => `${name}: ${total}`}
+                                        >
+                                            {pieChartDataPeerAnalysis.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip wrapperStyle={{ marginTop: 2 }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <p className="text-gray-500">No chart data available</p>
+                            )}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+                            <h3 className="text-lg font-semibold mb-2">Governance Topics</h3>
+                            <table className="w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr className="bg-gray-200 text-gray-700">
+                                        <th className="border p-2 text-left">Topic</th>
+                                        <th className="border p-2">Count</th>
+                                        <th className="border p-2">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {topEngagementTopics.gov.map((topic, index) => (
+                                        <tr key={index} className="text-center">
+                                            <td className="border p-2 text-left">{topic.topic}</td>
+                                            <td className="border p-2">{topic.count}</td>
+                                            <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+                            <h3 className="text-lg font-semibold mb-2">Environmental Topics</h3>
+                            <table className="w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr className="bg-gray-200 text-gray-700">
+                                        <th className="border p-2 text-left">Topic</th>
+                                        <th className="border p-2">Count</th>
+                                        <th className="border p-2">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {topEngagementTopics.env.map((topic, index) => (
+                                        <tr key={index} className="text-center">
+                                            <td className="border p-2 text-left">{topic.topic}</td>
+                                            <td className="border p-2">{topic.count}</td>
+                                            <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+                            <h3 className="text-lg font-semibold mb-2">Social Topics</h3>
+                            <table className="w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr className="bg-gray-200 text-gray-700">
+                                        <th className="border p-2 text-left">Topic</th>
+                                        <th className="border p-2">Count</th>
+                                        <th className="border p-2">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {topEngagementTopics.soc.map((topic, index) => (
+                                        <tr key={index} className="text-center">
+                                            <td className="border p-2 text-left">{topic.topic}</td>
+                                            <td className="border p-2">{topic.count}</td>
+                                            <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
+export default ChartComponent;
