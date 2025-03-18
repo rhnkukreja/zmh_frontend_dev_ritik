@@ -20,6 +20,11 @@ interface ChartComponentProps {
 
 const COLORS = ["#00C49F", "#FF6F00", "#0088FE"];
 
+const formatNumberWithCommas = (num: number): string => {
+    return num.toLocaleString();
+};
+
+
 const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics }) => {
     const isInvestorDataAvailable = investorData && investorData.length > 0;
 
@@ -28,15 +33,17 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
         return
     }
 
+    const filteredPieChartData = pieChartDataPeerAnalysis.filter(entry => entry.value > 0);
+
+
     return (
-        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl max-h-screen min-h-[50vh] flex flex-col mb-5">
+        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
             <h2 className="text-xl font-semibold mb-4">Analytics</h2>
             {!isInvestorDataAvailable ? (
                 <p className="text-center text-gray-500 text-lg">No Analytics available</p>
             ) : (
                 <>
                     <div className="flex gap-6">
-                        {/* Investor Data Table */}
                         <div className="w-3/5 overflow-auto max-h-80">
                             <table className="w-full border-collapse border border-gray-300">
                                 <thead>
@@ -57,31 +64,30 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                             >
                                                 {investor.institution__institution}
                                             </td>
-                                            <td className="border p-2">{investor.unique_companies}</td>
-                                            <td className="border p-2">{investor.environmental}</td>
-                                            <td className="border p-2">{investor.social}</td>
-                                            <td className="border p-2">{investor.governance}</td>
+                                            <td className="border p-2">{formatNumberWithCommas(investor.unique_companies)}</td>
+                                            <td className="border p-2">{formatNumberWithCommas(investor.environmental)}</td>
+                                            <td className="border p-2">{formatNumberWithCommas(investor.social)}</td>
+                                            <td className="border p-2">{formatNumberWithCommas(investor.governance)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
 
-                        {/* Pie Chart */}
-                        <div className="w-2/5 flex items-center justify-center bg-gray-100 rounded-lg py-4">
-                            {pieChartDataPeerAnalysis.length > 0 ? (
-                                <ResponsiveContainer width="120%" height={270} className="ml-[-15%]" >
-                                    <PieChart>
+                        <div className="w-6/12 flex items-center justify-center bg-gray-100 rounded-lg py-4 overflow-hidden">
+                            {filteredPieChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={260}  >
+                                    <PieChart >
                                         <Pie
-                                            data={pieChartDataPeerAnalysis}
-                                            dataKey="total"
+                                            data={filteredPieChartData}
+                                            dataKey="value"
                                             nameKey="name"
                                             cx="50%"
                                             cy="50%"
-                                            outerRadius={100}
-                                            label={({ name, total }) => `${name}: ${total}`}
+                                            outerRadius="80%"
+                                            label={({ name, value }) => `${name}: ${formatNumberWithCommas(value)}`}
                                         >
-                                            {pieChartDataPeerAnalysis.map((entry, index) => (
+                                            {filteredPieChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
@@ -92,6 +98,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <p className="text-gray-500">No chart data available</p>
                             )}
                         </div>
+
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
                         <div className="bg-gray-100 p-4 rounded-lg shadow-md">
@@ -105,10 +112,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {topEngagementTopics.gov.map((topic, index) => (
+                                    {topEngagementTopics.gov.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="text-center">
                                             <td className="border p-2 text-left">{topic.topic}</td>
-                                            <td className="border p-2">{topic.count}</td>
+                                            <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
                                             <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
                                         </tr>
                                     ))}
@@ -127,10 +134,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {topEngagementTopics.env.map((topic, index) => (
+                                    {topEngagementTopics.env.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="text-center">
                                             <td className="border p-2 text-left">{topic.topic}</td>
-                                            <td className="border p-2">{topic.count}</td>
+                                            <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
                                             <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
                                         </tr>
                                     ))}
@@ -148,10 +155,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {topEngagementTopics.soc.map((topic, index) => (
+                                    {topEngagementTopics.soc.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="text-center">
                                             <td className="border p-2 text-left">{topic.topic}</td>
-                                            <td className="border p-2">{topic.count}</td>
+                                            <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
                                             <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
                                         </tr>
                                     ))}

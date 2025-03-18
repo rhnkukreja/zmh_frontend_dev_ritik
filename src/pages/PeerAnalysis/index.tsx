@@ -553,7 +553,7 @@ function PeerAnalysis() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  {viewAll && selectedInstitution.length > 0 && selectedInstitution[0] != "" && (
+                  {viewAll && (
                     <FormSwitch>
                       <label className="text-md mr-3 font-semibold">Analytics</label>
                       <FormSwitch.Input
