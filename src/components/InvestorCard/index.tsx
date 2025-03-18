@@ -53,6 +53,7 @@ const index = () => {
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
+  const [todayDate, setTodayDate] = useState("");
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
@@ -91,20 +92,30 @@ const index = () => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
-        const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
-        tempValidImages[dashbboard?.institution_name] = isValid
-          ? dashbboard?.institution_logo_url
-          : investorIcon;
-      }
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.toLocaleString("en-US", { month: "long" });
+    const year = today.getFullYear();
+    const formattedDate = `${day} ${month}, ${year}`;
+    setTodayDate(formattedDate);
+  }, []);
 
-      setValidImages(tempValidImages);
-    };
+  // useEffect(() => {
+  //   const validateImages = async () => {
+  //     const tempValidImages: { [key: string]: string } = {};
+  //     if(dashboardDataList?.all_year_data?.length > 0) {
+  //       for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
+  //         const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
+  //         tempValidImages[dashbboard?.institution_name] = isValid
+  //           ? dashbboard?.institution_logo_url
+  //           : investorIcon;
+  //       }
+  //       setValidImages(tempValidImages);
+  //     }
+  //   };
 
-    validateImages();
-  }, [dashboardDataList]);
+  //   validateImages();
+  // }, [dashboardDataList]);
 
   const convertDivTableToCSV = () => {
     // Get the table element
@@ -213,7 +224,7 @@ const index = () => {
                     </div>
                   </Tippy>
                   {locationPathName === "/" && (
-                    <Tippy content="Expand" options={{ theme: "light" }}>
+                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
                         onClick={() =>
@@ -287,13 +298,12 @@ const index = () => {
                               >
                                 Ownership
                                 <sup
-                                  className="bold-sup cursor-pointer ml-1"
+                                  className="bold-sup cursor-pointer"
                                   style={{ fontSize: "0.8em" }}
                                 >
                                   1
                                 </sup>
                               </span>
-
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Proxy Advisory Influence
@@ -314,7 +324,7 @@ const index = () => {
                               >
                                 Engaged with Company
                                 <sup
-                                  className="bold-sup cursor-pointer ml-1"
+                                  className="bold-sup cursor-pointer"
                                   style={{ fontSize: "0.8em" }}
                                 >
                                   2
@@ -349,7 +359,19 @@ const index = () => {
                                       </Table.Td>
 
                                       <Table.Td className="relative w-full px-4 py-2">
-
+                                        {!dashboard.institution_id && (
+                                          <h1
+                                            className="cursor-pointer text-lg absolute left-2"
+                                            onClick={() => {
+                                              window.scrollBy({
+                                                top: 350,
+                                                behavior: "smooth",
+                                              });
+                                            }}
+                                          >
+                                            *
+                                          </h1>
+                                        )}
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center font-semibold whitespace-nowrap">
                                             <h1
@@ -362,28 +384,18 @@ const index = () => {
                                               }
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize text-wrap",
-                                                dashboard?.investor_profile_id && "cursor-pointer underline",
+                                                dashboard?.investor_profile_id &&
+                                                "cursor-pointer underline",
                                               ])}
                                             >
                                               {dashboard?.institution_name}
-
-                                              {!dashboard.institution_id && (
-                                                <sup
-                                                  className="cursor-pointer text-lg"
-                                                  onClick={() => {
-                                                    window.scrollBy({
-                                                      top: 350,
-                                                      behavior: "smooth",
-                                                    });
-                                                  }}
-                                                  style={{ fontSize: "1em" }}
-                                                >
-                                                  *
-                                                </sup>
-                                              )}
                                             </h1>
                                             {dashboard?.flag_13d === true && (
-                                              <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
+                                              <img
+                                                className="w-3 ml-2"
+                                                alt="flag-icon"
+                                                src={flagIcon}
+                                              />
                                             )}
                                           </div>
                                           <div className="flex items-center gap-x-2">
@@ -500,7 +512,7 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
-                                        {dashboard?.voted_against_say_on_pay ===
+                                        {dashboard?.voted_against_directors ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
@@ -547,35 +559,55 @@ const index = () => {
               </div>
             </div>
 
-            <footer className="!pt-5 flex flex-col w-full">
-              <div className="flex justify-between w-full">
-                {/* Left-aligned footnotes */}
-                <div className="flex flex-col items-start">
-                  <span className="!pt-3 flex items-center">
-                    <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>1</sup>
-                    <p id="footnote">
-                      Source: Whalewisdom. Data as of {new Date().toLocaleDateString()}
+            <footer className="!pt-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="!pt-3 flex items-center relative">
+
+                    <sup
+                      className="cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      1
+                    </sup>
+                    <p id="footnote" className="">
+                      Source: Whalewisdom. Data as of {todayDate}
                     </p>
-
                   </span>
-
-                  <span className="!pt-3 flex items-center">
-                    <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>2</sup>
-                    <p id="footnote">As disclosed by the investor in the last three years.</p>
+                  <span className="!pt-3 flex items-center ">
+                    <sup
+                      className="cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      2
+                    </sup>
+                    <p id="footnote">
+                      As disclosed by the investor in the last three years.
+                    </p>
                   </span>
                 </div>
 
-                {/* Right-aligned footnote */}
-                <div className="!pt-3 flex items-end">
-                  <span className="flex items-center">
-                    <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>*</sup>
-                    <p id="footnote">Not in ZMH coverage universe.</p>
+                <div>
+                  <span className="!pt-3 flex items-center relative justify-end">
+
+                    <sup
+                      className="cursor-pointer ml-1"
+                      style={{ fontSize: "0.8em" }}
+                    >
+                      *
+                    </sup>
+                    <p id="footnote" className="">
+                      Not in ZMH coverage universe.
+
+                    </p>
                   </span>
                 </div>
               </div>
+
+
+
+
             </footer>
-
-
           </div>
         </>
       )}
