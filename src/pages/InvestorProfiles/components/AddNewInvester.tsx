@@ -89,11 +89,11 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
       ...data,
       institution: data.institution ? Number(data.institution) : null,
     };
-    if (!keyContactsFile) {
-      return;
-    } else {
-      setShowRequiredStateErrors(false);
-    }
+    // if (!keyContactsFile) {
+    //   return;
+    // } else {
+    //   setShowRequiredStateErrors(false);
+    // }
     const formData = new FormData();
 
     for (const [key, value] of Object.entries(transformedData)) {
@@ -124,9 +124,9 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
   };
 
   const onError: SubmitErrorHandler<AddNewInvesterType> = () => {
-    if (!keyContactsFile) {
-      setShowRequiredStateErrors(true);
-    }
+    // if (!keyContactsFile) {
+    //   setShowRequiredStateErrors(true);
+    // }
   };
   return (
     <Dialog
@@ -238,6 +238,31 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                 </div>
               </div>
 
+              {/* Voting Guidelines Summary */}
+              <div>
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  Summary
+                </FormCheck.Label>
+                <Controller
+                  name="summary"
+                  rules={{ required: true }}
+                  control={control}
+                  render={({ field }) => (
+                    <ClassicEditor
+                      value={field.value}
+                      onChange={(event) => {
+                        field.onChange(event);
+                      }}
+                    />
+                  )}
+                />
+                {errors.summary && (
+                  <Error className="lg:max-w-[50%] ">
+                    Summary are required
+                  </Error>
+                )}
+              </div>
+
               {/* Engagement Priorities */}
               <div>
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
@@ -263,24 +288,7 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
                 )}
               </div>
 
-              {/* Voting Guidelines Summary */}
-              {/* <div>
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Voting Guidelines Summary
-                </FormCheck.Label>
-                <Controller
-                  name="voting_guidelines_summary"
-                  control={control}
-                  render={({ field }) => (
-                    <ClassicEditor
-                      value={field.value}
-                      onChange={(event) => {
-                        field.onChange(event);
-                      }}
-                    />
-                  )}
-                />
-              </div> */}
+              
 
               {/* Voting Guidelines Link */}
               <div>
