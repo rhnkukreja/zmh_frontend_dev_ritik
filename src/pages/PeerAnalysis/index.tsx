@@ -479,7 +479,7 @@ function PeerAnalysis() {
                       </option>
                     ) : (
                       <>
-                        {apiDropdownOptions?.institutes?.filter((inst: any) => inst?.label == "").map(
+                        {apiDropdownOptions?.institutes?.map(
                           (inst: any) => {
                             return (
                               <option
