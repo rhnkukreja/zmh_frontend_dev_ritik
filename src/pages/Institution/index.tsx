@@ -17,7 +17,7 @@ import {
 } from "@/stores/institutionSlice";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { countValidFilters, createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { useNavigate } from "react-router-dom";
 import { Institutions } from "@/types/institutions";
@@ -30,6 +30,7 @@ import { toast } from "react-toastify";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import FilterChips from "@/components/FilterChips";
 
 interface InstituteFilter {
   region: string[];
@@ -45,6 +46,7 @@ function Main() {
     totalPages,
     institutionFilterOptions,
     filters,
+    count
   } = useAppSelector((state) => state.institutions);
 
   const [searchTerms, setSearchTerms] = useState<string[]>(
@@ -52,6 +54,7 @@ function Main() {
   );
 
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
 
   const { handleSubmit, control, reset, setValue, watch } =
     useForm<InstituteFilter>({
@@ -82,6 +85,7 @@ function Main() {
 
     const { institution_name, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
+    setSelectedChipFilters(generateFilterChips(restFilters));
   }, [page, filters]);
 
   const handleNextPage = () => {
@@ -167,6 +171,22 @@ function Main() {
 
     dispatch(resetPage());
   };
+
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+      const updatedFilters: InstituteFilter = { ...filters };
+      if (Array.isArray(updatedFilters[removeKey])) {
+        updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+          (item) => item !== removeValue
+        );
+      } else if (updatedFilters[removeKey] === removeValue) {
+        updatedFilters[removeKey] = "";
+      }
+  
+      setValue(removeKey, updatedFilters[removeKey]);
+      Object.entries(updatedFilters).forEach(([key, value]) => {
+        dispatch(setFilter({ key: key as any, value: value as any }));
+      });
+    }
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -354,6 +374,19 @@ function Main() {
                 </Popover>
               </div>
             </div>
+
+            {
+              selectedChipFilters?.length > 0 &&
+              <>
+                <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+              </>
+            }
+
+            {count > 0 && (
+              <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                Count: {count}
+              </h2>
+            )}
             <div className="px-5">
               <TableWrapper isLoading={loading}>
                 <div className="overflow-auto max-h-[400px]">

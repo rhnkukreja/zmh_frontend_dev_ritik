@@ -16,10 +16,10 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { useNavigate } from "react-router-dom";
-import { countValidFilters, createDynamicURL } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, Fullscreen, Grid3X3, SaveAll } from "lucide-react";
+import { FilterX, Fullscreen, Grid3X3, MegaphoneOff, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -53,6 +53,7 @@ import AddNewNoAction from "./components/AddNewNoAction";
 import CompanySelect from "@/components/ReactSelectAsync";
 import DetailDialog from "./components/DetailDialog";
 import { modifyRoute } from "@/stores/themeSlice";
+import FilterChips from "@/components/FilterChips";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -126,7 +127,7 @@ function ShareHolderProposal() {
   ];
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
-
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -289,6 +290,8 @@ function ShareHolderProposal() {
           : { ...restFilters, global_search: filters.global_search }
       )
     );
+    setSelectedChipFilters(generateFilterChips(restFilters));
+
   }, [page, tab, filters]);
 
   useEffect(() => {
@@ -578,6 +581,21 @@ function ShareHolderProposal() {
     );
   };
 
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+      const updatedFilters = { ...filters };
+  
+      if (Array.isArray(updatedFilters[removeKey])) {
+        updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+          (item) => item !== removeValue
+        );
+      } else if (updatedFilters[removeKey] === removeValue) {
+        updatedFilters[removeKey] = "";
+      }
+  
+      setValue(removeKey, updatedFilters[removeKey]);
+      dispatch(setAllFilters(updatedFilters));
+    }
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -704,6 +722,13 @@ function ShareHolderProposal() {
                   </Popover>
                 </div>
               </div>
+
+              {
+                selectedChipFilters?.length > 0 &&
+                <>
+                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                </>
+              }
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -1004,7 +1029,7 @@ function ShareHolderProposal() {
                       )}
 
 {
-                            tab === "proposal" && (
+                            tab === "proposal" || tab === "no-action" && (
                               <div className="mx-2">
                               <div className="text-left text-slate-500 flex justify-between mb-1">
                                 <span className="font-semibold">Index</span>
@@ -1607,18 +1632,17 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Proponent
-                                </Table.Td>
-                                <Table.Td className="py-2 text-center w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Year
-                                </Table.Td>
-                                {isAllCompanySelected && (
+                              {isAllCompanySelected && (
                                   <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                     Company
                                   </Table.Td>
                                 )}
-
+                                 <Table.Td className="py-2 text-center w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Year
+                                </Table.Td>
+                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
+                                </Table.Td>
                                 <Table.Td
                                   onClick={() => {
                                     window.scrollBy({
@@ -1648,18 +1672,18 @@ function ShareHolderProposal() {
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
                                   >
-                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                      {noAction?.proponent}
-                                    </Table.Td>
-                                    <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
-                                      {noAction?.year}
-                                    </Table.Td>
                                     {isAllCompanySelected && (
                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                         {noAction?.company_name}
                                       </Table.Td>
                                     )}
-
+                                    <Table.Td className="py-2 text-center border-dashed dark:bg-darkmode-600">
+                                      {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
+                                      {noAction?.proponent}
+                                    </Table.Td>
+                                    
                                     <Table.Td
                                       className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-right`])}>
                                       {noAction?.outcome_percentage}
@@ -1678,10 +1702,17 @@ function ShareHolderProposal() {
                                               }
                                             />
                                           </div>
-                                          {/* <Grid2x2 onClick={() =>
-                                            onVisibleDetail(noAction)
-                                          } /> */}
                                         </Tippy>
+                                      )}
+
+                                      {!noAction?.vote_details && noAction?.year?.toString() === "2025" && (
+                                         <div className="whitespace-nowrap flex items-center justify-center">
+                                         <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                       <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                           <MegaphoneOff size={22} strokeWidth={1.2} absoluteStrokeWidth/>
+                                       </Tippy>
+                                         </div>
+                                       </div>
                                       )}
                                     </Table.Td>
                                     <Table.Td
@@ -1803,11 +1834,16 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2  w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Proponent
-                                </Table.Td>
+                              {isAllCompanySelected && (
+                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                    Company
+                                  </Table.Td>
+                                )}
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
+                                </Table.Td>
+                                <Table.Td className="py-2  w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proponent
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Category
@@ -1830,12 +1866,16 @@ function ShareHolderProposal() {
                                   <Table.Tr
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
-                                  >
-                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.proponent || "-"}
+                                  >{isAllCompanySelected && (
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                      {noAction?.company_name}
                                     </Table.Td>
+                                  )}
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
+                                    </Table.Td>
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                      {noAction?.proponent || "-"}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.category}

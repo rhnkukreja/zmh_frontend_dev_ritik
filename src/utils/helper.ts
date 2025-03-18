@@ -222,7 +222,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
         if (value.length > 0) {
           queryParams.append(key, JSON.stringify(value));
         }
-      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
+      } else if (value !== null && value !== undefined && value !== "") {
         queryParams.append(key, value);
       }
     }
@@ -235,7 +235,7 @@ function createDynamicURL<T extends Record<string, string | string[]>>(
         if (value.length > 0) {
           queryParams.append(key, JSON.stringify(value));
         }
-      } else if (value !== null && value !== undefined && value !== "") {
+      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
         queryParams.append(key, value);
       }
     }
@@ -344,6 +344,20 @@ function countValidFilters(filters: FilterObject): number {
       ? value.length !== 0
       : value !== undefined && value !== "" && value !== " " && value !== null;
   }).length;
+}
+
+
+function generateFilterChips(filterData: any) {
+  const selectedFilters: { key: string; value: any }[] = [];
+  Object.entries(filterData).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach((item) => selectedFilters.push({ key, value: item }));
+    } else if (value !== undefined && value !== "" && value !== " " && value !== null) {
+      selectedFilters.push({ key, value: typeof value === "boolean" ? value.toString() : value });
+    }
+  });
+
+  return selectedFilters;
 }
 
 function convertToTitleCase(str: string): string {
@@ -473,5 +487,6 @@ export {
   localStorageHelper,
   getDateWithoutTime,
   downloadXlsxFile,
-  downloadFileByServer
+  downloadFileByServer,
+  generateFilterChips
 };

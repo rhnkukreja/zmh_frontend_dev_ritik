@@ -67,4 +67,5 @@ export type AddNewInvesterType = {
   active: string;
   key_contacts?: any;
   institution?: string;
+  summary?: string;
 };

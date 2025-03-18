@@ -53,6 +53,7 @@ const index = () => {
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
+  const [todayDate, setTodayDate] = useState("");
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
@@ -91,20 +92,28 @@ const index = () => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   useEffect(() => {
-    const validateImages = async () => {
-      const tempValidImages: { [key: string]: string } = {};
-      for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
-        const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
-        tempValidImages[dashbboard?.institution_name] = isValid
-          ? dashbboard?.institution_logo_url
-          : investorIcon;
-      }
+    // Get today's date and format it
+    const today = new Date();
+    const formattedDate = today.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+    setTodayDate(formattedDate);
+  }, []);
 
-      setValidImages(tempValidImages);
-    };
+  // useEffect(() => {
+  //   const validateImages = async () => {
+  //     const tempValidImages: { [key: string]: string } = {};
+  //     if(dashboardDataList?.all_year_data?.length > 0) {
+  //       for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
+  //         const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
+  //         tempValidImages[dashbboard?.institution_name] = isValid
+  //           ? dashbboard?.institution_logo_url
+  //           : investorIcon;
+  //       }
+  //       setValidImages(tempValidImages);
+  //     }
+  //   };
 
-    validateImages();
-  }, [dashboardDataList]);
+  //   validateImages();
+  // }, [dashboardDataList]);
 
   const convertDivTableToCSV = () => {
     // Get the table element
@@ -213,7 +222,7 @@ const index = () => {
                     </div>
                   </Tippy>
                   {locationPathName === "/" && (
-                    <Tippy content="Expand" options={{ theme: "light" }}>
+                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
                         onClick={() =>
@@ -275,7 +284,7 @@ const index = () => {
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              <span
+                            <span
                                 id="footnote-1"
                                 className="cursor-pointer"
                                 onClick={() => {
@@ -285,7 +294,7 @@ const index = () => {
                                   });
                                 }}
                               >
-                                Ownership
+                               Ownership
                                 <sup
                                   className="bold-sup cursor-pointer ml-1"
                                   style={{ fontSize: "0.8em" }}
@@ -293,7 +302,6 @@ const index = () => {
                                   1
                                 </sup>
                               </span>
-
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Proxy Advisory Influence
@@ -500,7 +508,7 @@ const index = () => {
                                               </div>
                                             </div>
                                           )}
-                                        {dashboard?.voted_against_say_on_pay ===
+                                         {dashboard?.voted_against_directors ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
@@ -549,7 +557,6 @@ const index = () => {
 
             <footer className="!pt-5 flex flex-col w-full">
               <div className="flex justify-between w-full">
-                {/* Left-aligned footnotes */}
                 <div className="flex flex-col items-start">
                   <span className="!pt-3 flex items-center">
                     <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>1</sup>
@@ -565,7 +572,6 @@ const index = () => {
                   </span>
                 </div>
 
-                {/* Right-aligned footnote */}
                 <div className="!pt-3 flex items-end">
                   <span className="flex items-center">
                     <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>*</sup>
