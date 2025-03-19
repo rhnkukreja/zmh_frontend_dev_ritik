@@ -149,10 +149,10 @@ function Main() {
   }
 
   const handleClearAllFilter = () => {
-    dispatch(resetFilter());
+    // dispatch(resetFilter());
     setSearchTerms([]);
     dispatch(resetPage());
-    resetForm();
+    // resetForm();
   };
 
   const onSubmit = async (engagementQuesFilter: EngagementQuestionFilter) => {

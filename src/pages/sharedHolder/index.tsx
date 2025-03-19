@@ -290,7 +290,8 @@ function ShareHolderProposal() {
           : { ...restFilters, global_search: filters.global_search }
       )
     );
-    setSelectedChipFilters(generateFilterChips(restFilters));
+    const {proponent_name, ...chipFilters} = restFilters;
+    setSelectedChipFilters(generateFilterChips(chipFilters));
 
   }, [page, tab, filters]);
 
@@ -589,7 +590,11 @@ function ShareHolderProposal() {
           (item) => item !== removeValue
         );
       } else if (updatedFilters[removeKey] === removeValue) {
-        updatedFilters[removeKey] = "";
+        if(removeKey === "company_category"){
+          updatedFilters[removeKey] = " ";
+        }else {
+          updatedFilters[removeKey] = "";
+        }
       }
   
       setValue(removeKey, updatedFilters[removeKey]);
@@ -1028,51 +1033,51 @@ function ShareHolderProposal() {
                         </div>
                       )}
 
-{
-                            tab === "proposal" || tab === "no-action" && (
-                              <div className="mx-2">
-                              <div className="text-left text-slate-500 flex justify-between mb-1">
-                                <span className="font-semibold">Index</span>
-                              </div>
-                              <Controller
-                                name="company_category"
-                                control={control}
-                                defaultValue={""}
-                                render={({ field }) => (
-                                  <TomSelect
-                                    value={field.value || ""}
-                                    onChange={(value) => {
-                                      field.onChange(value);
-                                    }}
-                                    options={{
-                                      placeholder: "Select Index",
-                                    }}
-                                    className="w-full"
-                                    multiple={false}
-                                  >
-                                    {getDropdownLoader ? (
-                                      <option value="--" disabled>
-                                        Loading...
-                                      </option>
-                                    ) : (
-                                      <>
-                                        {apiDropdownOptions?.company_category?.map(
-                                          (company_category: string) => {
-                                            return (
-                                              <option value={company_category}>
-                                                {company_category}
-                                              </option>
-                                            );
-                                          }
-                                        )}
-                                      </>
-                                    )}
-                                  </TomSelect>
-                                )}
-                              />
+                      {
+                       (tab === "proposal" || tab === "no-action") && (
+                          <div className="mx-2">
+                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                              <span className="font-semibold">Index</span>
                             </div>
-                            )
-                          }
+                            <Controller
+                              name="company_category"
+                              control={control}
+                              defaultValue={""}
+                              render={({ field }) => (
+                                <TomSelect
+                                  value={field.value || ""}
+                                  onChange={(value) => {
+                                    field.onChange(value);
+                                  }}
+                                  options={{
+                                    placeholder: "Select Index",
+                                  }}
+                                  className="w-full"
+                                  multiple={false}
+                                >
+                                  {getDropdownLoader ? (
+                                    <option value="--" disabled>
+                                      Loading...
+                                    </option>
+                                  ) : (
+                                    <>
+                                      {apiDropdownOptions?.company_category?.map(
+                                        (company_category: string) => {
+                                          return (
+                                            <option value={company_category}>
+                                              {company_category}
+                                            </option>
+                                          );
+                                        }
+                                      )}
+                                    </>
+                                  )}
+                                </TomSelect>
+                              )}
+                            />
+                          </div>
+                        )
+                      }
 
                       {user?.user_type === "Admin" && (
                         <>

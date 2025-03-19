@@ -213,8 +213,8 @@ function CaseStudies() {
 
   const handleClearAllFilter = () => {
     setSearchTerms([]);
-    resetFormValues();
-    dispatch(resetFilters());
+    // resetFormValues();
+    // dispatch(resetFilters());
     dispatch(resetPage());
     dispatch(
       setFilters({ key: "global_search", value: [companyGlobalSearchName] })
