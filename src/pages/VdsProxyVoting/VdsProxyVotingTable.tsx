@@ -882,8 +882,10 @@ const VdsProxyVotingTable = () => {
           zIndex: 10,
           backgroundColor: "white",
           color: "#000000",
-          width: 700,
+          width: "maxContent",
+          maxWidth: 700,
           boxShadow: "2px 4px 6px rgba(0, 0, 0, 0.2)",
+          cursor: "pointer"
         }}
       />
     </>

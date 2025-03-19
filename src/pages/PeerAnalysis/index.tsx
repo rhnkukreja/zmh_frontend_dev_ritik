@@ -163,33 +163,29 @@ function PeerAnalysis() {
       return;
     }
 
-    if (isAllCompanySelected === true && filters?.global_search.length > 0) {
+    // if (isAllCompanySelected === true && filters?.global_search.length > 0) {
 
-      if (filters?.institution_name?.length !== 0) {
-        return;
-      }
-      else {
-        const { institution_name, global_search, ...restFilters } = filters;
-        const dynamicURL = createDynamicURL(
-          `${baseURL}/peer_analysis/`,
-          restFilters,
-          undefined,
-          page
-        );
-        dispatch(fetchPeerAnalysis(dynamicURL));
+    //     const { institution_name, global_search, ...restFilters } = filters;
+    //     const dynamicURL = createDynamicURL(
+    //       `${baseURL}/peer_analysis/`,
+    //       restFilters,
+    //       undefined,
+    //       page
+    //     );
+    //     dispatch(fetchPeerAnalysis(dynamicURL));
 
-        setFiltersLength(
-          countValidFilters(
-            isAllCompanySelected === false
-              ? restFilters
-              : { ...restFilters }
-          )
-        );
-        setSelectedChipFilters(generateFilterChips(restFilters));
-        return;
-      }
-    }
-    const { institution_name, global_search, ...restFilters } = filters;
+    //     setFiltersLength(
+    //       countValidFilters(
+    //         isAllCompanySelected === false
+    //           ? restFilters
+    //           : { ...restFilters }
+    //       )
+    //     );
+    //     setSelectedChipFilters(generateFilterChips(restFilters));
+    //     console.log("inner one")
+    //     return;
+    // }
+    const { global_search, ...restFilters } = filters;
     const dynamicURL = createDynamicURL(
       `${baseURL}/peer_analysis/`,
       filters,
@@ -197,16 +193,17 @@ function PeerAnalysis() {
       page
     );
     dispatch(fetchPeerAnalysis(dynamicURL));
-
+    
+    const {institution_name , ...chipFilters} = restFilters;
     setFiltersLength(
       countValidFilters(
         isAllCompanySelected === false
-          ? restFilters
-          : { ...restFilters }
+          ? chipFilters
+          : { ...chipFilters }
       )
     );
-
-    setSelectedChipFilters(generateFilterChips(restFilters));
+    setSelectedChipFilters(generateFilterChips(chipFilters));
+    console.log("outer one")
 
 
 
@@ -232,7 +229,6 @@ function PeerAnalysis() {
 
   const onFilterClear = () => {
     reset();
-    // setSelectedInstitution([""]);
     resetFormValues();
     dispatch(resetFilter());
     dispatch(resetPage());
@@ -247,17 +243,21 @@ function PeerAnalysis() {
 
   };
 
-  const handleClearAllFilter = () => {
-    // dispatch(resetFilter());
-    // resetFormValues();
+  const clearInstitutionFilter = () => {
     setSelectedInstitution([""]);
-    // reset();
     setSearchTerms([]);
-    dispatch(
-      setFilter({ key: "global_search", value: [companyGlobalSearchName] })
-    );
+    if(isAllCompanySelected){
+      dispatch(
+        setFilter({ key: "global_search", value: [] })
+      );
+    }
+    else {
+      dispatch(
+        setFilter({ key: "global_search", value: [companyGlobalSearchName] })
+      );
+    }
+   
     dispatch(resetPage());
-
     setValue("institution_name", []);
     setTimeout(() => {
       dispatch(
@@ -266,7 +266,6 @@ function PeerAnalysis() {
         })
       );
     }, 1000);
-    // dispatch(selectUnSelectAllCompany(!isAllCompanySelected))
   };
 
   const handleSearch = (searchTerms: string[]) => {
@@ -276,6 +275,7 @@ function PeerAnalysis() {
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Peer Analysis"]?.institution]);
+    setSelectedInstitution([...user?.saved_search["Peer Analysis"]?.institution]);
     setValue("year", user?.saved_search?.year || []);
     setValue("category", user?.saved_search?.category || []);
     setValue("country", user?.saved_search?.country || []);
@@ -301,7 +301,7 @@ function PeerAnalysis() {
   const saveSearch = async () => {
     const res = await commonService.saveSearches({
       module: "Peer Analysis",
-      institution: searchTerms,
+      institution: selectedInstitution,
       global_search: filters["global_search"],
       year: watch("year") || [],
       sector: watch("sector") || [],
@@ -315,7 +315,7 @@ function PeerAnalysis() {
         setSavedSearch({
           key: "Peer Analysis",
           value: {
-            institution: searchTerms,
+            institution: selectedInstitution,
             global_search: filters["global_search"],
             year: watch("year") || [],
             category: watch("category") || [],
@@ -333,7 +333,7 @@ function PeerAnalysis() {
     dispatch(
       setAllFilters({
         ...peerAnalysisFilters,
-        institution_name: searchTerms,
+        institution_name: selectedInstitution,
         global_search: isAllCompanySelected
           ? Array.isArray(peerAnalysisFilters?.global_search) &&
             peerAnalysisFilters?.global_search.length > 0
@@ -393,7 +393,11 @@ function PeerAnalysis() {
         (item) => item !== removeValue
       );
     } else if (updatedFilters[removeKey] === removeValue) {
-      updatedFilters[removeKey] = "";
+      if(removeKey === "company_category"){
+        updatedFilters[removeKey] = " ";
+      }else {
+        updatedFilters[removeKey] = "";
+      }
     }
 
     setValue(removeKey, updatedFilters[removeKey]);
@@ -501,23 +505,8 @@ function PeerAnalysis() {
                   </TomSelect>
                 </div>
                 <div className="flex">
-                  {/* <MultiSearchBar
-                    onSearch={handleSearch}
-                    onSearchSelect={() => {
-                      dispatch(resetPage());
-                    }}
-                    searchTerms={searchTerms}
-                    setSearchTerms={setSearchTerms}
-                    url={multSearchUrl}
-                    getOptionKey="institution_name"
-                    placeHolder="Search Institution"
-                    onSearchChange={resetPage}
-                  /> */}
-
-
-
                   <div className="hover:bg-slate-50">
-                    <Button onClick={handleClearAllFilter}>
+                    <Button onClick={clearInstitutionFilter}>
                       <Tippy
                         content="Clear Filters"
                         options={{ theme: "light" }}
@@ -528,7 +517,6 @@ function PeerAnalysis() {
                           className="text-slate-500 cursor-pointer	"
                         />
                       </Tippy>
-                      {/* <span className="text-slate-500">Clear Filters</span> */}
                     </Button>
                   </div>
 
@@ -963,10 +951,6 @@ function PeerAnalysis() {
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
-                  {/* {investersProfile?.length > 0 &&
-                          investersProfile.map(
-                            (profile: InvestersProfile, index: number) => {
-                              return ( */}
                   <div className="overflow-auto max-h-[400px]">
                     <Table>
                       <Table.Thead>
@@ -1008,11 +992,16 @@ function PeerAnalysis() {
                                 <div className=" flex flex-row justify-start items-center ">
                                   {peer?.institution_logo_url ? (
                                     <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
+
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
+                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
                                         <img
-                                          alt="ZMH Analytics"
-                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                          alt="Institution Logo"
+                                          className="object-contain "
                                           src={peer?.institution_logo_url}
+                                          content={
+                                            peer?.institution_name || ""
+                                          }
                                         />
                                       </div>
                                     </>
@@ -1023,42 +1012,40 @@ function PeerAnalysis() {
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                         src={investorIcon}
                                       />
-                                      <a
-                                        href=""
-                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
+                                      <a className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
                                       ></a>
                                     </div>
                                   )}
 
                                   <div className="ml-4">
-                                    <p className="font-medium whitespace-nowrap">
+                                    <p className="font-medium text-wrap w-[150px]">
                                       {peer?.institution_name}
                                     </p>
                                   </div>
                                 </div>
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
                                 {peer?.year}
                               </Table.Td>
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600  w-[200px]">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px] text-wrap">
                                   {peer?.company_name}
                                 </Table.Td>
                               )}
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
                                 {peer?.company_country}
                               </Table.Td>
 
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600  w-[200px]">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
                                 {peer?.company_sector}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
                                 {peer?.env_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
                                 {peer?.soc_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600  w-[200px]">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[200px] text-wrap">
                                 {peer?.gov_list}
                               </Table.Td>
                             </Table.Tr>

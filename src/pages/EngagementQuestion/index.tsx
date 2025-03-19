@@ -213,12 +213,12 @@ function Main() {
     setSearchTerms([
       ...user?.saved_search["Engagement Questions"]?.institution,
     ]);
-    setValue("year", user?.saved_search?.year || []);
-    setValue("category", user?.saved_search?.category || []);
+    setValue("year", user?.saved_search['Engagement Questions']?.year || []);
+    setValue("category", user?.saved_search['Engagement Questions']?.category || []);
     dispatch(
       setAllFilters({
-        year: user?.saved_search?.year || [],
-        category: user?.saved_search?.category || [],
+        year: user?.saved_search['Engagement Questions']?.year || [],
+        category: user?.saved_search['Engagement Questions']?.category || [],
       })
     );
   };

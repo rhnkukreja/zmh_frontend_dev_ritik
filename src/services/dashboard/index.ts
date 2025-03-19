@@ -195,6 +195,19 @@ class DashboardService {
       result: response.data,
     };
   }
+
+  public async getCompanyName(companyName?: any): Promise<{
+    result: any;
+  }> {
+    const url = `/company/?${companyName ? `company_name=${companyName}&` : ""}all=true`
+    const response = await axiosInstance.get(
+      createDynamicURL(url)
+    );
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
 }
 
 export const dashboardService = new DashboardService();
