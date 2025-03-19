@@ -136,7 +136,7 @@ function ShareHolderProposal() {
       category: [],
       sub_category: [],
       year: [],
-      company_category: [],
+      index: [],
     });
 
   const [monthDropdownOption, setMonthDropdownOption] = useState<any>(month);
@@ -189,7 +189,7 @@ function ShareHolderProposal() {
       is_correct: filters?.is_correct,
       company_status: filters?.company_status,
       nl_exist: filters?.nl_exist,
-      company_category: filters?.company_category ?? " ",
+      index: filters?.index ?? " ",
       global_search:
         filters?.global_search?.map((item: string) => ({
           value: item,
@@ -212,7 +212,7 @@ function ShareHolderProposal() {
     setValue("is_correct", null);
     setValue("company_status", null);
     setValue("nl_exist", null);
-    setValue("company_category", " ");
+    setValue("index", " ");
   };
 
   const navigate = useNavigate();
@@ -492,7 +492,7 @@ function ShareHolderProposal() {
       setValue("sub_category", savedSearch.sub_category || []);
       setValue("year", savedSearch.year || []);
       setValue("status", savedSearch.status || []);
-      setValue("company_category", savedSearch?.company_category || "");
+      setValue("index", savedSearch?.index || "");
       dispatch(
         setAllFilters({
           proponent_name: savedSearch.proponent_name || [],
@@ -501,7 +501,7 @@ function ShareHolderProposal() {
           sub_category: savedSearch.sub_category || [],
           year: savedSearch.year || [],
           status: savedSearch.status || [],
-          company_category: savedSearch.company_category || "",
+          index: savedSearch.index || "",
           global_search: savedSearch?.global_search,
         })
       );
@@ -524,7 +524,7 @@ function ShareHolderProposal() {
       is_correct: filters?.is_correct,
       company_status: filters?.company_status,
       nl_exist: filters?.nl_exist,
-      company_category: filters?.company_category,
+      index: filters?.index,
     });
     if (res?.user_id) {
       dispatch(
@@ -537,7 +537,7 @@ function ShareHolderProposal() {
             year: filters?.year || [],
             status: filters?.status || [],
             keyword: filters?.keyword || "",
-            company_category: filters?.company_category || "",
+            index: filters?.index || "",
             global_search: filters?.global_search,
           },
         })
@@ -590,7 +590,7 @@ function ShareHolderProposal() {
           (item) => item !== removeValue
         );
       } else if (updatedFilters[removeKey] === removeValue) {
-        if(removeKey === "company_category"){
+        if(removeKey === "index"){
           updatedFilters[removeKey] = " ";
         }else {
           updatedFilters[removeKey] = "";
@@ -1040,7 +1040,7 @@ function ShareHolderProposal() {
                               <span className="font-semibold">Index</span>
                             </div>
                             <Controller
-                              name="company_category"
+                              name="index"
                               control={control}
                               defaultValue={""}
                               render={({ field }) => (
@@ -1061,11 +1061,11 @@ function ShareHolderProposal() {
                                     </option>
                                   ) : (
                                     <>
-                                      {apiDropdownOptions?.company_category?.map(
-                                        (company_category: string) => {
+                                      {apiDropdownOptions?.index?.map(
+                                        (index: string) => {
                                           return (
-                                            <option value={company_category}>
-                                              {company_category}
+                                            <option value={index}>
+                                              {index}
                                             </option>
                                           );
                                         }

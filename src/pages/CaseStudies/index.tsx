@@ -54,7 +54,7 @@ interface CaseStudyFilter {
   approval_status: string;
   caspio_company_name: string;
   [key: string]: any;
-  company_category?: string;
+  index?: string;
 }
 function CaseStudies() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -125,7 +125,7 @@ function CaseStudies() {
       vote: filters?.vote,
       approval_status: filters?.approval_status,
       caspio_company_name: filters?.caspio_company_name,
-      company_category: filters?.company_category ?? " "
+      index: filters?.index ?? " "
     },
   });
 
@@ -140,7 +140,7 @@ function CaseStudies() {
     setValue("vote", []);
     setValue("approval_status", "");
     setValue("caspio_company_name", "");
-    setValue("company_category", " ");
+    setValue("index", " ");
   };
 
   useEffect(() => {
@@ -264,7 +264,7 @@ function CaseStudies() {
       setValue("caspio_company_name", savedSearch?.caspio_company_name || "");
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
-      setValue("company_category", user?.saved_search?.company_category || "");
+      setValue("index", user?.saved_search?.index || "");
       dispatch(
         setAllFilters({
           keyword: savedSearch?.keyword || "",
@@ -277,7 +277,7 @@ function CaseStudies() {
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
           global_search: savedSearch?.global_search,
-        company_category: user?.saved_search?.company_category,
+        index: user?.saved_search?.index,
 
         })
       );
@@ -299,7 +299,7 @@ function CaseStudies() {
       year: filters.year || [],
       keyword: filters.keyword || "",
       global_search: [companyGlobalSearchName],
-      company_category: filters.company_category || "",
+      index: filters.index || "",
 
     });
     if (res?.user_id) {
@@ -317,7 +317,7 @@ function CaseStudies() {
             vote: filters.vote || [],
             year: filters.year || [],
             keyword: filters.keyword || "",
-            company_category: filters.company_category || "",
+            index: filters.index || "",
             global_search: [companyGlobalSearchName],
           },
         })
@@ -377,7 +377,7 @@ function CaseStudies() {
         (item) => item !== removeValue
       );
     } else if (updatedFilters[removeKey] === removeValue) {
-      if(removeKey === "company_category"){
+      if(removeKey === "index"){
         updatedFilters[removeKey] = " ";
       }else {
         updatedFilters[removeKey] = "";
@@ -628,7 +628,7 @@ function CaseStudies() {
                           <span className="font-semibold">Index</span>
                         </div>
                         <Controller
-                          name="company_category"
+                          name="index"
                           control={control}
                           defaultValue={""}
                           render={({ field }) => (
@@ -649,11 +649,11 @@ function CaseStudies() {
                                 </option>
                               ) : (
                                 <>
-                                  {apiDropdownOptions?.company_category?.map(
-                                    (company_category: string) => {
+                                  {apiDropdownOptions?.index?.map(
+                                    (index: string) => {
                                       return (
-                                        <option value={company_category}>
-                                          {company_category}
+                                        <option value={index}>
+                                          {index}
                                         </option>
                                       );
                                     }

@@ -20,7 +20,7 @@ const useCaseStudyDropdowns = (): UseCaseStudyDropdownsResult => {
     year: [],
     category: [],
     sub_category: [],
-    company_category: []
+    index: []
   });
   const [loading, setLoading] = useState(false);
 

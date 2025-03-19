@@ -47,7 +47,7 @@ interface PeerAnalysisFilter {
   country: string[];
   sector: string[];
   institutes?: any[];
-  company_category?: string;
+  index?: string;
 }
 
 function PeerAnalysis() {
@@ -67,7 +67,7 @@ function PeerAnalysis() {
       country: [],
       sector: [],
       institutes: [],
-      company_category: []
+      index: []
     });
 
   const {
@@ -103,7 +103,7 @@ function PeerAnalysis() {
       category: filters.category,
       country: filters.country,
       institutes: filters?.institutes,
-      company_category: filters?.company_category ?? " "
+      index: filters?.index ?? " "
 
     },
   });
@@ -139,7 +139,7 @@ function PeerAnalysis() {
     setValue("country", []);
     setValue("global_search", []);
     // setValue("institutes", []);
-    setValue("company_category", " ");
+    setValue("index", " ");
   };
 
   useEffect(() => {
@@ -281,7 +281,7 @@ function PeerAnalysis() {
     setValue("country", user?.saved_search?.country || []);
     setValue("sector", user?.saved_search?.sector || []);
     setValue("institutes", user?.saved_search?.institutes || []);
-    setValue("company_category", user?.saved_search?.company_category || "");
+    setValue("index", user?.saved_search?.index || "");
 
 
     dispatch(
@@ -291,7 +291,7 @@ function PeerAnalysis() {
         country: user?.saved_search?.country || [],
         global_search: user?.saved_search?.global_search,
         institutes: user?.saved_search?.institutes,
-        company_category: user?.saved_search?.company_category,
+        index: user?.saved_search?.index,
       })
     );
     setIsFilterCollapse(true);
@@ -307,7 +307,7 @@ function PeerAnalysis() {
       sector: watch("sector") || [],
       category: watch("category") || [],
       country: watch("country") || [],
-      company_category: watch("company_category") || "",
+      index: watch("index") || "",
     });
 
     if (res?.user_id) {
@@ -321,7 +321,7 @@ function PeerAnalysis() {
             category: watch("category") || [],
             country: watch("country") || [],
             sector: watch("sector") || [],
-            company_category: watch("company_category") || "",
+            index: watch("index") || "",
           },
         })
       );
@@ -393,7 +393,7 @@ function PeerAnalysis() {
         (item) => item !== removeValue
       );
     } else if (updatedFilters[removeKey] === removeValue) {
-      if(removeKey === "company_category"){
+      if(removeKey === "index"){
         updatedFilters[removeKey] = " ";
       }else {
         updatedFilters[removeKey] = "";
@@ -831,7 +831,7 @@ function PeerAnalysis() {
                           <span className="font-semibold">Index</span>
                         </div>
                         <Controller
-                          name="company_category"
+                          name="index"
                           control={control}
                           defaultValue={""}
                           render={({ field }) => (
@@ -852,11 +852,11 @@ function PeerAnalysis() {
                                 </option>
                               ) : (
                                 <>
-                                  {apiDropdownOptions?.company_category?.map(
-                                    (company_category: string) => {
+                                  {apiDropdownOptions?.index?.map(
+                                    (index: string) => {
                                       return (
-                                        <option value={company_category}>
-                                          {company_category}
+                                        <option value={index}>
+                                          {index}
                                         </option>
                                       );
                                     }
