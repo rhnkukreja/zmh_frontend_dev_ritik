@@ -406,7 +406,8 @@ function Main() {
                                 shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
                                   <img
                                     alt="ZMH Analytics"
-                                    className="object-contain "
+                                    className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
+                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                     src={profile?.institution_logo_url}
                                   />
                                 </div>

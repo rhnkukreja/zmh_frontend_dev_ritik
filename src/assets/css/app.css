@@ -248,6 +248,10 @@ option[data-label="*"] {
 .ts-dropdown .option {
   cursor: pointer !important;
 }
+
+.header-card{
+  z-index: 1000 !important;
+}
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
