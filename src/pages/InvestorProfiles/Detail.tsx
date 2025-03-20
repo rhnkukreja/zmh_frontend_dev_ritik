@@ -268,7 +268,7 @@ function Main() {
         <div ref={contentRef}>
           <div className="flex justify-between   px-2 gap-y-3 items-center flex-row bg-white box py-2">
             <div>
-              <div className=" text-[18px]  font-semibold text-left py-1 leading-none  md:max-w-[350px] sm:max-w-[200px]  overflow-hidden text-ellipsis whitespace-nowrap ">
+              <div className=" text-[18px] font-semibold text-left py-1 leading-none  md:max-w-[350px] sm:max-w-[200px]  overflow-hidden text-ellipsis whitespace-nowrap ">
                 {params?.type! === "investor"
                   ? singleInvesterProfile?.institution_name
                   : singleInvesterProfile?.equity_firm_name}
@@ -326,8 +326,9 @@ function Main() {
               className=
                 {clsx(
                   "flex flex-col w-full gap-y-2",
-                  params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[75rem]", 
-                  params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]"
+                  params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[54rem]",
+                  params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]",
+                  params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
                 )}
             >
               {params?.type === "investor" &&
