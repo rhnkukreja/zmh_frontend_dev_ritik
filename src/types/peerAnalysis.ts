@@ -24,3 +24,35 @@ export type FlterDropdown = {
   sector: string[];
   year: string[];
 };
+
+
+export interface InvestorData {
+  institution__institution: string;
+  unique_companies: number;
+  environmental: number;
+  social: number;
+  governance: number;
+}
+
+export interface PieChartDataPeerAnalysis {
+  name: string;
+  value: number;
+}
+
+
+interface EngagementTopic {
+  topic: string;
+  count: number;
+  percentage_gov_engagements?: number;
+  percentage_env_engagements?: number;
+  percentage_soc_engagements?: number;
+  Share_of_all_unique_companies_engaged: number;
+}
+
+export interface TopEngagementTopics {
+  gov: EngagementTopic[];
+  env: EngagementTopic[];
+  soc: EngagementTopic[];
+}
+
+
