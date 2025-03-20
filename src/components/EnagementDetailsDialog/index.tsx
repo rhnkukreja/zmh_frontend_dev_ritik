@@ -116,7 +116,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                         <tr key={index} className="text-center">
                                             <td className="border p-2 text-left">{topic.topic}</td>
                                             <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
+                                            <td className="border p-2">{(topic.percentage_gov_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -138,7 +138,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                         <tr key={index} className="text-center">
                                             <td className="border p-2 text-left">{topic.topic}</td>
                                             <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
+                                            <td className="border p-2">{(topic.percentage_env_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -159,7 +159,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                         <tr key={index} className="text-center">
                                             <td className="border p-2 text-left">{topic.topic}</td>
                                             <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="border p-2">{(topic.Share_of_all_unique_companies_engaged * 100).toFixed(2)}%</td>
+                                            <td className="border p-2">{(topic.percentage_soc_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
