@@ -3,6 +3,7 @@ import _ from "lodash";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
+  fetchCompanyByName,
   fetchCompanyDashboard,
   getBoardDirectorMembers,
   setPage,
@@ -18,34 +19,58 @@ import AGMSummaryCard from "@/components/AGMSummaryCard";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import { dashboardService } from "@/services/dashboard";
+import useCompanySearch from "@/hooks/useCompanySearch";
+import { CompanyData } from "@/types/company";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const { isCompanySelected } = useAppSelector(
     (state: RootState) => state.authentiction
   );
+  const [searchParams] = useSearchParams();
+
+  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+  const { companySearchAndUpdate } = useCompanySearch();
+  const {tempSearch, } =
+  useAppSelector((state) => state.dashboard);
+  const searchTicker = searchParams.get("ticker");
+
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
   }, [isCompanySelected]);
 
-  const { investorCardLoading } = useAppSelector((state) => state.dashboard);
+
+  // useEffect(() => {
+  //   if (companyGlobalSearchTicker === tempSearch) {
+  //     getCompanyHeader();
+  //   }
+  // }, [companyGlobalSearchTicker]);
 
 
+  // const getCompanyHeader = async () => {
+  //   try {
+  //     const res = await dashboardService.getCompanyName(searchTicker);
+  //     if (res.result) {
+  //       const data = res.result[0];
+  //       const companyData: CompanyData = {id: data?.id, name: data?.name, symbol: data?.symbol};
+  //       if (companyData?.id) {
+  //         await companySearchAndUpdate(companyData);
+  //       }
+  //       console.log(res.result);
+  //     }
+  //   } catch (error) {
+  //     return error;
+  //   } finally {
+  //   }
 
+  // };
+
+    
   return (
     <>
-      {/* {
-        investorCardLoading && <div className=" h-96 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
-      }
-      {
-        <> */}
-        
           <section >
             <div className="grid grid-cols-12 gap-y-10 gap-x-6">
               <div className="col-span-12 xl:col-span-12">

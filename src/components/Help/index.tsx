@@ -186,6 +186,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                                   checked={field.value.includes(
                                     InfoType as InformationType
                                   )}
+                                  className="mr-2"
                                   onChange={(e) => {
                                     const updatedValue = e.target.checked
                                       ? [

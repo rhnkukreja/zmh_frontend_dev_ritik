@@ -32,7 +32,7 @@ const useCompanySearch = () => {
   };
 
   const companySearchAndUpdate = async (companyData: CompanyData) => {
-    window.history.pushState({}, "", `/?ticker=${companyData?.symbol}`);
+    // window.history.pushState({}, "", `/?ticker=${companyData?.symbol}`);
     const saveSearchResponse = await saveSearch(
       companyData?.id,
       companyData?.name
