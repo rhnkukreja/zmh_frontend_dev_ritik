@@ -266,7 +266,7 @@ function Main() {
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []);
+  }, [companyGlobalSearchTicker]);
 
   const {
     loading,
@@ -417,7 +417,7 @@ function Main() {
                           setHelpFormVisible(true);
                         } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
-                          menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
+                          // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
                           linkTo(menu, navigate);
                         } else {
                           linkTo(menu, navigate);
@@ -908,7 +908,7 @@ function Main() {
 
       <div
         className={clsx([
-          "transition-[margin,width] duration-100 pt-[54px] pb-8 relative z-10 group mode",
+          "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
           { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
@@ -917,10 +917,15 @@ function Main() {
         <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
           <div className="px-5 mt-10 w-full">
             <div className={clsx({ container: !shouldShowSidebar })}>
-              <div className="sticky z-10" style={{ top: "4rem" }}>
+              <div
+                className={clsx(
+                  "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",
+                  { "opacity-0 pointer-events-none -mt-5": shouldHideHeader }
+                )}
+                style={{ top: "4rem" }}
+              >
                 {!shouldHideHeader && <CountryInfoHeader />}
               </div>
-
               <Outlet />
             </div>
           </div>

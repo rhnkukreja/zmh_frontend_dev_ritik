@@ -582,18 +582,22 @@ function ProxyGuideline() {
                                 <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
                                   {guideline?.institution_logo_url ? (
                                     <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
+                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
                                         <img
-                                          alt="ZMH Analytics"
-                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                          alt="Institution Logo"
+                                          className="object-contain "
                                           src={guideline?.institution_logo_url}
+                                          content={
+                                            guideline?.institution_name || ""
+                                          }
                                         />
                                       </div>
                                     </>
                                   ) : (
                                     <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
                                       <img
-                                        alt="ZMH Analytics"
+                                        alt="Institution Logo"
                                         className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
                                         src={investorIcon}
                                       />
