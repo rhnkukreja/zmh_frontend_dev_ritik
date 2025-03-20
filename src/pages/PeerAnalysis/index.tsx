@@ -1085,10 +1085,12 @@ function PeerAnalysis() {
                       *
                     </sup>
                     <p id="footnote" className="">
-                      Investor does not disclose engagement details
+                      Investor does not disclose engagement details. (Dimensional does not disclose engagement topics)
                     </p>
+                    
                   </span>
                 </footer>
+                
 
                 {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>
