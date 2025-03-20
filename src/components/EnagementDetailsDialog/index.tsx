@@ -13,6 +13,7 @@ interface ChartComponentProps {
     pieChartDataPeerAnalysis: {
         name: string;
         value: number;
+        total: number;
     }[];
     handleSearch: (searchTerms: string[]) => void;
     topEngagementTopics: TopEngagementTopics;
@@ -33,7 +34,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
         return
     }
 
-    const filteredPieChartData = pieChartDataPeerAnalysis.filter(entry => entry.value > 0);
+    const filteredPieChartData = pieChartDataPeerAnalysis.filter(entry => entry.total > 0);
 
 
     return (
@@ -80,12 +81,12 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     <PieChart >
                                         <Pie
                                             data={filteredPieChartData}
-                                            dataKey="value"
+                                            dataKey="total"
                                             nameKey="name"
                                             cx="50%"
                                             cy="50%"
                                             outerRadius="80%"
-                                            label={({ name, value }) => `${name}: ${formatNumberWithCommas(value)}`}
+                                            label={({ name, total }) => `${name}: ${formatNumberWithCommas(total)}`}
                                         >
                                             {filteredPieChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
