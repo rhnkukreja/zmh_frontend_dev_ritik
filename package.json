@@ -61,6 +61,7 @@
     "react-tooltip": "^5.28.0",
     "react-transition-group": "^4.4.5",
     "react-window": "^1.8.10",
+    "recharts": "^2.15.1",
     "redux-persist": "^6.0.0",
     "simplebar": "^6.2.5",
     "tabulator-tables": "^5.5.2",

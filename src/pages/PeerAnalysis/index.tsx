@@ -37,7 +37,9 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { modifyRoute } from "@/stores/themeSlice";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import clsx from "clsx";
+import ChartComponent from "@/components/EnagementDetailsDialog";
 import FilterChips from "@/components/FilterChips";
+
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -59,6 +61,8 @@ function PeerAnalysis() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
+  const [viewAll, setViewAll] = useState<boolean>(false);
+  const [isViewAnalysis, setIsViewAnalysis] = useState(false);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
@@ -73,6 +77,9 @@ function PeerAnalysis() {
   const {
     loading,
     peerAnalysisData,
+    investorData,
+    pieChartDataPeerAnalysis,
+    topEngagementTopics,
     page,
     totalPages,
     filters,
@@ -356,9 +363,10 @@ function PeerAnalysis() {
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
   const handleViewAllChange = async (event: any) => {
-    if (event?.target?.checked) {
+    if(event?.target?.checked){
+      setViewAll(true)
       setValue("year", ["2024"]);
-      setValue("country", ["USA"]);
+      setValue("country", ["USA"]); 
       dispatch(
         setAllFilters({
           year: [2024],
@@ -368,6 +376,7 @@ function PeerAnalysis() {
 
     }
     else {
+      setViewAll(false)
       setValue("year", []);
       setValue("country", []);
       dispatch(
@@ -383,8 +392,6 @@ function PeerAnalysis() {
       dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
     } catch (error) { }
   }
-
-
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
     const updatedFilters = { ...filters };
 
@@ -434,7 +441,6 @@ function PeerAnalysis() {
                       type="checkbox"
                       checked={isAllCompanySelected}
                       onChange={async (e) => {
-
                         handleViewAllChange(e);
                       }}
                     />
@@ -495,7 +501,6 @@ function PeerAnalysis() {
                                 }}
                               >
                                 {inst?.institution_name} {inst?.label ? "*" : ""}
-
                               </option>
                             );
                           }
@@ -536,12 +541,17 @@ function PeerAnalysis() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  {user?.saved_search?.["Peer Analysis"] !== undefined && (
-                    <div className="hover:bg-slate-50 ">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
+                  {viewAll && (
+                    <FormSwitch>
+                      <label className="text-md mr-3 font-semibold">Analytics</label>
+                      <FormSwitch.Input
+                        id="view-analysis-switch"
+                        type="checkbox"
+                        checked={isViewAnalysis}
+                        onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                      />
+                      <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+                    </FormSwitch>
                   )}
                   <Popover className="inline-block">
                     {({ close }) => (
@@ -948,6 +958,7 @@ function PeerAnalysis() {
                 </form>
               )}
 
+              {isViewAnalysis && <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />}
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
@@ -956,7 +967,7 @@ function PeerAnalysis() {
                       <Table.Thead>
                         <Table.Tr>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Institution Name
+                            Institution
                           </Table.Td>
                           <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
                             Year
@@ -1074,10 +1085,12 @@ function PeerAnalysis() {
                       *
                     </sup>
                     <p id="footnote" className="">
-                      Investor does not disclose engagement details
+                      Investor does not disclose engagement details. (Dimensional does not disclose engagement topics)
                     </p>
+                    
                   </span>
                 </footer>
+                
 
                 {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>

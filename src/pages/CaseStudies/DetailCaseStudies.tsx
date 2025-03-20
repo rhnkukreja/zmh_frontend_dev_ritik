@@ -52,7 +52,7 @@ const DetailCaseStudies = () => {
               {singleCaseStudy?.institution_name && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">
-                    Institution Name
+                    Institution
                   </h3>
                   <p>{singleCaseStudy?.institution_name}</p>
                 </div>

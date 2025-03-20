@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { peerAnalysisService } from "@/services/peerAnalysis";
-import { TypesPeerAnalysis } from "@/types/peerAnalysis";
+import { InvestorData, PieChartDataPeerAnalysis, TopEngagementTopics, TypesPeerAnalysis } from "@/types/peerAnalysis";
 
 const name = "peer_analysis";
 
@@ -17,6 +17,9 @@ export interface PeerAnalysisFilter {
 
 export interface PeerAnalysis {
   peerAnalysisData: TypesPeerAnalysis[];
+  investorData: InvestorData[];
+  pieChartDataPeerAnalysis: PieChartDataPeerAnalysis[];
+  topEngagementTopics: TopEngagementTopics[];
   getSinglePeerAnalysis: TypesPeerAnalysis | null;
   totalPeerAnalysisNoAction: number;
   loading: boolean;
@@ -35,7 +38,9 @@ export interface PeerAnalysis {
 const initialState: PeerAnalysis = {
   peerAnalysisData: [],
   getSinglePeerAnalysis: null,
-
+  investorData: [],
+  pieChartDataPeerAnalysis: [],
+  topEngagementTopics: [],
   totalPeerAnalysisNoAction: 0,
   loading: false,
   error: null,
@@ -58,10 +63,14 @@ const initialState: PeerAnalysis = {
 };
 
 export const fetchPeerAnalysis = createAsyncThunk<
-  { count: number; results: TypesPeerAnalysis[] },
+  {
+    count: number; results: TypesPeerAnalysis[], investorData: InvestorData[], pieChartDataPeerAnalysis: PieChartDataPeerAnalysis[], topEngagementTopics: TopEngagementTopics[],
+  },
   string
 >(`${name}`, async (url: string) => {
-  return await peerAnalysisService.getPeerAnalysis(url);
+  const peerAnalysis = await peerAnalysisService.getPeerAnalysis(url)
+  console.log("peerAnalysisfrom api", peerAnalysis)
+  return peerAnalysis;
 });
 
 const peerAnalysisSlice = createSlice({
@@ -118,10 +127,16 @@ const peerAnalysisSlice = createSlice({
           action: PayloadAction<{
             count: number;
             results: any[];
+            investorData: any[];
+            pieChartDataPeerAnalysis: any[];
+            topEngagementTopics: any[];
           }>
         ) => {
           state.loading = false;
           state.peerAnalysisData = action.payload.results;
+          state.investorData = action.payload.investorData;
+          state.topEngagementTopics = action.payload.topEngagementTopics;
+          state.pieChartDataPeerAnalysis = action.payload.pieChartDataPeerAnalysis;
           state.totalPeerAnalysisNoAction = action.payload.count;
           state.count = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
