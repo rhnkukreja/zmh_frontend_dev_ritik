@@ -34,7 +34,9 @@ import Button from "../Base/Button";
 import { ChevronLeft } from "lucide-react";
 
 import Lucide from "../Base/Lucide";
-import { Tab } from "../Base/Headless";
+import { Dialog, Tab } from "../Base/Headless";
+import TradingViewWidget from "../TradingViewWidget";
+import EngagementQuestionsDialog from "../EngagementQuestionsDialog";
 
 const index = () => {
   const location = useLocation();
@@ -54,6 +56,10 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
   const [todayDate, setTodayDate] = useState("");
+  const [institutionName, setInstitutionName] = useState<string>("");
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+
+
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
@@ -154,6 +160,11 @@ const index = () => {
   const redirectCaseStudy = (institution_name: string) => {
     // window.open(`/case-studies`, "_blank");
     navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
+  };
+
+  const openEngagementQuestionsDialog = (institution_name: string) => {
+    setInstitutionName(institution_name);
+    setIsDialogOpen(true);
   };
 
   const [selectedYear, setSelectedYear] = useState<string>("");
@@ -442,6 +453,21 @@ const index = () => {
                                             ) : (
                                               <div className="w-6 h-6" />
                                             )}
+                                            <Tippy
+                                              content="Case Studies"
+                                              options={{ theme: "light" }}
+                                              className="w-6 h-6"
+                                              onClick={() =>
+                                                openEngagementQuestionsDialog(dashboard?.institution_name)
+                                              }
+                                            >
+                                              <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                <Lucide
+                                                  icon="HelpCircle" 
+                                                  className="w-4 h-4 stroke-[1.5]"
+                                                />
+                                              </div>
+                                            </Tippy>
                                           </div>
                                         </div>
                                       </Table.Td>
@@ -603,10 +629,6 @@ const index = () => {
                   </span>
                 </div>
               </div>
-
-
-
-
             </footer>
           </div>
         </>
@@ -627,6 +649,26 @@ const index = () => {
           <h1 className="font-semibold"> Investors Records Not Found..</h1>
         </div>
       )}
+
+
+      <Dialog size="2xl" open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+        <Dialog.Panel>
+          <Dialog.Title>
+            <h2 className="text-xl font-semibold">Engagement Questions</h2>
+            <div
+              onClick={() => setIsDialogOpen(false)}
+              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+          <Dialog.Description>
+            <div className="w-full h-[550px]">
+              <EngagementQuestionsDialog institution_name={institutionName} />
+            </div>
+          </Dialog.Description>
+        </Dialog.Panel>
+      </Dialog>
     </>
   );
 };
