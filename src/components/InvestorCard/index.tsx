@@ -360,8 +360,9 @@ const index = () => {
 
                                       <Table.Td className="relative w-full px-4 py-2">
                                         {!dashboard.investor_profile_id && (
-                                          <h1
-                                            className="cursor-pointer text-lg absolute left-2"
+                                          
+                                          <sup
+                                            className="cursor-pointer text-lg absolute left-2 top-1"
                                             onClick={() => {
                                               window.scrollBy({
                                                 top: 350,
@@ -370,7 +371,7 @@ const index = () => {
                                             }}
                                           >
                                             *
-                                          </h1>
+                                          </sup>
                                         )}
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center font-semibold whitespace-nowrap">
