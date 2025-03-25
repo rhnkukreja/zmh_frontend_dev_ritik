@@ -66,7 +66,7 @@ export const no_header_company = [
 export const subSidebarRoutes = ["/notes"];
 
 export const pageTitles: Record<string, string | null> = {
-  "/proxy-contest": "Proxy Contest 2024 (Beta)",
+  "/proxy-contest": "Proxy Contest",
   "/notes": "Notes (Beta)",
   "/investor-profile": null,
   "/engagement-question": null,
