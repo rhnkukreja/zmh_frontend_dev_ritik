@@ -287,7 +287,7 @@ const index = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                 <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
                                         Company*
                                     </div>
                                     <Controller
@@ -312,7 +312,7 @@ const index = () => {
                                 </div>
 
                                 <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
                                         Institution Name
                                     </div>
                                     <Controller
@@ -347,7 +347,7 @@ const index = () => {
                                 
 
                                 <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
                                         Category
                                     </div>
                                     <Controller
@@ -381,7 +381,7 @@ const index = () => {
                                 </div>
                             
                                 <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
                                         Vote
                                     </div>
                                     <Controller
@@ -415,7 +415,7 @@ const index = () => {
                                 </div>
 
                                 <div className="w-full">
-                                    <div className="text-left text-slate-500">Keyword</div>
+                                    <div className="text-left text-slate-500 font-semibold">Keyword</div>
                                     <Controller
                                         name="keyword"
                                         control={control}
