@@ -362,7 +362,7 @@ const index = () => {
                                         {!dashboard.investor_profile_id && (
                                           
                                           <sup
-                                            className="cursor-pointer text-lg absolute left-2 top-1"
+                                            className="cursor-pointer text-lg absolute left-3 top-1"
                                             onClick={() => {
                                               window.scrollBy({
                                                 top: 350,
