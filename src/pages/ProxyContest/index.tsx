@@ -517,7 +517,12 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
 
                                         </div>
 
-                                        <div className="font-bold text-2xl pt-4">{companyHeaderName}</div>
+                                        <div className="font-bold text-2xl pt-4">
+                                            {companyHeaderName}{" "}
+                                            {proxyContestReleaseDetails?.Activism_Presentation?.[0]?.year && (
+                                                <>({proxyContestReleaseDetails.Activism_Presentation[0].year})</>
+                                            )}
+                                        </div>
 
                                     </div>
 
@@ -1169,7 +1174,7 @@ const gotoDetailPage = (pdf: string, pdf_name: string) => {
                                     {/* Proxy Contest Table */}
 
                                     <section >
-                                        {!loading && proxyContestTopFilter?.company_name?.length > 0 &&
+                                    {!loading && proxyContestTopFilter?.company_name?.length > 0 && proxyContestReleaseDetails?.Activism_Presentation?.[0]?.year != "2023" &&
                                             <section className="box p-5 mt-3.5">
                                                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
