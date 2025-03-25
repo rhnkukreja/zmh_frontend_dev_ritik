@@ -221,7 +221,7 @@ const index = () => {
                 <div className="flex flex-col p-5  sm:flex-row gap-y-2">
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
-                            <h1 className="text-lg font-bold">VDS European (Beta)</h1>
+                            <h1 className="text-lg font-bold">VDS European</h1>
                             {/* {
                                 meetingDate &&
                                 <p className=" italic"> Meeting Date: {meetingDate} </p>
@@ -468,7 +468,7 @@ const index = () => {
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "17.5%" }}
                                                         >
-                                                            Porposal
+                                                            Proposal
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
