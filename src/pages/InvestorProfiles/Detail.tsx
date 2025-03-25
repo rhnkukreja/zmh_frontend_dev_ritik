@@ -213,6 +213,7 @@ function Main() {
   const backToPreviousPage = () => {
     if (from) {
       // navigate(`/?ticker=${companyGlobalSearchTicker}`);
+      navigate(`/`);
     } else {
       dispatch(setPage(currentPage));
       navigate(`/investor-profile`);
