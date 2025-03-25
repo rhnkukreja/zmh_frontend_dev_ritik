@@ -90,6 +90,7 @@ import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
 import ProxyContest from "@/pages/ProxyContest";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
+import VdsEuropean from "@/pages/vdsEuropean";
 
 function Router() {
   const TitleManager = () => {
@@ -469,6 +470,11 @@ function Router() {
           path: "proxy-contest",
           element: <ProxyContest />,
           data: { titleName: "Proxy - Contest - ZMH Analytics" },
+        },
+        {
+          path: "vds-european",
+          element: <VdsEuropean />,
+          data: { titleName: "VDS - European - ZMH Analytics" },
         },
         
       ],

@@ -103,6 +103,11 @@ const initialState: any = {
       pathname: "/proxy-contest",
       title: "Proxy Contest",
     },
+    {
+      icon: "ShieldAlert",
+      pathname: "/vds-european",
+      title: "VDS European",
+    },
 
     // {
     //   icon: "PanelTopClose",

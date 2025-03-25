@@ -82,7 +82,8 @@ const initialState: ThemeState = {
     "proxy-voting-guideline",
     "notes",
     "investor-company-details",
-    "proxy-contest"
+    "proxy-contest",
+    "vds-european"
   ],
 };
 

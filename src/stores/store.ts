@@ -23,6 +23,8 @@ import caseStudiesReducer from "./caseStudySlice";
 import peerAnalysisReducer from "./peerAnalysisSlice";
 import userDetailReducer from "./userDetailSlice";
 import notesReducer from "./notesSlice";
+import vdsEuropeanReducer from "./vdsEuropeanSlice";
+
 
 import { PersistPartial } from "redux-persist/es/persistReducer";
 import storage from "redux-persist/lib/storage";
@@ -57,6 +59,7 @@ const slices = {
   peerAnalysis: peerAnalysisReducer,
   userDetail: userDetailReducer,
   notes: notesReducer,
+  vdsEuropean: vdsEuropeanReducer,
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(
