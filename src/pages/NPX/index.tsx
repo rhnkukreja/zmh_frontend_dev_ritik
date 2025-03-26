@@ -55,23 +55,15 @@ const index = () => {
     fund_name: [],
   });
 
-  const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
     useState<boolean>(false);
   const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
     useState<boolean>(false);
   const [showFundName, setShowFundName] = useState<boolean>(false);
-
-  const [apiDropdownOptions, setApiDropdownOptions] = useState<any>({
-    institution: [],
-  });
-
   const [apiFundNameDropdown, setApiFundNameDropdown] = useState<any>({
     fund_name: [],
   });
-
   const [meetingDate, setMeetingDate] = useState('');
-
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
       proposal: [],
@@ -79,19 +71,6 @@ const index = () => {
       vote_category: [],
     });
 
-  const getAllInstitutionDropdown = async () => {
-    try {
-      setGetDropdownLoader(true);
-      const res = await dashboardService.getNPXDropdownValues();
-      if (res.result) {
-        setApiDropdownOptions({ ...res.result });
-      }
-    } catch (error) {
-      return error;
-    } finally {
-      setGetDropdownLoader(false);
-    }
-  };
 
   const getFundNameDependentDropdown = async (value: any) => {
     if (value !== "") {
@@ -172,12 +151,7 @@ const index = () => {
 
   useEffect(() => {
     getDependentDropdown();
-    // }
   }, [dropdownValues]);
-
-  useEffect(() => {
-    getAllInstitutionDropdown();
-  }, []);
 
   useEffect(() => {
     if (allApplyFilter) {
@@ -328,21 +302,7 @@ const index = () => {
       {/* )} */}
 
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-        {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-          <span>
-            <h1 className="text-lg font-bold">N-PX Voting (Beta)</h1>
-          </span>
-        </div> */}
-        {/* <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                <Tippy content="Download Excel" options={{ theme: "light" }}>
-                  <div
-                    className="box p-[5px] cursor-pointer"
-                    onClick={convertDivTableToCSV}
-                  >
-                    <img alt="download-icon" src={downloadIcon} />
-                  </div>
-                </Tippy>
-              </div> */}
+      
       </div>
       <div className="p-5 mt-1 box">
         <div className="flex flex-col p-5  sm:flex-row gap-y-2">
@@ -355,32 +315,6 @@ const index = () => {
               }
             </span>
           </div>
-          {/* <div className="flex">
-            <MultiSearchBar
-              onSearch={handleSearch}
-              searchTerms={searchTerms}
-              setSearchTerms={setSearchTerms}
-              url={`/npx/fund_name/?all=true`}
-              getOptionKey="fund_name"
-              placeHolder="Search Fund Name"
-              isSingle={true}
-              isAll={true}
-            />
-            <div className="hover:bg-slate-50">
-              <Button onClick={handleClearAllFilter}>
-                <Tippy
-                  content="Clear Filters"
-                  options={{ theme: "light" }}
-                >
-                  <FilterX
-                    size={17}
-                    strokeWidth={1}
-                    className="text-slate-500 cursor-pointer"
-                  />
-                </Tippy>
-              </Button>
-            </div>
-          </div> */}
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
             <Popover className="inline-block">
               {({ close }) => (
@@ -414,7 +348,6 @@ const index = () => {
                   variant="secondary"
                   onClick={() => {
                     onFilterClear();
-                    // close();
                   }}
                   type="button"
                   className="w-32 mx-2"
@@ -448,28 +381,6 @@ const index = () => {
                           getFundNameDependentDropdown(value?.label);
                         }}
                       />
-                      // <TomSelect
-                      //   value={field.value || []}
-
-                      //   onChange={(value) => {
-                      //     field.onChange(value);
-                      //     handleDropdownChange("institution_name", value?.target?.value);
-                      //     getFundNameDependentDropdown(value?.target?.value);
-                      //   }}
-                      //   options={{ placeholder: "Select Institution" }}
-                      //   className="w-full"
-
-                      // >
-                      //   {getDropdownLoader ? (
-                      //     <option disabled>Loading...</option>
-                      //   ) : (
-                      //     apiDropdownOptions.institution?.map((institution: any) => (
-                      //       <option key={institution} value={institution}>
-                      //         {institution}
-                      //       </option>
-                      //     ))
-                      //   )}
-                      // </TomSelect>
                     )}
                   />
                 </div>

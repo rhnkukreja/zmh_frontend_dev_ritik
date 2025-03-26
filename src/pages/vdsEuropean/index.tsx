@@ -28,6 +28,7 @@ import { vdsEuropeanService } from "@/services/vdsEuropean";
 import { setTempSearch } from "@/stores/dashboardSlice";
 import FilterChips from "@/components/FilterChips";
 import { Tooltip } from "react-tooltip";
+import Tippy from "@/components/Base/Tippy";
 
 const index = () => {
     const dispatch: AppDispatch = useAppDispatch();
@@ -43,9 +44,16 @@ const index = () => {
     const searchTicker = searchParams.get("ticker");
     const [allApplyFilter, setallApplyFilter] = useState<any>("");
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+     const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
+        useState<boolean>(false);
+      const [showFundName, setShowFundName] = useState<boolean>(false);
+      const [apiFundNameDropdown, setApiFundNameDropdown] = useState<any>({
+        institution: [],
+      });
 
     const [dropdownValues, setDropdownValues] = useState<any>({
         company_name: [],
+        institution: [],
     });
 
     const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
@@ -63,6 +71,7 @@ const index = () => {
     const getDependentDropdown = async () => {
         const paramFilter = {
             company_name: dropdownValues?.company_name !== "" ? [dropdownValues?.company_name] : [],
+            institution_name: dropdownValues?.institution_name
         };
 
         try {
@@ -77,6 +86,28 @@ const index = () => {
             setGetDynamicDropdownLoader(false);
         }
     };
+
+      const getFundNameDependentDropdown = async (value: any) => {
+        if (value !== "") {
+          const paramFilter = {
+            company_name: [value],
+          };
+          try {
+            setGetFundNameDropdownLoader(true);
+            const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(
+              paramFilter
+            );
+            if (res.result) {
+              setShowFundName(res.result?.is_institution);
+              setApiFundNameDropdown({ ...res.result });
+            }
+          } catch (error) {
+            return error;
+          } finally {
+            setGetFundNameDropdownLoader(false);
+          }
+        }
+      };
 
     const handleDropdownChange = (key: string, value: any) => {
         setDropdownValues((prev: any) => ({
@@ -160,18 +191,24 @@ const index = () => {
     const onFilterClear = () => {
         resetFormValues();
         setallApplyFilter({});
-        setApiDependentDropdownOptions({
-            institution: [],
-            vote: [],
-            category: [],
-            year: [],
-        })
+        
         dispatch(resetPage());
         dispatch(
             fetchVdsEuropeans(
                 createDynamicURL(`${baseURL}/vds_european/`, undefined, undefined, page)
             )
         );
+
+        setApiDependentDropdownOptions({
+            institution: [],
+            vote: [],
+            category: [],
+            year: [],
+        })
+        setApiFundNameDropdown({
+            institution: [],
+        })
+
     };
 
     const resetFormValues: any = () => {
@@ -218,6 +255,22 @@ const index = () => {
         // dispatch(setAllFilters(updatedFilters));
         setallApplyFilter(updatedFilters);
       }
+
+      const isObject = (item: any) => {
+        if (typeof item === "object") {
+          return true;
+        } else {
+          false;
+        }
+      };
+
+        const getSplitContents = (items: any) => {
+          const resultString = Object.entries(items)
+            .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
+            .join(", ");
+          return resultString;
+        };
+    
 
     return (
         <>
@@ -310,6 +363,7 @@ const index = () => {
                                                         "company_name",
                                                         value?.label
                                                     );
+                                                    getFundNameDependentDropdown(value?.label);
                                                 }}
                                             />
                                            
@@ -328,17 +382,21 @@ const index = () => {
                                         render={({ field }) => (
                                             <TomSelect
                                                 value={field.value || []}
-                                                onChange={(value) => {
+                                                onChange={(value: any) => {
                                                     field.onChange(value);
+                                                    handleDropdownChange(
+                                                        "institution_name",
+                                                        value?.target?.value
+                                                    );
                                                 }}
                                                 options={{ placeholder: "Select Institution Name" }}
                                                 className="w-full"
                                                 multiple
                                             >
-                                                {getDynamicDropdownLoader ? (
+                                                {getFundNameDropdownLoader ? (
                                                     <option disabled>Loading...</option>
                                                 ) : (
-                                                    apiDependentDropdownOptions?.institution?.map(
+                                                    apiFundNameDropdown?.institution?.map(
                                                         (institution: any) => (
                                                             <option key={institution} value={institution}>
                                                                 {convertToTitleCase(institution)}
@@ -565,6 +623,7 @@ const index = () => {
                                                                     style={{ width: "17.5%" }}
                                                                 >
                                                                     {convertToTitleCase(vds?.excel_institution_name)}
+                                                                    
                                                                    
                                                                 </Table.Td>
 
@@ -573,20 +632,35 @@ const index = () => {
                                                                     style={{ width: "17.5%" }}
                                                                 >
                                                                     {convertToTitleCase(vds?.meeting_date)}
+                                                                    
                                                                 </Table.Td>
 
                                                                 <Table.Td
                                                                     className="py-2 border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "17.5%" }}
                                                                 >
+                                                                    <div className="flex">
                                                                     {convertToTitleCase(vds?.meeting_type)}
+                                                                    { vds?.notes
+                                                                    &&
+                                                                    <span
+                                                                    data-tooltip-id="my-tooltip-data-html"
+                                                                    data-tooltip-html={vds?.notes}>
+                                                                    <Lucide
+                                                                        icon="Info"
+                                                                        className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                    />
+                                                                </span>
+                                                                   }
+                                                                    </div>
                                                                 </Table.Td>
 
                                                                 <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
+                                                                    className="py-2  border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "5%" }}
                                                                 >
                                                                     {convertToTitleCase(vds?.proposal_num)}
+                                                                    
                                                                 </Table.Td>
 
                                                                 <Table.Td
@@ -595,23 +669,32 @@ const index = () => {
                                                                 >
                                                                     {convertToTitleCase(vds?.proposal)}
                                                                 </Table.Td>
-
                                                                 <Table.Td
-                                                                    className="py-2 flex border-dashed dark:bg-darkmode-600"
+                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "30%" }}
                                                                 >
-                                                                    {convertToTitleCase(vds?.vote)}
-                                                                    { vds?.notes
-                                                                    &&
-                                                                    <div
-                                                                    data-tooltip-id="my-tooltip-data-html"
-                                                                    data-tooltip-html={vds?.notes}>
-                                                                    <Lucide
-                                                                        icon="Info"
-                                                                        className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                    />
-                                                                </div>
-                                                                   }
+                                                                    {vds?.vote === "Split Vote" ? (
+                                                                        <Tippy
+                                                                            content={
+                                                                                vds?.split_vote_counts
+                                                                                // getSplitContents(
+                                                                                //     vds?.split_vote_counts
+                                                                                // )
+                                                                            }
+                                                                            options={{ theme: "light" }}
+                                                                        >
+                                                                            {
+                                                                                vds?.vote
+                                                                            }
+                                                                        </Tippy>
+                                                                    ) : (
+                                                                        <span className="for">
+                                                                            {
+                                                                                vds?.vote
+                                                                            }
+                                                                        </span>
+                                                                    )}
+                                                                    
                                                                 </Table.Td>
 
                                                                 <Table.Td
