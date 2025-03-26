@@ -27,6 +27,7 @@ import { fetchVdsEuropeans, resetPage, setAllFilters, setPage } from "@/stores/v
 import { vdsEuropeanService } from "@/services/vdsEuropean";
 import { setTempSearch } from "@/stores/dashboardSlice";
 import FilterChips from "@/components/FilterChips";
+import { Tooltip } from "react-tooltip";
 
 const index = () => {
     const dispatch: AppDispatch = useAppDispatch();
@@ -55,6 +56,7 @@ const index = () => {
             institution: [],
             vote: [],
             category: [],
+            year: [],
         });
 
         
@@ -135,6 +137,7 @@ const index = () => {
             institution_name: [],
             vote: [],
             category: [],
+            year: [],
         },
     });
 
@@ -148,6 +151,7 @@ const index = () => {
             institution_name: npxFilter?.institution_name,
             vote:npxFilter?.vote,
             category: npxFilter?.category,
+            year: npxFilter?.year,
             keyword: npxFilter?.keyword,
         });
         dispatch(resetPage());
@@ -160,6 +164,7 @@ const index = () => {
             institution: [],
             vote: [],
             category: [],
+            year: [],
         })
         dispatch(resetPage());
         dispatch(
@@ -174,6 +179,7 @@ const index = () => {
         setValue("institution_name", []);
         setValue("vote", []);
         setValue("category", []);
+        setValue("year", []);
         setValue("keyword", "");
     };
 
@@ -345,6 +351,39 @@ const index = () => {
                                     />
                                 </div>
                                 
+                                <div className="w-full">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                                        Year
+                                    </div>
+                                    <Controller
+                                        name="year"
+                                        control={control}
+                                        defaultValue={[]}
+                                        render={({ field }) => (
+                                            <TomSelect
+                                                value={field.value || []}
+                                                onChange={(value) => {
+                                                    field.onChange(value);
+                                                }}
+                                                options={{ placeholder: "Select Year" }}
+                                                className="w-full"
+                                                multiple
+                                            >
+                                                {getDynamicDropdownLoader ? (
+                                                    <option disabled>Loading...</option>
+                                                ) : (
+                                                    apiDependentDropdownOptions?.year?.map(
+                                                        (year: any) => (
+                                                            <option key={year} value={year}>
+                                                                {year}
+                                                            </option>
+                                                        )
+                                                    )
+                                                )}
+                                            </TomSelect>
+                                        )}
+                                    />
+                                </div>
 
                                 <div className="w-full">
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
@@ -379,6 +418,8 @@ const index = () => {
                                         )}
                                     />
                                 </div>
+
+                                
                             
                                 <div className="w-full">
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
@@ -452,17 +493,35 @@ const index = () => {
                                             <Table>
                                                 <Table.Thead>
                                                     <Table.Tr>
+                                                    <Table.Td
+                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                            style={{ width: "30%" }}
+                                                        >
+                                                           Company Name
+                                                        </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "30%" }} // Proposal gets more width
+                                                            style={{ width: "17.5%" }}
                                                         >
-                                                            Excel Institution Name
+                                                            Institution Name
+                                                        </Table.Td>
+                                                        <Table.Td
+                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                            style={{ width: "17.5%" }} // Proposal gets more width
+                                                        >
+                                                            Meeting Date
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "17.5%" }} // Remaining columns have equal widths
                                                         >
-                                                            Industry Sector
+                                                            Meeting Type
+                                                        </Table.Td>
+                                                        <Table.Td
+                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                            style={{ width: "5%" }}
+                                                        >
+                                                            Proposal No.
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
@@ -472,16 +531,17 @@ const index = () => {
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }}
+                                                            style={{ width: "30%" }}
                                                         >
-                                                           Excel Company Name
+                                                            Vote
                                                         </Table.Td>
-                                                        {/* <Table.Td
+                                                        <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }}
+                                                            style={{ width: "20%" }}
                                                         >
-                                                            Fund Name
-                                                        </Table.Td> */}
+                                                            Management Record
+                                                        </Table.Td>
+                                                       
                                                     </Table.Tr>
                                                 </Table.Thead>
 
@@ -496,26 +556,73 @@ const index = () => {
                                                                     className="py-2 border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "30%" }}
                                                                 >
-                                                                    {vds?.excel_institution_name}
+                                                                    { vds?.company_name ?  convertToTitleCase(vds?.company_name) : convertToTitleCase(vds?.excel_company_name)}
+                                                                    
                                                                 </Table.Td>
+
+                                                                <Table.Td
+                                                                    className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                                                    style={{ width: "17.5%" }}
+                                                                >
+                                                                    {convertToTitleCase(vds?.excel_institution_name)}
+                                                                   
+                                                                </Table.Td>
+
                                                                 <Table.Td
                                                                     className="py-2 border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "17.5%" }}
                                                                 >
-                                                                    {convertToTitleCase(vds?.industry_sector)}
+                                                                    {convertToTitleCase(vds?.meeting_date)}
                                                                 </Table.Td>
+
+                                                                <Table.Td
+                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
+                                                                    style={{ width: "17.5%" }}
+                                                                >
+                                                                    {convertToTitleCase(vds?.meeting_type)}
+                                                                </Table.Td>
+
+                                                                <Table.Td
+                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
+                                                                    style={{ width: "5%" }}
+                                                                >
+                                                                    {convertToTitleCase(vds?.proposal_num)}
+                                                                </Table.Td>
+
                                                                 <Table.Td
                                                                     className="py-2 border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "17.5%" }}
                                                                 >
                                                                     {convertToTitleCase(vds?.proposal)}
                                                                 </Table.Td>
+
                                                                 <Table.Td
-                                                                    className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                                                    style={{ width: "17.5%" }}
+                                                                    className="py-2 flex border-dashed dark:bg-darkmode-600"
+                                                                    style={{ width: "30%" }}
                                                                 >
-                                                                    {convertToTitleCase(vds?.excel_company_name)}
+                                                                    {convertToTitleCase(vds?.vote)}
+                                                                    { vds?.notes
+                                                                    &&
+                                                                    <div
+                                                                    data-tooltip-id="my-tooltip-data-html"
+                                                                    data-tooltip-html={vds?.notes}>
+                                                                    <Lucide
+                                                                        icon="Info"
+                                                                        className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                    />
+                                                                </div>
+                                                                   }
                                                                 </Table.Td>
+
+                                                                <Table.Td
+                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
+                                                                    style={{ width: "25%" }}
+                                                                >
+                                                                    {convertToTitleCase(vds?.mgt_rec)}
+                                                                </Table.Td>
+
+                                                                
+
                                                             </Table.Tr>
                                                         ))}
                                                 </Table.Tbody>
@@ -555,6 +662,19 @@ const index = () => {
                         </div>
                     )}
             </div>
+
+            <Tooltip
+                    id="my-tooltip-data-html"
+                    style={{
+                      zIndex: 10,
+                      backgroundColor: "white",
+                      color: "#000000",
+                      width: "maxContent",
+                      maxWidth: 700,
+                      boxShadow: "2px 4px 6px rgba(0, 0, 0, 0.2)",
+                      cursor: "pointer"
+                    }}
+                  />
         </>
     );
 };

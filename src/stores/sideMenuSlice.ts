@@ -104,7 +104,7 @@ const initialState: any = {
       title: "Proxy Contest",
     },
     {
-      icon: "ShieldAlert",
+      icon: "ActivitySquare",
       pathname: "/vds-european",
       title: "VDS European",
     },
