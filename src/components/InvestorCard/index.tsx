@@ -169,13 +169,10 @@ const index = () => {
 
   const [selectedYear, setSelectedYear] = useState<string>("");
 
-
   const handleAGMYearTab = (tab: string, index: number) => {
     setSelectedIndex(index);
     setSelectedYear(tab);
   }
-
-
 
   const getSelectedTabIndex = () => {
     const tabIndex = dashboardDataList?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ?
@@ -188,7 +185,6 @@ const index = () => {
     const index = getSelectedTabIndex();
     setSelectedIndex(index);
   }, [selectedYear])
-
 
   return (
     <>
@@ -436,7 +432,7 @@ const index = () => {
                                               <Tippy
                                                 content="Case Studies"
                                                 options={{ theme: "light" }}
-                                                className="w-6 h-6"
+                                                className="w-6 h-6 mt-1"
                                                 onClick={() =>
                                                   redirectCaseStudy(
                                                     dashboard?.institution_name
@@ -453,21 +449,22 @@ const index = () => {
                                             ) : (
                                               <div className="w-6 h-6" />
                                             )}
-                                            <Tippy
-                                              content="Case Studies"
-                                              options={{ theme: "light" }}
-                                              className="w-6 h-6"
-                                              onClick={() =>
-                                                openEngagementQuestionsDialog(dashboard?.institution_name)
-                                              }
-                                            >
-                                              <div className="flex items-center justify-center w-6 h-6 text-primary">
-                                                <Lucide
-                                                  icon="HelpCircle" 
-                                                  className="w-4 h-4 stroke-[1.5]"
-                                                />
+                                            {["The Vanguard Group", "BlackRock, Inc.", "Fidelity Investments", "Charles Schwab Asset Management"].includes(dashboard?.institution_name) ? (
+                                              <Tippy
+                                                content="Notes"
+                                                options={{ theme: "light" }}
+                                                className="w-6 h-6 mt-1"
+                                                onClick={() => openEngagementQuestionsDialog(dashboard?.institution_name)}
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                  <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
+                                                </div>
+                                              </Tippy>
+                                            ) : (
+                                              <div className="flex items-center justify-center w-6 h-6 text-gray-400 cursor-not-allowed">
+                                                <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
                                               </div>
-                                            </Tippy>
+                                            )}
                                           </div>
                                         </div>
                                       </Table.Td>
@@ -650,11 +647,10 @@ const index = () => {
         </div>
       )}
 
-
       <Dialog size="2xl" open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <Dialog.Panel>
           <Dialog.Title>
-            <h2 className="text-xl font-semibold">Engagement Questions</h2>
+            <h2 className="text-xl font-semibold">Engagement Notes</h2>
             <div
               onClick={() => setIsDialogOpen(false)}
               className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
@@ -663,7 +659,7 @@ const index = () => {
             </div>
           </Dialog.Title>
           <Dialog.Description>
-            <div className="w-full h-[550px]">
+            <div className="w-full minh-[550px]">
               <EngagementQuestionsDialog institution_name={institutionName} />
             </div>
           </Dialog.Description>

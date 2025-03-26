@@ -8,13 +8,14 @@ import { Note } from "@/types/notes";
 interface FolderFieldProps {
   control: Control<Note, any>;
   rules?: object;
+  isQuestionDialog?: boolean
 }
 
-const FolderField: React.FC<FolderFieldProps> = ({ control, rules }) => {
+const FolderField: React.FC<FolderFieldProps> = ({ control, rules, isQuestionDialog }) => {
   return (
     <div className="w-full">
       <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-        Folder
+        {isQuestionDialog ? "Institution" : "Folder"}
       </FormCheck.Label>
       <Controller
         name="folder"
@@ -28,7 +29,7 @@ const FolderField: React.FC<FolderFieldProps> = ({ control, rules }) => {
               labelKey="folder"
               value={field?.value?.toString() || ""}
               onChange={(value) => field.onChange(value)}
-              options={{ placeholder: "Select Folder" }}
+              options={{ placeholder: isQuestionDialog ? "Select Institution" : "Select Folder" }}
               className="w-full"
             />
             {error && (
