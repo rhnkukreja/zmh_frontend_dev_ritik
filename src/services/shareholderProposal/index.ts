@@ -7,6 +7,7 @@ import {
 } from "@/types/shareHolder";
 import { axiosInstance } from "../index";
 import { createDynamicURL } from "@/utils/helper";
+import { TopSubcategories } from "@/stores/shareholderProposalSlice";
 
 class ShareHolderProposalService {
   public async getShareHolderProposal(url: string): Promise<{
@@ -15,9 +16,17 @@ class ShareHolderProposalService {
     proposalCount: number;
     withdrawnCount: number;
     noActionCount: number;
+    proposalCounts: {
+      [key: string]: number; 
+    };
+    topSubcategories: {
+      [key: string]: any[]; 
+    };
+    topCategories: any[];
+    yearlySummary: any[];
   }> {
     const response = await axiosInstance.get(url);
-    const { count, results, proposalCount, withdrawnCount, noActionCount } =
+    const { count, results, proposalCount, withdrawnCount, noActionCount, proposal_counts, top_subcategories, yearly_summary, top_categories } =
       response.data;
     return {
       count,
@@ -25,6 +34,10 @@ class ShareHolderProposalService {
       proposalCount,
       withdrawnCount,
       noActionCount,
+      proposalCounts: proposal_counts,
+      topSubcategories: top_subcategories,
+      yearlySummary: yearly_summary,
+      topCategories: top_categories
     };
   }
 
