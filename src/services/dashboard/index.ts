@@ -5,16 +5,25 @@ import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 
 class DashboardService {
-  public async fetchCompanyByName(companyName?: string): Promise<{
+  public async fetchCompanyByName(companyName?: string, exactUrl?: string): Promise<{
     results: CompanyData[];
   }> {
     let results = [];
+    let url = "";
     if (companyName !== "") {
-      const url = `/company/?${
-        companyName ? `company_name=${companyName}&` : ""
-      }all=true`;
+      if (exactUrl) {
+        url = `/${exactUrl}${companyName}`;
+      } else {
+        url = `/company/?${
+          companyName ? `company_name=${companyName}&` : ""
+        }all=true`;
+      }
       const response = await axiosInstance.get(url);
-      results = response.data;
+      if(exactUrl){
+        results = response.data?.company;
+      }else {
+        results = response.data;
+      }
     }
 
     return {

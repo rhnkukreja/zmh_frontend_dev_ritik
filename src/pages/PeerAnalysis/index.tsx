@@ -210,10 +210,6 @@ function PeerAnalysis() {
       )
     );
     setSelectedChipFilters(generateFilterChips(chipFilters));
-    console.log("outer one")
-
-
-
   }, [page, filters]);
 
 
