@@ -24,21 +24,22 @@ interface CompanySelectProps {
   placeholder?: string;
   companyGlobalSearchName?: string;
   isClearable?: boolean;
+  exactUrl?: string;
 }
 
 const fetchOptions = async (
   inputValue: string,
   isInstitution?: boolean,
-  companyGlobalSearchName?: string
+  companyGlobalSearchName?: string,
+  exactUrl?: string
 ): Promise<OptionType[]> => {
   try {
-    // const response = await dashboardService.fetchCompanyByName(inputValue);
     const response = isInstitution
       ? await dashboardService.fetchInstitutionByName(
           inputValue,
           companyGlobalSearchName
         )
-      : await dashboardService.fetchCompanyByName(inputValue);
+      : await dashboardService.fetchCompanyByName(inputValue, exactUrl);
 
     if (isInstitution) {
       return response.results.map((institution: any) => ({
@@ -46,9 +47,9 @@ const fetchOptions = async (
         label: institution,
       }));
     } else {
-      return response.results.map((company: CompanyData) => ({
-        value: company.id,
-        label: company.name,
+      return response.results.map((company: any) => ({
+        value: company?.id ?? company,
+        label: company?.name ?? company,
       }));
     }
   } catch (error) {
@@ -67,13 +68,14 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   placeholder = "",
   companyGlobalSearchName = "",
   isClearable,
+  exactUrl
 }) => {
   const [inputValue, setInputValue] = useState("");
 
   const loadOptions = useCallback(
     _.debounce(
       (inputValue: string, callback: (options: OptionType[]) => void) => {
-        fetchOptions(inputValue, isInstitution, companyGlobalSearchName).then(
+        fetchOptions(inputValue, isInstitution, companyGlobalSearchName, exactUrl).then(
           (options) => {
             callback(options);
           }
