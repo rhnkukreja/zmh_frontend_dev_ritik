@@ -57,7 +57,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                         ) : (
                             <ResponsiveContainer width="100%" height={300}>
                                 <ComposedChart
-                                    data={[...yearlySummary.filter((item) => item.year >= 2023)].reverse()} // Filter and reverse order
+                                    data={[...yearlySummary.filter((item) => item.year >= 2022)].reverse()} // Filter and reverse order
                                     margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -108,14 +108,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                         <p className="text-gray-500">No data available</p>
                     )}
                 </div>
-
-
-
-
-
-
-
-
                 {/* Proposal Distribution - Pie Chart */}
                 <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
                     <h3 className="text-lg font-semibold mb-4">Proposal Distribution by Category</h3>
@@ -179,6 +171,21 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                     <p className="text-gray-500">No subcategory data available</p>
                 )}
             </div>
+            <footer className="!pt-10">
+                <div className="flex items-start justify-between">
+                    <span className="!pt-3 flex items-center relative">
+                        <sup
+                            className="cursor-pointer ml-1"
+                            style={{ fontSize: "0.8em" }}
+                        >
+                            *
+                        </sup>
+                        <p id="footnote" className="">
+                            2022 and 2023 data is for S&P500 companies only
+                        </p>
+                    </span>
+                </div>
+            </footer>
         </div>
     );
 };
