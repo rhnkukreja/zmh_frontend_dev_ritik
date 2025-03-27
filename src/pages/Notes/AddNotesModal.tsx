@@ -13,6 +13,7 @@ interface AddNoteModalProps {
   title: string;
   selectedNote?: Note;
   fieldsToEdit?: Array<"name" | "text" | "folder">;
+  isQuestionDialog?: boolean
 }
 
 const AddNoteModal = ({
@@ -22,6 +23,7 @@ const AddNoteModal = ({
   selectedNote,
   mode,
   fieldsToEdit,
+  isQuestionDialog,
 }: AddNoteModalProps) => {
   const dispatch = useAppDispatch();
 
@@ -59,6 +61,7 @@ const AddNoteModal = ({
             onSubmit={handleNoteSubmit}
             setAddNoteModalVisible={setAddNoteModalVisible}
             fieldsToEdit={fieldsToEdit}
+            isQuestionDialog={isQuestionDialog}
           />
         </Dialog.Description>
       </Dialog.Panel>
