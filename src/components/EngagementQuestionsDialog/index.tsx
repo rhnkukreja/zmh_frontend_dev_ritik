@@ -234,18 +234,16 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ i
                                                 {notesByInstitution[institution_name] ? (
                                                     notesByInstitution[institution_name].map((note, index) => (
                                                         <Table.Tr key={index} className="relative">
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
                                                                 {note.date}
                                                             </Table.Td>
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
                                                                 {note.attendees}
                                                             </Table.Td>
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[700px]">
                                                                 <div className="flex justify-between items-start">
                                                                     <div
-                                                                        className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index]
-                                                                            ? "max-h-none"
-                                                                            : "line-clamp-2 overflow-hidden"
+                                                                        className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index] ? "max-h-none" : "line-clamp-2 overflow-hidden"
                                                                             } whitespace-pre-wrap`}
                                                                     >
                                                                         {note.notes}
@@ -261,11 +259,10 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ i
                                                                     </button>
                                                                 </div>
                                                             </Table.Td>
-
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
                                                                 {note.author}
                                                             </Table.Td>
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-center">
+                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-center align-top">
                                                                 <button className="text-primary hover:text-blue-500">
                                                                     <Lucide icon="Eye" className="w-4 h-4" />
                                                                 </button>
@@ -283,6 +280,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ i
                                                     </Table.Tr>
                                                 )}
                                             </Table.Tbody>
+
                                         </Table>
                                     </div>
                                 </TableWrapper>
