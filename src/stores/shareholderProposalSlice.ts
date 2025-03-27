@@ -22,6 +22,26 @@ type SharedHolderFiltersType = {
   global_search: string[];
 };
 
+type ProposalCounts = {
+  Environment: number;
+  Social: number;
+  Governance: number;
+  Compensation: number;
+};
+
+export interface Subcategory {
+  sub_category: string;
+  count: number;
+}
+
+export interface TopSubcategories {
+  Environment?: Subcategory[];
+  Social?: Subcategory[];
+  Governance?: Subcategory[];
+  Compensation?: Subcategory[];
+}
+
+
 export interface SharedHolderPrposal {
   shareHolderProposal: any[];
   getSingleShareHolder: any | null;
@@ -40,7 +60,19 @@ export interface SharedHolderPrposal {
   shareHolderFilterOption: {
     category: string[];
   };
+
+  proposalCounts: {
+    [key: string]: number; 
+  };
+  topSubcategories: {
+    [key: string]: any[]; 
+  };
+
+  topCategories: any[];
+  yearlySummary: any[];
 }
+
+
 
 const initialState: SharedHolderPrposal = {
   shareHolderProposal: [],
@@ -74,6 +106,20 @@ const initialState: SharedHolderPrposal = {
       "Social",
     ],
   },
+  proposalCounts: {
+    Environment: 0,
+    Social: 0,
+    Governance: 0,
+    Compensation: 0,
+  },
+  topCategories: [],
+  topSubcategories: {
+    Environment: [],
+    Social: [],
+    Governance: [],
+    Compensation: [],
+  },
+  yearlySummary: []
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<
@@ -83,6 +129,14 @@ export const fetchShareHolderProposal = createAsyncThunk<
     proposalCount: number;
     withdrawnCount: number;
     noActionCount: number;
+    proposalCounts: {
+      [key: string]: number; 
+    };
+    topSubcategories: {
+      [key: string]: any[]; 
+    };
+    topCategories: any[];
+    yearlySummary: any[];
   },
   string
 >(`${name}`, async (url: string) => {
@@ -202,12 +256,25 @@ const shareHolderProposal = createSlice({
             proposalCount: number;
             withdrawnCount: number;
             noActionCount: number;
+            topCategories: any[];
+            proposalCounts: {
+              [key: string]: number; 
+            };
+            topSubcategories: {
+              [key: string]: any[]; 
+            };
+            yearlySummary: any[]
           }>
         ) => {
           state.loading = false;
           state.shareHolderProposal = action.payload.results;
           state.totalShareHolderNoAction = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count);
+          state.topCategories = action.payload.topCategories
+          state.topSubcategories = action.payload.topSubcategories;
+          state.yearlySummary = action.payload.yearlySummary;
+          state.proposalCounts = action.payload.proposalCounts;
+
           // state.proposalCount = action?.payload?.proposalCount  ?? 0;
           // state.withdrawnCount = action?.payload?.withdrawnCount ?? 0;
           // state.noActionCount = action?.payload?.noActionCount ?? 0;
