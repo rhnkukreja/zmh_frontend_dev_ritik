@@ -286,7 +286,7 @@ const index = () => {
                 <div className="flex flex-col p-5  sm:flex-row gap-y-2">
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
-                            <h1 className="text-lg font-bold">Proxy Voting</h1>
+                            <h1 className="text-lg font-bold">Voting Data</h1>
                             {
                                 VdsEuropeans?.length > 0 &&
                                 <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date} </p>
@@ -379,7 +379,7 @@ const index = () => {
 
                                 <div className="w-full">
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Institution Name
+                                        Institution
                                     </div>
                                     <Controller
                                         name="institution_name"
@@ -562,7 +562,7 @@ const index = () => {
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "17.5%" }}
                                                         >
-                                                            Institution Name
+                                                            Institution
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
@@ -574,7 +574,7 @@ const index = () => {
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "5%" }}
                                                         >
-                                                            Proposal No.
+                                                            No.
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
@@ -650,7 +650,8 @@ const index = () => {
                                                                     className="py-2  border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "5%" }}
                                                                 >
-                                                                    {convertToTitleCase(vds?.proposal_num)}
+                                                                    {/* {convertToTitleCase(vds?.proposal_num)} */}
+                                                                    {vds?.proposal_num}
 
                                                                 </Table.Td>
 
@@ -658,7 +659,9 @@ const index = () => {
                                                                     className="py-2 border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "25%" }}
                                                                 >
-                                                                    {convertToTitleCase(vds?.proposal)}
+                                                                    {/* {convertToTitleCase(vds?.proposal)}
+                                                                     */}
+                                                                     {vds?.proposal}
                                                                 </Table.Td>
 
                                                                 <Table.Td
@@ -675,14 +678,14 @@ const index = () => {
                                                                     <div className="flex">
                                                                     {vds?.vote === "Split Vote" ? (
                                                                         <Tippy
-                                                                            content={
-                                                                                getSplitContents(
-                                                                                    vds?.split_vote_counts
-                                                                                )
-                                                                            }
                                                                             // content={
-                                                                            //     vds?.split_vote_counts
+                                                                            //     getSplitContents(
+                                                                            //         vds?.split_vote_counts
+                                                                            //     )
                                                                             // }
+                                                                            content={
+                                                                                vds?.split_vote_counts
+                                                                            }
                                                                             options={{ theme: "light" }}
                                                                         >
                                                                             {

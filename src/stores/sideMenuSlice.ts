@@ -99,16 +99,16 @@ const initialState: any = {
       title: "Shareholder Proposals",
     },
     {
+      icon: "ActivitySquare",
+      pathname: "/vds-european",
+      title: "Voting Data",
+    },
+    {
       icon: "ShieldAlert",
       pathname: "/proxy-contest",
       title: "Proxy Contest",
     },
-    {
-      icon: "ActivitySquare",
-      pathname: "/vds-european",
-      title: "Proxy Voting",
-    },
-
+    
     // {
     //   icon: "PanelTopClose",
     //   pathname: "/point-of-sale",
