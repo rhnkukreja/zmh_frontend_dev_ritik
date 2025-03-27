@@ -106,7 +106,7 @@ const initialState: any = {
     {
       icon: "ActivitySquare",
       pathname: "/vds-european",
-      title: "VDS European",
+      title: "Proxy Voting",
     },
 
     // {
