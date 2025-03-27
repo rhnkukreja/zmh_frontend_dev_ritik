@@ -77,7 +77,7 @@ const index = () => {
             institution_name: dropdownValues?.institution_name,
             year: dropdownValues?.institution_name && dropdownValues?.company_name ? [2024] : []
         };
-        if(dropdownValues?.institution_name && dropdownValues?.company_name){
+        if (dropdownValues?.institution_name && dropdownValues?.company_name) {
             setValue("year", [2024]);
         }
         try {
@@ -423,32 +423,30 @@ const index = () => {
                                     <Controller
                                         name="year"
                                         control={control}
-                                        defaultValue={[]}
+                                        defaultValue={""} // Default should be an empty string instead of an array
                                         render={({ field }) => (
                                             <TomSelect
-                                                value={field.value || []}
+                                                value={field.value || ""} // Ensure value is a string
                                                 onChange={(value) => {
-                                                    field.onChange(value);
+                                                    field.onChange(value); // Set a string value instead of an array
                                                 }}
                                                 options={{ placeholder: "Select Year" }}
                                                 className="w-full"
-                                                multiple
                                             >
                                                 {getDynamicDropdownLoader ? (
                                                     <option disabled>Loading...</option>
                                                 ) : (
-                                                    apiDependentDropdownOptions?.year?.map(
-                                                        (year: any) => (
-                                                            <option key={year} value={year}>
-                                                                {year}
-                                                            </option>
-                                                        )
-                                                    )
+                                                    apiDependentDropdownOptions?.year?.map((year: any) => (
+                                                        <option key={year} value={year}>
+                                                            {year}
+                                                        </option>
+                                                    ))
                                                 )}
                                             </TomSelect>
                                         )}
                                     />
                                 </div>
+
 
                                 {/* <div className="w-full">
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
@@ -661,7 +659,7 @@ const index = () => {
                                                                 >
                                                                     {/* {convertToTitleCase(vds?.proposal)}
                                                                      */}
-                                                                     {vds?.proposal}
+                                                                    {vds?.proposal}
                                                                 </Table.Td>
 
                                                                 <Table.Td
@@ -676,46 +674,46 @@ const index = () => {
                                                                     style={{ width: "30%" }}
                                                                 >
                                                                     <div className="flex">
-                                                                    {vds?.vote === "Split Vote" ? (
-                                                                        <Tippy
-                                                                            // content={
-                                                                            //     getSplitContents(
-                                                                            //         vds?.split_vote_counts
-                                                                            //     )
-                                                                            // }
-                                                                            content={
-                                                                                vds?.split_vote_counts
-                                                                            }
-                                                                            options={{ theme: "light" }}
-                                                                        >
-                                                                            {
-                                                                                vds?.vote
-                                                                            }
-                                                                        </Tippy>
-                                                                    ) : (
-                                                                        <span className={clsx([
-                                                                            (vds?.vote?.includes("Against") ||
-                                                                                vds.vote?.includes(
-                                                                                    "Withhold"
-                                                                                )) &&
-                                                                            "text-red-700 font-semibold ",
-                                                                        ])}>
-                                                                            {
-                                                                                vds?.vote
-                                                                            }
-                                                                        </span>
-                                                                    )}
-                                                                    {vds?.notes
-                                                                        &&
-                                                                        <span
-                                                                            data-tooltip-id="my-tooltip-data-html"
-                                                                            data-tooltip-html={vds?.notes}>
-                                                                            <Lucide
-                                                                                icon="Info"
-                                                                                className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                            />
-                                                                        </span>
-                                                                    }
+                                                                        {vds?.vote === "Split Vote" ? (
+                                                                            <Tippy
+                                                                                // content={
+                                                                                //     getSplitContents(
+                                                                                //         vds?.split_vote_counts
+                                                                                //     )
+                                                                                // }
+                                                                                content={
+                                                                                    vds?.split_vote_counts
+                                                                                }
+                                                                                options={{ theme: "light" }}
+                                                                            >
+                                                                                {
+                                                                                    vds?.vote
+                                                                                }
+                                                                            </Tippy>
+                                                                        ) : (
+                                                                            <span className={clsx([
+                                                                                (vds?.vote?.includes("Against") ||
+                                                                                    vds.vote?.includes(
+                                                                                        "Withhold"
+                                                                                    )) &&
+                                                                                "text-red-700 font-semibold ",
+                                                                            ])}>
+                                                                                {
+                                                                                    vds?.vote
+                                                                                }
+                                                                            </span>
+                                                                        )}
+                                                                        {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                                                            <span
+                                                                                data-tooltip-id="my-tooltip-data-html"
+                                                                                data-tooltip-html={vds?.notes}
+                                                                            >
+                                                                                <Lucide
+                                                                                    icon="Info"
+                                                                                    className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                                />
+                                                                            </span>
+                                                                        )}
                                                                     </div>
 
                                                                 </Table.Td>
