@@ -366,9 +366,13 @@ const index = () => {
                                       </Table.Td>
 
                                       <Table.Td className="relative w-full px-4 py-2">
-                                        {!dashboard.investor_profile_id && (
-                                          <h1
-                                            className="cursor-pointer text-lg absolute left-2"
+                                        
+                                        <div className="flex justify-between items-center w-full">
+                                          <div className="flex items-center  whitespace-nowrap">
+                                          {!dashboard.investor_profile_id && (
+                                          
+                                          <sup
+                                            className="cursor-pointer text-lg absolute left-2 top-1"
                                             onClick={() => {
                                               window.scrollBy({
                                                 top: 350,
@@ -377,10 +381,8 @@ const index = () => {
                                             }}
                                           >
                                             *
-                                          </h1>
+                                          </sup>
                                         )}
-                                        <div className="flex justify-between items-center w-full">
-                                          <div className="flex items-center font-semibold whitespace-nowrap">
                                             <h1
                                               onClick={() =>
                                                 dashboard?.investor_profile_id &&
@@ -390,7 +392,7 @@ const index = () => {
                                                 )
                                               }
                                               className={clsx([
-                                                "cell whitespace-nowrap capitalize text-wrap",
+                                                "cell whitespace-nowrap capitalize text-wrap font-semibold",
                                                 dashboard?.investor_profile_id &&
                                                 "cursor-pointer underline",
                                               ])}
