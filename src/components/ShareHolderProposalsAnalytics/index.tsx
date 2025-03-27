@@ -1,5 +1,5 @@
 import React from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Line, ComposedChart, LabelList } from "recharts";
 
 interface ShareHolderProposalAnalyticsComponentProps {
     proposalCounts: { [key: string]: number };
@@ -56,18 +56,64 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                             </p>
                         ) : (
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={yearlySummary}>
+                                <ComposedChart
+                                    data={[...yearlySummary.filter((item) => item.year >= 2023)].reverse()} // Filter and reverse order
+                                    margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                                >
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="year" />
-                                    <YAxis />
-                                    <Bar dataKey="count" fill="#FF6F00" />
-                                </BarChart>
+
+                                    <YAxis
+                                        yAxisId="left"
+                                        label={{ value: "Proposals", angle: -90, position: "insideLeft" }}
+                                    />
+
+                                    {/* Right Y-Axis for Avg Support (formatted as percentage) */}
+                                    <YAxis
+                                        yAxisId="right"
+                                        orientation="right"
+                                        label={{
+                                            angle: 90, // Rotates 180 degrees
+                                            position: "insideRight",
+                                        }}
+                                        domain={[0, "auto"]}
+                                        tickFormatter={(value) => `${value.toFixed(2)}%`} // Formats to 2 decimal places
+                                    />
+
+                                    {/* Bar Chart for Proposals */}
+                                    <Bar yAxisId="left" dataKey="count" fill="#FF6F00" name="Proposals">
+                                        {/* Display values on top of bars */}
+                                        <LabelList dataKey="count" position="top" fill="black" fontSize={12} />
+                                    </Bar>
+
+                                    {/* Line Chart for Avg Support (formatted as percentage) */}
+                                    <Line
+                                        yAxisId="right"
+                                        type="monotone"
+                                        dataKey="avg_support"
+                                        stroke="#007bff"
+                                        strokeWidth={2}
+                                        dot={{ r: 4 }}
+                                        name="Avg. Support (%)"
+                                    >
+                                        {/* Display values on top of the line */}
+                                        <LabelList dataKey="avg_support" position="top" fill="#007bff" fontSize={12} formatter={(value) => `${value.toFixed(2)}%`} />
+                                    </Line>
+
+                                    <Legend />
+                                </ComposedChart>
                             </ResponsiveContainer>
                         )
                     ) : (
                         <p className="text-gray-500">No data available</p>
                     )}
                 </div>
+
+
+
+
+
+
 
 
                 {/* Proposal Distribution - Pie Chart */}
