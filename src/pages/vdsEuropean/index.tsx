@@ -399,7 +399,8 @@ const index = () => {
                                                     apiFundNameDropdown?.institution?.map(
                                                         (institution: any) => (
                                                             <option key={institution} value={institution}>
-                                                                {convertToTitleCase(institution)}
+                                                                {/* {convertToTitleCase(institution)} */}
+                                                                {institution}
                                                             </option>
                                                         )
                                                     )
@@ -614,7 +615,8 @@ const index = () => {
                                                                     className="py-2 border-dashed dark:bg-darkmode-600"
                                                                     style={{ width: "30%" }}
                                                                 >
-                                                                    { vds?.company_name ?  convertToTitleCase(vds?.company_name) : convertToTitleCase(vds?.excel_company_name)}
+                                                                    {/* { vds?.company_name ?  convertToTitleCase(vds?.company_name) : convertToTitleCase(vds?.excel_company_name)} */}
+                                                                    { vds?.company_name ?  vds?.company_name : vds?.excel_company_name}
                                                                     
                                                                 </Table.Td>
 
