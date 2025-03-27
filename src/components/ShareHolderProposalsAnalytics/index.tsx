@@ -48,7 +48,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
                 {/* Yearly Proposal Trends - Bar Chart */}
                 <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
-                    <h3 className="text-lg font-semibold mb-4">Yearly Proposal Trends</h3>
+                    <h3 className="text-lg font-semibold mb-4">Yearly Proposal Trend</h3>
                     {isDataAvailable(yearlySummary) ? (
                         yearlySummary.length === 1 ? (
                             <p className="text-lg font-semibold text-gray-700">
@@ -60,13 +60,14 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     data={[...yearlySummary.filter((item) => item.year >= 2022)].reverse()} // Filter and reverse order
                                     margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
                                 >
-                                    <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="year" />
 
                                     <YAxis
                                         yAxisId="left"
                                         label={{ value: "Proposals", angle: -90, position: "insideLeft" }}
+                                        domain={[0, (dataMax) => dataMax + 200]} // Adds 50 to the highest value
                                     />
+
 
                                     {/* Right Y-Axis for Avg Support (formatted as percentage) */}
                                     <YAxis
@@ -77,7 +78,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                             position: "insideRight",
                                         }}
                                         domain={[0, "auto"]}
-                                        tickFormatter={(value) => `${value.toFixed(2)}%`} // Formats to 2 decimal places
+                                        tickFormatter={(value) => `${value.toFixed(1)}%`} // Formats to 2 decimal places
                                     />
 
                                     {/* Bar Chart for Proposals */}
@@ -97,7 +98,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                         name="Avg. Support (%)"
                                     >
                                         {/* Display values on top of the line */}
-                                        <LabelList dataKey="avg_support" position="top" fill="#007bff" fontSize={12} formatter={(value) => `${value.toFixed(2)}%`} />
+                                        <LabelList dataKey="avg_support" position="top" fill="#007bff" fontSize={12} formatter={(value) => `${value.toFixed(1)}%`} />
                                     </Line>
 
                                     <Legend />
@@ -123,11 +124,16 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     outerRadius={100}
                                     label={({ name, value }) => `${name === "Corporate Governance" ? "Governance" : name}: ${value}`}
                                 >
-                                    {topCategories.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
+                                    {topCategories.map((entry, index) => {
+                                        let color = COLORS[index % COLORS.length]; // Default color
+                                        if (entry.category === "Environmental") color = "#28a745"; // Green
+                                        if (entry.category === "Social") color = "#D39E00"; // Darker Yellow
+                                        if (entry.category === "Corporate Governance") color = "#0088FE"; 
+                                        return <Cell key={`cell-${index}`} fill={color} />;
+                                    })}
                                 </Pie>
                             </PieChart>
+
                         </ResponsiveContainer>
                     ) : (
                         <p className="text-gray-500">No data available</p>
