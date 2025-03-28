@@ -54,6 +54,9 @@ import CompanySelect from "@/components/ReactSelectAsync";
 import DetailDialog from "./components/DetailDialog";
 import { modifyRoute } from "@/stores/themeSlice";
 import FilterChips from "@/components/FilterChips";
+import ChartComponent from "@/components/EnagementDetailsDialog";
+import ShareHolderProposalAnalytics from "@/components/ShareHolderProposalsAnalytics";
+import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderProposalsAnalytics";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -69,11 +72,17 @@ function ShareHolderProposal() {
     tab,
     filters,
     isAllCompanySelected,
+    topCategories,
+    topSubcategories,
+    yearlySummary,
+    proposalCounts
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
   const [searchTerms, setSearchTerms] = useState<string[]>([
     ...filters?.proponent_name,
   ]);
+  const [isViewAnalysis, setIsViewAnalysis] = useState(false);
+
 
   const month = [
     {
@@ -290,7 +299,7 @@ function ShareHolderProposal() {
           : { ...restFilters, global_search: filters.global_search }
       )
     );
-    const {proponent_name, ...chipFilters} = restFilters;
+    const { proponent_name, ...chipFilters } = restFilters;
     setSelectedChipFilters(generateFilterChips(chipFilters));
 
   }, [page, tab, filters]);
@@ -583,23 +592,23 @@ function ShareHolderProposal() {
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
-      const updatedFilters = { ...filters };
-  
-      if (Array.isArray(updatedFilters[removeKey])) {
-        updatedFilters[removeKey] = updatedFilters[removeKey].filter(
-          (item) => item !== removeValue
-        );
-      } else if (updatedFilters[removeKey] === removeValue) {
-        if(removeKey === "index"){
-          updatedFilters[removeKey] = " ";
-        }else {
-          updatedFilters[removeKey] = "";
-        }
+    const updatedFilters = { ...filters };
+
+    if (Array.isArray(updatedFilters[removeKey])) {
+      updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+        (item) => item !== removeValue
+      );
+    } else if (updatedFilters[removeKey] === removeValue) {
+      if (removeKey === "index") {
+        updatedFilters[removeKey] = " ";
+      } else {
+        updatedFilters[removeKey] = "";
       }
-  
-      setValue(removeKey, updatedFilters[removeKey]);
-      dispatch(setAllFilters(updatedFilters));
     }
+
+    setValue(removeKey, updatedFilters[removeKey]);
+    dispatch(setAllFilters(updatedFilters));
+  }
 
   return (
     <>
@@ -704,6 +713,16 @@ function ShareHolderProposal() {
                         </Button>
                       </div>
                     )}
+                  <FormSwitch className="mb-6">
+                    <label className="text-md mr-3 font-semibold">Analytics</label>
+                    <FormSwitch.Input
+                      id="view-analysis-switch"
+                      type="checkbox"
+                      checked={isViewAnalysis}
+                      onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                    />
+                    <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+                  </FormSwitch>
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -1034,7 +1053,7 @@ function ShareHolderProposal() {
                       )}
 
                       {
-                       (tab === "proposal" || tab === "no-action") && (
+                        (tab === "proposal" || tab === "no-action") && (
                           <div className="mx-2">
                             <div className="text-left text-slate-500 flex justify-between mb-1">
                               <span className="font-semibold">Index</span>
@@ -1118,7 +1137,7 @@ function ShareHolderProposal() {
                             />
                           </div>
 
-                          
+
 
                           {tab === "proposal" && (
                             <>
@@ -1540,6 +1559,8 @@ function ShareHolderProposal() {
                 </form>
               )}
 
+              {isViewAnalysis && <ShareHolderProposalAnalyticsComponent proposalCounts={proposalCounts} topSubcategories={topSubcategories} topCategories={topCategories} yearlySummary={yearlySummary} />}
+
               <div className="overflow-auto xl:overflow-visible px-5">
                 <Tab.Group selectedIndex={getSelectedTabIndex()}>
                   <Tab.List variant="link-tabs">
@@ -1637,10 +1658,10 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                              <Table.Td className="py-2 text-left w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 text-left w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                              {isAllCompanySelected && (
+                                {isAllCompanySelected && (
                                   <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                     Company
                                   </Table.Td>
@@ -1677,7 +1698,7 @@ function ShareHolderProposal() {
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
                                   >
-                                      <Table.Td className="py-2 text-left border-dashed dark:bg-darkmode-600">
+                                    <Table.Td className="py-2 text-left border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
                                     {isAllCompanySelected && (
@@ -1710,13 +1731,13 @@ function ShareHolderProposal() {
                                       )}
 
                                       {!noAction?.vote_details && noAction?.year?.toString() === "2025" && (
-                                         <div className="whitespace-nowrap flex items-center justify-center">
-                                         <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                       <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                           <MegaphoneOff size={22} strokeWidth={1.2} absoluteStrokeWidth/>
-                                       </Tippy>
-                                         </div>
-                                       </div>
+                                        <div className="whitespace-nowrap flex items-center justify-center">
+                                          <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                              <MegaphoneOff size={22} strokeWidth={1.2} absoluteStrokeWidth />
+                                            </Tippy>
+                                          </div>
+                                        </div>
                                       )}
                                     </Table.Td>
                                     <Table.Td
@@ -1838,10 +1859,10 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                              <Table.Td className="py-2  w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2  w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
-                              {isAllCompanySelected && (
+                                {isAllCompanySelected && (
                                   <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                     Company
                                   </Table.Td>
@@ -1871,14 +1892,14 @@ function ShareHolderProposal() {
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
                                   >
-                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                    <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
                                     {isAllCompanySelected && (
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      {noAction?.company_name}
-                                    </Table.Td>
-                                  )}
+                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                        {noAction?.company_name}
+                                      </Table.Td>
+                                    )}
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                                       {noAction?.proponent || "-"}
                                     </Table.Td>
@@ -1964,7 +1985,7 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                              <Table.Td className="py-2 w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
@@ -1991,14 +2012,14 @@ function ShareHolderProposal() {
                                     key={noAction?.id}
                                     className="[&_td]:last:border-b-0"
                                   >
-                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                       {noAction?.year}
                                     </Table.Td>
                                     {isAllCompanySelected && (
-                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                      {noAction?.company_name}
-                                    </Table.Td>
-                                  )}
+                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                        {noAction?.company_name}
+                                      </Table.Td>
+                                    )}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis">
                                       {noAction?.proponent}
                                     </Table.Td>

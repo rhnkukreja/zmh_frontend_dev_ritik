@@ -308,7 +308,7 @@ const index = () => {
         <div className="flex flex-col p-5  sm:flex-row gap-y-2">
           <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
             <span>
-              <h1 className="text-lg font-bold">N-PX Voting 2024 (Beta)</h1>
+              <h1 className="text-lg font-bold">N-PX Voting 2024</h1>
               {
                 meetingDate &&
                 <p className=" italic"> Meeting Date: {meetingDate} </p>

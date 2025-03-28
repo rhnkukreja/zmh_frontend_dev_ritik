@@ -325,12 +325,12 @@ function Main() {
           <div className="mt-2 flex flex-col lg:flex-row  gap-x-2">
             <div
               className=
-                {clsx(
-                  "flex flex-col w-full gap-y-2",
-                  params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[54rem]",
-                  params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]",
-                  params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
-                )}
+              {clsx(
+                "flex flex-col w-full gap-y-2",
+                params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[54rem]",
+                params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]",
+                params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
+              )}
             >
               {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors)?.map(
@@ -410,6 +410,27 @@ function Main() {
 
             {params?.type! === "investor" && ((user?.user_type === "Admin") || (user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts?.length > 0)) && (
               <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
+                {singleInvesterProfile?.contact_email && (
+                  <div className="flex flex-col box mb-4 p-4 border border-gray-200 rounded-md">
+                    <h4 className="text-[18px] font-semibold text-left">
+                      {/\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
+                        ? "Team Contact Details"
+                        : "Link to Contact Form"}
+                    </h4>
+                    <a
+                      href={
+                        /\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
+                          ? `mailto:${singleInvesterProfile.contact_email}`
+                          : singleInvesterProfile.contact_email
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline mt-2 break-words"
+                    >
+                      {singleInvesterProfile.contact_email}
+                    </a>
+                  </div>
+                )}
                 <div className="flex flex-col box">
                   <div
                     className={clsx(
@@ -417,9 +438,9 @@ function Main() {
                       isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
                       !singleInvesterProfile?.key_contacts && "h-[120px]"
                     )}
-                    // user?.user_type?.toLowerCase() === "admin"
-                    //     ? "h-[70px] mt-4"
-                    //     : "h-[70px] mt-4"
+                  // user?.user_type?.toLowerCase() === "admin"
+                  //     ? "h-[70px] mt-4"
+                  //     : "h-[70px] mt-4"
                   >
                     <div className="flex items-center justify-between  w-full h-full ">
                       <h4 className="text-[18px]  font-semibold text-left ml-2 leading-none ">
@@ -437,9 +458,6 @@ function Main() {
                           Upload
                         </div>
                       )}
-                      
-                      
-
                     </div>
                     {isExpanded && (
                       <div className="w-full mt-3 max-h-[180px] exclude-from-pdf">

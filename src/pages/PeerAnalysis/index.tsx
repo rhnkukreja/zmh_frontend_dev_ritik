@@ -200,8 +200,8 @@ function PeerAnalysis() {
       page
     );
     dispatch(fetchPeerAnalysis(dynamicURL));
-    
-    const {institution_name , ...chipFilters} = restFilters;
+
+    const { institution_name, ...chipFilters } = restFilters;
     setFiltersLength(
       countValidFilters(
         isAllCompanySelected === false
@@ -249,7 +249,7 @@ function PeerAnalysis() {
   const clearInstitutionFilter = () => {
     setSelectedInstitution([""]);
     setSearchTerms([]);
-    if(isAllCompanySelected){
+    if (isAllCompanySelected) {
       dispatch(
         setFilter({ key: "global_search", value: [] })
       );
@@ -259,7 +259,7 @@ function PeerAnalysis() {
         setFilter({ key: "global_search", value: [companyGlobalSearchName] })
       );
     }
-   
+
     dispatch(resetPage());
     setValue("institution_name", []);
     setTimeout(() => {
@@ -359,10 +359,10 @@ function PeerAnalysis() {
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
   const handleViewAllChange = async (event: any) => {
-    if(event?.target?.checked){
+    if (event?.target?.checked) {
       setViewAll(true)
       setValue("year", ["2024"]);
-      setValue("country", ["USA"]); 
+      setValue("country", ["USA"]);
       dispatch(
         setAllFilters({
           year: [2024],
@@ -396,9 +396,9 @@ function PeerAnalysis() {
         (item) => item !== removeValue
       );
     } else if (updatedFilters[removeKey] === removeValue) {
-      if(removeKey === "index"){
+      if (removeKey === "index") {
         updatedFilters[removeKey] = " ";
-      }else {
+      } else {
         updatedFilters[removeKey] = "";
       }
     }
@@ -490,10 +490,10 @@ function PeerAnalysis() {
                                 className={inst?.label ? "" : ""}
                                 onClick={() => {
                                   inst?.label ?
-                                  window.scrollBy({
-                                    top: 350,
-                                    behavior: "smooth",
-                                  }) : "";
+                                    window.scrollBy({
+                                      top: 350,
+                                      behavior: "smooth",
+                                    }) : "";
                                 }}
                               >
                                 {inst?.institution_name} {inst?.label ? "*" : ""}
@@ -537,18 +537,16 @@ function PeerAnalysis() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  {viewAll && (
-                    <FormSwitch>
-                      <label className="text-md mr-3 font-semibold">Analytics</label>
-                      <FormSwitch.Input
-                        id="view-analysis-switch"
-                        type="checkbox"
-                        checked={isViewAnalysis}
-                        onChange={(e) => setIsViewAnalysis(e.target.checked)}
-                      />
-                      <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
-                    </FormSwitch>
-                  )}
+                  <FormSwitch>
+                    <label className="text-md mr-3 font-semibold">Analytics</label>
+                    <FormSwitch.Input
+                      id="view-analysis-switch"
+                      type="checkbox"
+                      checked={isViewAnalysis}
+                      onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                    />
+                    <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+                  </FormSwitch>
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -1083,10 +1081,10 @@ function PeerAnalysis() {
                     <p id="footnote" className="">
                       Investor does not disclose engagement details. (Dimensional does not disclose engagement topics)
                     </p>
-                    
+
                   </span>
                 </footer>
-                
+
 
                 {/* <FormSelect className="sm:w-20 rounded-[0.5rem]">
                 <option>10</option>

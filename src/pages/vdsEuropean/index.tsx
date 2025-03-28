@@ -412,12 +412,12 @@ const index = () => {
                                     <Controller
                                         name="year"
                                         control={control}
-                                        defaultValue={""}
+                                        defaultValue={""} // Default should be an empty string instead of an array
                                         render={({ field }) => (
                                             <TomSelect
-                                                value={field.value || " "}
+                                                value={field.value || ""} // Ensure value is a string
                                                 onChange={(value) => {
-                                                    field.onChange(value);
+                                                    field.onChange(value); // Set a string value instead of an array
                                                 }}
                                                 options={{ placeholder: "Select Year", allowEmptyOption: true }}
                                                 className="w-full"
@@ -426,18 +426,17 @@ const index = () => {
                                                 {getDynamicDropdownLoader ? (
                                                     <option disabled>Loading...</option>
                                                 ) : (
-                                                    apiDependentDropdownOptions?.year?.map(
-                                                        (year: any) => (
-                                                            <option key={year} value={year}>
-                                                                {year}
-                                                            </option>
-                                                        )
-                                                    )
+                                                    apiDependentDropdownOptions?.year?.map((year: any) => (
+                                                        <option key={year} value={year}>
+                                                            {year}
+                                                        </option>
+                                                    ))
                                                 )}
                                             </TomSelect>
                                         )}
                                     />
                                 </div>
+
 
                                 {/* <div className="w-full">
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
@@ -667,7 +666,7 @@ const index = () => {
                                                                                 }
                                                                             </span>
                                                                         )}
-                                                                        {vds?.notes
+                                                                        {vds?.notes && vds.notes.toLowerCase() !== "nan"
                                                                             &&
                                                                             <span
                                                                                 data-tooltip-id="my-tooltip-data-html"
