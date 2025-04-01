@@ -93,6 +93,7 @@ const index = () => {
         // return () => {
         //     onFilterClear();
         //   }
+        console.log(watch("year"));
     }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
 
 
@@ -112,7 +113,7 @@ const index = () => {
             institution_name: [],
             vote: [],
             category: [],
-            year: " ",
+            year: "",
         },
     });
 
