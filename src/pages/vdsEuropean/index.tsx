@@ -286,10 +286,16 @@ const index = () => {
                 <div className="flex flex-col p-5  sm:flex-row gap-y-2">
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
-                            <h1 className="text-lg font-bold">Voting Data</h1>
+                            <h1 className="text-lg font-bold">Voting Data (Beta)</h1>
                             {
                                 VdsEuropeans?.length > 0 &&
-                                <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date} </p>
+                                <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date
+                                    ? new Intl.DateTimeFormat("en-US", {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                    }).format(new Date(VdsEuropeans[0].meeting_date))
+                                    : ""} </p>
                             }
                         </span>
                     </div>
