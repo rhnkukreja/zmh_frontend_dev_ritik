@@ -122,19 +122,25 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     cx="50%"
                                     cy="50%"
                                     outerRadius={100}
-                                    label={({ name, value }) => `${name === "Corporate Governance" ? "Governance" : name}: ${value}`}
+                                    label={({ name, value }) => {
+                                        const displayName =
+                                            name === "Corporate Governance" ? "Governance" :
+                                                name === "Executive Compensation" ? "Exec. Compensation" :
+                                                    name;
+                                        return `${displayName}: ${value}`;
+                                    }}
                                 >
                                     {topCategories.map((entry, index) => {
                                         let color = COLORS[index % COLORS.length]; // Default color
                                         if (entry.category === "Environmental") color = "#28a745"; // Green
                                         if (entry.category === "Social") color = "#D39E00"; // Darker Yellow
-                                        if (entry.category === "Corporate Governance") color = "#0088FE"; 
+                                        if (entry.category === "Corporate Governance") color = "#0088FE";
                                         return <Cell key={`cell-${index}`} fill={color} />;
                                     })}
                                 </Pie>
                             </PieChart>
-
                         </ResponsiveContainer>
+
                     ) : (
                         <p className="text-gray-500">No data available</p>
                     )}
