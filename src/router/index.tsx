@@ -472,9 +472,9 @@ function Router() {
           data: { titleName: "Proxy - Contest - ZMH Analytics" },
         },
         {
-          path: "vds-european",
+          path: "voting-data",
           element: <VdsEuropean />,
-          data: { titleName: "VDS - European - ZMH Analytics" },
+          data: { titleName: "Voting Data - ZMH Analytics" },
         },
         
       ],

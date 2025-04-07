@@ -286,10 +286,16 @@ const index = () => {
                 <div className="flex flex-col p-5  sm:flex-row gap-y-2">
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
-                            <h1 className="text-lg font-bold">Voting Data</h1>
+                            <h1 className="text-lg font-bold">Voting Data (Beta)</h1>
                             {
                                 VdsEuropeans?.length > 0 &&
-                                <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date} </p>
+                                <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date
+                                    ? new Intl.DateTimeFormat("en-US", {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                    }).format(new Date(VdsEuropeans[0].meeting_date))
+                                    : ""} </p>
                             }
                         </span>
                     </div>
@@ -611,134 +617,86 @@ const index = () => {
                                                 </Table.Thead>
 
                                                 <Table.Tbody>
-                                                    {VdsEuropeans?.length > 0 &&
-                                                        VdsEuropeans?.map((vds: any) => (
-                                                            <Table.Tr
-                                                                key={vds?.id}
-                                                                className="[&_td]:last:border-b-0"
-                                                            >
-                                                                <Table.Td
-                                                                    className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                                                    style={{ width: "17.5%" }}
+                                                    {VdsEuropeans?.length > 0 && (() => {
+                                                        let lastInstitutionName = '';
+                                                        let toggle = false;
+
+                                                        return VdsEuropeans.map((vds: any, index: number) => {
+                                                            const currentInstitution = vds?.excel_institution_name;
+                                                            if (currentInstitution !== lastInstitutionName) {
+                                                                toggle = !toggle;
+                                                                lastInstitutionName = currentInstitution;
+                                                            }
+
+                                                            return (
+                                                                <Table.Tr
+                                                                    key={vds?.id}
+                                                                    className={clsx(
+                                                                        "[&_td]:last:border-b-0",
+                                                                        toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
+                                                                    )}
                                                                 >
-                                                                    {vds?.excel_institution_name}
-                                                                    {/* {convertToTitleCase(vds?.excel_institution_name)} */}
+                                                                    <Table.Td
+                                                                        className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                                                        style={{ width: "17.5%" }}
+                                                                    >
+                                                                        {vds?.excel_institution_name}
+                                                                    </Table.Td>
 
-                                                                </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
+                                                                        <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
+                                                                    </Table.Td>
 
-                                                                {/* <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "30%" }}
-                                                                >
-                                                                    { vds?.company_name ?  vds?.company_name : vds?.excel_company_name}
-                                                                    
-                                                                </Table.Td> */}
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
+                                                                        {vds?.proposal_num}
+                                                                    </Table.Td>
 
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "17.5%" }}
-                                                                >
-                                                                    <div className="flex">
-                                                                        {convertToTitleCase(vds?.meeting_type)}
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
+                                                                        {vds?.proposal}
+                                                                    </Table.Td>
 
-                                                                    </div>
-                                                                </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                                        {convertToTitleCase(vds?.mgt_rec)}
+                                                                    </Table.Td>
 
-                                                                <Table.Td
-                                                                    className="py-2  border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "5%" }}
-                                                                >
-                                                                    {/* {convertToTitleCase(vds?.proposal_num)} */}
-                                                                    {vds?.proposal_num}
-
-                                                                </Table.Td>
-
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "25%" }}
-                                                                >
-                                                                    {/* {convertToTitleCase(vds?.proposal)}
-                                                                     */}
-                                                                    {vds?.proposal}
-                                                                </Table.Td>
-
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "10%" }}
-                                                                >
-                                                                    {convertToTitleCase(vds?.mgt_rec)}
-                                                                </Table.Td>
-
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "30%" }}
-                                                                >
-                                                                    <div className="flex">
-                                                                        {vds?.vote === "Split Vote" ? (
-                                                                            <Tippy
-                                                                                // content={
-                                                                                //     getSplitContents(
-                                                                                //         vds?.split_vote_counts
-                                                                                //     )
-                                                                                // }
-                                                                                content={
-                                                                                    vds?.split_vote_counts
-                                                                                }
-                                                                                options={{ theme: "light" }}
-                                                                            >
-                                                                                {
-                                                                                    vds?.vote
-                                                                                }
-                                                                            </Tippy>
-                                                                        ) : (
-                                                                            <span className={clsx([
-                                                                                (vds?.vote?.includes("Against") ||
-                                                                                    vds.vote?.includes(
-                                                                                        "Withhold"
-                                                                                    )) &&
-                                                                                "text-red-700 font-semibold ",
-                                                                            ])}>
-                                                                                {
-                                                                                    vds?.vote
-                                                                                }
-                                                                            </span>
-                                                                        )}
-                                                                        {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                                                            <span
-                                                                                data-tooltip-id="my-tooltip-data-html"
-                                                                                data-tooltip-html={vds?.notes}
-                                                                            >
-                                                                                <Lucide
-                                                                                    icon="Info"
-                                                                                    className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                                />
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-
-                                                                </Table.Td>
-
-                                                                {/* <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "17.5%" }}
-                                                                >
-                                                                    {convertToTitleCase(vds?.meeting_date)}
-                                                                    
-                                                                </Table.Td> */}
-
-
-
-
-
-
-
-
-
-
-                                                            </Table.Tr>
-                                                        ))}
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
+                                                                        <div className="flex">
+                                                                            {vds?.vote === "Split Vote" ? (
+                                                                                <Tippy
+                                                                                    content={vds?.split_vote_counts}
+                                                                                    options={{ theme: "light" }}
+                                                                                >
+                                                                                    {vds?.vote}
+                                                                                </Tippy>
+                                                                            ) : (
+                                                                                <span
+                                                                                    className={clsx([
+                                                                                        (vds?.vote?.includes("Against") ||
+                                                                                            vds.vote?.includes("Withhold")) &&
+                                                                                        "text-red-700 font-semibold ",
+                                                                                    ])}
+                                                                                >
+                                                                                    {vds?.vote}
+                                                                                </span>
+                                                                            )}
+                                                                            {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                                                                <span
+                                                                                    data-tooltip-id="my-tooltip-data-html"
+                                                                                    data-tooltip-html={vds?.notes}
+                                                                                >
+                                                                                    <Lucide
+                                                                                        icon="Info"
+                                                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                                    />
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </Table.Td>
+                                                                </Table.Tr>
+                                                            );
+                                                        });
+                                                    })()}
                                                 </Table.Tbody>
-
                                                 {VdsEuropeans?.length === 0 && (
                                                     <div className="w-full">
                                                         <h1 className="mt-3">No NPX records available</h1>

@@ -100,7 +100,7 @@ const initialState: any = {
     },
     {
       icon: "ActivitySquare",
-      pathname: "/vds-european",
+      pathname: "/voting-data",
       title: "Voting Data",
     },
     {
