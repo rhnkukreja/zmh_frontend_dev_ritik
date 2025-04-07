@@ -474,7 +474,7 @@ function Router() {
         {
           path: "vds-european",
           element: <VdsEuropean />,
-          data: { titleName: "VDS - European - ZMH Analytics" },
+          data: { titleName: "Voting Data - ZMH Analytics" },
         },
         
       ],
