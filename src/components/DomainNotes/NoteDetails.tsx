@@ -5,12 +5,12 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import dayjs from "dayjs";
 import React, { useMemo, useState } from "react";
 import DOMPurify from "dompurify";
-import AddNoteModal from "../AddNotesModal";
 import { Note } from "@/types/notes";
 import NoteForm from "./AddEditNoteForm";
 import clsx from "clsx";
 import { toast } from "react-toastify";
 import { addNote } from "@/stores/notesSlice";
+import AddDomainNoteModal from "./AddDomainNotesModal";
 
 const NoteDetails: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -70,30 +70,6 @@ const NoteDetails: React.FC = () => {
                   )}
                 </p>
               </div>
-              {/* <div className="flex space-x-2">
-         <Button
-           variant="soft-secondary"
-           size="sm"
-           className=" py-2 bg-transparent border-gray-500"
-         >
-           <Lucide
-             icon="UserRoundPlus"
-             className="w-4 h-4 mr-1 text-gray-500"
-           />
-           Share
-         </Button>
-         <Button
-           size="sm"
-           variant="soft-secondary"
-           className=" py-2 bg-transparent border-gray-500"
-         >
-           <Lucide
-             icon="MessageSquareText"
-             className="w-4 h-4 mr-1 text-gray-500"
-           />
-           Comment
-         </Button>
-       </div> */}
             </div>
             <div className="border-b border-muted mb-2 !z-10"></div>
 
@@ -112,9 +88,6 @@ const NoteDetails: React.FC = () => {
                   </div>
                 </div>
               )}
-              {/* <h2 className="text-lg font-semibold text-gray-800">Notes Name</h2>
-       <div className="border-t text-gray-700 mb-5 mt-2"></div> */}
-
               <div
                 className={clsx(
                   "rounded-md mb-4",
@@ -142,7 +115,7 @@ const NoteDetails: React.FC = () => {
           </div>
 
           {addNoteModalVisible && (
-            <AddNoteModal
+            <AddDomainNoteModal
               mode="edit"
               selectedNote={selectedNote}
               addNoteModalVisible={addNoteModalVisible}

@@ -37,6 +37,8 @@ import Lucide from "../Base/Lucide";
 import { Dialog, Tab } from "../Base/Headless";
 import TradingViewWidget from "../TradingViewWidget";
 import EngagementQuestionsDialog from "../EngagementQuestionsDialog";
+import AddNoteModal from "@/pages/Notes/AddNotesModal";
+import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
 
 const index = () => {
   const location = useLocation();
@@ -61,6 +63,10 @@ const index = () => {
   const [todayDate, setTodayDate] = useState("");
   const [institutionName, setInstitutionName] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [data, setData] = useState<CompanyDashboard>();
+  const [addNoteModalVisible, setAddNoteModalVisible] =
+    useState<boolean>(false);
+
 
 
 
@@ -165,9 +171,14 @@ const index = () => {
     navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
   };
 
-  const openEngagementQuestionsDialog = (institution_name: string) => {
-    setInstitutionName(institution_name);
+  const openEngagementQuestionsDialog = (dashboard: CompanyDashboard) => {
+    setData(dashboard);
     setIsDialogOpen(true);
+  };
+
+  const openAddNotesDialog = (dashboard: CompanyDashboard) => {
+    setData(dashboard);
+    setAddNoteModalVisible(true)
   };
 
   const [selectedYear, setSelectedYear] = useState<string>("");
@@ -459,7 +470,7 @@ const index = () => {
                                                 content="View Notes"
                                                 options={{ theme: "light" }}
                                                 className="w-6 h-6 mt-1"
-                                                onClick={() => openEngagementQuestionsDialog(dashboard?.institution_name)}
+                                                onClick={() => openEngagementQuestionsDialog(dashboard)}
                                               >
                                                 <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
                                                   <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
@@ -470,7 +481,7 @@ const index = () => {
                                                 content="Add Notes"
                                                 options={{ theme: "light" }}
                                                 className="w-6 h-6 mt-1"
-                                                onClick={() => openEngagementQuestionsDialog(dashboard?.institution_name)}
+                                                onClick={() => openAddNotesDialog(dashboard)}
                                               >
                                                 <div className="flex items-center justify-center w-6 h-6 text-primary ">
                                                   <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
@@ -659,6 +670,15 @@ const index = () => {
         </div>
       )}
 
+      {addNoteModalVisible && (
+        <AddDomainNoteModal
+          mode="add"
+          addNoteModalVisible={addNoteModalVisible}
+          setAddNoteModalVisible={setAddNoteModalVisible}
+          title="Create New Note"
+        />
+      )}
+
       <Dialog size="2xl" open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <Dialog.Panel>
           <Dialog.Title>
@@ -672,7 +692,7 @@ const index = () => {
           </Dialog.Title>
           <Dialog.Description>
             <div className="w-full minh-[550px]">
-              <EngagementQuestionsDialog institution_name={institutionName} />
+              <EngagementQuestionsDialog data={data} />
             </div>
           </Dialog.Description>
         </Dialog.Panel>
