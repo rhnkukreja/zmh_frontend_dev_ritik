@@ -10,6 +10,7 @@ import { getPageNumbers } from "@/utils/helper";
 const name = "dashboard";
 
 export type CompanyDashboard = {
+  notes: any;
   revenue: number;
   profit: number;
   employees: number;

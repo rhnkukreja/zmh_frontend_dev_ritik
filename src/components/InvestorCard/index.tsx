@@ -47,6 +47,9 @@ const index = () => {
   const { dashboardDataList, investorCardLoading, page, tempSearch, percent } =
     useAppSelector((state) => state.dashboard);
 
+
+  console.log("dashboardDataList", dashboardDataList)
+
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
@@ -366,23 +369,23 @@ const index = () => {
                                       </Table.Td>
 
                                       <Table.Td className="relative w-full px-4 py-2">
-                                        
+
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center  whitespace-nowrap">
-                                          {!dashboard.investor_profile_id && (
-                                          
-                                          <sup
-                                            className="cursor-pointer text-lg absolute left-2 top-1"
-                                            onClick={() => {
-                                              window.scrollBy({
-                                                top: 350,
-                                                behavior: "smooth",
-                                              });
-                                            }}
-                                          >
-                                            *
-                                          </sup>
-                                        )}
+                                            {!dashboard.investor_profile_id && (
+
+                                              <sup
+                                                className="cursor-pointer text-lg absolute left-2 top-1"
+                                                onClick={() => {
+                                                  window.scrollBy({
+                                                    top: 350,
+                                                    behavior: "smooth",
+                                                  });
+                                                }}
+                                              >
+                                                *
+                                              </sup>
+                                            )}
                                             <h1
                                               onClick={() =>
                                                 dashboard?.investor_profile_id &&
@@ -451,21 +454,28 @@ const index = () => {
                                             ) : (
                                               <div className="w-6 h-6" />
                                             )}
-                                            {["The Vanguard Group", "BlackRock, Inc.", "Fidelity Investments", "Charles Schwab Asset Management"].includes(dashboard?.institution_name) ? (
+                                            {dashboard?.notes ? (
                                               <Tippy
-                                                content="Notes"
+                                                content="View Notes"
                                                 options={{ theme: "light" }}
                                                 className="w-6 h-6 mt-1"
                                                 onClick={() => openEngagementQuestionsDialog(dashboard?.institution_name)}
                                               >
-                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
                                                   <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
                                                 </div>
                                               </Tippy>
                                             ) : (
-                                              <div className="flex items-center justify-center w-6 h-6 text-gray-400 cursor-not-allowed">
-                                                <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
-                                              </div>
+                                              <Tippy
+                                                content="Add Notes"
+                                                options={{ theme: "light" }}
+                                                className="w-6 h-6 mt-1"
+                                                onClick={() => openEngagementQuestionsDialog(dashboard?.institution_name)}
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary ">
+                                                  <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
+                                                </div>
+                                              </Tippy>
                                             )}
                                           </div>
                                         </div>

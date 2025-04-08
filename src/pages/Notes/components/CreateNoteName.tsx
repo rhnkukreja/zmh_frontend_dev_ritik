@@ -8,14 +8,13 @@ import { Note } from "@/types/notes";
 interface NameFieldProps {
   control: Control<Note, any>;
   rules?: object;
-  isQuestionDialog?: boolean
 }
 
-const NameField: React.FC<NameFieldProps> = ({ control, rules, isQuestionDialog }) => {
+const NameField: React.FC<NameFieldProps> = ({ control, rules }) => {
   return (
     <div className="w-full">
       <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2 !ml-0">
-        {isQuestionDialog ? "Attendees" : "Note Name"}
+        Note Name
       </FormCheck.Label>
       <Controller
         name="name"
@@ -23,7 +22,7 @@ const NameField: React.FC<NameFieldProps> = ({ control, rules, isQuestionDialog 
         rules={rules}
         render={({ field, fieldState: { error } }) => (
           <>
-            <FormInput placeholder={isQuestionDialog ? "" : "Enter Note Name"} {...field} />
+            <FormInput placeholder="Enter Note Name" {...field} />
             {error && <Error className="text-red-600">{error.message}</Error>}
           </>
         )}

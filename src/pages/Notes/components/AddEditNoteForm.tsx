@@ -15,7 +15,6 @@ interface NoteFormProps {
   setAddNoteModalVisible: Dispatch<SetStateAction<boolean>>;
   mode: "add" | "edit";
   fieldsToEdit?: Array<"name" | "text" | "folder">;
-  isQuestionDialog
 }
 
 const NoteForm: React.FC<NoteFormProps> = ({
@@ -24,7 +23,6 @@ const NoteForm: React.FC<NoteFormProps> = ({
   setAddNoteModalVisible,
   mode,
   fieldsToEdit = ["name", "text", "folder"],
-  isQuestionDialog
 }) => {
   const { notesLoading, selectedFolder } = useAppSelector(
     (state) => state.notes
@@ -47,24 +45,8 @@ const NoteForm: React.FC<NoteFormProps> = ({
         <NameField
           control={control}
           rules={{ required: "Note Name is required" }}
-          isQuestionDialog={isQuestionDialog}
         />
       )}
-      {isQuestionDialog && (
-        <div>
-          <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">
-            Date
-          </label>
-          <input
-            type="text"
-            placeholder="Enter date"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
-      rounded-lg shadow-sm focus:ring focus:ring-blue-300 dark:bg-darkmode-600 
-      dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-          />
-        </div>
-      )}
-
       {fieldsToRender.includes("text") && (
         <NoteField
           control={control}
@@ -76,7 +58,6 @@ const NoteForm: React.FC<NoteFormProps> = ({
         <FolderField
           control={control}
           rules={{ required: "Folder Name is required" }}
-          isQuestionDialog={isQuestionDialog}
         />
       )}
 

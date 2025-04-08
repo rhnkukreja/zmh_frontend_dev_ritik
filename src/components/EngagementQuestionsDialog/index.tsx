@@ -353,7 +353,6 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ i
                                 addNoteModalVisible={addNoteModalVisible}
                                 setAddNoteModalVisible={setAddNoteModalVisible}
                                 title="Create New Note"
-                                isQuestionDialog={true}
                             />
                         )}
                     </div>
