@@ -23,6 +23,7 @@ import caseStudiesReducer from "./caseStudySlice";
 import peerAnalysisReducer from "./peerAnalysisSlice";
 import userDetailReducer from "./userDetailSlice";
 import notesReducer from "./notesSlice";
+import domainNotesReducer from "./domainNotesSlice";
 import vdsEuropeanReducer from "./vdsEuropeanSlice";
 
 
@@ -59,6 +60,7 @@ const slices = {
   peerAnalysis: peerAnalysisReducer,
   userDetail: userDetailReducer,
   notes: notesReducer,
+  domainNotes: domainNotesReducer,
   vdsEuropean: vdsEuropeanReducer,
 };
 const appReducer = combineReducers(

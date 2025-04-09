@@ -10,6 +10,7 @@ import { getPageNumbers } from "@/utils/helper";
 const name = "dashboard";
 
 export type CompanyDashboard = {
+  notes: any;
   revenue: number;
   profit: number;
   employees: number;
@@ -33,7 +34,8 @@ export type CompanyDashboard = {
   institution_id: number;
   unpri_signatory: boolean;
   voted_against_say_on_pay: any;
-
+  company_id: number;
+  company_name: string;
   // percent_ownership: string;
 };
 

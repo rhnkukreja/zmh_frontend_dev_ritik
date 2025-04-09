@@ -37,6 +37,8 @@ import Lucide from "../Base/Lucide";
 import { Dialog, Tab } from "../Base/Headless";
 import TradingViewWidget from "../TradingViewWidget";
 import EngagementQuestionsDialog from "../EngagementQuestionsDialog";
+import AddNoteModal from "@/pages/Notes/AddNotesModal";
+import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
 
 const index = () => {
   const location = useLocation();
@@ -46,6 +48,9 @@ const index = () => {
   const [searchParams] = useSearchParams();
   const { dashboardDataList, investorCardLoading, page, tempSearch, percent } =
     useAppSelector((state) => state.dashboard);
+
+
+  console.log("dashboardDataList", dashboardDataList)
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
@@ -58,11 +63,13 @@ const index = () => {
   const [todayDate, setTodayDate] = useState("");
   const [institutionName, setInstitutionName] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [data, setData] = useState<CompanyDashboard>();
+  const [addNoteModalVisible, setAddNoteModalVisible] =
+    useState<boolean>(false);
 
-
-
-  useEffect(() => {
-    if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
+  const fetchData = async () => {
+    if (companyGlobalSearchTicker ) {
+      console.log("hi")
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -82,6 +89,11 @@ const index = () => {
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
+  }
+
+
+  useEffect(() => {
+    fetchData()
   }, [companyGlobalSearchTicker, searchTicker]);
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
@@ -162,9 +174,14 @@ const index = () => {
     navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
   };
 
-  const openEngagementQuestionsDialog = (institution_name: string) => {
-    setInstitutionName(institution_name);
+  const openEngagementQuestionsDialog = (dashboard: CompanyDashboard) => {
+    setData(dashboard);
     setIsDialogOpen(true);
+  };
+
+  const openAddNotesDialog = (dashboard: CompanyDashboard) => {
+    setData(dashboard);
+    setAddNoteModalVisible(true)
   };
 
   const [selectedYear, setSelectedYear] = useState<string>("");
@@ -366,23 +383,23 @@ const index = () => {
                                       </Table.Td>
 
                                       <Table.Td className="relative w-full px-4 py-2">
-                                        
+
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center  whitespace-nowrap">
-                                          {!dashboard.investor_profile_id && (
-                                          
-                                          <sup
-                                            className="cursor-pointer text-lg absolute left-2 top-1"
-                                            onClick={() => {
-                                              window.scrollBy({
-                                                top: 350,
-                                                behavior: "smooth",
-                                              });
-                                            }}
-                                          >
-                                            *
-                                          </sup>
-                                        )}
+                                            {!dashboard.investor_profile_id && (
+
+                                              <sup
+                                                className="cursor-pointer text-lg absolute left-2 top-1"
+                                                onClick={() => {
+                                                  window.scrollBy({
+                                                    top: 350,
+                                                    behavior: "smooth",
+                                                  });
+                                                }}
+                                              >
+                                                *
+                                              </sup>
+                                            )}
                                             <h1
                                               onClick={() =>
                                                 dashboard?.investor_profile_id &&
@@ -451,21 +468,28 @@ const index = () => {
                                             ) : (
                                               <div className="w-6 h-6" />
                                             )}
-                                            {["The Vanguard Group", "BlackRock, Inc.", "Fidelity Investments", "Charles Schwab Asset Management"].includes(dashboard?.institution_name) ? (
+                                            {dashboard?.notes ? (
                                               <Tippy
-                                                content="Notes"
+                                                content="View Notes"
                                                 options={{ theme: "light" }}
                                                 className="w-6 h-6 mt-1"
-                                                onClick={() => openEngagementQuestionsDialog(dashboard?.institution_name)}
+                                                onClick={() => openEngagementQuestionsDialog(dashboard)}
                                               >
-                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
                                                   <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
                                                 </div>
                                               </Tippy>
                                             ) : (
-                                              <div className="flex items-center justify-center w-6 h-6 text-gray-400 cursor-not-allowed">
-                                                <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
-                                              </div>
+                                              <Tippy
+                                                content="Add Notes"
+                                                options={{ theme: "light" }}
+                                                className="w-6 h-6 mt-1"
+                                                onClick={() => openAddNotesDialog(dashboard)}
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary ">
+                                                  <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
+                                                </div>
+                                              </Tippy>
                                             )}
                                           </div>
                                         </div>
@@ -649,6 +673,17 @@ const index = () => {
         </div>
       )}
 
+      {addNoteModalVisible && (
+        <AddDomainNoteModal
+          mode="add"
+          addNoteModalVisible={addNoteModalVisible}
+          setAddNoteModalVisible={setAddNoteModalVisible}
+          title="Create New Note"
+          data={data}
+          fetchData={fetchData}
+        />
+      )}
+
       <Dialog size="2xl" open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <Dialog.Panel>
           <Dialog.Title>
@@ -662,7 +697,7 @@ const index = () => {
           </Dialog.Title>
           <Dialog.Description>
             <div className="w-full minh-[550px]">
-              <EngagementQuestionsDialog institution_name={institutionName} />
+              <EngagementQuestionsDialog data={data} />
             </div>
           </Dialog.Description>
         </Dialog.Panel>

@@ -128,7 +128,6 @@ const NoteDetails: React.FC = () => {
                     onSubmit={handleNoteSubmit}
                     setAddNoteModalVisible={setIsEditing}
                     fieldsToEdit={["text"]}
-                    isQuestionDialog={false}
                   />
                 ) : (
                   <div
