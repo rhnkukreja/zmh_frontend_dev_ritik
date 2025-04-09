@@ -29,6 +29,7 @@ import FilterChips from "@/components/FilterChips";
 import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
 const index = () => {
     const dispatch: AppDispatch = useAppDispatch();
@@ -696,7 +697,14 @@ const index = () => {
                     </div>
                 ) : (
                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <h1 className="font-semibold"></h1>
+                            {
+                                loading && <LoadingIcon
+                                    color="#800000"
+                                    icon="three-dots"
+                                    className="w-16 h-16"
+                                />
+                            }
+                        {/* <h1 className="font-semibold"></h1> */}
                     </div>
                 )}
             </div>
