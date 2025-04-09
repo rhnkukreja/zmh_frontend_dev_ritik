@@ -30,6 +30,7 @@ import FilterChips from "@/components/FilterChips";
 import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
 const index = () => {
     const dispatch: AppDispatch = useAppDispatch();
@@ -69,6 +70,8 @@ const index = () => {
             category: [],
             year: [],
         });
+
+    const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
     const getDependentDropdown = async () => {
@@ -127,31 +130,32 @@ const index = () => {
     }, [dropdownValues]);
 
     useEffect(() => {
-        if (allApplyFilter) {
-            dispatch(
-                fetchVdsEuropeans(
-                    createDynamicURL(
-                        `${baseURL}/vds_european/`,
-                        allApplyFilter,
-                        undefined,
-                        page
+        const fetchData = async () => {
+            if (allApplyFilter) {
+                setIsLoading(true);
+
+                await dispatch(
+                    fetchVdsEuropeans(
+                        createDynamicURL(
+                            `${baseURL}/vds_european/`,
+                            allApplyFilter,
+                            undefined,
+                            page
+                        )
                     )
-                )
-            );
+                );
 
-            setFiltersLength(
-                countValidFilters(
-                    allApplyFilter
-                )
-            );
-            setSelectedChipFilters(generateFilterChips(allApplyFilter));
-            dispatch(setTempSearch(companyGlobalSearchName));
-        }
+                setFiltersLength(countValidFilters(allApplyFilter));
+                setSelectedChipFilters(generateFilterChips(allApplyFilter));
+                dispatch(setTempSearch(companyGlobalSearchName));
 
-        // return () => {
-        //     onFilterClear();
-        //   }
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
     }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
+
 
 
     const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
@@ -525,7 +529,7 @@ const index = () => {
                                 </div>
 
                                 <div className="w-full">
-                                    <div className="text-left text-slate-500 font-semibold">Keyword</div>
+                                    <div className="text-left text-slate-500  font-semibold">Keyword</div>
                                     <Controller
                                         name="keyword"
                                         control={control}
@@ -551,7 +555,15 @@ const index = () => {
                         </div>
                     </form>
                 )}
-
+                {isLoading && (
+                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                        <LoadingIcon
+                            color="#800000"
+                            icon="three-dots"
+                            className="w-16 h-16"
+                        />
+                    </div>
+                )}
                 {VdsEuropeans?.length > 0 ? (
                     <div className="w-full">
                         <>
