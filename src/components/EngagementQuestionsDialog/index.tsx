@@ -371,7 +371,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                                 {question?.engagement_with_category}
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed max-w-[800px] dark:bg-darkmode-600">
-                                                                                {question?.engagement_question}
+                                                                                <div dangerouslySetInnerHTML={{ __html: question?.engagement_question || "" }} />
                                                                             </Table.Td>
                                                                         </Table.Tr>
                                                                     ))}
