@@ -24,6 +24,7 @@ interface ProxyVotingGuidelineSlice {
   proxyVotingSummary: ProxyVotingSummaryType[];
   totalProxyVotingSummary: number;
   summaryLoading: boolean;
+  summaryCount: number;
   error: string | null;
   totalPages: number;
   count: number;
@@ -44,6 +45,7 @@ const initialState: ProxyVotingGuidelineSlice = {
   loading: false,
   proxyVotingSummary: [],
   totalProxyVotingSummary: 0,
+  summaryCount: 0,
   summaryLoading: false,
   error: null,
   totalPages: 1,
@@ -228,6 +230,7 @@ const proxyVotingGuidelineSlice = createSlice({
           state.proxyVotingSummary = action.payload.results;
           state.totalProxyVotingSummary = action.payload.count;
           state.summaryTotalPages = getPageNumbers(action.payload.count, 20);
+          state.count = action.payload.count;
         }
       )
       .addCase(fetchProxyVotingSummary.rejected, (state, action) => {

@@ -25,7 +25,7 @@ import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { ProxyVotingSummaryType } from "@/types/proxyVotingGuideline";
-import { countValidFilters, createDynamicURL, downloadFileByServer } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, downloadFileByServer, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { ChevronLeft, FilterX, SaveAll } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
@@ -33,6 +33,7 @@ import { FormCheck, FormInput } from "@/components/Base/Form";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
 import downloadIcon from "../../../assets/images/zmh-images/download-icon.png";
+import FilterChips from "@/components/FilterChips";
 interface ProxySummaryFilter {
   category: string[];
   sub_category: string[];
@@ -52,9 +53,10 @@ function ProxyVotingSummary() {
     summaryPage,
     summaryTotalPages,
     summaryFilters,
+    count,
   } = useAppSelector((state) => state.proxyVotingGuideline);
   const { user } = useAppSelector((state) => state.authentiction);
-  // console.log("sumaaryyy", proxyVotingSummary[0])
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -66,6 +68,7 @@ function ProxyVotingSummary() {
     dispatch(fetchProxyVotingSummary(dynamicURL));
 
     setFiltersLength(countValidFilters(summaryFilters));
+    setSelectedChipFilters(generateFilterChips(summaryFilters));
   }, [params.id, summaryFilters, summaryPage]);
 
   const { handleSubmit, reset, setValue, watch, control } =
@@ -151,7 +154,7 @@ function ProxyVotingSummary() {
     try {
       setGetDropdownLoader(true);
       const res =
-        await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues({
+        await proxyVotingGuidelineService.getProxyVotingSummaryDropdownValues({
           proxy_voting_guidelines_id: params?.id,
         });
       if (res.result) {
@@ -171,7 +174,7 @@ function ProxyVotingSummary() {
       };
       try {
         const res =
-          await proxyVotingGuidelineService.getProxyVotingSumamryDropdownValues(
+          await proxyVotingGuidelineService.getProxyVotingSummaryDropdownValues(
             paramFilter
           );
         if (res.result) {
@@ -199,6 +202,21 @@ function ProxyVotingSummary() {
       console.error('Error downloading the file:', error);
     }
   };
+
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    const updatedFilters = { ...summaryFilters };
+
+    if (Array.isArray(updatedFilters[removeKey])) {
+        updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+            (item) => item !== removeValue
+        );
+    } else if (updatedFilters[removeKey] === removeValue) {
+            updatedFilters[removeKey] = "";
+    }
+
+    setValue(removeKey, updatedFilters[removeKey]);
+    dispatch(setSummaryFilters(updatedFilters));
+}
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -248,6 +266,15 @@ function ProxyVotingSummary() {
                   </Popover>
                 </div>
               </div>
+              {
+                selectedChipFilters?.length > 0 &&
+                <>
+                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                </>
+              }
+
+
+              
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -418,10 +445,16 @@ function ProxyVotingSummary() {
                   </div>
                 </form>
               )}
-
+              <div className="flex items-center justify-center ">
+                
+              {count > 0 && (
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                  Count: {count}
+                </h2>
+              )}
               {
                 filtersLength === 0 &&
-                <div className="flex justify-end items-center gap-4 mr-5 mb-4 xs:mt-4 md:mt-0">
+                <div className="flex justify-end items-center gap-4 mr-5 mb-2 xs:mt-4 md:mt-0">
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
                       className="box p-[5px] cursor-pointer"
@@ -434,6 +467,7 @@ function ProxyVotingSummary() {
                   </Tippy>
                 </div>
               }
+              </div>
               
               <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={summaryLoading}>

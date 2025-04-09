@@ -16,6 +16,10 @@ const multipartFormDataUrls = [
   "proxy_voting_guidelines_pdf_summary_data_upload"
 ];
 
+const isNotMultipartFormDataUrls = [
+  "/institute_documents/",
+];
+
 const logout = () => {
   localStorage.clear();
   persistor.purge();
@@ -61,9 +65,12 @@ class AxiosServiceConfig {
             config?.url?.includes(urlPattern)
           );
 
+          const isNotMultiPartFormData = multipartFormDataUrls.some((urlPattern) =>
+            config?.url?.includes(urlPattern)
+          );
+
           if (
-            (isMultipartFormData && config.method === "post") ||
-            config.method === "put"
+            (isMultipartFormData && config.method === "post") || (config.method === "put" && !isNotMultipartFormDataUrls)
           ) {
             config.headers["Content-Type"] = `multipart/form-data`;
           } else {

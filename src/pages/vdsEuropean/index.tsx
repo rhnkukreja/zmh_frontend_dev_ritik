@@ -21,7 +21,6 @@ import {
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
-import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { fetchVdsEuropeans, resetPage, setAllFilters, setPage } from "@/stores/vdsEuropeanSlice";
 import { vdsEuropeanService } from "@/services/vdsEuropean";
@@ -45,16 +44,15 @@ const index = () => {
     const [searchParams] = useSearchParams();
     const searchTicker = searchParams.get("ticker");
     const [allApplyFilter, setallApplyFilter] = useState<any>("");
-    const [meetingDate, setMeetingDate] = useState<any>("");
-
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
     const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
         useState<boolean>(false);
-    const [showFundName, setShowFundName] = useState<boolean>(false);
-    const [apiFundNameDropdown, setApiFundNameDropdown] = useState<any>({
+    const [apiInstitutionDropdown, setApiInstitutionDropdown] = useState<any>({
         institution: [],
     });
 
+    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
+    const [filtersLength, setFiltersLength] = useState<number>(0);
     const [dropdownValues, setDropdownValues] = useState<any>({
         company_name: [],
         institution: [],
@@ -70,64 +68,6 @@ const index = () => {
             category: [],
             year: [],
         });
-
-    const [isLoading, setIsLoading] = useState<boolean>(false)
-
-
-    const getDependentDropdown = async () => {
-        const paramFilter = {
-            company_name: dropdownValues?.company_name !== "" ? [dropdownValues?.company_name] : [],
-            institution_name: dropdownValues?.institution_name,
-            year: dropdownValues?.institution_name && dropdownValues?.company_name ? [2024] : []
-        };
-        if (dropdownValues?.institution_name && dropdownValues?.company_name) {
-            setValue("year", [2024]);
-        }
-        try {
-            setGetDynamicDropdownLoader(true);
-            const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(paramFilter);
-            if (res.result) {
-                setApiDependentDropdownOptions({ ...res.result });
-            }
-        } catch (error) {
-            return error;
-        } finally {
-            setGetDynamicDropdownLoader(false);
-        }
-    };
-
-    const getFundNameDependentDropdown = async (value: any) => {
-        if (value !== "") {
-            const paramFilter = {
-                company_name: [value],
-            };
-            try {
-                setGetFundNameDropdownLoader(true);
-                const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(
-                    paramFilter
-                );
-                if (res.result) {
-                    setShowFundName(res.result?.is_institution);
-                    setApiFundNameDropdown({ ...res.result });
-                }
-            } catch (error) {
-                return error;
-            } finally {
-                setGetFundNameDropdownLoader(false);
-            }
-        }
-    };
-
-    const handleDropdownChange = (key: string, value: any) => {
-        setDropdownValues((prev: any) => ({
-            ...prev,
-            [key]: value,
-        }));
-    };
-
-    useEffect(() => {
-        getDependentDropdown();
-    }, [dropdownValues]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -154,17 +94,13 @@ const index = () => {
         };
 
         fetchData();
+        console.log(watch("year"));
     }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
 
 
-
-    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
-    const [filtersLength, setFiltersLength] = useState<number>(0);
-
-    const handleCollapseFilter = (event: React.MouseEvent) => {
-        event.preventDefault();
-        setIsFilterCollapse(!isFilterCollapse);
-    };
+    useEffect(() => {
+        getDependentDropdown();
+    }, [dropdownValues]);
 
     const {
         handleSubmit,
@@ -178,9 +114,68 @@ const index = () => {
             institution_name: [],
             vote: [],
             category: [],
-            year: [],
+            year: "",
         },
     });
+
+
+    const getDependentDropdown = async () => {
+        const paramFilter = {
+            company_name: dropdownValues?.company_name !== "" ? [dropdownValues?.company_name] : [],
+            institution_name: dropdownValues?.institution_name,
+            year: dropdownValues?.institution_name && dropdownValues?.company_name ? 2024 : null
+        };
+        if (dropdownValues?.institution_name && dropdownValues?.company_name) {
+            setValue("year", 2024);
+        }
+        try {
+            setGetDynamicDropdownLoader(true);
+            const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(paramFilter);
+            if (res.result) {
+                setApiDependentDropdownOptions({ ...res.result });
+            }
+        } catch (error) {
+            return error;
+        } finally {
+            setGetDynamicDropdownLoader(false);
+        }
+    };
+
+    const getInstituionDependentDropdown = async (value: any) => {
+        if (value !== "") {
+            const paramFilter = {
+                company_name: [value],
+            };
+            try {
+                setGetFundNameDropdownLoader(true);
+                const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(
+                    paramFilter
+                );
+                if (res.result) {
+                    setApiInstitutionDropdown({ ...res.result });
+                }
+            } catch (error) {
+                return error;
+            } finally {
+                setGetFundNameDropdownLoader(false);
+            }
+        }
+    };
+
+    const handleDropdownChange = (key: string, value: any) => {
+        setDropdownValues((prev: any) => ({
+            ...prev,
+            [key]: value,
+        }));
+    };
+
+
+    const handleCollapseFilter = (event: React.MouseEvent) => {
+        event.preventDefault();
+        setIsFilterCollapse(!isFilterCollapse);
+    };
+
+
 
     const onSubmit = async (npxFilter: any) => {
         if (npxFilter?.company_name?.length === 0 || !npxFilter?.company_name?.label) {
@@ -200,6 +195,7 @@ const index = () => {
 
     const onFilterClear = () => {
         resetFormValues();
+        reset();
         setallApplyFilter({});
 
         dispatch(resetPage());
@@ -215,7 +211,7 @@ const index = () => {
             category: [],
             year: [],
         })
-        setApiFundNameDropdown({
+        setApiInstitutionDropdown({
             institution: [],
         })
 
@@ -226,7 +222,7 @@ const index = () => {
         setValue("institution_name", []);
         setValue("vote", []);
         setValue("category", []);
-        setValue("year", []);
+        setValue("year", " ");
         setValue("keyword", "");
     };
 
@@ -254,7 +250,7 @@ const index = () => {
                 (item) => item !== removeValue
             );
         } else if (updatedFilters[removeKey] === removeValue) {
-            if (removeKey === "index") {
+            if (removeKey === "year") {
                 updatedFilters[removeKey] = " ";
             } else {
                 updatedFilters[removeKey] = "";
@@ -266,21 +262,12 @@ const index = () => {
         setallApplyFilter(updatedFilters);
     }
 
-    const isObject = (item: any) => {
-        if (typeof item === "object") {
-            return true;
-        } else {
-            false;
-        }
-    };
-
-    const getSplitContents = (items: any) => {
-        const resultString = Object.entries(items)
-            .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
-            .join(", ");
-        return resultString;
-    };
-
+    // const getSplitContents = (items: any) => {
+    //     const resultString = Object.entries(items)
+    //         .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
+    //         .join(", ");
+    //     return resultString;
+    // };
 
     return (
         <>
@@ -371,6 +358,7 @@ const index = () => {
                                         defaultValue={[]}
                                         render={({ field }) => (
                                             <CompanySelect
+                                                isClearable={true}
                                                 exactUrl={"get_vds_european_dropdown_values/?company_name="}
                                                 value={field.value}
                                                 onChange={(value: any) => {
@@ -379,7 +367,7 @@ const index = () => {
                                                         "company_name",
                                                         value?.label
                                                     );
-                                                    getFundNameDependentDropdown(value?.label);
+                                                    getInstituionDependentDropdown(value?.label);
                                                 }}
                                             />
 
@@ -412,10 +400,9 @@ const index = () => {
                                                 {getFundNameDropdownLoader ? (
                                                     <option disabled>Loading...</option>
                                                 ) : (
-                                                    apiFundNameDropdown?.institution?.map(
+                                                    apiInstitutionDropdown?.institution?.map(
                                                         (institution: any) => (
                                                             <option key={institution} value={institution}>
-                                                                {/* {convertToTitleCase(institution)} */}
                                                                 {institution}
                                                             </option>
                                                         )
@@ -440,8 +427,9 @@ const index = () => {
                                                 onChange={(value) => {
                                                     field.onChange(value); // Set a string value instead of an array
                                                 }}
-                                                options={{ placeholder: "Select Year" }}
+                                                options={{ placeholder: "Select Year", allowEmptyOption: true }}
                                                 className="w-full"
+                                            // multiple
                                             >
                                                 {getDynamicDropdownLoader ? (
                                                     <option disabled>Loading...</option>
@@ -582,7 +570,7 @@ const index = () => {
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }} // Remaining columns have equal widths
+                                                            style={{ width: "17.5%" }}
                                                         >
                                                             Meeting Type
                                                         </Table.Td>
@@ -610,21 +598,6 @@ const index = () => {
                                                         >
                                                             Vote Cast
                                                         </Table.Td>
-
-                                                        {/* <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "30%" }}
-                                                        >
-                                                           Company Name
-
-                                                        </Table.Td>
-
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }} // Proposal gets more width
-                                                        >
-                                                            Meeting Date
-                                                        </Table.Td> */}
                                                     </Table.Tr>
                                                 </Table.Thead>
 
@@ -711,7 +684,7 @@ const index = () => {
                                                 </Table.Tbody>
                                                 {VdsEuropeans?.length === 0 && (
                                                     <div className="w-full">
-                                                        <h1 className="mt-3">No NPX records available</h1>
+                                                        <h1 className="mt-3">No Voting Data available</h1>
                                                     </div>
                                                 )}
                                             </Table>
@@ -732,17 +705,16 @@ const index = () => {
                     </div>
                 ) : (
                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <h1 className="font-semibold"></h1>
+                            {
+                                loading && <LoadingIcon
+                                    color="#800000"
+                                    icon="three-dots"
+                                    className="w-16 h-16"
+                                />
+                            }
+                        {/* <h1 className="font-semibold"></h1> */}
                     </div>
                 )}
-
-                {VdsEuropeans?.npx_report?.length === 0 &&
-                    !loading &&
-                    allApplyFilter && (
-                        <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
-                            <h1 className="font-semibold"> Proxy Records Not Found..</h1>
-                        </div>
-                    )}
             </div>
 
             <Tooltip
