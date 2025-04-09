@@ -17,8 +17,10 @@ import { useNavigate } from "react-router-dom";
 import { EngagementQuestions } from "@/types/engagementQuestions";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
-import { fetchDomainNotes } from "@/stores/domainNotesSlice";
+import { deleteDomainNote, fetchDomainNotes, shareDomainNote } from "@/stores/domainNotesSlice";
 import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
+import LoadingIcon from "../Base/LoadingIcon";
+import { toast } from "react-toastify";
 
 interface EngagementQuestionsDialogProps {
     data: CompanyDashboard,
@@ -52,6 +54,8 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
     const [initialStateNote, setInitialStateNote] = useState<any>([]);
     const [addNoteModalVisible, setAddNoteModalVisible] =
+        useState<boolean>(false);
+    const [isLoading, setIsLoading] =
         useState<boolean>(false);
     const [editNote, setEditNote] =
         useState<boolean>(false);
@@ -100,9 +104,9 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
         setAddNewEngagementQuestionModalVisible,
     ] = useState<boolean>(false);
 
-    useEffect(() => {
+
+    const fetchEngagementQuestionsData = async () => {
         const institutionArray = data.institution_name ? [data.institution_name] : [];
-        console.log("institution_name", data.institution_name);
         const dynamicURL = createDynamicURL(
             `${baseURL}/engagement_questions/`,
             { institution_name: institutionArray },
@@ -114,20 +118,62 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
         const { ...restFilters } = filters;
         setFiltersLength(countValidFilters(restFilters));
         setSelectedChipFilters(generateFilterChips(restFilters));
-    }, [page, filters]);
+    }
 
-    useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
         const dynamicURL = createDynamicURL(
             `${baseURL}/user/domain_notes/`,
-            { institution_id: JSON.stringify(data.institution_id), company_id: JSON.stringify(data.company_id) },
+            {
+                institution_id: JSON.stringify(data.institution_id),
+                company_id: JSON.stringify(data.company_id),
+            },
             undefined,
             page
         );
-        dispatch(fetchDomainNotes(dynamicURL));
+
+        await dispatch(fetchDomainNotes(dynamicURL));
+
         const { ...restFilters } = filters;
         setFiltersLength(countValidFilters(restFilters));
         setSelectedChipFilters(generateFilterChips(restFilters));
+
+        setIsLoading(false);
+    };
+    useEffect(() => {
+        fetchData();
+        fetchEngagementQuestionsData();
     }, [page, filters]);
+
+
+    const handleShareNote = async (id: number) => {
+        try {
+            if (id) {
+                await dispatch(shareDomainNote({ id }));
+                fetchEngagementQuestionsData();
+            }
+            toast.success("Note shared sucessfully");
+        } catch (error) {
+            toast.error("An error occurred while sharing the note");
+        } finally {
+            setAddNoteModalVisible(false);
+        }
+    };
+
+    const handleDeleteNote = async (id: number) => {
+        try {
+            if (id) {
+                await dispatch(deleteDomainNote({ id }));
+                fetchData();
+                toast.success("Note deleted sucessfully");
+            }
+        } catch (error) {
+            toast.error("An error occurred while deleting the note");
+        } finally {
+            setAddNoteModalVisible(false);
+        }
+    };
+
 
     const handleNextPage = () => {
         if (page < totalPages) {
@@ -210,143 +256,156 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
 
                             </div>
                         </div>
-
-                        <div className="px-5 mt-5">
-                            {/* Notes History Card */}
-                            <div className="bg-white dark:bg-darkmode-800 p-6 rounded-lg shadow-lg">
-                                <h2 className="text-lg font-semibold mb-2">Notes History</h2>
-                                <TableWrapper isLoading={false}>
-                                    <div className="overflow-auto max-h-[500px]">
-                                        <Table>
-                                            <Table.Thead>
-                                                <Table.Tr>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Date</Table.Td>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Attendees</Table.Td>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Notes</Table.Td>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Author</Table.Td>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2] text-center"></Table.Td>
-                                                </Table.Tr>
-                                            </Table.Thead>
-                                            <Table.Tbody>
-                                                {results ? (
-                                                    results.map((note, index) => (
-                                                        <Table.Tr key={index} className="relative">
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
-                                                                {note.formatted_date}
-                                                            </Table.Td>
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
-                                                                {note.attendees}
-                                                            </Table.Td>
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[630px]">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div
-                                                                        className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index] ? "max-h-none" : "line-clamp-2 overflow-hidden"
-                                                                            } whitespace-pre-wrap`}
-                                                                        dangerouslySetInnerHTML={{ __html: note.notes }}
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => toggleExpand(index)}
-                                                                        className="ml-1 text-blue-500 flex-shrink-0"
-                                                                    >
-                                                                        <Lucide
-                                                                            icon={expandedRows[index] ? "ChevronUp" : "ChevronDown"}
-                                                                            className="w-4 h-4"
+                        {isLoading ? (
+                            <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                <LoadingIcon
+                                    color="#800000"
+                                    icon="three-dots"
+                                    className="w-16 h-16"
+                                />
+                            </div>
+                        ) : (
+                            <div className="px-5 mt-5">
+                                {/* Notes History Card */}
+                                <div className="bg-white dark:bg-darkmode-800 p-6 rounded-lg shadow-lg">
+                                    <h2 className="text-lg font-semibold mb-2">Notes History</h2>
+                                    <TableWrapper isLoading={false}>
+                                        <div className="overflow-auto max-h-[500px]">
+                                            <Table>
+                                                <Table.Thead>
+                                                    <Table.Tr>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Date</Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Attendees</Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Notes</Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Author</Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2] text-center"></Table.Td>
+                                                    </Table.Tr>
+                                                </Table.Thead>
+                                                <Table.Tbody>
+                                                    {results ? (
+                                                        results.map((note, index) => (
+                                                            <Table.Tr key={index} className="relative">
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
+                                                                    {note.formatted_date}
+                                                                </Table.Td>
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
+                                                                    {note.attendees}
+                                                                </Table.Td>
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[630px]">
+                                                                    <div className="flex justify-between items-start">
+                                                                        <div
+                                                                            className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index] ? "max-h-none" : "line-clamp-2 overflow-hidden"
+                                                                                } whitespace-pre-wrap`}
+                                                                            dangerouslySetInnerHTML={{ __html: note.notes }}
                                                                         />
+                                                                        <button
+                                                                            onClick={() => toggleExpand(index)}
+                                                                            className="ml-1 text-blue-500 flex-shrink-0"
+                                                                        >
+                                                                            <Lucide
+                                                                                icon={expandedRows[index] ? "ChevronUp" : "ChevronDown"}
+                                                                                className="w-4 h-4"
+                                                                            />
+                                                                        </button>
+                                                                    </div>
+                                                                </Table.Td>
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
+                                                                    {note.author}
+                                                                </Table.Td>
+                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-center align-top">
+                                                                    {/* <button className="text-primary hover:text-blue-500">
+                                     <Lucide icon="Eye" className="w-4 h-4" />
+                                 </button> */}
+                                                                    <button className="text-primary hover:text-blue-500 ml-2">
+                                                                        <Lucide icon="Share" className="w-4 h-4 " onClick={() => handleShareNote(note.id)} />
                                                                     </button>
-                                                                </div>
-                                                            </Table.Td>
+                                                                    <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleNotesEdit(note)}>
+                                                                        <Lucide icon="Pen" className="w-4 h-4 mt-2" />
+                                                                    </button>
+                                                                    <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleDeleteNote(note.id)}>
+                                                                        <Lucide icon="Trash" className="w-4 h-4 mt-2" />
+                                                                    </button>
 
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
-                                                                {note.author}
-                                                            </Table.Td>
-                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-center align-top">
-                                                                {/* <button className="text-primary hover:text-blue-500">
-                                                                    <Lucide icon="Eye" className="w-4 h-4" />
-                                                                </button> */}
-                                                                <button className="text-primary hover:text-blue-500 ml-2">
-                                                                    <Lucide icon="Share" className="w-4 h-4 " />
-                                                                </button>
-                                                                <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleNotesEdit(note)}>
-                                                                    <Lucide icon="Pen" className="w-4 h-4 mt-2" />
-                                                                </button>
-
+                                                                </Table.Td>
+                                                            </Table.Tr>
+                                                        ))
+                                                    ) : (
+                                                        <Table.Tr>
+                                                            <Table.Td colSpan={5} className="py-10 text-center text-slate-500">
+                                                                No notes available for {data.institution_name}.
                                                             </Table.Td>
                                                         </Table.Tr>
-                                                    ))
-                                                ) : (
+                                                    )}
+                                                </Table.Tbody>
+
+                                            </Table>
+                                        </div>
+                                    </TableWrapper>
+                                </div>
+
+                                {/* Engagement Questions Card */}
+                                <div className="bg-white dark:bg-darkmode-800 p-6 rounded-lg shadow-lg mt-8">
+                                    <h2 className="text-lg font-semibold mb-2">Engagement Questions</h2>
+                                    <TableWrapper isLoading={loading}>
+                                        <div className="overflow-auto max-h-[400px]">
+                                            <Table>
+                                                <Table.Thead>
                                                     <Table.Tr>
-                                                        <Table.Td colSpan={5} className="py-10 text-center text-slate-500">
-                                                            No notes available for {data.institution_name}.
-                                                        </Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Engagement Date</Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Category</Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Engagement Questions</Table.Td>
                                                     </Table.Tr>
-                                                )}
-                                            </Table.Tbody>
+                                                </Table.Thead>
+                                                <Table.Tbody>
+                                                    {groupedQuestions ? (
+                                                        Object.entries(groupedQuestions).map(([institutionName, institutionQuestions]) => (
+                                                            <>
+                                                                {openGroups[institutionName] &&
+                                                                    Array.isArray(institutionQuestions) &&
+                                                                    institutionQuestions.map((question) => (
+                                                                        <Table.Tr key={question?.id} className="[&_td]:last:border-b-0">
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                {question?.formatted_engagement_date}
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                {question?.engagement_with_category}
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed max-w-[800px] dark:bg-darkmode-600">
+                                                                                {question?.engagement_question}
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                    ))}
+                                                            </>
+                                                        ))
+                                                    ) : (
+                                                        <Table.Tr>
+                                                            <Table.Td colSpan={3} className="py-10 text-center text-slate-500">
+                                                                No engagement questions.
+                                                            </Table.Td>
+                                                        </Table.Tr>
+                                                    )}
+                                                </Table.Tbody>
+                                            </Table>
+                                        </div>
+                                    </TableWrapper>
+                                </div>
 
-                                        </Table>
-                                    </div>
-                                </TableWrapper>
+                                {/* Pagination */}
+                                <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                    {questions?.length > 0 && (
+                                        <CPagination
+                                            page={page}
+                                            totalPages={totalPages}
+                                            handleNextPage={handleNextPage}
+                                            handlePageChange={handlePageChange}
+                                            handlePreviousPage={handlePreviousPage}
+                                        />
+                                    )}
+                                </div>
                             </div>
+                        )
+                        }
 
-                            {/* Engagement Questions Card */}
-                            <div className="bg-white dark:bg-darkmode-800 p-6 rounded-lg shadow-lg mt-8">
-                                <h2 className="text-lg font-semibold mb-2">Engagement Questions</h2>
-                                <TableWrapper isLoading={loading}>
-                                    <div className="overflow-auto max-h-[400px]">
-                                        <Table>
-                                            <Table.Thead>
-                                                <Table.Tr>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Engagement Date</Table.Td>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Category</Table.Td>
-                                                    <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Engagement Questions</Table.Td>
-                                                </Table.Tr>
-                                            </Table.Thead>
-                                            <Table.Tbody>
-                                                {groupedQuestions ? (
-                                                    Object.entries(groupedQuestions).map(([institutionName, institutionQuestions]) => (
-                                                        <>
-                                                            {openGroups[institutionName] &&
-                                                                Array.isArray(institutionQuestions) &&
-                                                                institutionQuestions.map((question) => (
-                                                                    <Table.Tr key={question?.id} className="[&_td]:last:border-b-0">
-                                                                        <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                            {question?.formatted_engagement_date}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                            {question?.engagement_with_category}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="py-2 border-dashed max-w-[800px] dark:bg-darkmode-600">
-                                                                            {question?.engagement_question}
-                                                                        </Table.Td>
-                                                                    </Table.Tr>
-                                                                ))}
-                                                        </>
-                                                    ))
-                                                ) : (
-                                                    <Table.Tr>
-                                                        <Table.Td colSpan={3} className="py-10 text-center text-slate-500">
-                                                            No engagement questions.
-                                                        </Table.Td>
-                                                    </Table.Tr>
-                                                )}
-                                            </Table.Tbody>
-                                        </Table>
-                                    </div>
-                                </TableWrapper>
-                            </div>
-
-                            {/* Pagination */}
-                            <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                                {questions?.length > 0 && (
-                                    <CPagination
-                                        page={page}
-                                        totalPages={totalPages}
-                                        handleNextPage={handleNextPage}
-                                        handlePageChange={handlePageChange}
-                                        handlePreviousPage={handlePreviousPage}
-                                    />
-                                )}
-                            </div>
-                        </div>
 
                         {addNoteModalVisible && (
                             <AddDomainNoteModal
@@ -356,12 +415,13 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                 title="Create New Note"
                                 data={data}
                                 selectedNote={initialStateNote}
+                                fetchData={fetchData}
                             />
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
 
     );
 }

@@ -14,7 +14,8 @@ interface AddNoteModalProps {
   title: string;
   selectedNote?: DomainNote;
   fieldsToEdit?: Array<"name" | "text" | "folder">;
-  data: CompanyDashboard
+  data: CompanyDashboard;
+  fetchData: () => Promise<void>
 }
 
 const AddDomainNoteModal = ({
@@ -24,7 +25,8 @@ const AddDomainNoteModal = ({
   selectedNote,
   mode,
   fieldsToEdit,
-  data
+  data,
+  fetchData
 }: AddNoteModalProps) => {
   const dispatch = useAppDispatch();
 
@@ -32,8 +34,12 @@ const AddDomainNoteModal = ({
     try {
       if (selectedNote?.id) {
         await dispatch(addDomainNote({ id: selectedNote.id, data }));
+        fetchData()
+        toast.success("Note edited sucessfully");
       } else {
         const response = await dispatch(addDomainNote({ data })).unwrap();
+        fetchData()
+        toast.success("Note added sucessfully");
       }
     } catch (error) {
       toast.error("An error occurred while saving the note");

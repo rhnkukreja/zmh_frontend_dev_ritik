@@ -677,6 +677,7 @@ const index = () => {
           setAddNoteModalVisible={setAddNoteModalVisible}
           title="Create New Note"
           data={data}
+          fetchData={async () => { }}
         />
       )}
 

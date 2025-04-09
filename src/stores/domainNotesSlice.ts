@@ -69,6 +69,28 @@ export const addDomainNote = createAsyncThunk<
   return { results: response.results, isEdit: !!id };
 });
 
+export const deleteDomainNote = createAsyncThunk<
+  {},
+  { id?: number; }
+>(`${name}/shareNote`, async ({ id }) => {
+  let response;
+  if (id) {
+    response = await domainNotesService.deleteNote(id);
+  }
+  return { results: response.results, isEdit: !!id };
+});
+
+export const shareDomainNote = createAsyncThunk<
+  {},
+  { id?: number; }
+>(`${name}/shareNote`, async ({ id }) => {
+  let response;
+  if (id) {
+    response = await domainNotesService.shareNote(id);
+  }
+  return { results: response.results, isEdit: !!id };
+});
+
 const domainNotesSlice = createSlice({
   name,
   initialState,

@@ -26,6 +26,29 @@ class DomainNotesService {
       results,
     };
   }
+
+  public async deleteNote(id: number,): Promise<{
+  }> {
+    const response = await axiosInstance.delete(`/user/domain_notes/${id}/`);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async shareNote(
+    id: number,
+  ): Promise<{
+  }> {
+    const response = await axiosInstance.get(`/user/share_note/?notes_id=${id}`);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+
+
   public async updateNote(
     id: number,
     data: Partial<DomainNote>
