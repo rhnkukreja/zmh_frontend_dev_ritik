@@ -42,7 +42,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
 
     return (
         <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">Shareholder Analytics (Beta)</h2>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">Shareholder Proposal Analytics (Beta)</h2>
 
             {/* Row: Pie Chart & Bar Chart */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
