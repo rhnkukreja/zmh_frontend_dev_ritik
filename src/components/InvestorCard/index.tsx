@@ -67,11 +67,9 @@ const index = () => {
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
 
-
-
-
-  useEffect(() => {
-    if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
+  const fetchData = async () => {
+    if (companyGlobalSearchTicker ) {
+      console.log("hi")
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -91,6 +89,11 @@ const index = () => {
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
+  }
+
+
+  useEffect(() => {
+    fetchData()
   }, [companyGlobalSearchTicker, searchTicker]);
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
@@ -677,7 +680,7 @@ const index = () => {
           setAddNoteModalVisible={setAddNoteModalVisible}
           title="Create New Note"
           data={data}
-          fetchData={async () => { }}
+          fetchData={fetchData}
         />
       )}
 
