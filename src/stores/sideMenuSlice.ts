@@ -144,7 +144,6 @@ const initialState: any = {
       title: "User Detail",
       isAdmin: true,
     },
-    "Additional",
     {
       icon: "FileText",
       pathname: "/notes",
