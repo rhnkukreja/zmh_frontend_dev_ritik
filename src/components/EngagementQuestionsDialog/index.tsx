@@ -248,7 +248,10 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
 
                                 <button
                                     className="flex items-center gap-x-2 px-4 py-2 text-white bg-primary border-primary dark:border-primary rounded"
-                                    onClick={() => setAddNoteModalVisible(true)}
+                                    onClick={() => {
+                                        setEditNote(false)
+                                        setAddNoteModalVisible(true)
+                                    }}
                                 >
                                     <Lucide icon="Plus" className="w-4 h-4 " />
                                     Add Notes
@@ -317,7 +320,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                      <Lucide icon="Eye" className="w-4 h-4" />
                                  </button> */}
                                                                     <button className="text-primary hover:text-blue-500 ml-2">
-                                                                        <Lucide icon="Share" className="w-4 h-4 " onClick={() => handleShareNote(note.id)} />
+                                                                        <Lucide icon="Share2" className="w-4 h-4 " onClick={() => handleShareNote(note.id)} />
                                                                     </button>
                                                                     <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleNotesEdit(note)}>
                                                                         <Lucide icon="Pen" className="w-4 h-4 mt-2" />

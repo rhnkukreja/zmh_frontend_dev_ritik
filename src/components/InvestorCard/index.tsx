@@ -69,7 +69,6 @@ const index = () => {
 
   const fetchData = async () => {
     if (companyGlobalSearchTicker ) {
-      console.log("hi")
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
