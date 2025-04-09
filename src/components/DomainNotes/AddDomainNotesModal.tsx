@@ -35,11 +35,9 @@ const AddDomainNoteModal = ({
       if (selectedNote?.id) {
         await dispatch(addDomainNote({ id: selectedNote.id, data }));
         fetchData()
-        toast.success("Note edited sucessfully");
       } else {
         const response = await dispatch(addDomainNote({ data })).unwrap();
         fetchData()
-        toast.success("Note added sucessfully");
       }
     } catch (error) {
       toast.error("An error occurred while saving the note");
@@ -56,7 +54,7 @@ const AddDomainNoteModal = ({
     >
       <Dialog.Panel>
         <Dialog.Title>
-          <h2 className="text-xl font-semibold">{data.institution_name} (Create new note)</h2>
+          <h2 className="text-xl font-semibold">{mode == "edit" ? "Edit note" : "Create new note"}</h2>
         </Dialog.Title>
         <Dialog.Description>
           <NoteForm

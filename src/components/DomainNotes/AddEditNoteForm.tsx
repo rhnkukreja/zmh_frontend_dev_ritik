@@ -9,6 +9,7 @@ import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { DomainNote } from "@/types/domainNotes";
 import DateField from "./CreateDate";
 import CategoryField from "./CreateCategory";
+import FormInput from "../Base/Form/FormInput";
 
 interface NoteFormProps {
   initialData: Partial<DomainNote>;
@@ -31,39 +32,61 @@ const NoteForm: React.FC<NoteFormProps> = ({
     (state) => state.notes
   );
 
-  const { control, handleSubmit } = useForm<DomainNote>({
-    defaultValues: {
-      attendees: initialData?.attendees || "",
-      notes: initialData?.notes || "",
-      date: initialData?.date || "",
-      category: initialData?.category || "",
-      company: data?.company_id || 0,
-      institution: data?.institution_id || null,
-      investor_name: data?.institution_name || ""
-    },
+  const today = new Date().toISOString().split("T")[0];
+
+  const { control, handleSubmit, reset } = useForm<DomainNote>({
+    defaultValues: mode === "add"
+      ? {
+        attendees: "",
+        notes: "",
+        date: today,
+        category: "",
+        company: data?.company_id || 0,
+        institution: data?.institution_id || null,
+        investor_name: data?.institution_name || ""
+      }
+      : {
+        attendees: initialData?.attendees || "",
+        notes: initialData?.notes || "",
+        date: initialData?.date || today,
+        category: initialData?.category || "",
+        company: data?.company_id || 0,
+        institution: data?.institution_id || null,
+        investor_name: data?.institution_name || ""
+      }
   });
+
 
   const fieldsToRender =
     mode === "add" ? ["attendees", "notes", "date", "category"] : fieldsToEdit;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="w-full">
+        <label className="block text-left font-semibold text-gray-800 mb-2">
+          Company
+        </label>
+        <FormInput
+          value={data?.company_name}
+          disabled
+          className="w-full"
+        />
+      </div>
+      <div className="w-full">
+        <label className="block text-left font-semibold text-gray-800 mb-2">
+          Institution
+        </label>
+        <FormInput
+          value={data?.institution_name}
+          disabled
+          className="w-full"
+        />
+      </div>
+
       {fieldsToRender.includes("attendees") && (
         <NameField
           control={control}
           rules={{ required: "Attendees is required" }}
-        />
-      )}
-      {fieldsToRender.includes("notes") && (
-        <NoteField
-          control={control}
-          rules={{ required: "Note Detail is required" }}
-        />
-      )}
-      {fieldsToRender.includes("date") && (
-        <DateField
-          control={control}
-          rules={{ required: "Date is required" }}
         />
       )}
       {fieldsToRender.includes("category") && (
@@ -72,15 +95,31 @@ const NoteForm: React.FC<NoteFormProps> = ({
           rules={{ required: "Category is required" }}
         />
       )}
+      {fieldsToRender.includes("date") && (
+        <DateField
+          control={control}
+          rules={{ required: "Date is required" }}
+        />
+      )}
+      {fieldsToRender.includes("notes") && (
+        <NoteField
+          control={control}
+          rules={{ required: "Note Detail is required" }}
+        />
+      )}
       <div className="w-full flex justify-end">
         <Button
           type="button"
           variant="outline-secondary"
-          onClick={() => setAddNoteModalVisible(false)}
+          onClick={() => {
+            reset();
+            setAddNoteModalVisible(false);
+          }}
           className="w-20 mr-3"
         >
           Cancel
         </Button>
+
         <Button variant="primary" type="submit">
           {notesLoading && (
             <Lucide
