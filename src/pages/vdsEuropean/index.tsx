@@ -57,7 +57,7 @@ const index = () => {
         company_name: [],
         institution: [],
     });
-
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
         useState<boolean>(false);
 
