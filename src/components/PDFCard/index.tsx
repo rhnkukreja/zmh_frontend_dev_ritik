@@ -6,6 +6,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import Button from "../Base/Button";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
+import { dashboardService } from "@/services/dashboard";
+import { fetchInvestorProfileDetails } from "@/stores/dashboardSlice";
+import { createDynamicURL } from "@/utils/helper";
+import { baseURL } from "@/constant";
+import { AppDispatch } from "@/stores/store";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import clsx from "clsx";
 
 interface ChildProps {
   pdfDocuments: any;
@@ -14,7 +21,7 @@ interface ChildProps {
 const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const dispatch: AppDispatch = useAppDispatch();
   const handleDownload = async (pdfUrl: string) => {
     // Create a link element
     try {
@@ -38,6 +45,12 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
       console.error("Error downloading the file:", error);
     }
   };
+  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+    (state) => state.authentiction
+  );
+
+  const [loading, setLoading] = useState(false);
+  const [pdfId, setPdfId] = useState(0);
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -66,6 +79,34 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
 
     validateImages();
   }, [pdfDocuments]);
+
+  const putDocumentStarred = async (documentId: number, isStarred: boolean) => {
+
+    try {
+      setPdfId(documentId);
+      setLoading(true);
+      const res =
+        await dashboardService.putDocumentStarred(documentId, {  starred: (isStarred ? false : true) });
+      if (res.result) {
+        // setApiDropdownOptions({ ...res.result });
+      }
+    } catch (error) {
+      return error;
+    } finally {
+    
+      setTimeout(() => {
+      setLoading(false);       
+        dispatch(
+          fetchInvestorProfileDetails(
+            createDynamicURL(
+              `${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}&global_search=${companyGlobalSearchName}`
+            )
+          )
+        );
+      }, 1000);
+      // setGetDropdownLoader(false);
+    }
+  };
 
   return (
     <div className="p-5 mt-3.5 box ">
@@ -120,16 +161,16 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                           />
                         </div>
                       </Table.Td>
-                      
+
                       <Table.Td className="px-0 py-3 border-b dark:border-darkmode-300 w-[300px]">
                         <div className="flex justify-between items-center ">
                           <div>
                             <h1
                               onClick={() =>
                                 /* handleDownload(document?.link) */ window.open(
-                                  document?.link,
-                                  "_blank"
-                                )
+                                document?.link,
+                                "_blank"
+                              )
                               }
                               className="font-semibold cursor-pointer hover:underline"
                             >
@@ -138,13 +179,12 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                           </div>
                         </div>
                       </Table.Td>
-                      
+
                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">{document.year}</Table.Td>
                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600"></Table.Td>
                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                         <div className="flex justify-center items-center h-full">
                           <Tippy
-                        //   Download
                             content="See Details"
                             options={{
                               theme: "light",
@@ -162,15 +202,39 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
                               />
                             </a>
                           </Tippy>
+
+                          <Tippy
+                            content={document?.starred ? 'Starred' : 'Not Starred' }
+                            options={{
+                              theme: "light",
+                            }}
+                          >
+                            <a
+                              onClick={() => putDocumentStarred(document?.id, document?.starred)}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+
+                              {pdfId === document?.id && loading ?
+                                <Lucide
+                                  icon="Loader"
+                                  className="w-4 h-4 mr-1.5 stroke-[1.3] animate-spin"
+                                />
+                                :
+                                <Lucide
+                                  icon="Star"
+                                  className={clsx([ document?.starred &&
+                                    " text-[red]", "w-4 h-4 mr-1.5 stroke-[1.3] "
+                                  ])}
+                                />
+                              }
+
+
+                            </a>
+                          </Tippy>
                         </div>
                       </Table.Td>
-
-                      {/* <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                                <div className="text-center font-semibold  cursor-pointer whitespace-nowrap"
-                                                  >
-                                                View Details
-                                                </div>
-                                            </Table.Td> */}
                     </Table.Tr>
                   ))}
               </Table.Tbody>
