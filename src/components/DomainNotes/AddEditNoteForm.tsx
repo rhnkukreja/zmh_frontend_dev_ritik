@@ -40,7 +40,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
         attendees: "",
         notes: "",
         date: today,
-        category: "",
+        category: "Shareholder Engagement",
         company: data?.company_id || 0,
         institution: data?.institution_id || null,
         investor_name: data?.institution_name || ""
