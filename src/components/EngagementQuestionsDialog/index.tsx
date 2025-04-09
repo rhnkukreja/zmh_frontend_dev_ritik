@@ -50,7 +50,10 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
     const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
     const [filtersLength, setFiltersLength] = useState<number>(0);
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+    const [initialStateNote, setInitialStateNote] = useState<any>([]);
     const [addNoteModalVisible, setAddNoteModalVisible] =
+        useState<boolean>(false);
+    const [editNote, setEditNote] =
         useState<boolean>(false);
 
     const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>({});
@@ -60,6 +63,12 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
             ...prev,
             [index]: !prev[index], // Toggle state for this row index
         }));
+    };
+
+    const handleNotesEdit = (note) => {
+        setInitialStateNote(note)
+        setEditNote(true)
+        setAddNoteModalVisible(true)
     };
 
 
@@ -101,7 +110,6 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
             page
         );
         dispatch(fetchEngagementQuestions(dynamicURL));
-        console.log("hello");
 
         const { ...restFilters } = filters;
         setFiltersLength(countValidFilters(restFilters));
@@ -115,8 +123,6 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
             undefined,
             page
         );
-
-        console.log("hello");
         dispatch(fetchDomainNotes(dynamicURL));
         const { ...restFilters } = filters;
         setFiltersLength(countValidFilters(restFilters));
@@ -236,9 +242,8 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                     <div
                                                                         className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index] ? "max-h-none" : "line-clamp-2 overflow-hidden"
                                                                             } whitespace-pre-wrap`}
-                                                                    >
-                                                                        {note.notes}
-                                                                    </div>
+                                                                        dangerouslySetInnerHTML={{ __html: note.notes }}
+                                                                    />
                                                                     <button
                                                                         onClick={() => toggleExpand(index)}
                                                                         className="ml-1 text-blue-500 flex-shrink-0"
@@ -250,6 +255,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                     </button>
                                                                 </div>
                                                             </Table.Td>
+
                                                             <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
                                                                 {note.author}
                                                             </Table.Td>
@@ -260,7 +266,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                 <button className="text-primary hover:text-blue-500 ml-2">
                                                                     <Lucide icon="Share" className="w-4 h-4 " />
                                                                 </button>
-                                                                <button className="text-primary hover:text-blue-500 ml-2">
+                                                                <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleNotesEdit(note)}>
                                                                     <Lucide icon="Pen" className="w-4 h-4 mt-2" />
                                                                 </button>
 
@@ -344,11 +350,12 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
 
                         {addNoteModalVisible && (
                             <AddDomainNoteModal
-                                mode="add"
+                                mode={editNote ? "edit" : "add"}
                                 addNoteModalVisible={addNoteModalVisible}
                                 setAddNoteModalVisible={setAddNoteModalVisible}
                                 title="Create New Note"
                                 data={data}
+                                selectedNote={initialStateNote}
                             />
                         )}
                     </div>

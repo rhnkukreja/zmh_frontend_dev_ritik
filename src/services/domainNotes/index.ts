@@ -32,7 +32,7 @@ class DomainNotesService {
   ): Promise<{
     results: DomainNote;
   }> {
-    const response = await axiosInstance.put(`/user/notes/${id}/`, data);
+    const response = await axiosInstance.put(`/user/domain_notes/${id}/`, data);
     const results = response.data;
     return {
       results,

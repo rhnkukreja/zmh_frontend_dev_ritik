@@ -1,7 +1,6 @@
 import React from "react";
 import { Control, Controller } from "react-hook-form";
 import FormCheck from "@/components/Base/Form/FormCheck";
-import FormInput from "@/components/Base/Form/FormInput";
 import Error from "@/components/Error";
 import { DomainNote } from "@/types/domainNotes";
 
@@ -22,7 +21,12 @@ const DateField: React.FC<DateFieldProps> = ({ control, rules }) => {
                 rules={rules}
                 render={({ field, fieldState: { error } }) => (
                     <>
-                        <FormInput placeholder={"Enter Date"} {...field} />
+                        <input
+                            {...field}
+                            type="date"
+                            className="w-full border border-[#E5EAF0] rounded-md p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                            placeholder="Enter Date"
+                        />
                         {error && <Error className="text-red-600">{error.message}</Error>}
                     </>
                 )}
