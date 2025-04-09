@@ -5,6 +5,7 @@ import {
 import { engagementQuestionService } from "@/services/engagementQuestion";
 import { getPageNumbers } from "@/utils/helper";
 import { domainNotesService } from "@/services/domainNotes";
+import { DomainNote } from "@/types/domainNotes";
 
 const name = "domainNotes";
 
@@ -55,31 +56,18 @@ export const fetchDomainNotes = createAsyncThunk<
   return await domainNotesService.getDomainNotes(url);
 });
 
-// export const getSingleEngagementQuestions = createAsyncThunk<
-//   { results: DomainNotes },
-//   number
-// >(`${name}/getSingleEngagementQuestions`, async (id: number) => {
-//   return await engagementQuestionService.getSingleEngagementQuestions(id);
-// });
-
-// export const addEditEngagementQuestion = createAsyncThunk<
-//   { results: DomainNotes; isEdit: boolean },
-//   { id?: number; data: EngagementFormData }
-// >(`${name}/addEditEngagementQuestion`, async ({ id, data }) => {
-//   let response;
-//   if (id) {
-//     response = await engagementQuestionService.updateEngagementQuestion(
-//       id,
-//       data
-//     );
-//   } else {
-//     response = await engagementQuestionService.createEngagementQuestion(data);
-//   }
-//   return {
-//     results: response.results,
-//     isEdit: id ? true : false,
-//   };
-// });
+export const addDomainNote = createAsyncThunk<
+  { results: DomainNote; isEdit: boolean },
+  { id?: number; data: Partial<DomainNote> }
+>(`${name}/addNote`, async ({ data, id }) => {
+  let response;
+  if (id) {
+    response = await domainNotesService.updateNote(id, data);
+  } else {
+    response = await domainNotesService.addNewNote(data);
+  }
+  return { results: response.results, isEdit: !!id };
+});
 
 const domainNotesSlice = createSlice({
   name,

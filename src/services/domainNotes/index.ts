@@ -1,3 +1,4 @@
+import { DomainNote } from "@/types/domainNotes";
 import { axiosInstance } from "../index";
 import {
   EngagementFormData,
@@ -16,36 +17,22 @@ class DomainNotesService {
     };
   }
 
-  public async getSingleEngagementQuestions(id: number): Promise<{
-    results: EngagementQuestions;
+  public async addNewNote(data: Partial<DomainNote>): Promise<{
+    results: DomainNote;
   }> {
-    const response = await axiosInstance.get(`/engagement_questions/${id}/`);
+    const response = await axiosInstance.post(`/user/domain_notes/`, data);
     const results = response.data;
     return {
       results,
     };
   }
-
-  public async createEngagementQuestion(
-    data: EngagementFormData
-  ): Promise<{ results: EngagementQuestions }> {
-    const response = await axiosInstance.post("/engagement_questions/", data);
-    const results = response.data;
-    return {
-      results,
-    };
-  }
-
-  public async updateEngagementQuestion(
+  public async updateNote(
     id: number,
-    data: EngagementFormData
+    data: Partial<DomainNote>
   ): Promise<{
-    results: EngagementQuestions;
+    results: DomainNote;
   }> {
-    const response = await axiosInstance.put(
-      `/engagement_questions/${id}/`,
-      data
-    );
+    const response = await axiosInstance.put(`/user/notes/${id}/`, data);
     const results = response.data;
     return {
       results,

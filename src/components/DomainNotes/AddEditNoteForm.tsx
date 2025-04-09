@@ -1,20 +1,22 @@
 import React, { SetStateAction, Dispatch } from "react";
 import { useForm } from "react-hook-form";
-
-import { Note } from "@/types/notes";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import { useAppSelector } from "@/stores/hooks";
-import FolderField from "./SelectFolders";
 import NoteField from "./NoteEditor";
 import NameField from "./CreateNoteName";
+import { CompanyDashboard } from "@/stores/dashboardSlice";
+import { DomainNote } from "@/types/domainNotes";
+import DateField from "./CreateDate";
+import CategoryField from "./CreateCategory";
 
 interface NoteFormProps {
-  initialData: Partial<Note>;
-  onSubmit: (data: Note) => void;
+  initialData: Partial<DomainNote>;
+  onSubmit: (data: DomainNote) => void;
   setAddNoteModalVisible: Dispatch<SetStateAction<boolean>>;
   mode: "add" | "edit";
   fieldsToEdit?: Array<"name" | "text" | "folder">;
+  data: CompanyDashboard
 }
 
 const NoteForm: React.FC<NoteFormProps> = ({
@@ -22,45 +24,54 @@ const NoteForm: React.FC<NoteFormProps> = ({
   onSubmit,
   setAddNoteModalVisible,
   mode,
-  fieldsToEdit = ["name", "text", "folder"],
+  fieldsToEdit = ["attendees", "notes", "date", "category"],
+  data
 }) => {
-  const { notesLoading, selectedFolder } = useAppSelector(
+  const { notesLoading } = useAppSelector(
     (state) => state.notes
   );
 
-  const { control, handleSubmit } = useForm<Note>({
+  const { control, handleSubmit } = useForm<DomainNote>({
     defaultValues: {
-      name: initialData?.name || "",
-      text: initialData?.text || "",
-      folder: selectedFolder?.id,
+      attendees: initialData?.attendees || "",
+      notes: initialData?.notes || "",
+      date: initialData?.date || "",
+      category: initialData?.category || "",
+      company: data?.company_id || 0,
+      institution: data?.institution_id || null,
+      investor_name: data?.institution_name || ""
     },
   });
 
   const fieldsToRender =
-    mode === "add" ? ["name", "text", "folder"] : fieldsToEdit;
+    mode === "add" ? ["attendees", "notes", "date", "category"] : fieldsToEdit;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {fieldsToRender.includes("name") && (
+      {fieldsToRender.includes("attendees") && (
         <NameField
           control={control}
-          rules={{ required: "Note Name is required" }}
+          rules={{ required: "Attendees is required" }}
         />
       )}
-      {fieldsToRender.includes("text") && (
+      {fieldsToRender.includes("notes") && (
         <NoteField
           control={control}
           rules={{ required: "Note Detail is required" }}
         />
       )}
-
-      {fieldsToRender.includes("folder") && (
-        <FolderField
+      {fieldsToRender.includes("date") && (
+        <DateField
           control={control}
-          rules={{ required: "Folder Name is required" }}
+          rules={{ required: "Date is required" }}
         />
       )}
-
+      {fieldsToRender.includes("category") && (
+        <CategoryField
+          control={control}
+          rules={{ required: "Category is required" }}
+        />
+      )}
       <div className="w-full flex justify-end">
         <Button
           type="button"

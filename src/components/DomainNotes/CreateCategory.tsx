@@ -1,28 +1,39 @@
 import React from "react";
 import { Control, Controller } from "react-hook-form";
 import FormCheck from "@/components/Base/Form/FormCheck";
-import FormInput from "@/components/Base/Form/FormInput";
 import Error from "@/components/Error";
 import { DomainNote } from "@/types/domainNotes";
 
-interface NameFieldProps {
+interface CategoryFieldProps {
   control: Control<DomainNote, any>;
   rules?: object;
 }
 
-const NameField: React.FC<NameFieldProps> = ({ control, rules }) => {
+const categories = ["Social", "Governance", "Environmental"];
+
+const CategoryField: React.FC<CategoryFieldProps> = ({ control, rules }) => {
   return (
     <div className="w-full">
       <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2 !ml-0">
-        Attendees
+        Category
       </FormCheck.Label>
       <Controller
-        name="attendees"
+        name="category"
         control={control}
         rules={rules}
         render={({ field, fieldState: { error } }) => (
           <>
-            <FormInput placeholder="Enter attendees name" {...field} />
+            <select
+              {...field}
+              className="w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-800 text-gray-400 dark:text-white"
+            >
+              <option value="">Select Category</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
             {error && <Error className="text-red-600">{error.message}</Error>}
           </>
         )}
@@ -31,4 +42,4 @@ const NameField: React.FC<NameFieldProps> = ({ control, rules }) => {
   );
 };
 
-export default NameField;
+export default CategoryField;

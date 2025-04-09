@@ -2,17 +2,19 @@ import { Dispatch, SetStateAction } from "react";
 import { Dialog } from "@/components/Base/Headless";
 import NoteForm from "./AddEditNoteForm";
 import { useAppDispatch } from "@/stores/hooks";
-import { addNote, fetchSingleFolder } from "@/stores/notesSlice";
 import { toast } from "react-toastify";
-import { Note } from "@/types/notes";
+import { CompanyDashboard } from "@/stores/dashboardSlice";
+import { DomainNote } from "@/types/domainNotes";
+import { addDomainNote } from "@/stores/domainNotesSlice";
 
 interface AddNoteModalProps {
   mode: "add" | "edit";
   addNoteModalVisible: boolean;
   setAddNoteModalVisible: Dispatch<SetStateAction<boolean>>;
   title: string;
-  selectedNote?: Note;
+  selectedNote?: DomainNote;
   fieldsToEdit?: Array<"name" | "text" | "folder">;
+  data: CompanyDashboard
 }
 
 const AddDomainNoteModal = ({
@@ -22,18 +24,16 @@ const AddDomainNoteModal = ({
   selectedNote,
   mode,
   fieldsToEdit,
+  data
 }: AddNoteModalProps) => {
   const dispatch = useAppDispatch();
 
-  const handleNoteSubmit = async (data: Note) => {
+  const handleNoteSubmit = async (data: DomainNote) => {
     try {
       if (selectedNote?.id) {
-        await dispatch(addNote({ id: selectedNote.id, data }));
+        await dispatch(addDomainNote({ id: selectedNote.id, data }));
       } else {
-        const response = await dispatch(addNote({ data })).unwrap();
-        if (response?.results?.id) {
-          dispatch(fetchSingleFolder(response?.results?.folder));
-        }
+        const response = await dispatch(addDomainNote({ data })).unwrap();
       }
     } catch (error) {
       toast.error("An error occurred while saving the note");
@@ -50,7 +50,7 @@ const AddDomainNoteModal = ({
     >
       <Dialog.Panel>
         <Dialog.Title>
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="text-xl font-semibold">{data.institution_name} (Create new note)</h2>
         </Dialog.Title>
         <Dialog.Description>
           <NoteForm
@@ -59,6 +59,7 @@ const AddDomainNoteModal = ({
             onSubmit={handleNoteSubmit}
             setAddNoteModalVisible={setAddNoteModalVisible}
             fieldsToEdit={fieldsToEdit}
+            data={data}
           />
         </Dialog.Description>
       </Dialog.Panel>

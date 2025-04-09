@@ -676,6 +676,7 @@ const index = () => {
           addNoteModalVisible={addNoteModalVisible}
           setAddNoteModalVisible={setAddNoteModalVisible}
           title="Create New Note"
+          data={data}
         />
       )}
 
