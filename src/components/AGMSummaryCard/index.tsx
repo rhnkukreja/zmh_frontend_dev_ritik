@@ -24,6 +24,8 @@ const index = () => {
     (state) => state.authentiction
   );
 
+  console.log("companyGlobalSearchTicker", companyGlobalSearchTicker)
+
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
@@ -96,25 +98,25 @@ const index = () => {
       dispatch(
         fetchAGMSummaryDashboard(
           createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker}
-          )
-        )
-      );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
-    } 
-    else if (companyGlobalSearchTicker !== tempSearch) {
-      setSelectedYear("");
-      dispatch(
-        fetchAGMSummaryDashboard(
-          createDynamicURL(
-            `${baseURL}/voting_report_8k/`, {ticker: companyGlobalSearchTicker}
+            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
           )
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-    
-    
+    else if (companyGlobalSearchTicker !== tempSearch) {
+      setSelectedYear("");
+      dispatch(
+        fetchAGMSummaryDashboard(
+          createDynamicURL(
+            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
+          )
+        )
+      );
+      dispatch(setTempSearch(companyGlobalSearchTicker));
+    }
+
+
   }, [companyGlobalSearchTicker]);
 
   useEffect(() => {
@@ -128,7 +130,7 @@ const index = () => {
       );
     }
   }, [selectedYear])
-  
+
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     // event.preventDefault();
@@ -138,7 +140,7 @@ const index = () => {
     //       },
     // })
     window.open(
-      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year}`,
+      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? 2024}`,
       "_blank"
     );
   };
@@ -151,7 +153,7 @@ const index = () => {
     //       },
     // })
     window.open(
-      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year}`,
+      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? 2024}`,
       "_blank"
     );
   };
@@ -162,38 +164,73 @@ const index = () => {
   useEffect(() => {
     // getAllInstitutionDropdown();
   }, [companyGlobalSearchTicker]);
-  
-   const getAllInstitutionDropdown = async () => {
-      try {
-        const res = await dashboardService.getInstitution({
-          company_name: [companyGlobalSearchName],
-        });
-        if (res.result?.institution?.length > 0) {
-          setIsInstitutionList(true);
-        }
-        else {
-          setIsInstitutionList(false);
-          
-        }
-      } catch (error) {
-        return error;
-      } finally {
-        // setGetDropdownLoader(false);
+
+  const getAllInstitutionDropdown = async () => {
+    try {
+      const res = await dashboardService.getInstitution({
+        company_name: [companyGlobalSearchName],
+      });
+      if (res.result?.institution?.length > 0) {
+        setIsInstitutionList(true);
       }
-    };
+      else {
+        setIsInstitutionList(false);
 
-    const handleAGMYearTab = (tab: string) =>{
-      setSelectedYear(tab);
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      // setGetDropdownLoader(false);
     }
+  };
 
-    const getSelectedTabIndex = () => {
-      // const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString()));
-      const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ? selectedYear?.toString() : agmSummaryDetails?.Year.toString()));
-      return tabIndex || 0;
-    };
+  const handleAGMYearTab = (tab: string) => {
+    setSelectedYear(tab);
+  }
+
+  const getSelectedTabIndex = () => {
+    // const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString()));
+    const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ? selectedYear?.toString() : agmSummaryDetails?.Year.toString()));
+    return tabIndex || 0;
+  };
 
   return (
     <>
+      {companyGlobalSearchTicker == "OC" && (
+        <div className="p-5 mt-3.5 box ">
+          <div className="w-full">
+            <>
+              <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+                <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                  <span>
+                    <h1 className="text-lg font-bold">
+                      Previous AGM Summary 2024
+                    </h1>
+                    <p className=" italic"> Meeting Date: 18 April, 2024</p>
+                  </span>
+                  <button
+                    onClick={(event: any) => handleViewMore(event)}
+                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
+                                  md:w-auto flex items-center justify-center border-red-800 border-2
+                                   font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                  >
+                    View More
+                  </button>
+                  <button
+                    onClick={(event: any) => handleViewNPX(event)}
+                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
+                                 md:w-auto flex items-center justify-center border-red-800 border-2
+                                  font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                  >
+                    View N-PX
+                  </button>
+                </div>
+              </div>
+            </>
+          </div>
+        </div>
+      )
+      }
       {agmSummaryDetails?.Year && (
         <div className="p-5 mt-3.5 box ">
           <div className="w-full">
@@ -208,7 +245,7 @@ const index = () => {
                   </span>
 
                   {
-                    
+
                     agmSummaryDetails?.vds_check &&
                     dashboardDataList?.total_year?.length > 0 && (
                       <button
@@ -267,35 +304,35 @@ const index = () => {
                 </div>
               </div>
               {
-                  agmSummaryDetails.total_year?.length > 1 &&
-            <div >
-              <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
-              <Tab.List
-                variant="boxed-tabs"
-                className="w-[100px] border-none bg-transparent"
-              >
-               {
-                  agmSummaryDetails.total_year?.length > 1 &&
-                  agmSummaryDetails.total_year?.map((tab: any, index: number) => (
-                    <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
+                agmSummaryDetails.total_year?.length > 1 &&
+                <div >
+                  <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
+                    <Tab.List
+                      variant="boxed-tabs"
+                      className="w-[100px] border-none bg-transparent"
+                    >
+                      {
+                        agmSummaryDetails.total_year?.length > 1 &&
+                        agmSummaryDetails.total_year?.map((tab: any, index: number) => (
+                          <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
                      last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
-                      <Tab.Button
-                        className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
-                        as="button"
-                        onClick={()=> handleAGMYearTab(tab)}>
-                        {tab}
-                      </Tab.Button>
-                    </Tab>
-                  ))
-                }
-               
-              </Tab.List>
-              </Tab.Group>
-              </div>
-               }
-              
-              
-              
+                            <Tab.Button
+                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                              as="button"
+                              onClick={() => handleAGMYearTab(tab)}>
+                              {tab}
+                            </Tab.Button>
+                          </Tab>
+                        ))
+                      }
+
+                    </Tab.List>
+                  </Tab.Group>
+                </div>
+              }
+
+
+
               <div className="mt-5">
                 <TableWrapper isLoading={loading}>
                   <div
@@ -348,15 +385,15 @@ const index = () => {
                                         <h1
                                           className={clsx([
                                             headerIndex === 0 &&
-                                              "font-semibold ",
+                                            "font-semibold ",
                                             headerIndex ===
-                                              agmSummaryDetails
-                                                ?.nominees_headers?.length -
-                                                1 &&
-                                              parseFloat(
-                                                nominee[nomineeHeader?.field]
-                                              ) < 85 &&
-                                              "text-red-700 font-semibold",
+                                            agmSummaryDetails
+                                              ?.nominees_headers?.length -
+                                            1 &&
+                                            parseFloat(
+                                              nominee[nomineeHeader?.field]
+                                            ) < 85 &&
+                                            "text-red-700 font-semibold",
                                           ])}
                                         >
                                           {nominee[nomineeHeader?.field]}
@@ -376,7 +413,7 @@ const index = () => {
                   <div
                     className={clsx([
                       locationPathName === "/" &&
-                        " max-h-[400px] overflow-y-scroll",
+                      " max-h-[400px] overflow-y-scroll",
                     ])}
                   >
                     <Table className="table_3 w-full">
@@ -423,15 +460,15 @@ const index = () => {
                                         <h1
                                           className={clsx([
                                             headerIndex === 0 &&
-                                              "font-semibold ",
+                                            "font-semibold ",
                                             headerIndex ===
-                                              agmSummaryDetails
-                                                ?.proposals_headers?.length -
-                                                1 &&
-                                              parseFloat(
-                                                proposal[proposalHeader?.field]
-                                              ) < 85 &&
-                                              "text-red-700 font-semibold",
+                                            agmSummaryDetails
+                                              ?.proposals_headers?.length -
+                                            1 &&
+                                            parseFloat(
+                                              proposal[proposalHeader?.field]
+                                            ) < 85 &&
+                                            "text-red-700 font-semibold",
                                           ])}
                                         >
                                           {proposal[proposalHeader?.field]}
@@ -447,14 +484,14 @@ const index = () => {
                   </div>
                 </TableWrapper>
 
-                 <footer className="!pt-3 flex items-start flex-col">
+                <footer className="!pt-3 flex items-start flex-col">
                   <span className="!pt-3 flex items-center p-2">
                     <sup
                       className="bold-sup cursor-pointer ml-1"
                       style={{ fontSize: "0.8em" }}
                     >*</sup>
                     <p id="footnote " className="">
-                    [(For + Against or Withhold + Abstain)/Shares Outstanding] (Based on Class A shares only for dual-class companies)
+                      [(For + Against or Withhold + Abstain)/Shares Outstanding] (Based on Class A shares only for dual-class companies)
                     </p>
                   </span>
                 </footer>

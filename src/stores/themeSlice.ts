@@ -83,7 +83,7 @@ const initialState: ThemeState = {
     "notes",
     "investor-company-details",
     "proxy-contest",
-    "vds-european"
+    "voting-data"
   ],
 };
 
