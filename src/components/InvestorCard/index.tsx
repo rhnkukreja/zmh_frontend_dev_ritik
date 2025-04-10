@@ -68,7 +68,7 @@ const index = () => {
     useState<boolean>(false);
 
   const fetchData = async () => {
-    if (companyGlobalSearchTicker ) {
+    if (companyGlobalSearchTicker) {
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -467,7 +467,7 @@ const index = () => {
                                             ) : (
                                               <div className="w-6 h-6" />
                                             )}
-                                            {dashboard?.notes ? (
+                                            {(dashboard?.notes || dashboard?.engagement_questions) ? (
                                               <Tippy
                                                 content="View Notes"
                                                 options={{ theme: "light" }}
