@@ -319,9 +319,13 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                     {/* <button className="text-primary hover:text-blue-500">
                                      <Lucide icon="Eye" className="w-4 h-4" />
                                  </button> */}
-                                                                    <button className="text-primary hover:text-blue-500 ml-2">
-                                                                        <Lucide icon="Share2" className="w-4 h-4 " onClick={() => handleShareNote(note.id)} />
+                                                                    <button
+                                                                        className="text-primary hover:text-blue-500 ml-2 cursor-not-allowed opacity-50"
+                                                                        disabled
+                                                                    >
+                                                                        <Lucide icon="Share2" className="w-4 h-4" />
                                                                     </button>
+
                                                                     <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleNotesEdit(note)}>
                                                                         <Lucide icon="Pen" className="w-4 h-4 mt-2" />
                                                                     </button>

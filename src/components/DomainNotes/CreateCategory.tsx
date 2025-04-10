@@ -9,7 +9,7 @@ interface CategoryFieldProps {
   rules?: object;
 }
 
-const categories = ["Social", "Governance", "Environmental", "Proxy Engagement", "Investor Engagement", "Other"];
+const categories = ["Social", "Governance", "Environmental", "Proxy Engagement", "Shareholder Engagement", "Other"];
 
 const CategoryField: React.FC<CategoryFieldProps> = ({ control, rules }) => {
   return (
