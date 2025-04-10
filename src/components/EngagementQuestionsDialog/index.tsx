@@ -102,9 +102,11 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
 
     const fetchEngagementQuestionsData = async () => {
         const institutionArray = data.institution_name ? [data.institution_name] : [];
+        const companyArray = data.company_name ? [data.company_name] : [];
+
         const dynamicURL = createDynamicURL(
             `${baseURL}/engagement_questions/`,
-            { institution_name: institutionArray },
+            { institution_name: institutionArray, company_name: companyArray },
             undefined,
             page
         );
