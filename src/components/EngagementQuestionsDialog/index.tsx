@@ -1,5 +1,4 @@
 import Lucide from "@/components/Base/Lucide";
-import Tippy from "@/components/Base/Tippy";
 import Table from "@/components/Base/Table";
 import { useEffect, useState } from "react";
 import _ from "lodash";
@@ -13,7 +12,6 @@ import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
-import { useNavigate } from "react-router-dom";
 import { EngagementQuestions } from "@/types/engagementQuestions";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
@@ -40,9 +38,6 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
     const {
         results
     } = useAppSelector((state) => state.domainNotes);
-
-    console.log("results", results[0]);
-
 
     const { user } = useAppSelector((state) => state.authentiction);
     const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
@@ -107,9 +102,11 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
 
     const fetchEngagementQuestionsData = async () => {
         const institutionArray = data.institution_name ? [data.institution_name] : [];
+        const companyArray = data.company_name ? [data.company_name] : [];
+
         const dynamicURL = createDynamicURL(
             `${baseURL}/engagement_questions/`,
-            { institution_name: institutionArray },
+            { institution_name: institutionArray, company_name: companyArray },
             undefined,
             page
         );
@@ -285,7 +282,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody>
-                                                    {results ? (
+                                                    {(results && results.length > 0) ? (
                                                         results.map((note, index) => (
                                                             <Table.Tr key={index} className="relative">
                                                                 <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
@@ -316,9 +313,6 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                     {note.author}
                                                                 </Table.Td>
                                                                 <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-center align-top">
-                                                                    {/* <button className="text-primary hover:text-blue-500">
-                                     <Lucide icon="Eye" className="w-4 h-4" />
-                                 </button> */}
                                                                     <button
                                                                         className="text-primary hover:text-blue-500 ml-2 cursor-not-allowed opacity-50"
                                                                         disabled
@@ -364,7 +358,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody>
-                                                    {groupedQuestions ? (
+                                                    {(groupedQuestions && groupedQuestions.length > 0) ? (
                                                         Object.entries(groupedQuestions).map(([institutionName, institutionQuestions]) => (
                                                             <>
                                                                 {openGroups[institutionName] &&

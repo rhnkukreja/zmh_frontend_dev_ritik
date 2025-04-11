@@ -36,6 +36,7 @@ export type CompanyDashboard = {
   voted_against_say_on_pay: any;
   company_id: number;
   company_name: string;
+  engagement_questions: boolean
   // percent_ownership: string;
 };
 

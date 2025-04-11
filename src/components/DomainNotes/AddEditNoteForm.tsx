@@ -62,45 +62,53 @@ const NoteForm: React.FC<NoteFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="w-full">
-        <label className="block text-left font-semibold text-gray-800 mb-2">
-          Company
-        </label>
-        <FormInput
-          value={data?.company_name}
-          disabled
-          className="w-full"
-        />
+      <div className="flex flex-wrap gap-4">
+        <div className="w-full md:w-[47%]">
+          <label className="block text-left font-semibold text-gray-800 mb-2">
+            Company
+          </label>
+          <FormInput
+            value={data?.company_name}
+            disabled
+            className="w-full"
+          />
+        </div>
+        <div className="w-full md:w-[47%]">
+          <label className="block text-left font-semibold text-gray-800 mb-2">
+            Institution
+          </label>
+          <FormInput
+            value={data?.institution_name}
+            disabled
+            className="w-full"
+          />
+        </div>
       </div>
-      <div className="w-full">
-        <label className="block text-left font-semibold text-gray-800 mb-2">
-          Institution
-        </label>
-        <FormInput
-          value={data?.institution_name}
-          disabled
-          className="w-full"
-        />
+      <div className="flex flex-wrap gap-4">
+        {fieldsToRender.includes("category") && (
+          <div className="w-full md:w-[47%]">
+            <CategoryField
+              control={control}
+              rules={{ required: "Category is required" }}
+            />
+          </div>
+        )}
+        {fieldsToRender.includes("date") && (
+          <div className="w-full md:w-[47%]">
+            <DateField
+              control={control}
+              rules={{ required: "Date is required" }}
+            />
+          </div>
+        )}
       </div>
-
       {fieldsToRender.includes("attendees") && (
         <NameField
           control={control}
           rules={{ required: "Attendees is required" }}
         />
       )}
-      {fieldsToRender.includes("category") && (
-        <CategoryField
-          control={control}
-          rules={{ required: "Category is required" }}
-        />
-      )}
-      {fieldsToRender.includes("date") && (
-        <DateField
-          control={control}
-          rules={{ required: "Date is required" }}
-        />
-      )}
+
       {fieldsToRender.includes("notes") && (
         <NoteField
           control={control}

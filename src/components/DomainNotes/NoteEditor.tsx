@@ -22,12 +22,14 @@ const NoteField: React.FC<NoteFieldProps> = ({ control, rules }) => {
         rules={rules}
         render={({ field, fieldState: { error } }) => (
           <>
-            <ClassicEditor
-              value={field.value}
-              onChange={(event) => {
-                field.onChange(event);
-              }}
-            />
+            <div className="min-h-[150px] max-h-[200px] overflow-y-auto">
+              <ClassicEditor
+                value={field.value}
+                onChange={(event) => {
+                  field.onChange(event);
+                }}
+              />
+            </div>
             {error && <Error className="text-red-600">{error.message}</Error>}
           </>
         )}
