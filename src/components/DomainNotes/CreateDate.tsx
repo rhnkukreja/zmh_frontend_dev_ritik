@@ -24,7 +24,7 @@ const DateField: React.FC<DateFieldProps> = ({ control, rules }) => {
                         <input
                             {...field}
                             type="date"
-                            className="w-full border border-[#E5EAF0] rounded-md p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                            className="w-full h-10 text-sm p-1.5 border border-[#E5EAF0] rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                             placeholder="Enter Date"
                         />
                         {error && <Error className="text-red-600">{error.message}</Error>}

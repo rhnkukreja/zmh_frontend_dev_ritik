@@ -282,7 +282,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody>
-                                                    {results ? (
+                                                    {(results && results.length > 0) ? (
                                                         results.map((note, index) => (
                                                             <Table.Tr key={index} className="relative">
                                                                 <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
@@ -358,7 +358,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody>
-                                                    {groupedQuestions ? (
+                                                    {(groupedQuestions && groupedQuestions.length > 0) ? (
                                                         Object.entries(groupedQuestions).map(([institutionName, institutionQuestions]) => (
                                                             <>
                                                                 {openGroups[institutionName] &&

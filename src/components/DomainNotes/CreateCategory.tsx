@@ -25,7 +25,7 @@ const CategoryField: React.FC<CategoryFieldProps> = ({ control, rules }) => {
           <>
             <select
               {...field}
-              className="w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-800 text-gray-400 dark:text-white"
+              className="w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-800 text-gray-400 dark:text-white text-sm"
             >
               <option value="">Select Category</option>
               {categories.map((cat) => (
@@ -34,6 +34,7 @@ const CategoryField: React.FC<CategoryFieldProps> = ({ control, rules }) => {
                 </option>
               ))}
             </select>
+
             {error && <Error className="text-red-600">{error.message}</Error>}
           </>
         )}

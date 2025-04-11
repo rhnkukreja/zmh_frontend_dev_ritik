@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { DomainNote } from "@/types/domainNotes";
 import { addDomainNote } from "@/stores/domainNotesSlice";
+import Lucide from "../Base/Lucide";
 
 interface AddNoteModalProps {
   mode: "add" | "edit";
@@ -53,8 +54,16 @@ const AddDomainNoteModal = ({
       onClose={() => setAddNoteModalVisible(false)}
     >
       <Dialog.Panel>
-        <Dialog.Title>
-          <h2 className="text-xl font-semibold">{mode == "edit" ? "Edit note" : "Create new note"}</h2>
+        <Dialog.Title className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">
+            {mode === "edit" ? "Edit note" : "New note"}
+          </h2>
+          <button
+            onClick={() => setAddNoteModalVisible(false)}
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-white transition"
+          >
+            <Lucide icon="X" className="w-5 h-5" />
+          </button>
         </Dialog.Title>
         <Dialog.Description>
           <NoteForm
