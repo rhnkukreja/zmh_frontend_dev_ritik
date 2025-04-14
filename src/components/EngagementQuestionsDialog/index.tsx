@@ -106,7 +106,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
 
         const dynamicURL = createDynamicURL(
             `${baseURL}/engagement_questions/`,
-            { institution_name: institutionArray, company_name: companyArray },
+            { institution_name: institutionArray },
             undefined,
             page
         );
@@ -358,7 +358,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody>
-                                                    {(groupedQuestions && groupedQuestions.length > 0) ? (
+                                                    {(groupedQuestions) ? (
                                                         Object.entries(groupedQuestions).map(([institutionName, institutionQuestions]) => (
                                                             <>
                                                                 {openGroups[institutionName] &&
