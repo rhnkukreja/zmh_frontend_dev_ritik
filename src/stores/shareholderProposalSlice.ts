@@ -62,14 +62,15 @@ export interface SharedHolderPrposal {
   };
 
   proposalCounts: {
-    [key: string]: number; 
+    [key: string]: number;
   };
   topSubcategories: {
-    [key: string]: any[]; 
+    [key: string]: any[];
   };
 
   topCategories: any[];
   yearlySummary: any[];
+  topProponents: any[]
 }
 
 
@@ -119,7 +120,8 @@ const initialState: SharedHolderPrposal = {
     Governance: [],
     Compensation: [],
   },
-  yearlySummary: []
+  yearlySummary: [],
+  topProponents: []
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<
@@ -130,13 +132,14 @@ export const fetchShareHolderProposal = createAsyncThunk<
     withdrawnCount: number;
     noActionCount: number;
     proposalCounts: {
-      [key: string]: number; 
+      [key: string]: number;
     };
     topSubcategories: {
-      [key: string]: any[]; 
+      [key: string]: any[];
     };
     topCategories: any[];
     yearlySummary: any[];
+    topProponents: any[]
   },
   string
 >(`${name}`, async (url: string) => {
@@ -258,12 +261,13 @@ const shareHolderProposal = createSlice({
             noActionCount: number;
             topCategories: any[];
             proposalCounts: {
-              [key: string]: number; 
+              [key: string]: number;
             };
             topSubcategories: {
-              [key: string]: any[]; 
+              [key: string]: any[];
             };
-            yearlySummary: any[]
+            yearlySummary: any[];
+            topProponents: any[];
           }>
         ) => {
           state.loading = false;
@@ -274,6 +278,7 @@ const shareHolderProposal = createSlice({
           state.topSubcategories = action.payload.topSubcategories;
           state.yearlySummary = action.payload.yearlySummary;
           state.proposalCounts = action.payload.proposalCounts;
+          state.topProponents = action.payload.topProponents;
 
           // state.proposalCount = action?.payload?.proposalCount  ?? 0;
           // state.withdrawnCount = action?.payload?.withdrawnCount ?? 0;

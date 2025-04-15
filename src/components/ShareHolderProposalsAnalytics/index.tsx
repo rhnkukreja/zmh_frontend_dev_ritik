@@ -36,7 +36,11 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
         !isDataAvailable(topCategories) &&
         !isDataAvailable(yearlySummary)
     ) {
-        return <h2 className="text-xl font-semibold mb-4 text-gray-600">No Analytics Available</h2>;
+        return (
+            <div className="flex items-center justify-center h-full mb-10">
+                <h2 className="text-xl font-semibold text-gray-600">No Analytics Available</h2>
+            </div>
+        );
     }
 
 
