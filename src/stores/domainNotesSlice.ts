@@ -5,7 +5,7 @@ import {
 import { engagementQuestionService } from "@/services/engagementQuestion";
 import { getPageNumbers } from "@/utils/helper";
 import { domainNotesService } from "@/services/domainNotes";
-import { DomainNote } from "@/types/domainNotes";
+import { DomainNote, DomainNoteComment } from "@/types/domainNotes";
 
 const name = "domainNotes";
 
@@ -56,6 +56,21 @@ export const fetchDomainNotes = createAsyncThunk<
   return await domainNotesService.getDomainNotes(url);
 });
 
+
+export const fetchDomainNotesDropDownValuesByCompany = createAsyncThunk<
+  { results: any[] },
+  string
+>(`${name}/fetchDomainNotesDropDownValuesByCompany`, async (companyName: string) => {
+  return await domainNotesService.domainNoteDropDownValuesByCompany(companyName);
+});
+
+export const fetchDomainNotesDropDownValuesByInstitution = createAsyncThunk<
+  { results: any[] },
+  string
+>(`${name}/fetchDomainNotesDropDownValuesByInstitution`, async (institutionName: string) => {
+  return await domainNotesService.domainNoteDropDownValuesByInstitution(institutionName);
+});
+
 export const addDomainNote = createAsyncThunk<
   { results: DomainNote; isEdit: boolean },
   { id?: number; data: Partial<DomainNote> }
@@ -76,6 +91,17 @@ export const deleteDomainNote = createAsyncThunk<
   let response;
   if (id) {
     response = await domainNotesService.deleteNote(id);
+  }
+  return { results: response.results, isEdit: !!id };
+});
+
+export const addDomainNoteComment = createAsyncThunk<
+  { results: DomainNote; isEdit: boolean },
+  { id?: number; data: Partial<DomainNoteComment> }
+>(`${name}/addNoteComment`, async ({ data, id }) => {
+  let response;
+  if (id) {
+    response = await domainNotesService.addNoteComment(id, data);
   }
   return { results: response.results, isEdit: !!id };
 });
