@@ -39,9 +39,9 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                         <th className="px-4 py-2 border">Proponents</th>
                         <th className="px-4 py-2 border"># of Proposals</th>
                         <th className="px-4 py-2 border">Environmental</th>
-                        <th className="px-4 py-2 border">Social</th>
-                        <th className="px-4 py-2 border">Governance</th>
-                        <th className="px-4 py-2 border">Executive Compensation</th>
+                        <th className="px-4 py-2 border w-36">Social</th>
+                        <th className="px-4 py-2 border w-36">Governance</th>
+                        <th className="px-4 py-2 border w-36">Executive Compensation</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -54,12 +54,15 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                         return (
                             <tr key={idx} className="text-center">
                                 <td className="border px-4 py-2">{idx + 1}</td> {/* Numbered index */}
-                                <td
-                                    className="border px-4 py-2 text-left cursor-pointer"
-                                    onClick={() => handleInstitutionClick(proponent.institution__name)}
-                                >
-                                    {proponent.institution__name}
+                                <td className="border px-4 py-2 text-left">
+                                    <button
+                                        onClick={() => handleInstitutionClick(proponent.institution__name)}
+                                        className="text-blue-600 hover:underline focus:outline-none text-left"
+                                    >
+                                        {proponent.institution__name}
+                                    </button>
                                 </td>
+
                                 <td className="border px-4 py-2">{proponent.total_count}</td>
                                 <td className="border px-4 py-2">{envCount}</td>
                                 <td className="border px-4 py-2">{socCount}</td>
