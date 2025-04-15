@@ -17,16 +17,17 @@ class ShareHolderProposalService {
     withdrawnCount: number;
     noActionCount: number;
     proposalCounts: {
-      [key: string]: number; 
+      [key: string]: number;
     };
     topSubcategories: {
-      [key: string]: any[]; 
+      [key: string]: any[];
     };
     topCategories: any[];
     yearlySummary: any[];
+    topProponents: any[]
   }> {
     const response = await axiosInstance.get(url);
-    const { count, results, proposalCount, withdrawnCount, noActionCount, proposal_counts, top_subcategories, yearly_summary, top_categories } =
+    const { count, results, proposalCount, withdrawnCount, noActionCount, proposal_counts, top_subcategories, yearly_summary, top_categories, top_10_proponent } =
       response.data;
     return {
       count,
@@ -37,7 +38,8 @@ class ShareHolderProposalService {
       proposalCounts: proposal_counts,
       topSubcategories: top_subcategories,
       yearlySummary: yearly_summary,
-      topCategories: top_categories
+      topCategories: top_categories,
+      topProponents: top_10_proponent,
     };
   }
 
