@@ -1,4 +1,4 @@
-import { DomainNote } from "@/types/domainNotes";
+import { DomainNote, DomainNoteComment } from "@/types/domainNotes";
 import { axiosInstance } from "../index";
 import {
   EngagementFormData,
@@ -47,6 +47,32 @@ class DomainNotesService {
     };
   }
 
+  public async domainNoteDropDownValuesByInstitution(
+    institutionName: string,
+  ): Promise<{
+    results: any[];
+  }> {
+    const response = await axiosInstance.get(`/user/get_domain_notes_dropdown_values/?institution_name=${institutionName}`);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+
+  public async domainNoteDropDownValuesByCompany(
+    companyName: string,
+  ): Promise<{
+    results: any[];
+  }> {
+    const response = await axiosInstance.get(`/user/get_domain_notes_dropdown_values/?institution_name=${companyName}`);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+
 
 
   public async updateNote(
@@ -61,6 +87,24 @@ class DomainNotesService {
       results,
     };
   }
+
+  public async addNoteComment(
+    id: number,
+    data: Partial<DomainNoteComment>
+  ): Promise<{
+    results: DomainNote;
+  }> {
+    const payload = {
+      ...data,
+      domain_notes: id,
+    };
+
+    const response = await axiosInstance.post(`/user/notes_comments/`, payload);
+    return {
+      results: response.data,
+    };
+  }
+
 }
 
 export const domainNotesService = new DomainNotesService();

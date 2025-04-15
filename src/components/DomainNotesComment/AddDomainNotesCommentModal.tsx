@@ -4,61 +4,59 @@ import NoteForm from "./AddEditNoteForm";
 import { useAppDispatch } from "@/stores/hooks";
 import { toast } from "react-toastify";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
-import { DomainNote } from "@/types/domainNotes";
-import { addDomainNote } from "@/stores/domainNotesSlice";
+import { DomainNote, DomainNoteComment } from "@/types/domainNotes";
+import { addDomainNoteComment } from "@/stores/domainNotesSlice";
 import Lucide from "../Base/Lucide";
 
-interface AddNoteModalProps {
+interface AddDomainNoteCommentProps {
   mode: "add" | "edit";
-  addNoteModalVisible: boolean;
-  setAddNoteModalVisible: Dispatch<SetStateAction<boolean>>;
+  addCommentModalVisible: boolean;
+  setAddNoteCommentsModalVisible: Dispatch<SetStateAction<boolean>>;
   title: string;
   selectedNote?: DomainNote;
-  fieldsToEdit?: Array<"name" | "text" | "folder">;
+  fieldsToEdit?: Array<"comments">;
   data: CompanyDashboard;
   fetchData: () => Promise<void>
 }
 
-const AddDomainNoteModal = ({
-  addNoteModalVisible,
-  setAddNoteModalVisible,
+const AddDomainNoteCommentsModal = ({
+  addCommentModalVisible,
+  setAddNoteCommentsModalVisible,
   title,
   selectedNote,
   mode,
   fieldsToEdit,
   data,
-  fetchData
-}: AddNoteModalProps) => {
+  fetchData,
+}: AddDomainNoteCommentProps) => {
   const dispatch = useAppDispatch();
 
-  const handleNoteSubmit = async (data: DomainNote) => {
+  const handleNoteCommentsSubmit = async (data: DomainNoteComment) => {
     try {
-      if (selectedNote?.id && mode == "edit") {
-        await dispatch(addDomainNote({ id: selectedNote.id, data }));
-      } else {
-        await dispatch(addDomainNote({ data })).unwrap();
+      if (selectedNote?.id) {
+        await dispatch(addDomainNoteComment({ id: selectedNote.id, data }));
+        fetchData()
       }
     } catch (error) {
-      toast.error("An error occurred while saving the note");
+      toast.error("An error occurred while adding a comment");
     } finally {
-      fetchData()
-      setAddNoteModalVisible(false);
+      setAddNoteCommentsModalVisible(false);
     }
   };
 
   return (
     <Dialog
       size="lg"
-      open={addNoteModalVisible}
-      onClose={() => setAddNoteModalVisible(false)}
+      open={addCommentModalVisible}
+      onClose={() => setAddNoteCommentsModalVisible(false)}
     >
       <Dialog.Panel>
         <Dialog.Title className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">
-            {mode === "edit" ? "Edit note" : "New note"}
+            {mode === "edit" ? "Edit comment" : "New comment"}
           </h2>
           <button
-            onClick={() => setAddNoteModalVisible(false)}
+            onClick={() => setAddNoteCommentsModalVisible(false)}
             className="text-gray-500 hover:text-gray-700 dark:hover:text-white transition"
           >
             <Lucide icon="X" className="w-5 h-5" />
@@ -67,9 +65,9 @@ const AddDomainNoteModal = ({
         <Dialog.Description>
           <NoteForm
             mode={mode}
-            initialData={selectedNote || {}}
-            onSubmit={handleNoteSubmit}
-            setAddNoteModalVisible={setAddNoteModalVisible}
+            initialData={selectedNote}
+            onSubmit={handleNoteCommentsSubmit}
+            setAddNoteCommentsModalVisible={setAddNoteCommentsModalVisible}
             fieldsToEdit={fieldsToEdit}
             data={data}
           />
@@ -79,4 +77,4 @@ const AddDomainNoteModal = ({
   );
 };
 
-export default AddDomainNoteModal;
+export default AddDomainNoteCommentsModal;

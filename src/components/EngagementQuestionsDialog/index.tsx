@@ -19,6 +19,8 @@ import { deleteDomainNote, fetchDomainNotes, shareDomainNote } from "@/stores/do
 import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
 import LoadingIcon from "../Base/LoadingIcon";
 import { toast } from "react-toastify";
+import AddDomainNoteCommentsModal from "../DomainNotesComment/AddDomainNotesCommentModal";
+import React from "react";
 
 interface EngagementQuestionsDialogProps {
     data: CompanyDashboard,
@@ -39,7 +41,11 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
         results
     } = useAppSelector((state) => state.domainNotes);
 
+    console.log("Results", results)
+
+
     const { user } = useAppSelector((state) => state.authentiction);
+
     const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
         useState<EngagementQuestions | null>(null);
     const [groupedQuestions, setGroupedQuestions] = useState<any>([]);
@@ -50,10 +56,15 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
     const [initialStateNote, setInitialStateNote] = useState<any>([]);
     const [addNoteModalVisible, setAddNoteModalVisible] =
         useState<boolean>(false);
+    const [addCommentModalVisible, setAddCommentModalVisible] =
+        useState<boolean>(false);
     const [isLoading, setIsLoading] =
         useState<boolean>(false);
     const [editNote, setEditNote] =
         useState<boolean>(false);
+    const [editComment, setEditComment] =
+        useState<boolean>(false);
+
 
     const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>({});
 
@@ -69,7 +80,11 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
         setEditNote(true)
         setAddNoteModalVisible(true)
     };
-
+    const handleCommentNote = (note) => {
+        setInitialStateNote(note)
+        // setEditComment(true)
+        setAddCommentModalVisible(true)
+    };
 
     const checkImageUrl = async (url: string): Promise<boolean> => {
         return new Promise((resolve) => {
@@ -278,57 +293,108 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                         <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Attendees</Table.Td>
                                                         <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Notes</Table.Td>
                                                         <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Author</Table.Td>
+                                                        <Table.Td className="py-2 font-semibold bg-header text-[#000000B2]">Comments</Table.Td>
                                                         <Table.Td className="py-2 font-semibold bg-header text-[#000000B2] text-center"></Table.Td>
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody>
-                                                    {(results && results.length > 0) ? (
+                                                    {results && results.length > 0 ? (
                                                         results.map((note, index) => (
-                                                            <Table.Tr key={index} className="relative">
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
-                                                                    {note.formatted_date}
-                                                                </Table.Td>
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
-                                                                    {note.attendees}
-                                                                </Table.Td>
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[630px]">
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div
-                                                                            className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index] ? "max-h-none" : "line-clamp-2 overflow-hidden"
-                                                                                } whitespace-pre-wrap`}
-                                                                            dangerouslySetInnerHTML={{ __html: note.notes }}
-                                                                        />
-                                                                        <button
-                                                                            onClick={() => toggleExpand(index)}
-                                                                            className="ml-1 text-blue-500 flex-shrink-0"
-                                                                        >
-                                                                            <Lucide
-                                                                                icon={expandedRows[index] ? "ChevronUp" : "ChevronDown"}
-                                                                                className="w-4 h-4"
+                                                            <React.Fragment key={index}>
+                                                                {/* Main Note Row */}
+                                                                <Table.Tr className="relative">
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
+                                                                        {note.formatted_date}
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
+                                                                        {note.attendees}
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[500px]">
+                                                                        <div className="flex justify-between items-start">
+                                                                            <div
+                                                                                className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index] ? "max-h-none" : "line-clamp-2 overflow-hidden"
+                                                                                    } whitespace-pre-wrap`}
+                                                                                dangerouslySetInnerHTML={{ __html: note.notes }}
                                                                             />
-                                                                        </button>
-                                                                    </div>
-                                                                </Table.Td>
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
-                                                                    {note.author}
-                                                                </Table.Td>
-                                                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-center align-top">
-                                                                    <button
-                                                                        className="text-primary hover:text-blue-500 ml-2 cursor-not-allowed opacity-50"
-                                                                        disabled
-                                                                    >
-                                                                        <Lucide icon="Share2" className="w-4 h-4" />
-                                                                    </button>
+                                                                            <button
+                                                                                onClick={() => toggleExpand(index)}
+                                                                                className="ml-1 text-blue-500 flex-shrink-0"
+                                                                            >
+                                                                                <Lucide
+                                                                                    icon={expandedRows[index] ? "ChevronUp" : "ChevronDown"}
+                                                                                    className="w-4 h-4"
+                                                                                />
+                                                                            </button>
+                                                                        </div>
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 align-top">
+                                                                        {note.author}
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-center align-top">
+                                                                        {note.update_delete_check ? (
+                                                                            <>
+                                                                                <button
+                                                                                    className="text-primary hover:text-blue-500 ml-2"
+                                                                                    onClick={() => handleNotesEdit(note)}
+                                                                                    title="Edit Note"
+                                                                                >
+                                                                                    <Lucide icon="Pen" className="w-4 h-4 mt-2" />
+                                                                                </button>
+                                                                                <button
+                                                                                    className="text-primary hover:text-blue-500 ml-2"
+                                                                                    onClick={() => handleDeleteNote(note.id)}
+                                                                                    title="Delete Note"
+                                                                                >
+                                                                                    <Lucide icon="Trash" className="w-4 h-4 mt-2" />
+                                                                                </button>
+                                                                                <button
+                                                                                    className="text-primary hover:text-blue-500 ml-2"
+                                                                                    onClick={() => handleCommentNote?.(note)}
+                                                                                    title="Comment"
+                                                                                >
+                                                                                    <Lucide icon="MessageCircle" className="w-4 h-4 mt-2" />
+                                                                                </button>
+                                                                            </>
+                                                                        ) : (
+                                                                            <button
+                                                                                className="text-primary hover:text-blue-500 ml-2"
+                                                                                onClick={() => handleShareNote?.(note)}
+                                                                                title="Share Note"
+                                                                            >
+                                                                                <Lucide icon="Share2" className="w-4 h-4" />
+                                                                            </button>
+                                                                        )}
+                                                                    </Table.Td>
+                                                                </Table.Tr>
 
-                                                                    <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleNotesEdit(note)}>
-                                                                        <Lucide icon="Pen" className="w-4 h-4 mt-2" />
-                                                                    </button>
-                                                                    <button className="text-primary hover:text-blue-500 ml-2" onClick={() => handleDeleteNote(note.id)}>
-                                                                        <Lucide icon="Trash" className="w-4 h-4 mt-2" />
-                                                                    </button>
-
-                                                                </Table.Td>
-                                                            </Table.Tr>
+                                                                {/* Comments Row */}
+                                                                <Table.Tr className="bg-muted dark:bg-darkmode-700">
+                                                                    <Table.Td colSpan={5} className="py-3 px-5 text-sm">
+                                                                        {note.comments && note.comments.length > 0 ? (
+                                                                            <div className="space-y-2">
+                                                                                {note.comments.map((comment, idx) => (
+                                                                                    <div
+                                                                                        key={idx}
+                                                                                        className="border-l-4 border-primary/80 pl-4 py-1 bg-white dark:bg-darkmode-600 rounded-md shadow-sm"
+                                                                                    >
+                                                                                        <div className="flex justify-between items-start gap-4">
+                                                                                            <div
+                                                                                                className="text-gray-800 dark:text-gray-100 text-sm"
+                                                                                                dangerouslySetInnerHTML={{ __html: comment.comments }}
+                                                                                            />
+                                                                                            <span className="text-xs text-gray-500 dark:text-gray-400 italic whitespace-nowrap">
+                                                                                                – {comment.name}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="text-sm text-slate-500 italic">– No comments available –</div>
+                                                                        )}
+                                                                    </Table.Td>
+                                                                </Table.Tr>
+                                                            </React.Fragment>
                                                         ))
                                                     ) : (
                                                         <Table.Tr>
@@ -338,6 +404,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                         </Table.Tr>
                                                     )}
                                                 </Table.Tbody>
+
 
                                             </Table>
                                         </div>
@@ -413,6 +480,18 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                 mode={editNote ? "edit" : "add"}
                                 addNoteModalVisible={addNoteModalVisible}
                                 setAddNoteModalVisible={setAddNoteModalVisible}
+                                title="Create New Note"
+                                data={data}
+                                selectedNote={initialStateNote}
+                                fetchData={fetchData}
+                            />
+                        )}
+
+                        {addCommentModalVisible && (
+                            <AddDomainNoteCommentsModal
+                                mode={editComment ? "edit" : "add"}
+                                addCommentModalVisible={addCommentModalVisible}
+                                setAddNoteCommentsModalVisible={setAddCommentModalVisible}
                                 title="Create New Note"
                                 data={data}
                                 selectedNote={initialStateNote}
