@@ -1608,7 +1608,7 @@ function ShareHolderProposal() {
                       }`}
                     onClick={() => setActiveTab("shareholders")}
                   >
-                    All ShareHolder Proposals
+                    All Shareholder Proposals
                   </button>
                   <button
                     className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
