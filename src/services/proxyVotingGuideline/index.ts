@@ -27,7 +27,7 @@ class ProxyVotingGuidelineService {
     };
   }
 
-  public async getProxyVotingSumamryDropdownValues(paramFilter?: any): Promise<{
+  public async getProxyVotingSummaryDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
     const response = await axiosInstance.get(

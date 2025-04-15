@@ -21,7 +21,6 @@ import {
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
-import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { fetchVdsEuropeans, resetPage, setAllFilters, setPage } from "@/stores/vdsEuropeanSlice";
 import { vdsEuropeanService } from "@/services/vdsEuropean";
@@ -30,6 +29,7 @@ import FilterChips from "@/components/FilterChips";
 import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
 const index = () => {
     const dispatch: AppDispatch = useAppDispatch();
@@ -44,21 +44,20 @@ const index = () => {
     const [searchParams] = useSearchParams();
     const searchTicker = searchParams.get("ticker");
     const [allApplyFilter, setallApplyFilter] = useState<any>("");
-    const [meetingDate, setMeetingDate] = useState<any>("");
-
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
     const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
         useState<boolean>(false);
-    const [showFundName, setShowFundName] = useState<boolean>(false);
-    const [apiFundNameDropdown, setApiFundNameDropdown] = useState<any>({
+    const [apiInstitutionDropdown, setApiInstitutionDropdown] = useState<any>({
         institution: [],
     });
 
+    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
+    const [filtersLength, setFiltersLength] = useState<number>(0);
     const [dropdownValues, setDropdownValues] = useState<any>({
         company_name: [],
         institution: [],
     });
-
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
         useState<boolean>(false);
 
@@ -70,15 +69,64 @@ const index = () => {
             year: [],
         });
 
+    useEffect(() => {
+        const fetchData = async () => {
+            if (allApplyFilter) {
+                setIsLoading(true);
+
+                await dispatch(
+                    fetchVdsEuropeans(
+                        createDynamicURL(
+                            `${baseURL}/vds_european/`,
+                            allApplyFilter,
+                            undefined,
+                            page
+                        )
+                    )
+                );
+
+                setFiltersLength(countValidFilters(allApplyFilter));
+                setSelectedChipFilters(generateFilterChips(allApplyFilter));
+                dispatch(setTempSearch(companyGlobalSearchName));
+
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+        console.log(watch("year"));
+    }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
+
+
+    useEffect(() => {
+        getDependentDropdown();
+    }, [dropdownValues]);
+
+    const {
+        handleSubmit,
+        control,
+        reset,
+        formState: { errors },
+        setValue,
+        watch,
+    } = useForm<any>({
+        defaultValues: {
+            institution_name: [],
+            vote: [],
+            category: [],
+            year: "",
+        },
+    });
+
 
     const getDependentDropdown = async () => {
         const paramFilter = {
             company_name: dropdownValues?.company_name !== "" ? [dropdownValues?.company_name] : [],
             institution_name: dropdownValues?.institution_name,
-            year: dropdownValues?.institution_name && dropdownValues?.company_name ? [2024] : []
+            year: dropdownValues?.institution_name && dropdownValues?.company_name ? 2024 : null
         };
         if (dropdownValues?.institution_name && dropdownValues?.company_name) {
-            setValue("year", [2024]);
+            setValue("year", 2024);
         }
         try {
             setGetDynamicDropdownLoader(true);
@@ -93,7 +141,7 @@ const index = () => {
         }
     };
 
-    const getFundNameDependentDropdown = async (value: any) => {
+    const getInstituionDependentDropdown = async (value: any) => {
         if (value !== "") {
             const paramFilter = {
                 company_name: [value],
@@ -104,8 +152,7 @@ const index = () => {
                     paramFilter
                 );
                 if (res.result) {
-                    setShowFundName(res.result?.is_institution);
-                    setApiFundNameDropdown({ ...res.result });
+                    setApiInstitutionDropdown({ ...res.result });
                 }
             } catch (error) {
                 return error;
@@ -122,61 +169,13 @@ const index = () => {
         }));
     };
 
-    useEffect(() => {
-        getDependentDropdown();
-    }, [dropdownValues]);
-
-    useEffect(() => {
-        if (allApplyFilter) {
-            dispatch(
-                fetchVdsEuropeans(
-                    createDynamicURL(
-                        `${baseURL}/vds_european/`,
-                        allApplyFilter,
-                        undefined,
-                        page
-                    )
-                )
-            );
-
-            setFiltersLength(
-                countValidFilters(
-                    allApplyFilter
-                )
-            );
-            setSelectedChipFilters(generateFilterChips(allApplyFilter));
-            dispatch(setTempSearch(companyGlobalSearchName));
-        }
-
-        // return () => {
-        //     onFilterClear();
-        //   }
-    }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
-
-
-    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
-    const [filtersLength, setFiltersLength] = useState<number>(0);
 
     const handleCollapseFilter = (event: React.MouseEvent) => {
         event.preventDefault();
         setIsFilterCollapse(!isFilterCollapse);
     };
 
-    const {
-        handleSubmit,
-        control,
-        reset,
-        formState: { errors },
-        setValue,
-        watch,
-    } = useForm<any>({
-        defaultValues: {
-            institution_name: [],
-            vote: [],
-            category: [],
-            year: [],
-        },
-    });
+
 
     const onSubmit = async (npxFilter: any) => {
         if (npxFilter?.company_name?.length === 0 || !npxFilter?.company_name?.label) {
@@ -196,6 +195,7 @@ const index = () => {
 
     const onFilterClear = () => {
         resetFormValues();
+        reset();
         setallApplyFilter({});
 
         dispatch(resetPage());
@@ -211,7 +211,7 @@ const index = () => {
             category: [],
             year: [],
         })
-        setApiFundNameDropdown({
+        setApiInstitutionDropdown({
             institution: [],
         })
 
@@ -222,7 +222,7 @@ const index = () => {
         setValue("institution_name", []);
         setValue("vote", []);
         setValue("category", []);
-        setValue("year", []);
+        setValue("year", " ");
         setValue("keyword", "");
     };
 
@@ -250,7 +250,7 @@ const index = () => {
                 (item) => item !== removeValue
             );
         } else if (updatedFilters[removeKey] === removeValue) {
-            if (removeKey === "index") {
+            if (removeKey === "year") {
                 updatedFilters[removeKey] = " ";
             } else {
                 updatedFilters[removeKey] = "";
@@ -262,21 +262,12 @@ const index = () => {
         setallApplyFilter(updatedFilters);
     }
 
-    const isObject = (item: any) => {
-        if (typeof item === "object") {
-            return true;
-        } else {
-            false;
-        }
-    };
-
-    const getSplitContents = (items: any) => {
-        const resultString = Object.entries(items)
-            .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
-            .join(", ");
-        return resultString;
-    };
-
+    // const getSplitContents = (items: any) => {
+    //     const resultString = Object.entries(items)
+    //         .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
+    //         .join(", ");
+    //     return resultString;
+    // };
 
     return (
         <>
@@ -286,10 +277,16 @@ const index = () => {
                 <div className="flex flex-col p-5  sm:flex-row gap-y-2">
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
-                            <h1 className="text-lg font-bold">Voting Data</h1>
+                            <h1 className="text-lg font-bold">Voting Data (Beta)</h1>
                             {
                                 VdsEuropeans?.length > 0 &&
-                                <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date} </p>
+                                <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date
+                                    ? new Intl.DateTimeFormat("en-US", {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                    }).format(new Date(VdsEuropeans[0].meeting_date))
+                                    : ""} </p>
                             }
                         </span>
                     </div>
@@ -361,6 +358,7 @@ const index = () => {
                                         defaultValue={[]}
                                         render={({ field }) => (
                                             <CompanySelect
+                                                isClearable={true}
                                                 exactUrl={"get_vds_european_dropdown_values/?company_name="}
                                                 value={field.value}
                                                 onChange={(value: any) => {
@@ -369,7 +367,7 @@ const index = () => {
                                                         "company_name",
                                                         value?.label
                                                     );
-                                                    getFundNameDependentDropdown(value?.label);
+                                                    getInstituionDependentDropdown(value?.label);
                                                 }}
                                             />
 
@@ -402,10 +400,9 @@ const index = () => {
                                                 {getFundNameDropdownLoader ? (
                                                     <option disabled>Loading...</option>
                                                 ) : (
-                                                    apiFundNameDropdown?.institution?.map(
+                                                    apiInstitutionDropdown?.institution?.map(
                                                         (institution: any) => (
                                                             <option key={institution} value={institution}>
-                                                                {/* {convertToTitleCase(institution)} */}
                                                                 {institution}
                                                             </option>
                                                         )
@@ -430,8 +427,9 @@ const index = () => {
                                                 onChange={(value) => {
                                                     field.onChange(value); // Set a string value instead of an array
                                                 }}
-                                                options={{ placeholder: "Select Year" }}
+                                                options={{ placeholder: "Select Year", allowEmptyOption: true }}
                                                 className="w-full"
+                                            // multiple
                                             >
                                                 {getDynamicDropdownLoader ? (
                                                     <option disabled>Loading...</option>
@@ -519,7 +517,7 @@ const index = () => {
                                 </div>
 
                                 <div className="w-full">
-                                    <div className="text-left text-slate-500 font-semibold">Keyword</div>
+                                    <div className="text-left text-slate-500  font-semibold">Keyword</div>
                                     <Controller
                                         name="keyword"
                                         control={control}
@@ -545,7 +543,15 @@ const index = () => {
                         </div>
                     </form>
                 )}
-
+                {isLoading && (
+                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                        <LoadingIcon
+                            color="#800000"
+                            icon="three-dots"
+                            className="w-16 h-16"
+                        />
+                    </div>
+                )}
                 {VdsEuropeans?.length > 0 ? (
                     <div className="w-full">
                         <>
@@ -564,7 +570,7 @@ const index = () => {
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }} // Remaining columns have equal widths
+                                                            style={{ width: "17.5%" }}
                                                         >
                                                             Meeting Type
                                                         </Table.Td>
@@ -592,156 +598,93 @@ const index = () => {
                                                         >
                                                             Vote Cast
                                                         </Table.Td>
-
-                                                        {/* <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "30%" }}
-                                                        >
-                                                           Company Name
-
-                                                        </Table.Td>
-
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }} // Proposal gets more width
-                                                        >
-                                                            Meeting Date
-                                                        </Table.Td> */}
                                                     </Table.Tr>
                                                 </Table.Thead>
 
                                                 <Table.Tbody>
-                                                    {VdsEuropeans?.length > 0 &&
-                                                        VdsEuropeans?.map((vds: any) => (
-                                                            <Table.Tr
-                                                                key={vds?.id}
-                                                                className="[&_td]:last:border-b-0"
-                                                            >
-                                                                <Table.Td
-                                                                    className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                                                    style={{ width: "17.5%" }}
+                                                    {VdsEuropeans?.length > 0 && (() => {
+                                                        let lastInstitutionName = '';
+                                                        let toggle = false;
+
+                                                        return VdsEuropeans.map((vds: any, index: number) => {
+                                                            const currentInstitution = vds?.excel_institution_name;
+                                                            if (currentInstitution !== lastInstitutionName) {
+                                                                toggle = !toggle;
+                                                                lastInstitutionName = currentInstitution;
+                                                            }
+
+                                                            return (
+                                                                <Table.Tr
+                                                                    key={vds?.id}
+                                                                    className={clsx(
+                                                                        "[&_td]:last:border-b-0",
+                                                                        toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
+                                                                    )}
                                                                 >
-                                                                    {vds?.excel_institution_name}
-                                                                    {/* {convertToTitleCase(vds?.excel_institution_name)} */}
+                                                                    <Table.Td
+                                                                        className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                                                        style={{ width: "17.5%" }}
+                                                                    >
+                                                                        {vds?.excel_institution_name}
+                                                                    </Table.Td>
 
-                                                                </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
+                                                                        <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
+                                                                    </Table.Td>
 
-                                                                {/* <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "30%" }}
-                                                                >
-                                                                    { vds?.company_name ?  vds?.company_name : vds?.excel_company_name}
-                                                                    
-                                                                </Table.Td> */}
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
+                                                                        {vds?.proposal_num}
+                                                                    </Table.Td>
 
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "17.5%" }}
-                                                                >
-                                                                    <div className="flex">
-                                                                        {convertToTitleCase(vds?.meeting_type)}
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
+                                                                        {vds?.proposal}
+                                                                    </Table.Td>
 
-                                                                    </div>
-                                                                </Table.Td>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                                        {convertToTitleCase(vds?.mgt_rec)}
+                                                                    </Table.Td>
 
-                                                                <Table.Td
-                                                                    className="py-2  border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "5%" }}
-                                                                >
-                                                                    {/* {convertToTitleCase(vds?.proposal_num)} */}
-                                                                    {vds?.proposal_num}
-
-                                                                </Table.Td>
-
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "25%" }}
-                                                                >
-                                                                    {/* {convertToTitleCase(vds?.proposal)}
-                                                                     */}
-                                                                    {vds?.proposal}
-                                                                </Table.Td>
-
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "10%" }}
-                                                                >
-                                                                    {convertToTitleCase(vds?.mgt_rec)}
-                                                                </Table.Td>
-
-                                                                <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "30%" }}
-                                                                >
-                                                                    <div className="flex">
-                                                                        {vds?.vote === "Split Vote" ? (
-                                                                            <Tippy
-                                                                                // content={
-                                                                                //     getSplitContents(
-                                                                                //         vds?.split_vote_counts
-                                                                                //     )
-                                                                                // }
-                                                                                content={
-                                                                                    vds?.split_vote_counts
-                                                                                }
-                                                                                options={{ theme: "light" }}
-                                                                            >
-                                                                                {
-                                                                                    vds?.vote
-                                                                                }
-                                                                            </Tippy>
-                                                                        ) : (
-                                                                            <span className={clsx([
-                                                                                (vds?.vote?.includes("Against") ||
-                                                                                    vds.vote?.includes(
-                                                                                        "Withhold"
-                                                                                    )) &&
-                                                                                "text-red-700 font-semibold ",
-                                                                            ])}>
-                                                                                {
-                                                                                    vds?.vote
-                                                                                }
-                                                                            </span>
-                                                                        )}
-                                                                        {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                                                            <span
-                                                                                data-tooltip-id="my-tooltip-data-html"
-                                                                                data-tooltip-html={vds?.notes}
-                                                                            >
-                                                                                <Lucide
-                                                                                    icon="Info"
-                                                                                    className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                                />
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-
-                                                                </Table.Td>
-
-                                                                {/* <Table.Td
-                                                                    className="py-2 border-dashed dark:bg-darkmode-600"
-                                                                    style={{ width: "17.5%" }}
-                                                                >
-                                                                    {convertToTitleCase(vds?.meeting_date)}
-                                                                    
-                                                                </Table.Td> */}
-
-
-
-
-
-
-
-
-
-
-                                                            </Table.Tr>
-                                                        ))}
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
+                                                                        <div className="flex">
+                                                                            {vds?.vote === "Split Vote" ? (
+                                                                                <Tippy
+                                                                                    content={vds?.split_vote_counts}
+                                                                                    options={{ theme: "light" }}
+                                                                                >
+                                                                                    {vds?.vote}
+                                                                                </Tippy>
+                                                                            ) : (
+                                                                                <span
+                                                                                    className={clsx([
+                                                                                        (vds?.vote?.includes("Against") ||
+                                                                                            vds.vote?.includes("Withhold")) &&
+                                                                                        "text-red-700 font-semibold ",
+                                                                                    ])}
+                                                                                >
+                                                                                    {vds?.vote}
+                                                                                </span>
+                                                                            )}
+                                                                            {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                                                                <span
+                                                                                    data-tooltip-id="my-tooltip-data-html"
+                                                                                    data-tooltip-html={vds?.notes}
+                                                                                >
+                                                                                    <Lucide
+                                                                                        icon="Info"
+                                                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                                    />
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </Table.Td>
+                                                                </Table.Tr>
+                                                            );
+                                                        });
+                                                    })()}
                                                 </Table.Tbody>
-
                                                 {VdsEuropeans?.length === 0 && (
                                                     <div className="w-full">
-                                                        <h1 className="mt-3">No NPX records available</h1>
+                                                        <h1 className="mt-3">No Voting Data available</h1>
                                                     </div>
                                                 )}
                                             </Table>
@@ -762,17 +705,16 @@ const index = () => {
                     </div>
                 ) : (
                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <h1 className="font-semibold"></h1>
+                            {
+                                loading && <LoadingIcon
+                                    color="#800000"
+                                    icon="three-dots"
+                                    className="w-16 h-16"
+                                />
+                            }
+                        {/* <h1 className="font-semibold"></h1> */}
                     </div>
                 )}
-
-                {VdsEuropeans?.npx_report?.length === 0 &&
-                    !loading &&
-                    allApplyFilter && (
-                        <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
-                            <h1 className="font-semibold"> Proxy Records Not Found..</h1>
-                        </div>
-                    )}
             </div>
 
             <Tooltip

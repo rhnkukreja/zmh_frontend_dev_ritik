@@ -309,6 +309,7 @@ function ShareHolderProposal() {
       return;
     }
     getAllShareholderAPI();
+   
   }, [filters]);
 
   const getAllShareholderAPI = async () => {
@@ -351,6 +352,17 @@ function ShareHolderProposal() {
       if (withdrawnResponse?.result) {
         setWithdrawnCount(withdrawnResponse?.result?.count ?? 0);
       }
+
+      if(proposalResponse?.result?.count > 0){
+        dispatch(setTabs("proposal"));
+      }
+      else if(noActionResponse?.result?.count > 0){
+        dispatch(setTabs("no-action"));
+  
+      }
+      else if(withdrawnResponse?.result?.count > 0){
+        dispatch(setTabs("withdrawn"));
+      }
     } catch (error) {
       return error;
     }
@@ -369,6 +381,20 @@ function ShareHolderProposal() {
       setGetDropdownLoader(false);
     }
   };
+
+  // useEffect(() => {
+  //   if(proposalCount > 0){
+  //     dispatch(setTabs("proposal"));
+  //   }
+  //   else if(noActionCount > 0){
+  //     dispatch(setTabs("no-action"));
+
+  //   }
+  //   else if(withdrawnCount > 0){
+  //     dispatch(setTabs("withdrawn"));
+
+  //   }
+  // }, []);
 
   useEffect(() => {
     getAllShareholderDropdowns();

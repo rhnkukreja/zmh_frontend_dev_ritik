@@ -100,7 +100,7 @@ const initialState: any = {
     },
     {
       icon: "ActivitySquare",
-      pathname: "/vds-european",
+      pathname: "/voting-data",
       title: "Voting Data",
     },
     {
@@ -144,7 +144,6 @@ const initialState: any = {
       title: "User Detail",
       isAdmin: true,
     },
-    "Additional",
     {
       icon: "FileText",
       pathname: "/notes",

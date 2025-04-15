@@ -205,6 +205,16 @@ class DashboardService {
     };
   }
 
+  public async putDocumentStarred(id: number, data:any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.put(`institute_documents/${id}/`, data);
+
+    return {
+      result: response.data,
+    };
+  }
+
   public async getCompanyName(companyName?: any): Promise<{
     result: any;
   }> {
