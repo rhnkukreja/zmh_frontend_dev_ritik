@@ -143,7 +143,15 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
 
 
     return (
-        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
+        <div
+            className={`relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl flex flex-col mb-20 ${topProponents.length === 1 &&
+                    topProponents[0]?.subcategory_detail &&
+                    Object.keys(topProponents[0].subcategory_detail).length > 0
+                    ? "min-h-[100vh]"
+                    : "min-h-[65vh]"
+                }`}
+        >
+
             <h2 className="text-2xl font-semibold mb-6 text-gray-800">
                 All Proponents Analytics (Beta)
             </h2>
