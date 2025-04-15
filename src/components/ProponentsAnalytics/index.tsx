@@ -35,6 +35,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
             <table className="min-w-full border border-gray-300">
                 <thead className="bg-gray-100">
                     <tr>
+                        <th className="px-4 py-2 border">#</th> {/* New column */}
                         <th className="px-4 py-2 border">Proponents</th>
                         <th className="px-4 py-2 border"># of Proposals</th>
                         <th className="px-4 py-2 border">Environmental</th>
@@ -52,6 +53,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
 
                         return (
                             <tr key={idx} className="text-center">
+                                <td className="border px-4 py-2">{idx + 1}</td> {/* Numbered index */}
                                 <td
                                     className="border px-4 py-2 text-left cursor-pointer"
                                     onClick={() => handleInstitutionClick(proponent.institution__name)}
@@ -70,6 +72,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
             </table>
         </div>
     );
+
 
 
     const renderSubcategoryTable = (title: string, data: any[]) => {
@@ -92,7 +95,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
         return (
             <div className="bg-gray-100 p-4 rounded-lg shadow-md min-w-[275px] flex flex-col justify-between h-full mt-5">
                 <h3 className="text-md font-semibold mb-2">{title}</h3>
-                <div className="overflow-x-auto min-h-[200px]">
+                <div className="overflow-x-auto min-h-[300px]">
                     {data.length > 0 ? (
                         <table className="w-full border-collapse border border-gray-300 text-sm">
                             <thead className="bg-gray-200">
@@ -116,26 +119,6 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                         </div>
                     )}
                 </div>
-
-                <div className="flex justify-center items-center mt-3 gap-4">
-                    <button
-                        onClick={goToPreviousPage}
-                        disabled={currentPage === 0}
-                        className={`p-1 rounded-full hover:bg-gray-300 ${currentPage === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                        <ChevronLeft size={18} />
-                    </button>
-                    <span className="text-sm text-gray-700">
-                        Page {currentPage + 1} of {totalPages}
-                    </span>
-                    <button
-                        onClick={goToNextPage}
-                        disabled={currentPage >= totalPages - 1}
-                        className={`p-1 rounded-full hover:bg-gray-300 ${currentPage >= totalPages - 1 ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                        <ChevronRight size={18} />
-                    </button>
-                </div>
             </div>
         );
     };
@@ -145,10 +128,10 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
     return (
         <div
             className={`relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl flex flex-col mb-20 ${topProponents.length === 1 &&
-                    topProponents[0]?.subcategory_detail &&
-                    Object.keys(topProponents[0].subcategory_detail).length > 0
-                    ? "min-h-[100vh]"
-                    : "min-h-[65vh]"
+                topProponents[0]?.subcategory_detail &&
+                Object.keys(topProponents[0].subcategory_detail).length > 0
+                ? "min-h-[100vh]"
+                : "min-h-[65vh]"
                 }`}
         >
 
@@ -163,11 +146,11 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                 topProponents[0]?.subcategory_detail &&
                 Object.keys(topProponents[0].subcategory_detail).length > 0 && (
                     <div className="flex flex-row flex-wrap md:flex-nowrap gap-6 overflow-x-auto">
-                        {topProponents[0].subcategory_detail.Environment && renderSubcategoryTable("Environmental", topProponents[0].subcategory_detail.Environment)}
-                        {topProponents[0].subcategory_detail.Social && renderSubcategoryTable("Social", topProponents[0].subcategory_detail.Social)}
-                        {topProponents[0].subcategory_detail.Governance && renderSubcategoryTable("Governance", topProponents[0].subcategory_detail.Governance)}
+                        {topProponents[0].subcategory_detail.Environment && renderSubcategoryTable("Environmental", topProponents[0].subcategory_detail.Environment.slice(0, 5))}
+                        {topProponents[0].subcategory_detail.Social && renderSubcategoryTable("Social", topProponents[0].subcategory_detail.Social.slice(0, 5))}
+                        {topProponents[0].subcategory_detail.Governance && renderSubcategoryTable("Governance", topProponents[0].subcategory_detail.Governance.slice(0, 5))}
                         {topProponents[0].subcategory_detail["Executive Compensation"] &&
-                            renderSubcategoryTable("Executive Compensation", topProponents[0].subcategory_detail["Executive Compensation"])}
+                            renderSubcategoryTable("Executive Compensation", topProponents[0].subcategory_detail["Executive Compensation"].slice(0, 5))}
                     </div>
                 )}
             <footer className="!pt-10">

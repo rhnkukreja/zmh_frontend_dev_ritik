@@ -1617,7 +1617,7 @@ function ShareHolderProposal() {
                       }`}
                     onClick={() => setActiveTab("proponents")}
                   >
-                    All Proponents
+                    Proponent Analytics
                   </button>
                 </div>
 
