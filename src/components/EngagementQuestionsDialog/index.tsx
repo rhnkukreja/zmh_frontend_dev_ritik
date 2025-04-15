@@ -354,15 +354,33 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                                 >
                                                                                     <Lucide icon="MessageCircle" className="w-4 h-4 mt-2" />
                                                                                 </button>
+                                                                                <button
+                                                                                    className="text-gray-400 ml-2 cursor-not-allowed"
+                                                                                    onClick={(e) => e.preventDefault()} // prevent click
+                                                                                    title="Share Note"
+                                                                                    disabled
+                                                                                >
+                                                                                    <Lucide icon="Share2" className="w-4 h-4" />
+                                                                                </button>
                                                                             </>
                                                                         ) : (
-                                                                            <button
-                                                                                className="text-primary hover:text-blue-500 ml-2"
-                                                                                onClick={() => handleShareNote?.(note)}
-                                                                                title="Share Note"
-                                                                            >
-                                                                                <Lucide icon="Share2" className="w-4 h-4" />
-                                                                            </button>
+                                                                            <>
+                                                                                <button
+                                                                                    className="text-primary hover:text-blue-500 ml-2"
+                                                                                    onClick={() => handleCommentNote?.(note)}
+                                                                                    title="Comment"
+                                                                                >
+                                                                                    <Lucide icon="MessageCircle" className="w-4 h-4 mt-2" />
+                                                                                </button>
+                                                                                <button
+                                                                                    className="text-gray-400 ml-2 cursor-not-allowed"
+                                                                                    onClick={(e) => e.preventDefault()} // prevent click
+                                                                                    title="Share Note"
+                                                                                    disabled
+                                                                                >
+                                                                                    <Lucide icon="Share2" className="w-4 h-4" />
+                                                                                </button>
+                                                                            </>
                                                                         )}
                                                                     </Table.Td>
                                                                 </Table.Tr>
