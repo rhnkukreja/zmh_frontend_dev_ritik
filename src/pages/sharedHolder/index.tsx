@@ -1674,6 +1674,7 @@ function ShareHolderProposal() {
                         onClick={() => {
                           dispatch(setTabs("no-action"));
                           dispatch(resetPage());
+                          setIsViewAnalysis(false);
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1697,6 +1698,7 @@ function ShareHolderProposal() {
                           dispatch(setTabs("withdrawn"));
                           dispatch(resetPage());
                           clearNoActionFilter();
+                          setIsViewAnalysis(false);
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1795,19 +1797,13 @@ function ShareHolderProposal() {
                                     </Table.Td>
                                     <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       {noAction?.vote_details?.length > 0 && (
-                                        <Tippy
-                                          content="View Vote Details"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <div className="flex items-center justify-center">
-                                            <Grid3X3
-                                              strokeWidth={1.25}
-                                              onClick={() =>
-                                                onVisibleDetail(noAction)
-                                              }
-                                            />
-                                          </div>
-                                        </Tippy>
+                                        <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
+                                          <Grid3X3
+                                            strokeWidth={1.25}
+                                            onClick={() => onVisibleDetail(noAction)}
+                                          />
+                                        </div>
+
                                       )}
 
                                       {!noAction?.vote_details && noAction?.year?.toString() === "2025" && (
@@ -1866,20 +1862,17 @@ function ShareHolderProposal() {
                                             />
                                           </Tippy>
                                         )}
-                                        <Tippy
-                                          content=" See Details"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() =>
-                                              navigate(
-                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
-                                              )
-                                            }
-                                            icon="Eye"
-                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                          />
-                                        </Tippy>
+
+                                        <Lucide
+                                          onClick={() =>
+                                            navigate(
+                                              `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
+                                            )
+                                          }
+                                          icon="Eye"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer hover:opacity-80 transition duration-150"
+                                        />
+
                                         {user?.user_type === "Admin" && (
                                           <Tippy
                                             content="Edit"
