@@ -5,12 +5,14 @@ interface ProponentsAnalyticsComponentProps {
     topProponents: any[];
     handleSearch: (searchTerms: string[]) => void;
     setSearchTerms: Dispatch<SetStateAction<string[]>>
+    tab: any
 }
 
 const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> = ({
     topProponents,
     handleSearch,
-    setSearchTerms
+    setSearchTerms,
+    tab
 }) => {
     const isDataAvailable = (data: any) =>
         Array.isArray(data) && data.length > 0;
