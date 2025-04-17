@@ -6,6 +6,7 @@ interface ShareHolderProposalAnalyticsComponentProps {
     topSubcategories: { [key: string]: any[] };
     topCategories: any[];
     yearlySummary: any[];
+    tab: any;
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A569BD"];
@@ -24,12 +25,9 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
     topSubcategories,
     topCategories,
     yearlySummary,
+    tab
 }) => {
 
-    console.log(proposalCounts,
-        topSubcategories,
-        topCategories,
-        yearlySummary,)
     if (
         !isDataAvailable(proposalCounts) &&
         !isDataAvailable(topSubcategories) &&
@@ -46,7 +44,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
 
     return (
         <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">Shareholder Proposal Analytics (Beta)</h2>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">{tab == "proposal" ? "Shareholder Proposal Analytics (Beta)" : "No Action Letter Analytics (Beta) "}</h2>
 
             {/* Row: Pie Chart & Bar Chart */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">

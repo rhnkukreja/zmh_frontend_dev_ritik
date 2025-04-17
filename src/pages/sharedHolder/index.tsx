@@ -749,7 +749,7 @@ function ShareHolderProposal() {
                         </Button>
                       </div>
                     )}
-                  {tab == "proposal" &&
+                  {(tab == "proposal" || tab == "no-action") &&
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
                         <label className="text-md mr-3 font-semibold">Analytics</label>
@@ -1629,12 +1629,14 @@ function ShareHolderProposal() {
                       topSubcategories={topSubcategories}
                       topCategories={topCategories}
                       yearlySummary={yearlySummary}
+                      tab={tab}
                     />
                   ) : (
                     <ProponentsAnalyticsComponent
                       topProponents={topProponents}
                       handleSearch={handleSearch}
                       setSearchTerms={setSearchTerms}
+                      tab={tab}
                     />
                   )}
                 </div>
@@ -1674,7 +1676,6 @@ function ShareHolderProposal() {
                         onClick={() => {
                           dispatch(setTabs("no-action"));
                           dispatch(resetPage());
-                          setIsViewAnalysis(false);
                         }}
                       >
                         <div className="flex items-center justify-center ">
