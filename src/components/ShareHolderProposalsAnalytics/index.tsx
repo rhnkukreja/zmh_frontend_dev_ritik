@@ -112,16 +112,23 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                 {/* Proposal Distribution - Pie Chart */}
                 <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
                     <h3 className="text-lg font-semibold mb-4">Proposal Distribution by Category</h3>
+
                     {isDataAvailable(topCategories) ? (
+
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
-                                    data={topCategories}
+                                    data={[...topCategories].sort((a, b) => (
+                                        a.category === "Executive Compensation" ? -1 :
+                                            b.category === "Executive Compensation" ? 1 : 0
+                                    ))}
                                     dataKey="count"
                                     nameKey="category"
                                     cx="50%"
                                     cy="50%"
                                     outerRadius={100}
+                                    startAngle={90}  // Starts at top
+                                    endAngle={-270}  // Goes clockwise
                                     label={({ name, value }) => {
                                         const displayName =
                                             name === "Corporate Governance" ? "Governance" :
@@ -131,9 +138,9 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     }}
                                 >
                                     {topCategories.map((entry, index) => {
-                                        let color = COLORS[index % COLORS.length]; // Default color
-                                        if (entry.category === "Environmental") color = "#28a745"; // Green
-                                        if (entry.category === "Social") color = "#D39E00"; // Darker Yellow
+                                        let color = COLORS[index % COLORS.length];
+                                        if (entry.category === "Environmental") color = "#28a745";
+                                        if (entry.category === "Social") color = "#D39E00";
                                         if (entry.category === "Corporate Governance") color = "#0088FE";
                                         return <Cell key={`cell-${index}`} fill={color} />;
                                     })}
@@ -141,9 +148,11 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                             </PieChart>
                         </ResponsiveContainer>
 
+
                     ) : (
                         <p className="text-gray-500">No data available</p>
                     )}
+
                 </div>
             </div>
 
@@ -198,7 +207,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                     </span>
                 </div>
             </footer>
-        </div>
+        </div >
     );
 };
 
