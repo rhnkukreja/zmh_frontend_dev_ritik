@@ -26,10 +26,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
     yearlySummary,
 }) => {
 
-    console.log(proposalCounts,
-        topSubcategories,
-        topCategories,
-        yearlySummary,)
     if (
         !isDataAvailable(proposalCounts) &&
         !isDataAvailable(topSubcategories) &&
