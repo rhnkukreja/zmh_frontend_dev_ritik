@@ -1792,7 +1792,14 @@ function ShareHolderProposal() {
                                       </Table.Td>
                                     )}
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                      {noAction?.proponent}
+                                      {
+                                        noAction?.proponent === "Not Disclosed" &&
+                                          (!noAction?.proponent_name || noAction?.proponent_name.trim() === "")
+                                          ? noAction?.proponent
+                                          : noAction?.proponent === "Not Disclosed"
+                                            ? noAction?.proponent_name
+                                            : noAction?.proponent
+                                      }
                                     </Table.Td>
                                     <Table.Td
                                       className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-right`])}>
