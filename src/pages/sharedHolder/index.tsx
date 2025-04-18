@@ -1599,48 +1599,7 @@ function ShareHolderProposal() {
                   </div>
                 </form>
               )}
-              {isViewAnalysis && <div className="w-full">
-                <div className="flex gap-4 mb-6 px-4">
-                  <button
-                    className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={() => setActiveTab("shareholders")}
-                  >
-                    All Shareholder Proposals
-                  </button>
-                  <button
-                    className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={() => setActiveTab("proponents")}
-                  >
-                    Proponent Analytics
-                  </button>
-                </div>
 
-                {/* Content */}
-                <div className="px-4">
-                  {activeTab === "shareholders" ? (
-                    <ShareHolderProposalAnalyticsComponent
-                      proposalCounts={proposalCounts}
-                      topSubcategories={topSubcategories}
-                      topCategories={topCategories}
-                      yearlySummary={yearlySummary}
-                      tab={tab}
-                    />
-                  ) : (
-                    <ProponentsAnalyticsComponent
-                      topProponents={topProponents}
-                      handleSearch={handleSearch}
-                      setSearchTerms={setSearchTerms}
-                      tab={tab}
-                    />
-                  )}
-                </div>
-              </div>}
 
 
               <div className="overflow-auto xl:overflow-visible px-5">
@@ -1736,6 +1695,49 @@ function ShareHolderProposal() {
                           </Button>
                         </div>
                       )}
+                      {isViewAnalysis &&
+                        <div className="w-full pt-5">
+                          <div className="flex gap-4 mb-6 px-4">
+                            <button
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                }`}
+                              onClick={() => setActiveTab("shareholders")}
+                            >
+                              All Shareholder Proposals
+                            </button>
+                            <button
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                }`}
+                              onClick={() => setActiveTab("proponents")}
+                            >
+                              Proponent Analytics
+                            </button>
+                          </div>
+
+                          {/* Content */}
+                          <div className="px-4">
+                            {activeTab === "shareholders" ? (
+                              <ShareHolderProposalAnalyticsComponent
+                                proposalCounts={proposalCounts}
+                                topSubcategories={topSubcategories}
+                                topCategories={topCategories}
+                                yearlySummary={yearlySummary}
+                                tab={tab}
+                              />
+                            ) : (
+                              <ProponentsAnalyticsComponent
+                                topProponents={topProponents}
+                                handleSearch={handleSearch}
+                                setSearchTerms={setSearchTerms}
+                                tab={tab}
+                              />
+                            )}
+                          </div>
+                        </div>}
                       <TableWrapper isLoading={loading}>
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
@@ -1928,6 +1930,49 @@ function ShareHolderProposal() {
                           </Button>
                         </div>
                       )}
+                      {isViewAnalysis &&
+                        <div className="w-full pt-5">
+                          <div className="flex gap-4 mb-6 px-4 ">
+                            <button
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                }`}
+                              onClick={() => setActiveTab("shareholders")}
+                            >
+                              All No Action Letter Proposals
+                            </button>
+                            <button
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                }`}
+                              onClick={() => setActiveTab("proponents")}
+                            >
+                              Proponent Analytics
+                            </button>
+                          </div>
+
+                          {/* Content */}
+                          <div className="px-4">
+                            {activeTab === "shareholders" ? (
+                              <ShareHolderProposalAnalyticsComponent
+                                proposalCounts={proposalCounts}
+                                topSubcategories={topSubcategories}
+                                topCategories={topCategories}
+                                yearlySummary={yearlySummary}
+                                tab={tab}
+                              />
+                            ) : (
+                              <ProponentsAnalyticsComponent
+                                topProponents={topProponents}
+                                handleSearch={handleSearch}
+                                setSearchTerms={setSearchTerms}
+                                tab={tab}
+                              />
+                            )}
+                          </div>
+                        </div>}
                       <TableWrapper isLoading={loading}>
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
