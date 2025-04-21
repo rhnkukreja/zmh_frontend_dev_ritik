@@ -27,84 +27,12 @@ import { AppDispatch, RootState } from "@/stores/store";
 
 
 
-
-const dummyInstitutionOrCompanyData: InstitutionOrCompanyData[] = [
-  {
-    id: 1,
-    attendees: "John Doe",
-    notes: "<p>Initial discussion about ESG policies.</p>",
-    date: "2025-04-01",
-    author: "Jane Smith",
-    category: "Governance",
-    investor_name: "Vanguard Group",
-    company: 1001,
-    institution: 201,
-    company_name: "Tesla, Inc.",
-    institution_name: "Vanguard Group",
-    created_by_email: "jane@zmhadvisors.com",
-    created_by: 2,
-    updated_by: null,
-    date_created: "2025-04-01T10:12:34.567Z",
-    date_updated: "2025-04-01T10:12:34.567Z",
-    update_delete_check: false,
-    formatted_date: "Apr 1, 2025",
-    starred: true,
-    notes_count: 3
-  },
-  {
-    id: 2,
-    attendees: "Alex Johnson",
-    notes: "<p>Talked about shareholder voting trends.</p>",
-    date: "2025-04-05",
-    author: "Alex Johnson",
-    category: "Shareholder Engagement",
-    investor_name: "State Street Global Advisors",
-    company: 1002,
-    institution: 202,
-    company_name: "Apple Inc.",
-    institution_name: "State Street Global Advisors",
-    created_by_email: "alex@zmhadvisors.com",
-    created_by: 3,
-    updated_by: null,
-    date_created: "2025-04-05T14:23:10.123Z",
-    date_updated: "2025-04-05T14:23:10.123Z",
-    update_delete_check: false,
-    formatted_date: "Apr 5, 2025",
-    starred: false,
-    notes_count: 5
-  },
-  {
-    id: 3,
-    attendees: "Emily White",
-    notes: "<p>Reviewed sustainability metrics and reporting gaps.</p>",
-    date: "2025-04-08",
-    author: "Emily White",
-    category: "Sustainability",
-    investor_name: "Fidelity Investments",
-    company: 1003,
-    institution: 203,
-    company_name: "Microsoft Corporation",
-    institution_name: "Fidelity Investments",
-    created_by_email: "emily@zmhadvisors.com",
-    created_by: 4,
-    updated_by: null,
-    date_created: "2025-04-08T09:45:56.789Z",
-    date_updated: "2025-04-08T09:45:56.789Z",
-    update_delete_check: false,
-    formatted_date: "Apr 8, 2025",
-    starred: true,
-    notes_count: 2
-  }
-];
-
-
-const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab }) => {
+const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setInstitutionName }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   // const [searchParams] = useSearchParams();
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
-  const [companyName, setCompanyName] = useState<string>("");
-  const [institutionName, setInstitutionName] = useState<string>("");
+
 
   const [folderToBeDeleted, setFolderToBeDeleted] = useState<FolderData | null>(
     null
@@ -113,35 +41,9 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab }) => {
     null
   );
 
-  const [isLoading, setIsLoading] =
-    useState<boolean>(false);
   const { folders, loading, selectedFolder, selectedNote } = useAppSelector(
     (state) => state.notes
   );
-
-  const {
-    results
-  } = useAppSelector((state) => state.domainNotes);
-
-
-  const fetchNotes = async () => {
-    setIsLoading(true);
-    const dynamicURL = createDynamicURL(
-      `${baseURL}/user/domain_notes/`,
-      {
-        institution_name: JSON.stringify(institutionName),
-        company_name: JSON.stringify(companyName),
-      },
-      undefined,
-    );
-
-    await dispatch(fetchDomainNotes(dynamicURL));
-
-    setIsLoading(false);
-  };
-  useEffect(() => {
-    fetchNotes();
-  }, [dispatch]);
 
   const [addNotesModalVisible, setAddNotesModalVisible] =
     useState<boolean>(false);
@@ -157,7 +59,6 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab }) => {
   const onClickNewFolder = () => {
     setAddNotesModalVisible(true);
     setFolderToBeEdited(null);
-    // dispatch(clearSelectedFolder());
   };
 
   function handleEditFolder(folder: FolderData) {
@@ -223,8 +124,6 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab }) => {
       setFolderToBeDeleted(null);
     }
   };
-
-
 
   return (
     <div className="w-80 bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 ml-2 h-full shadow-sm rounded-md mt-2">
@@ -406,10 +305,15 @@ const InstitutionOrCompanyList = ({
   setInstitutionName: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedName, setSelectedName] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+
+
+  useEffect(() => {
+    setSelectedName("");
+  }, [isCompany])
+
 
   const dropdownData = useSelector((state: RootState) =>
     isCompany ? state.domainNotes.companyDropDown : state.domainNotes.institutionDropDown
