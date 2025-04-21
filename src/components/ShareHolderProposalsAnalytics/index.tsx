@@ -50,7 +50,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
                 {/* Yearly Proposal Trends - Bar Chart */}
                 <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
-                    <h3 className="text-lg font-semibold mb-4">Yearly Proposal Trend</h3>
+                    <h3 className="text-lg font-semibold mb-4">{tab == "proposal" ? "Yearly Proposal Trend" : "No Action Letter Trend"}</h3>
                     {isDataAvailable(yearlySummary) ? (
                         yearlySummary.length === 1 ? (
                             <p className="text-lg font-semibold text-gray-700">
@@ -98,6 +98,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                         strokeWidth={2}
                                         dot={{ r: 4 }}
                                         name="Avg. Support (%)"
+                                        legendType="none"
                                     >
                                         {/* Display values on top of the line */}
                                         <LabelList dataKey="avg_support" position="top" fill="#007bff" fontSize={12} formatter={(value) => `${value.toFixed(1)}%`} />
@@ -113,7 +114,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                 </div>
                 {/* Proposal Distribution - Pie Chart */}
                 <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
-                    <h3 className="text-lg font-semibold mb-4">Proposal Distribution by Category</h3>
+                    <h3 className="text-lg font-semibold mb-4">{tab == "proposal" ? "Proposal Distribution by Category" : "No Action Letter Distribution by Category"} </h3>
 
                     {isDataAvailable(topCategories) ? (
 
