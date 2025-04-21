@@ -884,28 +884,6 @@ function Main() {
         </div>
       </div>
 
-      <>
-        {selectedText && (
-          <div
-            ref={tooltipRef}
-            className="absolute bg-white shadow-lg rounded-lg px-4 py-2 cursor-pointer z-50 transform transition-transform hover:scale-105"
-            style={{
-              top: tooltipPosition.y,
-              left: tooltipPosition.x,
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-            }}
-            onClick={handleCreateNote}
-          >
-            <span className="text-sm font-medium text-primary flex justify-center items-center">
-              <Lucide icon="Pen" className="w-4 h-4 stroke-[1.3] mr-1.5" />
-              Create Note
-            </span>
-          </div>
-        )}
-      </>
-
       <div
         className={clsx([
           "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",

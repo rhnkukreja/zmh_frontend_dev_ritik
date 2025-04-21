@@ -17,8 +17,21 @@ import clsx from "clsx";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
+import { fetchDomainNotes } from "@/stores/domainNotesSlice";
+import { createDynamicURL } from "@/utils/helper";
+import { baseURL } from "@/constant";
+import AddButton from "./AddButton";
 
-const NotesList: React.FC = () => {
+
+
+export interface NotesFieldProps {
+  activeTab: "institution" | "company" | "other";
+  companyName?: string;
+  institutionName?: string;
+}
+
+
+const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institutionName }) => {
   const dispatch = useAppDispatch();
   const [noteToBeDeleted, setNoteToBeDeleted] = useState<Note | null>(null);
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
@@ -26,9 +39,11 @@ const NotesList: React.FC = () => {
   const { notes, notesLoading, selectedNote, selectedFolder } = useAppSelector(
     (state) => state.notes
   );
+  console.log(activeTab)
+
 
   useEffect(() => {
-    if (selectedFolder?.id) {
+    if (selectedFolder?.id && activeTab == "other") {
       if (!notes || notes?.length === 0) {
         dispatch(fetchNotes(selectedFolder.id));
       } else if (notes[0]?.folder !== selectedFolder.id) {
@@ -36,6 +51,16 @@ const NotesList: React.FC = () => {
       } else {
         return;
       }
+    } else {
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/user/domain_notes/`,
+        {
+          institution_name: companyName,
+          company_name: institutionName,
+        },
+        undefined,
+      );
+      dispatch(fetchDomainNotes(dynamicURL));
     }
   }, [dispatch, selectedFolder]);
 
@@ -82,10 +107,14 @@ const NotesList: React.FC = () => {
   return (
     <div className="w-full border-r border-gray-200 h-screen overflow-y-auto no-scrollbar">
       <div className="flex justify-between items-center  px-4 py-4  ">
-        <h2 className="text-lg font-semibold">{"Notes"}</h2>
-        <span className="text-muted-foreground">{`${
-          selectedFolder?.notes_count || 0
-        } Notes`}</span>
+        <h2 className="text-lg font-semibold">
+          {activeTab === "institution"
+            ? "Companies"
+            : activeTab === "company"
+              ? "Institutions"
+              : "Notes"}
+        </h2>
+        <AddButton />
       </div>
 
       <div className="border-b border-muted "></div>
@@ -159,9 +188,8 @@ const NotesList: React.FC = () => {
           isVisible={isModalVisible}
           onClose={() => setModalVisible(false)}
           onConfirm={handleDelete}
-          description={`Are you sure you want to delete <strong>"${
-            noteToBeDeleted?.name || ""
-          }"</strong> ?`}
+          description={`Are you sure you want to delete <strong>"${noteToBeDeleted?.name || ""
+            }"</strong> ?`}
           loading={notesLoading}
         />
       )}

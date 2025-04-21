@@ -11,8 +11,9 @@ import NoteForm from "./AddEditNoteForm";
 import clsx from "clsx";
 import { toast } from "react-toastify";
 import { addNote } from "@/stores/notesSlice";
+import { NotesFieldProps } from "./NotesList";
 
-const NoteDetails: React.FC = () => {
+const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
   const dispatch = useAppDispatch();
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);

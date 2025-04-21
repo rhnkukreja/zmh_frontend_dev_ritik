@@ -38,7 +38,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                 <thead className="bg-gray-100">
                     <tr>
                         <th className="px-4 py-2 border">#</th> {/* New column */}
-                        <th className="px-4 py-2 border">Proponents</th>
+                        <th className="px-4 py-2 border text-left">Proponents</th>
                         <th className="px-4 py-2 border"># of Proposals</th>
                         <th className="px-4 py-2 border">Environmental</th>
                         <th className="px-4 py-2 border w-36">Social</th>
