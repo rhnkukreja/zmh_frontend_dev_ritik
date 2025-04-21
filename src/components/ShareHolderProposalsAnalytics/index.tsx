@@ -6,6 +6,7 @@ interface ShareHolderProposalAnalyticsComponentProps {
     topSubcategories: { [key: string]: any[] };
     topCategories: any[];
     yearlySummary: any[];
+    tab: any;
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A569BD"];
@@ -24,25 +25,26 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
     topSubcategories,
     topCategories,
     yearlySummary,
+    tab
 }) => {
 
-    console.log(proposalCounts,
-        topSubcategories,
-        topCategories,
-        yearlySummary,)
     if (
         !isDataAvailable(proposalCounts) &&
         !isDataAvailable(topSubcategories) &&
         !isDataAvailable(topCategories) &&
         !isDataAvailable(yearlySummary)
     ) {
-        return <h2 className="text-xl font-semibold mb-4 text-gray-600">No Analytics Available</h2>;
+        return (
+            <div className="flex items-center justify-center h-full mb-10">
+                <h2 className="text-xl font-semibold text-gray-600">No Analytics Available</h2>
+            </div>
+        );
     }
 
 
     return (
         <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">Shareholder Proposal Analytics (Beta)</h2>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">{tab == "proposal" ? "Shareholder Proposal Analytics (Beta)" : "No Action Letter Analytics (Beta) "}</h2>
 
             {/* Row: Pie Chart & Bar Chart */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
@@ -112,16 +114,23 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                 {/* Proposal Distribution - Pie Chart */}
                 <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
                     <h3 className="text-lg font-semibold mb-4">Proposal Distribution by Category</h3>
+
                     {isDataAvailable(topCategories) ? (
+
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
-                                    data={topCategories}
+                                    data={[...topCategories].sort((a, b) => (
+                                        a.category === "Executive Compensation" ? -1 :
+                                            b.category === "Executive Compensation" ? 1 : 0
+                                    ))}
                                     dataKey="count"
                                     nameKey="category"
                                     cx="50%"
                                     cy="50%"
                                     outerRadius={100}
+                                    startAngle={90}  // Starts at top
+                                    endAngle={-270}  // Goes clockwise
                                     label={({ name, value }) => {
                                         const displayName =
                                             name === "Corporate Governance" ? "Governance" :
@@ -131,9 +140,9 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     }}
                                 >
                                     {topCategories.map((entry, index) => {
-                                        let color = COLORS[index % COLORS.length]; // Default color
-                                        if (entry.category === "Environmental") color = "#28a745"; // Green
-                                        if (entry.category === "Social") color = "#D39E00"; // Darker Yellow
+                                        let color = COLORS[index % COLORS.length];
+                                        if (entry.category === "Environmental") color = "#28a745";
+                                        if (entry.category === "Social") color = "#D39E00";
                                         if (entry.category === "Corporate Governance") color = "#0088FE";
                                         return <Cell key={`cell-${index}`} fill={color} />;
                                     })}
@@ -141,9 +150,11 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                             </PieChart>
                         </ResponsiveContainer>
 
+
                     ) : (
                         <p className="text-gray-500">No data available</p>
                     )}
+
                 </div>
             </div>
 
@@ -198,7 +209,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                     </span>
                 </div>
             </footer>
-        </div>
+        </div >
     );
 };
 

@@ -53,35 +53,35 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const defaultValues =
     type === "duplicate"
       ? {
-          company: selectedShareholderProposal?.company_name,
-          link_to_filing: selectedShareholderProposal?.link_to_filing,
-          year: selectedShareholderProposal?.year?.toString(),
-        }
+        company: selectedShareholderProposal?.company_name,
+        link_to_filing: selectedShareholderProposal?.link_to_filing,
+        year: selectedShareholderProposal?.year?.toString(),
+      }
       : {
-          institution: selectedShareholderProposal?.institution,
-          category: selectedShareholderProposal?.category,
-          company: selectedShareholderProposal?.company_name,
-          link_to_filing: selectedShareholderProposal?.link_to_filing,
-          year: selectedShareholderProposal?.year?.toString(),
-          proposal_text: selectedShareholderProposal?.proposal_text,
-          proposal_name: selectedShareholderProposal?.proposal_name,
-          vote_outcome_formula:
-            selectedShareholderProposal?.vote_outcome_formula || "  ",
-          matched_id_no_action:
-            selectedShareholderProposal?.matched_id_no_action,
-          vote_outcome: selectedShareholderProposal?.vote_outcome || "  ",
-          status: selectedShareholderProposal?.status ? true : false,
-          nl_exist: selectedShareholderProposal?.nl_exist ? true : false,
-          ready_for_review: selectedShareholderProposal?.ready_for_review
-            ? true
-            : false,
-          proposal_num: selectedShareholderProposal?.proposal_num,
-          sub_category: selectedShareholderProposal?.sub_category,
-          proponent: selectedShareholderProposal?.proponent,
-          percentage_support: selectedShareholderProposal?.percentage_support,
-          no_shareholder_proposal:
-            selectedShareholderProposal?.no_shareholder_proposal ? true : false,
-        };
+        institution: selectedShareholderProposal?.institution,
+        category: selectedShareholderProposal?.category,
+        company: selectedShareholderProposal?.company_name,
+        link_to_filing: selectedShareholderProposal?.link_to_filing,
+        year: selectedShareholderProposal?.year?.toString(),
+        proposal_text: selectedShareholderProposal?.proposal_text,
+        proposal_name: selectedShareholderProposal?.proposal_name,
+        vote_outcome_formula:
+          selectedShareholderProposal?.vote_outcome_formula || "  ",
+        matched_id_no_action:
+          selectedShareholderProposal?.matched_id_no_action,
+        vote_outcome: selectedShareholderProposal?.vote_outcome || "  ",
+        status: selectedShareholderProposal?.status ? true : false,
+        nl_exist: selectedShareholderProposal?.nl_exist ? true : false,
+        ready_for_review: selectedShareholderProposal?.ready_for_review
+          ? true
+          : false,
+        proposal_num: selectedShareholderProposal?.proposal_num,
+        sub_category: selectedShareholderProposal?.sub_category,
+        proponent: selectedShareholderProposal?.proponent,
+        percentage_support: selectedShareholderProposal?.percentage_support,
+        no_shareholder_proposal:
+          selectedShareholderProposal?.no_shareholder_proposal ? true : false,
+      };
 
   const {
     handleSubmit,
@@ -198,6 +198,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         data?.vote_outcome_formula === "  " ? null : data?.vote_outcome_formula,
       matched_id_no_action:
         data?.matched_id_no_action === "  " ? null : data?.matched_id_no_action,
+      no_action:
+        data?.matched_id_no_action === "  " ? null : parseInt(data?.matched_id_no_action),
+
       nl_exist: data?.matched_id_no_action ? true : false,
     };
     try {
@@ -243,7 +246,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
     }
   };
 
-  
+
 
   const onError: SubmitErrorHandler<any> = () => {
     // setShowRequiredStateErrors(true);
@@ -284,12 +287,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               <input />
             </div>
             {/* Garbage */}
-            
+
             <div className="flex flex-col gap-7">
               {/* Institution Name */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-             
-             
+
+
 
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
@@ -364,7 +367,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             options={{
                               placeholder: "Select Year",
                             }}
-                            
+
                             className="w-full text-left"
                           >
                             {apiDropdownOptions?.year?.map((year: string) => {
@@ -821,7 +824,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               {...field}
                               value="true"
                               checked={field.value === true}
-                              // onChange={(e) => field.onChange(true)}
+                            // onChange={(e) => field.onChange(true)}
                             />
                             <FormCheck.Label
                               htmlFor="checkbox-switch-4"
@@ -901,19 +904,19 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             onChange={(e) => field.onChange(e.target.value)}
                             // options={{
                             //   placeholder: "Select No Action ID Match",
-                              
+
                             // }}
                             options={{
                               placeholder: "Select No Action Year",
                               allowEmptyOption: true,
                               plugins: {
                                 clear_button: {
-                                  title: "Clear selection", 
+                                  title: "Clear selection",
                                 },
                               },
                             }}
                             className="w-full text-left relative"
-                            
+
                           >
                             {apiNoActionDropdown?.proposals?.map(
                               (proposals: any) => {
@@ -1011,7 +1014,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               {...field}
                               value="true"
                               checked={field.value === true}
-                              // onChange={(e) => field.onChange(true)}
+                            // onChange={(e) => field.onChange(true)}
                             />
                             <FormCheck.Label
                               htmlFor="checkbox-switch-4"
@@ -1052,9 +1055,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               {loading && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                    loading ? "animate-spin" : ""
-                  }`}
+                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                    }`}
                 />
               )}
               Save
