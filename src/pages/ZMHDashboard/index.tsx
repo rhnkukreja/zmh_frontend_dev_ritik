@@ -30,12 +30,13 @@ function Main() {
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
+
   const { companySearchAndUpdate } = useCompanySearch();
-  const {tempSearch, } =
-  useAppSelector((state) => state.dashboard);
+  const { tempSearch, } =
+    useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
 
   useEffect(() => {
@@ -68,27 +69,33 @@ function Main() {
 
   // };
 
-    
+  if (window.clarity && user?.id) {
+    window.clarity("identify", user.id.toString(), {
+      email: user.email,
+      name: user.first_name,
+    });
+  }
+
   return (
     <>
-          <section >
-            <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-              <div className="col-span-12 xl:col-span-12">
-                <InvestorCard />
-              </div>
+      <section >
+        <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+          <div className="col-span-12 xl:col-span-12">
+            <InvestorCard />
+          </div>
 
-              {/* <BoardDirectorMembers /> */}
+          {/* <BoardDirectorMembers /> */}
 
-              <div className="col-span-12 xl:col-span-12">
-                <AGMSummaryCard />
-              </div>
+          <div className="col-span-12 xl:col-span-12">
+            <AGMSummaryCard />
+          </div>
 
-              <div className="col-span-12 xl:col-span-12">
-                <CaseStudiesCard />
-              </div>
-            </div>
-          </section>
-        {/* </>
+          <div className="col-span-12 xl:col-span-12">
+            <CaseStudiesCard />
+          </div>
+        </div>
+      </section>
+      {/* </>
       } */}
     </>
   );
