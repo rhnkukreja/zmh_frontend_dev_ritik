@@ -73,9 +73,9 @@ function ShareHolderProposal() {
     topSubcategories,
     yearlySummary,
     proposalCounts,
-    topProponents
+    topProponents,
+    pieChartOutcome
   } = useAppSelector((state) => state.sharedHolderNoAction);
-
 
   const [searchTerms, setSearchTerms] = useState<string[]>([
     ...filters?.proponent_name,
@@ -1994,6 +1994,7 @@ function ShareHolderProposal() {
                                 topCategories={topCategories}
                                 yearlySummary={yearlySummary}
                                 tab={tab}
+                                pieChartOutcome={pieChartOutcome}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
