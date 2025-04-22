@@ -239,7 +239,7 @@ const index = () => {
                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                   <span>
                     <h1 className="text-lg font-bold">
-                      Previous AGM Summary {agmSummaryDetails?.Year}
+                      Shareholder Meeting Summary {agmSummaryDetails?.Year}
                     </h1>
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
