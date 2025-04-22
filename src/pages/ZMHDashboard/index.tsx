@@ -30,7 +30,7 @@ function Main() {
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -69,12 +69,6 @@ function Main() {
 
   // };
 
-  if (window.clarity && user?.id) {
-    window.clarity("identify", user.id.toString(), {
-      email: user.email,
-      name: user.first_name,
-    });
-  }
 
   return (
     <>
