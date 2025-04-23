@@ -70,7 +70,8 @@ export interface SharedHolderPrposal {
 
   topCategories: any[];
   yearlySummary: any[];
-  topProponents: any[]
+  topProponents: any[];
+  pieChartOutcome: any
 }
 
 
@@ -121,7 +122,8 @@ const initialState: SharedHolderPrposal = {
     Compensation: [],
   },
   yearlySummary: [],
-  topProponents: []
+  topProponents: [],
+  pieChartOutcome: {}
 };
 
 export const fetchShareHolderProposal = createAsyncThunk<
@@ -139,7 +141,8 @@ export const fetchShareHolderProposal = createAsyncThunk<
     };
     topCategories: any[];
     yearlySummary: any[];
-    topProponents: any[]
+    topProponents: any[];
+    pieChartOutcome: any
   },
   string
 >(`${name}`, async (url: string) => {
@@ -268,6 +271,7 @@ const shareHolderProposal = createSlice({
             };
             yearlySummary: any[];
             topProponents: any[];
+            pieChartOutcome: any
           }>
         ) => {
           state.loading = false;
@@ -279,7 +283,7 @@ const shareHolderProposal = createSlice({
           state.yearlySummary = action.payload.yearlySummary;
           state.proposalCounts = action.payload.proposalCounts;
           state.topProponents = action.payload.topProponents;
-
+          state.pieChartOutcome = action.payload.pieChartOutcome;
           // state.proposalCount = action?.payload?.proposalCount  ?? 0;
           // state.withdrawnCount = action?.payload?.withdrawnCount ?? 0;
           // state.noActionCount = action?.payload?.noActionCount ?? 0;

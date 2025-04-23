@@ -73,9 +73,9 @@ function ShareHolderProposal() {
     topSubcategories,
     yearlySummary,
     proposalCounts,
-    topProponents
+    topProponents,
+    pieChartOutcome
   } = useAppSelector((state) => state.sharedHolderNoAction);
-
 
   const [searchTerms, setSearchTerms] = useState<string[]>([
     ...filters?.proponent_name,
@@ -380,6 +380,16 @@ function ShareHolderProposal() {
       setGetDropdownLoader(false);
     }
   };
+
+  useEffect(() => {
+    if (tab == "proposal" && proposalCount == 0) {
+      setIsViewAnalysis(false);
+    }
+    if (tab == "no-action" && noActionCount == 0) {
+      setIsViewAnalysis(false);
+    }
+
+  }, [tab]);
 
   // useEffect(() => {
   //   if(proposalCount > 0){
@@ -749,7 +759,22 @@ function ShareHolderProposal() {
                         </Button>
                       </div>
                     )}
-                  {(tab == "proposal" || tab == "no-action") &&
+                  {(tab == "proposal" && proposalCount > 0) &&
+                    <div className="mt-2">
+                      <FormSwitch className="mb-6">
+                        <label className="text-md mr-3 font-semibold">Analytics</label>
+                        <FormSwitch.Input
+                          id="view-analysis-switch"
+                          type="checkbox"
+                          checked={isViewAnalysis}
+                          onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                        />
+                        <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+                      </FormSwitch>
+                    </div>
+
+                  }
+                  {(tab == "no-action" && noActionCount > 0) &&
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
                         <label className="text-md mr-3 font-semibold">Analytics</label>
@@ -1714,7 +1739,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              Proponent Analytics
+                              Shareholder Proposals Proponent Analytics
                             </button>
                           </div>
 
@@ -1727,6 +1752,7 @@ function ShareHolderProposal() {
                                 topCategories={topCategories}
                                 yearlySummary={yearlySummary}
                                 tab={tab}
+                                isAllCompanySelected={isAllCompanySelected}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
@@ -1947,7 +1973,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
-                              All No Action Letter Proposals
+                              All No Action Letter
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
@@ -1956,7 +1982,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              Proponent Analytics
+                              No Action Letter Proponent Analytics
                             </button>
                           </div>
 
@@ -1969,6 +1995,8 @@ function ShareHolderProposal() {
                                 topCategories={topCategories}
                                 yearlySummary={yearlySummary}
                                 tab={tab}
+                                pieChartOutcome={pieChartOutcome}
+                                isAllCompanySelected={isAllCompanySelected}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
