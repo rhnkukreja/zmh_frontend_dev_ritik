@@ -40,7 +40,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                 <thead className="bg-gray-100">
                     <tr>
                         <th className="px-4 py-2 border">#</th> {/* New column */}
-                        <th className="px-4 py-2 border">Proponents</th>
+                        <th className="px-4 py-2 border text-left">Proponents</th>
                         <th className="px-4 py-2 border"># of Proposals</th>
                         <th className="px-4 py-2 border">Environmental</th>
                         <th className="px-4 py-2 border w-36">Social</th>
@@ -73,19 +73,19 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                                 </td>
 
                                 <td className="border px-4 py-2">
-                                    {proponent.total_count} {tab === "no-action" && `(${proponent.avg_support})`}
+                                    {proponent.total_count}
                                 </td>
                                 <td className="border px-4 py-2">
-                                    {envCount} {tab === "no-action" && `(${envAvgSupport})`}
+                                    {envCount}
                                 </td>
                                 <td className="border px-4 py-2">
-                                    {socCount} {tab === "no-action" && `(${socAvgSupport})`}
+                                    {socCount}
                                 </td>
                                 <td className="border px-4 py-2">
-                                    {govCount} {tab === "no-action" && `(${govAvgSupport})`}
+                                    {govCount}
                                 </td>
                                 <td className="border px-4 py-2">
-                                    {execComp} {tab === "no-action" && `(${execAvgSupport})`}
+                                    {execComp}
                                 </td>
 
                             </tr>
@@ -137,9 +137,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                             </tbody>
                         </table>
                     ) : (
-                        <div className="flex justify-center items-center h-full min-h-[200px] text-gray-500">
-                            No data available
-                        </div>
+                     <p className="text-gray-500">No data available</p>
                     )}
                 </div>
             </div>

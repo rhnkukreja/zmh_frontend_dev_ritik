@@ -315,7 +315,7 @@ const index = () => {
                                   // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
                                     "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-right",
-                                    headerIndex === 0 && "text-left w-[200px]",
+                                    headerIndex === 0 && "text-left w-[200px]", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
                                   ])}
                                 >
                                   {nomineeHeader.header}
@@ -344,7 +344,7 @@ const index = () => {
                                         key={headerIndex}
                                         className={clsx([
                                           "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
-                                          headerIndex === 0 && "text-left ",
+                                          headerIndex === 0 && "text-left ", headerIndex === 1 && "text-center ", headerIndex === 2 && "text-center ",
                                         ])}
                                       >
                                         <h1
@@ -390,7 +390,7 @@ const index = () => {
                                 key={headerIndex}
                                 className={clsx([
                                   "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-right",
-                                  headerIndex === 0 && "text-left w-[220px]",
+                                  headerIndex === 0 && "text-left w-[220px]", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
                                 ])}
                               >
                                 {proposalHeader?.header}
@@ -419,7 +419,7 @@ const index = () => {
                                         key={headerIndex}
                                         className={clsx([
                                           "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
-                                          headerIndex === 0 && "text-left",
+                                          headerIndex === 0 && "text-left", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
                                         ])}
                                       >
                                         <h1

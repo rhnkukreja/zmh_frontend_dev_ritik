@@ -1739,12 +1739,12 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              Shareholder Proposals Proponent Analytics
+                              Shareholder Proposals: Proponent Analytics
                             </button>
                           </div>
 
                           {/* Content */}
-                          <div className="px-4">
+                          <div >
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalCounts}
@@ -1787,7 +1787,7 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-right bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   % Support*
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -1828,7 +1828,7 @@ function ShareHolderProposal() {
                                       }
                                     </Table.Td>
                                     <Table.Td
-                                      className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-right`])}>
+                                      className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-center`])}>
                                       {noAction?.outcome_percentage}
                                     </Table.Td>
                                     <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
@@ -1973,7 +1973,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
-                              All No Action Letter
+                              All No Action Letters
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
@@ -1982,12 +1982,12 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              No Action Letter Proponent Analytics
+                              No Action Letters: Proponent Analytics
                             </button>
                           </div>
 
                           {/* Content */}
-                          <div className="px-4">
+                          <div>
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalCounts}
