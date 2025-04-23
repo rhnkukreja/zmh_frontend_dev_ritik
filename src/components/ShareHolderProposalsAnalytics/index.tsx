@@ -78,7 +78,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                         yAxisId="right"
                                         orientation="right"
                                         label={{ angle: 90, position: "insideRight" }}
-                                        domain={[0, "auto"]}
+                                        domain={[0, 60]}
                                         tickFormatter={(value) => `${value.toFixed(1)}%`}
                                     />
                                     <Bar yAxisId="left" dataKey="count" fill="#FF6F00" name="Proposals">
@@ -96,7 +96,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                         >
                                             <LabelList
                                                 dataKey="avg_support"
-                                                position="top"
+                                                position="bottom"
                                                 fill="#007bff"
                                                 fontSize={12}
                                                 formatter={(value) => `${value.toFixed(1)}%`}
