@@ -137,9 +137,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                             </tbody>
                         </table>
                     ) : (
-                        <div className="flex justify-center items-center h-full min-h-[200px] text-gray-500">
-                            No data available
-                        </div>
+                     <p className="text-gray-500">No data available</p>
                     )}
                 </div>
             </div>
