@@ -53,6 +53,7 @@ const index = () => {
     (state: RootState) => state.authentiction
   );
 
+
   const navigate = useNavigate();
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
@@ -76,7 +77,7 @@ const index = () => {
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (companyGlobalSearchTicker !== tempSearch && dashboardDataList.length == 0) {
+    } else if (companyGlobalSearchTicker !== tempSearch ) {
       setSelectedYear("");
       dispatch(
         fetchCompanyDashboard(
