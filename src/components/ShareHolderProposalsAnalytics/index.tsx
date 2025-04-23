@@ -166,12 +166,15 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
-                                        data={interleaveOutcome([
-                                            { name: "Incl.", value: pieChartOutcome.include },
-                                            { name: "Excl.", value: pieChartOutcome.exclude },
-                                            { name: "Withd.", value: pieChartOutcome.withdraw },
-                                            { name: "Incom.", value: pieChartOutcome.Incoming },
-                                        ])}
+                                        data={interleaveOutcome(
+                                            [
+                                                { name: "Incl.", value: pieChartOutcome.include },
+                                                { name: "Excl.", value: pieChartOutcome.exclude },
+                                                { name: "Withd.", value: pieChartOutcome.withdraw },
+                                                { name: "Incom.", value: pieChartOutcome.Incoming },
+                                            ].filter(item => item.value > 0)
+                                        )}
+
 
                                         dataKey="value"
                                         nameKey="name"
