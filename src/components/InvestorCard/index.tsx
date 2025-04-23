@@ -64,8 +64,10 @@ const index = () => {
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
 
+  console.log("dashboardDataList", dashboardDataList)
+
   const fetchData = async () => {
-    if (companyGlobalSearchTicker && !dashboardDataList) {
+    if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -74,7 +76,7 @@ const index = () => {
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (companyGlobalSearchTicker !== tempSearch && !dashboardDataList) {
+    } else if (companyGlobalSearchTicker !== tempSearch && dashboardDataList.length == 0) {
       setSelectedYear("");
       dispatch(
         fetchCompanyDashboard(
