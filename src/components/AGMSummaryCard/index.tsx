@@ -196,41 +196,6 @@ const index = () => {
 
   return (
     <>
-      {companyGlobalSearchTicker == "OC" && (
-        <div className="p-5 mt-3.5 box ">
-          <div className="w-full">
-            <>
-              <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                  <span>
-                    <h1 className="text-lg font-bold">
-                      Previous AGM Summary 2024
-                    </h1>
-                    <p className=" italic"> Meeting Date: 18 April, 2024</p>
-                  </span>
-                  <button
-                    onClick={(event: any) => handleViewMore(event)}
-                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
-                                  md:w-auto flex items-center justify-center border-red-800 border-2
-                                   font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                  >
-                    View More
-                  </button>
-                  <button
-                    onClick={(event: any) => handleViewNPX(event)}
-                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
-                                 md:w-auto flex items-center justify-center border-red-800 border-2
-                                  font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                  >
-                    View N-PX
-                  </button>
-                </div>
-              </div>
-            </>
-          </div>
-        </div>
-      )
-      }
       {agmSummaryDetails?.Year && (
         <div className="p-5 mt-3.5 box ">
           <div className="w-full">
