@@ -74,13 +74,15 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                         label={{ value: "Proposals", angle: -90, position: "insideLeft" }}
                                         domain={[0, (dataMax) => isAllCompanySelected ? dataMax + 200 : dataMax + 20]}
                                     />
-                                    <YAxis
-                                        yAxisId="right"
-                                        orientation="right"
-                                        label={{ angle: 90, position: "insideRight" }}
-                                        domain={[0, 60]}
-                                        tickFormatter={(value) => `${value.toFixed(1)}%`}
-                                    />
+                                    {tab == "proposal" &&
+                                        <YAxis
+                                            yAxisId="right"
+                                            orientation="right"
+                                            label={{ angle: 90, position: "insideRight" }}
+                                            domain={[0, 60]}
+                                            tickFormatter={(value) => `${value.toFixed(1)}%`}
+                                        />
+                                    }
                                     <Bar yAxisId="left" dataKey="count" fill="#FF6F00" name="Proposals">
                                         <LabelList dataKey="count" position="top" fill="black" fontSize={12} />
                                     </Bar>
@@ -118,7 +120,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                     <h3 className="text-lg font-semibold mb-4">
                         {tab == "proposal"
                             ? "Proposal Distribution by Category"
-                            : "No Action Letter Distribution by Category"}
+                            : "Distribution by Category"}
                     </h3>
                     {isDataAvailable(topCategories) ? (
                         <ResponsiveContainer width="100%" height={250}>
@@ -141,10 +143,10 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     label={({ name, value }) => {
                                         const displayName =
                                             name === "Corporate Governance"
-                                                ? "Governance"
+                                                ? "Gov"
                                                 : name === "Executive Compensation"
-                                                    ? "Exec. Compensation"
-                                                    : name;
+                                                    ? "Exec. Comp"
+                                                    : name === "Environmental" ? "Env" : name === "Governance" ? "Gov." : name == "Social" ? "Soc" : name;
                                         return `${displayName}: ${value}`;
                                     }}
                                 >
@@ -164,7 +166,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                 </div>
 
                 {/* 3. Outcome Distribution Pie Chart */}
-                {tab !== "proposal" &&
+                {tab !== "proposal" && (
                     <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
                         <h3 className="text-lg font-semibold mb-4">Outcome Distribution</h3>
                         {isDataAvailable(pieChartOutcome) ? (
@@ -172,16 +174,17 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                 <PieChart>
                                     <Pie
                                         data={[
-                                            { name: "Included", value: pieChartOutcome.include },
-                                            { name: "Excluded", value: pieChartOutcome.exclude },
-                                            { name: "Withdrawn", value: pieChartOutcome.withdraw },
-                                            { name: "Incoming", value: pieChartOutcome.Incoming },
+                                            { name: "Incl.", value: pieChartOutcome.include },
+                                            { name: "Excl.", value: pieChartOutcome.exclude },
+                                            { name: "Withd.", value: pieChartOutcome.withdraw },
+                                            { name: "Incom.", value: pieChartOutcome.Incoming },
                                         ]}
                                         dataKey="value"
                                         nameKey="name"
                                         cx="50%"
                                         cy="50%"
-                                        outerRadius={80}
+                                        outerRadius={75}
+                                        labelLine={{ length: 10, length2: 5 }}
                                         label={({ name, value }) => `${name}: ${value}`}
                                     >
                                         <Cell fill="#4caf50" /> {/* Included */}
@@ -195,7 +198,8 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                             <p className="text-gray-500">No data available</p>
                         )}
                     </div>
-                }
+                )}
+
 
             </div>
 
