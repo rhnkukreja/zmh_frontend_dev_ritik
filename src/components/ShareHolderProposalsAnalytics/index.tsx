@@ -184,7 +184,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                         cx="50%"
                                         cy="50%"
                                         outerRadius={75}
-                                        labelLine={{ length: 10, length2: 5 }}
                                         label={({ name, value }) => `${name}: ${value}`}
                                     >
                                         <Cell fill="#4caf50" /> {/* Included */}
