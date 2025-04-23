@@ -44,7 +44,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
             </div>
         );
     }
-    console.log("isAllCompanySelected", isAllCompanySelected)
 
     return (
         <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">

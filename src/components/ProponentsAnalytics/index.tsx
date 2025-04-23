@@ -26,6 +26,8 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
             </div>
         );
     }
+    console.log("tab", tab);
+    console.log("top proponents", topProponents)
     const handleInstitutionClick = (institution_name: string) => {
         setSearchTerms([institution_name]);
         handleSearch([institution_name]);
@@ -53,6 +55,11 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                         const govCount = proponent.category?.find((c: any) => c.category === "Corporate Governance")?.count || 0;
                         const execComp = proponent.category?.find((c: any) => c.category === "Executive Compensation")?.count || 0;
 
+                        const envAvgSupport = proponent.category?.find((c: any) => c.category === "Environmental")?.avg_support || 0;
+                        const socAvgSupport = proponent.category?.find((c: any) => c.category === "Social")?.avg_support || 0;
+                        const govAvgSupport = proponent.category?.find((c: any) => c.category === "Corporate Governance")?.avg_support || 0;
+                        const execAvgSupport = proponent.category?.find((c: any) => c.category === "Executive Compensation")?.avg_support || 0;
+
                         return (
                             <tr key={idx} className="text-center">
                                 <td className="border px-4 py-2">{idx + 1}</td> {/* Numbered index */}
@@ -65,11 +72,22 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                                     </button>
                                 </td>
 
-                                <td className="border px-4 py-2">{proponent.total_count}</td>
-                                <td className="border px-4 py-2">{envCount}</td>
-                                <td className="border px-4 py-2">{socCount}</td>
-                                <td className="border px-4 py-2">{govCount}</td>
-                                <td className="border px-4 py-2">{execComp}</td>
+                                <td className="border px-4 py-2">
+                                    {proponent.total_count} {tab === "no-action" && `(${proponent.avg_support})`}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {envCount} {tab === "no-action" && `(${envAvgSupport})`}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {socCount} {tab === "no-action" && `(${socAvgSupport})`}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {govCount} {tab === "no-action" && `(${govAvgSupport})`}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {execComp} {tab === "no-action" && `(${execAvgSupport})`}
+                                </td>
+
                             </tr>
                         );
                     })}
