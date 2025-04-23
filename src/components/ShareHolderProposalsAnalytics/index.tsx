@@ -70,7 +70,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     <XAxis dataKey="year" />
                                     <YAxis
                                         yAxisId="left"
-                                        label={{ value: "Proposals", angle: -90, position: "insideLeft" }}
+                                        label={{ value: tab == "proposal" ? "Proposals" : "Count", angle: -90, position: "insideLeft" }}
                                         domain={[0, (dataMax) => isAllCompanySelected ? dataMax + 200 : dataMax + 20]}
                                     />
                                     {tab == "proposal" &&
@@ -105,7 +105,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                         </Line>
                                     }
 
-                                    <Legend />
+                                    {tab == "proposal" && <Legend />}
                                 </ComposedChart>
                             </ResponsiveContainer>
                         )
