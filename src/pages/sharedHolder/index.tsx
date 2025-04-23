@@ -1739,7 +1739,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              Shareholder Proposals Proponent Analytics
+                              Shareholder Proposals: Proponent Analytics
                             </button>
                           </div>
 
@@ -1973,7 +1973,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
-                              All No Action Letter
+                              All No Action Letters
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
@@ -1982,7 +1982,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              No Action Letter Proponent Analytics
+                              No Action Letters: Proponent Analytics
                             </button>
                           </div>
 

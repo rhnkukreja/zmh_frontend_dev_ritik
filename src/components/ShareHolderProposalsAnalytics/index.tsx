@@ -125,13 +125,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                         <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
-                                    data={[...topCategories].sort((a, b) =>
-                                        a.category === "Executive Compensation"
-                                            ? -1
-                                            : b.category === "Executive Compensation"
-                                                ? 1
-                                                : 0
-                                    )}
+                                    data={interleaveSlices(topCategories)}
                                     dataKey="count"
                                     nameKey="category"
                                     cx="50%"
@@ -172,12 +166,13 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
-                                        data={[
+                                        data={interleaveOutcome([
                                             { name: "Incl.", value: pieChartOutcome.include },
                                             { name: "Excl.", value: pieChartOutcome.exclude },
                                             { name: "Withd.", value: pieChartOutcome.withdraw },
                                             { name: "Incom.", value: pieChartOutcome.Incoming },
-                                        ]}
+                                        ])}
+
                                         dataKey="value"
                                         nameKey="name"
                                         cx="50%"
@@ -256,5 +251,38 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
         </div >
     );
 };
+
+const interleaveSlices = (data: any[]) => {
+    const sorted = [...data].sort((a, b) => b.count - a.count);
+    const result = [];
+    let i = 0, j = sorted.length - 1;
+    while (i <= j) {
+        if (i === j) result.push(sorted[i]);
+        else {
+            result.push(sorted[i]);
+            result.push(sorted[j]);
+        }
+        i++;
+        j--;
+    }
+    return result;
+};
+
+const interleaveOutcome = (data: any[]) => {
+    const sorted = [...data].sort((a, b) => b.value - a.value);
+    const result = [];
+    let i = 0, j = sorted.length - 1;
+    while (i <= j) {
+        if (i === j) result.push(sorted[i]);
+        else {
+            result.push(sorted[i]);
+            result.push(sorted[j]);
+        }
+        i++;
+        j--;
+    }
+    return result;
+};
+
 
 export default ShareHolderProposalAnalyticsComponent;
