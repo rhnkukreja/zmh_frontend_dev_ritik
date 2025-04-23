@@ -8,6 +8,7 @@ interface ShareHolderProposalAnalyticsComponentProps {
     yearlySummary: any[];
     tab: any;
     pieChartOutcome?: any;
+    isAllCompanySelected: any
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A569BD"];
@@ -27,7 +28,9 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
     topCategories,
     yearlySummary,
     tab,
-    pieChartOutcome
+    pieChartOutcome,
+    isAllCompanySelected
+
 }) => {
     if (
         !isDataAvailable(proposalCounts) &&
@@ -41,7 +44,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
             </div>
         );
     }
-
+    console.log("isAllCompanySelected", isAllCompanySelected)
 
     return (
         <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
@@ -69,7 +72,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     <YAxis
                                         yAxisId="left"
                                         label={{ value: "Proposals", angle: -90, position: "insideLeft" }}
-                                        domain={[0, (dataMax) => dataMax + 200]}
+                                        domain={[0, (dataMax) => isAllCompanySelected ? dataMax + 200 : dataMax + 20]}
                                     />
                                     <YAxis
                                         yAxisId="right"

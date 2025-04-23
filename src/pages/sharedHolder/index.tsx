@@ -1752,6 +1752,7 @@ function ShareHolderProposal() {
                                 topCategories={topCategories}
                                 yearlySummary={yearlySummary}
                                 tab={tab}
+                                isAllCompanySelected={isAllCompanySelected}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
@@ -1995,6 +1996,7 @@ function ShareHolderProposal() {
                                 yearlySummary={yearlySummary}
                                 tab={tab}
                                 pieChartOutcome={pieChartOutcome}
+                                isAllCompanySelected={isAllCompanySelected}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
