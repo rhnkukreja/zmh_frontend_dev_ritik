@@ -12,6 +12,7 @@ import { HelmetProvider } from "react-helmet-async";
 import ScrollTop from "./components/ScrollTop";
 
 
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <BrowserRouter>
     <HelmetProvider>
