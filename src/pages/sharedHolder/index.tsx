@@ -1744,7 +1744,7 @@ function ShareHolderProposal() {
                           </div>
 
                           {/* Content */}
-                          <div className="px-4">
+                          <div >
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalCounts}
@@ -1987,7 +1987,7 @@ function ShareHolderProposal() {
                           </div>
 
                           {/* Content */}
-                          <div className="px-4">
+                          <div>
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalCounts}

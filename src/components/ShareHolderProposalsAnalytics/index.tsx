@@ -45,6 +45,34 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
         );
     }
 
+    const outcomeData = pieChartOutcome
+        ? interleaveOutcome(
+            [
+                { name: "Included", value: pieChartOutcome.include, color: "#4caf50" },
+                { name: "Excluded", value: pieChartOutcome.exclude, color: "#f44336" },
+                { name: "Withdrawn", value: pieChartOutcome.withdraw, color: "#ff9800" },
+                { name: "Incoming", value: pieChartOutcome.Incoming, color: "#03a9f4" },
+            ].filter(item => item.value > 0)
+        )
+        : [];
+
+    const pieCategoryData = interleaveSlices(
+        topCategories
+            .map((item, index) => {
+                let color = COLORS[index % COLORS.length];
+                if (item.category === "Environmental") color = "#28a745";
+                if (item.category === "Social") color = "#D39E00";
+                if (item.category === "Corporate Governance") color = "#0088FE";
+                return {
+                    ...item,
+                    color,
+                };
+            })
+    );
+
+
+
+
     return (
         <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
             <h2 className="text-2xl font-semibold mb-6 text-gray-800">{tab == "proposal" ? "Shareholder Proposal Analytics (Beta)" : "No Action Letter Analytics (Beta) "}</h2>
@@ -125,7 +153,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                         <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
-                                    data={interleaveSlices(topCategories)}
+                                    data={pieCategoryData}
                                     dataKey="count"
                                     nameKey="category"
                                     cx="50%"
@@ -133,25 +161,46 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     outerRadius={80}
                                     startAngle={90}
                                     endAngle={-270}
-                                    label={({ name, value }) => {
+                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
+                                        const RADIAN = Math.PI / 180;
+                                        const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
+                                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
                                         const displayName =
                                             name === "Corporate Governance"
                                                 ? "Gov"
                                                 : name === "Executive Compensation"
                                                     ? "Exec. Comp"
-                                                    : name === "Environmental" ? "Env" : name === "Governance" ? "Gov." : name == "Social" ? "Soc" : name;
-                                        return `${displayName}: ${value}`;
+                                                    : name === "Environmental"
+                                                        ? "Env"
+                                                        : name === "Governance"
+                                                            ? "Gov."
+                                                            : name === "Social"
+                                                                ? "Social"
+                                                                : name;
+
+                                        return (
+                                            <text
+                                                x={x}
+                                                y={y}
+                                                fill={pieCategoryData[index].color}
+                                                textAnchor={x > cx ? "start" : "end"}
+                                                dominantBaseline="central"
+                                                fontSize={13}
+                                            >
+                                                {`${displayName}: ${value}`}
+                                            </text>
+                                        );
                                     }}
+                                    labelLine={false}
                                 >
-                                    {topCategories.map((entry, index) => {
-                                        let color = COLORS[index % COLORS.length];
-                                        if (entry.category === "Environmental") color = "#28a745";
-                                        if (entry.category === "Social") color = "#D39E00";
-                                        if (entry.category === "Corporate Governance") color = "#0088FE";
-                                        return <Cell key={`cell-${index}`} fill={color} />;
-                                    })}
+                                    {pieCategoryData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
                                 </Pie>
                             </PieChart>
+
                         </ResponsiveContainer>
                     ) : (
                         <p className="text-gray-500">No data available</p>
@@ -166,30 +215,40 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
-                                        data={interleaveOutcome(
-                                            [
-                                                { name: "Incl.", value: pieChartOutcome.include },
-                                                { name: "Excl.", value: pieChartOutcome.exclude },
-                                                { name: "Withd.", value: pieChartOutcome.withdraw },
-                                                { name: "Incom.", value: pieChartOutcome.Incoming },
-                                            ].filter(item => item.value > 0)
-                                        )}
-
-
+                                        data={outcomeData}
                                         dataKey="value"
                                         nameKey="name"
                                         cx="50%"
                                         cy="50%"
                                         outerRadius={75}
-                                        label={({ name, value }) => `${name}: ${value}`}
+                                        label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
+                                            const RADIAN = Math.PI / 180;
+                                            const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
+                                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                                            return (
+                                                <text
+                                                    x={x}
+                                                    y={y}
+                                                    fill={outcomeData[index].color}
+                                                    textAnchor={x > cx ? "start" : "end"}
+                                                    dominantBaseline="central"
+                                                    fontSize={13}
+                                                >
+                                                    {`${name}: ${value}`}
+                                                </text>
+                                            );
+                                        }}
+                                        labelLine={false}
                                     >
-                                        <Cell fill="#4caf50" /> {/* Included */}
-                                        <Cell fill="#f44336" /> {/* Excluded */}
-                                        <Cell fill="#ff9800" /> {/* Withdrawn */}
-                                        <Cell fill="#03a9f4" /> {/* Incoming */}
+                                        {outcomeData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
+
                         ) : (
                             <p className="text-gray-500">No data available</p>
                         )}
