@@ -26,8 +26,6 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
             </div>
         );
     }
-    console.log("tab", tab);
-    console.log("top proponents", topProponents)
     const handleInstitutionClick = (institution_name: string) => {
         setSearchTerms([institution_name]);
         handleSearch([institution_name]);

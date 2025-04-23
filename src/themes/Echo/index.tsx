@@ -884,7 +884,7 @@ function Main() {
         </div>
       </div>
 
-      <>
+      {/* <>
         {selectedText && (
           <div
             ref={tooltipRef}
@@ -904,7 +904,7 @@ function Main() {
             </span>
           </div>
         )}
-      </>
+      </> */}
 
       <div
         className={clsx([
