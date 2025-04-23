@@ -82,6 +82,7 @@ function ShareHolderProposal() {
   ]);
   const [isViewAnalysis, setIsViewAnalysis] = useState(false);
   const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">("shareholders");
+  const [tempTab, setTempTab] = useState<"" | "proposal" | "no-action" | "withdrawn">("proposal");
 
   const month = [
     {
@@ -389,7 +390,13 @@ function ShareHolderProposal() {
       setIsViewAnalysis(false);
     }
 
+    if (tempTab !== tab) {
+      dispatch(setTabs(tempTab));
+    }
+
   }, [tab]);
+
+
 
   // useEffect(() => {
   //   if(proposalCount > 0){
@@ -1638,6 +1645,7 @@ function ShareHolderProposal() {
                           dispatch(setTabs("proposal"));
                           dispatch(resetPage());
                           clearNoActionFilter();
+                          setTempTab("proposal");
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1660,6 +1668,7 @@ function ShareHolderProposal() {
                         onClick={() => {
                           dispatch(setTabs("no-action"));
                           dispatch(resetPage());
+                          setTempTab("no-action");
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1684,6 +1693,8 @@ function ShareHolderProposal() {
                           dispatch(resetPage());
                           clearNoActionFilter();
                           setIsViewAnalysis(false);
+                          setTempTab("withdrawn");
+
                         }}
                       >
                         <div className="flex items-center justify-center ">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Line, ComposedChart, LabelList } from "recharts";
 
 interface ShareHolderProposalAnalyticsComponentProps {
@@ -45,16 +45,21 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
         );
     }
 
-    const outcomeData = pieChartOutcome
-        ? interleaveOutcome(
-            [
-                { name: "Included", value: pieChartOutcome.include, color: "#4caf50" },
-                { name: "Excluded", value: pieChartOutcome.exclude, color: "#f44336" },
-                { name: "Withdrawn", value: pieChartOutcome.withdraw, color: "#ff9800" },
-                { name: "Incoming", value: pieChartOutcome.Incoming, color: "#03a9f4" },
-            ].filter(item => item.value > 0)
-        )
-        : [];
+    const [outcomeData, setOutcomeData] = useState([]);
+
+    useEffect(() => {
+        if (pieChartOutcome) {
+            const formatted = interleaveOutcome(
+                [
+                    { name: "Included", value: pieChartOutcome.include, color: "#4caf50" },
+                    { name: "Excluded", value: pieChartOutcome.exclude, color: "#f44336" },
+                    { name: "Withdrawn", value: pieChartOutcome.withdraw, color: "#ff9800" },
+                    { name: "Incoming", value: pieChartOutcome.Incoming, color: "#03a9f4" },
+                ].filter(item => item.value > 0)
+            );
+            setOutcomeData(formatted);
+        }
+    }, [pieChartOutcome]);
 
     const pieCategoryData = interleaveSlices(
         topCategories
@@ -98,8 +103,8 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     <XAxis dataKey="year" />
                                     <YAxis
                                         yAxisId="left"
-                                        label={{ value: tab == "proposal" ? "Proposals" : "Count", angle: -90, position: "insideLeft" }}
-                                        domain={[0, (dataMax) => isAllCompanySelected ? dataMax + 200 : dataMax + 20]}
+                                        label={{ value: "Count", angle: -90, position: "insideLeft" }}
+                                        domain={[0, (dataMax) => isAllCompanySelected ? dataMax + 150 : dataMax + 5]}
                                     />
                                     {tab == "proposal" &&
                                         <YAxis
@@ -126,7 +131,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                             <LabelList
                                                 dataKey="avg_support"
                                                 position="bottom"
-                                                fill="#007bff"
+                                                fill="white"
                                                 fontSize={12}
                                                 formatter={(value) => `${value.toFixed(1)}%`}
                                             />
@@ -179,7 +184,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                                             : name === "Social"
                                                                 ? "Social"
                                                                 : name;
-
                                         return (
                                             <text
                                                 x={x}
