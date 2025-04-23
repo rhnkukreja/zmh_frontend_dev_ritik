@@ -7,6 +7,7 @@ interface ShareHolderProposalAnalyticsComponentProps {
     topCategories: any[];
     yearlySummary: any[];
     tab: any;
+    pieChartOutcome?: any;
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A569BD"];
@@ -25,9 +26,9 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
     topSubcategories,
     topCategories,
     yearlySummary,
-    tab
+    tab,
+    pieChartOutcome
 }) => {
-
     if (
         !isDataAvailable(proposalCounts) &&
         !isDataAvailable(topSubcategories) &&
@@ -47,62 +48,58 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
             <h2 className="text-2xl font-semibold mb-6 text-gray-800">{tab == "proposal" ? "Shareholder Proposal Analytics (Beta)" : "No Action Letter Analytics (Beta) "}</h2>
 
             {/* Row: Pie Chart & Bar Chart */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                {/* Yearly Proposal Trends - Bar Chart */}
-                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
-                    <h3 className="text-lg font-semibold mb-4">{tab == "proposal" ? "Yearly Proposal Trend" : "No Action Letter Trend"}</h3>
+            <div className={`grid grid-cols-1 ${tab !== "proposal" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-6 mb-12`}>
+                {/* 1. Yearly Proposal Trends - Bar Chart */}
+                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                    <h3 className="text-lg font-semibold mb-4">
+                        {tab == "proposal" ? "Yearly Proposal Trend" : "No Action Letter Trend"}
+                    </h3>
                     {isDataAvailable(yearlySummary) ? (
                         yearlySummary.length === 1 ? (
                             <p className="text-lg font-semibold text-gray-700">
                                 {formatNumberWithCommas(yearlySummary[0].count)} Proposals
                             </p>
                         ) : (
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={250}>
                                 <ComposedChart
-                                    data={[...yearlySummary.filter((item) => item.year >= 2022)].reverse()} // Filter and reverse order
-                                    margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                                    data={[...yearlySummary.filter((item) => item.year >= 2022)].reverse()}
+                                    margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
                                 >
                                     <XAxis dataKey="year" />
-
                                     <YAxis
                                         yAxisId="left"
                                         label={{ value: "Proposals", angle: -90, position: "insideLeft" }}
-                                        domain={[0, (dataMax) => dataMax + 200]} // Adds 50 to the highest value
+                                        domain={[0, (dataMax) => dataMax + 200]}
                                     />
-
-
-                                    {/* Right Y-Axis for Avg Support (formatted as percentage) */}
                                     <YAxis
                                         yAxisId="right"
                                         orientation="right"
-                                        label={{
-                                            angle: 90, // Rotates 180 degrees
-                                            position: "insideRight",
-                                        }}
+                                        label={{ angle: 90, position: "insideRight" }}
                                         domain={[0, "auto"]}
-                                        tickFormatter={(value) => `${value.toFixed(1)}%`} // Formats to 2 decimal places
+                                        tickFormatter={(value) => `${value.toFixed(1)}%`}
                                     />
-
-                                    {/* Bar Chart for Proposals */}
                                     <Bar yAxisId="left" dataKey="count" fill="#FF6F00" name="Proposals">
-                                        {/* Display values on top of bars */}
                                         <LabelList dataKey="count" position="top" fill="black" fontSize={12} />
                                     </Bar>
-
-                                    {/* Line Chart for Avg Support (formatted as percentage) */}
-                                    <Line
-                                        yAxisId="right"
-                                        type="monotone"
-                                        dataKey="avg_support"
-                                        stroke="#007bff"
-                                        strokeWidth={2}
-                                        dot={{ r: 4 }}
-                                        name="Avg. Support (%)"
-                                        legendType="none"
-                                    >
-                                        {/* Display values on top of the line */}
-                                        <LabelList dataKey="avg_support" position="top" fill="#007bff" fontSize={12} formatter={(value) => `${value.toFixed(1)}%`} />
-                                    </Line>
+                                    {tab == "proposal" &&
+                                        <Line
+                                            yAxisId="right"
+                                            type="monotone"
+                                            dataKey="avg_support"
+                                            stroke="#007bff"
+                                            strokeWidth={2}
+                                            dot={{ r: 4 }}
+                                            name="Avg. Support (%)"
+                                        >
+                                            <LabelList
+                                                dataKey="avg_support"
+                                                position="top"
+                                                fill="#007bff"
+                                                fontSize={12}
+                                                formatter={(value) => `${value.toFixed(1)}%`}
+                                            />
+                                        </Line>
+                                    }
 
                                     <Legend />
                                 </ComposedChart>
@@ -112,31 +109,39 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                         <p className="text-gray-500">No data available</p>
                     )}
                 </div>
-                {/* Proposal Distribution - Pie Chart */}
-                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
-                    <h3 className="text-lg font-semibold mb-4">{tab == "proposal" ? "Proposal Distribution by Category" : "No Action Letter Distribution by Category"} </h3>
 
+                {/* 2. Proposal Distribution Pie Chart */}
+                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                    <h3 className="text-lg font-semibold mb-4">
+                        {tab == "proposal"
+                            ? "Proposal Distribution by Category"
+                            : "No Action Letter Distribution by Category"}
+                    </h3>
                     {isDataAvailable(topCategories) ? (
-
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
-                                    data={[...topCategories].sort((a, b) => (
-                                        a.category === "Executive Compensation" ? -1 :
-                                            b.category === "Executive Compensation" ? 1 : 0
-                                    ))}
+                                    data={[...topCategories].sort((a, b) =>
+                                        a.category === "Executive Compensation"
+                                            ? -1
+                                            : b.category === "Executive Compensation"
+                                                ? 1
+                                                : 0
+                                    )}
                                     dataKey="count"
                                     nameKey="category"
                                     cx="50%"
                                     cy="50%"
-                                    outerRadius={100}
-                                    startAngle={90}  // Starts at top
-                                    endAngle={-270}  // Goes clockwise
+                                    outerRadius={80}
+                                    startAngle={90}
+                                    endAngle={-270}
                                     label={({ name, value }) => {
                                         const displayName =
-                                            name === "Corporate Governance" ? "Governance" :
-                                                name === "Executive Compensation" ? "Exec. Compensation" :
-                                                    name;
+                                            name === "Corporate Governance"
+                                                ? "Governance"
+                                                : name === "Executive Compensation"
+                                                    ? "Exec. Compensation"
+                                                    : name;
                                         return `${displayName}: ${value}`;
                                     }}
                                 >
@@ -150,14 +155,47 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                 </Pie>
                             </PieChart>
                         </ResponsiveContainer>
-
-
                     ) : (
                         <p className="text-gray-500">No data available</p>
                     )}
-
                 </div>
+
+                {/* 3. Outcome Distribution Pie Chart */}
+                {tab !== "proposal" &&
+                    <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                        <h3 className="text-lg font-semibold mb-4">Outcome Distribution</h3>
+                        {isDataAvailable(pieChartOutcome) ? (
+                            <ResponsiveContainer width="100%" height={250}>
+                                <PieChart>
+                                    <Pie
+                                        data={[
+                                            { name: "Included", value: pieChartOutcome.include },
+                                            { name: "Excluded", value: pieChartOutcome.exclude },
+                                            { name: "Withdrawn", value: pieChartOutcome.withdraw },
+                                            { name: "Incoming", value: pieChartOutcome.Incoming },
+                                        ]}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={80}
+                                        label={({ name, value }) => `${name}: ${value}`}
+                                    >
+                                        <Cell fill="#4caf50" /> {/* Included */}
+                                        <Cell fill="#f44336" /> {/* Excluded */}
+                                        <Cell fill="#ff9800" /> {/* Withdrawn */}
+                                        <Cell fill="#03a9f4" /> {/* Incoming */}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <p className="text-gray-500">No data available</p>
+                        )}
+                    </div>
+                }
+
             </div>
+
 
             {/* Row: Tables for Top Subcategories */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
