@@ -61,6 +61,8 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
         }
     }, [pieChartOutcome]);
 
+   
+
     const pieCategoryData = interleaveSlices(
         topCategories
             .map((item, index) => {
@@ -215,7 +217,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                 {tab !== "proposal" && (
                     <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
                         <h3 className="text-lg font-semibold mb-4">Outcome Distribution</h3>
-                        {isDataAvailable(pieChartOutcome) ? (
+                      
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
@@ -252,10 +254,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
-
-                        ) : (
-                            <p className="text-gray-500">No data available</p>
-                        )}
                     </div>
                 )}
 
