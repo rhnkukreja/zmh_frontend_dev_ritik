@@ -102,7 +102,7 @@ const ProponentsAnalyticsComponent: React.FC<
                     {proponent.institution__name}
                   </button>
                 </td>
-                <td className="border px-4 py-2">{proponent.total_count}</td>
+                <td className="border px-4 py-2">{proponent.total_count} {format(proponent.avg_support)}</td>
                 <td className="border px-4 py-2">
                   {envCount} {format(envAvgSupport)}
                 </td>
@@ -170,13 +170,12 @@ const ProponentsAnalyticsComponent: React.FC<
 
   return (
     <div
-      className={`relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl flex flex-col mb-20 ${
-        topProponents.length === 1 &&
+      className={`relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl flex flex-col mb-20 ${topProponents.length === 1 &&
         topProponents[0]?.subcategory_detail &&
         Object.keys(topProponents[0].subcategory_detail).length > 0
-          ? "min-h-[100vh]"
-          : "min-h-[65vh]"
-      }`}
+        ? "min-h-[100vh]"
+        : "min-h-[65vh]"
+        }`}
     >
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">
         All Proponents Analytics (Beta)
