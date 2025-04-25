@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Line, ComposedChart, LabelList } from "recharts";
 
 interface ShareHolderProposalAnalyticsComponentProps {
@@ -7,6 +7,8 @@ interface ShareHolderProposalAnalyticsComponentProps {
     topCategories: any[];
     yearlySummary: any[];
     tab: any;
+    pieChartOutcome?: any;
+    isAllCompanySelected: any
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A569BD"];
@@ -25,9 +27,11 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
     topSubcategories,
     topCategories,
     yearlySummary,
-    tab
-}) => {
+    tab,
+    pieChartOutcome,
+    isAllCompanySelected
 
+}) => {
     if (
         !isDataAvailable(proposalCounts) &&
         !isDataAvailable(topSubcategories) &&
@@ -41,69 +45,102 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
         );
     }
 
+    const [outcomeData, setOutcomeData] = useState([]);
+
+    useEffect(() => {
+        if (pieChartOutcome) {
+            const formatted = interleaveOutcome(
+                [
+                    { name: "Included", value: pieChartOutcome.include, color: "#4caf50" },
+                    { name: "Excluded", value: pieChartOutcome.exclude, color: "#f44336" },
+                    { name: "Withdrawn", value: pieChartOutcome.withdraw, color: "#ff9800" },
+                    { name: "Incoming", value: pieChartOutcome.Incoming, color: "#03a9f4" },
+                ].filter(item => item.value > 0)
+            );
+            setOutcomeData(formatted);
+        }
+    }, [pieChartOutcome]);
+
+   
+
+    const pieCategoryData = interleaveSlices(
+        topCategories
+            .map((item, index) => {
+                let color = COLORS[index % COLORS.length];
+                if (item.category === "Environmental") color = "#28a745";
+                if (item.category === "Social") color = "#D39E00";
+                if (item.category === "Corporate Governance") color = "#0088FE";
+                return {
+                    ...item,
+                    color,
+                };
+            })
+    );
+
+
+
 
     return (
         <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
             <h2 className="text-2xl font-semibold mb-6 text-gray-800">{tab == "proposal" ? "Shareholder Proposal Analytics (Beta)" : "No Action Letter Analytics (Beta) "}</h2>
 
             {/* Row: Pie Chart & Bar Chart */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                {/* Yearly Proposal Trends - Bar Chart */}
-                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
-                    <h3 className="text-lg font-semibold mb-4">Yearly Proposal Trend</h3>
+            <div className={`grid grid-cols-1 ${tab !== "proposal" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-6 mb-12`}>
+                {/* 1. Yearly Proposal Trends - Bar Chart */}
+                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                    <h3 className="text-lg font-semibold mb-4">
+                        {tab == "proposal" ? "Yearly Proposal Trend" : "No Action Letter Trend"}
+                    </h3>
                     {isDataAvailable(yearlySummary) ? (
                         yearlySummary.length === 1 ? (
                             <p className="text-lg font-semibold text-gray-700">
                                 {formatNumberWithCommas(yearlySummary[0].count)} Proposals
                             </p>
                         ) : (
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={250}>
                                 <ComposedChart
-                                    data={[...yearlySummary.filter((item) => item.year >= 2022)].reverse()} // Filter and reverse order
-                                    margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                                    data={[...yearlySummary.filter((item) => item.year >= 2022)].reverse()}
+                                    margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
                                 >
                                     <XAxis dataKey="year" />
-
                                     <YAxis
                                         yAxisId="left"
-                                        label={{ value: "Proposals", angle: -90, position: "insideLeft" }}
-                                        domain={[0, (dataMax) => dataMax + 200]} // Adds 50 to the highest value
+                                        label={{ value: "Count", angle: -90, position: "insideLeft" }}
+                                        domain={[0, (dataMax) => isAllCompanySelected ? dataMax + 150 : dataMax + 5]}
                                     />
-
-
-                                    {/* Right Y-Axis for Avg Support (formatted as percentage) */}
-                                    <YAxis
-                                        yAxisId="right"
-                                        orientation="right"
-                                        label={{
-                                            angle: 90, // Rotates 180 degrees
-                                            position: "insideRight",
-                                        }}
-                                        domain={[0, "auto"]}
-                                        tickFormatter={(value) => `${value.toFixed(1)}%`} // Formats to 2 decimal places
-                                    />
-
-                                    {/* Bar Chart for Proposals */}
+                                    {tab == "proposal" &&
+                                        <YAxis
+                                            yAxisId="right"
+                                            orientation="right"
+                                            label={{ angle: 90, position: "insideRight" }}
+                                            domain={[0, 60]}
+                                            tickFormatter={(value) => `${value.toFixed(1)}%`}
+                                        />
+                                    }
                                     <Bar yAxisId="left" dataKey="count" fill="#FF6F00" name="Proposals">
-                                        {/* Display values on top of bars */}
                                         <LabelList dataKey="count" position="top" fill="black" fontSize={12} />
                                     </Bar>
+                                    {tab == "proposal" &&
+                                        <Line
+                                            yAxisId="right"
+                                            type="monotone"
+                                            dataKey="avg_support"
+                                            stroke="#007bff"
+                                            strokeWidth={2}
+                                            dot={{ r: 4 }}
+                                            name="Avg. Support (%)"
+                                        >
+                                            <LabelList
+                                                dataKey="avg_support"
+                                                position="bottom"
+                                                fill="white"
+                                                fontSize={12}
+                                                formatter={(value) => `${value.toFixed(1)}%`}
+                                            />
+                                        </Line>
+                                    }
 
-                                    {/* Line Chart for Avg Support (formatted as percentage) */}
-                                    <Line
-                                        yAxisId="right"
-                                        type="monotone"
-                                        dataKey="avg_support"
-                                        stroke="#007bff"
-                                        strokeWidth={2}
-                                        dot={{ r: 4 }}
-                                        name="Avg. Support (%)"
-                                    >
-                                        {/* Display values on top of the line */}
-                                        <LabelList dataKey="avg_support" position="top" fill="#007bff" fontSize={12} formatter={(value) => `${value.toFixed(1)}%`} />
-                                    </Line>
-
-                                    <Legend />
+                                    {tab == "proposal" && <Legend />}
                                 </ComposedChart>
                             </ResponsiveContainer>
                         )
@@ -111,52 +148,118 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
                         <p className="text-gray-500">No data available</p>
                     )}
                 </div>
-                {/* Proposal Distribution - Pie Chart */}
-                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center">
-                    <h3 className="text-lg font-semibold mb-4">Proposal Distribution by Category</h3>
 
+                {/* 2. Proposal Distribution Pie Chart */}
+                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                    <h3 className="text-lg font-semibold mb-4">
+                        {tab == "proposal"
+                            ? "Proposal Distribution by Category"
+                            : "Distribution by Category"}
+                    </h3>
                     {isDataAvailable(topCategories) ? (
-
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
-                                    data={[...topCategories].sort((a, b) => (
-                                        a.category === "Executive Compensation" ? -1 :
-                                            b.category === "Executive Compensation" ? 1 : 0
-                                    ))}
+                                    data={pieCategoryData}
                                     dataKey="count"
                                     nameKey="category"
                                     cx="50%"
                                     cy="50%"
-                                    outerRadius={100}
-                                    startAngle={90}  // Starts at top
-                                    endAngle={-270}  // Goes clockwise
-                                    label={({ name, value }) => {
+                                    outerRadius={80}
+                                    startAngle={90}
+                                    endAngle={-270}
+                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
+                                        const RADIAN = Math.PI / 180;
+                                        const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
+                                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
                                         const displayName =
-                                            name === "Corporate Governance" ? "Governance" :
-                                                name === "Executive Compensation" ? "Exec. Compensation" :
-                                                    name;
-                                        return `${displayName}: ${value}`;
+                                            name === "Corporate Governance"
+                                                ? "Gov"
+                                                : name === "Executive Compensation"
+                                                    ? "Exec. Comp"
+                                                    : name === "Environmental"
+                                                        ? "Env"
+                                                        : name === "Governance"
+                                                            ? "Gov."
+                                                            : name === "Social"
+                                                                ? "Social"
+                                                                : name;
+                                        return (
+                                            <text
+                                                x={x}
+                                                y={y}
+                                                fill={pieCategoryData[index].color}
+                                                textAnchor={x > cx ? "start" : "end"}
+                                                dominantBaseline="central"
+                                                fontSize={13}
+                                            >
+                                                {`${displayName}: ${value}`}
+                                            </text>
+                                        );
                                     }}
+                                    labelLine={false}
                                 >
-                                    {topCategories.map((entry, index) => {
-                                        let color = COLORS[index % COLORS.length];
-                                        if (entry.category === "Environmental") color = "#28a745";
-                                        if (entry.category === "Social") color = "#D39E00";
-                                        if (entry.category === "Corporate Governance") color = "#0088FE";
-                                        return <Cell key={`cell-${index}`} fill={color} />;
-                                    })}
+                                    {pieCategoryData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
                                 </Pie>
                             </PieChart>
+
                         </ResponsiveContainer>
-
-
                     ) : (
                         <p className="text-gray-500">No data available</p>
                     )}
-
                 </div>
+
+                {/* 3. Outcome Distribution Pie Chart */}
+                {tab !== "proposal" && (
+                    <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                        <h3 className="text-lg font-semibold mb-4">Outcome Distribution</h3>
+                      
+                            <ResponsiveContainer width="100%" height={250}>
+                                <PieChart>
+                                    <Pie
+                                        data={outcomeData}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={75}
+                                        label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
+                                            const RADIAN = Math.PI / 180;
+                                            const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
+                                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                                            return (
+                                                <text
+                                                    x={x}
+                                                    y={y}
+                                                    fill={outcomeData[index].color}
+                                                    textAnchor={x > cx ? "start" : "end"}
+                                                    dominantBaseline="central"
+                                                    fontSize={13}
+                                                >
+                                                    {`${name}: ${value}`}
+                                                </text>
+                                            );
+                                        }}
+                                        labelLine={false}
+                                    >
+                                        {outcomeData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                    </div>
+                )}
+
+
             </div>
+
 
             {/* Row: Tables for Top Subcategories */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -212,5 +315,38 @@ const ShareHolderProposalAnalyticsComponent: React.FC<ShareHolderProposalAnalyti
         </div >
     );
 };
+
+const interleaveSlices = (data: any[]) => {
+    const sorted = [...data].sort((a, b) => b.count - a.count);
+    const result = [];
+    let i = 0, j = sorted.length - 1;
+    while (i <= j) {
+        if (i === j) result.push(sorted[i]);
+        else {
+            result.push(sorted[i]);
+            result.push(sorted[j]);
+        }
+        i++;
+        j--;
+    }
+    return result;
+};
+
+const interleaveOutcome = (data: any[]) => {
+    const sorted = [...data].sort((a, b) => b.value - a.value);
+    const result = [];
+    let i = 0, j = sorted.length - 1;
+    while (i <= j) {
+        if (i === j) result.push(sorted[i]);
+        else {
+            result.push(sorted[i]);
+            result.push(sorted[j]);
+        }
+        i++;
+        j--;
+    }
+    return result;
+};
+
 
 export default ShareHolderProposalAnalyticsComponent;

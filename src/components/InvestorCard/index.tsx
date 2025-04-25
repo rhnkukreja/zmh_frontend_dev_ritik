@@ -49,12 +49,10 @@ const index = () => {
   const { dashboardDataList, investorCardLoading, page, tempSearch, percent } =
     useAppSelector((state) => state.dashboard);
 
-
-  console.log("dashboardDataList", dashboardDataList)
-
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
+
 
   const navigate = useNavigate();
 
@@ -67,8 +65,10 @@ const index = () => {
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
 
+  console.log("dashboardDataList", dashboardDataList)
+
   const fetchData = async () => {
-    if (companyGlobalSearchTicker) {
+    if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
       dispatch(
         fetchCompanyDashboard(
           createDynamicURL(
@@ -77,7 +77,7 @@ const index = () => {
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (companyGlobalSearchTicker !== tempSearch) {
+    } else if (companyGlobalSearchTicker !== tempSearch ) {
       setSelectedYear("");
       dispatch(
         fetchCompanyDashboard(

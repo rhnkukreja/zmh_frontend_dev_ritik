@@ -196,41 +196,6 @@ const index = () => {
 
   return (
     <>
-      {companyGlobalSearchTicker == "OC" && (
-        <div className="p-5 mt-3.5 box ">
-          <div className="w-full">
-            <>
-              <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                  <span>
-                    <h1 className="text-lg font-bold">
-                      Previous AGM Summary 2024
-                    </h1>
-                    <p className=" italic"> Meeting Date: 18 April, 2024</p>
-                  </span>
-                  <button
-                    onClick={(event: any) => handleViewMore(event)}
-                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
-                                  md:w-auto flex items-center justify-center border-red-800 border-2
-                                   font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                  >
-                    View More
-                  </button>
-                  <button
-                    onClick={(event: any) => handleViewNPX(event)}
-                    className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
-                                 md:w-auto flex items-center justify-center border-red-800 border-2
-                                  font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                  >
-                    View N-PX
-                  </button>
-                </div>
-              </div>
-            </>
-          </div>
-        </div>
-      )
-      }
       {agmSummaryDetails?.Year && (
         <div className="p-5 mt-3.5 box ">
           <div className="w-full">
@@ -239,7 +204,7 @@ const index = () => {
                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                   <span>
                     <h1 className="text-lg font-bold">
-                      Previous AGM Summary {agmSummaryDetails?.Year}
+                      Shareholder Meeting Summary {agmSummaryDetails?.Year}
                     </h1>
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
@@ -350,7 +315,7 @@ const index = () => {
                                   // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
                                     "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-right",
-                                    headerIndex === 0 && "text-left w-[200px]",
+                                    headerIndex === 0 && "text-left w-[200px]", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
                                   ])}
                                 >
                                   {nomineeHeader.header}
@@ -379,7 +344,7 @@ const index = () => {
                                         key={headerIndex}
                                         className={clsx([
                                           "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
-                                          headerIndex === 0 && "text-left ",
+                                          headerIndex === 0 && "text-left ", headerIndex === 1 && "text-center ", headerIndex === 2 && "text-center ",
                                         ])}
                                       >
                                         <h1
@@ -425,7 +390,7 @@ const index = () => {
                                 key={headerIndex}
                                 className={clsx([
                                   "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-right",
-                                  headerIndex === 0 && "text-left w-[220px]",
+                                  headerIndex === 0 && "text-left w-[220px]", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
                                 ])}
                               >
                                 {proposalHeader?.header}
@@ -454,7 +419,7 @@ const index = () => {
                                         key={headerIndex}
                                         className={clsx([
                                           "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
-                                          headerIndex === 0 && "text-left",
+                                          headerIndex === 0 && "text-left", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
                                         ])}
                                       >
                                         <h1

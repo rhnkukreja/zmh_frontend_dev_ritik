@@ -53,6 +53,11 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                         const govCount = proponent.category?.find((c: any) => c.category === "Corporate Governance")?.count || 0;
                         const execComp = proponent.category?.find((c: any) => c.category === "Executive Compensation")?.count || 0;
 
+                        const envAvgSupport = proponent.category?.find((c: any) => c.category === "Environmental")?.avg_support || 0;
+                        const socAvgSupport = proponent.category?.find((c: any) => c.category === "Social")?.avg_support || 0;
+                        const govAvgSupport = proponent.category?.find((c: any) => c.category === "Corporate Governance")?.avg_support || 0;
+                        const execAvgSupport = proponent.category?.find((c: any) => c.category === "Executive Compensation")?.avg_support || 0;
+
                         return (
                             <tr key={idx} className="text-center">
                                 <td className="border px-4 py-2">{idx + 1}</td> {/* Numbered index */}
@@ -65,11 +70,22 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                                     </button>
                                 </td>
 
-                                <td className="border px-4 py-2">{proponent.total_count}</td>
-                                <td className="border px-4 py-2">{envCount}</td>
-                                <td className="border px-4 py-2">{socCount}</td>
-                                <td className="border px-4 py-2">{govCount}</td>
-                                <td className="border px-4 py-2">{execComp}</td>
+                                <td className="border px-4 py-2">
+                                    {proponent.total_count}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {envCount}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {socCount}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {govCount}
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {execComp}
+                                </td>
+
                             </tr>
                         );
                     })}
@@ -119,9 +135,7 @@ const ProponentsAnalyticsComponent: React.FC<ProponentsAnalyticsComponentProps> 
                             </tbody>
                         </table>
                     ) : (
-                        <div className="flex justify-center items-center h-full min-h-[200px] text-gray-500">
-                            No data available
-                        </div>
+                     <p className="text-gray-500">No data available</p>
                     )}
                 </div>
             </div>

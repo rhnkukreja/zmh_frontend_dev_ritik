@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import _ from "lodash";
+import _, { head } from "lodash";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
@@ -30,17 +30,26 @@ function Main() {
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
+
   const { companySearchAndUpdate } = useCompanySearch();
-  const {tempSearch, } =
-  useAppSelector((state) => state.dashboard);
+  const { tempSearch, } =
+    useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
 
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
   }, [isCompanySelected]);
+
+
+  if (window.clarity && user?.user_id) {
+    window.clarity("identify", user?.user_id.toString(), {
+      email: user.email,
+      name: user.first_name,
+    });
+  }
 
 
   // useEffect(() => {
@@ -68,27 +77,27 @@ function Main() {
 
   // };
 
-    
+
   return (
     <>
-          <section >
-            <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-              <div className="col-span-12 xl:col-span-12">
-                <InvestorCard />
-              </div>
+      <section >
+        <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+          <div className="col-span-12 xl:col-span-12">
+            <InvestorCard />
+          </div>
 
-              {/* <BoardDirectorMembers /> */}
+          {/* <BoardDirectorMembers /> */}
 
-              <div className="col-span-12 xl:col-span-12">
-                <AGMSummaryCard />
-              </div>
+          <div className="col-span-12 xl:col-span-12">
+            <AGMSummaryCard />
+          </div>
 
-              <div className="col-span-12 xl:col-span-12">
-                <CaseStudiesCard />
-              </div>
-            </div>
-          </section>
-        {/* </>
+          <div className="col-span-12 xl:col-span-12">
+            <CaseStudiesCard />
+          </div>
+        </div>
+      </section>
+      {/* </>
       } */}
     </>
   );

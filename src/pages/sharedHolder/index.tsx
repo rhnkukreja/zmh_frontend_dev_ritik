@@ -73,15 +73,16 @@ function ShareHolderProposal() {
     topSubcategories,
     yearlySummary,
     proposalCounts,
-    topProponents
+    topProponents,
+    pieChartOutcome
   } = useAppSelector((state) => state.sharedHolderNoAction);
-
 
   const [searchTerms, setSearchTerms] = useState<string[]>([
     ...filters?.proponent_name,
   ]);
   const [isViewAnalysis, setIsViewAnalysis] = useState(false);
   const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">("shareholders");
+  const [tempTab, setTempTab] = useState<"" | "proposal" | "no-action" | "withdrawn">("proposal");
 
   const month = [
     {
@@ -380,6 +381,22 @@ function ShareHolderProposal() {
       setGetDropdownLoader(false);
     }
   };
+
+  useEffect(() => {
+    if (tab == "proposal" && proposalCount == 0) {
+      setIsViewAnalysis(false);
+    }
+    if (tab == "no-action" && noActionCount == 0) {
+      setIsViewAnalysis(false);
+    }
+
+    if (tempTab !== tab) {
+      dispatch(setTabs(tempTab));
+    }
+
+  }, [tab]);
+
+
 
   // useEffect(() => {
   //   if(proposalCount > 0){
@@ -749,7 +766,22 @@ function ShareHolderProposal() {
                         </Button>
                       </div>
                     )}
-                  {(tab == "proposal" || tab == "no-action") &&
+                  {(tab == "proposal" && proposalCount > 0) &&
+                    <div className="mt-2">
+                      <FormSwitch className="mb-6">
+                        <label className="text-md mr-3 font-semibold">Analytics</label>
+                        <FormSwitch.Input
+                          id="view-analysis-switch"
+                          type="checkbox"
+                          checked={isViewAnalysis}
+                          onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                        />
+                        <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+                      </FormSwitch>
+                    </div>
+
+                  }
+                  {(tab == "no-action" && noActionCount > 0) &&
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
                         <label className="text-md mr-3 font-semibold">Analytics</label>
@@ -1613,6 +1645,7 @@ function ShareHolderProposal() {
                           dispatch(setTabs("proposal"));
                           dispatch(resetPage());
                           clearNoActionFilter();
+                          setTempTab("proposal");
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1635,6 +1668,7 @@ function ShareHolderProposal() {
                         onClick={() => {
                           dispatch(setTabs("no-action"));
                           dispatch(resetPage());
+                          setTempTab("no-action");
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1659,6 +1693,8 @@ function ShareHolderProposal() {
                           dispatch(resetPage());
                           clearNoActionFilter();
                           setIsViewAnalysis(false);
+                          setTempTab("withdrawn");
+
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1714,12 +1750,12 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              Proponent Analytics
+                              Shareholder Proposals: Proponent Analytics
                             </button>
                           </div>
 
                           {/* Content */}
-                          <div className="px-4">
+                          <div >
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalCounts}
@@ -1727,6 +1763,7 @@ function ShareHolderProposal() {
                                 topCategories={topCategories}
                                 yearlySummary={yearlySummary}
                                 tab={tab}
+                                isAllCompanySelected={isAllCompanySelected}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
@@ -1761,7 +1798,7 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-right bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                                   % Support*
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -1802,7 +1839,7 @@ function ShareHolderProposal() {
                                       }
                                     </Table.Td>
                                     <Table.Td
-                                      className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-right`])}>
+                                      className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-center`])}>
                                       {noAction?.outcome_percentage}
                                     </Table.Td>
                                     <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
@@ -1947,7 +1984,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
-                              All No Action Letter Proposals
+                              All No Action Letters
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
@@ -1956,12 +1993,12 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              Proponent Analytics
+                              No Action Letters: Proponent Analytics
                             </button>
                           </div>
 
                           {/* Content */}
-                          <div className="px-4">
+                          <div>
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalCounts}
@@ -1969,6 +2006,8 @@ function ShareHolderProposal() {
                                 topCategories={topCategories}
                                 yearlySummary={yearlySummary}
                                 tab={tab}
+                                pieChartOutcome={pieChartOutcome}
+                                isAllCompanySelected={isAllCompanySelected}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
