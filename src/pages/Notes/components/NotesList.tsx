@@ -46,7 +46,6 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
     (state) => state.domainNotes
   );
 
-  
 
   useEffect(() => {
     if (selectedFolder?.id && activeTab == "other") {
@@ -61,14 +60,14 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
       const dynamicURL = createDynamicURL(
         `${baseURL}/user/domain_notes/`,
         {
-          institution_name: companyName,
-          company_name: institutionName,
+          institution_name: institutionName,
+          company_name: companyName,
         },
         undefined,
       );
       dispatch(fetchDomainNotes(dynamicURL));
     }
-  }, [dispatch, selectedFolder]);
+  }, [dispatch, selectedFolder, companyName, institutionName]);
 
   useEffect(() => {
     if (notes?.length > 0 && !selectedNote && selectedFolder !== null) {
@@ -124,7 +123,7 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
       </div>
 
       <div className="border-b border-muted "></div>
-      {results?.length > 0 && activeTab !== "other" && (
+      {results?.length > 0 && activeTab !== "other" && (institutionName || companyName) && (
         <div>
           {results.map((result, index) => (
             <div
@@ -186,7 +185,7 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
             ))}
           </div>
         )}
-      {notes?.length === 0 && !notesLoading && (
+      {notes?.length === 0 && !notesLoading && activeTab == "other" &&(
         <div className="flex items-center justify-center h-full flex-col">
           <Lucide
             icon="NotebookPen"

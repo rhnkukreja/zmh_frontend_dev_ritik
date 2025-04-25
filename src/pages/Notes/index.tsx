@@ -75,7 +75,7 @@ const Notes: React.FC = () => {
         <div className="flex flex-col ml-5 overflow-hidden w-full">
           <Header />
           <div className="flex flex-col lg:flex-row lg:flex-1 h-screen pb-2 bg-white dark:bg-darkmode-800 rounded-b-lg p-4">
-            {activeTab === "institution" ? (
+            {activeTab === "institution" || activeTab === "company" ? (
               <>
                 <div className="lg:w-2/5 w-full h-full">
                   <NotesList activeTab={activeTab} companyName={companyName} institutionName={institutionName} />
