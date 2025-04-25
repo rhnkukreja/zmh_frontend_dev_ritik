@@ -1,10 +1,9 @@
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
-import { FolderData } from "@/types/notes";
-import React, { useEffect, useState } from "react";
+import { FolderData, InstitutionOrCompanyData } from "@/types/notes";
+import React, { useEffect, useRef, useState } from "react";
 import { AddFoldersModal } from "../AddFolderModal";
 import {
-  clearSelectedFolder,
   clearSelectedNote,
   deleteFolder,
   fetchFolders,
@@ -16,16 +15,25 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 
-import { updateQueryParams } from "@/utils/helper";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { createDynamicURL, updateQueryParams } from "@/utils/helper";
+import { useNavigate } from "react-router-dom";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
-import { toast } from "react-toastify";
+import { NotesFieldProps } from "./NotesList";
+import { fetchDomainNotes, fetchDomainNotesDropDownValuesByCompany, fetchDomainNotesDropDownValuesByInstitution } from "@/stores/domainNotesSlice";
+import { baseURL } from "@/constant";
+import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/stores/store";
 
-const SubSidebar: React.FC = () => {
+
+
+const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setInstitutionName }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   // const [searchParams] = useSearchParams();
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
+
+
   const [folderToBeDeleted, setFolderToBeDeleted] = useState<FolderData | null>(
     null
   );
@@ -36,12 +44,6 @@ const SubSidebar: React.FC = () => {
   const { folders, loading, selectedFolder, selectedNote } = useAppSelector(
     (state) => state.notes
   );
-
-  const removeSearchParams = () => {
-    const currentUrl = new URL(window.location.href);
-    currentUrl.search = "";
-    navigate("/notes");
-  };
 
   const [addNotesModalVisible, setAddNotesModalVisible] =
     useState<boolean>(false);
@@ -57,7 +59,6 @@ const SubSidebar: React.FC = () => {
   const onClickNewFolder = () => {
     setAddNotesModalVisible(true);
     setFolderToBeEdited(null);
-    // dispatch(clearSelectedFolder());
   };
 
   function handleEditFolder(folder: FolderData) {
@@ -86,6 +87,12 @@ const SubSidebar: React.FC = () => {
   const onClickCancel = () => {
     setFolderToBeEdited(null);
     setAddNotesModalVisible(false);
+  };
+
+  const removeSearchParams = () => {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.search = "";
+    navigate("/notes");
   };
 
   const handleDelete = async () => {
@@ -119,25 +126,49 @@ const SubSidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-64  bg-white border-r  ml-2   h-full">
-      <div className="w-full flex justify-center mb-3">
-        <Button
-          onClick={onClickNewFolder}
-          variant="soft-secondary"
-          className="border-none bg-transparent py-3 w-full text-primary font-semibold hover:opacity-60"
-        >
-          <span className="mr-2 text-xl">+</span>
-          New Folder
-        </Button>
-      </div>
+    <div className="w-80 bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 ml-2 h-full shadow-sm rounded-md mt-2">
+      {activeTab === "other" &&
+        <div className="w-full flex justify-center mb-3">
+          <Button
+            onClick={onClickNewFolder}
+            variant="soft-secondary"
+            className="border-none bg-transparent py-3 w-full text-primary font-semibold hover:opacity-60"
+          >
+            <span className="mr-2 text-xl">+</span>
+            New Folder
+          </Button>
+        </div>
+      }
 
-      <FolderList
-        folders={folders}
-        handleEditFolder={handleEditFolder}
-        onClickDeleteIcon={onClickDeleteIcon}
-        selectedFolder={selectedFolder}
-        onClickFolder={onClickFolder}
-      />
+      {activeTab === "company" &&
+        <div className="w-full flex justify-center mb-3 mt-5 font-bold">
+          Companies
+        </div>
+      }
+
+      {activeTab === "institution" &&
+        <div className="w-full flex justify-center mb-3 mt-5 font-bold ">
+          Institutions
+        </div>
+      }
+
+      {activeTab === "other" &&
+        <FolderList
+          folders={folders}
+          handleEditFolder={handleEditFolder}
+          onClickDeleteIcon={onClickDeleteIcon}
+          selectedFolder={selectedFolder}
+          onClickFolder={onClickFolder}
+        />
+      }
+
+      {activeTab !== "other" &&
+        <InstitutionOrCompanyList
+          isCompany={activeTab == "company" ? true : false}
+          setCompanyName={setCompanyName}
+          setInstitutionName={setInstitutionName}
+        />
+      }
 
       {folders?.length === 0 && !loading && (
         <div className="flex justify-center items-center h-screen">
@@ -172,9 +203,8 @@ const SubSidebar: React.FC = () => {
           isVisible={isModalVisible}
           onClose={() => setModalVisible(false)}
           onConfirm={handleDelete}
-          description={`Are you sure you want to delete <strong>"${
-            folderToBeDeleted?.folder || ""
-          }"</strong> ?`}
+          description={`Are you sure you want to delete <strong>"${folderToBeDeleted?.folder || ""
+            }"</strong> ?`}
           loading={loading}
         />
       )}
@@ -261,3 +291,136 @@ const FolderList = ({
     </>
   );
 };
+
+
+
+
+const InstitutionOrCompanyList = ({
+  isCompany,
+  setCompanyName,
+  setInstitutionName,
+}: {
+  isCompany: boolean;
+  setCompanyName: React.Dispatch<React.SetStateAction<string>>;
+  setInstitutionName: React.Dispatch<React.SetStateAction<string>>;
+}) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedName, setSelectedName] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
+
+  useEffect(() => {
+    setSelectedName("");
+  }, [isCompany])
+
+
+  const dropdownData = useSelector((state: RootState) =>
+    isCompany ? state.domainNotes.companyDropDown : state.domainNotes.institutionDropDown
+  );
+
+  const isLoading = useSelector((state: RootState) =>
+    isCompany ? state.domainNotes.loadingCompanyDropdown : state.domainNotes.loadingInstitutionDropdown
+  );
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      if (!searchTerm.trim()) return;
+
+      setShowDropdown(true);
+
+      if (isCompany) {
+        dispatch(fetchDomainNotesDropDownValuesByCompany(searchTerm));
+      } else {
+        dispatch(fetchDomainNotesDropDownValuesByInstitution(searchTerm));
+      }
+    }, 500);
+
+    return () => clearTimeout(debounce);
+  }, [searchTerm, dispatch, isCompany]);
+
+  const handleSelect = (name: string) => {
+    setSelectedName(name);
+    setSearchTerm("");
+    setShowDropdown(false); // Close dropdown
+
+    if (isCompany) {
+      setCompanyName(name);
+    } else {
+      setInstitutionName(name);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const listItems = dropdownData?.[isCompany ? "company" : "institution"] || [];
+
+  return (
+    <div className="w-full px-4 py-6 bg-gray-50 rounded-lg shadow-inner h-screen">
+      <div className="sticky top-0 bg-gray-50 pb-4 z-10">
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder={`Search ${isCompany ? "companies" : "institutions"}...`}
+          className="w-60 px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2"
+          style={{
+            boxShadow: showDropdown ? "0 0 0 2px #a0143c" : undefined,
+            borderColor: showDropdown ? "#a0143c" : undefined,
+          }}
+          onFocus={() => {
+            if (searchTerm.trim()) setShowDropdown(true);
+          }}
+        />
+
+        {showDropdown && (
+          <ul className="absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-60 mt-1 max-h-60 overflow-y-auto transition-all duration-200">
+            {isLoading ? (
+              <li className="px-4 py-2 text-sm text-gray-500">Loading...</li>
+            ) : listItems.length > 0 ? (
+              listItems.map((name: string, idx: number) => (
+                <li
+                  key={idx}
+                  onClick={() => handleSelect(name)}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                >
+                  {name}
+                </li>
+              ))
+            ) : (
+              <li className="px-4 py-2 text-sm text-gray-500">No results found</li>
+            )}
+          </ul>
+        )}
+      </div>
+
+      {selectedName && (
+        <div className="mt-4 text-sm text-gray-600">
+          <span className="text-gray-500">
+            Selected {isCompany ? "Company" : "Institution"}:
+          </span>{" "}
+          <span className="font-medium text-gray-800">{selectedName}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+

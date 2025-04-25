@@ -22,3 +22,28 @@ export interface Note {
   date_created: string;
   date_updated: string;
 }
+
+export interface InstitutionOrCompanyData {
+  id: number;
+  attendees: string;
+  notes: string;
+  date: string;
+  author: string;
+  category: string;
+  investor_name: string;
+  company: number;
+  institution: number;
+  company_name: string;
+  institution_name: string;
+  created_by_email: string;
+  created_by: number;
+  updated_by: number | null;
+  date_created: string;
+  date_updated: string;
+  update_delete_check: boolean;
+  formatted_date: string;
+  starred: boolean;
+  notes_count?: number;
+};
+
+

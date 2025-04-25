@@ -28,6 +28,8 @@ interface DomainNotesState {
     year: string[];
   };
   filters: DomainNotesFilters;
+  companyDropDown: any,
+  institutionDropDown: any,
 }
 
 const initialState: DomainNotesState = {
@@ -46,7 +48,9 @@ const initialState: DomainNotesState = {
     category: [],
     year: [],
   },
-  count: 0
+  count: 0,
+  companyDropDown: {},
+  institutionDropDown: {},
 };
 
 export const fetchDomainNotes = createAsyncThunk<
@@ -176,51 +180,12 @@ const domainNotesSlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch engagement questions";
       })
-    // .addCase(getSingleEngagementQuestions.pending, (state) => {
-    //   state.loading = true;
-    //   state.error = null;
-    // })
-    // .addCase(
-    //   getSingleEngagementQuestions.fulfilled,
-    //   (
-    //     state,
-    //     action: PayloadAction<{
-    //       results: any;
-    //     }>
-    //   ) => {
-    //     state.loading = false;
-    //     state.getSingleQuestion = action.payload.results;
-    //   }
-    // )
-    // .addCase(getSingleEngagementQuestions.rejected, (state, action) => {
-    //   state.loading = false;
-    //   state.error =
-    //     action.error.message || "Failed to fetch engagement questions";
-    // })
-    // .addCase(addEditEngagementQuestion.pending, (state) => {
-    //   state.loading = true;
-    //   state.error = null;
-    // })
-    // .addCase(addEditEngagementQuestion.fulfilled, (state, action) => {
-    //   state.loading = false;
-    //   if (action.payload.isEdit) {
-    //     const index = state.questions.findIndex(
-    //       (question) => question.id === action.payload.results.id
-    //     );
-    //     if (index !== -1) {
-    //       state.questions[index] = action.payload.results;
-    //     }
-    //   } else {
-    //     if (state.totalQuestions < 10) {
-    //       state.questions = [...state.questions, action.payload.results];
-    //     }
-    //   }
-    // })
-    // .addCase(addEditEngagementQuestion.rejected, (state, action) => {
-    //   state.loading = false;
-    //   state.error =
-    //     action.error.message || "Failed to create engagement question";
-    // });
+      .addCase(fetchDomainNotesDropDownValuesByCompany.fulfilled, (state, action) => {
+        state.companyDropDown = action.payload.results;
+      })
+      .addCase(fetchDomainNotesDropDownValuesByInstitution.fulfilled, (state, action) => {
+        state.institutionDropDown = action.payload.results;
+      });
   },
 });
 
