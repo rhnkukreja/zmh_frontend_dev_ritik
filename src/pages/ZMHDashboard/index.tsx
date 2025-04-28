@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import _ from "lodash";
+import _, { head } from "lodash";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
@@ -30,7 +30,7 @@ function Main() {
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -42,6 +42,14 @@ function Main() {
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
   }, [isCompanySelected]);
+
+
+  if (window.clarity && user?.user_id) {
+    window.clarity("identify", user?.user_id.toString(), {
+      email: user.email,
+      name: user.first_name,
+    });
+  }
 
 
   // useEffect(() => {

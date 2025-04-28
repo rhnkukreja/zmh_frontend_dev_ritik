@@ -65,7 +65,7 @@ class DomainNotesService {
   ): Promise<{
     results: any[];
   }> {
-    const response = await axiosInstance.get(`/user/get_domain_notes_dropdown_values/?institution_name=${companyName}`);
+    const response = await axiosInstance.get(`/user/get_domain_notes_dropdown_values/?company_name=${companyName}`);
     const results = response.data;
     return {
       results,

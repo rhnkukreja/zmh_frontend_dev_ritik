@@ -42,7 +42,7 @@ const DetailShareHolder = () => {
   const backToPreviousPage = () => {
     dispatch(setPage(page));
     dispatch(setTabs(selectedTab));
-    navigate(`/share-holder-proposal`);
+    navigate('/share-holder-proposal', { state: { isBackToShareholderPage: true } });
   }
 
 

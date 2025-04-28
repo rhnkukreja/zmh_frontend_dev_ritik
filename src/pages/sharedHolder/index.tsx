@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
@@ -43,7 +43,7 @@ import {
 } from "@/types/shareHolder";
 import clsx from "clsx";
 import { commonService } from "@/services/common";
-import { setSavedSearch } from "@/stores/authenticationSlice";
+import { setIsCompanySelected, setSavedSearch } from "@/stores/authenticationSlice";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import AddNewShareholder from "./components/AddNewShareholder";
 import AddNewWithdrawn from "./components/AddNewWithdrawn";
@@ -57,10 +57,11 @@ import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
-  const { user, companyGlobalSearchName } = useAppSelector(
+  const { user, companyGlobalSearchName, isCompanySelected } = useAppSelector(
     (state) => state.authentiction
   );
-
+  const location = useLocation();
+  const { isBackToShareholderPage } = location.state || {};
   const {
     loading,
     shareHolderProposal,
@@ -276,7 +277,6 @@ function ShareHolderProposal() {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
       return;
     }
-
     const dynamicURL = createDynamicURL(tabUrls[tab], filters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
 
@@ -299,10 +299,21 @@ function ShareHolderProposal() {
           : { ...restFilters, global_search: filters.global_search }
       )
     );
-    const { proponent_name, ...chipFilters } = restFilters;
-    setSelectedChipFilters(generateFilterChips(chipFilters));
+    var { proponent_name, ...chipFilters } = restFilters;
+
+    setSelectedChipFilters(generateFilterChips(isAllCompanySelected === false
+      ? chipFilters
+      : { ...chipFilters, global_search: filters.global_search }));
 
   }, [page, tab, filters]);
+
+    useEffect(() => {
+      if (isCompanySelected) {
+        dispatch(selectUnSelectAllCompany(false));
+        dispatch(setIsCompanySelected(false));
+      }
+     
+    }, [isCompanySelected]);
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
@@ -353,16 +364,18 @@ function ShareHolderProposal() {
         setWithdrawnCount(withdrawnResponse?.result?.count ?? 0);
       }
 
-      if (proposalResponse?.result?.count > 0) {
-        dispatch(setTabs("proposal"));
+      if (!isBackToShareholderPage) {
+        if (proposalResponse?.result?.count > 0) {
+          dispatch(setTabs("proposal"));
+        } else if (noActionResponse?.result?.count > 0) {
+          dispatch(setTabs("no-action"));
+        } else if (withdrawnResponse?.result?.count > 0) {
+          dispatch(setTabs("withdrawn"));
+        }
       }
-      else if (noActionResponse?.result?.count > 0) {
-        dispatch(setTabs("no-action"));
 
-      }
-      else if (withdrawnResponse?.result?.count > 0) {
-        dispatch(setTabs("withdrawn"));
-      }
+      
+
     } catch (error) {
       return error;
     }
@@ -390,27 +403,12 @@ function ShareHolderProposal() {
       setIsViewAnalysis(false);
     }
 
-    if (tempTab !== tab) {
-      dispatch(setTabs(tempTab));
-    }
+    // if (tempTab !== tab) {
+    //   dispatch(setTabs(tempTab));
+    // }
 
   }, [tab]);
 
-
-
-  // useEffect(() => {
-  //   if(proposalCount > 0){
-  //     dispatch(setTabs("proposal"));
-  //   }
-  //   else if(noActionCount > 0){
-  //     dispatch(setTabs("no-action"));
-
-  //   }
-  //   else if(withdrawnCount > 0){
-  //     dispatch(setTabs("withdrawn"));
-
-  //   }
-  // }, []);
 
   useEffect(() => {
     getAllShareholderDropdowns();
