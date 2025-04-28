@@ -311,9 +311,12 @@ function ShareHolderProposal() {
       if (isCompanySelected) {
         dispatch(selectUnSelectAllCompany(false));
         dispatch(setIsCompanySelected(false));
+           setIsViewAnalysis(false);
       }
      
+     
     }, [isCompanySelected]);
+  
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
@@ -668,7 +671,7 @@ function ShareHolderProposal() {
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
             {isAllCompanySelected === true ? (
               <div className="font-semibold text-xl">
-                All Shareholder Proposals
+                All Shareholder Proposals 
               </div>
             ) : (
               <div className="font-semibold text-xl">Shareholder Proposals</div>
@@ -767,7 +770,7 @@ function ShareHolderProposal() {
                   {(tab == "proposal" && proposalCount > 0) &&
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
-                        <label className="text-md mr-3 font-semibold">Analytics</label>
+                        <label className="text-md mr-3 font-semibold">Analytics </label>
                         <FormSwitch.Input
                           id="view-analysis-switch"
                           type="checkbox"
@@ -1752,6 +1755,7 @@ function ShareHolderProposal() {
                             </button>
                           </div>
 
+ 
                           {/* Content */}
                           <div >
                             {activeTab === "shareholders" ? (
@@ -1762,6 +1766,7 @@ function ShareHolderProposal() {
                                 yearlySummary={yearlySummary}
                                 tab={tab}
                                 isAllCompanySelected={isAllCompanySelected}
+                                loading ={loading}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
@@ -1769,6 +1774,8 @@ function ShareHolderProposal() {
                                 handleSearch={handleSearch}
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
+                                loading={loading}
+                                pieChartOutcome={pieChartOutcome}
                               />
                             )}
                           </div>
@@ -2006,6 +2013,7 @@ function ShareHolderProposal() {
                                 tab={tab}
                                 pieChartOutcome={pieChartOutcome}
                                 isAllCompanySelected={isAllCompanySelected}
+                                loading={loading}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
@@ -2013,6 +2021,8 @@ function ShareHolderProposal() {
                                 handleSearch={handleSearch}
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
+                                loading={loading}
+                                pieChartOutcome={pieChartOutcome}
                               />
                             )}
                           </div>
