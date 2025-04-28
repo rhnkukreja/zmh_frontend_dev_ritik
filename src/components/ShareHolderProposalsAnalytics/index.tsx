@@ -16,6 +16,7 @@ import {
   LabelList,
 } from "recharts";
 import LoadingIcon from "../Base/LoadingIcon";
+import OutcomePieChart from "../OutcomePieChart";
 
 interface ShareHolderProposalAnalyticsComponentProps {
   proposalCounts: { [key: string]: number };
@@ -303,8 +304,8 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                 <h3 className="text-lg font-semibold mb-4">
                   Outcome Distribution
                 </h3>
-
-                <ResponsiveContainer width="100%" height={250}>
+                <OutcomePieChart pieChartOutcome={pieChartOutcome} />
+                {/* <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={outcomeData}
@@ -349,7 +350,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                       ))}
                     </Pie>
                   </PieChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer> */}
               </div>
             )}
           </div>

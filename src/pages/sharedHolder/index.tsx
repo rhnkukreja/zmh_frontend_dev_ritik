@@ -311,9 +311,12 @@ function ShareHolderProposal() {
       if (isCompanySelected) {
         dispatch(selectUnSelectAllCompany(false));
         dispatch(setIsCompanySelected(false));
+           setIsViewAnalysis(false);
       }
      
+     
     }, [isCompanySelected]);
+  
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
@@ -767,7 +770,7 @@ function ShareHolderProposal() {
                   {(tab == "proposal" && proposalCount > 0) &&
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
-                        <label className="text-md mr-3 font-semibold">Analytics</label>
+                        <label className="text-md mr-3 font-semibold">Analytics </label>
                         <FormSwitch.Input
                           id="view-analysis-switch"
                           type="checkbox"
@@ -1772,6 +1775,7 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
+                                pieChartOutcome={pieChartOutcome}
                               />
                             )}
                           </div>
@@ -2018,6 +2022,7 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
+                                pieChartOutcome={pieChartOutcome}
                               />
                             )}
                           </div>
