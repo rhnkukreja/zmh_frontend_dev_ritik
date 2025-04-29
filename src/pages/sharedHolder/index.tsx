@@ -328,13 +328,13 @@ function ShareHolderProposal() {
 
   useEffect(() => {
     if (
-      (isAllCompanySelected === false &&
-      filters?.global_search.length === 0) ||
-      (filters?.proponent_name?.length > 0)
+      isAllCompanySelected === false &&
+      filters?.global_search.length === 0
     ) {
       return;
     }
     getAllShareholderAPI();
+
   }, [filters]);
 
   const getAllShareholderAPI = async () => {
@@ -378,16 +378,16 @@ function ShareHolderProposal() {
         setWithdrawnCount(withdrawnResponse?.result?.count ?? 0);
       }
 
-      if (!isBackToShareholderPage) {
-        if (proposalResponse?.result?.count > 0) {
-          dispatch(setTabs("proposal"));
+      // if (!isBackToShareholderPage) {
+      //   if (proposalResponse?.result?.count > 0 &&  filters?.proponent_name?.length >= 0) {
+      //     dispatch(setTabs("proposal"));
           
-        } else if (noActionResponse?.result?.count > 0) {
-          dispatch(setTabs("no-action"));
-        } else if (withdrawnResponse?.result?.count > 0) {
-          dispatch(setTabs("withdrawn"));
-        }
-      }
+      //   } else if (noActionResponse?.result?.count > 0) {
+      //     dispatch(setTabs("no-action"));
+      //   } else if (withdrawnResponse?.result?.count > 0) {
+      //     dispatch(setTabs("withdrawn"));
+      //   }
+      // }
     } catch (error) {
       return error;
     }
