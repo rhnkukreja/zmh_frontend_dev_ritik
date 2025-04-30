@@ -241,7 +241,7 @@ const DetailShareHolder = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {getSingleShareHolder?.link_to_filing &&
                     selectedTab === "proposal" && (
-                      <div>
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-2 " >
                         <h3 className="font-semibold min-w-[150px] mb-2">
                           Link to Proxy
                         </h3>
@@ -292,12 +292,12 @@ const DetailShareHolder = () => {
                       </div>
                     )}
 
-                  {selectedTab === "proposal" && (
-                    <div>
+                  {/* {selectedTab === "proposal" && (
+                    <div> */}
                       {/* <h3 className="font-semibold min-w-[150px] mb-2">Link to Proxy</h3>
                         <p>{getSingleShareHolder.no_action_link}</p> */}
-                    </div>
-                  )}
+                    {/* </div>
+                  )} */}
 
                   {getSingleShareHolder?.outcome_percentage &&
                     selectedTab === "proposal" && (
