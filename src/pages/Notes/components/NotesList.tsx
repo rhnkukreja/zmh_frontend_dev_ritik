@@ -7,8 +7,17 @@ import {
   fetchFolders,
   fetchNotes,
   setSelectedNote,
+  setSelectedGroup,
 } from "@/stores/notesSlice";
 import { Note } from "@/types/notes";
+import {
+  CompanyDashboard,
+  fetchCompanyDashboard,
+  setInstitution,
+  setPage,
+  setTempSearch,
+  
+} from "@/stores/dashboardSlice";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 // import DOMPurify from "dompurify";
 // import AddButton from "./AddButton";
@@ -19,33 +28,43 @@ import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
 import { fetchDomainNotes } from "@/stores/domainNotesSlice";
 import { createDynamicURL } from "@/utils/helper";
+import { RootState } from "@/stores/store";
 import { baseURL } from "@/constant";
 import AddButton from "./AddButton";
-
-
+import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
+import AddNoteModal from "../AddNotesModal";
 
 export interface NotesFieldProps {
   activeTab: "institution" | "company" | "other";
   companyName?: string;
   institutionName?: string;
-  setCompanyName?: React.Dispatch<React.SetStateAction<string>>
-  setInstitutionName?: React.Dispatch<React.SetStateAction<string>>
+  setCompanyName?: React.Dispatch<React.SetStateAction<string>>;
+  setInstitutionName?: React.Dispatch<React.SetStateAction<string>>;
 }
 
-
-const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institutionName }) => {
+const NotesList: React.FC<NotesFieldProps> = ({
+  activeTab,
+  companyName,
+  institutionName,
+}) => {
   const dispatch = useAppDispatch();
   const [noteToBeDeleted, setNoteToBeDeleted] = useState<Note | null>(null);
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
+  const [editNote, setEditNote] = useState<boolean>(false);
+   const [data, setData] = useState<CompanyDashboard>();
+  const [addNoteModalVisible, setAddNoteModalVisible] =
+    useState<boolean>(false);
 
-  const { notes, notesLoading, selectedNote, selectedFolder } = useAppSelector(
-    (state) => state.notes
+  const { notes, notesLoading, selectedNote, selectedFolder} =
+    useAppSelector((state) => state.notes);
+  const { companyGlobalSearchTicker } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+  const { dashboardDataList, tempSearch } = useAppSelector(
+    (state) => state.dashboard
   );
 
-  const { results } = useAppSelector(
-    (state) => state.domainNotes
-  );
-
+ 
 
   useEffect(() => {
     if (selectedFolder?.id && activeTab == "other") {
@@ -63,7 +82,7 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
           institution_name: institutionName,
           company_name: companyName,
         },
-        undefined,
+        undefined
       );
       dispatch(fetchDomainNotes(dynamicURL));
     }
@@ -88,6 +107,27 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
     setModalVisible(true);
   };
 
+  const fetchData = async () => {
+    if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
+      dispatch(
+        fetchCompanyDashboard(
+          createDynamicURL(
+            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+      dispatch(setTempSearch(companyGlobalSearchTicker));
+    } else if (companyGlobalSearchTicker !== tempSearch) {
+      dispatch(
+        fetchCompanyDashboard(
+          createDynamicURL(
+            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+          )
+        )
+      );
+      dispatch(setTempSearch(companyGlobalSearchTicker));
+    }
+  };
   const handleDelete = async () => {
     try {
       if (!noteToBeDeleted) return;
@@ -113,49 +153,23 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
     <div className="w-full border-r border-gray-200 h-screen overflow-y-auto no-scrollbar">
       <div className="flex justify-between items-center  px-4 py-4  ">
         <h2 className="text-lg font-semibold">
-          {activeTab === "institution"
-            ? "Companies"
-            : activeTab === "company"
-              ? "Institutions"
-              : "Notes"}
+          Notes
         </h2>
-        <AddButton />
+        <button
+          className="flex items-center gap-x-2 px-4 py-2 text-white bg-primary border-primary dark:border-primary rounded "
+          onClick={() => setAddNoteModalVisible(true)}
+        >
+          <Lucide icon="Plus" className="w-4 h-4" />
+          Add Notes
+        </button>
       </div>
 
       <div className="border-b border-muted "></div>
-      {results?.length > 0 && activeTab !== "other" && (institutionName || companyName) && (
-        <div>
-          {results.map((result, index) => (
-            <div
-              key={index}
-              className={clsx(
-                "relative py-4 border-b-[1px] bg-muted px-6 hover:bg-red-50 cursor-pointer",
-                selectedNote?.id === result?.id ? "bg-red-50" : ""
-              )}
-              onClick={() => {
-                dispatch(setSelectedNote(result)); // You may want a different action if handling differently
-              }}
-            >
-              <div className="relative flex justify-between items-center">
-                <h4 className="font-semibold mb-2">{result?.institution_name}</h4>
-                <MenuNoteList
-                  onClickDeleteIcon={() => {
-                    onClickDeleteIcon(result); // Handle appropriately
-                  }}
-                />
-              </div>
-              <section className="flex justify-between items-center mt-3">
-                <span className="text-xs text-muted-foreground">
-                  {result?.formatted_date}
-                </span>
-              </section>
-            </div>
-          ))}
-        </div>
-      )}
+     
       {notes?.length > 0 &&
         selectedFolder?.id &&
-        selectedFolder?.id === notes[0]?.folder && activeTab == "other" && (
+        selectedFolder?.id === notes[0]?.folder &&
+        activeTab == "other" && (
           <div>
             {(notes || []).map((note: Note, index: number) => (
               <div
@@ -185,7 +199,7 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
             ))}
           </div>
         )}
-      {notes?.length === 0 && !notesLoading && activeTab == "other" &&(
+      {notes?.length === 0 && !notesLoading && activeTab == "other" && (
         <div className="flex items-center justify-center h-full flex-col">
           <Lucide
             icon="NotebookPen"
@@ -210,9 +224,18 @@ const NotesList: React.FC<NotesFieldProps> = ({ activeTab, companyName, institut
           isVisible={isModalVisible}
           onClose={() => setModalVisible(false)}
           onConfirm={handleDelete}
-          description={`Are you sure you want to delete <strong>"${noteToBeDeleted?.name || ""
-            }"</strong> ?`}
+          description={`Are you sure you want to delete <strong>"${
+            noteToBeDeleted?.name || ""
+          }"</strong> ?`}
           loading={notesLoading}
+        />
+      )}
+      {addNoteModalVisible && (
+        <AddNoteModal
+          mode={editNote ? "edit" : "add"}
+          addNoteModalVisible={addNoteModalVisible}
+          setAddNoteModalVisible={setAddNoteModalVisible}
+          title="Create New Note"
         />
       )}
     </div>

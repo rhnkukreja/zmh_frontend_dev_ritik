@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { notesService } from "@/services/notes";
-import { FolderData, NewFolder, Note } from "@/types/notes";
+import { FolderData, NewFolder, Note ,Group} from "@/types/notes";
 import { getPageNumbers } from "@/utils/helper";
 
 const name = "notes";
@@ -14,6 +14,7 @@ interface NotesSliceState {
   totalNotesCount: number;
   totalNotesPages: number;
   selectedNote: Note | null;
+  selectedGroup:Group | null;
   loading: boolean;
   notesLoading: boolean;
   error: string | null;
@@ -28,6 +29,7 @@ const initialState: NotesSliceState = {
   totalNotesCount: 0,
   totalNotesPages: 0,
   selectedNote: null,
+  selectedGroup: null,
   loading: false,
   error: null,
   notesLoading: false,
@@ -133,6 +135,9 @@ const notesSlice = createSlice({
 
     setSelectedNote(state, action: PayloadAction<Note | null>) {
       state.selectedNote = action.payload;
+    },
+    setSelectedGroup(state, action: PayloadAction<Group | null>) {
+      state.selectedGroup = action.payload;
     },
     clearSelectedNote(state) {
       state.selectedNote = null;
@@ -336,4 +341,5 @@ export const {
   setSelectedNote,
   clearSelectedNote,
   removeAllNotes,
+  setSelectedGroup,
 } = notesSlice.actions;

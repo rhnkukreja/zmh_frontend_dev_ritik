@@ -9,6 +9,7 @@ import {
   fetchFolders,
   removeAllNotes,
   setSelectedFolder,
+  setSelectedGroup,
 } from "@/stores/notesSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -19,20 +20,27 @@ import { createDynamicURL, updateQueryParams } from "@/utils/helper";
 import { useNavigate } from "react-router-dom";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
 import { NotesFieldProps } from "./NotesList";
-import { fetchDomainNotes, fetchDomainNotesDropDownValuesByCompany, fetchDomainNotesDropDownValuesByInstitution } from "@/stores/domainNotesSlice";
+import {
+  fetchDomainNotes,
+  fetchDomainNotesDropDownValuesByCompany,
+  fetchDomainNotesDropDownValuesByInstitution,
+} from "@/stores/domainNotesSlice";
 import { baseURL } from "@/constant";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/stores/store";
 
-
-
-const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setInstitutionName }) => {
+const SubSidebar: React.FC<NotesFieldProps> = ({
+  activeTab,
+  setCompanyName,
+  setInstitutionName,
+  companyName,
+  institutionName,
+}) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   // const [searchParams] = useSearchParams();
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
-
 
   const [folderToBeDeleted, setFolderToBeDeleted] = useState<FolderData | null>(
     null
@@ -41,9 +49,8 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setI
     null
   );
 
-  const { folders, loading, selectedFolder, selectedNote } = useAppSelector(
-    (state) => state.notes
-  );
+  const { folders, loading, selectedFolder, selectedNote, selectedGroup } =
+    useAppSelector((state) => state.notes);
 
   const [addNotesModalVisible, setAddNotesModalVisible] =
     useState<boolean>(false);
@@ -127,7 +134,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setI
 
   return (
     <div className="w-80 bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 ml-2 h-full shadow-sm rounded-md mt-2">
-      {activeTab === "other" &&
+      {activeTab === "other" && (
         <div className="w-full flex justify-center mb-3">
           <Button
             onClick={onClickNewFolder}
@@ -138,21 +145,9 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setI
             New Folder
           </Button>
         </div>
-      }
+      )}
 
-      {activeTab === "company" &&
-        <div className="w-full flex justify-center mb-3 mt-5 font-bold">
-          Companies
-        </div>
-      }
-
-      {activeTab === "institution" &&
-        <div className="w-full flex justify-center mb-3 mt-5 font-bold ">
-          Institutions
-        </div>
-      }
-
-      {activeTab === "other" &&
+      {activeTab === "other" && (
         <FolderList
           folders={folders}
           handleEditFolder={handleEditFolder}
@@ -160,15 +155,19 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setI
           selectedFolder={selectedFolder}
           onClickFolder={onClickFolder}
         />
-      }
+      )}
 
-      {activeTab !== "other" &&
+      {activeTab !== "other" && (
         <InstitutionOrCompanyList
           isCompany={activeTab == "company" ? true : false}
           setCompanyName={setCompanyName}
           setInstitutionName={setInstitutionName}
+          selectedGroup={selectedGroup}
+          activeTab={activeTab}
+          companyName={companyName}
+          institutionName={institutionName}
         />
-      }
+      )}
 
       {folders?.length === 0 && !loading && (
         <div className="flex justify-center items-center h-screen">
@@ -203,8 +202,9 @@ const SubSidebar: React.FC<NotesFieldProps> = ({ activeTab, setCompanyName, setI
           isVisible={isModalVisible}
           onClose={() => setModalVisible(false)}
           onConfirm={handleDelete}
-          description={`Are you sure you want to delete <strong>"${folderToBeDeleted?.folder || ""
-            }"</strong> ?`}
+          description={`Are you sure you want to delete <strong>"${
+            folderToBeDeleted?.folder || ""
+          }"</strong> ?`}
           loading={loading}
         />
       )}
@@ -292,37 +292,56 @@ const FolderList = ({
   );
 };
 
-
-
-
 const InstitutionOrCompanyList = ({
   isCompany,
   setCompanyName,
   setInstitutionName,
+  selectedGroup,
+  activeTab,
+  companyName,
+  institutionName,
 }: {
   isCompany: boolean;
   setCompanyName: React.Dispatch<React.SetStateAction<string>>;
   setInstitutionName: React.Dispatch<React.SetStateAction<string>>;
+  selectedGroup: object | null;
+  activeTab: string;
+  companyName: string;
+  institutionName: string;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedName, setSelectedName] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
-
   useEffect(() => {
     setSelectedName("");
-  }, [isCompany])
+  }, [isCompany]);
 
+  const { results } = useAppSelector((state) => state.domainNotes);
 
   const dropdownData = useSelector((state: RootState) =>
-    isCompany ? state.domainNotes.companyDropDown : state.domainNotes.institutionDropDown
+    isCompany
+      ? state.domainNotes.companyDropDown
+      : state.domainNotes.institutionDropDown
   );
 
   const isLoading = useSelector((state: RootState) =>
-    isCompany ? state.domainNotes.loadingCompanyDropdown : state.domainNotes.loadingInstitutionDropdown
+    isCompany
+      ? state.domainNotes.loadingCompanyDropdown
+      : state.domainNotes.loadingInstitutionDropdown
   );
-
+  useEffect(() => {
+    const dynamicURL = createDynamicURL(
+      `${baseURL}/user/domain_notes/`,
+      {
+        institution_name: institutionName,
+        company_name: companyName,
+      },
+      undefined
+    );
+    dispatch(fetchDomainNotes(dynamicURL));
+  }, [dispatch, companyName, institutionName]);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -346,7 +365,7 @@ const InstitutionOrCompanyList = ({
     setSelectedName(name);
     setSearchTerm("");
     setShowDropdown(false); // Close dropdown
-
+    dispatch(setSelectedGroup(null));
     if (isCompany) {
       setCompanyName(name);
     } else {
@@ -369,9 +388,26 @@ const InstitutionOrCompanyList = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
+  const key = activeTab === "company" ? "institution_name" : "company_name";
   const listItems = dropdownData?.[isCompany ? "company" : "institution"] || [];
+  const groupByValue = (array: any) => {
+    const grouped = array.reduce((acc, note) => {
+      const companyName = note[key];
+      if (!acc[companyName]) {
+        acc[companyName] = [];
+      }
+      acc[companyName].push(note);
+      return acc;
+    }, {});
 
+    return Object.entries(grouped).map(([key, value]) => ({
+      id: Number(key),
+      name: key,
+      data: value as any[],
+    }));
+  };
+
+  const groupedData = groupByValue(results);
   return (
     <div className="w-full px-4 py-6 bg-gray-50 rounded-lg shadow-inner h-screen">
       <div className="sticky top-0 bg-gray-50 pb-4 z-10">
@@ -390,7 +426,6 @@ const InstitutionOrCompanyList = ({
             if (searchTerm.trim()) setShowDropdown(true);
           }}
         />
-
         {showDropdown && (
           <ul className="absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-60 mt-1 max-h-60 overflow-y-auto transition-all duration-200">
             {isLoading ? (
@@ -406,21 +441,72 @@ const InstitutionOrCompanyList = ({
                 </li>
               ))
             ) : (
-              <li className="px-4 py-2 text-sm text-gray-500">No results found</li>
+              <li className="px-4 py-2 text-sm text-gray-500">
+                No results found
+              </li>
             )}
           </ul>
         )}
       </div>
 
       {selectedName && (
-        <div className="mt-4 text-sm text-gray-600">
-          <span className="text-gray-500">
+        <div className="mb-4 text-sm text-gray-600 text-center">
+          {/* <span className="text-gray-500">
             Selected {isCompany ? "Company" : "Institution"}:
-          </span>{" "}
+          </span>{" "} */}
           <span className="font-medium text-gray-800">{selectedName}</span>
         </div>
       )}
+      {results?.length > 0 &&
+        activeTab !== "other" &&
+        (institutionName || companyName) && (
+          <div>
+            {groupedData?.map((result, index) => (
+              <div
+                key={index}
+                className={clsx(
+                  "relative py-4 border-b-[1px] bg-muted px-6 hover:bg-red-50 cursor-pointer",
+                  selectedGroup?.name === result?.name ? "bg-red-50" : ""
+                )}
+                onClick={() => {
+                  dispatch(setSelectedGroup(result));
+                }}
+              >
+                <div className="relative flex justify-between items-czenter">
+                  <h4 className="font-semibold mb-2">{result?.name}</h4>
+                </div>
+              </div>
+            ))}
+            {/* {results?.map((result, index) => (
+                    <div
+                      key={index}
+                      className={clsx(
+                        "relative py-4 border-b-[1px] bg-muted px-6 hover:bg-red-50 cursor-pointer",
+                        selectedNote?.id === result?.id ? "bg-red-50" : ""
+                      )}
+                      onClick={() => {
+                        dispatch(setSelectedNote(result)); // You may want a different action if handling differently
+                      }}
+                    >
+                      <div className="relative flex justify-between items-center">
+                        <h4 className="font-semibold mb-2">
+                          {result?.[key]}
+                        </h4>
+                        <MenuNoteList
+                          onClickDeleteIcon={() => {
+                            onClickDeleteIcon(result); // Handle appropriately
+                          }}
+                        />
+                      </div>
+                      <section className="flex justify-between items-center mt-3">
+                        <span className="text-xs text-muted-foreground">
+                          {result?.formatted_date}
+                        </span>
+                      </section>
+                    </div>
+                  ))} */}
+          </div>
+        )}
     </div>
   );
 };
-

@@ -22,6 +22,11 @@ export interface Note {
   date_created: string;
   date_updated: string;
 }
+export interface Group {
+  name: string;
+  data: Array<any>
+  
+}
 
 export interface InstitutionOrCompanyData {
   id: number;

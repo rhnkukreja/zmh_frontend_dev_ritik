@@ -502,6 +502,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                 data={data}
                                 selectedNote={initialStateNote}
                                 fetchData={fetchData}
+                                noteModule={false}
                             />
                         )}
 

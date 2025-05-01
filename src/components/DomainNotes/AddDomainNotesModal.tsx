@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Dialog } from "@/components/Base/Headless";
 import NoteForm from "./AddEditNoteForm";
 import { useAppDispatch } from "@/stores/hooks";
@@ -15,8 +15,9 @@ interface AddNoteModalProps {
   title: string;
   selectedNote?: DomainNote;
   fieldsToEdit?: Array<"name" | "text" | "folder">;
-  data: CompanyDashboard;
-  fetchData: () => Promise<void>
+  data?: CompanyDashboard;
+  fetchData?: () => Promise<void>;
+  noteModule: boolean;
 }
 
 const AddDomainNoteModal = ({
@@ -27,21 +28,34 @@ const AddDomainNoteModal = ({
   mode,
   fieldsToEdit,
   data,
-  fetchData
+  fetchData,
+  noteModule,
 }: AddNoteModalProps) => {
   const dispatch = useAppDispatch();
-
+  const [selectedData, setSelectedData] = useState({
+    company: 0,
+    institution: 0,
+    investor_name: "",
+  });
   const handleNoteSubmit = async (data: DomainNote) => {
     try {
       if (selectedNote?.id && mode == "edit") {
         await dispatch(addDomainNote({ id: selectedNote.id, data }));
       } else {
-        await dispatch(addDomainNote({ data })).unwrap();
+        if (noteModule) {
+          const noteData = {
+            ...data,
+            ...selectedData,
+          };
+          await dispatch(addDomainNote({ data: noteData })).unwrap();
+        } else {
+          await dispatch(addDomainNote({ data })).unwrap();
+        }
       }
     } catch (error) {
       toast.error("An error occurred while saving the note");
     } finally {
-      fetchData()
+      fetchData();
       setAddNoteModalVisible(false);
     }
   };
@@ -72,6 +86,9 @@ const AddDomainNoteModal = ({
             setAddNoteModalVisible={setAddNoteModalVisible}
             fieldsToEdit={fieldsToEdit}
             data={data}
+            noteModule={noteModule}
+            setSelectedData={setSelectedData}
+            selectedData={selectedData}
           />
         </Dialog.Description>
       </Dialog.Panel>
