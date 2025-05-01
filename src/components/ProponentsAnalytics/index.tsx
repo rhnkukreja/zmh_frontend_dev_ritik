@@ -1,6 +1,9 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, PieChart } from "lucide-react";
 import React, { Dispatch, SetStateAction, useState } from "react";
 import LoadingIcon from "../Base/LoadingIcon";
+
+import { Pie, ResponsiveContainer } from "recharts";
+import OutcomePieChart from "../OutcomePieChart";
 
 interface ProponentsAnalyticsComponentProps {
   topProponents: any[];
@@ -8,11 +11,22 @@ interface ProponentsAnalyticsComponentProps {
   setSearchTerms: Dispatch<SetStateAction<string[]>>;
   tab: any;
   loading: boolean;
+
+  pieChartOutcome: any;
+  filters: { proponent_name: string[] };
 }
 
 const ProponentsAnalyticsComponent: React.FC<
   ProponentsAnalyticsComponentProps
-> = ({ topProponents, handleSearch, setSearchTerms, tab, loading }) => {
+> = ({
+  topProponents,
+  handleSearch,
+  setSearchTerms,
+  tab,
+  loading,
+  pieChartOutcome,
+  filters,
+}) => {
   const isDataAvailable = (data: any) => Array.isArray(data) && data.length > 0;
 
   if (!isDataAvailable(topProponents)) {
@@ -28,6 +42,7 @@ const ProponentsAnalyticsComponent: React.FC<
     setSearchTerms([institution_name]);
     handleSearch([institution_name]);
   };
+
   const handleInstitutionClickAll = () => {
     setSearchTerms([]);
     handleSearch([]);
@@ -37,7 +52,7 @@ const ProponentsAnalyticsComponent: React.FC<
     handleSearch([]);
   };
   const format = (value: number) => {
-    if (value === 0) return;
+    if (value === 0 && !value) return;
     return `(${value.toFixed(2)}%)`;
   };
 
@@ -54,86 +69,205 @@ const ProponentsAnalyticsComponent: React.FC<
           />
         </div>
       ) : (
-        <table className="min-w-full border border-gray-300">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-2 border">#</th> {/* New column */}
-              <th className="px-4 py-2 border text-left">Proponents</th>
-              <th className="px-4 py-2 border"># of Proposals</th>
-              <th className="px-4 py-2 border">Environmental</th>
-              <th className="px-4 py-2 border w-36">Social</th>
-              <th className="px-4 py-2 border w-36">Governance</th>
-              <th className="px-4 py-2 border w-36">Executive Compensation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topProponents.map((proponent, idx) => {
-              const envCount =
-                proponent.category?.find(
-                  (c: any) => c.category === "Environmental"
-                )?.count || 0;
-              const socCount =
-                proponent.category?.find((c: any) => c.category === "Social")
-                  ?.count || 0;
-              const govCount =
-                proponent.category?.find(
-                  (c: any) => c.category === "Corporate Governance"
-                )?.count || 0;
-              const execComp =
-                proponent.category?.find(
-                  (c: any) => c.category === "Executive Compensation"
-                )?.count || 0;
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mb-12">
+            <div
+              className={`${
+                tab == "no-action" && filters?.proponent_name?.length == 0
+                  ? "col-span-7"
+                  : "col-span-10"
+              }  rounded-lg flex flex-col items-center w-full`}
+            >
+              <table className="min-w-full border border-gray-300">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 border">#</th> {/* New column */}
+                    <th className="px-4 py-2 border text-left">Proponents</th>
+                    <th className="px-4 py-2 border"># of Proposals</th>
+                    <th className="px-4 py-2 border">Environmental</th>
+                    <th className="px-4 py-2 border w-36">Social</th>
+                    <th className="px-4 py-2 border w-36">Governance</th>
+                    <th className="px-4 py-2 border w-36">
+                      Executive Compensation
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topProponents.map((proponent, idx) => {
+                    const envCount =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Environmental"
+                      )?.count || 0;
+                    const socCount =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Social"
+                      )?.count || 0;
+                    const govCount =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Corporate Governance"
+                      )?.count || 0;
+                    const execComp =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Executive Compensation"
+                      )?.count || 0;
 
-              const envAvgSupport =
-                proponent.category?.find(
-                  (c: any) => c.category === "Environmental"
-                )?.avg_support || 0;
-              const socAvgSupport =
-                proponent.category?.find((c: any) => c.category === "Social")
-                  ?.avg_support || 0;
-              const govAvgSupport =
-                proponent.category?.find(
-                  (c: any) => c.category === "Corporate Governance"
-                )?.avg_support || 0;
-              const execAvgSupport =
-                proponent.category?.find(
-                  (c: any) => c.category === "Executive Compensation"
-                )?.avg_support || 0;
+                    const envAvgSupport =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Environmental"
+                      )?.avg_support || 0;
+                    const socAvgSupport =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Social"
+                      )?.avg_support || 0;
+                    const govAvgSupport =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Corporate Governance"
+                      )?.avg_support || 0;
+                    const execAvgSupport =
+                      proponent.category?.find(
+                        (c: any) => c.category === "Executive Compensation"
+                      )?.avg_support || 0;
 
-              return (
-                <tr key={idx} className="text-center">
-                  <td className="border px-4 py-2">{idx + 1}</td>{" "}
-                  {/* Numbered index */}
-                  <td className="border px-4 py-2 text-left">
-                    <button
-                      onClick={() =>
-                        handleInstitutionClick(proponent.institution__name)
-                      }
-                      className="text-blue-600 hover:underline focus:outline-none text-left"
-                    >
-                      {proponent.institution__name}
-                    </button>
-                  </td>
-                  <td className="border px-4 py-2">
-                    {proponent.total_count} {format(proponent.avg_support)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {envCount} {format(envAvgSupport)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {socCount} {format(socAvgSupport)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {govCount} {format(govAvgSupport)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {execComp} {format(execAvgSupport)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    return (
+                      <tr key={idx} className="text-center">
+                        <td className="border px-4 py-2">{idx + 1}</td>{" "}
+                        {/* Numbered index */}
+                        <td className="border px-4 py-2 text-left">
+                          {filters?.proponent_name?.length > 0 ? (
+                            proponent.institution__name
+                          ) : (
+                            <button
+                              onClick={() =>
+                                handleInstitutionClick(
+                                  proponent.institution__name
+                                )
+                              }
+                              className="text-blue-600 hover:underline focus:outline-none text-left"
+                            >
+                              {proponent.institution__name}
+                            </button>
+                          )}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {proponent.total_count}{" "}
+                          {tab !== "no-action" &&
+                            proponent.avg_support !== undefined &&
+                            format(proponent.avg_support)}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {envCount}{" "}
+                          {tab !== "no-action" &&
+                            envAvgSupport !== undefined &&
+                            format(envAvgSupport)}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {socCount}{" "}
+                          {tab !== "no-action" &&
+                            socAvgSupport !== undefined &&
+                            format(socAvgSupport)}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {govCount}{" "}
+                          {tab !== "no-action" &&
+                            govAvgSupport !== undefined &&
+                            format(govAvgSupport)}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {execComp}{" "}
+                          {tab !== "no-action" &&
+                            execAvgSupport !== undefined &&
+                            format(execAvgSupport)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {tab == "no-action" && filters?.proponent_name?.length == 0 && (
+              <div
+                className="col-span-3 bg-gray-100 p-4 rounded-lg flex flex-col items-center w-full  "
+                style={{ height: "fit-content" }}
+              >
+                <h3 className="text-lg font-semibold mb-4">
+                  Outcome Distribution
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <OutcomePieChart pieChartOutcome={pieChartOutcome} />
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+      {loading ? (
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          {" "}
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
+        </div>
+      ) : (
+        <>
+          {tab == "no-action" && filters?.proponent_name?.length > 0 && (
+            <>
+              <h3 className="text-lg font-semibold pt-10 pb-4 ">
+                All Outcome Distribution
+              </h3>
+              <div className={`grid grid-cols-1 md:grid-cols-10 gap-6 mb-12`}>
+                <div className=" col-span-7  rounded-lg flex flex-col items-center w-full">
+                  <table className="min-w-full border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        {/* New column */}
+                        <th className="px-4 py-2 border text-left"></th>
+                        <th className="px-4 py-2 border ">Total</th>
+                        <th className="px-4 py-2 border">Excluded</th>
+                        <th className="px-4 py-2 border">Included</th>
+                        <th className="px-4 py-2 border w-36">Withdrawn</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topProponents[0]?.category.map((cat, idx) => {
+                        if (cat.category !== null) {
+                          return (
+                          <tr key={idx} className="text-center">
+                            <td className="border px-4 py-2 text-left">
+                              {cat.category}
+                            </td>
+                            <td className="border px-4 py-2">{cat.count}</td>
+                            <td className="border px-4 py-2">
+                              {cat.exclude_count}
+                            </td>
+                            <td className="border px-4 py-2">
+                              {cat.include_count}
+                            </td>
+                            <td className="border px-4 py-2">
+                              {cat.withdraw_count}
+                            </td>
+                          </tr>
+                        );}
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div
+                  className="col-span-3 bg-gray-100 p-4 rounded-lg flex flex-col items-center w-full  "
+                  style={{ height: "fit-content" }}
+                >
+                  <h3 className="text-lg font-semibold mb-4">
+                    Outcome Distribution
+                  </h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <OutcomePieChart pieChartOutcome={pieChartOutcome} />
+                  </ResponsiveContainer>
+                </div>
+              </div>{" "}
+            </>
+          )}
+        </>
       )}
     </div>
   );

@@ -145,7 +145,7 @@ const stringToHTML = (arg: string) => {
 const slideUp = (
   el: HTMLElement,
   duration = 300,
-  callback = (el: HTMLElement) => {}
+  callback = (el: HTMLElement) => { }
 ) => {
   el.style.transitionProperty = "height, margin, padding";
   el.style.transitionDuration = duration + "ms";
@@ -174,7 +174,7 @@ const slideUp = (
 const slideDown = (
   el: HTMLElement,
   duration = 300,
-  callback = (el: HTMLElement) => {}
+  callback = (el: HTMLElement) => { }
 ) => {
   el.style.removeProperty("display");
   let display = window.getComputedStyle(el).display;
@@ -204,7 +204,7 @@ const slideDown = (
   }, duration);
 };
 
-const getPageNumbers = (totalCounts: number,perPageCount = PAGE_SIZE): number => {
+const getPageNumbers = (totalCounts: number, perPageCount = PAGE_SIZE): number => {
   return Math.ceil(totalCounts / perPageCount);
 };
 
@@ -364,6 +364,12 @@ function convertToTitleCase(str: string): string {
   if (!str) {
     return "";
   }
+  if (str == "global_search" || str == "company_name") {
+    return "Company"
+  } else if (str == "institution_name") {
+    return "Institution"
+  }
+  console.log("str", str)
   return str
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase())

@@ -1,12 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
 import { Popover, Tab } from "@/components/Base/Headless";
-import {
-  FormCheck,
-  FormInput,
-  FormSwitch,
-} from "@/components/Base/Form";
+import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
-
 import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
@@ -14,11 +9,22 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { useNavigate } from "react-router-dom";
-import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  countValidFilters,
+  createDynamicURL,
+  downloadXlsxFile,
+  generateFilterChips,
+} from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, Grid3X3, MegaphoneOff, SaveAll } from "lucide-react";
+import {
+  Download,
+  FilterX,
+  Grid3X3,
+  MegaphoneOff,
+  SaveAll,
+} from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -43,7 +49,10 @@ import {
 } from "@/types/shareHolder";
 import clsx from "clsx";
 import { commonService } from "@/services/common";
-import { setSavedSearch } from "@/stores/authenticationSlice";
+import {
+  setIsCompanySelected,
+  setSavedSearch,
+} from "@/stores/authenticationSlice";
 import { ShareHolderFilter } from "@/types/ShareholdeFilter";
 import AddNewShareholder from "./components/AddNewShareholder";
 import AddNewWithdrawn from "./components/AddNewWithdrawn";
@@ -57,10 +66,11 @@ import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
-  const { user, companyGlobalSearchName } = useAppSelector(
+  const { user, companyGlobalSearchName, isCompanySelected } = useAppSelector(
     (state) => state.authentiction
   );
-
+  const location = useLocation();
+  const { isBackToShareholderPage } = location.state || {};
   const {
     loading,
     shareHolderProposal,
@@ -74,15 +84,20 @@ function ShareHolderProposal() {
     yearlySummary,
     proposalCounts,
     topProponents,
-    pieChartOutcome
+    pieChartOutcome,
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
   const [searchTerms, setSearchTerms] = useState<string[]>([
     ...filters?.proponent_name,
   ]);
+
   const [isViewAnalysis, setIsViewAnalysis] = useState(false);
-  const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">("shareholders");
-  const [tempTab, setTempTab] = useState<"" | "proposal" | "no-action" | "withdrawn">("proposal");
+  const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">(
+    "shareholders"
+  );
+  const [tempTab, setTempTab] = useState<
+    "" | "proposal" | "no-action" | "withdrawn"
+  >("proposal");
 
   const month = [
     {
@@ -276,7 +291,6 @@ function ShareHolderProposal() {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
       return;
     }
-
     const dynamicURL = createDynamicURL(tabUrls[tab], filters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
 
@@ -299,17 +313,30 @@ function ShareHolderProposal() {
           : { ...restFilters, global_search: filters.global_search }
       )
     );
-    const { proponent_name, ...chipFilters } = restFilters;
-    setSelectedChipFilters(generateFilterChips(chipFilters));
+    var { proponent_name, ...chipFilters } = restFilters;
 
+    setSelectedChipFilters(
+      generateFilterChips(
+        isAllCompanySelected === false
+          ? chipFilters
+          : { ...chipFilters, global_search: filters.global_search }
+      )
+    );
   }, [page, tab, filters]);
+
+  useEffect(() => {
+    if (isCompanySelected) {
+      dispatch(selectUnSelectAllCompany(false));
+      dispatch(setIsCompanySelected(false));
+      setIsViewAnalysis(false);
+    }
+  }, [isCompanySelected]);
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
       return;
     }
     getAllShareholderAPI();
-
   }, [filters]);
 
   const getAllShareholderAPI = async () => {
@@ -353,16 +380,16 @@ function ShareHolderProposal() {
         setWithdrawnCount(withdrawnResponse?.result?.count ?? 0);
       }
 
-      if (proposalResponse?.result?.count > 0) {
-        dispatch(setTabs("proposal"));
-      }
-      else if (noActionResponse?.result?.count > 0) {
-        dispatch(setTabs("no-action"));
+      // if (!isBackToShareholderPage) {
+      //   if (proposalResponse?.result?.count > 0 &&  filters?.proponent_name?.length >= 0) {
+      //     dispatch(setTabs("proposal"));
 
-      }
-      else if (withdrawnResponse?.result?.count > 0) {
-        dispatch(setTabs("withdrawn"));
-      }
+      //   } else if (noActionResponse?.result?.count > 0) {
+      //     dispatch(setTabs("no-action"));
+      //   } else if (withdrawnResponse?.result?.count > 0) {
+      //     dispatch(setTabs("withdrawn"));
+      //   }
+      // }
     } catch (error) {
       return error;
     }
@@ -390,27 +417,10 @@ function ShareHolderProposal() {
       setIsViewAnalysis(false);
     }
 
-    if (tempTab !== tab) {
-      dispatch(setTabs(tempTab));
-    }
-
+    // if (tempTab !== tab) {
+    //   dispatch(setTabs(tempTab));
+    // }
   }, [tab]);
-
-
-
-  // useEffect(() => {
-  //   if(proposalCount > 0){
-  //     dispatch(setTabs("proposal"));
-  //   }
-  //   else if(noActionCount > 0){
-  //     dispatch(setTabs("no-action"));
-
-  //   }
-  //   else if(withdrawnCount > 0){
-  //     dispatch(setTabs("withdrawn"));
-
-  //   }
-  // }, []);
 
   useEffect(() => {
     getAllShareholderDropdowns();
@@ -499,10 +509,10 @@ function ShareHolderProposal() {
       tab === "proposal"
         ? 0
         : tab === "no-action"
-          ? 1
-          : tab === "withdrawn"
-            ? 2
-            : -1;
+        ? 1
+        : tab === "withdrawn"
+        ? 2
+        : -1;
     return tabIndex;
   };
 
@@ -597,6 +607,24 @@ function ShareHolderProposal() {
     }
   };
 
+  const sortData = (data: any) => {
+    return [...data].sort((a, b) => {
+      if (b.year !== a.year) {
+        return b.year - a.year;
+      }
+
+      const isPercentageA = !!a.outcome_percentage?.match(/^(\d+(\.\d+)?)%$/);
+      const isPercentageB = !!b.outcome_percentage?.match(/^(\d+(\.\d+)?)%$/);
+      if (isPercentageA && !isPercentageB) {
+        return -1;
+      }
+      if (!isPercentageA && isPercentageB) {
+        return 1;
+      }
+      return 0;
+    });
+  };
+
   const onVisibleDetail = (detail: any) => {
     setselectedShareholderDetail(detail);
     setShareholderDetailModalVisible(true);
@@ -612,11 +640,37 @@ function ShareHolderProposal() {
     if (isAllCompanySelected) {
       return baseUrls.map((baseUrl) => baseUrl);
     } else {
-      const queryParam = `?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
-        }`;
+      const queryParam = `?global_search=${
+        companyGlobalSearchName || filters?.global_search?.[0]
+      }`;
       return baseUrls.map((baseUrl) => `${baseUrl}${queryParam}`);
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
+
+ 
+  const mergeVoteDetails = (data: any[]) => {
+    return data.map((item) => {
+      const result: any = {
+        year: item.year,
+        proponent: item.proponent_name,
+        support: item.outcome_percentage,
+        no_action_letters: item.nl_exist ? "Yes" : "",
+      };
+      if (item?.vote_details?.length > 0) {
+        const mergedDetails = item.vote_details.reduce((acc, detail) => {
+          let [key, value] = Object.entries(detail)[0];
+
+          key = key.replace(/^\d+\.\s*/, "");
+
+          acc[key] = value;
+          return acc;
+        }, {});
+
+        Object.assign(result, mergedDetails);
+      }
+      return result;
+    });
+  };
 
   const clearNoActionFilter = () => {
     // setValue("is_correct", null);
@@ -650,18 +704,26 @@ function ShareHolderProposal() {
 
     setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
-  }
-
+  };
 
   const getDefaultTabIndex = () => {
-    if (proposalCount > 0 && proposalCount >= noActionCount && proposalCount >= withdrawnCount) return 0;
-    if (noActionCount > 0 && noActionCount >= proposalCount && noActionCount >= withdrawnCount) return 1;
+    if (
+      proposalCount > 0 &&
+      proposalCount >= noActionCount &&
+      proposalCount >= withdrawnCount
+    )
+      return 0;
+    if (
+      noActionCount > 0 &&
+      noActionCount >= proposalCount &&
+      noActionCount >= withdrawnCount
+    )
+      return 1;
     if (withdrawnCount > 0) return 2;
     return 0;
   };
 
   const defaultTabIndex = getDefaultTabIndex();
-
 
   return (
     <>
@@ -703,7 +765,7 @@ function ShareHolderProposal() {
                               type: e.target.checked,
                             })
                           );
-                        } catch (error) { }
+                        } catch (error) {}
                       }}
                     />
                     <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
@@ -758,18 +820,42 @@ function ShareHolderProposal() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button
+                      onClick={() =>
+                        downloadXlsxFile({
+                          data: mergeVoteDetails(shareHolderProposal),
+                          fileName: `ShareHolderProposal.xlsx`,
+                        })
+                      }
+                    >
+                      <Tippy
+                        content="Download Excel"
+                        options={{ theme: "light" }}
+                      >
+                        <Download
+                          size={17}
+                          strokeWidth={1}
+                          className="text-slate-500 cursor-pointer	"
+                        />
+                      </Tippy>
+                    </Button>
+                  </div>
+
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                      <div className="hover:bg-slate-50 ">
-                        <Button onClick={getSavedSearches}>
-                          Previous Search
-                        </Button>
-                      </div>
-                    )}
-                  {(tab == "proposal" && proposalCount > 0) &&
+                    <div className="hover:bg-slate-50 ">
+                      <Button onClick={getSavedSearches}>
+                        Previous Search
+                      </Button>
+                    </div>
+                  )}
+                  {tab == "proposal" && proposalCount > 0 && (
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
-                        <label className="text-md mr-3 font-semibold">Analytics</label>
+                        <label className="text-md mr-3 font-semibold">
+                          Analytics{" "}
+                        </label>
                         <FormSwitch.Input
                           id="view-analysis-switch"
                           type="checkbox"
@@ -779,12 +865,13 @@ function ShareHolderProposal() {
                         <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                       </FormSwitch>
                     </div>
-
-                  }
-                  {(tab == "no-action" && noActionCount > 0) &&
+                  )}
+                  {tab == "no-action" && noActionCount > 0 && (
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
-                        <label className="text-md mr-3 font-semibold">Analytics</label>
+                        <label className="text-md mr-3 font-semibold">
+                          Analytics
+                        </label>
                         <FormSwitch.Input
                           id="view-analysis-switch"
                           type="checkbox"
@@ -794,8 +881,7 @@ function ShareHolderProposal() {
                         <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                       </FormSwitch>
                     </div>
-
-                  }
+                  )}
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -820,12 +906,14 @@ function ShareHolderProposal() {
                 </div>
               </div>
 
-              {
-                selectedChipFilters?.length > 0 &&
+              {selectedChipFilters?.length > 0 && (
                 <>
-                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                  <FilterChips
+                    filters={selectedChipFilters}
+                    onRemove={handleRemoveChip}
+                  />
                 </>
-              }
+              )}
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -1125,51 +1213,47 @@ function ShareHolderProposal() {
                         </div>
                       )}
 
-                      {
-                        (tab === "proposal" || tab === "no-action") && (
-                          <div className="mx-2">
-                            <div className="text-left text-slate-500 flex justify-between mb-1">
-                              <span className="font-semibold">Index</span>
-                            </div>
-                            <Controller
-                              name="index"
-                              control={control}
-                              defaultValue={""}
-                              render={({ field }) => (
-                                <TomSelect
-                                  value={field.value || ""}
-                                  onChange={(value) => {
-                                    field.onChange(value);
-                                  }}
-                                  options={{
-                                    placeholder: "Select Index",
-                                  }}
-                                  className="w-full"
-                                  multiple={false}
-                                >
-                                  {getDropdownLoader ? (
-                                    <option value="--" disabled>
-                                      Loading...
-                                    </option>
-                                  ) : (
-                                    <>
-                                      {apiDropdownOptions?.index?.map(
-                                        (index: string) => {
-                                          return (
-                                            <option value={index}>
-                                              {index}
-                                            </option>
-                                          );
-                                        }
-                                      )}
-                                    </>
-                                  )}
-                                </TomSelect>
-                              )}
-                            />
+                      {(tab === "proposal" || tab === "no-action") && (
+                        <div className="mx-2">
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            <span className="font-semibold">Index</span>
                           </div>
-                        )
-                      }
+                          <Controller
+                            name="index"
+                            control={control}
+                            defaultValue={""}
+                            render={({ field }) => (
+                              <TomSelect
+                                value={field.value || ""}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                }}
+                                options={{
+                                  placeholder: "Select Index",
+                                }}
+                                className="w-full"
+                                multiple={false}
+                              >
+                                {getDropdownLoader ? (
+                                  <option value="--" disabled>
+                                    Loading...
+                                  </option>
+                                ) : (
+                                  <>
+                                    {apiDropdownOptions?.index?.map(
+                                      (index: string) => {
+                                        return (
+                                          <option value={index}>{index}</option>
+                                        );
+                                      }
+                                    )}
+                                  </>
+                                )}
+                              </TomSelect>
+                            )}
+                          />
+                        </div>
+                      )}
 
                       {user?.user_type === "Admin" && (
                         <>
@@ -1209,8 +1293,6 @@ function ShareHolderProposal() {
                               )}
                             />
                           </div>
-
-
 
                           {tab === "proposal" && (
                             <>
@@ -1632,10 +1714,11 @@ function ShareHolderProposal() {
                 </form>
               )}
 
-
-
               <div className="overflow-auto xl:overflow-visible px-5">
-                <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={defaultTabIndex}>
+                <Tab.Group
+                  selectedIndex={getSelectedTabIndex()}
+                  defaultIndex={defaultTabIndex}
+                >
                   <Tab.List variant="link-tabs">
                     <Tab>
                       <Tab.Button
@@ -1694,7 +1777,6 @@ function ShareHolderProposal() {
                           clearNoActionFilter();
                           setIsViewAnalysis(false);
                           setTempTab("withdrawn");
-
                         }}
                       >
                         <div className="flex items-center justify-center ">
@@ -1731,23 +1813,25 @@ function ShareHolderProposal() {
                           </Button>
                         </div>
                       )}
-                      {isViewAnalysis &&
+                      {isViewAnalysis && (
                         <div className="w-full pt-5">
                           <div className="flex gap-4 mb-6 px-4">
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
-                                ? "bg-primary text-white shadow"
-                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                                }`}
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
+                                activeTab === "shareholders"
+                                  ? "bg-primary text-white shadow"
+                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                              }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
                               All Shareholder Proposals
                             </button>
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
-                                ? "bg-primary text-white shadow"
-                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                                }`}
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
+                                activeTab === "proponents"
+                                  ? "bg-primary text-white shadow"
+                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                              }`}
                               onClick={() => setActiveTab("proponents")}
                             >
                               Shareholder Proposals: Proponent Analytics
@@ -1756,7 +1840,7 @@ function ShareHolderProposal() {
 
  
                           {/* Content */}
-                          <div >
+                          <div>
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalCounts}
@@ -1765,7 +1849,8 @@ function ShareHolderProposal() {
                                 yearlySummary={yearlySummary}
                                 tab={tab}
                                 isAllCompanySelected={isAllCompanySelected}
-                                loading ={loading}
+
+                                loading={loading}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
@@ -1774,10 +1859,14 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
+
+                                pieChartOutcome={pieChartOutcome}
+                                filters={filters}
                               />
                             )}
                           </div>
-                        </div>}
+                        </div>
+                      )}
                       <TableWrapper isLoading={loading}>
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
@@ -1801,7 +1890,8 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]"
+                                >
                                   % Support*
                                 </Table.Td>
                                 <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -1818,132 +1908,149 @@ function ShareHolderProposal() {
 
                             <Table.Tbody>
                               {shareHolderProposal?.length > 0 &&
-                                shareHolderProposal?.map((noAction: any) => (
-                                  <Table.Tr
-                                    key={noAction?.id}
-                                    className="[&_td]:last:border-b-0"
-                                  >
-                                    <Table.Td className="py-2 text-left border-dashed dark:bg-darkmode-600">
-                                      {noAction?.year}
-                                    </Table.Td>
-                                    {isAllCompanySelected && (
-                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                        {noAction?.company_name}
-                                      </Table.Td>
-                                    )}
-                                    <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
-                                      {
-                                        noAction?.proponent === "Not Disclosed" &&
-                                          (!noAction?.proponent_name || noAction?.proponent_name.trim() === "")
-                                          ? noAction?.proponent
-                                          : noAction?.proponent === "Not Disclosed"
-                                            ? noAction?.proponent_name
-                                            : noAction?.proponent
-                                      }
-                                    </Table.Td>
-                                    <Table.Td
-                                      className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-center`])}>
-                                      {noAction?.outcome_percentage}
-                                    </Table.Td>
-                                    <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      {noAction?.vote_details?.length > 0 && (
-                                        <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
-                                          <Grid3X3
-                                            strokeWidth={1.25}
-                                            onClick={() => onVisibleDetail(noAction)}
-                                          />
-                                        </div>
-
-                                      )}
-
-                                      {!noAction?.vote_details && noAction?.year?.toString() === "2025" && (
-                                        <div className="whitespace-nowrap flex items-center justify-center">
-                                          <div className="flex items-center justify-center w-full h-full text-primary mr-2">
-                                            <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                              <MegaphoneOff size={22} strokeWidth={1.2} absoluteStrokeWidth />
-                                            </Tippy>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </Table.Td>
-                                    <Table.Td
-                                      className={clsx([
-                                        "py-2 font-semibold border-dashed dark:bg-darkmode-600",
-                                        noAction?.nl_exist &&
-                                        "text-blue-600 underline cursor-pointer",
-                                      ])}
-                                      onClick={() => {
-                                        const id =
-                                          noAction?.nl_exist === true
-                                            ? noAction?.no_action_link
-                                              ?.split("/")
-                                              .filter(Boolean)
-                                              .pop()
-                                            : 0;
-                                        noAction?.nl_exist === true &&
-                                          navigate(
-                                            `/share-holder-proposal/${id}?url=shareholder_proposal/no_action`
-                                          );
-                                      }}
+                                sortData(shareHolderProposal)?.map(
+                                  (noAction: any) => (
+                                    <Table.Tr
+                                      key={noAction?.id}
+                                      className="[&_td]:last:border-b-0"
                                     >
-                                      <div className="flex items-center justify-center">
-                                        {noAction?.nl_exist === true
-                                          ? "Yes"
-                                          : ""}
-                                      </div>
-                                    </Table.Td>
-
-                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex gap-3 justify-center">
-                                        {user?.user_type === "Admin" && (
-                                          <Tippy
-                                            content="Duplicate"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
+                                      <Table.Td className="py-2 text-left border-dashed dark:bg-darkmode-600">
+                                        {noAction?.year}
+                                      </Table.Td>
+                                      {isAllCompanySelected && (
+                                        <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                          {noAction?.company_name}
+                                        </Table.Td>
+                                      )}
+                                      <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
+                                        {noAction?.proponent ===
+                                          "Not Disclosed" &&
+                                        (!noAction?.proponent_name ||
+                                          noAction?.proponent_name.trim() ===
+                                            "")
+                                          ? noAction?.proponent
+                                          : noAction?.proponent ===
+                                            "Not Disclosed"
+                                          ? noAction?.proponent_name
+                                          : noAction?.proponent}
+                                      </Table.Td>
+                                      <Table.Td
+                                        className={clsx([
+                                          `py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-center`,
+                                        ])}
+                                      >
+                                        {noAction?.outcome_percentage}
+                                      </Table.Td>
+                                      <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                        {noAction?.vote_details?.length > 0 && (
+                                          <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
+                                            <Grid3X3
+                                              strokeWidth={1.25}
                                               onClick={() =>
-                                                onEditProposalClickHandler(
-                                                  noAction,
-                                                  "duplicate"
-                                                )
+                                                onVisibleDetail(noAction)
                                               }
-                                              icon="Copy"
-                                              className="w-4 h-4 mr-1.5 stroke-[1.3]"
                                             />
-                                          </Tippy>
+                                          </div>
                                         )}
 
-                                        <Lucide
-                                          onClick={() =>
+                                        {!noAction?.vote_details &&
+                                          noAction?.year?.toString() ===
+                                            "2025" && (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                                <Tippy
+                                                  content="Not Disclose"
+                                                  options={{ theme: "light" }}
+                                                >
+                                                  <MegaphoneOff
+                                                    size={22}
+                                                    strokeWidth={1.2}
+                                                    absoluteStrokeWidth
+                                                  />
+                                                </Tippy>
+                                              </div>
+                                            </div>
+                                          )}
+                                      </Table.Td>
+                                      <Table.Td
+                                        className={clsx([
+                                          "py-2 font-semibold border-dashed dark:bg-darkmode-600",
+                                          noAction?.nl_exist &&
+                                            "text-blue-600 underline cursor-pointer",
+                                        ])}
+                                        onClick={() => {
+                                          const id =
+                                            noAction?.nl_exist === true
+                                              ? noAction?.no_action_link
+                                                  ?.split("/")
+                                                  .filter(Boolean)
+                                                  .pop()
+                                              : 0;
+                                          noAction?.nl_exist === true &&
                                             navigate(
-                                              `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
-                                            )
-                                          }
-                                          icon="Eye"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer hover:opacity-80 transition duration-150"
-                                        />
+                                              `/share-holder-proposal/${id}?url=shareholder_proposal/no_action`
+                                            );
+                                        }}
+                                      >
+                                        <div className="flex items-center justify-center">
+                                          {noAction?.nl_exist === true
+                                            ? "Yes"
+                                            : ""}
+                                        </div>
+                                      </Table.Td>
 
-                                        {user?.user_type === "Admin" && (
-                                          <Tippy
-                                            content="Edit"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
-                                              onClick={() =>
-                                                onEditProposalClickHandler(
-                                                  noAction,
-                                                  "edit"
-                                                )
-                                              }
-                                              icon="PenLine"
-                                              className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                            />
-                                          </Tippy>
-                                        )}
-                                      </div>
-                                    </Table.Td>
-                                  </Table.Tr>
-                                ))}
+                                      <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                        <div className="flex gap-3 justify-center">
+                                          {user?.user_type === "Admin" && (
+                                            <Tippy
+                                              content="Duplicate"
+                                              options={{ theme: "light" }}
+                                            >
+                                              <Lucide
+                                                onClick={() =>
+                                                  onEditProposalClickHandler(
+                                                    noAction,
+                                                    "duplicate"
+                                                  )
+                                                }
+                                                icon="Copy"
+                                                className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                              />
+                                            </Tippy>
+                                          )}
+
+                                          <Lucide
+                                            onClick={() =>
+                                              navigate(
+                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
+                                              )
+                                            }
+                                            icon="Eye"
+                                            className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer hover:opacity-80 transition duration-150"
+                                          />
+
+                                          {user?.user_type === "Admin" && (
+                                            <Tippy
+                                              content="Edit"
+                                              options={{ theme: "light" }}
+                                            >
+                                              <Lucide
+                                                onClick={() =>
+                                                  onEditProposalClickHandler(
+                                                    noAction,
+                                                    "edit"
+                                                  )
+                                                }
+                                                icon="PenLine"
+                                                className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                              />
+                                            </Tippy>
+                                          )}
+                                        </div>
+                                      </Table.Td>
+                                    </Table.Tr>
+                                  )
+                                )}
                             </Table.Tbody>
                             {shareHolderProposal?.length === 0 && (
                               <div className="w-full">
@@ -1953,7 +2060,6 @@ function ShareHolderProposal() {
                           </Table>
                         </div>
                       </TableWrapper>
-
                     </Tab.Panel>
                   </Tab.Panels>
 
@@ -1977,23 +2083,25 @@ function ShareHolderProposal() {
                           </Button>
                         </div>
                       )}
-                      {isViewAnalysis &&
+                      {isViewAnalysis && (
                         <div className="w-full pt-5">
                           <div className="flex gap-4 mb-6 px-4 ">
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
-                                ? "bg-primary text-white shadow"
-                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                                }`}
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
+                                activeTab === "shareholders"
+                                  ? "bg-primary text-white shadow"
+                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                              }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
                               All No Action Letters
                             </button>
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
-                                ? "bg-primary text-white shadow"
-                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                                }`}
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
+                                activeTab === "proponents"
+                                  ? "bg-primary text-white shadow"
+                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                              }`}
                               onClick={() => setActiveTab("proponents")}
                             >
                               No Action Letters: Proponent Analytics
@@ -2020,10 +2128,14 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
+
+                                pieChartOutcome={pieChartOutcome}
+                                filters={filters}
                               />
                             )}
                           </div>
-                        </div>}
+                        </div>
+                      )}
                       <TableWrapper isLoading={loading}>
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
@@ -2259,7 +2371,9 @@ function ShareHolderProposal() {
                   <sup
                     className="bold-sup cursor-pointer ml-1"
                     style={{ fontSize: "0.8em" }}
-                  >*</sup>
+                  >
+                    *
+                  </sup>
                   <p id="footnote " className="">
                     [For/(For + Against or Withhold + Abstain)]
                   </p>
