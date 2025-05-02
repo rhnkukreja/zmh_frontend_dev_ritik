@@ -304,7 +304,7 @@ const InstitutionOrCompanyList = ({
   isCompany: boolean;
   setCompanyName: React.Dispatch<React.SetStateAction<string>>;
   setInstitutionName: React.Dispatch<React.SetStateAction<string>>;
-  selectedGroup: object | null;
+  selectedGroup: { name: string } | null;
   activeTab: string;
   companyName: string;
   institutionName: string;
@@ -408,6 +408,7 @@ const InstitutionOrCompanyList = ({
   };
 
   const groupedData = groupByValue(results);
+  console.log(results ,"=>results")
   return (
     <div className="w-full px-4 py-6 bg-gray-50 rounded-lg shadow-inner h-screen">
       <div className="sticky top-0 bg-gray-50 pb-4 z-10">
@@ -431,13 +432,13 @@ const InstitutionOrCompanyList = ({
             {isLoading ? (
               <li className="px-4 py-2 text-sm text-gray-500">Loading...</li>
             ) : listItems.length > 0 ? (
-              listItems.map((name: string, idx: number) => (
+              listItems.map((item:any, idx: number) => (
                 <li
                   key={idx}
-                  onClick={() => handleSelect(name)}
+                  onClick={() => handleSelect(item?.name)}
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                 >
-                  {name}
+                  {item?.name}
                 </li>
               ))
             ) : (

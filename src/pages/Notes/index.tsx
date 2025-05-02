@@ -13,6 +13,7 @@ import {
   removeAllNotes,
   setSelectedFolder,
   setSelectedGroup,
+  setSelectedNote,
 } from "@/stores/notesSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/stores/store";
@@ -30,8 +31,8 @@ const Notes: React.FC = () => {
   const { selectedFolder } = useAppSelector((state) => state.notes);
   const [companyName, setCompanyName] = useState<string>("");
   const [institutionName, setInstitutionName] = useState<string>("");
-    const [addNoteModalVisible, setAddNoteModalVisible] =
-      useState<boolean>(false);
+  const [addNoteModalVisible, setAddNoteModalVisible] =
+    useState<boolean>(false);
   const dispatch = useDispatch<AppDispatch>();
   const { selectedNote, selectedGroup } = useAppSelector(
     (state) => state.notes
@@ -42,6 +43,7 @@ const Notes: React.FC = () => {
     setCompanyName("");
     setInstitutionName("");
     dispatch(setSelectedGroup(null));
+    dispatch(setSelectedNote(null));
   };
   const fetchData = async () => {
     // const dynamicURL = createDynamicURL(
@@ -54,7 +56,6 @@ const Notes: React.FC = () => {
     //   1
     // );
     // const response = await dispatch(fetchDomainNotes(dynamicURL));
-
     // dispatch(
     //   setSelectedGroup({ ...selectedGroup, data: response?.payload?.results })
     // );
@@ -171,17 +172,16 @@ const Notes: React.FC = () => {
               </>
             )}
 
-              {addNoteModalVisible && (
-                    <AddDomainNoteModal
-                      mode={"add"}
-                      addNoteModalVisible={addNoteModalVisible}
-                      setAddNoteModalVisible={setAddNoteModalVisible}
-                      title="Create New Note"
-                      noteModule={true}
-                      fetchData={fetchData}
-                    />
-                  )}
-                  
+            {addNoteModalVisible && (
+              <AddDomainNoteModal
+                mode={"add"}
+                addNoteModalVisible={addNoteModalVisible}
+                setAddNoteModalVisible={setAddNoteModalVisible}
+                title="Create New Note"
+                noteModule={true}
+                fetchData={fetchData}
+              />
+            )}
           </div>
         </div>
       </div>

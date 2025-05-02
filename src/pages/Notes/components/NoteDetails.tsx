@@ -30,9 +30,9 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
   const { selectedNote, selectedGroup } = useAppSelector(
     (state) => state.notes
   );
-  console.log(selectedGroup, "=>selectedGroup");
-  const [data, setData] = useState<NoteData | undefined>();
-  const [noteDetails, setNoteDetails] = useState({});
+
+  const [data, setData] = useState(null);
+  const [noteDetails, setNoteDetails] = useState(null);
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
 
@@ -41,8 +41,8 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
     const dynamicURL = createDynamicURL(
       `${baseURL}/user/domain_notes/`,
       {
-        institution_id: JSON.stringify(data.institution_id),
-        company_id: JSON.stringify(data.company_id),
+        institution_id: JSON.stringify(data?.institution_id),
+        company_id: JSON.stringify(data?.company_id),
       },
       undefined,
       1
@@ -50,7 +50,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
     const response = await dispatch(fetchDomainNotes(dynamicURL));
 
     dispatch(
-      setSelectedGroup({ ...selectedGroup, data: response?.payload?.results })
+      setSelectedGroup({ ...selectedGroup, data: (response?.payload as { results: any }).results })
     );
   };
   const handleDeleteNote = async (item: any) => {
@@ -75,7 +75,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
       const response = await dispatch(fetchDomainNotes(dynamicURL));
 
       dispatch(
-        setSelectedGroup({ ...selectedGroup, data: response?.payload?.results })
+        setSelectedGroup({ ...selectedGroup, data: (response?.payload as { results: any }).results })
       );
     }
   };
@@ -232,13 +232,13 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                     </Tippy>
                   </h2>
 
-                  <Lucide
+              {activeTab ==="other" && <Lucide
                     icon="FilePen"
                     onClick={() => {
                       setAddNoteModalVisible(true);
                     }}
                     className=" text-primary stroke-[1.3] w-5 h-5 ml-2  cursor-pointer"
-                  />
+                  /> }    
                 </div>
                 {/*       
                       <p className="text-xs">
