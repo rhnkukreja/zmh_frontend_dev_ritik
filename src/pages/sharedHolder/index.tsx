@@ -820,7 +820,7 @@ function ShareHolderProposal() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  <div className="hover:bg-slate-50 ml-2">
+                  {/* <div className="hover:bg-slate-50 ml-2">
                     <Button
                       onClick={() =>
                         downloadXlsxFile({
@@ -840,7 +840,7 @@ function ShareHolderProposal() {
                         />
                       </Tippy>
                     </Button>
-                  </div>
+                  </div> */}
 
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
@@ -1905,7 +1905,7 @@ function ShareHolderProposal() {
 
                             <Table.Tbody>
                               {shareHolderProposal?.length > 0 &&
-                                sortData(shareHolderProposal)?.map(
+                                shareHolderProposal.map(
                                   (noAction: any) => (
                                     <Table.Tr
                                       key={noAction?.id}

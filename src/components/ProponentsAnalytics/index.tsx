@@ -148,33 +148,33 @@ const ProponentsAnalyticsComponent: React.FC<
                         </td>
                         <td className="border px-4 py-2">
                           {proponent.total_count}{" "}
-                          {tab !== "no-action" &&
+                          {/* {tab !== "no-action" &&
                             proponent.avg_support !== undefined &&
-                            format(proponent.avg_support)}
+                            format(proponent.avg_support)} */}
                         </td>
                         <td className="border px-4 py-2">
                           {envCount}{" "}
-                          {tab !== "no-action" &&
+                          {/* {tab !== "no-action" &&
                             envAvgSupport !== undefined &&
-                            format(envAvgSupport)}
+                            format(envAvgSupport)} */}
                         </td>
                         <td className="border px-4 py-2">
                           {socCount}{" "}
-                          {tab !== "no-action" &&
+                          {/* {tab !== "no-action" &&
                             socAvgSupport !== undefined &&
-                            format(socAvgSupport)}
+                            format(socAvgSupport)} */}
                         </td>
                         <td className="border px-4 py-2">
                           {govCount}{" "}
-                          {tab !== "no-action" &&
+                          {/* {tab !== "no-action" &&
                             govAvgSupport !== undefined &&
-                            format(govAvgSupport)}
+                            format(govAvgSupport)} */}
                         </td>
                         <td className="border px-4 py-2">
                           {execComp}{" "}
-                          {tab !== "no-action" &&
+                          {/* {tab !== "no-action" &&
                             execAvgSupport !== undefined &&
-                            format(execAvgSupport)}
+                            format(execAvgSupport)} */}
                         </td>
                       </tr>
                     );
