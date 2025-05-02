@@ -65,7 +65,7 @@ const index = () => {
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
 
-  console.log("dashboardDataList", dashboardDataList)
+  
 
   const fetchData = async () => {
     if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
@@ -366,6 +366,7 @@ const index = () => {
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
+
                           {dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
                             dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.map(
                               (dashboard: CompanyDashboard, index: number) => (
@@ -680,6 +681,7 @@ const index = () => {
           title="Create New Note"
           data={data}
           fetchData={fetchData}
+          noteModule={false}
         />
       )}
 

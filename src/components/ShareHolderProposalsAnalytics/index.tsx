@@ -16,6 +16,7 @@ import {
   LabelList,
 } from "recharts";
 import LoadingIcon from "../Base/LoadingIcon";
+
 import OutcomePieChart from "../OutcomePieChart";
 
 interface ShareHolderProposalAnalyticsComponentProps {
@@ -70,7 +71,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
       </div>
     );
   }
-
   const [outcomeData, setOutcomeData] = useState([]);
 
   useEffect(() => {
@@ -224,6 +224,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                 <p className="text-gray-500">No data available</p>
               )}
             </div>
+
 
             {/* 2. Proposal Distribution Pie Chart */}
             <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
@@ -456,3 +457,4 @@ const interleaveOutcome = (data: any[]) => {
 };
 
 export default ShareHolderProposalAnalyticsComponent;
+

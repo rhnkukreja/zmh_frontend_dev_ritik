@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, PieChart } from "lucide-react";
 import React, { Dispatch, SetStateAction, useState } from "react";
 import LoadingIcon from "../Base/LoadingIcon";
+
 import { Pie, ResponsiveContainer } from "recharts";
 import OutcomePieChart from "../OutcomePieChart";
 
@@ -10,6 +11,7 @@ interface ProponentsAnalyticsComponentProps {
   setSearchTerms: Dispatch<SetStateAction<string[]>>;
   tab: any;
   loading: boolean;
+
   pieChartOutcome: any;
   filters: { proponent_name: string[] };
 }

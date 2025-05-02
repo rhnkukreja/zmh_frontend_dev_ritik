@@ -732,7 +732,7 @@ function ShareHolderProposal() {
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
             {isAllCompanySelected === true ? (
               <div className="font-semibold text-xl">
-                All Shareholder Proposals
+                All Shareholder Proposals 
               </div>
             ) : (
               <div className="font-semibold text-xl">Shareholder Proposals</div>
@@ -1838,6 +1838,7 @@ function ShareHolderProposal() {
                             </button>
                           </div>
 
+ 
                           {/* Content */}
                           <div>
                             {activeTab === "shareholders" ? (
@@ -1848,6 +1849,7 @@ function ShareHolderProposal() {
                                 yearlySummary={yearlySummary}
                                 tab={tab}
                                 isAllCompanySelected={isAllCompanySelected}
+
                                 loading={loading}
                               />
                             ) : (
@@ -1857,6 +1859,7 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
+
                                 pieChartOutcome={pieChartOutcome}
                                 filters={filters}
                               />
@@ -2125,6 +2128,7 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
+
                                 pieChartOutcome={pieChartOutcome}
                                 filters={filters}
                               />

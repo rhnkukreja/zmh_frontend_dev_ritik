@@ -37,6 +37,7 @@ export type CompanyDashboard = {
   company_id: number;
   company_name: string;
   engagement_questions: boolean
+  results: any
   // percent_ownership: string;
 };
 
