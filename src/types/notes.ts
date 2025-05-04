@@ -23,6 +23,8 @@ export interface Note {
   date_updated: string;
 }
 export interface Group {
+  company_id:number;
+  institution_id:number;
   name: string;
   data: Array<any>
   

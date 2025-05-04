@@ -16,7 +16,12 @@ import { RootState } from "@/stores/store";
 import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
-import { deleteDomainNote, fetchDomainNotes } from "@/stores/domainNotesSlice";
+import {
+  deleteDomainNote,
+  fetchDomainNotes,
+  fetchDomainNotesDropDownValuesByCompany,
+  fetchDomainNotesDropDownValuesByInstitution,
+} from "@/stores/domainNotesSlice";
 interface NoteData {
   company_id?: string;
   institution_id?: string;
@@ -35,7 +40,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
   const [noteDetails, setNoteDetails] = useState(null);
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
-
+  const { results } = useAppSelector((state) => state.domainNotes);
   const [isEditing, setIsEditing] = useState(false);
   const fetchData = async () => {
     const dynamicURL = createDynamicURL(
@@ -48,10 +53,13 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
       1
     );
     const response = await dispatch(fetchDomainNotes(dynamicURL));
-
     dispatch(
-      setSelectedGroup({ ...selectedGroup, data: (response?.payload as { results: any }).results })
+      setSelectedGroup({
+        ...selectedGroup,
+        data: (response?.payload as { results: any }).results,
+      })
     );
+   
   };
   const handleDeleteNote = async (item: any) => {
     try {
@@ -75,7 +83,10 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
       const response = await dispatch(fetchDomainNotes(dynamicURL));
 
       dispatch(
-        setSelectedGroup({ ...selectedGroup, data: (response?.payload as { results: any }).results })
+        setSelectedGroup({
+          ...selectedGroup,
+          data: (response?.payload as { results: any }).results,
+        })
       );
     }
   };
@@ -232,13 +243,15 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                     </Tippy>
                   </h2>
 
-              {activeTab ==="other" && <Lucide
-                    icon="FilePen"
-                    onClick={() => {
-                      setAddNoteModalVisible(true);
-                    }}
-                    className=" text-primary stroke-[1.3] w-5 h-5 ml-2  cursor-pointer"
-                  /> }    
+                  {activeTab === "other" && (
+                    <Lucide
+                      icon="FilePen"
+                      onClick={() => {
+                        setAddNoteModalVisible(true);
+                      }}
+                      className=" text-primary stroke-[1.3] w-5 h-5 ml-2  cursor-pointer"
+                    />
+                  )}
                 </div>
                 {/*       
                       <p className="text-xs">

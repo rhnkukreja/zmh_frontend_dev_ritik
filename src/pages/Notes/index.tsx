@@ -46,20 +46,28 @@ const Notes: React.FC = () => {
     dispatch(setSelectedNote(null));
   };
   const fetchData = async () => {
-    // const dynamicURL = createDynamicURL(
-    //   `${baseURL}/user/domain_notes/`,
-    //   {
-    //     institution_id: JSON.stringify(data.institution_id),
-    //     company_id: JSON.stringify(data.company_id),
-    //   },
-    //   undefined,
-    //   1
-    // );
-    // const response = await dispatch(fetchDomainNotes(dynamicURL));
-    // dispatch(
-    //   setSelectedGroup({ ...selectedGroup, data: response?.payload?.results })
-    // );
+    
+    if (selectedGroup.institution_id && selectedGroup.company_id) {
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/user/domain_notes/`,
+        {
+          institution_id: JSON.stringify(selectedGroup.institution_id),
+          company_id: JSON.stringify(selectedGroup.company_id),
+        },
+        undefined,
+        1
+      );
+      const response = await dispatch(fetchDomainNotes(dynamicURL));
+
+      dispatch(
+        setSelectedGroup({
+          ...selectedGroup,
+          data: (response?.payload as { results: any }).results,
+        })
+      );
+    }
   };
+ 
   return (
     <div className="h-full flex flex-col my-[-35px] ml-[-20px] pb-[30px]">
       <div className="w-full flex justify-between px-4 py-6 bg-white dark:bg-darkmode-800">
