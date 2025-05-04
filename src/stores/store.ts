@@ -25,6 +25,7 @@ import userDetailReducer from "./userDetailSlice";
 import notesReducer from "./notesSlice";
 import domainNotesReducer from "./domainNotesSlice";
 import vdsEuropeanReducer from "./vdsEuropeanSlice";
+import realTimeReducer from "./realTimeDataSlice";
 
 
 import { PersistPartial } from "redux-persist/es/persistReducer";
@@ -62,6 +63,7 @@ const slices = {
   notes: notesReducer,
   domainNotes: domainNotesReducer,
   vdsEuropean: vdsEuropeanReducer,
+  realTime: realTimeReducer,
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(
