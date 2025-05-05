@@ -304,7 +304,11 @@ const InstitutionOrCompanyList = ({
   isCompany: boolean;
   setCompanyName: React.Dispatch<React.SetStateAction<string>>;
   setInstitutionName: React.Dispatch<React.SetStateAction<string>>;
-  selectedGroup: object | null;
+  selectedGroup: {
+    name: string;
+    institution_id?: number | null;
+    company_id?: number | null;
+  } | null;
   activeTab: string;
   companyName: string;
   institutionName: string;
@@ -361,15 +365,32 @@ const InstitutionOrCompanyList = ({
     return () => clearTimeout(debounce);
   }, [searchTerm, dispatch, isCompany]);
 
-  const handleSelect = (name: string) => {
+  const handleSelect = (item: any) => {
+    const name = item.name;
     setSelectedName(name);
     setSearchTerm("");
     setShowDropdown(false); // Close dropdown
-    dispatch(setSelectedGroup(null));
+
     if (isCompany) {
       setCompanyName(name);
+      dispatch(
+        setSelectedGroup({
+          company_id: item.company,
+          institution_id: null,
+          name: "",
+          data: [],
+        })
+      );
     } else {
       setInstitutionName(name);
+      dispatch(
+        setSelectedGroup({
+          company_id: null,
+          institution_id: item.institution,
+          name: "",
+          data: [],
+        })
+      );
     }
   };
 
@@ -401,13 +422,17 @@ const InstitutionOrCompanyList = ({
     }, {});
 
     return Object.entries(grouped).map(([key, value]) => ({
-      id: Number(key),
+      institution_id: isCompany
+        ? value[0]?.institution
+        : selectedGroup?.institution_id,
+      company_id: isCompany ? selectedGroup?.company_id : value[0]?.company,
       name: key,
       data: value as any[],
     }));
   };
 
   const groupedData = groupByValue(results);
+
   return (
     <div className="w-full px-4 py-6 bg-gray-50 rounded-lg shadow-inner h-screen">
       <div className="sticky top-0 bg-gray-50 pb-4 z-10">
@@ -431,13 +456,13 @@ const InstitutionOrCompanyList = ({
             {isLoading ? (
               <li className="px-4 py-2 text-sm text-gray-500">Loading...</li>
             ) : listItems.length > 0 ? (
-              listItems.map((name: string, idx: number) => (
+              listItems.map((item: any, idx: number) => (
                 <li
                   key={idx}
-                  onClick={() => handleSelect(name)}
+                  onClick={() => handleSelect(item)}
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                 >
-                  {name}
+                  {item?.name}
                 </li>
               ))
             ) : (

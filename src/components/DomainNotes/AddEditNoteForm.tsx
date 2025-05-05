@@ -45,14 +45,6 @@ const NoteForm: React.FC<NoteFormProps> = ({
   setSelectedData,
   selectedData,
 }) => {
-  const dummyData = {
-    company: [{ id: 243, name: "Guardant Health, Inc" }, {}],
-    institution: [
-      { id: 7, name: "Baillie Gifford & Co" },
-      { id: 34, name: "BlackRock, Inc." },
-      { id: 33, name: "The Vanguard Group" },
-    ],
-  };
   const dispatch =
     useDispatch<typeof import("@/stores/store").store.dispatch>();
   const { notesLoading } = useAppSelector((state) => state.notes);
@@ -71,16 +63,14 @@ const NoteForm: React.FC<NoteFormProps> = ({
     (state: { domainNotes: { loadingInstitutionDropdown: boolean } }) =>
       state.domainNotes.loadingInstitutionDropdown
   );
-  const dropdownData = dummyData;
-  // useSelector(
-  //   (state: { domainNotes: { companyDropDown: any } }) =>
-  //     state.domainNotes.companyDropDown
-  // );
-  const companyDropdownData = dummyData;
-  // useSelector(
-  //   (state: { domainNotes: { institutionDropDown: any } }) =>
-  //     state.domainNotes.institutionDropDown
-  // );
+  const dropdownData = useSelector(
+    (state: { domainNotes: { companyDropDown: any } }) =>
+      state.domainNotes.companyDropDown
+  );
+  const companyDropdownData = useSelector(
+    (state: { domainNotes: { institutionDropDown: any } }) =>
+      state.domainNotes.institutionDropDown
+  );
   useEffect(() => {
     const debounce = setTimeout(() => {
       if (!searchTerm.trim()) return;
@@ -95,7 +85,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
       dispatch(
         fetchDomainNotesDropDownValuesByInstitution(institutionsSearchTerm)
       );
-    });
+    }, 500);
     return () => clearTimeout(debounce);
   }, [institutionsSearchTerm, dispatch]);
 
@@ -172,18 +162,20 @@ const NoteForm: React.FC<NoteFormProps> = ({
                     <li className="px-4 py-2 text-sm text-gray-500">
                       Loading...
                     </li>
-                  ) : dropdownData["company"]?.length > 0 ? (
-                    dropdownData["company"]?.map((com: any, idx: number) => (
-                      <li
-                        key={idx}
-                        onClick={() =>
-                          handleSelect(com.id, com.name, "company")
-                        }
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                      >
-                        {com.name}
-                      </li>
-                    ))
+                  ) : dropdownData["all_companies"]?.length > 0 ? (
+                    dropdownData["all_companies"]?.map(
+                      (com: any, idx: number) => (
+                        <li
+                          key={idx}
+                          onClick={() =>
+                            handleSelect(com.id, com.name, "company")
+                          }
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        >
+                          {com.name}
+                        </li>
+                      )
+                    )
                   ) : (
                     <li className="px-4 py-2 text-sm text-gray-500">
                       No results found
@@ -227,17 +219,17 @@ const NoteForm: React.FC<NoteFormProps> = ({
                     <li className="px-4 py-2 text-sm text-gray-500">
                       Loading...
                     </li>
-                  ) : companyDropdownData["institution"]?.length > 0 ? (
-                    companyDropdownData["institution"].map(
+                  ) : companyDropdownData["all_institution"]?.length > 0 ? (
+                    companyDropdownData["all_institution"].map(
                       (ins: any, idx: number) => (
                         <li
                           key={idx}
                           onClick={() =>
-                            handleSelect(ins.id, ins.name, "institution")
+                            handleSelect(ins.id, ins.institution, "institution")
                           }
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                         >
-                          {ins.name}
+                          {ins.institution}
                         </li>
                       )
                     )
