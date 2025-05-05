@@ -189,7 +189,7 @@ const index = () => {
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
                             <h1 className="text-lg font-bold">Real Time Data 2025</h1>
-                            {
+                            {/* {
                                 realTimeData?.length > 0 &&
                                 <p className=" italic"> Meeting Date: {realTimeData[0]?.meeting_date
                                     ? new Intl.DateTimeFormat("en-US", {
@@ -198,7 +198,7 @@ const index = () => {
                                         day: "numeric",
                                     }).format(new Date(realTimeData[0].meeting_date))
                                     : ""} </p>
-                            }
+                            } */}
                         </span>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
@@ -392,11 +392,11 @@ const index = () => {
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "17.5%" }}
                                                         >
-                                                            Institution
+                                                            Company
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }}
+                                                            style={{ width: "12%" }}
                                                         >
                                                             Meeting Type
                                                         </Table.Td>
@@ -420,9 +420,15 @@ const index = () => {
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "30%" }}
+                                                            style={{ width: "10%" }}
                                                         >
                                                             Vote Cast
+                                                        </Table.Td>
+                                                        <Table.Td
+                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                            style={{ width: "17.5%" }}
+                                                        >
+                                                            Institution
                                                         </Table.Td>
                                                     </Table.Tr>
                                                 </Table.Thead>
@@ -451,10 +457,10 @@ const index = () => {
                                                                         className="whitespace-nowrap overflow-hidden text-ellipsis"
                                                                         style={{ width: "17.5%" }}
                                                                     >
-                                                                        {vds?.excel_institution_name}
+                                                                        {vds?.company_name}
                                                                     </Table.Td>
 
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "12%" }}>
                                                                         <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
                                                                     </Table.Td>
 
@@ -470,7 +476,7 @@ const index = () => {
                                                                         {convertToTitleCase(vds?.mgt_rec)}
                                                                     </Table.Td>
 
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
+                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
                                                                         <div className="flex">
                                                                             {vds?.vote === "Split Vote" ? (
                                                                                 <Tippy
@@ -502,6 +508,12 @@ const index = () => {
                                                                                 </span>
                                                                             )}
                                                                         </div>
+                                                                    </Table.Td>
+                                                                    <Table.Td
+                                                                        className="py-2 border-dashed dark:bg-transparent"
+                                                                        style={{ width: "17.5%" }}
+                                                                    >
+                                                                        {vds?.institution_name}
                                                                     </Table.Td>
                                                                 </Table.Tr>
                                                             );

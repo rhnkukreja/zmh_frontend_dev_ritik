@@ -511,10 +511,10 @@ function ShareHolderProposal() {
       tab === "proposal"
         ? 0
         : tab === "no-action"
-        ? 1
-        : tab === "withdrawn"
-        ? 2
-        : -1;
+          ? 1
+          : tab === "withdrawn"
+            ? 2
+            : -1;
     return tabIndex;
   };
 
@@ -643,14 +643,13 @@ function ShareHolderProposal() {
     if (isAllCompanySelected) {
       return baseUrls.map((baseUrl) => baseUrl);
     } else {
-      const queryParam = `?global_search=${
-        companyGlobalSearchName || filters?.global_search?.[0]
-      }`;
+      const queryParam = `?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
+        }`;
       return baseUrls.map((baseUrl) => `${baseUrl}${queryParam}`);
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
- 
+
   const mergeVoteDetails = (data: any[]) => {
     return data.map((item) => {
       const result: any = {
@@ -735,7 +734,7 @@ function ShareHolderProposal() {
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
             {isAllCompanySelected === true ? (
               <div className="font-semibold text-xl">
-                All Shareholder Proposals 
+                All Shareholder Proposals
               </div>
             ) : (
               <div className="font-semibold text-xl">Shareholder Proposals</div>
@@ -768,7 +767,7 @@ function ShareHolderProposal() {
                               type: e.target.checked,
                             })
                           );
-                        } catch (error) {}
+                        } catch (error) { }
                       }}
                     />
                     <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
@@ -847,12 +846,12 @@ function ShareHolderProposal() {
 
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
-                    <div className="hover:bg-slate-50 ">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
-                    </div>
-                  )}
+                      <div className="hover:bg-slate-50 ">
+                        <Button onClick={getSavedSearches}>
+                          Previous Search
+                        </Button>
+                      </div>
+                    )}
                   {tab == "proposal" && proposalCount > 0 && (
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
@@ -1216,7 +1215,7 @@ function ShareHolderProposal() {
                         </div>
                       )}
 
-                      {(tab === "proposal" || tab === "no-action") && (
+                      {isAllCompanySelected && ((tab === "proposal" || tab === "no-action") && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
                             <span className="font-semibold">Index</span>
@@ -1256,7 +1255,7 @@ function ShareHolderProposal() {
                             )}
                           />
                         </div>
-                      )}
+                      ))}
 
                       {user?.user_type === "Admin" && (
                         <>
@@ -1767,7 +1766,7 @@ function ShareHolderProposal() {
                                 />
                               </div>
 
-                              
+
                             </>
                           )}
                         </>
@@ -1880,28 +1879,26 @@ function ShareHolderProposal() {
                         <div className="w-full pt-5">
                           <div className="flex gap-4 mb-6 px-4">
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                                activeTab === "shareholders"
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
                                   ? "bg-primary text-white shadow"
                                   : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                              }`}
+                                }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
                               All Shareholder Proposals
                             </button>
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                                activeTab === "proponents"
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
                                   ? "bg-primary text-white shadow"
                                   : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                              }`}
+                                }`}
                               onClick={() => setActiveTab("proponents")}
                             >
                               Shareholder Proposals: Proponent Analytics
                             </button>
                           </div>
 
- 
+
                           {/* Content */}
                           <div>
                             {activeTab === "shareholders" ? (
@@ -1935,8 +1932,8 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr>
-                                <Table.Td className="py-2 text-left w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                  Year
+                                <Table.Td className="py-2 text-left w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  Proxy Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
                                   <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
@@ -1978,7 +1975,7 @@ function ShareHolderProposal() {
                                       className="[&_td]:last:border-b-0"
                                     >
                                       <Table.Td className="py-2 text-left border-dashed dark:bg-darkmode-600">
-                                        {noAction?.year}
+                                        {noAction?.proxy_season ?? noAction?.year}
                                       </Table.Td>
                                       {isAllCompanySelected && (
                                         <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
@@ -1988,14 +1985,14 @@ function ShareHolderProposal() {
                                       <Table.Td className="whitespace-nowrap capitalize max-w-[300px] overflow-hidden text-ellipsis text-wrap">
                                         {noAction?.proponent ===
                                           "Not Disclosed" &&
-                                        (!noAction?.proponent_name ||
-                                          noAction?.proponent_name.trim() ===
+                                          (!noAction?.proponent_name ||
+                                            noAction?.proponent_name.trim() ===
                                             "")
                                           ? noAction?.proponent
                                           : noAction?.proponent ===
                                             "Not Disclosed"
-                                          ? noAction?.proponent_name
-                                          : noAction?.proponent}
+                                            ? noAction?.proponent_name
+                                            : noAction?.proponent}
                                       </Table.Td>
                                       <Table.Td
                                         className={clsx([
@@ -2018,7 +2015,7 @@ function ShareHolderProposal() {
 
                                         {!noAction?.vote_details &&
                                           noAction?.year?.toString() ===
-                                            "2025" && (
+                                          "2025" && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="flex items-center justify-center w-full h-full text-primary mr-2">
                                                 <Tippy
@@ -2039,15 +2036,15 @@ function ShareHolderProposal() {
                                         className={clsx([
                                           "py-2 font-semibold border-dashed dark:bg-darkmode-600",
                                           noAction?.nl_exist &&
-                                            "text-blue-600 underline cursor-pointer",
+                                          "text-blue-600 underline cursor-pointer",
                                         ])}
                                         onClick={() => {
                                           const id =
                                             noAction?.nl_exist === true
                                               ? noAction?.no_action_link
-                                                  ?.split("/")
-                                                  .filter(Boolean)
-                                                  .pop()
+                                                ?.split("/")
+                                                .filter(Boolean)
+                                                .pop()
                                               : 0;
                                           noAction?.nl_exist === true &&
                                             navigate(
@@ -2150,21 +2147,19 @@ function ShareHolderProposal() {
                         <div className="w-full pt-5">
                           <div className="flex gap-4 mb-6 px-4 ">
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                                activeTab === "shareholders"
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
                                   ? "bg-primary text-white shadow"
                                   : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                              }`}
+                                }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
                               All No Action Letters
                             </button>
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                                activeTab === "proponents"
+                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
                                   ? "bg-primary text-white shadow"
                                   : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                              }`}
+                                }`}
                               onClick={() => setActiveTab("proponents")}
                             >
                               No Action Letters: Proponent Analytics

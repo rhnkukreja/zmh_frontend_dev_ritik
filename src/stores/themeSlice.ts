@@ -83,7 +83,8 @@ const initialState: ThemeState = {
     "notes",
     "investor-company-details",
     "proxy-contest",
-    "voting-data"
+    "voting-data",
+    "real-time-data"
   ],
 };
 
