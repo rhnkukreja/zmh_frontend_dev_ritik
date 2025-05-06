@@ -7,7 +7,7 @@ import Lucide from "@/components/Base/Lucide";
 import TradingViewWidget from "@/components/TradingViewWidget";
 
 const CountryInfoHeader = () => {
-  const { finhub } = useAppSelector((state: RootState) => state.authentiction);
+  const { finhub , companyGlobalSearchTicker ,companyGlobalSearchName } = useAppSelector((state: RootState) => state.authentiction);
   const [isChartOpen, setIsChartOpen] = useState(false);
 
   return (
@@ -24,7 +24,7 @@ const CountryInfoHeader = () => {
         )}
         <div className="flex items-center">
           <span className="font-semibold text-lg">
-            {finhub?.name} {finhub?.ticker && `(${finhub?.ticker})`}
+            {finhub?.name || companyGlobalSearchName} {finhub?.ticker ? `(${finhub?.ticker})` :  `(${companyGlobalSearchTicker})`}
           </span>
         </div>
       </div>
@@ -42,14 +42,14 @@ const CountryInfoHeader = () => {
         )}
       </div>
 
-      {finhub?.finnhub_industry && (
+      {finhub?.finnhub_industry ? (
         <div className="flex items-center">
           <div className="flex flex-row items-start gap-2">
             <p className="text-gray-600 font-medium text-sm">Industry:</p>
             <p className="text-gray-500 text-sm">{finhub?.finnhub_industry}</p>
           </div>
         </div>
-      )}
+      ):""}
 
       <div
         className="cursor-pointer ml-4 p-2 bg-red-100 rounded-full hover:bg-red-200 transition-all shadow-md"
@@ -62,7 +62,7 @@ const CountryInfoHeader = () => {
       <Dialog size="xl" open={isChartOpen} onClose={() => setIsChartOpen(false)}>
         <Dialog.Panel>
           <Dialog.Title>
-            <h2 className="text-xl font-semibold">{finhub?.name} Chart</h2>
+            <h2 className="text-xl font-semibold">{finhub?.name || companyGlobalSearchName} Chart</h2>
             <div
               onClick={() => setIsChartOpen(false)}
               className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"

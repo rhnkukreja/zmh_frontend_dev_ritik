@@ -202,20 +202,20 @@ function ProxyGuideline() {
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
-       const updatedFilters = { ...filters };
-   
-       if (Array.isArray(updatedFilters[removeKey])) {
-         updatedFilters[removeKey] = updatedFilters[removeKey].filter(
-           (item) => item !== removeValue
-         );
-       } else if (updatedFilters[removeKey] === removeValue) {
-         updatedFilters[removeKey] = "";
-       }
-   
-       setValue(removeKey, updatedFilters[removeKey]);
-       dispatch(setAllFilters(updatedFilters));
-     }
-     
+    const updatedFilters = { ...filters };
+
+    if (Array.isArray(updatedFilters[removeKey])) {
+      updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+        (item) => item !== removeValue
+      );
+    } else if (updatedFilters[removeKey] === removeValue) {
+      updatedFilters[removeKey] = "";
+    }
+
+    setValue(removeKey, updatedFilters[removeKey]);
+    dispatch(setAllFilters(updatedFilters));
+  }
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -314,7 +314,7 @@ function ProxyGuideline() {
                           className="stroke-[2] w-4 h-4 text-white "
                         />
                         <span className="ml-2 font-semibold hidden xl:flex">
-                        Key Overboarding Policies
+                          Key Overboarding Policies
                         </span>
                       </div>
                     </a>
@@ -344,9 +344,9 @@ function ProxyGuideline() {
                           <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
                             {filtersLength}
                           </div>
-                         
+
                         </Popover.Button>
-                       
+
                         <Popover.Panel placement="bottom-end">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="p-2">
@@ -375,7 +375,7 @@ function ProxyGuideline() {
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                <span className="font-semibold">Year</span>
+                                    <span className="font-semibold">Year</span>
                                     {guidelineFilterOptions?.year?.length >
                                       0 && (
                                         <div>
@@ -440,7 +440,7 @@ function ProxyGuideline() {
                                 </div>
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                <span className="font-semibold">Region</span>
+                                    <span className="font-semibold">Region</span>
                                     {guidelineFilterOptions?.region?.length >
                                       0 && (
                                         <div>
@@ -508,13 +508,13 @@ function ProxyGuideline() {
                             </div>
                           </form>
                         </Popover.Panel>
-                        
+
                       </>
                     )}
                   </Popover>
-                  
+
                 </div>
-               
+
               </div>
 
               {
@@ -525,10 +525,10 @@ function ProxyGuideline() {
               }
 
               {count > 0 && (
-              <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
-                Count: {count}
-              </h2>
-            )}
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                  Count: {count}
+                </h2>
+              )}
               <div className="overflow-auto xl:overflow-visible px-5">
 
                 <TableWrapper isLoading={loading}>
@@ -580,34 +580,28 @@ function ProxyGuideline() {
                                 className="[&_td]:last:border-b-0"
                               >
                                 <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                  {guideline?.institution_logo_url ? (
-                                    <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
+                                {guideline?.institution_logo_url &&
+                              guideline.institution_logo_url !== "null" ? (
+                              <>
+                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
                                 shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
-                                        <img
-                                          alt="Institution Logo"
-                                          className="object-contain "
-                                          src={guideline?.institution_logo_url}
-                                          content={
-                                            guideline?.institution_name || ""
-                                          }
-                                        />
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                      <img
-                                        alt="Institution Logo"
-                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                        src={investorIcon}
-                                      />
-
-                                      <a
-                                        href=""
-                                        className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
-                                      ></a>
-                                    </div>
-                                  )}
+                                  <img
+                                    alt="ZMH Analytics"
+                                    className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
+                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
+                                    src={guideline?.institution_logo_url}
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                <img
+                                  src={investorIcon}
+                                  alt="Investor Icon"
+                                  className="w-[65%] h-[65%] object-contain"
+                                />
+                              </div>
+                            )}
 
                                   <div className="ml-4">
                                     <p className="font-medium whitespace-nowrap">

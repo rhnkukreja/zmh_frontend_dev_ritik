@@ -39,6 +39,8 @@ const useCompanySearch = () => {
     );
     if (saveSearchResponse?.finnhub) {
       dispatch(setFinhub(saveSearchResponse?.finnhub));
+    } else {
+      dispatch(setFinhub(null));
     }
     dispatch(
       setDashboardGlobalSearch({

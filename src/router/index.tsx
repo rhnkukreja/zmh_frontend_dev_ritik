@@ -91,6 +91,7 @@ import NPXDetails from "@/pages/NPX";
 import ProxyContest from "@/pages/ProxyContest";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
 import VdsEuropean from "@/pages/vdsEuropean";
+import RealTimeData from "@/pages/RealTimeData";
 
 function Router() {
   const TitleManager = () => {
@@ -475,6 +476,11 @@ function Router() {
           path: "voting-data",
           element: <VdsEuropean />,
           data: { titleName: "Voting Data - ZMH Analytics" },
+        },
+        {
+          path: "real-time-data",
+          element: <RealTimeData />,
+          data: { titleName: "Real Time Data - ZMH Analytics" },
         },
         
       ],

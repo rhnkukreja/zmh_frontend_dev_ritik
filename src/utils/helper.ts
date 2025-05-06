@@ -369,6 +369,12 @@ function convertToTitleCase(str: string): string {
   } else if (str == "institution_name") {
     return "Institution"
   }
+  else if (str == "from_date") {
+    return "From"
+  }
+  else if (str == "to_date") {
+    return "To"
+  }
   console.log("str", str)
   return str
     .toLowerCase()

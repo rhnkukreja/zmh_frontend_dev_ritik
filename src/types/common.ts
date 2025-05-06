@@ -43,6 +43,7 @@ export type ShareholderProposalPayload = {
   approved: boolean;
   is_correct: boolean;
   company_status: boolean;
+  head_support: boolean;
   nl_exist: boolean;
   index: string;
 };
