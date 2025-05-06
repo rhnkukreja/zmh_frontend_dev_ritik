@@ -55,9 +55,9 @@ import { dashboardService } from "@/services/dashboard";
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
-
+  const { selectedGroup } = useAppSelector((state) => state.notes);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
-
+const selectedName = selectedGroup?.institutionName || selectedGroup?.companyName || ""
   const { companySearchAndUpdate } = useCompanySearch();
 
   const { noCompanyHeaderRoutes } = useAppSelector((state) => state.theme);
@@ -284,10 +284,11 @@ function Main() {
     getModulesCount();
   }, [companyGlobalSearchName]);
 
-
   const getModulesCount = async () => {
     try {
-      const res = await dashboardService.getModulesCount({ global_search: companyGlobalSearchName });
+      const res = await dashboardService.getModulesCount({
+        global_search: companyGlobalSearchName,
+      });
       if (res?.result) {
         setModulesData(res?.result);
       }
@@ -394,7 +395,7 @@ function Main() {
                     {user.user_type === "Admin" ? (
                       <>{menu}</>
                     ) : user.user_type !== "Admin" && menu === "Admin" ? (
-                      <>{ }</>
+                      <>{}</>
                     ) : (
                       <>{menu}</>
                     )}
@@ -526,116 +527,112 @@ function Main() {
                       //   onExit={leave}
                       //   timeout={300}
                       // >
-                        <ul
-                          className={clsx([
-                            "",
-                            { block: menu.activeDropdown },
-                            { hidden: !menu.activeDropdown },
-                          ])}
-                        >
-                          {menu.subMenu.map((subMenu, subMenuKey) => (
-                            <li key={subMenuKey}>
-                              <a
-                                href=""
-                                className={clsx([
-                                  "side-menu__link",
-                                  { "side-menu__link--active": subMenu.active },
-                                  {
-                                    "side-menu__link--active-dropdown":
-                                      subMenu.activeDropdown,
-                                  },
-                                ])}
-                                onClick={(event: React.MouseEvent) => {
-                                  event.preventDefault();
-                                  linkTo(subMenu, navigate);
-                                  setFormattedMenu([...formattedMenu]);
-                                }}
-                              >
-                                <Lucide
-                                  icon={subMenu.icon}
-                                  className="side-menu__link__icon"
-                                />
-                                <div className="side-menu__link__title link_color">
-                                  {subMenu.title}
+                      <ul
+                        className={clsx([
+                          "",
+                          { block: menu.activeDropdown },
+                          { hidden: !menu.activeDropdown },
+                        ])}
+                      >
+                        {menu.subMenu.map((subMenu, subMenuKey) => (
+                          <li key={subMenuKey}>
+                            <a
+                              href=""
+                              className={clsx([
+                                "side-menu__link",
+                                { "side-menu__link--active": subMenu.active },
+                                {
+                                  "side-menu__link--active-dropdown":
+                                    subMenu.activeDropdown,
+                                },
+                              ])}
+                              onClick={(event: React.MouseEvent) => {
+                                event.preventDefault();
+                                linkTo(subMenu, navigate);
+                                setFormattedMenu([...formattedMenu]);
+                              }}
+                            >
+                              <Lucide
+                                icon={subMenu.icon}
+                                className="side-menu__link__icon"
+                              />
+                              <div className="side-menu__link__title link_color">
+                                {subMenu.title}
+                              </div>
+                              {subMenu.badge && (
+                                <div className="side-menu__link__badge">
+                                  {subMenu.badge}
                                 </div>
-                                {subMenu.badge && (
-                                  <div className="side-menu__link__badge">
-                                    {subMenu.badge}
-                                  </div>
-                                )}
-                                {subMenu.subMenu && (
-                                  <Lucide
-                                    icon="ChevronDown"
-                                    className="side-menu__link__chevron"
-                                  />
-                                )}
-                              </a>
-                              {/* BEGIN: Third Child */}
-                              {subMenu.subMenu && (
-                                // <Transition
-                                //   in={subMenu.activeDropdown}
-                                //   onEnter={enter}
-                                //   onExit={leave}
-                                //   timeout={300}
-                                // >
-                                  <ul
-                                    className={clsx([
-                                      "",
-                                      {
-                                        block: subMenu.activeDropdown,
-                                      },
-                                      { hidden: !subMenu.activeDropdown },
-                                    ])}
-                                  >
-                                    {subMenu.subMenu.map(
-                                      (lastSubMenu, lastSubMenuKey) => (
-                                        <li key={lastSubMenuKey}>
-                                          <a
-                                            href=""
-                                            className={clsx([
-                                              "side-menu__link",
-                                              {
-                                                "side-menu__link--active":
-                                                  lastSubMenu.active,
-                                              },
-                                              {
-                                                "side-menu__link--active-dropdown":
-                                                  lastSubMenu.activeDropdown,
-                                              },
-                                            ])}
-                                            onClick={(
-                                              event: React.MouseEvent
-                                            ) => {
-                                              event.preventDefault();
-                                              linkTo(lastSubMenu, navigate);
-                                              setFormattedMenu([
-                                                ...formattedMenu,
-                                              ]);
-                                            }}
-                                          >
-                                            <Lucide
-                                              icon={lastSubMenu.icon}
-                                              className="side-menu__link__icon"
-                                            />
-                                            <div className="side-menu__link__title link_color">
-                                              {lastSubMenu.title}
-                                            </div>
-                                            {lastSubMenu.badge && (
-                                              <div className="side-menu__link__badge">
-                                                {lastSubMenu.badge}
-                                              </div>
-                                            )}
-                                          </a>
-                                        </li>
-                                      )
-                                    )}
-                                  </ul>
-                                // </Transition>
                               )}
-                              {/* END: Third Child */}
-                            </li>
-                          ))}
-                        </ul>
+                              {subMenu.subMenu && (
+                                <Lucide
+                                  icon="ChevronDown"
+                                  className="side-menu__link__chevron"
+                                />
+                              )}
+                            </a>
+                            {/* BEGIN: Third Child */}
+                            {subMenu.subMenu && (
+                              // <Transition
+                              //   in={subMenu.activeDropdown}
+                              //   onEnter={enter}
+                              //   onExit={leave}
+                              //   timeout={300}
+                              // >
+                              <ul
+                                className={clsx([
+                                  "",
+                                  {
+                                    block: subMenu.activeDropdown,
+                                  },
+                                  { hidden: !subMenu.activeDropdown },
+                                ])}
+                              >
+                                {subMenu.subMenu.map(
+                                  (lastSubMenu, lastSubMenuKey) => (
+                                    <li key={lastSubMenuKey}>
+                                      <a
+                                        href=""
+                                        className={clsx([
+                                          "side-menu__link",
+                                          {
+                                            "side-menu__link--active":
+                                              lastSubMenu.active,
+                                          },
+                                          {
+                                            "side-menu__link--active-dropdown":
+                                              lastSubMenu.activeDropdown,
+                                          },
+                                        ])}
+                                        onClick={(event: React.MouseEvent) => {
+                                          event.preventDefault();
+                                          linkTo(lastSubMenu, navigate);
+                                          setFormattedMenu([...formattedMenu]);
+                                        }}
+                                      >
+                                        <Lucide
+                                          icon={lastSubMenu.icon}
+                                          className="side-menu__link__icon"
+                                        />
+                                        <div className="side-menu__link__title link_color">
+                                          {lastSubMenu.title}
+                                        </div>
+                                        {lastSubMenu.badge && (
+                                          <div className="side-menu__link__badge">
+                                            {lastSubMenu.badge}
+                                          </div>
+                                        )}
+                                      </a>
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                              // </Transition>
+                            )}
+                            {/* END: Third Child */}
+                          </li>
+                        ))}
+                      </ul>
                       // </Transition>
                     )}
                     {/* END: Second Child */}
@@ -699,7 +696,9 @@ function Main() {
                   "/proxy-voting-guideline",
                 ]?.includes(location.pathname) ? (
                   <h1 className="font-semibold text-2xl">
-                    {pageTitles[location.pathname]}
+                    {pageTitles[location.pathname]}{" "}
+                    {location.pathname.includes("/notes") && selectedName &&
+                    `- ${selectedName}`}
                   </h1>
                 ) : (
                   <div
@@ -972,8 +971,9 @@ function Main() {
             )}
 
             <iframe
-              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
-                }`}
+              className={`w-full h-full ${
+                isFrameLoading || isError ? "hidden" : ""
+              }`}
               src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
               title="Embedded Dashboard"
               onLoad={handleLoad}

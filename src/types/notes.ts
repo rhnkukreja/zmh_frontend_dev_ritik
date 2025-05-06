@@ -25,6 +25,8 @@ export interface Note {
 export interface Group {
   company_id:number;
   institution_id:number;
+  companyName:string |null;
+  institutionName:string | null;
   name: string;
   data: Array<any>
   
