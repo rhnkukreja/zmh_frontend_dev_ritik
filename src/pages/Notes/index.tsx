@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SubSidebar from "./components/SubSidebar";
 import NotesList from "./components/NotesList";
 import NoteDetails from "./components/NoteDetails";
@@ -46,7 +46,6 @@ const Notes: React.FC = () => {
     dispatch(setSelectedNote(null));
   };
   const fetchData = async () => {
-    
     if (selectedGroup.institution_id && selectedGroup.company_id) {
       const dynamicURL = createDynamicURL(
         `${baseURL}/user/domain_notes/`,
@@ -67,9 +66,11 @@ const Notes: React.FC = () => {
       );
     }
   };
- 
+  useEffect(() => {
+    dispatch(setSelectedGroup(null));
+  }, []);
   return (
-    <div className="h-full flex flex-col my-[-35px] ml-[-20px] pb-[30px]">
+    <div className=" container m-auto h-full flex  flex-col my-[-35px]  pb-[30px]">
       <div className="w-full flex justify-between px-4 py-6 bg-white dark:bg-darkmode-800">
         <div className="flex gap-4">
           <button

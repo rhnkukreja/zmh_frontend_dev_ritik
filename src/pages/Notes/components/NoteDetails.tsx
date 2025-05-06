@@ -59,7 +59,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
         data: (response?.payload as { results: any }).results,
       })
     );
-   
   };
   const handleDeleteNote = async (item: any) => {
     try {
@@ -289,40 +288,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
             <div className="border-b border-muted mb-2 !z-10"></div>
             {selectedGroup?.data.map((item, index) => (
               <div className="mx-4" key={index}>
-                {isEditing ? null : (
-                  <div className=" flex justify-end  text-gray-500 text-xs mb-2">
-                    <div className="flex gap-1 ">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          setIsEditing(true);
-                          setData({
-                            company_id: item?.company,
-                            institution_id: item?.institution,
-                            institution_name: item?.institution_name,
-                            company_name: item?.company_name,
-                          });
-                          setNoteDetails(item);
-                        }}
-                      >
-                        <Tippy content="Edit Note" options={{ theme: "light" }}>
-                          <Lucide icon="Pen" className="w-4 h-4" />
-                        </Tippy>
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => handleDeleteNote(item)}
-                      >
-                        <Tippy
-                          content="Delete Note"
-                          options={{ theme: "light" }}
-                        >
-                          <Lucide icon="Trash" className="w-4 h-4" />
-                        </Tippy>
-                      </Button>
-                    </div>
-                  </div>
-                )}
                 {/* <h2 className="text-lg font-semibold text-gray-800">Notes Name</h2>
              <div className="border-t text-gray-700 mb-5 mt-2"></div> */}
 
@@ -333,17 +298,59 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                   )}
                 >
                   {isEditing ? null : (
-                    <>
-                      <div
-                        className="prose max-w-none"
-                        dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(item.notes),
-                        }}
-                      />
+                    <div>
+                      <div className="flex">
+                        <div className="w-[80%]">
+                          <div
+                            className="prose max-w-none"
+                            dangerouslySetInnerHTML={{
+                              __html: DOMPurify.sanitize(item.notes),
+                            }}
+                          />
+                        </div>
+                        <div className="w-[20%]">
+                          <div className=" flex justify-end  text-gray-500 text-xs mb-2">
+                            <div className="flex gap-1 ">
+                              <Button
+                                variant="secondary"
+                                onClick={() => {
+                                  setIsEditing(true);
+                                  setData({
+                                    company_id: item?.company,
+                                    institution_id: item?.institution,
+                                    institution_name: item?.institution_name,
+                                    company_name: item?.company_name,
+                                  });
+                                  setNoteDetails(item);
+                                }}
+                              >
+                                <Tippy
+                                  content="Edit Note"
+                                  options={{ theme: "light" }}
+                                >
+                                  <Lucide icon="Pen" className="w-4 h-4" />
+                                </Tippy>
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                onClick={() => handleDeleteNote(item)}
+                              >
+                                <Tippy
+                                  content="Delete Note"
+                                  options={{ theme: "light" }}
+                                >
+                                  <Lucide icon="Trash" className="w-4 h-4" />
+                                </Tippy>
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {item.comments?.map((comment, index) => (
                         <div
                           key={index}
-                          className="border-l-4 border-primary/80 pl-4 py-1 bg-white dark:bg-darkmode-600 rounded-md shadow-sm mt-5"
+                          className="border-l-4 border-primary/80 px-4 py-1 bg-white dark:bg-darkmode-600 rounded-md shadow-sm mt-5"
                         >
                           <div className="flex justify-between items-start gap-4">
                             <div
@@ -358,7 +365,10 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                           </div>
                         </div>
                       ))}
-                    </>
+                      <div className="flex justify-end mt-3">
+                      <span className="text-xs text-gray-500 dark:text-gray-400  whitespace-nowrap">{item.formatted_date}</span> 
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

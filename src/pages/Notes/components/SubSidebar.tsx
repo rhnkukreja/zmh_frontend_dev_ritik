@@ -133,7 +133,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
   };
 
   return (
-    <div className="w-80 bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 ml-2 h-full shadow-sm rounded-md mt-2">
+    <div className={`${activeTab === "other" ? "w-[22rem]" : "w-[17rem]"} bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 h-full shadow-sm rounded-md mt-2 box-border`}>
       {activeTab === "other" && (
         <div className="w-full flex justify-center mb-3">
           <Button
@@ -250,11 +250,11 @@ const FolderList = ({
                     {folder?.folder}
                   </Tippy>
                 </span>
-
+                <div className="h-6">
                 {hoveredFolderId === folder?.id && (
                   <div className="flex">
                     <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 ml-2 cursor-pointer"
+                      className="w-6 h-6 flex items-center justify-center  ml-2 cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditFolder(folder);
@@ -267,7 +267,7 @@ const FolderList = ({
                     </div>
 
                     <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 ml-2 cursor-pointer"
+                      className="w-6 h-6 rounded-full flex items-center justify-center ml-2 cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         onClickDeleteIcon(folder);
@@ -280,7 +280,9 @@ const FolderList = ({
                     </div>
                   </div>
                 )}
+                </div>
               </div>
+
               <span className="font-semibold text-sm text-gray-500">
                 {folder?.notes_count}
               </span>
@@ -308,6 +310,8 @@ const InstitutionOrCompanyList = ({
     name: string;
     institution_id?: number | null;
     company_id?: number | null;
+    institutionName?: string | null;
+    companyName?: string | null;
   } | null;
   activeTab: string;
   companyName: string;
@@ -376,7 +380,9 @@ const InstitutionOrCompanyList = ({
       dispatch(
         setSelectedGroup({
           company_id: item.company,
+          companyName:item.name,
           institution_id: null,
+          institutionName:null,
           name: "",
           data: [],
         })
@@ -387,6 +393,8 @@ const InstitutionOrCompanyList = ({
         setSelectedGroup({
           company_id: null,
           institution_id: item.institution,
+          institutionName:item.name,
+          companyName:null,
           name: "",
           data: [],
         })
@@ -422,27 +430,31 @@ const InstitutionOrCompanyList = ({
     }, {});
 
     return Object.entries(grouped).map(([key, value]) => ({
+   
       institution_id: isCompany
         ? value[0]?.institution
         : selectedGroup?.institution_id,
       company_id: isCompany ? selectedGroup?.company_id : value[0]?.company,
+      institutionName:selectedGroup?.institutionName,
+      companyName:selectedGroup?.companyName,
       name: key,
       data: value as any[],
+
     }));
   };
 
   const groupedData = groupByValue(results);
 
   return (
-    <div className="w-full px-4 py-6 bg-gray-50 rounded-lg shadow-inner h-screen">
-      <div className="sticky top-0 bg-gray-50 pb-4 z-10">
+    <div className="w-full px-4 py-6 rounded-lg h-screen">
+      <div className="sticky top-0 pb-4 z-10">
         <input
           ref={inputRef}
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder={`Search ${isCompany ? "companies" : "institutions"}...`}
-          className="w-60 px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2"
+          className="w-50 px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2"
           style={{
             boxShadow: showDropdown ? "0 0 0 2px #a0143c" : undefined,
             borderColor: showDropdown ? "#a0143c" : undefined,
@@ -452,7 +464,7 @@ const InstitutionOrCompanyList = ({
           }}
         />
         {showDropdown && (
-          <ul className="absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-60 mt-1 max-h-60 overflow-y-auto transition-all duration-200">
+          <ul className="absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-[100%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
             {isLoading ? (
               <li className="px-4 py-2 text-sm text-gray-500">Loading...</li>
             ) : listItems.length > 0 ? (
@@ -475,11 +487,12 @@ const InstitutionOrCompanyList = ({
       </div>
 
       {selectedName && (
-        <div className="mb-4 text-sm text-gray-600 text-center">
-          {/* <span className="text-gray-500">
-            Selected {isCompany ? "Company" : "Institution"}:
-          </span>{" "} */}
-          <span className="font-medium text-gray-800">{selectedName}</span>
+        <div className="mb-4 text-sm text-gray-600 ">
+       
+          <span className="font-medium text-gray-800">{isCompany 
+  ?  groupedData?.length > 1 ? 'Institutions' : 'Institution' 
+  :  groupedData?.length > 1 ? 'Companies' : 'Company'}
+</span>
         </div>
       )}
       {results?.length > 0 &&
@@ -490,7 +503,7 @@ const InstitutionOrCompanyList = ({
               <div
                 key={index}
                 className={clsx(
-                  "relative py-4 border-b-[1px] bg-muted px-6 hover:bg-red-50 cursor-pointer",
+                  "relative py-4 border-b-[1px] bg-muted  pl-4 hover:bg-red-50 cursor-pointer",
                   selectedGroup?.name === result?.name ? "bg-red-50" : ""
                 )}
                 onClick={() => {
