@@ -64,9 +64,9 @@ const index = () => {
     const [companyName , setCompanyName] = useState<any>('');
 
     useEffect(() => {
-        getRealTimeDropdownData({});
-        getInstitutionDropdownData({});
-        getVotesDropdownData({});
+        getRealTimeDropdownData({year: 2025});
+        getInstitutionDropdownData({year: 2025});
+        getVotesDropdownData({year: 2025});
         onSubmit({});
     }, [])
 
@@ -107,8 +107,8 @@ const index = () => {
             index: " ",
             from_date: "",
             date_range: "",
-            institutes: "",
-            votes: "",
+            institute: "",
+            vote: "",
 
         },
     });
@@ -164,8 +164,8 @@ const index = () => {
             year: "2025",
             index: cleanFilter?.index,
             date_range: cleanFilter?.date_range ?? null,
-            institutes: cleanFilter?.institutes ? [cleanFilter?.institutes] : null,
-            votes: cleanFilter?.votes ? [cleanFilter?.votes] : null,
+            institute: cleanFilter?.institute ? [cleanFilter?.institute] : null,
+            vote: cleanFilter?.vote ? [cleanFilter?.vote] : null,
             company_name: companyName ? [companyName] : null,
             keyword: cleanFilter?.keyword,
         });
@@ -187,9 +187,9 @@ const index = () => {
     const resetFormValues: any = () => {
         setValue("index", " ");
         setValue("date_range","");
-        setValue("institutes"," ");
-        setValue("votes"," ");
-        setCompanyName("");
+        setValue("institute"," ");
+        setValue("vote"," ");
+        setValue("company_name", []);
         setValue("keyword", "");
 
     };
@@ -357,7 +357,8 @@ const index = () => {
                                         render={({ field }) => (
                                             <CompanySelect
                                                 isClearable={true}
-                                                exactUrl={"get_vds_dropdown_values/?company_name="}
+                                                arrayKeyName={"companies"}
+                                                exactUrl={"get_vds_dropdown_values/?year=2025&company_name="}
                                                 value={field.value}
                                                 onChange={(value: any) => {
                                                     field.onChange(value);
@@ -375,7 +376,7 @@ const index = () => {
                                         <span className="font-semibold">Institute</span>
                                     </div>
                                     <Controller
-                                        name="institutes"
+                                        name="institute"
                                         control={control}
                                         defaultValue={""}
                                         render={({ field }) => (
@@ -416,7 +417,7 @@ const index = () => {
                                         <span className="font-semibold">Vote</span>
                                     </div>
                                     <Controller
-                                        name="votes"
+                                        name="vote"
                                         control={control}
                                         defaultValue={""}
                                         render={({ field }) => (

@@ -103,11 +103,11 @@ const initialState: any = {
       pathname: "/voting-data",
       title: "Voting Data",
     },
-    // {
-    //   icon: "Activity",
-    //   pathname: "/real-time-data",
-    //   title: "Real Time Data",
-    // },
+    {
+      icon: "Activity",
+      pathname: "/real-time-data",
+      title: "Real Time Data",
+    },
     {
       icon: "ShieldAlert",
       pathname: "/proxy-contest",

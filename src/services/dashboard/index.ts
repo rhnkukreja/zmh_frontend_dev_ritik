@@ -5,7 +5,7 @@ import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 
 class DashboardService {
-  public async fetchCompanyByName(companyName?: string, exactUrl?: string): Promise<{
+  public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?:string): Promise<{
     results: CompanyData[];
   }> {
     let results = [];
@@ -20,7 +20,7 @@ class DashboardService {
       }
       const response = await axiosInstance.get(url);
       if(exactUrl){
-        results = response.data?.company;
+        results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
       }else {
         results = response.data;
       }
