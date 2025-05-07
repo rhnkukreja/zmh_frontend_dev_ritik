@@ -166,7 +166,7 @@ const index = () => {
             date_range: cleanFilter?.date_range ?? null,
             institute: cleanFilter?.institute ? [cleanFilter?.institute] : null,
             vote: cleanFilter?.vote ? [cleanFilter?.vote] : null,
-            company_name: companyName ? [companyName] : null,
+            company_name: cleanFilter?.company_name?.value ? [cleanFilter?.company_name?.value] : null,
             keyword: cleanFilter?.keyword,
         });
         dispatch(resetPage());
@@ -214,15 +214,16 @@ const index = () => {
         const updatedFilters = { ...allApplyFilter };
 
         if (Array.isArray(updatedFilters[removeKey])) {
-            updatedFilters[removeKey] = updatedFilters[removeKey].filter(
-                (item) => item !== removeValue
-            );
+            // updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+            //     (item) => item !== removeValue
+            // );
+            updatedFilters[removeKey] = " ";
         } else if (updatedFilters[removeKey] === removeValue) {
-            // if (removeKey === "votes" || removeKey === "institutes" || removeKey === "index") {
-            //     updatedFilters[removeKey] = " ";
-            // } else {
+            if (removeKey === "vote" || removeKey === "institute" || removeKey === "index") {
+                updatedFilters[removeKey] = " ";
+            } else {
                 updatedFilters[removeKey] = "";
-            // }
+            }
         }
 
         setValue(removeKey, updatedFilters[removeKey]);
