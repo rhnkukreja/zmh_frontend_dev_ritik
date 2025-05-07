@@ -466,6 +466,19 @@ const downloadFileByServer = (blob: any, filename: string) => {
   document.body.removeChild(a);
 }
 
+const cleanObject = (obj: Record<string, any>) => {
+  const cleaned: Record<string, any> = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    if (!(typeof value === "string" && value.trim() === "")) {
+      cleaned[key] = value;
+    }
+  }
+
+  return cleaned;
+};
+
 
 export default localStorageHelper;
 
@@ -500,5 +513,6 @@ export {
   getDateWithoutTime,
   downloadXlsxFile,
   downloadFileByServer,
-  generateFilterChips
+  generateFilterChips,
+  cleanObject
 };

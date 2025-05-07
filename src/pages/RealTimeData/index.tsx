@@ -1,15 +1,13 @@
 import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import {
-    convertToTitleCase,
+    cleanObject,
     countValidFilters,
     createDynamicURL,
-    formatedDate,
     generateFilterChips,
-    getDateWithoutTime,
 } from "@/utils/helper";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { baseURL } from "@/constant";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -22,7 +20,6 @@ import {
 } from "@/components/Base/Form";
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
-import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { setTempSearch } from "@/stores/dashboardSlice";
 import FilterChips from "@/components/FilterChips";
@@ -56,9 +53,20 @@ const index = () => {
     const [dropdownValues, setDropdownValues] = useState<any>({
         index: [],
     });
+    const [dropdownInstitutionValues, setDropdownInstitutionValues] = useState<any>({
+        instututes: [],
+    });
+
+    const [dropdownVotesValues, setDropdownVotesValues] = useState<any>({
+        votes: [],
+    });
+
+    const [companyName , setCompanyName] = useState<any>('');
 
     useEffect(() => {
-        getRealTimeDropdownData();
+        getRealTimeDropdownData({});
+        getInstitutionDropdownData({});
+        getVotesDropdownData({});
         onSubmit({});
     }, [])
 
@@ -98,15 +106,18 @@ const index = () => {
         defaultValues: {
             index: " ",
             from_date: "",
-            to_date: "",
+            date_range: "",
+            institutes: "",
+            votes: "",
+
         },
     });
 
 
-    const getRealTimeDropdownData = async () => {
+    const getRealTimeDropdownData = async (filter:any) => {
         try {
             setGetDropdownLoader(true);
-            const res = await realTimeService.getDynamicrealTimeDropdownValues();
+            const res = await realTimeService.getDynamicrealTimeDropdownValues(filter);
             if (res.result) {
                 setDropdownValues({ ...res.result });
             }
@@ -117,32 +128,70 @@ const index = () => {
         }
     };
 
+    const getInstitutionDropdownData = async (filter:any) => {
+        try {
+            const res = await realTimeService.getDynamicrealTimeDropdownValues(filter);
+            if (res.result) {
+                setDropdownInstitutionValues({ ...res.result });
+            }
+        } catch (error) {
+            return error;
+        } finally {
+        }
+    };
+
+    const getVotesDropdownData = async (filter:any) => {
+        try {
+            const res = await realTimeService.getDynamicrealTimeDropdownValues(filter);
+            if (res.result) {
+                setDropdownVotesValues({ ...res.result });
+            }
+        } catch (error) {
+            return error;
+        } finally {
+        }
+    };
+
     const handleCollapseFilter = (event: React.MouseEvent) => {
         event.preventDefault();
         setIsFilterCollapse(!isFilterCollapse);
     };
 
-    const onSubmit = async (npxFilter: any) => {
+    const onSubmit = async (realTimeFilter: any) => {
+        const cleanFilter = cleanObject(realTimeFilter);
+        
         setallApplyFilter({
             year: "2025",
-            index: npxFilter?.index,
-            from_date:npxFilter?.from_date ? getDateWithoutTime(npxFilter?.from_date) : null,
-            to_date: npxFilter?.to_date ? getDateWithoutTime(npxFilter?.to_date) : null
+            index: cleanFilter?.index,
+            date_range: cleanFilter?.date_range ?? null,
+            institutes: cleanFilter?.institutes ? [cleanFilter?.institutes] : null,
+            votes: cleanFilter?.votes ? [cleanFilter?.votes] : null,
+            company_name: companyName ? [companyName] : null,
+            keyword: cleanFilter?.keyword,
         });
         dispatch(resetPage());
     };
 
+    
+
     const onFilterClear = () => {
         resetFormValues();
-        reset();
+        // reset();
         setallApplyFilter({year:"2025"});
         dispatch(resetPage());
+        // getVotesDropdownData({year:"2025"})
+        // getInstitutionDropdownData({year:"2025"})
+
     };
 
     const resetFormValues: any = () => {
         setValue("index", " ");
-        setValue("from_date","");
-        setValue("to_date","");
+        setValue("date_range","");
+        setValue("institutes"," ");
+        setValue("votes"," ");
+        setCompanyName("");
+        setValue("keyword", "");
+
     };
 
     const handleNextPage = () => {
@@ -169,16 +218,53 @@ const index = () => {
                 (item) => item !== removeValue
             );
         } else if (updatedFilters[removeKey] === removeValue) {
-            if (removeKey === "year") {
-                updatedFilters[removeKey] = " ";
-            } else {
+            // if (removeKey === "votes" || removeKey === "institutes" || removeKey === "index") {
+            //     updatedFilters[removeKey] = " ";
+            // } else {
                 updatedFilters[removeKey] = "";
-            }
+            // }
         }
 
         setValue(removeKey, updatedFilters[removeKey]);
         setallApplyFilter( {year: "2025", ...updatedFilters});
     }
+
+    const [groupedQuestions, setGroupedQuestions] = useState<any>([]);
+    const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+
+     useEffect(() => {
+        const groupedQuestions = realTimeData?.reduce((acc: any, question: any) => {
+          const company_name = question?.company_name;
+          const meeting_date = question?.meeting_date;
+          if (!acc[company_name + ' (' + meeting_date + ')']) {
+            acc[company_name + ' (' + meeting_date + ')'] = [];
+          }
+          acc[company_name + ' (' + meeting_date + ')'].push(question);
+          return acc;
+        }, {});
+    
+        setGroupedQuestions(groupedQuestions);
+      }, [realTimeData]);
+    
+      useEffect(() => {
+        if (groupedQuestions) {
+          const initialOpenGroups = Object.keys(groupedQuestions).reduce(
+            (acc, company_name) => {
+              acc[company_name] = openGroups[company_name] ?? true;
+              return acc;
+            },
+            {} as { [key: string]: boolean }
+          );
+          setOpenGroups(initialOpenGroups);
+        }
+      }, [groupedQuestions]);
+    
+      const toggleGroup = (company_name: string) => {
+        setOpenGroups((prevState) => ({
+          ...prevState,
+          [company_name]: !prevState[company_name],
+        }));
+      };
 
     return (
         <>
@@ -259,6 +345,112 @@ const index = () => {
                                 </Button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+
+                                <div className="w-full">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                                        Company*
+                                    </div>
+                                    <Controller
+                                        name="company_name"
+                                        control={control}
+                                        defaultValue={[]}
+                                        render={({ field }) => (
+                                            <CompanySelect
+                                                isClearable={true}
+                                                exactUrl={"get_vds_dropdown_values/?company_name="}
+                                                value={field.value}
+                                                onChange={(value: any) => {
+                                                    field.onChange(value);
+                                                        getInstitutionDropdownData({ year: 2025, company_name: value?.label != null ? [value?.label] : '' });
+                                                        getVotesDropdownData({ year: 2025, company_name: value?.label != null ? [value?.label] : '' });
+                                                        setCompanyName(value?.label);
+                                                }}
+                                            />
+
+                                        )}
+                                    />
+                                </div>
+                                <div className="mx-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                        <span className="font-semibold">Institute</span>
+                                    </div>
+                                    <Controller
+                                        name="institutes"
+                                        control={control}
+                                        defaultValue={""}
+                                        render={({ field }) => (
+                                            <TomSelect
+                                                value={field.value || ""}
+                                                onChange={(event) => {
+                                                    getVotesDropdownData({year: 2025, institutes: [event?.target?.value]})
+                                                    field.onChange(event);
+                                                }}
+                                                options={{
+                                                    placeholder: "Select institute",
+                                                }}
+                                                className="w-full"
+                                                multiple={false}
+                                            >
+                                                {getDropdownLoader ? (
+                                                    <option value="--" disabled>
+                                                        Loading...
+                                                    </option>
+                                                ) : (
+                                                    <>
+                                                        {dropdownInstitutionValues?.institutes?.map(
+                                                            (institutes: string) => {
+                                                                return (
+                                                                    <option value={institutes}>{institutes}</option>
+                                                                );
+                                                            }
+                                                        )}
+                                                    </>
+                                                )}
+                                            </TomSelect>
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="mx-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                        <span className="font-semibold">Vote</span>
+                                    </div>
+                                    <Controller
+                                        name="votes"
+                                        control={control}
+                                        defaultValue={""}
+                                        render={({ field }) => (
+                                            <TomSelect
+                                                value={field.value || ""}
+                                                onChange={(event) => {
+                                                    getInstitutionDropdownData({year: 2025, votes: [event?.target?.value]})
+                                                    field.onChange(event);
+                                                }}
+                                                options={{
+                                                    placeholder: "Select Vote",
+                                                }}
+                                                className="w-full"
+                                                multiple={false}
+                                            >
+                                                {getDropdownLoader ? (
+                                                    <option value="--" disabled>
+                                                        Loading...
+                                                    </option>
+                                                ) : (
+                                                    <>
+                                                        {dropdownVotesValues?.votes?.map(
+                                                            (votes: string) => {
+                                                                return (
+                                                                    <option value={votes}>{votes}</option>
+                                                                );
+                                                            }
+                                                        )}
+                                                    </>
+                                                )}
+                                            </TomSelect>
+                                        )}
+                                    />
+                                </div>
                                 <div className="mx-2">
                                     <div className="text-left text-slate-500 flex justify-between mb-1">
                                         <span className="font-semibold">Index</span>
@@ -299,9 +491,10 @@ const index = () => {
                                     />
                                 </div>
 
+
                                 <div className="mx-2">
                                     <div className="text-left text-slate-500 flex justify-between mb-1">
-                                        <span className="font-semibold">From Date</span>
+                                        <span className="font-semibold">Date Range</span>
                                     </div>
 
                                     <div className="relative">
@@ -309,35 +502,60 @@ const index = () => {
                                             <Lucide icon="Calendar" className="w-4 h-4" />
                                         </div>
                                         <Controller
-                                            name="from_date"
+                                            name="date_range"
                                             control={control}
                                             defaultValue=""
-
                                             render={({ field }) => (
-                                                <Litepicker
-                                                    placeholder="Select From Date"
-                                                    value={field.value}
-                                                    onChange={(date) => field.onChange(date)}
+                                                <Litepicker value={field.value} 
+                                                 onChange={(date) => field.onChange(date)}
+                                                 placeholder="Select Date Range"
                                                     options={{
-                                                        autoApply: false,
-                                                        showWeekNumbers: true,
-                                                        dropdowns: {
-                                                            minYear: 2025,
-                                                            maxYear: 2025,
-                                                            months: true,
-                                                            years: true,
-                                                        },
-                                                        position: 'top',
-                                                        maxDate: new Date().toISOString().split('T')[0],
-                                                        minDate: '2025-01-01',                                                    }}
+
+                                                                  autoApply: false,
+                                                                  singleMode: false,
+                                                                  numberOfColumns: 2,
+                                                                  numberOfMonths: 2,
+                                                                  showWeekNumbers: true,
+                                                                  dropdowns: {
+                                                                    minYear: 1990,
+                                                                    maxYear: null,
+                                                                    months: true,
+                                                                    years: true,
+                                                                  },
+                                                                maxDate: new Date().toISOString().split('T')[0],
+                                                                minDate: '2025-01-01',     
+                                                                }}
                                                     className="pl-12"
-                                                />
+                                                    />
                                             )}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="mx-2">
+                                <div className="w-full">
+                                    <div className="text-left text-slate-500  font-semibold">Keyword</div>
+                                    <Controller
+                                        name="keyword"
+                                        control={control}
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                            <FormInput
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        e.preventDefault();
+                                                        handleSubmit(onSubmit)();
+                                                    }
+                                                }}
+                                                value={field.value?.toString() || ""}
+                                                onChange={field.onChange}
+                                                type="text"
+                                                className="mt-1"
+                                                placeholder="Search Keyword"
+                                            />
+                                        )}
+                                    />
+                                </div>
+                                {/* <div className="mx-2">
                                     <div className="text-left text-slate-500 flex justify-between mb-1">
                                         <span className="font-semibold">To Date</span>
                                     </div>
@@ -372,7 +590,7 @@ const index = () => {
                                         )}
                                     />
                                    </div>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
                     </form>
@@ -395,8 +613,8 @@ const index = () => {
                                                             Company
                                                         </Table.Td>
                                                         <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "12%" }}
+                                                            className="py-2 font-semibold h-[50px] min-w-[150px] bg-header border-header text-[#000000B2]"
+                                                            
                                                         >
                                                             Meeting Type
                                                         </Table.Td>
@@ -432,99 +650,138 @@ const index = () => {
                                                         </Table.Td>
                                                     </Table.Tr>
                                                 </Table.Thead>
+                                                <Table.Tbody className="!max-h-400px overflow-auto">
+                                                                      <>
+                                                                        {groupedQuestions ? (
+                                                                          Object.entries(groupedQuestions).map(
+                                                                            ([company_name, institutionQuestions]: [
+                                                                              string,
+                                                                              any
+                                                                            ]) => (
+                                                                              <>
+                                                                                <Table.Tr
+                                                                                  className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer"
+                                                                                  onClick={() => toggleGroup(company_name)}
+                                                                                >
+                                                                                  <Table.Td
+                                                                                    colSpan={8}
+                                                                                    className="font-semibold py-2"
+                                                                                  >
+                                                                                    <div className="flex flex-row justify-start items-center">
+                                                                                      {company_name}
+                                                                                      <button className="ml-2 text-blue-500">
+                                                                                        {openGroups[company_name] ? (
+                                                                                          <Lucide
+                                                                                            icon="ChevronUp"
+                                                                                            className=" w-6 h-6 mr-2 "
+                                                                                          />
+                                                                                        ) : (
+                                                                                          <Lucide
+                                                                                            icon="ChevronDown"
+                                                                                            className=" w-6 h-6 mr-2 "
+                                                                                          />
+                                                                                        )}
+                                                                                      </button>
+                                                                                    </div>
+                                                                                  </Table.Td>
+                                                                                </Table.Tr>
+                                                
+                                                                                {openGroups[company_name] &&
+                                                                                  Array.isArray(institutionQuestions) &&
+                                                                                  institutionQuestions.map((question: any) => (
+                                                                                    <Table.Tr
+                                                                                      key={question?.id}
+                                                                                      className="[&_td]:last:border-b-0"
+                                                                                    >
+                                                                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600"></Table.Td>
+                                                
+                                                                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                        <div className="whitespace-nowrap min-w-[150px]">
+                                                                                          {question?.meeting_type}
+                                                                                        </div>
+                                                                                      </Table.Td>
+                                                
+                                                                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                        <div className="whitespace-normal  max-w-[200px] overflow-hidden text-ellipsis line-clamp-2">
+                                                                                          {question?.proposal_num}
+                                                                                        </div>
+                                                                                      </Table.Td>
+                                                
+                                                                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                        <div className=" text-wrap max max-w-[200px]">
+                                                                                          {question?.proposal}
+                                                                                        </div>
+                                                                                      </Table.Td>
 
-                                                <Table.Tbody>
-                                                    {realTimeData?.length > 0 && (() => {
-                                                        let lastInstitutionName = '';
-                                                        let toggle = false;
+                                                                                      <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                        <div className="whitespace-nowrap  max-w-[200px]">
+                                                                                          {question?.mgt_rec}
+                                                                                        </div>
+                                                                                      </Table.Td>
 
-                                                        return realTimeData.map((vds: any, index: number) => {
-                                                            const currentInstitution = vds?.excel_institution_name;
-                                                            if (currentInstitution !== lastInstitutionName) {
-                                                                toggle = !toggle;
-                                                                lastInstitutionName = currentInstitution;
-                                                            }
-
-                                                            return (
-                                                                <Table.Tr
-                                                                    key={vds?.id}
-                                                                    className={clsx(
-                                                                        "[&_td]:last:border-b-0",
-                                                                        toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
+                                                                                          <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                                                              <div className="flex">
+                                                                                                  {question?.vote === "Split Vote" ? (
+                                                                                                      <Tippy
+                                                                                                          content={question?.split_vote_counts}
+                                                                                                          options={{ theme: "light" }}
+                                                                                                      >
+                                                                                                          {question?.vote}
+                                                                                                      </Tippy>
+                                                                                                  ) : (
+                                                                                                      <span
+                                                                                                          className={clsx([
+                                                                                                              (question?.vote?.includes("Against") ||
+                                                                                                                  question.vote?.includes("Withhold")) &&
+                                                                                                              "text-red-700 font-semibold ",
+                                                                                                          ])}
+                                                                                                      >
+                                                                                                          {question?.vote}
+                                                                                                      </span>
+                                                                                                  )}
+                                                                                                  {question?.notes && question.notes.toLowerCase() !== "nan" && (
+                                                                                                      <span
+                                                                                                          data-tooltip-id="my-tooltip-data-html"
+                                                                                                          data-tooltip-html={question?.notes}
+                                                                                                      >
+                                                                                                          <Lucide
+                                                                                                              icon="Info"
+                                                                                                              className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                                                          />
+                                                                                                      </span>
+                                                                                                  )}
+                                                                                              </div>
+                                                                                          </Table.Td>
+                                                                                          <Table.Td
+                                                                                              className="py-2 border-dashed dark:bg-transparent"
+                                                                                              style={{ width: "17.5%" }}
+                                                                                          >
+                                                                                              {question?.institution_name}
+                                                                                          </Table.Td>
+                                                
+                                                                                      
+                                                                                    </Table.Tr>
+                                                                                  ))}
+                                                                              </>
+                                                                            )
+                                                                          )
+                                                                        ) : (
+                                                                          <Table.Tr>
+                                                                            <Table.Td
+                                                                              colSpan={5}
+                                                                              className="py-10 text-center text-slate-500"
+                                                                            >
+                                                                              No engagement questions.
+                                                                            </Table.Td>
+                                                                          </Table.Tr>
+                                                                        )}
+                                                                      </>
+                                                                    </Table.Tbody>
+                                                                    {groupedQuestions?.length === 0 && (
+                                                                      <div className="w-full">
+                                                                        <h1 className="mt-3">No Records Found..</h1>
+                                                                      </div>
                                                                     )}
-                                                                >
-                                                                    <Table.Td
-                                                                        className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                                                        style={{ width: "17.5%" }}
-                                                                    >
-                                                                        {vds?.company_name}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "12%" }}>
-                                                                        <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
-                                                                        {vds?.proposal_num}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
-                                                                        {vds?.proposal}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
-                                                                        {convertToTitleCase(vds?.mgt_rec)}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
-                                                                        <div className="flex">
-                                                                            {vds?.vote === "Split Vote" ? (
-                                                                                <Tippy
-                                                                                    content={vds?.split_vote_counts}
-                                                                                    options={{ theme: "light" }}
-                                                                                >
-                                                                                    {vds?.vote}
-                                                                                </Tippy>
-                                                                            ) : (
-                                                                                <span
-                                                                                    className={clsx([
-                                                                                        (vds?.vote?.includes("Against") ||
-                                                                                            vds.vote?.includes("Withhold")) &&
-                                                                                        "text-red-700 font-semibold ",
-                                                                                    ])}
-                                                                                >
-                                                                                    {vds?.vote}
-                                                                                </span>
-                                                                            )}
-                                                                            {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                                                                <span
-                                                                                    data-tooltip-id="my-tooltip-data-html"
-                                                                                    data-tooltip-html={vds?.notes}
-                                                                                >
-                                                                                    <Lucide
-                                                                                        icon="Info"
-                                                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                                    />
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </Table.Td>
-                                                                    <Table.Td
-                                                                        className="py-2 border-dashed dark:bg-transparent"
-                                                                        style={{ width: "17.5%" }}
-                                                                    >
-                                                                        {vds?.institution_name}
-                                                                    </Table.Td>
-                                                                </Table.Tr>
-                                                            );
-                                                        });
-                                                    })()}
-                                                </Table.Tbody>
-                                                {realTimeData?.length === 0 && (
-                                                    <div className="w-full">
-                                                        <h1 className="mt-3">No Voting Data available</h1>
-                                                    </div>
-                                                )}
                                             </Table>
                                         </div>
                                     </TableWrapper>

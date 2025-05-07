@@ -18,7 +18,7 @@ class RealTimeService {
     result: any;
   }> {
     const response = await axiosInstance.get(
-      createDynamicURL(`/get_peer_analysis_dropdown_values/`, paramFilter)
+      createDynamicURL(`/get_vds_dropdown_values/`, paramFilter)
     );
     const result = response.data;
     return {
