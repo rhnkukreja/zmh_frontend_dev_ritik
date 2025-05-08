@@ -372,6 +372,9 @@ function convertToTitleCase(str: string): string {
   else if (str == "date_range") {
     return "Date Range"
   }
+  else if (str == "outcome_percentage") {
+    return "Outcome Percentage"
+  }
   console.log("str", str)
   return str
     .toLowerCase()

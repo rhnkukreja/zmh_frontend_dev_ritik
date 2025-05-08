@@ -133,7 +133,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           ? placeholder
           : isInstitution
           ? "Search Institution"
-          : "Select Company"
+          : "Search Company"
       }
       onInputChange={handleInputChange}
       inputValue={inputValue}

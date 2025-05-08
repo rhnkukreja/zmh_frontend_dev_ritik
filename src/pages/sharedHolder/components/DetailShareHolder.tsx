@@ -213,7 +213,7 @@ const DetailShareHolder = () => {
                       <h3 className="font-semibold min-w-[150px] mb-2">
                         Category
                       </h3>
-                      <p>{getSingleShareHolder.category}</p>
+                      <p>{getSingleShareHolder.filtered_category}</p>
                     </div>
                   )}
                   {getSingleShareHolder?.sub_category && (
