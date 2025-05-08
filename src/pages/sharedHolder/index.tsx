@@ -9,10 +9,11 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   countValidFilters,
   createDynamicURL,
+  downloadFileByServer,
   downloadXlsxFile,
   generateFilterChips,
 } from "@/utils/helper";
@@ -649,7 +650,6 @@ function ShareHolderProposal() {
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
-
   const mergeVoteDetails = (data: any[]) => {
     return data.map((item) => {
       const result: any = {
@@ -726,6 +726,34 @@ function ShareHolderProposal() {
   };
 
   const defaultTabIndex = getDefaultTabIndex();
+
+  const handleDownload = async () => {
+    try {
+      const file = await shareHolderProposalService.getAllShareholderAPIFile(
+        createDynamicURL(
+          `${baseURL}/shareholder_proposal/def14a/`,
+          filters,
+          undefined,
+          page
+        ) + "&download=true"
+      );
+
+      // ✅ Access the blob correctly
+      const url = URL.createObjectURL(file.result);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "shareholder_proposals.xlsx";
+      document.body.appendChild(link);
+      link.click();
+
+      // ✅ Clean up
+      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading the file:", error);
+    }
+  };
+
 
   return (
     <>
@@ -822,15 +850,8 @@ function ShareHolderProposal() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  {/* <div className="hover:bg-slate-50 ml-2">
-                    <Button
-                      onClick={() =>
-                        downloadXlsxFile({
-                          data: mergeVoteDetails(shareHolderProposal),
-                          fileName: `ShareHolderProposal.xlsx`,
-                        })
-                      }
-                    >
+                  <div className="hover:bg-slate-50 ml-2">
+                    <Button onClick={handleDownload}>
                       <Tippy
                         content="Download Excel"
                         options={{ theme: "light" }}
@@ -842,7 +863,7 @@ function ShareHolderProposal() {
                         />
                       </Tippy>
                     </Button>
-                  </div> */}
+                  </div>
 
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
@@ -1256,7 +1277,55 @@ function ShareHolderProposal() {
                           />
                         </div>
                       ))}
+                      {tab === "proposal" && (
+                        <div className="me-2">
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            <span className="font-semibold">% Support</span>
+                          </div>
 
+                          <div className="mt-3">
+                            <Controller
+                              name="outcome_percentage"
+                              control={control}
+                              defaultValue=""
+                              render={({ field }) => (
+                                <FormCheck>
+                                  <FormCheck.Input
+                                    id="radio-switch-1"
+                                    type="radio"
+                                    value="yes"
+                                    checked={
+                                      field.value ===
+                                      "yes"
+                                    }
+                                    onChange={(e) =>
+                                      field.onChange(e.target.value)
+                                    }
+                                  />
+                                  <FormCheck.Label htmlFor="radio-switch-1">
+                                    Yes
+                                  </FormCheck.Label>
+                                  <FormCheck.Input
+                                    id="radio-switch-2"
+                                    type="radio"
+                                    value="no"
+                                    className="d-inline-block ms-4"
+                                    checked={
+                                      field.value === "no"
+                                    }
+                                    onChange={(e) =>
+                                      field.onChange(e.target.value)
+                                    }
+                                  />
+                                  <FormCheck.Label htmlFor="radio-switch-2">
+                                    No
+                                  </FormCheck.Label>
+                                </FormCheck>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      )}
                       {user?.user_type === "Admin" && (
                         <>
                           <div className="w-full">
@@ -1503,7 +1572,6 @@ function ShareHolderProposal() {
                                           True
                                         </FormCheck.Label>
                                       </FormCheck>
-
                                       <FormCheck className="flex items-center mr-2">
                                         <FormCheck.Input
                                           id="checkbox-switch-false"
@@ -1880,8 +1948,8 @@ function ShareHolderProposal() {
                           <div className="flex gap-4 mb-6 px-4">
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
-                                  ? "bg-primary text-white shadow"
-                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
@@ -1889,15 +1957,14 @@ function ShareHolderProposal() {
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
-                                  ? "bg-primary text-white shadow"
-                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
                               Shareholder Proposals: Proponent Analytics
                             </button>
                           </div>
-
 
                           {/* Content */}
                           <div>
@@ -1909,7 +1976,6 @@ function ShareHolderProposal() {
                                 yearlySummary={yearlySummary}
                                 tab={tab}
                                 isAllCompanySelected={isAllCompanySelected}
-
                                 loading={loading}
                               />
                             ) : (
@@ -1919,7 +1985,6 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
-
                                 pieChartOutcome={pieChartOutcome}
                                 filters={filters}
                               />
@@ -2148,8 +2213,8 @@ function ShareHolderProposal() {
                           <div className="flex gap-4 mb-6 px-4 ">
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
-                                  ? "bg-primary text-white shadow"
-                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
@@ -2157,8 +2222,8 @@ function ShareHolderProposal() {
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
-                                  ? "bg-primary text-white shadow"
-                                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                ? "bg-primary text-white shadow"
+                                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
@@ -2186,7 +2251,6 @@ function ShareHolderProposal() {
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
-
                                 pieChartOutcome={pieChartOutcome}
                                 filters={filters}
                               />
