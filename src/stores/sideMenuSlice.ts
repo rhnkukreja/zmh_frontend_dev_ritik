@@ -104,9 +104,9 @@ const initialState: any = {
       title: "Voting Data",
     },
     {
-      icon: "Activity",
+      icon: "Vote",
       pathname: "/real-time-data",
-      title: "Real Time Data",
+      title: "2025 Shareholder Meetings",
     },
     {
       icon: "ShieldAlert",

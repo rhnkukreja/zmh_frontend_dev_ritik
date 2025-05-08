@@ -107,7 +107,7 @@ const index = () => {
             index: " ",
             from_date: "",
             date_range: "",
-            institute: "",
+            institution_name: "",
             vote: "",
 
         },
@@ -164,7 +164,7 @@ const index = () => {
             year: "2025",
             index: cleanFilter?.index,
             date_range: cleanFilter?.date_range ?? null,
-            institute: cleanFilter?.institute ? [cleanFilter?.institute] : null,
+            institution_name: cleanFilter?.institution_name ? [cleanFilter?.institution_name] : null,
             vote: cleanFilter?.vote ? [cleanFilter?.vote] : null,
             company_name: cleanFilter?.company_name?.value ? [cleanFilter?.company_name?.value] : null,
             keyword: cleanFilter?.keyword,
@@ -187,7 +187,7 @@ const index = () => {
     const resetFormValues: any = () => {
         setValue("index", " ");
         setValue("date_range","");
-        setValue("institute"," ");
+        setValue("institution_name"," ");
         setValue("vote"," ");
         setValue("company_name", []);
         setValue("keyword", "");
@@ -219,7 +219,7 @@ const index = () => {
             // );
             updatedFilters[removeKey] = " ";
         } else if (updatedFilters[removeKey] === removeValue) {
-            if (removeKey === "vote" || removeKey === "institute" || removeKey === "index") {
+            if (removeKey === "vote" || removeKey === "institution_name" || removeKey === "index") {
                 updatedFilters[removeKey] = " ";
             } else {
                 updatedFilters[removeKey] = "";
@@ -275,7 +275,7 @@ const index = () => {
                 <div className="flex flex-col p-5  sm:flex-row gap-y-2">
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
-                            <h1 className="text-lg font-bold">Real Time Data 2025</h1>
+                            <h1 className="text-lg font-bold">2025 Shareholder Meetings</h1>
                             {/* {
                                 realTimeData?.length > 0 &&
                                 <p className=" italic"> Meeting Date: {realTimeData[0]?.meeting_date
@@ -349,7 +349,7 @@ const index = () => {
 
                                 <div className="w-full">
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Company*
+                                        Company
                                     </div>
                                     <Controller
                                         name="company_name"
@@ -374,10 +374,10 @@ const index = () => {
                                 </div>
                                 <div className="mx-2">
                                     <div className="text-left text-slate-500 flex justify-between mb-1">
-                                        <span className="font-semibold">Institute</span>
+                                        <span className="font-semibold">Institution</span>
                                     </div>
                                     <Controller
-                                        name="institute"
+                                        name="institution_name"
                                         control={control}
                                         defaultValue={""}
                                         render={({ field }) => (
@@ -388,7 +388,7 @@ const index = () => {
                                                     field.onChange(event);
                                                 }}
                                                 options={{
-                                                    placeholder: "Select institute",
+                                                    placeholder: "Select Institution",
                                                 }}
                                                 className="w-full"
                                                 multiple={false}
