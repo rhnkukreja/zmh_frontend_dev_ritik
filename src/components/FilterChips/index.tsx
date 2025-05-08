@@ -21,7 +21,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
             "[&.active]:bg-primary/5 [&.active]:border-primary/50 [&.active]:text-primary [&:not(.active)_a]:hidden",
           ])}
         >
-          <span className="font-semibold text-gray-600">{convertToTitleCase(filter.key)}:</span>
+          <span className="font-semibold text-gray-600">{filter.key === "outcome_percentage" ? "Percentage Support" :convertToTitleCase(filter.key)}:</span>
           <span className="font-bold">{filter.value}</span>
           <Lucide
             icon="X"

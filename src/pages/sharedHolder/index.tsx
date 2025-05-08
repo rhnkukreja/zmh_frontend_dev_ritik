@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -850,20 +850,17 @@ function ShareHolderProposal() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  <div className="hover:bg-slate-50 ml-2">
-                    <Button onClick={handleDownload}>
-                      <Tippy
-                        content="Download Excel"
-                        options={{ theme: "light" }}
-                      >
-                        <Download
-                          size={17}
-                          strokeWidth={1}
-                          className="text-slate-500 cursor-pointer	"
-                        />
-                      </Tippy>
-                    </Button>
-                  </div>
+                {tab == "proposal" &&  <div className="hover:bg-slate-50 ml-2">
+                  <Tippy content="Download Excel" options={{ theme: "light" }}>
+                    <div
+                      className="box p-[5px] cursor-pointer"
+                      onClick={handleDownload}
+                    >
+                      <img alt="download-icon" src={downloadIcon} />
+                    </div>
+                  </Tippy>
+                   
+                  </div>}
 
                   {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
@@ -931,6 +928,7 @@ function ShareHolderProposal() {
 
               {selectedChipFilters?.length > 0 && (
                 <>
+                
                   <FilterChips
                     filters={selectedChipFilters}
                     onRemove={handleRemoveChip}
