@@ -636,7 +636,7 @@ const index = () => {
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "10%" }}
                                                         >
-                                                            Management Recommendation
+                                                            Management Recommendation 
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
@@ -652,17 +652,18 @@ const index = () => {
                                                         </Table.Td>
                                                     </Table.Tr>
                                                 </Table.Thead>
-                                                <Table.Tbody className="!max-h-400px overflow-auto">
+                                                <Table.Tbody className="!max-h-400px overflow-auto position-relative">
                                                                       <>
                                                                         {groupedQuestions ? (
                                                                           Object.entries(groupedQuestions).map(
                                                                             ([company_name, institutionQuestions]: [
                                                                               string,
                                                                               any
-                                                                            ]) => (
+                                                                            ] ,index) => (
                                                                               <>
                                                                                 <Table.Tr
-                                                                                  className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer"
+                                                                                  className={`bg-gray-100 dark:bg-darkmode-700 cursor-pointer sticky  z-10`}
+                                                                                  style={{ top: `${index === 0 ? 50 : 45 * (index + 1)}px` }}
                                                                                   onClick={() => toggleGroup(company_name)}
                                                                                 >
                                                                                   <Table.Td
