@@ -128,6 +128,19 @@ const NoteForm: React.FC<NoteFormProps> = ({
       setSelectedData({ ...selectedData, company: id });
     }
   };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.querySelector('.dropdown')
+      if ((dropdown || showInsDropdown) && !dropdown.contains(event.target as Node)) {
+        setShowDropdown(false);
+        setInsShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [setShowDropdown]);
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="flex flex-wrap gap-4">
@@ -157,7 +170,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
                 }}
               />
               {showDropdown && (
-                <ul className="absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg md:w-[44%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
+                <ul className="dropdown absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg md:w-[44%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
                   {isLoading ? (
                     <li className="px-4 py-2 text-sm text-gray-500">
                       Loading...
@@ -214,7 +227,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
                 }}
               />
               {showInsDropdown && (
-                <ul className="absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg md:w-[44%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
+                <ul className="dropdown absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg md:w-[44%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
                   {isInsLoading ? (
                     <li className="px-4 py-2 text-sm text-gray-500">
                       Loading...
