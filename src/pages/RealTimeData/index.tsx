@@ -617,7 +617,7 @@ const index = () => {
                                                     <Table.Tr>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "32%" }}
+                                                            style={{ width: "35%" }}
                                                         >
                                                             Company
                                                         </Table.Td>

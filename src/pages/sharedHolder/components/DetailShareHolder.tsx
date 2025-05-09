@@ -163,7 +163,7 @@ const DetailShareHolder = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {getSingleShareHolder?.year && (
                     <div>
-                      <h3 className="font-semibold min-w-[150px] mb-2">Year</h3>
+                      <h3 className="font-semibold min-w-[150px] mb-2">Proxy Year</h3>
                       <p> {getSingleShareHolder?.proxy_season ?? getSingleShareHolder?.year}</p>
                     </div>
                   )}
