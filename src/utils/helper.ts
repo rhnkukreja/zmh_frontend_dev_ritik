@@ -369,11 +369,11 @@ function convertToTitleCase(str: string): string {
   } else if (str == "institution_name") {
     return "Institution"
   }
-  else if (str == "from_date") {
-    return "From"
+  else if (str == "date_range") {
+    return "Date Range"
   }
-  else if (str == "to_date") {
-    return "To"
+  else if (str == "outcome_percentage") {
+    return "Outcome Percentage"
   }
   console.log("str", str)
   return str
@@ -465,6 +465,22 @@ const downloadFileByServer = (blob: any, filename: string) => {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+
+
+const cleanObject = (obj: Record<string, any>) => {
+  const cleaned: Record<string, any> = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    if (!(typeof value === "string" && value.trim() === "")) {
+      cleaned[key] = value;
+    }
+  }
+
+  return cleaned;
+};
+
+
 const groupByValue = (array: any ,key :string ,isCompany :boolean,selectedGroup :any) => {
   const grouped = array.reduce((acc, note) => {
     const companyName = note[key];
@@ -488,6 +504,7 @@ const groupByValue = (array: any ,key :string ,isCompany :boolean,selectedGroup 
 
   }));
 };
+
 
 export default localStorageHelper;
 
@@ -522,6 +539,8 @@ export {
   getDateWithoutTime,
   downloadXlsxFile,
   downloadFileByServer,
+  generateFilterChips,
+  cleanObject,
   groupByValue,
-  generateFilterChips
+
 };

@@ -188,6 +188,18 @@ class ShareHolderProposalService {
       result: result,
     };
   }
+
+  public async getAllShareholderAPIFile(url: string): Promise<{
+    result: Blob;
+  }> {
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
 }
 
 export const shareHolderProposalService = new ShareHolderProposalService();

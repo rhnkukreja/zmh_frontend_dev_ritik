@@ -67,7 +67,7 @@ export const subSidebarRoutes = ["/notes"];
 
 export const pageTitles: Record<string, string | null> = {
   "/proxy-contest": "Proxy Contest",
-  "/notes": "Notes (Beta)",
+  "/notes": "Notes",
   "/investor-profile": null,
   "/engagement-question": null,
   "/proxy-voting-guideline": null,

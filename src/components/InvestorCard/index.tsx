@@ -113,7 +113,7 @@ const index = () => {
     const day = today.getDate();
     const month = today.toLocaleString("en-US", { month: "long" });
     const year = today.getFullYear();
-    const formattedDate = `${day} ${month}, ${year}`;
+    const formattedDate = `${month} ${day}, ${year}`;
     setTodayDate(formattedDate);
   }, []);
 

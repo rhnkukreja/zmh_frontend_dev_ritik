@@ -25,13 +25,15 @@ interface CompanySelectProps {
   companyGlobalSearchName?: string;
   isClearable?: boolean;
   exactUrl?: string;
+  arrayKeyName?: string
 }
 
 const fetchOptions = async (
   inputValue: string,
   isInstitution?: boolean,
   companyGlobalSearchName?: string,
-  exactUrl?: string
+  exactUrl?: string,
+  arrayKeyName?: string,
 ): Promise<OptionType[]> => {
   try {
     const response = isInstitution
@@ -39,7 +41,7 @@ const fetchOptions = async (
           inputValue,
           companyGlobalSearchName
         )
-      : await dashboardService.fetchCompanyByName(inputValue, exactUrl);
+      : await dashboardService.fetchCompanyByName(inputValue, exactUrl, arrayKeyName);
 
     if (isInstitution) {
       return response.results.map((institution: any) => ({
@@ -68,14 +70,15 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   placeholder = "",
   companyGlobalSearchName = "",
   isClearable,
-  exactUrl
+  exactUrl,
+  arrayKeyName
 }) => {
   const [inputValue, setInputValue] = useState("");
 
   const loadOptions = useCallback(
     _.debounce(
       (inputValue: string, callback: (options: OptionType[]) => void) => {
-        fetchOptions(inputValue, isInstitution, companyGlobalSearchName, exactUrl).then(
+        fetchOptions(inputValue, isInstitution, companyGlobalSearchName, exactUrl,arrayKeyName).then(
           (options) => {
             callback(options);
           }
@@ -130,7 +133,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           ? placeholder
           : isInstitution
           ? "Search Institution"
-          : "Select Company Name"
+          : "Search Company"
       }
       onInputChange={handleInputChange}
       inputValue={inputValue}
