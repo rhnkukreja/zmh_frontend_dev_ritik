@@ -67,6 +67,8 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
 
 
     const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>({});
+    const [expandedComment, setExpandedComment] = useState(null);
+
 
     const toggleExpand = (index: number) => {
         setExpandedRows((prev) => ({
@@ -74,7 +76,13 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
             [index]: !prev[index], // Toggle state for this row index
         }));
     };
-
+    const collapseComment = (index: number) => {
+        if (expandedComment === index) {
+            setExpandedComment(null); 
+        }else {
+            setExpandedComment(index); 
+        }
+    };
     const handleNotesEdit = (note) => {
         setInitialStateNote(note)
         setEditNote(true)
@@ -311,6 +319,7 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                     </Table.Td>
                                                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[500px]">
                                                                         <div className="flex justify-between items-start">
+
                                                                             <div
                                                                                 className={`transition-all duration-300 ease-in-out flex-1 ${expandedRows[index] ? "max-h-none" : "line-clamp-2 overflow-hidden"
                                                                                     } whitespace-pre-wrap`}
@@ -397,9 +406,18 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                                                                     >
                                                                                         <div className="flex justify-between items-start gap-4">
                                                                                             <div
-                                                                                                className="text-gray-800 dark:text-gray-100 text-sm"
+                                                                                                className={`text-gray-800 dark:text-gray-100 text-sm ${expandedComment === index+idx ? "" :"line-clamp-2"} overflow-hidden`}
                                                                                                 dangerouslySetInnerHTML={{ __html: comment.comments }}
                                                                                             />
+                                                                                              <button
+                                                                                onClick={() => collapseComment(index+idx)}
+                                                                                className="ml-1 text-blue-500 flex-shrink-0"
+                                                                            >
+                                                                                <Lucide
+                                                                                    icon={expandedRows[index] ? "ChevronUp" : "ChevronDown"}
+                                                                                    className="w-4 h-4"
+                                                                                />
+                                                                            </button>
                                                                                             <span className="text-xs text-gray-500 dark:text-gray-400 italic whitespace-nowrap">
                                                                                                 – {comment.name}
                                                                                             </span>

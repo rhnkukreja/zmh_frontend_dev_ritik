@@ -16,7 +16,11 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 
-import { createDynamicURL, updateQueryParams } from "@/utils/helper";
+import {
+  createDynamicURL,
+  groupByValue,
+  updateQueryParams,
+} from "@/utils/helper";
 import { useNavigate } from "react-router-dom";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
 import { NotesFieldProps } from "./NotesList";
@@ -99,7 +103,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
   const removeSearchParams = () => {
     const currentUrl = new URL(window.location.href);
     currentUrl.search = "";
-    navigate("/notes");
+    // navigate("/notes");
   };
 
   const handleDelete = async () => {
@@ -133,7 +137,11 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
   };
 
   return (
-    <div className={`${activeTab === "other" ? "w-[22rem]" : "w-[17rem]"} bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 h-full shadow-sm rounded-md mt-2 box-border`}>
+    <div
+      className={`${
+        activeTab === "other" ? "w-[22rem]" : "w-[17rem]"
+      } bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 h-full shadow-sm rounded-md mt-2 box-border`}
+    >
       {activeTab === "other" && (
         <div className="w-full flex justify-center mb-3">
           <Button
@@ -251,35 +259,35 @@ const FolderList = ({
                   </Tippy>
                 </span>
                 <div className="h-6">
-                {hoveredFolderId === folder?.id && (
-                  <div className="flex">
-                    <div
-                      className="w-6 h-6 flex items-center justify-center  ml-2 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditFolder(folder);
-                      }}
-                    >
-                      <Lucide
-                        icon="Pen"
-                        className="w-3 h-3 text-primary stroke-[1.3]"
-                      />
-                    </div>
+                  {hoveredFolderId === folder?.id && (
+                    <div className="flex">
+                      <div
+                        className="w-6 h-6 flex items-center justify-center  ml-2 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditFolder(folder);
+                        }}
+                      >
+                        <Lucide
+                          icon="Pen"
+                          className="w-3 h-3 text-primary stroke-[1.3]"
+                        />
+                      </div>
 
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center ml-2 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onClickDeleteIcon(folder);
-                      }}
-                    >
-                      <Lucide
-                        icon="Trash"
-                        className="w-4 h-4 text-primary stroke-[1.3]"
-                      />
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center ml-2 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClickDeleteIcon(folder);
+                        }}
+                      >
+                        <Lucide
+                          icon="Trash"
+                          className="w-4 h-4 text-primary stroke-[1.3]"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
                 </div>
               </div>
 
@@ -380,9 +388,9 @@ const InstitutionOrCompanyList = ({
       dispatch(
         setSelectedGroup({
           company_id: item.company,
-          companyName:item.name,
+          companyName: item.name,
           institution_id: null,
-          institutionName:null,
+          institutionName: null,
           name: "",
           data: [],
         })
@@ -393,8 +401,8 @@ const InstitutionOrCompanyList = ({
         setSelectedGroup({
           company_id: null,
           institution_id: item.institution,
-          institutionName:item.name,
-          companyName:null,
+          institutionName: item.name,
+          companyName: null,
           name: "",
           data: [],
         })
@@ -419,32 +427,21 @@ const InstitutionOrCompanyList = ({
   }, []);
   const key = activeTab === "company" ? "institution_name" : "company_name";
   const listItems = dropdownData?.[isCompany ? "company" : "institution"] || [];
-  const groupByValue = (array: any) => {
-    const grouped = array.reduce((acc, note) => {
-      const companyName = note[key];
-      if (!acc[companyName]) {
-        acc[companyName] = [];
+
+  const groupedData = groupByValue(results, key, isCompany, selectedGroup);
+  console.log(groupedData, "=>groupedData");
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.querySelector(".dropdown");
+      if (dropdown && !dropdown.contains(event.target as Node)) {
+        setShowDropdown(false);
       }
-      acc[companyName].push(note);
-      return acc;
-    }, {});
-
-    return Object.entries(grouped).map(([key, value]) => ({
-   
-      institution_id: isCompany
-        ? value[0]?.institution
-        : selectedGroup?.institution_id,
-      company_id: isCompany ? selectedGroup?.company_id : value[0]?.company,
-      institutionName:selectedGroup?.institutionName,
-      companyName:selectedGroup?.companyName,
-      name: key,
-      data: value as any[],
-
-    }));
-  };
-
-  const groupedData = groupByValue(results);
-
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [setShowDropdown]);
   return (
     <div className="w-full px-4 py-6 rounded-lg h-screen">
       <div className="sticky top-0 pb-4 z-10">
@@ -464,7 +461,7 @@ const InstitutionOrCompanyList = ({
           }}
         />
         {showDropdown && (
-          <ul className="absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-[100%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
+          <ul className="dropdown absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-[100%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
             {isLoading ? (
               <li className="px-4 py-2 text-sm text-gray-500">Loading...</li>
             ) : listItems.length > 0 ? (
@@ -488,11 +485,17 @@ const InstitutionOrCompanyList = ({
 
       {selectedName && (
         <div className="mb-4 text-sm text-gray-600 ">
-       
-          <span className="font-medium text-gray-800">{isCompany 
-  ?  groupedData?.length > 1 ? 'Institutions' : 'Institution' 
-  :  groupedData?.length > 1 ? 'Companies' : 'Company'}
-</span>
+          <span className="font-medium text-gray-800">
+            {groupedData?.length !== 0
+              ? isCompany
+                ? groupedData?.length > 1
+                  ? "Institutions"
+                  : "Institution"
+                : groupedData?.length > 1
+                ? "Companies"
+                : "Company"
+              : ""}
+          </span>
         </div>
       )}
       {results?.length > 0 &&

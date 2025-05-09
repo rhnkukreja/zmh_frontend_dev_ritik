@@ -38,18 +38,27 @@ const AddDomainNoteModal = ({
     investor_name: "",
   });
   const handleNoteSubmit = async (data: DomainNote) => {
+    function removeTrailingSpaces(htmlContent: string): string {
+      const trailingTagsRegex = /^(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+|(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+$/gi;
+      return htmlContent.replace(trailingTagsRegex, '');
+    }
     try {
+      const trimmedData = {
+        ...data,
+        notes: removeTrailingSpaces(data.notes), 
+      };
       if (selectedNote?.id && mode == "edit") {
-        await dispatch(addDomainNote({ id: selectedNote.id, data }));
+        await dispatch(addDomainNote({ id: selectedNote.id, data:trimmedData  }));
       } else {
         if (noteModule) {
           const noteData = {
-            ...data,
+            ...trimmedData,
             ...selectedData,
           };
-          await dispatch(addDomainNote({ data: noteData })).unwrap();
+        const response =  await dispatch(addDomainNote({ data: noteData })).unwrap();
+        if(response?.results)  toast.success("Note successfully created");
         } else {
-          await dispatch(addDomainNote({ data })).unwrap();
+          await dispatch(addDomainNote({ data:trimmedData })).unwrap();
         }
       }
     } catch (error) {
