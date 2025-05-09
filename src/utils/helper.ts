@@ -465,7 +465,29 @@ const downloadFileByServer = (blob: any, filename: string) => {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+const groupByValue = (array: any ,key :string ,isCompany :boolean,selectedGroup :any) => {
+  const grouped = array.reduce((acc, note) => {
+    const companyName = note[key];
+    if (!acc[companyName]) {
+      acc[companyName] = [];
+    }
+    acc[companyName].push(note);
+    return acc;
+  }, {});
 
+  return Object.entries(grouped).map(([key, value]) => ({
+ 
+    institution_id: isCompany
+      ? value[0]?.institution
+      : selectedGroup?.institution_id,
+    company_id: isCompany ? selectedGroup?.company_id : value[0]?.company,
+    institutionName:selectedGroup?.institutionName,
+    companyName:selectedGroup?.companyName,
+    name: key,
+    data: value as any[],
+
+  }));
+};
 
 export default localStorageHelper;
 
@@ -500,5 +522,6 @@ export {
   getDateWithoutTime,
   downloadXlsxFile,
   downloadFileByServer,
+  groupByValue,
   generateFilterChips
 };

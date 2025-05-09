@@ -14,7 +14,7 @@ import { addNote, setSelectedGroup } from "@/stores/notesSlice";
 import { NotesFieldProps } from "./NotesList";
 import { RootState } from "@/stores/store";
 import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
-import { createDynamicURL } from "@/utils/helper";
+import { createDynamicURL, groupByValue } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import {
   deleteDomainNote,
@@ -60,6 +60,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
       })
     );
   };
+
   const handleDeleteNote = async (item: any) => {
     try {
       if (item.id) {
@@ -79,14 +80,23 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
         undefined,
         1
       );
+      const isCompany=activeTab == "company" ? true : false;
+      const key = activeTab === "company" ? "institution_name" : "company_name";
+       const groupedData = groupByValue(results , key, isCompany,selectedGroup );
       const response = await dispatch(fetchDomainNotes(dynamicURL));
-
-      dispatch(
+      if ((response?.payload as { results: any[] })?.results.length > 0) {
+         dispatch(
         setSelectedGroup({
           ...selectedGroup,
           data: (response?.payload as { results: any }).results,
         })
-      );
+      );}
+      else{
+        dispatch(
+          setSelectedGroup(null)
+        );
+      }
+      console.log(results,"results");
     }
   };
   const handleNoteSubmit = async (data: Note) => {
