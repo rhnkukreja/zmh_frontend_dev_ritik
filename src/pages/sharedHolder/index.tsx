@@ -807,7 +807,7 @@ function ShareHolderProposal() {
 
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top: "60px" }}>
+              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top:   isAllCompanySelected ? "60px" :"134px" }}>
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
