@@ -643,7 +643,7 @@ const index = () => {
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "7%" }}
                                                         >
-                                                            Management Recommendation
+                                                            Management Recommendation 
                                                         </Table.Td>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
@@ -660,6 +660,7 @@ const index = () => {
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody className="!max-h-400px overflow-auto position-relative">
+
                                                     <>
                                                         {groupedQuestions ? (
                                                             Object.entries(groupedQuestions).map(
@@ -680,6 +681,7 @@ const index = () => {
                                                                                 <div className="flex flex-row justify-start items-center">
                                                                                     {company_name}
                                                                                     <button className="ml-2 text-blue-500">
+
                                                                                         {openGroups[company_name] ? (
                                                                                             <Lucide
                                                                                                 icon="ChevronUp"
