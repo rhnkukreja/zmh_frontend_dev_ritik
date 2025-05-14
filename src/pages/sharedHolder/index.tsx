@@ -965,7 +965,7 @@ function ShareHolderProposal() {
                     >
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Year</span>
+                          <span className="font-semibold">Proxy Year</span>
                           {apiDropdownOptions?.year?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -999,7 +999,7 @@ function ShareHolderProposal() {
                             <TomSelect
                               value={field.value || []}
                               onChange={field.onChange}
-                              options={{ placeholder: "Select Year" }}
+                              options={{ placeholder: "Select Proxy Year" }}
                               className="w-full"
                               multiple
                             >
@@ -1278,7 +1278,7 @@ function ShareHolderProposal() {
                       {tab === "proposal" && (
                         <div className="me-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">% Support Available</span>
+                            <span className="font-semibold">Shareholder Meeting Held</span>
                           </div>
 
                           <div className="mt-3">
