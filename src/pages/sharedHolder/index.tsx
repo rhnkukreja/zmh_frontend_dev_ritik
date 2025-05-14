@@ -805,9 +805,9 @@ function ShareHolderProposal() {
             </div>
           </div>
 
-          <div className="mt-3.5">
+          <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2">
+              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top:   isAllCompanySelected ? "60px" :"134px" }}>
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -2295,7 +2295,7 @@ function ShareHolderProposal() {
                                     className="[&_td]:last:border-b-0"
                                   >
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.year}
+                                      {tab === "no-action" ? noAction.proxy_season : noAction?.year}
                                     </Table.Td>
                                     {isAllCompanySelected && (
                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">

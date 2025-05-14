@@ -117,7 +117,8 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
   );
 
   return (
-    <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
+    <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
+      
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">
         {tab == "proposal"
           ? "Shareholder Proposal Analytics (Beta)"

@@ -57,7 +57,7 @@ const ProponentsAnalyticsComponent: React.FC<
   };
 
   const renderSummaryTable = () => (
-    <div className="overflow-x-auto my-6">
+    <div className="overflow-x-auto mt-6">
       <h3 className="text-lg font-semibold mb-2">Top Proponents</h3>
       {loading ? (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
@@ -70,7 +70,7 @@ const ProponentsAnalyticsComponent: React.FC<
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-12">
             <div
               className={`${
                 tab == "no-action" && filters?.proponent_name?.length == 0
