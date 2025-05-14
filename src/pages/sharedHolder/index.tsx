@@ -294,7 +294,17 @@ function ShareHolderProposal() {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
       return;
     }
-    const dynamicURL = createDynamicURL(tabUrls[tab], filters, undefined, page);
+ const updatedFilters = tab === "withdrawn" 
+  ? { 
+      ...filters, 
+      ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season , proxy_season: [] }) 
+    } 
+  : { 
+      ...filters, 
+      ...(filters.year?.length > 0 && { proxy_season: filters.year ,year:[]  }) 
+    };
+
+    const dynamicURL = createDynamicURL(tabUrls[tab], updatedFilters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
 
     if (tab === "no-action") {
@@ -309,6 +319,7 @@ function ShareHolderProposal() {
         ...restFilters
       } = filters;
     }
+
     setFiltersLength(
       countValidFilters(
         isAllCompanySelected === false
@@ -965,7 +976,7 @@ function ShareHolderProposal() {
                     >
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Year</span>
+                          <span className="font-semibold">{tab === "withdrawn" ? null : "Proxy "}Year</span>
                           {apiDropdownOptions?.year?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -980,7 +991,7 @@ function ShareHolderProposal() {
                                   type="checkbox"
                                   onChange={(e) => {
                                     setValue(
-                                      "year",
+                                    tab === "withdrawn"  ?"year" : "proxy_season",
                                       e.target.checked
                                         ? apiDropdownOptions.year
                                         : []
@@ -992,14 +1003,14 @@ function ShareHolderProposal() {
                           )}
                         </div>
                         <Controller
-                          name="year"
+                          name={tab === "withdrawn"  ?"year" : "proxy_season"}
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
                             <TomSelect
                               value={field.value || []}
                               onChange={field.onChange}
-                              options={{ placeholder: "Select Year" }}
+                              options={{ placeholder: `Select ${tab === "withdrawn" ? "" : "Proxy"} Year` }}
                               className="w-full"
                               multiple
                             >
@@ -1278,7 +1289,7 @@ function ShareHolderProposal() {
                       {tab === "proposal" && (
                         <div className="me-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">% Support Available</span>
+                            <span className="font-semibold">Shareholder Meeting Held</span>
                           </div>
 
                           <div className="mt-3">

@@ -166,7 +166,7 @@ const Main: React.FC = () => {
                         Remember me
                       </label>
                     </div>
-                    <a href="">Forgot Password?</a>
+                    {/* <a href="">Forgot Password?</a> */}
                   </div>
                   <div className="mt-5 text-center xl:mt-8 xl:text-left">
                     <Button
