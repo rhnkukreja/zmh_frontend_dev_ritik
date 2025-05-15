@@ -240,7 +240,7 @@ const index = () => {
             const meeting_type = question?.meeting_type;
 
             // Build the new key format: Company (Formatted Date - Meeting Type)
-            const key = `${company_name} (${meeting_type} - ${formatted_meeting_date})`;
+            const key = `${formatted_meeting_date}  - ${company_name}  (${meeting_type})`;
 
             if (!acc[key]) {
                 acc[key] = [];
