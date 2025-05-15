@@ -156,9 +156,14 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                 ) : (
                   <ResponsiveContainer width="100%" height={250}>
                     <ComposedChart
-                      data={[
-                         ...(Array.isArray(yearlySummary) ? yearlySummary.filter((item) => item.year >= 2022) : []),
-                      ].reverse()}
+                      data={Object.entries(yearlySummary)
+    .filter(([year]) => parseInt(year) >= 2022) 
+    .map(([year, { count, avg_support }]) => ({
+      year: parseInt(year), 
+      count,
+      avg_support,
+    }))
+    .reverse()}
                       margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
                     >
                       <XAxis dataKey="year" />
