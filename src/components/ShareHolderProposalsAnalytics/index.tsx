@@ -41,6 +41,17 @@ const isDataAvailable = (data: any) => {
   return true; // Otherwise, assume valid data
 };
 
+
+type YearlySummaryItem = {
+  count: number;
+  avg_support: number;
+};
+
+type YearlySummaryObject = {
+  [year: number]: YearlySummaryItem;
+};
+
+
 const ShareHolderProposalAnalyticsComponent: React.FC<
   ShareHolderProposalAnalyticsComponentProps
 > = ({
@@ -72,12 +83,12 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
       );
     }
     const [outcomeData, setOutcomeData] = useState([]);
-    const [objectYearlySummary, setObjectYearlySummary] = useState(() =>
+    const [objectYearlySummary, setObjectYearlySummary] = useState<YearlySummaryObject>(() =>
       Array.isArray(yearlySummary)
         ? yearlySummary.reduce((acc, item) => {
           acc[item.year] = { count: item.count, avg_support: item.avg_support };
           return acc;
-        }, {})
+        }, {} as YearlySummaryObject)
         : {}
     );
 
