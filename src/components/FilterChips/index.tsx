@@ -24,7 +24,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
         >
           <span className="font-semibold text-gray-600">
             {filter.key === "outcome_percentage"
-              ? "Percentage Support"
+              ? "Shareholder Meeting Held"
               : (filter.key === "proxy_season" || filter.key === "year") &&
                 tab !== "withdrawn"
               ? "Proxy Year"

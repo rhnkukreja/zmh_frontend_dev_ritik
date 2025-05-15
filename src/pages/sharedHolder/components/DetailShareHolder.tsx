@@ -118,6 +118,7 @@ const DetailShareHolder = () => {
       </div>
     );
   };
+  console.log(getSingleShareHolder ,"getSingleShareHolder")
   return (
     <>
       <Button
@@ -213,7 +214,7 @@ const DetailShareHolder = () => {
                       <h3 className="font-semibold min-w-[150px] mb-2">
                         Category
                       </h3>
-                      <p>{getSingleShareHolder.filtered_category}</p>
+                      <p>{getSingleShareHolder.category}</p>
                     </div>
                   )}
                   {getSingleShareHolder?.sub_category && (
