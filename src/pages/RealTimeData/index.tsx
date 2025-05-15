@@ -641,8 +641,8 @@ const index = () => {
                                                                 ], index) => (
                                                                     <>
                                                                         <Table.Tr
-                                                                            className={`bg-gray-100 dark:bg-darkmode-700 cursor-pointer sticky  z-10`}
-                                                                            style={{ top: `${index === 0 ? 50 : 45 * (index + 1)}px` }}
+                                                                            className={`bg-gray-100 dark:bg-darkmode-700 cursor-pointer sticky z-10`}
+                                                                            // style={{ top: `${index === 0 ? 50 : 45 * (index + 1)}px` }}
                                                                             onClick={() => toggleGroup(company_name)}
                                                                         >
                                                                             <Table.Td
@@ -668,108 +668,108 @@ const index = () => {
                                                                                 </div>
                                                                             </Table.Td>
                                                                         </Table.Tr>
-                                                                       
-                                                                       {openGroups[company_name] && Array.isArray(institutionQuestions) && (
-    <>
-        <Table.Tr>
-            <Table.Td
-                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                style={{ width: "5%" }}
-            >
-                No.
-            </Table.Td>
-            <Table.Td
-                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                style={{ width: "30%" }}
-            >
-                Proposal
-            </Table.Td>
-            <Table.Td
-                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                style={{ width: "7%" }}
-            >
-                Management Recommendation
-            </Table.Td>
-            <Table.Td
-                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                style={{ width: "7%" }}
-            >
-                Vote Cast
-            </Table.Td>
-            <Table.Td
-                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                style={{ width: "17.5%" }}
-            >
-                Institution
-            </Table.Td>
-        </Table.Tr>
-        {institutionQuestions.map((question) => (
-            <Table.Tr
-                key={question?.id}
-                className="[&_td]:last:border-b-0"
-            >
-          
-                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                    <div className="whitespace-normal max-w-[200px] overflow-hidden text-ellipsis line-clamp-2">
-                        {question?.proposal_num}
-                    </div>
-                </Table.Td>
-                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                    <div className="text-wrap max-w-[300px]">
-                        {question?.proposal}
-                    </div>
-                </Table.Td>
-                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                    <div className="whitespace-nowrap max-w-[100px]">
-                        {question?.mgt_rec}
-                    </div>
-                </Table.Td>
-                <Table.Td
-                    className="py-2 border-dashed dark:bg-transparent"
-                    style={{ width: "7%" }}
-                >
-                    <div className="flex">
-                        {question?.vote === "Split Vote" ? (
-                            <Tippy
-                                content={question?.split_vote_counts}
-                                options={{ theme: "light" }}
-                            >
-                                {question?.vote}
-                            </Tippy>
-                        ) : (
-                            <span
-                                className={clsx([
-                                    (question?.vote?.includes("Against") ||
-                                        question?.vote?.includes("Withhold")) &&
-                                        "text-red-700 font-semibold",
-                                ])}
-                            >
-                                {question?.vote}
-                            </span>
-                        )}
-                        {question?.notes && question.notes.toLowerCase() !== "nan" && (
-                            <span
-                                data-tooltip-id="my-tooltip-data-html"
-                                data-tooltip-html={question?.notes}
-                            >
-                                <Lucide
-                                    icon="Info"
-                                    className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                />
-                            </span>
-                        )}
-                    </div>
-                </Table.Td>
-                <Table.Td
-                    className="py-2 border-dashed dark:bg-transparent"
-                    style={{ width: "17.5%" }}
-                >
-                    {question?.institution_name}
-                </Table.Td>
-            </Table.Tr>
-        ))}
-    </>
-)}
+
+                                                                        {openGroups[company_name] && Array.isArray(institutionQuestions) && (
+                                                                            <>
+                                                                                <Table.Tr>
+                                                                                    <Table.Td
+                                                                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                                        style={{ width: "5%" }}
+                                                                                    >
+                                                                                        No.
+                                                                                    </Table.Td>
+                                                                                    <Table.Td
+                                                                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                                        style={{ width: "30%" }}
+                                                                                    >
+                                                                                        Proposal
+                                                                                    </Table.Td>
+                                                                                    <Table.Td
+                                                                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                                        style={{ width: "7%" }}
+                                                                                    >
+                                                                                        Management Recommendation
+                                                                                    </Table.Td>
+                                                                                    <Table.Td
+                                                                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                                        style={{ width: "7%" }}
+                                                                                    >
+                                                                                        Vote Cast
+                                                                                    </Table.Td>
+                                                                                    <Table.Td
+                                                                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                                        style={{ width: "17.5%" }}
+                                                                                    >
+                                                                                        Institution
+                                                                                    </Table.Td>
+                                                                                </Table.Tr>
+                                                                                {institutionQuestions.map((question) => (
+                                                                                    <Table.Tr
+                                                                                        key={question?.id}
+                                                                                        className="[&_td]:last:border-b-0 !max-h-100px overflow-auto"
+                                                                                    >
+
+                                                                                        <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                            <div className="whitespace-normal max-w-[200px] overflow-hidden text-ellipsis line-clamp-2">
+                                                                                                {question?.proposal_num}
+                                                                                            </div>
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                            <div className="text-wrap max-w-[300px]">
+                                                                                                {question?.proposal}
+                                                                                            </div>
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                                                                            <div className="whitespace-nowrap max-w-[100px]">
+                                                                                                {question?.mgt_rec}
+                                                                                            </div>
+                                                                                        </Table.Td>
+                                                                                        <Table.Td
+                                                                                            className="py-2 border-dashed dark:bg-transparent"
+                                                                                            style={{ width: "7%" }}
+                                                                                        >
+                                                                                            <div className="flex">
+                                                                                                {question?.vote === "Split Vote" ? (
+                                                                                                    <Tippy
+                                                                                                        content={question?.split_vote_counts}
+                                                                                                        options={{ theme: "light" }}
+                                                                                                    >
+                                                                                                        {question?.vote}
+                                                                                                    </Tippy>
+                                                                                                ) : (
+                                                                                                    <span
+                                                                                                        className={clsx([
+                                                                                                            (question?.vote?.includes("Against") ||
+                                                                                                                question?.vote?.includes("Withhold")) &&
+                                                                                                            "text-red-700 font-semibold",
+                                                                                                        ])}
+                                                                                                    >
+                                                                                                        {question?.vote}
+                                                                                                    </span>
+                                                                                                )}
+                                                                                                {question?.notes && question.notes.toLowerCase() !== "nan" && (
+                                                                                                    <span
+                                                                                                        data-tooltip-id="my-tooltip-data-html"
+                                                                                                        data-tooltip-html={question?.notes}
+                                                                                                    >
+                                                                                                        <Lucide
+                                                                                                            icon="Info"
+                                                                                                            className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                                                        />
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </Table.Td>
+                                                                                        <Table.Td
+                                                                                            className="py-2 border-dashed dark:bg-transparent"
+                                                                                            style={{ width: "17.5%" }}
+                                                                                        >
+                                                                                            {question?.institution_name}
+                                                                                        </Table.Td>
+                                                                                    </Table.Tr>
+                                                                                ))}
+                                                                            </>
+                                                                        )}
 
                                                                     </>
                                                                 )
