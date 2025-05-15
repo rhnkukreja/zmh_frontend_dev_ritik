@@ -611,10 +611,10 @@ const index = () => {
                             <div className="">
                                 <div>
                                     <TableWrapper isLoading={allApplyFilter && loading}>
-                                        <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                                        <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                                             <Table>
-                                                <Table.Thead>
-                                                    <Table.Tr>
+                                                <Table.Thead className="relative">
+                                                    <Table.Tr className="sticky z-30" style={{ top: 0 }}>
                                                         <Table.Td
                                                             className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                             style={{ width: "35%" }}
@@ -622,12 +622,6 @@ const index = () => {
                                                         >
                                                             Company
                                                         </Table.Td>
-                                                        {/* <Table.Td
-                                                            className="py-2 font-semibold h-[50px] min-w-[150px] bg-header border-header text-[#000000B2]"
-                                                            
-                                                        >
-                                                            Meeting Type
-                                                        </Table.Td> */}
                                                     </Table.Tr>
                                                 </Table.Thead>
                                                 <Table.Tbody className="!max-h-400px overflow-auto position-relative">
@@ -641,8 +635,9 @@ const index = () => {
                                                                 ], index) => (
                                                                     <>
                                                                         <Table.Tr
-                                                                            className={`bg-gray-100 dark:bg-darkmode-700 cursor-pointer sticky z-10`}
+                                                                            className={`bg-gray-100 dark:bg-darkmode-700 cursor-pointer sticky z-10 my-10`}
                                                                             // style={{ top: `${index === 0 ? 50 : 45 * (index + 1)}px` }}
+                                                                            style={{ top: 50 }}
                                                                             onClick={() => toggleGroup(company_name)}
                                                                         >
                                                                             <Table.Td
@@ -671,7 +666,7 @@ const index = () => {
 
                                                                         {openGroups[company_name] && Array.isArray(institutionQuestions) && (
                                                                             <>
-                                                                                <Table.Tr>
+                                                                                <Table.Tr className="sticky z-10" style={{ top: 87 }} >
                                                                                     <Table.Td
                                                                                         className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                                                         style={{ width: "5%" }}
