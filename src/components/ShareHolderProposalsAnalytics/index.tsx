@@ -157,7 +157,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                   <ResponsiveContainer width="100%" height={250}>
                     <ComposedChart
                       data={[
-                        ...yearlySummary.filter((item) => item.year >= 2022),
+                         ...(Array.isArray(yearlySummary) ? yearlySummary.filter((item) => item.year >= 2022) : []),
                       ].reverse()}
                       margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
                     >
