@@ -51,6 +51,7 @@ import useCompanySearch from "@/hooks/useCompanySearch";
 import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { dashboardService } from "@/services/dashboard";
+import GetWhatsNew from "@/components/WhatsNew";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -102,6 +103,8 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   const [isFrameLoading, setIsFrameLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
+  const [whatsNewFormVisible, setWhatsNewFormVisible] = useState<boolean>(false);
+
 
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -416,7 +419,11 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        } else if (menu.title === "Company Search") {
+                        }
+                        else if(menu.title === "WhatsNew"){
+                          setWhatsNewFormVisible(true);
+                        }
+                          else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
                           linkTo(menu, navigate);
@@ -645,6 +652,10 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
           <GetHelp
             helpFormVisible={helpFormVisible}
             setHelpFormVisible={setHelpFormVisible}
+          />
+          <GetWhatsNew
+            whatsNewFormVisible={whatsNewFormVisible}
+            setWhatsNewFormVisible={setWhatsNewFormVisible}
           />
         </div>
         <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] bg-white inset-x-0 top-0">
