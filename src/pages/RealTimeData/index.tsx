@@ -77,6 +77,7 @@ const index = () => {
 
     useEffect(() => {
         const fetchData = async () => {
+       
             if (allApplyFilter) {
                 const { year, ...restFilter } = allApplyFilter;
                 await dispatch(
@@ -92,7 +93,7 @@ const index = () => {
 
                 setFiltersLength(countValidFilters(restFilter));
                 setSelectedChipFilters(generateFilterChips(restFilter));
-                dispatch(setTempSearch(companyGlobalSearchName));
+                // dispatch(setTempSearch(companyGlobalSearchName));
             }
         };
 
