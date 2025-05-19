@@ -89,7 +89,7 @@ function Main() {
           {/* <BoardDirectorMembers /> */}
 
           <div className="col-span-12 xl:col-span-12">
-            <AGMSummaryCard />
+            <AGMSummaryCard companyGlobalSearchTicker={companyGlobalSearchTicker} companyGlobalSearchName={companyGlobalSearchName}  />
           </div>
 
           {/* <div className="col-span-12 xl:col-span-12">
