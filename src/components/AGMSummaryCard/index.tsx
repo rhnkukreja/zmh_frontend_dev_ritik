@@ -97,7 +97,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
     else if (companyGlobalSearchTicker !== tempSearch) {
       setSelectedYear("");
@@ -108,7 +108,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
 
 
