@@ -471,7 +471,7 @@ const handleViewSummary = (company: string, companyTicker: string) => {
                                         )}
                                     />
                                 </div>
-                                <div className="me-2">
+                                <div className="w-full me-2">
                                     <div className="text-left text-slate-500 flex justify-between mb-1">
                                         <span className="font-semibold">Index</span>
                                     </div>
