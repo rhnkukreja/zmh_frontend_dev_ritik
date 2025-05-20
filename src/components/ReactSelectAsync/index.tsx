@@ -25,7 +25,7 @@ interface CompanySelectProps {
   companyGlobalSearchName?: string;
   isClearable?: boolean;
   exactUrl?: string;
-  arrayKeyName?: string
+  arrayKeyName?: string;
 }
 
 const fetchOptions = async (
@@ -33,7 +33,7 @@ const fetchOptions = async (
   isInstitution?: boolean,
   companyGlobalSearchName?: string,
   exactUrl?: string,
-  arrayKeyName?: string,
+  arrayKeyName?: string
 ): Promise<OptionType[]> => {
   try {
     const response = isInstitution
@@ -41,7 +41,11 @@ const fetchOptions = async (
           inputValue,
           companyGlobalSearchName
         )
-      : await dashboardService.fetchCompanyByName(inputValue, exactUrl, arrayKeyName);
+      : await dashboardService.fetchCompanyByName(
+          inputValue,
+          exactUrl,
+          arrayKeyName
+        );
 
     if (isInstitution) {
       return response.results.map((institution: any) => ({
@@ -71,24 +75,48 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   companyGlobalSearchName = "",
   isClearable,
   exactUrl,
-  arrayKeyName
+  arrayKeyName,
 }) => {
   const [inputValue, setInputValue] = useState("");
+   const [ defaultOptions, setDefaultOptions] = useState([])
 
   const loadOptions = useCallback(
     _.debounce(
       (inputValue: string, callback: (options: OptionType[]) => void) => {
-        fetchOptions(inputValue, isInstitution, companyGlobalSearchName, exactUrl,arrayKeyName).then(
-          (options) => {
-            callback(options);
-          }
-        );
+        fetchOptions(
+          inputValue,
+          isInstitution,
+          companyGlobalSearchName,
+          exactUrl,
+          arrayKeyName
+        ).then((options) => {
+          callback(options);
+         
+        });
       },
       300
     ),
     [companyGlobalSearchName]
   );
+useEffect(() => {
+  const fetchDefaultOptions = async () => {
+    try {
+      const options = await fetchOptions(
+        "a",
+        isInstitution,
+        companyGlobalSearchName,
+        exactUrl,
+        arrayKeyName
+      );
+      setDefaultOptions(options);
+      console.log(options, "Default Options");
+    } catch (error) {
+      console.error("Error fetching default options:", error);
+    }
+  };
 
+  fetchDefaultOptions();
+}, []);
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
   };
@@ -127,7 +155,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       styles={customStyles}
       isMulti={isMulti}
       loadOptions={loadOptions}
-      defaultOptions={false}
+      defaultOptions={defaultOptions?.length ?  defaultOptions?.slice(0,5) : false}
       placeholder={
         placeholder
           ? placeholder
