@@ -109,7 +109,7 @@ useEffect(() => {
         arrayKeyName
       );
       setDefaultOptions(options);
-      console.log(options, "Default Options");
+
     } catch (error) {
       console.error("Error fetching default options:", error);
     }
