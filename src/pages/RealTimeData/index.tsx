@@ -678,8 +678,10 @@ const handleViewSummary = (company: string, companyTicker: string) => {
                                                                                                                     <Button
                           
                             variant="primary"
-                            className="bg-theme-2 border-bg-theme-2 "
+                            className="bg-theme-2 border-bg-theme-2"
                             onClick={() => handleViewSummary(company_name, companyTicker)}
+                            
+size = "sm"
                           >
                            
                             Meeting Details
