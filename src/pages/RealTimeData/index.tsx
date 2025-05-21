@@ -682,7 +682,7 @@ const handleViewSummary = (company: string, companyTicker: string) => {
                             onClick={() => handleViewSummary(company_name, companyTicker)}
                           >
                            
-                            View
+                            Meeting Details
                           </Button>
                                                                                 </div>
                                                                             </Table.Td>
