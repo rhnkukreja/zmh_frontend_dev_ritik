@@ -83,14 +83,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
       );
     }
     const [outcomeData, setOutcomeData] = useState([]);
-    const [objectYearlySummary, setObjectYearlySummary] = useState<YearlySummaryObject>(() =>
-      Array.isArray(yearlySummary)
-        ? yearlySummary.reduce((acc, item) => {
-          acc[item.year] = { count: item.count, avg_support: item.avg_support };
-          return acc;
-        }, {} as YearlySummaryObject)
-        : {}
-    );
+  
 
 
 
@@ -124,15 +117,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
       }
     }, [pieChartOutcome]);
 
-    useEffect(() => {
-      if (tab !== "proposal" && Array.isArray(yearlySummary)) {
-        const transformed = yearlySummary.reduce((acc, item) => {
-          acc[item.year] = { count: item.count, avg_support: item.avg_support };
-          return acc;
-        }, {});
-        setObjectYearlySummary(transformed);
-      }
-    }, [tab, yearlySummary]);
+
 
     const pieCategoryData = interleaveSlices(
       topCategories.map((item, index) => {
@@ -146,9 +131,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
         };
       })
     );
-    console.log("asgdyiuansd", yearlySummary)
-
-    console.log("YeobjectYearlySummary", objectYearlySummary)
+ 
 
 
     if (!yearlySummary) {
@@ -200,17 +183,13 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                     </p>
                   ) : (
                     <ResponsiveContainer width="100%" height={250}>
-                      <ComposedChart
-                        data={Object.entries(tab == "proposal" ? yearlySummary : objectYearlySummary)
-                          .filter(([year]) => parseInt(year) >= 2022)
-                          .map(([year, { count, avg_support }]) => ({
-                            year: parseInt(year),
-                            count,
-                            avg_support,
-                          }))
-                          .reverse()}
-                        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
-                      >
+                     
+                       <ComposedChart
+                      data={[
+                        ...yearlySummary?.filter((item) => item.year >= 2022),
+                      ].reverse()}
+                      margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                    >
                         <XAxis dataKey="year" />
                         <YAxis
                           yAxisId="left"
