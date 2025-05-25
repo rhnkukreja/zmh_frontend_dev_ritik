@@ -35,7 +35,7 @@ class CommonService {
   ): Promise<any> {
     try {
       const response = await axiosInstance.post(
-        "/whats_new/",
+        "/whats_new/email_notifications",
         payload
       );
       return response.data;
