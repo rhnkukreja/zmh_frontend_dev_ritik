@@ -231,7 +231,7 @@ class DashboardService {
   public async getNotifications(status?: boolean): Promise<{
     result: any;
   }> {
-    const url = status ? `/whats_new/notifications/?status=${status}/?date=2025-05-22` : `whats_new/notifications/?date=2025-05-22`
+    const url = status ? `/whats_new/notifications/?status=${status}` : `whats_new/notifications`
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );
