@@ -29,6 +29,21 @@ class CommonService {
       return error;
     }
   }
+
+  public async requestWhatsNew(
+    payload: any
+  ): Promise<any> {
+    try {
+      const response = await axiosInstance.post(
+        "/whats_new/email_notifications",
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  }
+
   public async contactUs(payload: ContactUsAdditionalData): Promise<any> {
     try {
       const response = await axiosInstance.post("/user/contact_us/", payload);

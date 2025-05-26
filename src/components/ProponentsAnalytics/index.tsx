@@ -57,7 +57,7 @@ const ProponentsAnalyticsComponent: React.FC<
   };
 
   const renderSummaryTable = () => (
-    <div className="overflow-x-auto my-6">
+    <div className="overflow-x-auto mt-6">
       <h3 className="text-lg font-semibold mb-2">Top Proponents</h3>
       {loading ? (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
@@ -70,7 +70,7 @@ const ProponentsAnalyticsComponent: React.FC<
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-12">
             <div
               className={`${
                 tab == "no-action" && filters?.proponent_name?.length == 0
@@ -150,33 +150,33 @@ const ProponentsAnalyticsComponent: React.FC<
                         </td>
                         <td className="border px-4 py-2">
                           {proponent.total_count}{" "}
-                          {/* {tab !== "no-action" &&
+                          {tab !== "no-action" &&
                             proponent.avg_support !== undefined &&
-                            format(proponent.avg_support)} */}
+                            format(proponent.avg_support)}
                         </td>
                         <td className="border px-4 py-2">
                           {envCount}{" "}
-                          {/* {tab !== "no-action" &&
+                          {tab !== "no-action" &&
                             envAvgSupport !== undefined &&
-                            format(envAvgSupport)} */}
+                            format(envAvgSupport)}
                         </td>
                         <td className="border px-4 py-2">
                           {socCount}{" "}
-                          {/* {tab !== "no-action" &&
+                          {tab !== "no-action" &&
                             socAvgSupport !== undefined &&
-                            format(socAvgSupport)} */}
+                            format(socAvgSupport)}
                         </td>
                         <td className="border px-4 py-2">
                           {govCount}{" "}
-                          {/* {tab !== "no-action" &&
+                          {tab !== "no-action" &&
                             govAvgSupport !== undefined &&
-                            format(govAvgSupport)} */}
+                            format(govAvgSupport)}
                         </td>
                         <td className="border px-4 py-2">
                           {execComp}{" "}
-                          {/* {tab !== "no-action" &&
+                          {tab !== "no-action" &&
                             execAvgSupport !== undefined &&
-                            format(execAvgSupport)} */}
+                            format(execAvgSupport)}
                         </td>
                       </tr>
                     );

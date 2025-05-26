@@ -19,12 +19,7 @@ import LoadingIcon from "../Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
 import { Tab } from "@/components/Base/Headless";
 
-const index = () => {
-  const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
-    (state) => state.authentiction
-  );
-
-  console.log("companyGlobalSearchTicker", companyGlobalSearchTicker)
+const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -102,7 +97,7 @@ const index = () => {
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
     else if (companyGlobalSearchTicker !== tempSearch) {
       setSelectedYear("");
@@ -113,7 +108,7 @@ const index = () => {
           )
         )
       );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
+      // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
 
 

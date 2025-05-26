@@ -1,7 +1,7 @@
 import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
-import { useState, useEffect, createRef, useRef } from "react";
+import React, { useState, useEffect, createRef, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
 import {
@@ -25,7 +25,7 @@ import localStorageHelper, {
 } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
-import { FilterX, Mail } from "lucide-react";
+import { FilterX, Mail, BellRing} from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -51,6 +51,8 @@ import useCompanySearch from "@/hooks/useCompanySearch";
 import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { dashboardService } from "@/services/dashboard";
+import GetWhatsNew from "@/components/WhatsNew";
+import { Disclosure } from "@/components/Base/Headless";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -102,6 +104,8 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   const [isFrameLoading, setIsFrameLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
+  const [whatsNewFormVisible, setWhatsNewFormVisible] = useState<boolean>(false);
+
 
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -279,9 +283,12 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
   const [modulesData, setModulesData] = useState<any>({});
+  const [notificationData, setNotificationData] = useState<any>([]);
+
 
   useEffect(() => {
     getModulesCount();
+    getNotificationList();
   }, [companyGlobalSearchName]);
 
   const getModulesCount = async () => {
@@ -291,6 +298,18 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
       });
       if (res?.result) {
         setModulesData(res?.result);
+      }
+    } catch (error) {
+      return error;
+    } finally {
+    }
+  };
+
+  const getNotificationList = async (status?: boolean) => {
+    try {
+      const res = await dashboardService.getNotifications(status);
+      if (res?.result) {
+        setNotificationData(res?.result);
       }
     } catch (error) {
       return error;
@@ -416,7 +435,11 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        } else if (menu.title === "Company Search") {
+                        }
+                        else if(menu.title === "WhatsNew"){
+                          setWhatsNewFormVisible(true);
+                        }
+                          else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
                           linkTo(menu, navigate);
@@ -646,6 +669,10 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
             helpFormVisible={helpFormVisible}
             setHelpFormVisible={setHelpFormVisible}
           />
+          <GetWhatsNew
+            whatsNewFormVisible={whatsNewFormVisible}
+            setWhatsNewFormVisible={setWhatsNewFormVisible}
+          />
         </div>
         <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] bg-white inset-x-0 top-0">
           <div
@@ -749,34 +776,66 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                   </a>
                   <div className="h-8"></div>
                   <div className="h-8"></div>
-                  {/* <div className="flex items-center justify-center w-10 relative cursor-pointer">
-                    <Tippy content="Notes" options={{ theme: "light" }}>
-                      <Lucide
-                        onClick={() => {
-                          navigate("/notes");
-                        }}
-                        icon="FileText"
-                        className="w-8 h-8 text-gray-400 shadow-sm"
-                      />
-                    </Tippy>
-                  </div> */}
+                 
+                      <Menu>
+                        <Menu.Button onClick={() => {
+                         !notificationData?.notification_status && getNotificationList(true)
+                        }}>
+                          <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
+                            <img src={notificationIcon} alt="ai icon" />
+                            {!notificationData?.notification_status && (
+                              <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-2 text-[11px] font-semibold text-white top-0 flex items-center justify-center left-[25px]"></span>
+                            )}
+                          </div>
+                        </Menu.Button>
 
-                  {/* <a
-                    onClick={(event: React.MouseEvent) => {
-                      event.preventDefault();
-                      setNotificationModalVisible(true);
-                    }}
-                  >
-                    <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
-                      <img src={notificationIcon} alt="ai icon" />
-                      <span
-                        className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[11px]  
-                          font-semibold text-white top-0 flex items-center justify-center left-[25px]"
-                      >
-                        {2}
-                      </span>
-                    </div>
-                  </a> */}
+                        <Menu.Items className="w-[500px] p-4"> 
+                        {notificationData.notifications?.length > 0
+                          ? notificationData.notifications?.map((group, i) => (
+                            <React.Fragment key={i}>
+                              <Disclosure>
+                                <Disclosure.Button className="w-full text-left p-3 bg-gray-100 hover:bg-gray-200 rounded-md">
+                                  <h2 className="text-[14px] font-bold">
+                                    {group.module} ({group.count})
+                                  </h2>
+                                </Disclosure.Button>
+                                {
+                                  group?.results?.length > 0 &&
+                                  <Disclosure.Panel>
+                                    <div >
+                                      <div className="p-2 bg-white border border-gray-200 rounded-md shadow-sm overflow-y-scroll h-[500px]">
+                                        {group?.results?.map((item) => (
+                                          <React.Fragment key={item.record_id}>
+                                            <Menu.Item>
+                                              <div className="flex items-start p-2" onClick={() => {
+                                                navigate(`${item?.navigate_url}`);
+                                              }}>
+                                                <BellRing strokeWidth={1} className="w-4 h-4 mr-2 mt-1" />
+                                                <h2 className="text-[14px]">{item?.message}</h2>
+                                              </div>
+                                            </Menu.Item>
+                                            <Menu.Divider />
+                                          </React.Fragment>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </Disclosure.Panel>
+
+                                }
+
+                              </Disclosure>
+                            </React.Fragment>
+                          ))
+                          :
+                          <div className="flex items-center justify-center">
+                            <BellRing strokeWidth={1} className="w-4 h-4 mr-2 mt-1" />
+                            <h1>No Notifications Found.</h1>
+                          </div>
+                        }
+                        </Menu.Items>
+                      </Menu>
+                      
+                   
 
                   {/* <a
                     href=""

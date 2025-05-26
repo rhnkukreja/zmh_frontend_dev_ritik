@@ -1,9 +1,13 @@
 import AGMSummaryCard from "@/components/AGMSummaryCard"
+import { useAppSelector } from "@/stores/hooks";
 
 const index = () => {
+   const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
   return (
     <div>
-        <AGMSummaryCard/>
+        <AGMSummaryCard  companyGlobalSearchTicker={companyGlobalSearchTicker} companyGlobalSearchName={companyGlobalSearchName} />
     </div>
   )
 }
