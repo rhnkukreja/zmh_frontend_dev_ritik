@@ -778,7 +778,11 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
 
                   <Menu>
                     <Menu.Button>
-                      <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
+                      <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
+                      onClick={() => {
+                         !notificationData?.notification_status && getNotificationList(true)
+                        }}
+                        >
                         <img src={notificationIcon} alt="ai icon" />
                         {!notificationData?.notification_status && (
                           <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-2 text-[11px] font-semibold text-white top-0 flex items-center justify-center left-[25px]"></span>
@@ -811,8 +815,9 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                                         {open ? "▲" : "▼"}
                                       </span>
                                     </Disclosure.Button>
-
-                                    <Disclosure.Panel className="px-4 py-3 bg-gray-50 border border-t-0 border-gray-200 rounded-b-lg">
+                                    {
+                                      group?.results?.length > 0 &&
+                                      <Disclosure.Panel className="px-4 py-3 bg-gray-50 border border-t-0 border-gray-200 rounded-b-lg">
                                       <div className="overflow-y-auto max-h-[400px] space-y-2">
                                         {group?.results?.map((item) => (
                                           <div
@@ -838,6 +843,8 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                                         ))}
                                       </div>
                                     </Disclosure.Panel>
+                                    }
+                                    
                                   </>
                                 )}
                               </Disclosure>
