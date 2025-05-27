@@ -435,11 +435,9 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        }
-                        else if(menu.title === "WhatsNew"){
+                        } else if (menu.title === "WhatsNew") {
                           setWhatsNewFormVisible(true);
-                        }
-                          else if (menu.title === "Company Search") {
+                        } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
                           linkTo(menu, navigate);
@@ -724,8 +722,9 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                 ]?.includes(location.pathname) ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
-                    {location.pathname.includes("/notes") && selectedName &&
-                    `- ${selectedName}`}
+                    {location.pathname.includes("/notes") &&
+                      selectedName &&
+                      `- ${selectedName}`}
                   </h1>
                 ) : (
                   <div
@@ -776,66 +775,84 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                   </a>
                   <div className="h-8"></div>
                   <div className="h-8"></div>
-                 
-                      <Menu>
-                        <Menu.Button onClick={() => {
-                         !notificationData?.notification_status && getNotificationList(true)
-                        }}>
-                          <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
-                            <img src={notificationIcon} alt="ai icon" />
-                            {!notificationData?.notification_status && (
-                              <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-2 text-[11px] font-semibold text-white top-0 flex items-center justify-center left-[25px]"></span>
-                            )}
-                          </div>
-                        </Menu.Button>
 
-                        <Menu.Items className="w-[500px] p-4"> 
-                        {notificationData.notifications?.length > 0
-                          ? notificationData.notifications?.map((group, i) => (
-                            <React.Fragment key={i}>
-                              <Disclosure>
-                                <Disclosure.Button className="w-full text-left p-3 bg-gray-100 hover:bg-gray-200 rounded-md">
-                                  <h2 className="text-[14px] font-bold">
-                                    {group.module} ({group.count})
-                                  </h2>
-                                </Disclosure.Button>
-                                {
-                                  group?.results?.length > 0 &&
-                                  <Disclosure.Panel>
-                                    <div >
-                                      <div className="p-2 bg-white border border-gray-200 rounded-md shadow-sm overflow-y-scroll h-[500px]">
+                  <Menu>
+                    <Menu.Button>
+                      <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer">
+                        <img src={notificationIcon} alt="ai icon" />
+                        {!notificationData?.notification_status && (
+                          <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-2 text-[11px] font-semibold text-white top-0 flex items-center justify-center left-[25px]"></span>
+                        )}
+                      </div>
+                    </Menu.Button>
+
+                    <Menu.Items className="w-[500px] p-4 space-y-1">
+                      {notificationData.notifications?.length > 0 ? (
+                        notificationData.notifications?.map((group, i) => (
+                              <Disclosure key={i}>
+                                {({ open }) => (
+                                  <>
+                                    <Disclosure.Button className="w-full mt-1 flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-50 transition-all">
+                                      <div className="flex items-center">
+                                        <BellRing
+                                          strokeWidth={1}
+                                          className="w-6 h-6 text-red-500 mr-2"
+                                        />
+                                        <div className="text-left">
+                                          <h2 className="text-sm font-semibold text-gray-800">
+                                            {group.module}
+                                          </h2>
+                                          <p className="text-xs text-gray-500">
+                                            {group.count} new
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <span className="text-xs text-gray-400">
+                                        {open ? "▲" : "▼"}
+                                      </span>
+                                    </Disclosure.Button>
+
+                                    <Disclosure.Panel className="px-4 py-3 bg-gray-50 border border-t-0 border-gray-200 rounded-b-lg">
+                                      <div className="overflow-y-auto max-h-[400px] space-y-2">
                                         {group?.results?.map((item) => (
-                                          <React.Fragment key={item.record_id}>
-                                            <Menu.Item>
-                                              <div className="flex items-start p-2" onClick={() => {
-                                                navigate(`${item?.navigate_url}`);
-                                              }}>
-                                                <BellRing strokeWidth={1} className="w-4 h-4 mr-2 mt-1" />
-                                                <h2 className="text-[14px]">{item?.message}</h2>
-                                              </div>
-                                            </Menu.Item>
-                                            <Menu.Divider />
-                                          </React.Fragment>
+                                          <div
+                                            key={item.record_id}
+                                            className="bg-white p-3 rounded-md border shadow hover:shadow-md transition cursor-pointer"
+                                            onClick={() =>
+                                             item?.navigate_url && window.open(
+                                                item?.navigate_url,
+                                                "_blank"
+                                              )
+                                            }
+                                          >
+                                            <div className="flex items-start">
+                                              <BellRing
+                                                strokeWidth={1}
+                                                className="w-4 h-4 mr-2 mt-1 text-blue-500"
+                                              />
+                                              <p className="text-sm text-gray-700">
+                                                {item?.message}
+                                              </p>
+                                            </div>
+                                          </div>
                                         ))}
                                       </div>
-                                    </div>
-                                  </Disclosure.Panel>
-
-                                }
-
+                                    </Disclosure.Panel>
+                                  </>
+                                )}
                               </Disclosure>
-                            </React.Fragment>
-                          ))
-                          :
-                          <div className="flex items-center justify-center">
-                            <BellRing strokeWidth={1} className="w-4 h-4 mr-2 mt-1" />
-                            <h1>No Notifications Found.</h1>
-                          </div>
-                        }
-                        </Menu.Items>
-                      </Menu>
-                      
-                   
+                        ))
+                      ) : (
+                        <div className="flex items-center justify-center">
+                          <BellRing
+                            strokeWidth={1}
+                            className="w-4 h-4 mr-2 mt-1"
+                          />
+                          <h1>No Notifications Found.</h1>
+                        </div>
+                      )}
+                    </Menu.Items>
+                  </Menu>
 
                   {/* <a
                     href=""
