@@ -317,6 +317,13 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     }
   };
 
+  const getTotalNotificationsCount = () => {
+    const totalCount = notificationData?.notifications?.reduce((acc, group) => {
+      return acc + (group.count || 0);
+    }, 0);  
+    return totalCount;
+  }
+
   return (
     <div
       className={clsx([
@@ -783,16 +790,20 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                          !notificationData?.notification_status && getNotificationList(true)
                         }}
                         >
-                        <img src={notificationIcon} alt="ai icon" />
+                        {/* <img src={notificationIcon} alt="ai icon" /> */}
+                        <BellRing
+                          strokeWidth={1.5}
+                          className={`w-8 h-8 mr-2 ${notificationData?.notifications?.length > 0 ? "animate-[ring_1s_ease-in-out_infinite]" : ""}`}
+                        />
                         {!notificationData?.notification_status && (
-                          <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-2 text-[11px] font-semibold text-white top-0 flex items-center justify-center left-[25px]"></span>
+                          <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-3 text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[30px]">{getTotalNotificationsCount() || 0}</span>
                         )}
                       </div>
                     </Menu.Button>
 
                     <Menu.Items className="w-[500px] p-4 space-y-1">
-                      {notificationData.notifications?.length > 0 ? (
-                        notificationData.notifications?.map((group, i) => (
+                      {notificationData?.notifications?.length > 0 ? (
+                        notificationData?.notifications?.map((group, i) => (
                               <Disclosure key={i}>
                                 {({ open }) => (
                                   <>
@@ -800,7 +811,8 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                                       <div className="flex items-center">
                                         <BellRing
                                           strokeWidth={1}
-                                          className="w-6 h-6 text-red-500 mr-2"
+                                          className={`w-6 h-6 text-red-500 mr-2 ${group?.results?.length > 0 ? "animate-[ring_1s_ease-in-out_infinite]" : ""}`}
+
                                         />
                                         <div className="text-left">
                                           <h2 className="text-sm font-semibold text-gray-800">
@@ -831,10 +843,12 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                                             }
                                           >
                                             <div className="flex items-start">
+                                              <div>
                                               <BellRing
                                                 strokeWidth={1}
-                                                className="w-4 h-4 mr-2 mt-1 text-blue-500"
+                                                className="w-4 h-4 mr-2 mt-1 text-blue-500 animate-[ring_1s_ease-in-out_infinite]"
                                               />
+                                              </div>
                                               <p className="text-sm text-gray-700">
                                                 {item?.message}
                                               </p>
