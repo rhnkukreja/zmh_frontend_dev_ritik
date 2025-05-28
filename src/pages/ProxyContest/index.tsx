@@ -1175,14 +1175,13 @@ const index = () => {
 
                                     {/* Proxy Contest Table */}
 
-                                    <section >
+                                    {/* <section >
                                         {!loading && proxyContestTopFilter?.company_name?.length > 0 && proxyContestReleaseDetails?.Activism_Presentation?.[0]?.year != "2023" && proxyContestReleaseDetails?.Activism_ISS_GL?.[0]?.year != "2023" &&
                                             <section className="box p-5 mt-3.5">
                                                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                                                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                         <span>
                                                             <h1 className="text-lg font-bold">
-                                                                {/* Proxy Contest */}
                                                                 Director Voting Details
                                                                 {proxyContestTopFilter?.institution_name?.length > 0 ? "" : ' (Top 5)'}
                                                             </h1>
@@ -1270,7 +1269,6 @@ const index = () => {
 
                                                 {(proxyContestTopFiveDetails === "" && proxyContestTopFiveLoading) && (
                                                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                        {/* <h1 className="font-semibold">Loading...</h1> */}
                                                         <div className="absolute inset-0 flex items-center justify-center bg-white">
                                                             <LoadingIcon
                                                                 color="#800000"
@@ -1376,8 +1374,6 @@ const index = () => {
                                                                                                                 ) : (
                                                                                                                     <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
                                                                                                                 )}
-
-                                                                                                            {/* <Tippy content={<span dangerouslySetInnerHTML={{ __html: getContent(vdsProxy[vdsHeader?.field]?.notes) ?? '' }}/>}> */}
                                                                                                             <div data-tooltip-id="my-tooltip-data-html"
 
                                                                                                                 data-tooltip-html={vdsProxy[vdsHeader?.field]?.notes}>
@@ -1385,9 +1381,6 @@ const index = () => {
                                                                                                                     icon="Info"
                                                                                                                     className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
                                                                                                                 />
-                                                                                                                {/* <span className="tooltiptext shadow-md" >
-      </span> */}
-                                                                                                                {/* </Tippy> */}
                                                                                                             </div>
                                                                                                         </h1>
                                                                                                     ) :
@@ -1453,7 +1446,7 @@ const index = () => {
 
                                             </section>
                                         }
-                                    </section>
+                                    </section> */}
 
 
 
