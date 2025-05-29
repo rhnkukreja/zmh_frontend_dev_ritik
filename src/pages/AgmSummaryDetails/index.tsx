@@ -7,7 +7,7 @@ const index = () => {
   );
   return (
     <div>
-        <AGMSummaryCard  companyGlobalSearchTicker={companyGlobalSearchTicker} companyGlobalSearchName={companyGlobalSearchName} />
+        <AGMSummaryCard  companyGlobalSearchTicker={companyGlobalSearchTicker} companyGlobalSearchName={companyGlobalSearchName} isMeetingModal={false} />
     </div>
   )
 }

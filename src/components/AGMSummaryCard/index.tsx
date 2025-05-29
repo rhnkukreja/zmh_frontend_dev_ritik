@@ -19,7 +19,7 @@ import LoadingIcon from "../Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
 import { Tab } from "@/components/Base/Headless";
 
-const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
+const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingModal}) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -94,7 +94,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
         fetchAGMSummaryDashboard(
           createDynamicURL(
             `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
-          )
+          )+(isMeetingModal ? `&year=2025`:"")
         )
       );
       // dispatch(setTempSearch(companyGlobalSearchTicker));
@@ -105,7 +105,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
         fetchAGMSummaryDashboard(
           createDynamicURL(
             `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
-          )
+          )+(isMeetingModal ? `&year=2025`:"")
         )
       );
       // dispatch(setTempSearch(companyGlobalSearchTicker));
@@ -204,7 +204,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
 
-                  {
+              {!isMeetingModal &&  <>   {
 
                     agmSummaryDetails?.vds_check &&
                     dashboardDataList?.total_year?.length > 0 && (
@@ -226,7 +226,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
                     >
                       View N-PX
                     </button>
-                  )}
+                  )}</>}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <div className="flex justify-between items-center gap-2">
@@ -471,14 +471,30 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName }) => {
         </div>
       )}
 
-      {!agmSummaryDetails?.Year && !loading && (
+      {!agmSummaryDetails?.Year && !loading &&
+      <>
+      {
+        isMeetingModal ?
+         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <h1 className="font-semibold">
+            {" "}
+             AGM Summary Has Not Been Released
+          </h1>
+        </div>
+        :
+         (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <h1 className="font-semibold">
             {" "}
             Previous AGM Summary Records Not Found..
           </h1>
         </div>
-      )}
+      )
+
+      }
+      </>
+      
+      }
     </>
   );
 };

@@ -78,11 +78,11 @@ const initialState: any = {
       pathname: "/case-studies",
       title: "Case Studies",
     },
-    {
-      icon: "MessageCircle",
-      pathname: "/engagement-question",
-      title: "Engagement Question",
-    },
+    // {
+    //   icon: "MessageCircle",
+    //   pathname: "/engagement-question",
+    //   title: "Engagement Question",
+    // },
     {
       icon: "Network",
       pathname: "/peer-analysis",
