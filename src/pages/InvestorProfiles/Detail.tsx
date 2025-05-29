@@ -247,7 +247,7 @@ function Main() {
 
     validateImages();
   }, [singleInvesterProfile?.key_contacts]);
-
+ 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 ">
@@ -269,7 +269,7 @@ function Main() {
         <div ref={contentRef}>
           <div className="flex justify-between   px-2 gap-y-3 items-center flex-row bg-white box py-2">
             <div>
-              <div className=" text-[18px] font-semibold text-left py-1 leading-none  md:max-w-[350px] sm:max-w-[200px]  overflow-hidden text-ellipsis whitespace-nowrap ">
+              <div className=" text-[18px] font-semibold text-left py-1 leading-none  md:max-w-[375px] sm:max-w-[200px]  overflow-hidden  whitespace-nowrap ">
                 {params?.type! === "investor"
                   ? singleInvesterProfile?.institution_name
                   : singleInvesterProfile?.equity_firm_name}
