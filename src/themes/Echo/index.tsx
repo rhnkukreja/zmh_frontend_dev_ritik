@@ -793,7 +793,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                         {/* <img src={notificationIcon} alt="ai icon" /> */}
                         <BellRing
                           strokeWidth={1.5}
-                          className={`w-8 h-8 mr-2 ${notificationData?.notifications?.length > 0 ? "animate-[ring_1s_ease-in-out_infinite]" : ""}`}
+                          className={`w-8 h-8 mr-2`}
                         />
                         {!notificationData?.notification_status && getTotalNotificationsCount() > 0 &&
                           <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-3 text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[30px]">{getTotalNotificationsCount() || 0}</span>
