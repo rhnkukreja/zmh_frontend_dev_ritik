@@ -12,14 +12,15 @@ interface ModalProps {
   setOpenSummaryModal: (visible: boolean) => void;
   companyTicker: string;
   companyName: string;
-  
+
 }
 
 const SummaryModal: React.FC<ModalProps> = ({
   openSummaryModal,
   setOpenSummaryModal,
   companyTicker,
-  companyName
+  companyName,
+
 }) => {
  
   
@@ -47,7 +48,7 @@ const SummaryModal: React.FC<ModalProps> = ({
             </div>
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
-  <AGMSummaryCard  companyGlobalSearchTicker={companyTicker} companyGlobalSearchName={companyName} />
+  <AGMSummaryCard  companyGlobalSearchTicker={companyTicker} companyGlobalSearchName={companyName} isMeetingModal={true} />
          
           </Dialog.Description >
           <Dialog.Footer className="flex justify-end">
