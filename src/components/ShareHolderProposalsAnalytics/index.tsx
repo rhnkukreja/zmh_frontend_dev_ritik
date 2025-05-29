@@ -67,7 +67,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
     const formatWithCommas = (value: number): string => {
       return value.toLocaleString();
     };
-
+const chartKey = tab === "proposal"  ? "proxy_season" : "year"
     if (
       !isDataAvailable(proposalCounts) &&
       !isDataAvailable(topSubcategories) &&
@@ -141,10 +141,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
 
 
 
-
-
-
-
     return (
       <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
 
@@ -186,11 +182,11 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                      
                        <ComposedChart
                       data={[
-                        ...yearlySummary?.filter((item) => item.year >= 2022),
+                        ...yearlySummary?.filter((item) => item[chartKey] >= 2022),
                       ].reverse()}
                       margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
                     >
-                        <XAxis dataKey="year" />
+                        <XAxis dataKey={chartKey}  />
                         <YAxis
                           yAxisId="left"
                           label={{

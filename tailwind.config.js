@@ -29,6 +29,15 @@ module.exports = {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
+        ring: {
+          '0%': { transform: 'rotate(0)' },
+          '10%': { transform: 'rotate(15deg)' },
+          '20%': { transform: 'rotate(-10deg)' },
+          '30%': { transform: 'rotate(15deg)' },
+          '40%': { transform: 'rotate(-5deg)' },
+          '50%': { transform: 'rotate(5deg)' },
+          '60%, 100%': { transform: 'rotate(0)' },
+        },
       },
       animation: {
         spinOnce: "spinOnce 1s ease-in-out 1",

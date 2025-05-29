@@ -203,7 +203,10 @@ a.side-menu__link.side-menu__link--active svg {
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
-
+.note-html a{
+  color: blue ;
+  text-decoration: underline;
+}
 .css-13cymwt-control {
   background: #f7f7f7 !important;
 }

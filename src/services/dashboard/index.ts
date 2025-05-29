@@ -227,6 +227,23 @@ class DashboardService {
       result: result,
     };
   }
+
+  public async getNotifications(status?: boolean): Promise<{
+    result: any;
+  }> {
+    const url = status ? `/whats_new/notifications/?status=${status}` : `whats_new/notifications`
+    const response = await axiosInstance.get(
+      createDynamicURL(url)
+    );
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
 }
+
+
+
+
 
 export const dashboardService = new DashboardService();
