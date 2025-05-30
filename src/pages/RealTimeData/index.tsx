@@ -31,6 +31,8 @@ import { fetchRealTimes, resetPage, setPage } from "@/stores/realTimeDataSlice";
 import { realTimeService } from "@/services/realTimeData";
 import Litepicker from "@/components/Base/Litepicker";
 import SummaryModal from "./components/ViewSummaryModal";
+import axios from "axios";
+import { axiosInstance } from "@/services";
 
 
 const index = () => {
@@ -284,7 +286,18 @@ const handleViewSummary = (company: string, companyTicker: string) => {
     setViewCompanyName(company)
 
 }
+   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axiosInstance.get(`${baseURL}/api/vds/`,);
+        console.log(response ,"response"); 
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
 
+    fetchData();
+  }, []);
     return (
         <>
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
