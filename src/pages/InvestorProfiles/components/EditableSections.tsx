@@ -70,7 +70,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
         <>
           <div className="flex flex-row justify-between items-center px-4 py-3.5 border-b-2 border-gray-100 ">
             <h4 className="text-[18px]  font-semibold text-left py-1 leading-none ">
-              {title}
+              {title} 
             </h4>
 
             {user?.user_type === "Admin" && (
@@ -131,8 +131,9 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             <>
               {renderHtml ? (
                 <div className="flex flex-col px-4 py-3">
+                <div className="html-link">
                   <ClassicEditor value={renderHtml} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing}  />
-                
+                </div>
                 </div>
               ) : null}
             </>

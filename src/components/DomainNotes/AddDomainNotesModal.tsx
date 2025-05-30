@@ -40,7 +40,7 @@ const AddDomainNoteModal = ({
   const handleNoteSubmit = async (data: DomainNote) => {
     function removeTrailingSpaces(htmlContent: string): string {
       const trailingTagsRegex = /^(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+|(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+$/gi;
-      return `<div class="note-html">` + htmlContent.replace(trailingTagsRegex, '') + `</div>`;
+      return htmlContent.replace(trailingTagsRegex, '');
     }
     try {
       const trimmedData = {
