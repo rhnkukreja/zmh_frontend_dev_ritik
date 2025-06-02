@@ -32,8 +32,8 @@ import { fetchRealTimes, resetPage, setPage } from "@/stores/realTimeDataSlice";
 import { realTimeService } from "@/services/realTimeData";
 import Litepicker from "@/components/Base/Litepicker";
 import SummaryModal from "./components/ViewSummaryModal";
-import axios from "axios";
-import { axiosInstance } from "@/services";
+
+
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -52,8 +52,10 @@ const index = () => {
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [openSummaryModal, setOpenSummaryModal] = useState<boolean>(false);
   const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(false);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(false);
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [analytics, setAnalytics] = useState<any>([]);
   const [dropdownValues, setDropdownValues] = useState<any>({
     index: [],
   });
@@ -83,7 +85,7 @@ const index = () => {
         await dispatch(
           fetchRealTimes(
             createDynamicURL(
-              `${baseURL}/api/vds/`,
+              `${baseURL}/vds/`,
               allApplyFilter,
               undefined,
               page
@@ -99,6 +101,37 @@ const index = () => {
 
     fetchData();
   }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
+ useEffect(() => {
+  const fetchAnalytics = async () => {
+    if (allApplyFilter) {
+      const { year, ...restFilter } = allApplyFilter;
+      setIsAnalyticsLoading(true);
+
+      try {
+        const response = await realTimeService.getMeetingAnalytics(
+          createDynamicURL(
+            `${baseURL}/api/vds/`,
+            allApplyFilter,
+            undefined,
+            page
+          )
+        );
+
+        if (response) {
+          setAnalytics(response?.response);
+        }
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+      } finally {
+        setIsAnalyticsLoading(false);
+      }
+    }
+  };
+
+  if (isViewAnalysis) {
+    fetchAnalytics();
+  }
+}, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
 
   const {
     handleSubmit,
@@ -247,8 +280,7 @@ const index = () => {
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
-    console.log(realTimeData?.data, "=> realTimeData");
-    const groupedQuestions = realTimeData?.data?.reduce(
+    const groupedQuestions = realTimeData?.reduce(
       (acc: any, question: any) => {
         const company_name = question?.company_name;
         const formatted_meeting_date = question?.formatted_meeting_date;
@@ -294,18 +326,7 @@ const index = () => {
     setCompanyTicker(companyTicker);
     setViewCompanyName(company);
   };
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axiosInstance.get(`${baseURL}/api/vds/`);
-        console.log(response, "response");
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
 
-    fetchData();
-  }, []);
   return (
     <>
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
@@ -666,7 +687,7 @@ const index = () => {
         </div>
         {isViewAnalysis ? (
           <div>
-            <TableWrapper isLoading={allApplyFilter && loading}>
+            <TableWrapper isLoading={allApplyFilter && isAnalyticsLoading}>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                 <Table>
                   <Table.Thead>
@@ -711,8 +732,8 @@ const index = () => {
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody className="!max-h-400px overflow-auto position-relative">
-                    {realTimeData?.institution_data.length > 0 ?
-                     realTimeData?.institution_data.map((ins) => (
+                    {analytics?.results?.institution_data.length > 0 ?
+                     analytics?.results?.institution_data.map((ins) => (
                       <Table.Tr>
                         <Table.Td
                           className="py-2  h-[50px]  text-[#000000B2]"
