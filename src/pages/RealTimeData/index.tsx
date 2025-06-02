@@ -675,7 +675,7 @@ const index = () => {
                                                                                                     />
                                                                                                 )}
                                                                                             </button></div>
-                                                                                        {/* <Button
+                                                                                        <Button
 
                                                                                             variant="primary"
                                                                                             className="bg-theme-2 border-bg-theme-2"
@@ -685,7 +685,7 @@ const index = () => {
                                                                                         >
 
                                                                                             Meeting Details
-                                                                                        </Button> */}
+                                                                                        </Button>
                                                                                     </div>
                                                                                 </Table.Td>
                                                                             </Table.Tr>
