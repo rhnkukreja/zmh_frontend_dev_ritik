@@ -285,10 +285,9 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   const [modulesData, setModulesData] = useState<any>({});
   const [notificationData, setNotificationData] = useState<any>([]);
 
-
   useEffect(() => {
     getModulesCount();
-    getNotificationList();
+    getNotificationList(finhub?.name,null);
   }, [companyGlobalSearchName]);
 
   const getModulesCount = async () => {
@@ -305,9 +304,10 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     }
   };
 
-  const getNotificationList = async (status?: boolean) => {
+  const getNotificationList = async (companyName:string ,status?: boolean) => {
     try {
-      const res = await dashboardService.getNotifications(status);
+      
+      const res = await dashboardService.getNotifications(companyName,status);
       if (res?.result) {
         setNotificationData(res?.result);
       }
@@ -787,7 +787,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                     <Menu.Button>
                       <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
                       onClick={() => {
-                         !notificationData?.notification_status && getNotificationList(true)
+                         !notificationData?.notification_status && getNotificationList(finhub?.name,true)
                         }}
                         >
                         {/* <img src={notificationIcon} alt="ai icon" /> */}
