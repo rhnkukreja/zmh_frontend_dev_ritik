@@ -332,7 +332,7 @@ const index = () => {
     <>
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
       <div className="p-5 mt-1 box">
-        <div className="flex flex-col p-5  sm:flex-row gap-y-2">
+        <div className="flex flex-col py-5  sm:flex-row gap-y-2">
           <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
             <span>
               <h1 className="text-lg font-bold">2025 Shareholder Meetings</h1>
