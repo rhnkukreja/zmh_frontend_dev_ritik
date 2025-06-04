@@ -36,32 +36,10 @@ import SummaryModal from "./components/ViewSummaryModal";
 
 
 const index = () => {
-
-    const dispatch: AppDispatch = useAppDispatch();
-    const { realTimeData, loading, page, totalPages, count } =
-        useAppSelector((state) => state.realTime);
-
-    const {
-        companyGlobalSearchName,
-        companyGlobalSearchTicker,
-    } = useAppSelector((state: RootState) => state.authentiction);
-
-    const [searchParams] = useSearchParams();
-    const searchTicker = searchParams.get("ticker");
-    const [allApplyFilter, setallApplyFilter] = useState<any>("");
-    const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
-    const [getDropdownLoader, setGetDropdownLoader] =
-        useState<boolean>(false);
-    const [openSummaryModal, setOpenSummaryModal] = useState<boolean>(false);
-    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
-    const [filtersLength, setFiltersLength] = useState<number>(0);
-    const [dropdownValues, setDropdownValues] = useState<any>({
-        index: [],
-    });
-    const [dropdownInstitutionValues, setDropdownInstitutionValues] = useState<any>({
-        instututes: [],
-    });
-
+  const dispatch: AppDispatch = useAppDispatch();
+  const { realTimeData, loading, page, totalPages, count } = useAppSelector(
+    (state) => state.realTime
+  );
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
@@ -100,47 +78,26 @@ const index = () => {
     onSubmit({});
   }, []);
 
- 
-    useEffect(() => {
-        const fetchData = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
+      if (allApplyFilter) {
+        const { year, ...restFilter } = allApplyFilter;
+        await dispatch(
+          fetchRealTimes(
+            createDynamicURL(
+              `${baseURL}/vds/`,
+              allApplyFilter,
+              undefined,
+              page
+            )
+          )
+        );
 
-            if (allApplyFilter) {
-                const { year, ...restFilter } = allApplyFilter;
-                await dispatch(
-                    fetchRealTimes(
-                        createDynamicURL(
-                            `${baseURL}/vds/`,
-                            allApplyFilter,
-                            undefined,
-                            page
-                        )
-                    )
-                );
-
-                setFiltersLength(countValidFilters(restFilter));
-                setSelectedChipFilters(generateFilterChips(restFilter));
-                // dispatch(setTempSearch(companyGlobalSearchName));
-            }
-        };
-
-        fetchData();
-    }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
-
-    const {
-        handleSubmit,
-        control,
-        reset,
-        formState: { errors },
-        setValue,
-        watch,
-    } = useForm<any>({
-        defaultValues: {
-            index: " ",
-            from_date: "",
-            date_range: "",
-            institution_name: "",
-            vote: "",
-
+        setFiltersLength(countValidFilters(restFilter));
+        setSelectedChipFilters(generateFilterChips(restFilter));
+        // dispatch(setTempSearch(companyGlobalSearchName));
+      }
+    };
 
     fetchData();
   }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
@@ -359,7 +316,6 @@ const index = () => {
     }
   }, [groupedQuestions]);
 
-
   const toggleGroup = (company_name: string) => {
     setOpenGroups((prevState) => ({
       ...prevState,
@@ -371,7 +327,6 @@ const index = () => {
     setCompanyTicker(companyTicker);
     setViewCompanyName(company);
   };
-
 
   return (
     <>
@@ -726,7 +681,6 @@ const index = () => {
                                     />
                                    </div>
                                 </div> */}
-
               </div>
             </div>
           </form>
@@ -1042,209 +996,6 @@ const index = () => {
                                                       </Table.Td>
                                                     </Table.Tr>
                                                   )
-
-                            </div>
-                        </div>
-                    </form>
-                )}
-
-                {realTimeData?.length > 0 ? (
-                    <div className="w-full">
-                        <>
-                            <div className="">
-                                <div>
-                                    <TableWrapper isLoading={allApplyFilter && loading}>
-                                        <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
-                                            <Table>
-                                                <Table.Thead className="relative">
-                                                    <Table.Tr className="sticky z-30" style={{ top: 0 }}>
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "35%" }}
-                                                            colSpan={5}
-                                                        >
-                                                            Company
-                                                        </Table.Td>
-
-                                                    </Table.Tr>
-                                                </Table.Thead>
-                                                <Table.Tbody className="!max-h-400px overflow-auto position-relative">
-
-                                                    <>
-                                                        {groupedQuestions ? (
-                                                            Object.entries(groupedQuestions).map(
-                                                                ([company_name, institutionQuestions]: [
-                                                                    string,
-                                                                    any
-                                                                ], index) => {
-                                                                    const companyTicker = institutionQuestions[0]?.company_ticker
-                                                                    return (
-
-                                                                        <>
-                                                                            <Table.Tr
-                                                                                className={`bg-gray-100 dark:bg-darkmode-700 sticky z-10 my-10`}
-                                                                                // style={{ top: `${index === 0 ? 50 : 45 * (index + 1)}px` }}
-                                                                                style={{ top: 50 }}
-
-                                                                            >
-                                                                                <Table.Td
-                                                                                    colSpan={8}
-                                                                                    className="font-semibold py-2  "
-                                                                                >
-                                                                                    <div className="flex flex-row justify-between items-center"   >
-                                                                                        <div className=" cursor-pointer flex flex-row items-center" onClick={() => toggleGroup(company_name)}>  {company_name}
-                                                                                            <button className="ml-2 text-blue-500">
-
-                                                                                                {openGroups[company_name] ? (
-                                                                                                    <Lucide
-                                                                                                        icon="ChevronUp"
-                                                                                                        className=" w-6 h-6 mr-2 "
-                                                                                                    />
-                                                                                                ) : (
-                                                                                                    <Lucide
-                                                                                                        icon="ChevronDown"
-                                                                                                        className=" w-6 h-6 mr-2 "
-                                                                                                    />
-                                                                                                )}
-                                                                                            </button></div>
-                                                                                        <Button
-
-                                                                                            variant="primary"
-                                                                                            className="bg-theme-2 border-bg-theme-2"
-                                                                                            onClick={() => handleViewSummary(company_name, companyTicker)}
-
-                                                                                            size="sm"
-                                                                                        >
-
-                                                                                            Meeting Details
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </Table.Td>
-                                                                            </Table.Tr>
-
-                                                                            {openGroups[company_name] && Array.isArray(institutionQuestions) && (
-                                                                                <>
-                                                                                    <Table.Tr className="sticky z-10" style={{ top: 87 }} >
-                                                                                        <Table.Td
-                                                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                                            style={{ width: "5%" }}
-                                                                                        >
-                                                                                            No.
-                                                                                        </Table.Td>
-                                                                                        <Table.Td
-                                                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                                            style={{ width: "30%" }}
-                                                                                        >
-                                                                                            Proposal
-                                                                                        </Table.Td>
-                                                                                        <Table.Td
-                                                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                                            style={{ width: "7%" }}
-                                                                                        >
-                                                                                            Management Recommendation
-                                                                                        </Table.Td>
-                                                                                        <Table.Td
-                                                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                                            style={{ width: "7%" }}
-                                                                                        >
-                                                                                            Vote Cast
-                                                                                        </Table.Td>
-                                                                                        <Table.Td
-                                                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                                            style={{ width: "17.5%" }}
-                                                                                        >
-                                                                                            Institution
-                                                                                        </Table.Td>
-                                                                                    </Table.Tr>
-                                                                                    {institutionQuestions.map((question) => (
-                                                                                        <Table.Tr
-                                                                                            key={question?.id}
-                                                                                            className="[&_td]:last:border-b-0 !max-h-100px overflow-auto"
-                                                                                        >
-
-                                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                                                <div className="whitespace-normal max-w-[200px] overflow-hidden text-ellipsis line-clamp-2">
-                                                                                                    {question?.proposal_num}
-                                                                                                </div>
-                                                                                            </Table.Td>
-                                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                                                <div className="text-wrap max-w-[300px]">
-                                                                                                    {question?.proposal}
-                                                                                                </div>
-                                                                                            </Table.Td>
-                                                                                            <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
-                                                                                                <div className="whitespace-nowrap max-w-[100px]">
-                                                                                                    {question?.mgt_rec}
-                                                                                                </div>
-                                                                                            </Table.Td>
-                                                                                            <Table.Td
-                                                                                                className="py-2 border-dashed dark:bg-transparent"
-                                                                                                style={{ width: "7%" }}
-                                                                                            >
-                                                                                                <div className="flex">
-                                                                                                    {question?.vote === "Split Vote" ? (
-                                                                                                        <Tippy
-                                                                                                            content={question?.split_vote_counts}
-                                                                                                            options={{ theme: "light" }}
-                                                                                                        >
-                                                                                                            {question?.vote}
-                                                                                                        </Tippy>
-                                                                                                    ) : (
-                                                                                                        <span
-                                                                                                            className={clsx([
-                                                                                                                (question?.vote?.includes("Against") ||
-                                                                                                                    question?.vote?.includes("Withhold")) &&
-                                                                                                                "text-red-700 font-semibold",
-                                                                                                            ])}
-                                                                                                        >
-                                                                                                            {question?.vote}
-                                                                                                        </span>
-                                                                                                    )}
-                                                                                                    {question?.notes && question.notes.toLowerCase() !== "nan" && (
-                                                                                                        <span
-                                                                                                            data-tooltip-id="my-tooltip-data-html"
-                                                                                                            data-tooltip-html={question?.notes}
-                                                                                                        >
-                                                                                                            <Lucide
-                                                                                                                icon="Info"
-                                                                                                                className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                                                            />
-                                                                                                        </span>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            </Table.Td>
-                                                                                            <Table.Td
-                                                                                                className="py-2 border-dashed dark:bg-transparent"
-                                                                                                style={{ width: "17.5%" }}
-                                                                                            >
-                                                                                                {question?.institution_name}
-                                                                                            </Table.Td>
-                                                                                        </Table.Tr>
-                                                                                    ))}
-                                                                                </>
-                                                                            )}
-
-                                                                        </>
-                                                                    )
-                                                                }
-                                                            )
-                                                        ) : (
-                                                            <Table.Tr>
-                                                                <Table.Td
-                                                                    colSpan={5}
-                                                                    className="py-10 text-center text-slate-500"
-                                                                >
-                                                                    No engagement questions.
-                                                                </Table.Td>
-                                                            </Table.Tr>
-                                                        )}
-                                                    </>
-                                                </Table.Tbody>
-                                                {groupedQuestions?.length === 0 && (
-                                                    <div className="w-full">
-                                                        <h1 className="mt-3">No Records Found..</h1>
-                                                    </div>
-
                                                 )}
                                               </>
                                             )}
@@ -1273,7 +1024,6 @@ const index = () => {
                         </div>
                       </TableWrapper>
                     </div>
-
                     <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                       <CPagination
                         page={page}
@@ -1324,7 +1074,6 @@ const index = () => {
       )}
     </>
   );
-
 };
 
 export default index;
