@@ -25,6 +25,14 @@ class RealTimeService {
       result: result,
     };
   }
+   public async getMeetingAnalytics(url: string): Promise<{
+    response: any[];
+  }> {
+    const response = await axiosInstance.get(url);
+    return {
+      response: response.data,
+    };
+  }
 }
 
 export const realTimeService = new RealTimeService();

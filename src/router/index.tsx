@@ -478,7 +478,7 @@ function Router() {
           data: { titleName: "Voting Data - ZMH Analytics" },
         },
         {
-          path: "real-time-data",
+          path: "2025-shareholder-meetings",
           element: <RealTimeData />,
           data: { titleName: "2025 Shareholder Meetings - ZMH Analytics" },
         },

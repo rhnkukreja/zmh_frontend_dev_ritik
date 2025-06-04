@@ -105,7 +105,7 @@ const initialState: any = {
     },
     {
       icon: "Vote",
-      pathname: "/real-time-data",
+      pathname: "/2025-shareholder-meetings",
       title: "2025 Shareholder Meetings",
     },
     {

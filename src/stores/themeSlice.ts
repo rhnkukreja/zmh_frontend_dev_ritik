@@ -84,7 +84,7 @@ const initialState: ThemeState = {
     "investor-company-details",
     "proxy-contest",
     "voting-data",
-    "real-time-data"
+    "2025-shareholder-meetings"
   ],
 };
 
