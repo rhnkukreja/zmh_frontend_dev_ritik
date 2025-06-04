@@ -113,11 +113,11 @@ const initialState: any = {
       pathname: "/proxy-contest",
       title: "Proxy Contest",
     },
-    // {
-    //   icon: "HelpCircle",
-    //   pathname: "#",
-    //   title: "WhatsNew",
-    // },
+    {
+      icon: "HelpCircle",
+      pathname: "#",
+      title: "WhatsNew",
+    },
     
     // {
     //   icon: "PanelTopClose",

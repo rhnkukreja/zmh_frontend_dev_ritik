@@ -228,10 +228,10 @@ class DashboardService {
     };
   }
 
-  public async getNotifications(status?: boolean): Promise<{
+  public async getNotifications(companyName: string, status?: boolean): Promise<{
     result: any;
   }> {
-    const url = status ? `/whats_new/notifications/?status=${status}` : `whats_new/notifications`
+    const url = status ? `/whats_new/notifications/?global_search=${companyName}&status=${status}` : `whats_new/notifications/?global_search=${companyName}`
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );
