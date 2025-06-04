@@ -130,6 +130,7 @@ const index = () => {
 
   if (isViewAnalysis) {
     fetchAnalytics();
+    setIsFilterCollapse(false);
   }
 }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
 
@@ -347,7 +348,27 @@ const index = () => {
                             } */}
             </span>
           </div>
+             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+          
+          </div>
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                 {count > 0 && (
+          <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-6">
+            Count: {count}
+          </h2>
+        )}
+            <div className="mt-2">
+              <FormSwitch className="mb-6">
+                <label className="text-md mr-3 font-semibold">Analytics</label>
+                <FormSwitch.Input
+                  id="view-analysis-switch"
+                  type="checkbox"
+                  checked={isViewAnalysis}
+                  onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                />
+                <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+              </FormSwitch>
+            </div>
             <Popover className="inline-block">
               {({ close }) => (
                 <>
@@ -381,11 +402,7 @@ const index = () => {
           </>
         )}
 
-        {count > 0 && (
-          <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
-            Count: {count}
-          </h2>
-        )}
+       
 
         {isFilterCollapse && (
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -668,25 +685,9 @@ const index = () => {
             </div>
           </form>
         )}
-        <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white ">
-          <div className="flex  "></div>
-          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-            <div className="mt-2">
-              <FormSwitch className="mb-6">
-                <label className="text-md mr-3 font-semibold">Analytics</label>
-                <FormSwitch.Input
-                  id="view-analysis-switch"
-                  type="checkbox"
-                  checked={isViewAnalysis}
-                  onChange={(e) => setIsViewAnalysis(e.target.checked)}
-                />
-                <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
-              </FormSwitch>
-            </div>
-          </div>
-        </div>
-        {isViewAnalysis ? (
-          <div>
+     
+        {isViewAnalysis && (
+          <div className="mb-20">
             <TableWrapper isLoading={allApplyFilter && isAnalyticsLoading}>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                 <Table>
@@ -781,7 +782,7 @@ const index = () => {
               </div>
             </TableWrapper>
           </div>
-        ) : (
+        )}
           <div>
             {realTimeData?.length > 0 ? (
               <div className="w-full">
@@ -1048,7 +1049,7 @@ const index = () => {
               )
             )}
           </div>
-        )}
+      
       </div>
 
       <Tooltip
