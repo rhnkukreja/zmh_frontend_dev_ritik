@@ -144,15 +144,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
           })
         ).unwrap();
 
-        dispatch(
-          fetchEngagementQuestions(
-            createDynamicURL(
-              `${baseURL}/engagement_questions/`,
-              undefined,
-              page
-            )
-          )
-        );
+       
       }
 
       if (response?.results?.id) {
@@ -160,6 +152,15 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
           selectedProxyVotingGuideline
             ? "Policy Guideline updated successfully"
             : "Policy Guideline saved successfully"
+        );
+         dispatch(
+          fetchEngagementQuestions(
+            createDynamicURL(
+              `${baseURL}/engagement_questions/`,
+              undefined,
+              page
+            )
+          )
         );
       }
     } catch (error) {
