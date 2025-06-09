@@ -19,7 +19,7 @@ import {
 } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import {
+import { 
   Download,
   FilterX,
   Grid3X3,
@@ -91,6 +91,8 @@ function ShareHolderProposal() {
   const [searchTerms, setSearchTerms] = useState<string[]>([
     ...filters?.proponent_name,
   ]);
+const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   const [isViewAnalysis, setIsViewAnalysis] = useState(false);
   const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">(
@@ -294,7 +296,7 @@ function ShareHolderProposal() {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
       return;
     }
- const updatedFilters = tab === "withdrawn" 
+    const updatedFilters = tab === "withdrawn" 
   ? { 
       ...filters, 
       ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season , proxy_season: [] }) 
@@ -345,6 +347,42 @@ function ShareHolderProposal() {
       setIsViewAnalysis(false);
     }
   }, [isCompanySelected]);
+useEffect(() => {
+  const fetchData = async () => {
+    if (!isAllCompanySelected && filters?.global_search.length === 0) {
+      return;
+    }
+
+    try {
+      setLoadingAnalytics(true);
+
+      const updatedFilters = {
+        ...filters,
+        ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] }),
+      };
+
+      const dynamicURL =
+        createDynamicURL(tabUrls[tab], updatedFilters, undefined, page) +
+        (isViewAnalysis && tab === "proposal" ? "&analytics_data=true" : "");
+
+      const response = await shareHolderProposalService.getShareHolderProposal(dynamicURL);
+
+      if (response) {
+        setProposalsAnalytics(response);
+      }
+    } catch (error) {
+      console.error("Error fetching shareholder proposals:", error);
+     
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  if (isViewAnalysis) {
+    fetchData();
+  }
+}, [page, tab, filters, isViewAnalysis]);
+
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
@@ -1977,24 +2015,25 @@ function ShareHolderProposal() {
 
                           {/* Content */}
                           <div>
+                           
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
-                                proposalCounts={proposalCounts}
-                                topSubcategories={topSubcategories}
-                                topCategories={topCategories}
-                                yearlySummary={yearlySummary}
+                                proposalCounts={proposalsAnalytics?.total_proposals}
+                                topSubcategories={proposalsAnalytics?.topSubcategories}
+                                topCategories={proposalsAnalytics?.topCategories}
+                                yearlySummary={proposalsAnalytics?.yearlySummary}
                                 tab={tab}
                                 isAllCompanySelected={isAllCompanySelected}
-                                loading={loading}
+                                loading={loadingAnalytics}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
-                                topProponents={topProponents}
+                                topProponents={proposalsAnalytics?.topProponents}
                                 handleSearch={handleSearch}
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
-                                loading={loading}
-                                pieChartOutcome={pieChartOutcome}
+                                loading={loadingAnalytics}
+                                pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
                                 filters={filters}
                               />
                             )}

@@ -25,10 +25,11 @@ class ShareHolderProposalService {
     topCategories: any[];
     yearlySummary: any[];
     topProponents: any[];
-    pieChartOutcome: any
+    pieChartOutcome: any;
+    total_proposals: number;
   }> {
     const response = await axiosInstance.get(url);
-    const { count, results, proposalCount, withdrawnCount, noActionCount, proposal_counts, top_subcategories, yearly_summary, top_categories, top_10_proponent, pie_chart_outcome } =
+    const { count, results, proposalCount, withdrawnCount, noActionCount, proposal_counts, top_subcategories, yearly_summary, top_categories, top_10_proponent, pie_chart_outcome ,total_proposals} =
       response.data;
     return {
       count,
@@ -41,7 +42,8 @@ class ShareHolderProposalService {
       yearlySummary: yearly_summary,
       topCategories: top_categories,
       topProponents: top_10_proponent,
-      pieChartOutcome: pie_chart_outcome
+      pieChartOutcome: pie_chart_outcome,
+      total_proposals,
     };
   }
 

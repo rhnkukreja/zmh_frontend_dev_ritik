@@ -269,7 +269,7 @@ function Main() {
         <div ref={contentRef}>
           <div className="flex justify-between   px-2 gap-y-3 items-center flex-row bg-white box py-2">
             <div>
-              <div className=" text-[18px] font-semibold text-left py-1 leading-none  md:max-w-[375px] sm:max-w-[200px]  overflow-hidden  whitespace-nowrap ">
+              <div className=" text-[18px] font-semibold text-left py-1 leading-none ">
                 {params?.type! === "investor"
                   ? singleInvesterProfile?.institution_name
                   : singleInvesterProfile?.equity_firm_name}
