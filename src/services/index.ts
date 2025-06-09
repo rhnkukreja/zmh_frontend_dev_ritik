@@ -70,7 +70,7 @@ class AxiosServiceConfig {
           );
 
           if (
-            (isMultipartFormData && config.method === "post") || (config.method === "put" && !isNotMultipartFormDataUrls)
+            (isMultipartFormData && (config.method === "post" || config.method === "put")) || (config.method === "put" && !isNotMultipartFormDataUrls)
           ) {
             config.headers["Content-Type"] = `multipart/form-data`;
           } else {

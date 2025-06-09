@@ -400,7 +400,7 @@ function Main() {
                         <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
                           <div className="ml-5 flex items-center">
                             {profile?.institution_logo_url &&
-                              profile.institution_logo_url !== "null" ? (
+                              profile.institution_logo_url !== "null" && profile.institution_logo_url !== "nan" ? (
                               <>
                                 <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
                                 shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">

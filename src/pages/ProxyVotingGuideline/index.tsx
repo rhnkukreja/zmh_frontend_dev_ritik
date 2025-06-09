@@ -215,7 +215,16 @@ function ProxyGuideline() {
     setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   }
-
+const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
+  const seenInstitutions = new Set<string>();
+  return guidelines.filter((guideline) => {
+    if (seenInstitutions.has(guideline.institution_name)) {
+      return false;
+    }
+    seenInstitutions.add(guideline.institution_name);
+    return true;
+  });
+};
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -573,7 +582,7 @@ function ProxyGuideline() {
                       </Table.Thead>
                       <Table.Tbody>
                         {proxyVotingGuidelines?.length > 0 &&
-                          proxyVotingGuidelines?.map(
+                            uniqueGuidelines(proxyVotingGuidelines)?.map(
                             (guideline: ProxyVotingGuideline) => (
                               <Table.Tr
                                 key={guideline?.id}
