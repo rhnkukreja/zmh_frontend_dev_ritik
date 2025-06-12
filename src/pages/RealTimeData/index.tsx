@@ -357,7 +357,7 @@ const index = () => {
             Count: {count}
           </h2>
         )}
-            <div className="mt-2">
+            {/* <div className="mt-2">
               <FormSwitch className="mb-6">
                 <label className="text-md mr-3 font-semibold">Analytics</label>
                 <FormSwitch.Input
@@ -368,7 +368,7 @@ const index = () => {
                 />
                 <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
               </FormSwitch>
-            </div>
+            </div> */}
             <Popover className="inline-block">
               {({ close }) => (
                 <>
@@ -855,7 +855,7 @@ const index = () => {
                                                     )}
                                                   </button>
                                                 </div>
-                                                <Button
+                                                {/* <Button
                                                   variant="primary"
                                                   className="bg-theme-2 border-bg-theme-2"
                                                   onClick={() =>
@@ -867,7 +867,7 @@ const index = () => {
                                                   size="sm"
                                                 >
                                                   Meeting Details
-                                                </Button>
+                                                </Button> */}
                                               </div>
                                             </Table.Td>
                                           </Table.Tr>
