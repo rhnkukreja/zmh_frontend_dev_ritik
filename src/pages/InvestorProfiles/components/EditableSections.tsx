@@ -61,6 +61,22 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const handleChange = (value: string) => {
     setValue(value);
   };
+useEffect(() => {
+  const applyAttributes = () => {
+    const elements = document.querySelectorAll(`.html-link a`);
+    
+    elements.forEach((link) => {
+      const anchor = link as HTMLAnchorElement;
+      if (anchor.href) {
+        anchor.setAttribute("target", "_blank");
+        anchor.setAttribute("rel", "noopener noreferrer");
+      }
+    });
+  };
+  const timeout = setTimeout(applyAttributes, 0);
+
+  return () => clearTimeout(timeout);
+}, [renderHtml]);
 
   return (
     <div className="box border-none ">
