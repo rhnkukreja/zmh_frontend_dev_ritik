@@ -150,7 +150,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
       setTopBarActive(false);
     }
   };
-
+console.log(noCompanyHeaderRoutes ,"noCompanyHeaderRoutes")
   const handleToggleMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);

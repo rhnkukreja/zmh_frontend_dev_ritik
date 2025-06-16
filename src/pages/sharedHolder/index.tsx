@@ -19,7 +19,7 @@ import {
 } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { 
+import {
   Download,
   FilterX,
   Grid3X3,
@@ -67,7 +67,7 @@ import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
-  const { user, companyGlobalSearchName, isCompanySelected } = useAppSelector(
+  const { user, companyGlobalSearchName, isCompanySelected ,finhub, companyGlobalSearchTicker  } = useAppSelector(
     (state) => state.authentiction
   );
   const location = useLocation();
@@ -91,10 +91,10 @@ function ShareHolderProposal() {
   const [searchTerms, setSearchTerms] = useState<string[]>([
     ...filters?.proponent_name,
   ]);
-const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
+  const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
-  const [isViewAnalysis, setIsViewAnalysis] = useState(false);
+  const [isViewAnalysis, setIsViewAnalysis] = useState(true);
   const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">(
     "shareholders"
   );
@@ -281,7 +281,7 @@ const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
     dispatch(
       modifyRoute({
         route: "shareholder-proposal",
-        type: isAllCompanySelected === true ? true : false,
+        type: true,
       })
     );
   }, [companyGlobalSearchName, isAllCompanySelected]);
@@ -296,15 +296,15 @@ const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
       return;
     }
-    const updatedFilters = tab === "withdrawn" 
-  ? { 
-      ...filters, 
-      ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season , proxy_season: [] }) 
-    } 
-  : { 
-      ...filters, 
-      ...(filters.year?.length > 0 && { proxy_season: filters.year ,year:[]  }) 
-    };
+    const updatedFilters = tab === "withdrawn"
+      ? {
+        ...filters,
+        ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season, proxy_season: [] })
+      }
+      : {
+        ...filters,
+        ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
+      };
 
     const dynamicURL = createDynamicURL(tabUrls[tab], updatedFilters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
@@ -347,41 +347,41 @@ const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
       setIsViewAnalysis(false);
     }
   }, [isCompanySelected]);
-useEffect(() => {
-  const fetchData = async () => {
-    if (!isAllCompanySelected && filters?.global_search.length === 0) {
-      return;
-    }
-
-    try {
-      setLoadingAnalytics(true);
-
-      const updatedFilters = {
-        ...filters,
-        ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] }),
-      };
-
-      const dynamicURL =
-        createDynamicURL(tabUrls[tab], updatedFilters, undefined, page) +
-        (isViewAnalysis && tab === "proposal" ? "&analytics_data=true" : "");
-
-      const response = await shareHolderProposalService.getShareHolderProposal(dynamicURL);
-
-      if (response) {
-        setProposalsAnalytics(response);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isAllCompanySelected && filters?.global_search.length === 0) {
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching shareholder proposals:", error);
-     
-    } finally {
-      setLoadingAnalytics(false);
-    }
-  };
 
-  if (isViewAnalysis) {
-    fetchData();
-  }
-}, [page, tab, filters, isViewAnalysis]);
+      try {
+        setLoadingAnalytics(true);
+
+        const updatedFilters = {
+          ...filters,
+          ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] }),
+        };
+
+        const dynamicURL =
+          createDynamicURL(tabUrls[tab], updatedFilters, undefined, page) +
+          (isViewAnalysis && tab === "proposal" ? "&analytics_data=true" : "");
+
+        const response = await shareHolderProposalService.getShareHolderProposal(dynamicURL);
+
+        if (response) {
+          setProposalsAnalytics(response);
+        }
+      } catch (error) {
+        console.error("Error fetching shareholder proposals:", error);
+
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    };
+
+    if (isViewAnalysis) {
+      fetchData();
+    }
+  }, [page, tab, filters, isViewAnalysis]);
 
 
   useEffect(() => {
@@ -808,7 +808,67 @@ useEffect(() => {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
+          <div className="overflow-auto xl:overflow-visible mt-4">
+            <Tab.Group
+              selectedIndex={isAllCompanySelected ? 1 : 0}
+              defaultIndex={defaultTabIndex}
+            >
+              <Tab.List variant="link-tabs">
+                <Tab>
+                  <Tab.Button
+                    className="w-full py-2"
+                    as="button"
+                    onClick={async (e) => {
+                      try {
+                        dispatch(
+                          selectUnSelectAllCompany(false)
+                        );
+                        dispatch(
+                          modifyRoute({
+                            route: "shareholder-proposal",
+                            type: true,
+                          })
+                        );
+                      } catch (error) { }
+                    }}
+                  >
+                    <div className="flex items-center justify-center ">
+                      {finhub?.name}
+                      {finhub?.name || companyGlobalSearchName} {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
+                    </div>
+                  </Tab.Button>
+                </Tab>
+
+                <Tab>
+                  <Tab.Button
+                    className="w-full py-2"
+                    as="button"
+                    onClick={async (e) => {
+                      try {
+                        dispatch(
+                          selectUnSelectAllCompany(true)
+                        );
+                        dispatch(
+                          modifyRoute({
+                            route: "shareholder-proposal",
+                            type: true,
+                          })
+                        );
+                      } catch (error) { }
+                    }}
+                  >
+                    <div className="flex items-center justify-center ">
+                      View All
+                    </div>
+                  </Tab.Button>
+                </Tab>
+
+
+              </Tab.List>
+
+            </Tab.Group>
+          </div>
+          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center mt-3">
             {isAllCompanySelected === true ? (
               <div className="font-semibold text-xl">
                 All Shareholder Proposals
@@ -817,46 +877,12 @@ useEffect(() => {
               <div className="font-semibold text-xl">Shareholder Proposals</div>
             )}
 
-            <div className="flex items-center">
-              <Tippy
-                content="All Companies"
-                options={{
-                  theme: "light",
-                }}
-              >
-                <div className="mt-2">
-                  <FormSwitch>
-                    <label className="text-md mr-3 font-semibold">
-                      View All
-                    </label>
-                    <FormSwitch.Input
-                      id="checkbox-switch-7"
-                      type="checkbox"
-                      checked={isAllCompanySelected}
-                      onChange={async (e) => {
-                        try {
-                          dispatch(
-                            selectUnSelectAllCompany(!isAllCompanySelected)
-                          );
-                          dispatch(
-                            modifyRoute({
-                              route: "shareholder-proposal",
-                              type: e.target.checked,
-                            })
-                          );
-                        } catch (error) { }
-                      }}
-                    />
-                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
-                  </FormSwitch>
-                </div>
-              </Tippy>
-            </div>
+
           </div>
 
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top:   isAllCompanySelected ? "60px" :"134px" }}>
+              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top:  "60px" }}>
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -899,16 +925,16 @@ useEffect(() => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                {tab == "proposal" &&  <div className="hover:bg-slate-50 ml-2">
-                  <Tippy content="Download Excel" options={{ theme: "light" }}>
-                    <div
-                      className="box p-[5px] cursor-pointer"
-                      onClick={handleDownload}
-                    >
-                      <img alt="download-icon" src={downloadIcon} />
-                    </div>
-                  </Tippy>
-                   
+                  {tab == "proposal" && <div className="hover:bg-slate-50 ml-2">
+                    <Tippy content="Download Excel" options={{ theme: "light" }}>
+                      <div
+                        className="box p-[5px] cursor-pointer"
+                        onClick={handleDownload}
+                      >
+                        <img alt="download-icon" src={downloadIcon} />
+                      </div>
+                    </Tippy>
+
                   </div>}
 
                   {user?.saved_search?.["Shareholder Proposal"] !==
@@ -977,7 +1003,7 @@ useEffect(() => {
 
               {selectedChipFilters?.length > 0 && (
                 <>
-                
+
                   <FilterChips
                     filters={selectedChipFilters}
                     onRemove={handleRemoveChip}
@@ -1029,7 +1055,7 @@ useEffect(() => {
                                   type="checkbox"
                                   onChange={(e) => {
                                     setValue(
-                                    tab === "withdrawn"  ?"year" : "proxy_season",
+                                      tab === "withdrawn" ? "year" : "proxy_season",
                                       e.target.checked
                                         ? apiDropdownOptions.year
                                         : []
@@ -1041,7 +1067,7 @@ useEffect(() => {
                           )}
                         </div>
                         <Controller
-                          name={tab === "withdrawn"  ?"year" : "proxy_season"}
+                          name={tab === "withdrawn" ? "year" : "proxy_season"}
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
@@ -2015,7 +2041,7 @@ useEffect(() => {
 
                           {/* Content */}
                           <div>
-                           
+
                             {activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
                                 proposalCounts={proposalsAnalytics?.total_proposals}
