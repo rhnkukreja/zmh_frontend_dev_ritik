@@ -618,7 +618,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute"
+                            url="/institute/?type=Proponent"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}
@@ -627,6 +627,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                               placeholder: "Select Proponent Options",
                             }}
                             className="w-full"
+                            fetchAll={false}
                           />
                           {error && (
                             <Error className="text-red-600 mt-2">

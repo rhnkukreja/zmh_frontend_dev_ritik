@@ -297,13 +297,14 @@ const formatDate = (dateString: string | undefined): string | undefined => {
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute"
+                            url="/institute/?type=Proponent"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}
                             onChange={(value) => field.onChange(value)}
                             options={{ placeholder: "Select proponent" }}
                             className="w-full"
+                            fetchAll={false}
                           />
                           {error && (
                             <Error className="text-red-600 mt-2">
