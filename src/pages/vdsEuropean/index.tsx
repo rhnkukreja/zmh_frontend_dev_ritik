@@ -608,7 +608,7 @@ const index = () => {
 
                                                         return VdsEuropeans.map((vds: any, index: number) => {
                                                             const currentInstitution = vds?.excel_institution_name;
-                                                            console.log(currentInstitution, 'and', lastInstitutionName ,"=>here");
+                                                          
                                                             if (currentInstitution !== lastInstitutionName) {
                                                                 toggle = !toggle;
                                                                 lastInstitutionName = currentInstitution;
@@ -626,7 +626,7 @@ const index = () => {
                                                                         className="whitespace-nowrap overflow-hidden text-ellipsis"
                                                                         style={{ width: "17.5%" }}
                                                                     >
-                                                                        {vds?.excel_institution_name}
+                                                                        {vds?.excel_institution_name} ++ {lastInstitutionName}
                                                                     </Table.Td>
 
                                                                     <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
