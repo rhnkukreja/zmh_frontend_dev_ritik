@@ -280,7 +280,7 @@ const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
 
     dispatch(
       modifyRoute({
-        route: "share-holder-proposal",
+        route: "shareholder-proposal",
         type: isAllCompanySelected === true ? true : false,
       })
     );
@@ -840,7 +840,7 @@ useEffect(() => {
                           );
                           dispatch(
                             modifyRoute({
-                              route: "share-holder-proposal",
+                              route: "shareholder-proposal",
                               type: e.target.checked,
                             })
                           );
@@ -2161,7 +2161,7 @@ useEffect(() => {
                                               : 0;
                                           noAction?.nl_exist === true &&
                                             navigate(
-                                              `/share-holder-proposal/${id}?url=shareholder_proposal/no_action`
+                                              `/shareholder-proposal/${id}?url=shareholder_proposal/no_action`
                                             );
                                         }}
                                       >
@@ -2195,7 +2195,7 @@ useEffect(() => {
                                           <Lucide
                                             onClick={() =>
                                               navigate(
-                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
+                                                `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
                                               )
                                             }
                                             icon="Eye"
@@ -2373,7 +2373,7 @@ useEffect(() => {
                                           <Lucide
                                             onClick={() =>
                                               navigate(
-                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
+                                                `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
                                               )
                                             }
                                             icon="Eye"
@@ -2487,7 +2487,7 @@ useEffect(() => {
                                           <Lucide
                                             onClick={() =>
                                               navigate(
-                                                `/share-holder-proposal/${noAction?.id}?url=shareholder_proposal/withdrawn`
+                                                `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/withdrawn`
                                               )
                                             }
                                             icon="Eye"

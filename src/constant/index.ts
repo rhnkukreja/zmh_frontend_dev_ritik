@@ -61,7 +61,7 @@ export const investorProfileEditableSectionsEquity = {
 export const no_header_company = [
   "investor-profile",
   "engagement-question",
-  "proxy-voting-guideline",
+  "voting-guidelines",
 ];
 
 export const subSidebarRoutes = ["/notes"];
@@ -71,5 +71,5 @@ export const pageTitles: Record<string, string | null> = {
   "/notes": "Notes",
   "/investor-profile": null,
   "/engagement-question": null,
-  "/proxy-voting-guideline": null,
+  "/voting-guidelines": null,
 };

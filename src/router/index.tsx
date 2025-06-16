@@ -372,12 +372,12 @@ function Router() {
           data: { titleName: "Institution - ZMH Analytics" },
         },
         {
-          path: "proxy-voting-guideline",
+          path: "voting-guidelines",
           element: <ProxyVotingGuideline />,
           data: { titleName: "Voting Guidlines - ZMH Analytics" },
         },
         {
-          path: "proxy-voting-guideline/pdf-sumamry/:id",
+          path: "voting-guidelines/pdf-sumamry/:id",
           element: <ProxyVotingSummary />,
           data: { titleName: "Voting Guidlines Summary - ZMH Analytics" },
         },
@@ -397,17 +397,17 @@ function Router() {
           data: { titleName: "institution Detail - ZMH Analytics" },
         },
         {
-          path: "share-holder-proposal",
+          path: "shareholder-proposal",
           element: <SharedHolder />,
           data: { titleName: "Shareholder Proposal - ZMH Analytics" },
         },
         {
-          path: "share-holder-proposal/:id",
+          path: "shareholder-proposal/:id",
           element: <DetailShareHolder />,
           data: { titleName: "Shareholder Proposal Detail - ZMH Analytics" },
         },
         {
-          path: "peer-analysis",
+          path: "engagement-detail",
           element: <PeerAnalysis />,
           data: { titleName: "Engagement Details - ZMH Analytics" },
         },

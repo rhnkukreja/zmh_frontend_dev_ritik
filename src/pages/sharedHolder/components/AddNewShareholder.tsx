@@ -925,7 +925,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                                     className=" text-blue-400"
                                     onClick={() =>
                                       navigate(
-                                        `share-holder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`
+                                        `shareholder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`
                                       )
                                     }
                                     value={proposals?.id}

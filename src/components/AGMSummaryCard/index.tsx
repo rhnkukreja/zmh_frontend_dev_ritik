@@ -214,7 +214,8 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
                                     md:w-auto flex items-center justify-center border-red-800 border-2
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                       >
-                        {agmSummaryDetails?.Year == "2025" ? "Real-Time 2025" : "View More"}
+                        Voting Data
+                        {/* {agmSummaryDetails?.Year == "2025" ? "Real-Time 2025" : "View More"} */}
                       </button>
                     )}
                   {dashboardDataList?.total_year?.length > 0 && agmSummaryDetails?.npx_check && (

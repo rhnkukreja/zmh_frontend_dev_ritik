@@ -749,7 +749,7 @@ const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
                                               year: guideline?.year,
                                             };
                                             navigate(
-                                              `/proxy-voting-guideline/pdf-sumamry/${guideline?.id}`,
+                                              `/voting-guidelines/pdf-sumamry/${guideline?.id}`,
                                               { state: data }
                                             );
                                           }}

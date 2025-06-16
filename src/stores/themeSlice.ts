@@ -79,7 +79,7 @@ const initialState: ThemeState = {
   noCompanyHeaderRoutes: [
     "investor-profile",
     "engagement-question",
-    "proxy-voting-guideline",
+    "voting-guidelines",
     "notes",
     "investor-company-details",
     "proxy-contest",

@@ -188,7 +188,7 @@ function ProxyVotingSummary() {
   };
 
   const backToPreviousPage = () => {
-    navigate(`/proxy-voting-guideline`);
+    navigate(`/voting-guidelines`);
     countValidFilters({});
     onFilterClear();
     dispatch(resetSummaryFilter());

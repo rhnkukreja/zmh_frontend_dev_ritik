@@ -187,13 +187,14 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     if (!location.pathname.includes("/engagement-question")) {
       dispatch(resetEngagementQuestions());
     }
-    if (!location.pathname.includes("/peer-analysis")) {
+    
+    if (!location.pathname.includes("/engagement-detail")) {
       dispatch(resetPeerAnalysis());
     }
-    if (!location.pathname.includes("/proxy-voting-guideline")) {
+    if (!location.pathname.includes("/voting-guidelines")) {
       dispatch(resetProxyVotingGuidelines());
     }
-    if (!location.pathname.includes("/share-holder-proposal")) {
+    if (!location.pathname.includes("/shareholder-proposal")) {
       dispatch(resetShareholderProposal());
     }
     if (!location.pathname.includes("/institution")) {
@@ -725,7 +726,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                   "/proxy-contest",
                   "/investor-profile",
                   "/engagement-question",
-                  "/proxy-voting-guideline",
+                  "/voting-guidelines",
                 ]?.includes(location.pathname) ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
