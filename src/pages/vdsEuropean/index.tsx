@@ -608,6 +608,7 @@ const index = () => {
 
                                                         return VdsEuropeans.map((vds: any, index: number) => {
                                                             const currentInstitution = vds?.excel_institution_name;
+                                                            console.log(currentInstitution, 'and', lastInstitutionName ,"=>here");
                                                             if (currentInstitution !== lastInstitutionName) {
                                                                 toggle = !toggle;
                                                                 lastInstitutionName = currentInstitution;
