@@ -912,96 +912,78 @@ const index = () => {
                                                   Institution
                                                 </Table.Td>
                                               </Table.Tr>
-                                              {institutionQuestions?.length > 0 && (() => {
-                                                        let lastInstitutionName = '';
-                                                        let toggle = false;
+                                              {institutionQuestions?.length > 0 &&
+                                                institutionQuestions.map((question) => {
+                                                 
+                                                  let lastInstitutionName = '';
+                                                  let toggle = false;
 
-                                            return  institutionQuestions.map(
-                                                (question) => {
-
-
-                                              
-                                                  console.log(
-                                                    "current", 
-                                                    question?.excel_institution_name,
-                                                    "la=>",
-                                                    lastInstitutionName,
-                                                  );
-                                                  const currentInstitution = question?.excel_institution_name;
-
+                                                  const currentInstitution = question?.institution_name;
                                                   if (currentInstitution !== lastInstitutionName) {
                                                     toggle = !toggle;
                                                     lastInstitutionName = currentInstitution;
-                                                  
                                                   }
 
+                                                  // Render the table row
                                                   return (
                                                     <Table.Tr
                                                       key={question?.id}
-
-
                                                       className={clsx(
                                                         "[&_td]:last:border-b-0",
                                                         toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
                                                       )}
                                                     >
+                                                      {/* Proposal Number */}
                                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                         <div className="whitespace-normal max-w-[200px] overflow-hidden text-ellipsis line-clamp-2">
-                                                          {
-                                                            question?.proposal_num
-                                                          }
+                                                          {question?.proposal_num}
                                                         </div>
                                                       </Table.Td>
+
+                                                      {/* Proposal Description */}
                                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                         <div className="text-wrap max-w-[300px]">
                                                           {question?.proposal}
                                                         </div>
                                                       </Table.Td>
+
+                                                      {/* Management Recommendation */}
                                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
                                                         <div className="whitespace-nowrap max-w-[100px]">
                                                           {question?.mgt_rec}
                                                         </div>
                                                       </Table.Td>
+
+                                                      {/* Vote Details */}
                                                       <Table.Td
                                                         className="py-2 border-dashed dark:bg-transparent"
                                                         style={{ width: "7%" }}
                                                       >
                                                         <div className="flex">
-                                                          {question?.vote ===
-                                                            "Split Vote" ? (
+                                                          {question?.vote === "Split Vote" ? (
                                                             <Tippy
-                                                              content={
-                                                                question?.split_vote_counts
-                                                              }
-                                                              options={{
-                                                                theme: "light",
-                                                              }}
+                                                              content={question?.split_vote_counts}
+                                                              options={{ theme: "light" }}
                                                             >
                                                               {question?.vote}
                                                             </Tippy>
                                                           ) : (
                                                             <span
-                                                              className={clsx([
-                                                                (question?.vote?.includes(
-                                                                  "Against"
-                                                                ) ||
-                                                                  question?.vote?.includes(
-                                                                    "Withhold"
-                                                                  )) &&
-                                                                "text-red-700 font-semibold",
-                                                              ])}
+                                                              className={clsx({
+                                                                "text-red-700 font-semibold":
+                                                                  question?.vote?.includes("Against") ||
+                                                                  question?.vote?.includes("Withhold"),
+                                                              })}
                                                             >
                                                               {question?.vote}
                                                             </span>
                                                           )}
+
                                                           {question?.notes &&
-                                                            question.notes.toLowerCase() !==
-                                                            "nan" && (
+                                                            question.notes.toLowerCase() !== "nan" && (
                                                               <span
                                                                 data-tooltip-id="my-tooltip-data-html"
-                                                                data-tooltip-html={
-                                                                  question?.notes
-                                                                }
+                                                                data-tooltip-html={question?.notes}
                                                               >
                                                                 <Lucide
                                                                   icon="Info"
@@ -1011,20 +993,19 @@ const index = () => {
                                                             )}
                                                         </div>
                                                       </Table.Td>
+
+                                                      {/* Institution Name */}
                                                       <Table.Td
                                                         className="py-2 border-dashed dark:bg-transparent"
-                                                        style={{
-                                                          width: "17.5%",
-                                                        }}
+                                                        style={{ width: "17.5%" }}
                                                       >
-                                                        {
-                                                          question?.institution_name
-                                                        }
+                                                        {question?.institution_name}
                                                       </Table.Td>
-                                                    </Table.Tr>)
-                                                }
-                                              )}
-                                            )}
+                                                    </Table.Tr>
+                                                  );
+                                                })
+                                              }
+
                                             </>
                                           )}
                                       </>

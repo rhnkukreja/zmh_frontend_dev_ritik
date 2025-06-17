@@ -608,12 +608,12 @@ const index = () => {
 
                                                         return VdsEuropeans.map((vds: any, index: number) => {
                                                             const currentInstitution = vds?.excel_institution_name;
-                                                          
+ 
                                                             if (currentInstitution !== lastInstitutionName) {
                                                                 toggle = !toggle;
                                                                 lastInstitutionName = currentInstitution;
                                                             }
-
+                                                      
                                                             return (
                                                                 <Table.Tr
                                                                     key={vds?.id}
@@ -626,7 +626,7 @@ const index = () => {
                                                                         className="whitespace-nowrap overflow-hidden text-ellipsis"
                                                                         style={{ width: "17.5%" }}
                                                                     >
-                                                                        {vds?.excel_institution_name} ++ {lastInstitutionName}
+                                                                        {vds?.excel_institution_name}
                                                                     </Table.Td>
 
                                                                     <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
@@ -706,13 +706,13 @@ const index = () => {
                     </div>
                 ) : (
                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            {
-                                loading && <LoadingIcon
-                                    color="#800000"
-                                    icon="three-dots"
-                                    className="w-16 h-16"
-                                />
-                            }
+                        {
+                            loading && <LoadingIcon
+                                color="#800000"
+                                icon="three-dots"
+                                className="w-16 h-16"
+                            />
+                        }
                         {/* <h1 className="font-semibold"></h1> */}
                     </div>
                 )}
