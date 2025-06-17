@@ -912,18 +912,19 @@ const index = () => {
                                                   Institution
                                                 </Table.Td>
                                               </Table.Tr>
-                                              {institutionQuestions?.length > 0 &&
-                                                institutionQuestions.map((question) => {
-                                                 
-                                                  let lastInstitutionName = '';
-                                                  let toggle = false;
+                                              {institutionQuestions?.length > 0 && (() => {
+                                                let lastInstitutionName = '';
+                                                let toggle = false;
 
+
+                                                return institutionQuestions.map((question) => {
                                                   const currentInstitution = question?.institution_name;
+                                                  
                                                   if (currentInstitution !== lastInstitutionName) {
                                                     toggle = !toggle;
                                                     lastInstitutionName = currentInstitution;
                                                   }
-
+                                                 
                                                   // Render the table row
                                                   return (
                                                     <Table.Tr
@@ -1004,7 +1005,8 @@ const index = () => {
                                                     </Table.Tr>
                                                   );
                                                 })
-                                              }
+
+                                              })()}
 
                                             </>
                                           )}
