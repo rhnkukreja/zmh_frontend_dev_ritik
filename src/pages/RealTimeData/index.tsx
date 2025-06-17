@@ -81,6 +81,7 @@ const index = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (allApplyFilter) {
+
         const { year, ...restFilter } = allApplyFilter;
         await dispatch(
           fetchRealTimes(
@@ -208,7 +209,7 @@ const index = () => {
       index: cleanFilter?.index,
       date_range: cleanFilter?.date_range ?? null,
       institution_name: cleanFilter?.institution_name
-        ? [cleanFilter?.institution_name]
+        ? [...cleanFilter?.institution_name]
         : null,
       vote: cleanFilter?.vote ? [cleanFilter?.vote] : null,
       company_name: cleanFilter?.company_name?.value
@@ -461,7 +462,8 @@ const index = () => {
                   <div className="text-left text-slate-500 flex justify-between mb-1">
                     <span className="font-semibold">Institution</span>
                   </div>
-                  <Controller
+
+                  {/* <Controller
                     name="institution_name"
                     control={control}
                     defaultValue={""}
@@ -479,9 +481,51 @@ const index = () => {
                           placeholder: "Select Institution",
                         }}
                         className="w-full"
-                        multiple={false}
+                        multiple
                       >
                         {getDropdownLoader ? (
+                          <option value="--" disabled>
+                            Loading...
+                          </option>
+                        ) : (
+                          <>
+                            {dropdownInstitutionValues?.institutes?.map(
+                              (institutes: string) => {
+                                return (
+                                  <option value={institutes}>
+                                    {institutes}
+                                  </option>
+                                );
+                              }
+                            )}
+                          </>
+                        )}
+                      </TomSelect>
+                      
+                    )}
+                  /> */}
+                  <Controller
+                       name="institution_name"
+                    control={control}
+                    defaultValue={""}
+                    render={({ field }) => (
+                      <TomSelect
+                        value={field.value || []}
+                        // onChange={field.onChange}
+                        onChange={(event) => {
+                          getVotesDropdownData({
+                            year: 2025,
+                            institutes: [event?.target?.value],
+                          });
+                          field.onChange(event);
+                        }}
+                        options={{
+                          placeholder: "Select Institution",
+                        }}
+                        className="w-full"
+                        multiple
+                      >
+                       {getDropdownLoader ? (
                           <option value="--" disabled>
                             Loading...
                           </option>
@@ -919,12 +963,12 @@ const index = () => {
 
                                                 return institutionQuestions.map((question) => {
                                                   const currentInstitution = question?.institution_name;
-                                                  
+
                                                   if (currentInstitution !== lastInstitutionName) {
                                                     toggle = !toggle;
                                                     lastInstitutionName = currentInstitution;
                                                   }
-                                                 
+
                                                   // Render the table row
                                                   return (
                                                     <Table.Tr
