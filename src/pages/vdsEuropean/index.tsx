@@ -71,9 +71,9 @@ const index = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (allApplyFilter) {
+            // if (allApplyFilter) {
                 setIsLoading(true);
-
+               
                 await dispatch(
                     fetchVdsEuropeans(
                         createDynamicURL(
@@ -81,7 +81,9 @@ const index = () => {
                             allApplyFilter,
                             undefined,
                             page
-                        )
+                        ) +
+                        (allApplyFilter.year ? "" : "&year=2025") +
+                        (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
                     )
                 );
 
@@ -90,11 +92,11 @@ const index = () => {
                 dispatch(setTempSearch(companyGlobalSearchName));
 
                 setIsLoading(false);
-            }
+            // }
         };
 
         fetchData();
-        console.log(watch("year"));
+        // console.log(watch("year"));
     }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
 
 
@@ -608,12 +610,12 @@ const index = () => {
 
                                                         return VdsEuropeans.map((vds: any, index: number) => {
                                                             const currentInstitution = vds?.excel_institution_name;
- 
+
                                                             if (currentInstitution !== lastInstitutionName) {
                                                                 toggle = !toggle;
                                                                 lastInstitutionName = currentInstitution;
                                                             }
-                                                      
+
                                                             return (
                                                                 <Table.Tr
                                                                     key={vds?.id}
