@@ -297,7 +297,7 @@ const formatDate = (dateString: string | undefined): string | undefined => {
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <TomSelectServer
-                            url="/institute/?type=Proponent"
+                            url="/institute/?type=Proponent&all=true"
                             valueKey="id"
                             labelKey="institution"
                             value={field?.value?.toString() || ""}
