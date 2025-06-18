@@ -33,6 +33,7 @@ import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import FilterChips from "@/components/FilterChips";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 interface InvestorProfileFilter {
   region: string[];
@@ -201,7 +202,7 @@ function Main() {
               </div>
             )}
 
-            
+
           </div>
 
           <div className="mt-3.5">
@@ -306,7 +307,7 @@ function Main() {
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                  <span className="font-semibold">Region</span>
+                                    <span className="font-semibold">Region</span>
                                     {investerProfileFilterOption?.region
                                       ?.length > 0 && (
                                         <div>
@@ -342,31 +343,44 @@ function Main() {
                                     name="region"
                                     control={control}
                                     render={({ field }) => (
-                                      <TomSelect
-                                        value={field.value || []}
-                                        onChange={(value) => {
-                                          field.onChange(value);
+                                      <MultiSelectDropdown
+                                        data={investerProfileFilterOption?.region}
+                                        placeholder="Select Region"
+                                        loading={investerProfileFilterOption?.region
+                                          .length === 0}
+                                        onChange={(selectedOptions) => {
+                                          const selectedValues = selectedOptions.map((option) => option.value);
+                                          field.onChange(selectedValues);
+
+
                                         }}
-                                        options={{
-                                          placeholder: "Select region",
-                                        }}
-                                        className="w-full"
-                                        multiple
-                                      >
-                                        <>
-                                          {investerProfileFilterOption?.region
-                                            .length > 0 &&
-                                            investerProfileFilterOption?.region?.map(
-                                              (region: string) => {
-                                                return (
-                                                  <option value={region}>
-                                                    {region}
-                                                  </option>
-                                                );
-                                              }
-                                            )}
-                                        </>
-                                      </TomSelect>
+                                        selectedOption={field.value || []}
+                                      />
+                                      // <TomSelect
+                                      //   value={field.value || []}
+                                      //   onChange={(value) => {
+                                      //     field.onChange(value);
+                                      //   }}
+                                      //   options={{
+                                      //     placeholder: "Select region",
+                                      //   }}
+                                      //   className="w-full"
+                                      //   multiple
+                                      // >
+                                      //   <>
+                                      //     {investerProfileFilterOption?.region
+                                      //       .length > 0 &&
+                                      //       investerProfileFilterOption?.region?.map(
+                                      //         (region: string) => {
+                                      //           return (
+                                      //             <option value={region}>
+                                      //               {region}
+                                      //             </option>
+                                      //           );
+                                      //         }
+                                      //       )}
+                                      //   </>
+                                      // </TomSelect>
                                     )}
                                   />
                                 </div>
@@ -387,10 +401,10 @@ function Main() {
                 </>
               }
               {count > 0 && (
-              <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
-                Count: {count}
-              </h2>
-            )}
+                <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                  Count: {count}
+                </h2>
+              )}
 
               <div className="overflow-auto xl:overflow-visible px-5">
                 <TableWrapper isLoading={loading}>

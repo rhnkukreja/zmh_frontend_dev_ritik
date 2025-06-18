@@ -15,7 +15,7 @@ import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 import { Controller, useForm } from "react-hook-form";
-import { FormInput, FormSwitch } from "@/components/Base/Form";
+import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import CompanySelect from "@/components/ReactSelectAsync";
@@ -32,6 +32,7 @@ import { fetchRealTimes, resetPage, setPage } from "@/stores/realTimeDataSlice";
 import { realTimeService } from "@/services/realTimeData";
 import Litepicker from "@/components/Base/Litepicker";
 import SummaryModal from "./components/ViewSummaryModal";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 
 
@@ -70,17 +71,17 @@ const index = () => {
   const [companyTicker, setCompanyTicker] = useState<string>("");
   const [companyName, setCompanyName] = useState<any>("");
   const [viewCompanyName, setViewCompanyName] = useState<any>("");
-
+  console.log(dropdownInstitutionValues, "dropdownInstitutionValues")
   useEffect(() => {
     getRealTimeDropdownData({ year: 2025 });
     getInstitutionDropdownData({ year: 2025 });
     getVotesDropdownData({ year: 2025 });
-    onSubmit({});
+    // onSubmit({});
   }, []);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (allApplyFilter) {
+      // if (allApplyFilter) {
 
         const { year, ...restFilter } = allApplyFilter;
         await dispatch(
@@ -90,14 +91,14 @@ const index = () => {
               allApplyFilter,
               undefined,
               page
-            )
+            )+"&year=2025"
           )
         );
 
         setFiltersLength(countValidFilters(restFilter));
         setSelectedChipFilters(generateFilterChips(restFilter));
         // dispatch(setTempSearch(companyGlobalSearchName));
-      }
+      // }
     };
 
     fetchData();
@@ -211,7 +212,7 @@ const index = () => {
       institution_name: cleanFilter?.institution_name
         ? [...cleanFilter?.institution_name]
         : null,
-      vote: cleanFilter?.vote ? [cleanFilter?.vote] : null,
+      vote: cleanFilter?.vote ? [...cleanFilter?.vote] : null,
       company_name: cleanFilter?.company_name?.value
         ? [cleanFilter?.company_name?.value]
         : null,
@@ -328,7 +329,12 @@ const index = () => {
     setCompanyTicker(companyTicker);
     setViewCompanyName(company);
   };
+  // Add this import at the top if not already present
 
+
+  const handleSelectionChange = (selected: any) => {
+    console.log("Selected options:", selected);
+  };
   return (
     <>
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
@@ -504,47 +510,31 @@ const index = () => {
                       
                     )}
                   /> */}
+
                   <Controller
-                       name="institution_name"
+                    name="institution_name"
                     control={control}
-                    defaultValue={""}
+                    defaultValue={[]}
                     render={({ field }) => (
-                      <TomSelect
-                        value={field.value || []}
-                        // onChange={field.onChange}
-                        onChange={(event) => {
+                      <MultiSelectDropdown
+                        data={dropdownInstitutionValues?.institutes}
+                        placeholder="Select Institutions"
+                        loading={getDropdownLoader}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
                           getVotesDropdownData({
                             year: 2025,
-                            institutes: [event?.target?.value],
+                            institutes: selectedValues,
                           });
-                          field.onChange(event);
+
                         }}
-                        options={{
-                          placeholder: "Select Institution",
-                        }}
-                        className="w-full"
-                        multiple
-                      >
-                       {getDropdownLoader ? (
-                          <option value="--" disabled>
-                            Loading...
-                          </option>
-                        ) : (
-                          <>
-                            {dropdownInstitutionValues?.institutes?.map(
-                              (institutes: string) => {
-                                return (
-                                  <option value={institutes}>
-                                    {institutes}
-                                  </option>
-                                );
-                              }
-                            )}
-                          </>
-                        )}
-                      </TomSelect>
+                        selectedOption={field.value || []}
+
+                      />
                     )}
                   />
+
                 </div>
 
                 <div className="mx-2">
@@ -556,35 +546,50 @@ const index = () => {
                     control={control}
                     defaultValue={""}
                     render={({ field }) => (
-                      <TomSelect
-                        value={field.value || ""}
-                        onChange={(event) => {
-                          getInstitutionDropdownData({
+                       <MultiSelectDropdown
+                        data={dropdownVotesValues?.votes}
+                        placeholder="Select Vote"
+                        loading={getDropdownLoader}
+                       onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                          getVotesDropdownData({
                             year: 2025,
-                            votes: [event?.target?.value],
+                             votes: selectedValues,
                           });
-                          field.onChange(event);
+
                         }}
-                        options={{
-                          placeholder: "Select Vote",
-                        }}
-                        className="w-full"
-                        multiple={false}
-                      >
-                        {getDropdownLoader ? (
-                          <option value="--" disabled>
-                            Loading...
-                          </option>
-                        ) : (
-                          <>
-                            {dropdownVotesValues?.votes?.map(
-                              (votes: string) => {
-                                return <option value={votes}>{votes}</option>;
-                              }
-                            )}
-                          </>
-                        )}
-                      </TomSelect>
+                        selectedOption={field.value || []}
+                        />
+                      // <TomSelect
+                      //   value={field.value || ""}
+                      //   onChange={(event) => {
+                      //     getInstitutionDropdownData({
+                      //       year: 2025,
+                      //       votes: [event?.target?.value],
+                      //     });
+                      //     field.onChange(event);
+                      //   }}
+                      //   options={{
+                      //     placeholder: "Select Vote",
+                      //   }}
+                      //   className="w-full"
+                      //   multiple={false}
+                      // >
+                      //   {getDropdownLoader ? (
+                      //     <option value="--" disabled>
+                      //       Loading...
+                      //     </option>
+                      //   ) : (
+                      //     <>
+                      //       {dropdownVotesValues?.votes?.map(
+                      //         (votes: string) => {
+                      //           return <option value={votes}>{votes}</option>;
+                      //         }
+                      //       )}
+                      //     </>
+                      //   )}
+                      // </TomSelect>
                     )}
                   />
                 </div>
@@ -597,6 +602,8 @@ const index = () => {
                     control={control}
                     defaultValue={""}
                     render={({ field }) => (
+                      
+                      
                       <TomSelect
                         value={field.value || ""}
                         onChange={(value) => {
@@ -1105,7 +1112,7 @@ const index = () => {
           )}
         </div>
 
-      </div>
+      </div >
 
       <Tooltip
         id="my-tooltip-data-html"
@@ -1119,14 +1126,16 @@ const index = () => {
           cursor: "pointer",
         }}
       />
-      {openSummaryModal && (
-        <SummaryModal
-          openSummaryModal={openSummaryModal}
-          setOpenSummaryModal={setOpenSummaryModal}
-          companyTicker={companyTicker}
-          companyName={viewCompanyName}
-        />
-      )}
+      {
+        openSummaryModal && (
+          <SummaryModal
+            openSummaryModal={openSummaryModal}
+            setOpenSummaryModal={setOpenSummaryModal}
+            companyTicker={companyTicker}
+            companyName={viewCompanyName}
+          />
+        )
+      }
     </>
   );
 };
