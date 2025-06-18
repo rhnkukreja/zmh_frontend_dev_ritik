@@ -67,7 +67,7 @@ import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
-  const { user, companyGlobalSearchName, isCompanySelected ,finhub, companyGlobalSearchTicker  } = useAppSelector(
+  const { user, companyGlobalSearchName, isCompanySelected, finhub, companyGlobalSearchTicker } = useAppSelector(
     (state) => state.authentiction
   );
   const location = useLocation();
@@ -809,20 +809,19 @@ function ShareHolderProposal() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="overflow-auto xl:overflow-visible mt-4">
-            <Tab.Group
-              selectedIndex={isAllCompanySelected ? 1 : 0}
-              defaultIndex={defaultTabIndex}
-            >
-              <Tab.List variant="link-tabs">
-                <Tab>
-                  <Tab.Button
-                    className="w-full py-2"
-                    as="button"
+            <div className="w-full pt-5">
+
+              <div>
+
+                <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
                     onClick={async (e) => {
                       try {
-                        dispatch(
-                          selectUnSelectAllCompany(false)
-                        );
+                        dispatch(selectUnSelectAllCompany(false));
                         dispatch(
                           modifyRoute({
                             route: "shareholder-proposal",
@@ -832,22 +831,18 @@ function ShareHolderProposal() {
                       } catch (error) { }
                     }}
                   >
-                    <div className="flex items-center justify-center ">
-                      {finhub?.name}
-                      {finhub?.name || companyGlobalSearchName} {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
-                    </div>
-                  </Tab.Button>
-                </Tab>
-
-                <Tab>
-                  <Tab.Button
-                    className="w-full py-2"
-                    as="button"
+                    {finhub?.name}
+                    {finhub?.name || companyGlobalSearchName}{" "}
+                    {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
+                  </button>
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
                     onClick={async (e) => {
                       try {
-                        dispatch(
-                          selectUnSelectAllCompany(true)
-                        );
+                        dispatch(selectUnSelectAllCompany(true));
                         dispatch(
                           modifyRoute({
                             route: "shareholder-proposal",
@@ -857,16 +852,12 @@ function ShareHolderProposal() {
                       } catch (error) { }
                     }}
                   >
-                    <div className="flex items-center justify-center ">
-                      View All
-                    </div>
-                  </Tab.Button>
-                </Tab>
+                    View All
+                  </button>
+                </div>
+              </div>
+            </div>
 
-
-              </Tab.List>
-
-            </Tab.Group>
           </div>
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center mt-3">
             {isAllCompanySelected === true ? (
@@ -879,10 +870,13 @@ function ShareHolderProposal() {
 
 
           </div>
+          <div className="flex gap-4">
 
+
+          </div>
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top:  "60px" }}>
+              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top: "60px" }}>
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
