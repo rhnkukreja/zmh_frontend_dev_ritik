@@ -85,17 +85,17 @@ const initialState: any = {
     // },
     {
       icon: "Network",
-      pathname: "/peer-analysis",
+      pathname: "/engagement-detail",
       title: "Engagement Details",
     },
     {
       icon: "FileText",
-      pathname: "/proxy-voting-guideline",
+      pathname: "/voting-guidelines",
       title: "Voting Guidelines",
     },
     {
       icon: "Hand",
-      pathname: "/share-holder-proposal",
+      pathname: "/shareholder-proposal",
       title: "Shareholder Proposals",
     },
     {

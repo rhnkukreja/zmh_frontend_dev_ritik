@@ -159,7 +159,7 @@ function PeerAnalysis() {
 
     dispatch(
       modifyRoute({
-        route: "peer-analysis",
+        route: "engagement-detail",
         type: isAllCompanySelected === true ? true : false,
       })
     );
