@@ -109,8 +109,24 @@ body {
   border-radius: 5px !important;
   border-color: #d5dde7 !important;
   box-shadow: #d5dde7 !important;
+  
 }
-
+.css-v7duua:hover{
+ color: hsl(0, 0%, 60%)!important;
+ background-color: transparent !important;
+}
+.css-1p3m7a8-multiValue{
+  background-color: #e2e8f0 !important;
+}
+.css-tj5bde-Svg{
+  fill:#303030 !important
+}
+.css-1u9des2-indicatorSeparator{
+  background-color: transparent !important;
+}
+.css-1nmdiq5-menu {
+  z-index: 1000 !important;
+}
 @media only screen and (min-width: 1400px) and (max-width: 1580px) {
   .thumbnail-section {
     /* width: 100%; */

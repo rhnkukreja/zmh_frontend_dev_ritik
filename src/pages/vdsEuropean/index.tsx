@@ -30,6 +30,7 @@ import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 const index = () => {
     const dispatch: AppDispatch = useAppDispatch();
@@ -386,31 +387,46 @@ const index = () => {
                                         control={control}
                                         defaultValue={[]}
                                         render={({ field }) => (
-                                            <TomSelect
-                                                value={field.value || []}
-                                                onChange={(value: any) => {
-                                                    field.onChange(value);
-                                                    handleDropdownChange(
+                                            <MultiSelectDropdown
+                        data={ apiInstitutionDropdown?.institution}
+                        placeholder="Select Institutions"
+                        loading={getFundNameDropdownLoader}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                           handleDropdownChange(
                                                         "institution_name",
-                                                        value?.target?.value
+                                                        selectedValues
                                                     );
-                                                }}
-                                                options={{ placeholder: "Select Institution Name" }}
-                                                className="w-full"
-                                                multiple
-                                            >
-                                                {getFundNameDropdownLoader ? (
-                                                    <option disabled>Loading...</option>
-                                                ) : (
-                                                    apiInstitutionDropdown?.institution?.map(
-                                                        (institution: any) => (
-                                                            <option key={institution} value={institution}>
-                                                                {institution}
-                                                            </option>
-                                                        )
-                                                    )
-                                                )}
-                                            </TomSelect>
+
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                                            // <TomSelect
+                                            //     value={field.value || []}
+                                            //     onChange={(value: any) => {
+                                            //         field.onChange(value);
+                                            //         handleDropdownChange(
+                                            //             "institution_name",
+                                            //             value?.target?.value
+                                            //         );
+                                            //     }}
+                                            //     options={{ placeholder: "Select Institution Name" }}
+                                            //     className="w-full"
+                                            //     multiple
+                                            // >
+                                            //     {getFundNameDropdownLoader ? (
+                                            //         <option disabled>Loading...</option>
+                                            //     ) : (
+                                            //         apiInstitutionDropdown?.institution?.map(
+                                            //             (institution: any) => (
+                                            //                 <option key={institution} value={institution}>
+                                            //                     {institution}
+                                            //                 </option>
+                                            //             )
+                                            //         )
+                                            //     )}
+                                            // </TomSelect>
                                         )}
                                     />
                                 </div>
@@ -493,27 +509,39 @@ const index = () => {
                                         control={control}
                                         defaultValue={[]}
                                         render={({ field }) => (
-                                            <TomSelect
-                                                value={field.value || []}
-                                                onChange={(value) => {
-                                                    field.onChange(value);
-                                                }}
-                                                options={{ placeholder: "Select Vote" }}
-                                                className="w-full"
-                                                multiple
-                                            >
-                                                {getDynamicDropdownLoader ? (
-                                                    <option disabled>Loading...</option>
-                                                ) : (
-                                                    apiDependentDropdownOptions?.vote?.map(
-                                                        (vote: any) => (
-                                                            <option key={vote} value={vote}>
-                                                                {convertToTitleCase(vote)}
-                                                            </option>
-                                                        )
-                                                    )
-                                                )}
-                                            </TomSelect>
+                                                <MultiSelectDropdown
+                        data={apiDependentDropdownOptions?.vote}
+                        placeholder="Select Vote"
+                        loading={getDynamicDropdownLoader}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                          
+
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                                            // <TomSelect
+                                            //     value={field.value || []}
+                                            //     onChange={(value) => {
+                                            //         field.onChange(value);
+                                            //     }}
+                                            //     options={{ placeholder: "Select Vote" }}
+                                            //     className="w-full"
+                                            //     multiple
+                                            // >
+                                            //     {getDynamicDropdownLoader ? (
+                                            //         <option disabled>Loading...</option>
+                                            //     ) : (
+                                            //         apiDependentDropdownOptions?.vote?.map(
+                                            //             (vote: any) => (
+                                            //                 <option key={vote} value={vote}>
+                                            //                     {convertToTitleCase(vote)}
+                                            //                 </option>
+                                            //             )
+                                            //         )
+                                            //     )}
+                                            // </TomSelect>
                                         )}
                                     />
                                 </div>

@@ -39,6 +39,7 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 import clsx from "clsx";
 import FilterChips from "@/components/FilterChips";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 interface CaseStudyFilter {
   keyword: string;
@@ -599,26 +600,40 @@ function CaseStudies() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => handleFieldChange(value, field)}
-                              options={{ placeholder: "Select Year" }}
-                              className="w-full"
-                              multiple
+                             <MultiSelectDropdown
+                                                    data={apiDropdownOptions.year}
+                                                    placeholder="Select Year"
+                                                    loading={getDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                      const selectedValues = selectedOptions.map((option) => option.value);
+                                                      field.onChange(selectedValues);
+                                                       handleFieldChange(selectedValues, field)
+                                                     
                             
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                apiDropdownOptions.year.map((year) => (
-                                  <option key={year} value={year}>
-                                    {year}
-                                  </option>
-                                ))
-                              )}
-                            </TomSelect>
+                                                    }}
+                                                    selectedOption={field.value || []}
+                            
+                                                  />
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   onChange={(value) => handleFieldChange(value, field)}
+                            //   options={{ placeholder: "Select Year" }}
+                            //   className="w-full"
+                            //   multiple
+                            
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option value="--" disabled>
+                            //       Loading...
+                            //     </option>
+                            //   ) : (
+                            //     apiDropdownOptions.year.map((year) => (
+                            //       <option key={year} value={year}>
+                            //         {year}
+                            //       </option>
+                            //     ))
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>
@@ -724,26 +739,40 @@ function CaseStudies() {
                             control={control}
                             defaultValue={[]}
                             render={({ field }) => (
-                              <TomSelect
-                                value={field.value || []}
-                                // onChange={(value) => field.onChange(value)}
-                                onChange={(value) => handleFieldChange(value, field)}
-                                options={{ placeholder: "Select Country" }}
-                                className="w-full"
-                                multiple
-                              >
-                                {getDropdownLoader ? (
-                                  <option value="--" disabled>
-                                    Loading...
-                                  </option>
-                                ) : (
-                                  apiDropdownOptions.market.map((market) => (
-                                    <option key={market} value={market}>
-                                      {market}
-                                    </option>
-                                  ))
-                                )}
-                              </TomSelect>
+                                 <MultiSelectDropdown
+                                                    data={apiDropdownOptions.market}
+                                                    placeholder="Select Country"
+                                                    loading={getDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                      const selectedValues = selectedOptions.map((option) => option.value);
+                                                      field.onChange(selectedValues);
+                                                       handleFieldChange(selectedValues, field)
+                                                     
+                            
+                                                    }}
+                                                    selectedOption={field.value || []}
+                            
+                                                  />
+                              // <TomSelect
+                              //   value={field.value || []}
+                              //   // onChange={(value) => field.onChange(value)}
+                              //   onChange={(value) => handleFieldChange(value, field)}
+                              //   options={{ placeholder: "Select Country" }}
+                              //   className="w-full"
+                              //   multiple
+                              // >
+                              //   {getDropdownLoader ? (
+                              //     <option value="--" disabled>
+                              //       Loading...
+                              //     </option>
+                              //   ) : (
+                              //     apiDropdownOptions.market.map((market) => (
+                              //       <option key={market} value={market}>
+                              //         {market}
+                              //       </option>
+                              //     ))
+                              //   )}
+                              // </TomSelect>
                             )}
                           />
                         </div>
@@ -781,26 +810,40 @@ function CaseStudies() {
                             control={control}
                             defaultValue={[]}
                             render={({ field }) => (
-                              <TomSelect
-                                value={field.value || []}
-                                // onChange={(value) => field.onChange(value)}
-                                onChange={(value) => handleFieldChange(value, field)}
-                                options={{ placeholder: "Select Sector" }}
-                                className="w-full"
-                                multiple
-                              >
-                                {getDropdownLoader ? (
-                                  <option value="--" disabled>
-                                    Loading...
-                                  </option>
-                                ) : (
-                                  apiDropdownOptions.sector.map((sector) => (
-                                    <option key={sector} value={sector}>
-                                      {sector}
-                                    </option>
-                                  ))
-                                )}
-                              </TomSelect>
+                                 <MultiSelectDropdown
+                                                    data={apiDropdownOptions.sector}
+                                                    placeholder="Select Sector"
+                                                    loading={getDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                      const selectedValues = selectedOptions.map((option) => option.value);
+                                                      field.onChange(selectedValues);
+                                                       handleFieldChange(selectedValues, field)
+                                                     
+                            
+                                                    }}
+                                                    selectedOption={field.value || []}
+                            
+                                                  />
+                              // <TomSelect
+                              //   value={field.value || []}
+                              //   // onChange={(value) => field.onChange(value)}
+                              //   onChange={(value) => handleFieldChange(value, field)}
+                              //   options={{ placeholder: "Select Sector" }}
+                              //   className="w-full"
+                              //   multiple
+                              // >
+                              //   {getDropdownLoader ? (
+                              //     <option value="--" disabled>
+                              //       Loading...
+                              //     </option>
+                              //   ) : (
+                              //     apiDropdownOptions.sector.map((sector) => (
+                              //       <option key={sector} value={sector}>
+                              //         {sector}
+                              //       </option>
+                              //     ))
+                              //   )}
+                              // </TomSelect>
                             )}
                           />
                         </div>
@@ -837,26 +880,40 @@ function CaseStudies() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              // onChange={(value) => field.onChange(value)}
-                              onChange={(value) => handleFieldChange(value, field)}
-                              options={{ placeholder: "Select Themes" }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                apiDropdownOptions.themes.map((theme) => (
-                                  <option key={theme} value={theme}>
-                                    {theme}
-                                  </option>
-                                ))
-                              )}
-                            </TomSelect>
+                               <MultiSelectDropdown
+                                                    data={apiDropdownOptions.themes}
+                                                    placeholder="Select Themes"
+                                                    loading={getDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                      const selectedValues = selectedOptions.map((option) => option.value);
+                                                      field.onChange(selectedValues);
+                                                       handleFieldChange(selectedValues, field)
+                                                     
+                            
+                                                    }}
+                                                    selectedOption={field.value || []}
+                            
+                                                  />
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   // onChange={(value) => field.onChange(value)}
+                            //   onChange={(value) => handleFieldChange(value, field)}
+                            //   options={{ placeholder: "Select Themes" }}
+                            //   className="w-full"
+                            //   multiple
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option value="--" disabled>
+                            //       Loading...
+                            //     </option>
+                            //   ) : (
+                            //     apiDropdownOptions.themes.map((theme) => (
+                            //       <option key={theme} value={theme}>
+                            //         {theme}
+                            //       </option>
+                            //     ))
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>

@@ -37,6 +37,7 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { useNavigate } from "react-router-dom";
 import UploadFile from "@/components/UploadFile";
 import FilterChips from "@/components/FilterChips";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 interface ProxyGuidelineFilter {
   year: string[];
@@ -215,16 +216,16 @@ function ProxyGuideline() {
     setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   }
-const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
-  const seenInstitutions = new Set<string>();
-  return guidelines.filter((guideline) => {
-    if (seenInstitutions.has(guideline.institution_name)) {
-      return false;
-    }
-    seenInstitutions.add(guideline.institution_name);
-    return true;
-  });
-};
+  const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
+    const seenInstitutions = new Set<string>();
+    return guidelines.filter((guideline) => {
+      if (seenInstitutions.has(guideline.institution_name)) {
+        return false;
+      }
+      seenInstitutions.add(guideline.institution_name);
+      return true;
+    });
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -421,29 +422,43 @@ const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
                                     control={control}
                                     defaultValue={[]}
                                     render={({ field }) => (
-                                      <TomSelect
-                                        value={field.value || []}
-                                        onChange={(value) => {
-                                          field.onChange(value);
+                                      <MultiSelectDropdown
+                                        data={guidelineFilterOptions?.year}
+                                        placeholder="Select Year"
+                                        loading={guidelineFilterOptions?.year?.length === 0}
+                                        onChange={(selectedOptions) => {
+                                          const selectedValues = selectedOptions.map((option) => option.value);
+                                          field.onChange(selectedValues);
+
+
+
                                         }}
-                                        options={{
-                                          placeholder: "Select Year",
-                                        }}
-                                        className="w-full"
-                                        multiple
-                                      >
-                                        <>
-                                          {guidelineFilterOptions?.year?.map(
-                                            (year: string) => {
-                                              return (
-                                                <option value={year}>
-                                                  {year}
-                                                </option>
-                                              );
-                                            }
-                                          )}
-                                        </>
-                                      </TomSelect>
+                                        selectedOption={field.value || []}
+
+                                      />
+                                      // <TomSelect
+                                      //   value={field.value || []}
+                                      //   onChange={(value) => {
+                                      //     field.onChange(value);
+                                      //   }}
+                                      //   options={{
+                                      //     placeholder: "Select Year",
+                                      //   }}
+                                      //   className="w-full"
+                                      //   multiple
+                                      // >
+                                      //   <>
+                                      //     {guidelineFilterOptions?.year?.map(
+                                      //       (year: string) => {
+                                      //         return (
+                                      //           <option value={year}>
+                                      //             {year}
+                                      //           </option>
+                                      //         );
+                                      //       }
+                                      //     )}
+                                      //   </>
+                                      // </TomSelect>
                                     )}
                                   />
                                 </div>
@@ -485,31 +500,44 @@ const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
                                     name="region"
                                     control={control}
                                     render={({ field }) => (
-                                      <TomSelect
-                                        value={field.value || []}
-                                        onChange={(value) => {
-                                          field.onChange(value);
+                                      <MultiSelectDropdown
+                                        data={guidelineFilterOptions?.region}
+                                        placeholder="Select Region"
+                                        loading={guidelineFilterOptions?.region?.length === 0}
+                                        onChange={(selectedOptions) => {
+                                          const selectedValues = selectedOptions.map((option) => option.value);
+                                          field.onChange(selectedValues);
+
                                         }}
-                                        options={{
-                                          placeholder: "Select Region",
-                                        }}
-                                        className="w-full"
-                                        multiple
-                                      >
-                                        <>
-                                          {guidelineFilterOptions?.region
-                                            .length > 0 &&
-                                            guidelineFilterOptions?.region?.map(
-                                              (region: string) => {
-                                                return (
-                                                  <option value={region}>
-                                                    {region}
-                                                  </option>
-                                                );
-                                              }
-                                            )}
-                                        </>
-                                      </TomSelect>
+                                        selectedOption={field.value || []}
+
+                                      />
+
+                                      // <TomSelect
+                                      //   value={field.value || []}
+                                      //   onChange={(value) => {
+                                      //     field.onChange(value);
+                                      //   }}
+                                      //   options={{
+                                      //     placeholder: "Select Region",
+                                      //   }}
+                                      //   className="w-full"
+                                      //   multiple
+                                      // >
+                                      //   <>
+                                      //     {guidelineFilterOptions?.region
+                                      //       .length > 0 &&
+                                      //       guidelineFilterOptions?.region?.map(
+                                      //         (region: string) => {
+                                      //           return (
+                                      //             <option value={region}>
+                                      //               {region}
+                                      //             </option>
+                                      //           );
+                                      //         }
+                                      //       )}
+                                      //   </>
+                                      // </TomSelect>
                                     )}
                                   />
                                 </div>
@@ -582,35 +610,35 @@ const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
                       </Table.Thead>
                       <Table.Tbody>
                         {proxyVotingGuidelines?.length > 0 &&
-                            uniqueGuidelines(proxyVotingGuidelines)?.map(
+                          uniqueGuidelines(proxyVotingGuidelines)?.map(
                             (guideline: ProxyVotingGuideline) => (
                               <Table.Tr
                                 key={guideline?.id}
                                 className="[&_td]:last:border-b-0"
                               >
                                 <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                {guideline?.institution_logo_url &&
-                              guideline.institution_logo_url !== "null" ? (
-                              <>
-                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
+                                  {guideline?.institution_logo_url &&
+                                    guideline.institution_logo_url !== "null" ? (
+                                    <>
+                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
                                 shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
-                                  <img
-                                    alt="ZMH Analytics"
-                                    className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
+                                        <img
+                                          alt="ZMH Analytics"
+                                          className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
                                 shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                    src={guideline?.institution_logo_url}
-                                  />
-                                </div>
-                              </>
-                            ) : (
-                              <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                <img
-                                  src={investorIcon}
-                                  alt="Investor Icon"
-                                  className="w-[65%] h-[65%] object-contain"
-                                />
-                              </div>
-                            )}
+                                          src={guideline?.institution_logo_url}
+                                        />
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
+                                      <img
+                                        src={investorIcon}
+                                        alt="Investor Icon"
+                                        className="w-[65%] h-[65%] object-contain"
+                                      />
+                                    </div>
+                                  )}
 
                                   <div className="ml-4">
                                     <p className="font-medium whitespace-nowrap">

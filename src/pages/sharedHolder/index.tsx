@@ -64,6 +64,7 @@ import { modifyRoute } from "@/stores/themeSlice";
 import FilterChips from "@/components/FilterChips";
 import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderProposalsAnalytics";
 import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -1065,23 +1066,37 @@ function ShareHolderProposal() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={field.onChange}
-                              options={{ placeholder: `Select ${tab === "withdrawn" ? "" : "Proxy"} Year` }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader ? (
-                                <option disabled>Loading...</option>
-                              ) : (
-                                apiDropdownOptions.year?.map((year) => (
-                                  <option key={year} value={year}>
-                                    {year}
-                                  </option>
-                                ))
-                              )}
-                            </TomSelect>
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions.year}
+                              placeholder={`Select ${tab === "withdrawn" ? "" : "Proxy"} Year`}
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+
+
+
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   onChange={field.onChange}
+                            //   options={{ placeholder: `Select ${tab === "withdrawn" ? "" : "Proxy"} Year` }}
+                            //   className="w-full"
+                            //   multiple
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option disabled>Loading...</option>
+                            //   ) : (
+                            //     apiDropdownOptions.year?.map((year) => (
+                            //       <option key={year} value={year}>
+                            //         {year}
+                            //       </option>
+                            //     ))
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>
@@ -1122,27 +1137,44 @@ function ShareHolderProposal() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              // onChange={field.onChange}
-                              onChange={(value) => {
-                                field.onChange(value);
-                                getSubCategoryDropdown(value?.target?.value);
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.category}
+                              placeholder="Select Category"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+                                getSubCategoryDropdown(selectedValues);
+
+
+
                               }}
-                              options={{ placeholder: "Select Category" }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader ? (
-                                <option disabled>Loading...</option>
-                              ) : (
-                                apiDropdownOptions.category?.map((cat) => (
-                                  <option key={cat} value={cat}>
-                                    {cat}
-                                  </option>
-                                ))
-                              )}
-                            </TomSelect>
+                              selectedOption={field.value || []}
+
+                            />
+
+
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   // onChange={field.onChange}
+                            //   onChange={(value) => {
+                            //     field.onChange(value);
+                            //     getSubCategoryDropdown(value?.target?.value);
+                            //   }}
+                            //   options={{ placeholder: "Select Category" }}
+                            //   className="w-full"
+                            //   multiple
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option disabled>Loading...</option>
+                            //   ) : (
+                            //     apiDropdownOptions.category?.map((cat) => (
+                            //       <option key={cat} value={cat}>
+                            //         {cat}
+                            //       </option>
+                            //     ))
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>
@@ -1180,25 +1212,37 @@ function ShareHolderProposal() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={field.onChange}
-                              options={{ placeholder: "Select Sub Category" }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader ? (
-                                <option disabled>Loading...</option>
-                              ) : (
-                                apiSubCategoryDropdown.sub_category?.map(
-                                  (subCat: any) => (
-                                    <option key={subCat} value={subCat}>
-                                      {subCat}
-                                    </option>
-                                  )
-                                )
-                              )}
-                            </TomSelect>
+                            <MultiSelectDropdown
+                              data={apiSubCategoryDropdown.sub_category}
+                              placeholder="Select Sub Category"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+                              }
+                              }
+                              selectedOption={field.value || []}
+                            />
+
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   onChange={field.onChange}
+                            //   options={{ placeholder: "Select Sub Category" }}
+                            //   className="w-full"
+                            //   multiple
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option disabled>Loading...</option>
+                            //   ) : (
+                            //     apiSubCategoryDropdown.sub_category?.map(
+                            //       (subCat: any) => (
+                            //         <option key={subCat} value={subCat}>
+                            //           {subCat}
+                            //         </option>
+                            //       )
+                            //     )
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>
@@ -1292,6 +1336,7 @@ function ShareHolderProposal() {
                             name="global_search"
                             control={control}
                             render={({ field }) => (
+                              
                               <CompanySelect
                                 value={field.value}
                                 onChange={field.onChange}

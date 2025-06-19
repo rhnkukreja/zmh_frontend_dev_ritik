@@ -39,6 +39,7 @@ import { peerAnalysisService } from "@/services/peerAnalysis";
 import clsx from "clsx";
 import ChartComponent from "@/components/EnagementDetailsDialog";
 import FilterChips from "@/components/FilterChips";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 
 interface PeerAnalysisFilter {
@@ -410,6 +411,7 @@ function PeerAnalysis() {
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+        
         <div className="col-span-12">
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
             {isAllCompanySelected === true ? (
@@ -645,35 +647,49 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Year",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.year?.map(
-                                    (year: string) => {
-                                      return (
-                                        <option value={year}>
-                                          {year}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
+                               <MultiSelectDropdown
+                                                    data={apiDropdownOptions?.year}
+                                                    placeholder="Select Year"
+                                                    loading={getDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                      const selectedValues = selectedOptions.map((option) => option.value);
+                                                      field.onChange(selectedValues);
+                                                       
+                                                     
+                            
+                                                    }}
+                                                    selectedOption={field.value || []}
+                            
+                                                  />
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   onChange={(value) => {
+                            //     field.onChange(value);
+                            //   }}
+                            //   options={{
+                            //     placeholder: "Select Year",
+                            //   }}
+                            //   className="w-full"
+                            //   multiple
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option value="--" disabled>
+                            //       Loading...
+                            //     </option>
+                            //   ) : (
+                            //     <>
+                            //       {apiDropdownOptions?.year?.map(
+                            //         (year: string) => {
+                            //           return (
+                            //             <option value={year}>
+                            //               {year}
+                            //             </option>
+                            //           );
+                            //         }
+                            //       )}
+                            //     </>
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>
@@ -719,37 +735,51 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Category",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.category
-                                    ?.length > 0 &&
-                                    apiDropdownOptions?.category?.map(
-                                      (category: string) => {
-                                        return (
-                                          <option value={category}>
-                                            {category}
-                                          </option>
-                                        );
-                                      }
-                                    )}
-                                </>
-                              )}
-                            </TomSelect>
+                             <MultiSelectDropdown
+                                                    data={apiDropdownOptions?.category}
+                                                    placeholder="Select Category"
+                                                    loading={getDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                      const selectedValues = selectedOptions.map((option) => option.value);
+                                                      field.onChange(selectedValues);
+                                                      
+                                                     
+                            
+                                                    }}
+                                                    selectedOption={field.value || []}
+                            
+                                                  />
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   onChange={(value) => {
+                            //     field.onChange(value);
+                            //   }}
+                            //   options={{
+                            //     placeholder: "Select Category",
+                            //   }}
+                            //   className="w-full"
+                            //   multiple
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option value="--" disabled>
+                            //       Loading...
+                            //     </option>
+                            //   ) : (
+                            //     <>
+                            //       {apiDropdownOptions?.category
+                            //         ?.length > 0 &&
+                            //         apiDropdownOptions?.category?.map(
+                            //           (category: string) => {
+                            //             return (
+                            //               <option value={category}>
+                            //                 {category}
+                            //               </option>
+                            //             );
+                            //           }
+                            //         )}
+                            //     </>
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>
@@ -795,37 +825,51 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || []}
-                              onChange={(value) => {
-                                field.onChange(value);
-                              }}
-                              options={{
-                                placeholder: "Select Country",
-                              }}
-                              className="w-full"
-                              multiple
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.country
-                                    ?.length > 0 &&
-                                    apiDropdownOptions?.country?.map(
-                                      (country: string) => {
-                                        return (
-                                          <option value={country}>
-                                            {country}
-                                          </option>
-                                        );
-                                      }
-                                    )}
-                                </>
-                              )}
-                            </TomSelect>
+                             <MultiSelectDropdown
+                                                    data={apiDropdownOptions?.country}
+                                                    placeholder="Select Country"
+                                                    loading={getDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                      const selectedValues = selectedOptions.map((option) => option.value);
+                                                      field.onChange(selectedValues);
+                                                  
+                                                     
+                            
+                                                    }}
+                                                    selectedOption={field.value || []}
+                            
+                                                  />
+                            // <TomSelect
+                            //   value={field.value || []}
+                            //   onChange={(value) => {
+                            //     field.onChange(value);
+                            //   }}
+                            //   options={{
+                            //     placeholder: "Select Country",
+                            //   }}
+                            //   className="w-full"
+                            //   multiple
+                            // >
+                            //   {getDropdownLoader ? (
+                            //     <option value="--" disabled>
+                            //       Loading...
+                            //     </option>
+                            //   ) : (
+                            //     <>
+                            //       {apiDropdownOptions?.country
+                            //         ?.length > 0 &&
+                            //         apiDropdownOptions?.country?.map(
+                            //           (country: string) => {
+                            //             return (
+                            //               <option value={country}>
+                            //                 {country}
+                            //               </option>
+                            //             );
+                            //           }
+                            //         )}
+                            //     </>
+                            //   )}
+                            // </TomSelect>
                           )}
                         />
                       </div>
@@ -912,37 +956,48 @@ function PeerAnalysis() {
                             control={control}
                             defaultValue={[]}
                             render={({ field }) => (
-                              <TomSelect
-                                value={field.value || []}
-                                onChange={(value) => {
-                                  field.onChange(value);
+                              <MultiSelectDropdown
+                                data={apiDropdownOptions?.sector}
+                                placeholder="Select Sector"
+                                loading={getDropdownLoader}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
+
                                 }}
-                                options={{
-                                  placeholder: "Select Sector",
-                                }}
-                                className="w-full"
-                                multiple
-                              >
-                                {getDropdownLoader ? (
-                                  <option value="--" disabled>
-                                    Loading...
-                                  </option>
-                                ) : (
-                                  <>
-                                    {apiDropdownOptions?.sector
-                                      ?.length > 0 &&
-                                      apiDropdownOptions?.sector?.map(
-                                        (sector: string) => {
-                                          return (
-                                            <option value={sector}>
-                                              {sector}
-                                            </option>
-                                          );
-                                        }
-                                      )}
-                                  </>
-                                )}
-                              </TomSelect>
+                                selectedOption={field.value || []}
+                              />
+                              // <TomSelect
+                              //   value={field.value || []}
+                              //   onChange={(value) => {
+                              //     field.onChange(value);
+                              //   }}
+                              //   options={{
+                              //     placeholder: "Select Sector",
+                              //   }}
+                              //   className="w-full"
+                              //   multiple
+                              // >
+                              //   {getDropdownLoader ? (
+                              //     <option value="--" disabled>
+                              //       Loading...
+                              //     </option>
+                              //   ) : (
+                              //     <>
+                              //       {apiDropdownOptions?.sector
+                              //         ?.length > 0 &&
+                              //         apiDropdownOptions?.sector?.map(
+                              //           (sector: string) => {
+                              //             return (
+                              //               <option value={sector}>
+                              //                 {sector}
+                              //               </option>
+                              //             );
+                              //           }
+                              //         )}
+                              //     </>
+                              //   )}
+                              // </TomSelect>
                             )}
                           />
                         </div>
