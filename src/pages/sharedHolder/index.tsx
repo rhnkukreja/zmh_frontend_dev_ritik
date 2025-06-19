@@ -306,9 +306,10 @@ function ShareHolderProposal() {
         ...filters,
         ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
       };
-
+   
     const dynamicURL = createDynamicURL(tabUrls[tab], updatedFilters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
+  
 
     if (tab === "no-action") {
       var { institution_name, global_search, ...restFilters } = filters;
@@ -394,11 +395,20 @@ function ShareHolderProposal() {
 
   const getAllShareholderAPI = async () => {
     try {
+      const updatedFilters = tab === "withdrawn"
+        ? {
+          ...filters,
+          ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season, proxy_season: [] })
+        }
+        : {
+          ...filters,
+          ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
+        };
       const proposalResponse =
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/def14a/`,
-            filters,
+            updatedFilters,
             undefined,
             page
           )
@@ -411,7 +421,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/no_action/`,
-            filters,
+            updatedFilters,
             undefined,
             page
           )
@@ -424,7 +434,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/withdrawn/`,
-            filters,
+            updatedFilters,
             undefined,
             page
           )
@@ -541,6 +551,7 @@ function ShareHolderProposal() {
   ]);
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
+
     dispatch(
       setAllFilters({
         ...shareHolderFilters,
@@ -1062,7 +1073,7 @@ function ShareHolderProposal() {
                           )}
                         </div>
                         <Controller
-                          name={tab === "withdrawn" ? "year" : "proxy_season"}
+                          name={"proxy_season"}
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
@@ -1336,7 +1347,7 @@ function ShareHolderProposal() {
                             name="global_search"
                             control={control}
                             render={({ field }) => (
-                              
+
                               <CompanySelect
                                 value={field.value}
                                 onChange={field.onChange}
