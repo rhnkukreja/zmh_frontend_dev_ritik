@@ -361,7 +361,7 @@ const index = () => {
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
             {count > 0 && (
               <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-6">
-                Count: {count}
+                Count: {count.toLocaleString()}
               </h2>
             )}
             {/* <div className="mt-2">

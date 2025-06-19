@@ -67,7 +67,7 @@ const GetWhatsNew = ({ whatsNewFormVisible, setWhatsNewFormVisible }: GetHelpPro
                         className="bg-gradient-to-b rounded-t-md to-[#000000CC] from-[#9F1239]
                     text-white  "
                     >
-                        <h2 className="mr-auto text-md font-semibold">Whats New?</h2>
+                        <h2 className="mr-auto text-md font-semibold">What's New</h2>
                         <div
                             onClick={() => {
                                 reset();

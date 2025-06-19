@@ -34,7 +34,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
               : convertToTitleCase(filter.key)}
             :
           </span>
-          <span className="font-bold">{filter.value}</span>
+          <span className="font-bold">{convertToTitleCase(String(filter.value))}</span>
           <Lucide
             icon="X"
             className="w-4 h-4 text-red-500 -mr-1 cursor-pointer"

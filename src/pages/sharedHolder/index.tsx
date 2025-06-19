@@ -843,8 +843,8 @@ function ShareHolderProposal() {
                       } catch (error) { }
                     }}
                   >
-                    {finhub?.name}
-                    {finhub?.name || companyGlobalSearchName}{" "}
+                   
+                    {finhub?.name || companyGlobalSearchName} {" "}
                     {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
                   </button>
                   <button
@@ -864,7 +864,7 @@ function ShareHolderProposal() {
                       } catch (error) { }
                     }}
                   >
-                    View All
+                    View For All Companies
                   </button>
                 </div>
               </div>
@@ -943,14 +943,14 @@ function ShareHolderProposal() {
 
                   </div>}
 
-                  {user?.saved_search?.["Shareholder Proposal"] !==
+                  {/* {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
                       <div className="hover:bg-slate-50 ">
                         <Button onClick={getSavedSearches}>
                           Previous Search
                         </Button>
                       </div>
-                    )}
+                    )} */}
                   {tab == "proposal" && proposalCount > 0 && (
                     <div className="mt-2">
                       <FormSwitch className="mb-6">
@@ -2076,7 +2076,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
-                              All Shareholder Proposals
+                              Shareholder Proposals
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
@@ -2085,7 +2085,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                              Shareholder Proposals: Proponent Analytics
+                             Proponent Analytics
                             </button>
                           </div>
 
