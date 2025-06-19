@@ -127,6 +127,9 @@ body {
 .css-1nmdiq5-menu {
   z-index: 1000 !important;
 }
+.ts-dropdown-content{
+  text-align: left !important;
+}
 @media only screen and (min-width: 1400px) and (max-width: 1580px) {
   .thumbnail-section {
     /* width: 100%; */
