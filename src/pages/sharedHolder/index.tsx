@@ -894,11 +894,12 @@ function ShareHolderProposal() {
                     onSearch={handleSearch}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url={[...multSearchUrls]}
+                    url={"/institute/?type=Proponent"}
                     getOptionKey="proponent_name"
                     placeHolder="Search Proponent"
                     onSearchChange={resetPage}
                     isSingle={true}
+                    searchPoponents={true}
                   />
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
