@@ -704,9 +704,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       }}
                       render={({ field, fieldState: { error } }) => (
                         <>
+
                           <FormInput
                             placeholder="Enter Actual Proponent Name"
                             {...field}
+
                           />
                           {error && (
                             <Error className="text-red-600 ">
