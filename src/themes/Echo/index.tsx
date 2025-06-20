@@ -443,7 +443,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        } else if (menu.title === "WhatsNew") {
+                        } else if (menu.title === "What's New") {
                           setWhatsNewFormVisible(true);
                         } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`

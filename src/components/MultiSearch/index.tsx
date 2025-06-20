@@ -21,6 +21,7 @@ interface MultiSearchBarProps {
   onSearchChange?: any;
   isSingle?: boolean;
   isAll?: boolean;
+  searchPoponents?: boolean;
 }
 
 // type FetchedOptionType = {
@@ -43,6 +44,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   onSearchChange,
   urlQueryKey,
   isAll,
+  searchPoponents = false, // New prop to control the search popover
 }) => {
   const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
@@ -57,29 +59,26 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       const responses = await Promise.all(
         Array.isArray(url)
           ? url?.map((u) =>
-              axiosInstance.get(
-                `${u}${u.includes("?") ? "&" : "?"}${
-                  queryKey || getOptionKey
-                }=${query}&all=true`
-              )
+            axiosInstance.get(
+              `${u}${u.includes("?") ? "&" : "?"}${queryKey || getOptionKey
+              }=${query}&all=true`
             )
+          )
           : isRadioInput
-          ? [
+            ? [
               axiosInstance.get(
-                `${url}${
-                  url.includes("?") ? "&" : "?"
+                `${url}${url.includes("?") ? "&" : "?"
                 }${urlQueryKey}=${query}&all=true`
               ),
             ]
-          : [
+            : [
               axiosInstance.get(
-                `${url}${url.includes("?") ? "&" : "?"}${
-                  queryKey || getOptionKey
-                }=${query}&all=true`
+                `${url}${url.includes("?") ? "&" : "?"}${queryKey || getOptionKey
+                }=${query}${searchPoponents ? "" : "&all=true"} `
               ),
             ]
       );
-
+     
       return responses.flatMap((response) => {
         if (isAll) {
           return (
@@ -90,7 +89,13 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         }
         if (isRadioInput) {
           return response.data?.map((item: any) => item) || [];
-        } else {
+        }
+        if (searchPoponents) {
+  
+          return response.data?.results?.map((item: any) => item.institution as string) || [];
+        }
+
+        else {
           return (
             response.data?.results?.map(
               (item: any) => item[getOptionKey as string]
@@ -117,6 +122,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       if (options.length === 0) {
         setMsg("No results found for ");
       }
+          
       setOptions(Array.isArray(options) ? [...new Set(options)] : []);
     }, 900),
     [url]
@@ -219,9 +225,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                       {isLoading && (
                         <Lucide
                           icon="Loader"
-                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                            isLoading ? "animate-spin" : ""
-                          }`}
+                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${isLoading ? "animate-spin" : ""
+                            }`}
                         />
                       )}
                     </span>
