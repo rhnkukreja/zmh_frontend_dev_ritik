@@ -225,7 +225,7 @@ const Main: React.FC = () => {
                           Remember me
                         </label>
                       </div>
-                      <button onClick={() => {
+                      <button type="button" onClick={() => {
                         setFormView("sendOtp");
                         setEmail("");
 
