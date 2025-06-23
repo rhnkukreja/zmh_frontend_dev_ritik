@@ -45,7 +45,7 @@ export type AddShareholderType = {
   nl_exist: boolean;
   ready_for_review: boolean;
   proposal_num: string;
-  institution: string;
+  institutes?: any[];
   company_name?:string;
   // adminStatus: boolean;
   proponent: string;
