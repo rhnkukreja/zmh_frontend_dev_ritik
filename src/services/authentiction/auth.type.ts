@@ -3,7 +3,7 @@ export class LoginRequestDTO {
     //   public email: string,
     public password: string,
     public email: string
-  ) {}
+  ) { }
 }
 
 export class SignUpRequestDTO {
@@ -16,5 +16,21 @@ export class SignUpRequestDTO {
     public username: string,
     public user_type: string,
     public company: number | null
-  ) {}
+  ) { }
+}
+export class SendOtpDTO {
+  constructor(
+
+    public password: string,
+    public email: string,
+    public confirm_password: string
+
+  ) { }
+}
+export class VerifyOtpDTO {
+  constructor(
+    public email: string,
+    public otp: string
+
+  ) { }
 }

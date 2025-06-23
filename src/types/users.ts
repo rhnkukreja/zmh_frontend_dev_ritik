@@ -24,3 +24,13 @@ export type Register = {
   date_created: string;
   date_updated: string;
 };
+export type  OTP = {
+  email: string;
+  message: string;
+ 
+};
+export type  verifiedOTP = {
+  email: string;
+  message: string;
+ 
+};
