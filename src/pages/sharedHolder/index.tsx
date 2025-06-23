@@ -895,7 +895,7 @@ function ShareHolderProposal() {
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url={"/institute/?type=Proponent"}
-                    getOptionKey="proponent_name"
+                    getOptionKey="institution_name"
                     placeHolder="Search Proponent"
                     onSearchChange={resetPage}
                     isSingle={true}
