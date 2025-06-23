@@ -126,7 +126,9 @@ const Main: React.FC = () => {
           otp: data.otp,
         })
       ).unwrap();
-      if (response.message) {
+
+
+      if (response.message === "Password reset successful!") {
         toast.success(response.message);
         setFormView("login")
       }
@@ -327,8 +329,12 @@ const Main: React.FC = () => {
                     {errors.confirm_password && (
                       <p className="text-red-500">{typeof errors.confirm_password?.message === "string" ? errors.confirm_password.message : ""}</p>
                     )}
+
                     <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
-                      <button onClick={() => setFormView("login")} >Login</button>
+                      <button type="button" onClick={() => setFormView("login")}  className="flex align-center" >  <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back To Login</button>
                     </div>
                     <div className="mt-5 text-center xl:mt-8 xl:text-left">
                       <Button
@@ -363,7 +369,10 @@ const Main: React.FC = () => {
                     )}
 
                     <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
-                      <button onClick={() => setFormView("sendOtp")} >Back</button> <button onClick={() => {
+                      <button type="button" onClick={() => setFormView("sendOtp")} className="flex align-center" > <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back</button> <button type="button" onClick={() => {
                         setFormView("sendOtp");
 
                       }}>Resend OTP</button>
