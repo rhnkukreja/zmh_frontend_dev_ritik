@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 import { RootState, AppDispatch } from "../../stores/store";
-import { login } from "../../stores/authenticationSlice";
+import { login, sendOtp, verifyOtp } from "../../stores/authenticationSlice";
 import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import users from "@/fakers/users";
@@ -22,23 +22,39 @@ import {
   setDashboardGlobalSearch,
   setFinhub,
 } from "@/stores/authenticationSlice";
+import { toast } from "react-toastify";
 
 interface LoginFormInputs {
   email: string;
   password: string;
 }
+interface SendOtpInputs {
+  email: string;
+  password: string;
+  confirm_password: string;
+}
+interface VerifyOtpInputs {
+  email: string;
+  otp: string;
 
+}
 const Main: React.FC = () => {
   const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
+  const [formView, setFormView] = useState<"login" | "sendOtp" | "resetPassword">(
+    "login"
+  );
+  const [email, setEmail] = useState("");
+
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormInputs>();
+  } = useForm<any>();
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
@@ -77,9 +93,50 @@ const Main: React.FC = () => {
         navigate(`/?ticker=${response?.company_ticker}`);
       }
 
-    } catch (error) {}
+    } catch (error) { }
   };
+  const handleSendOtp = async (data: SendOtpInputs) => {
+    try {
 
+      const response = await dispatch(
+        sendOtp({
+          email: data.email,
+          password: data.password,
+          confirm_password: data.confirm_password,
+        })
+      ).unwrap();
+
+
+      if (response.email) {
+        toast.success(response.message);
+        setEmail(response.email);
+        setFormView("resetPassword");
+      }
+
+
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
+  const handleVerifyOTP = async (data: VerifyOtpInputs) => {
+    try {
+      const response = await dispatch(
+        verifyOtp({
+          email: email,
+          otp: data.otp,
+        })
+      ).unwrap();
+
+
+      if (response.message === "Password reset successful!") {
+        toast.success(response.message);
+        setFormView("login")
+      }
+
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
   return (
     <>
       <Helmet>
@@ -101,93 +158,249 @@ const Main: React.FC = () => {
               </div>
             </div>
             <div className="mt-10">
-              <div className="text-2xl font-medium">Sign In</div>
-              <div className="mt-2.5 text-slate-600">
+              <div className="text-2xl font-medium">
+                {formView === "login" ? "Sign In" :
+                  formView === "sendOtp" ? "Reset Password" : "Enter Verification Code"}
+              </div>
+              {formView === "login" && <div className="mt-2.5 text-slate-600">
                 Don't have an account?
                 <Link className="ml-2 font-medium text-primary" to="/register">
                   Sign Up
                 </Link>
-              </div>
+              </div>}
+              {formView === "resetPassword" && <div className="mt-2.5 text-slate-600">
+               Verification code sent to your email
+                
+              </div>}
 
               <div className="mt-6">
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <FormLabel>Email*</FormLabel>
-                  <FormInput
-                    type="text"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Email"
-                    {...register("email", { required: "Email is required" })}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500">{errors.email.message}</p>
-                  )}
-                  <FormLabel className="mt-4">Password*</FormLabel>
-                  <div className="relative">
+                {formView === "login" && (
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    <FormLabel>Email*</FormLabel>
                     <FormInput
-                      type={showPassword ? "text" : "password"}
+                      type="text"
                       className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                      placeholder="Enter your password"
-                      {...register("password", {
-                        required: "Password is required",
-                      })}
+                      placeholder="Enter Email"
+                      {...register("email", { required: "Email is required" })}
                     />
-                    <span className="absolute top-[28%] right-[5%] cursor-pointer">
-                      {showPassword && (
-                        <Eye
-                          onClick={() => setShowPassword(!showPassword)}
-                          strokeWidth={0.75}
-                          size={20}
-                        />
-                      )}
-                      {!showPassword && (
-                        <EyeOff
-                          onClick={() => setShowPassword(!showPassword)}
-                          strokeWidth={0.75}
-                          size={20}
-                        />
-                      )}
-                    </span>
-                  </div>
-
-                  {errors.password && (
-                    <p className="text-red-500">{errors.password.message}</p>
-                  )}
-                  <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
-                    <div className="flex items-center mr-auto">
-                      <FormCheck.Input
-                        id="remember-me"
-                        type="checkbox"
-                        className="mr-2.5 border"
+                    {errors.email && (
+                      <p className="text-red-500">{errors.email?.message as string}</p>
+                    )}
+                    <FormLabel className="mt-4">Password*</FormLabel>
+                    <div className="relative">
+                      <FormInput
+                        type={showPassword ? "text" : "password"}
+                        className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                        placeholder="Enter your password"
+                        {...register("password", {
+                          required: "Password is required",
+                        })}
                       />
-                      <label
-                        className="cursor-pointer select-none"
-                        htmlFor="remember-me"
-                      >
-                        Remember me
-                      </label>
+                      <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                        {showPassword && (
+                          <Eye
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                        {!showPassword && (
+                          <EyeOff
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                      </span>
                     </div>
-                    {/* <a href="">Forgot Password?</a> */}
-                  </div>
-                  <div className="mt-5 text-center xl:mt-8 xl:text-left">
-                    <Button
-                      variant="primary"
-                      rounded
-                      className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
-                      type="submit"
-                      disabled={loading}
-                    >
-                      {loading && (
-                        <Lucide
-                          icon="Loader"
-                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                            loading ? "animate-spin" : ""
-                          }`}
+
+                    {errors.password && (
+                      <p className="text-red-500">{typeof errors.password.message === "string" ? errors.password.message : ""}</p>
+                    )}
+                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
+                      <div className="flex items-center mr-auto">
+                        <FormCheck.Input
+                          id="remember-me"
+                          type="checkbox"
+                          className="mr-2.5 border"
                         />
-                      )}
-                      Log In
-                    </Button>
-                  </div>
-                </form>
+                        <label
+                          className="cursor-pointer select-none"
+                          htmlFor="remember-me"
+                        >
+                          Remember me
+                        </label>
+                      </div>
+                      <button type="button" onClick={() => {
+                        setFormView("sendOtp");
+                        setEmail("");
+
+
+                      }} >Forgot Password?</button>
+                    </div>
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Log In
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {formView === "sendOtp" && (
+                  <form onSubmit={handleSubmit(handleSendOtp)}>
+                    <FormLabel>Email*</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Email"
+                      {...register("email", { required: "Email is required" })}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500">{typeof errors.email?.message === "string" ? errors.email.message : ""}</p>
+                    )}
+                    <FormLabel className="mt-4">New Password*</FormLabel>
+                    <div className="relative">
+                      <FormInput
+                        type={showPassword ? "text" : "password"}
+                        className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                        placeholder="Enter your password"
+                        {...register("password", {
+                          required: "Password is required",
+                        })}
+                      />
+                      <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                        {showPassword && (
+                          <Eye
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                        {!showPassword && (
+                          <EyeOff
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                      </span>
+                    </div>
+
+                    {errors.password && (
+                      <p className="text-red-500">{typeof errors.password?.message === "string" ? errors.password.message : ""}</p>
+                    )}
+                    <FormLabel className="mt-4">Confirm Password*</FormLabel>
+                    <div className="relative">
+                      <FormInput
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                        placeholder="Enter confirm password"
+                        {...register("confirm_password", {
+                          required: "Confirm Password is required",
+                        })}
+                      />
+                      <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                        {showConfirmPassword && (
+                          <Eye
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                        {!showConfirmPassword && (
+                          <EyeOff
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                      </span>
+                    </div>
+
+                    {errors.confirm_password && (
+                      <p className="text-red-500">{typeof errors.confirm_password?.message === "string" ? errors.confirm_password.message : ""}</p>
+                    )}
+
+                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
+                      <button type="button" onClick={() => setFormView("login")} className="flex items-center" >  <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back To Login</button>
+                    </div>
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Send Verification Code
+                      </Button>
+                    </div>
+                  </form>)}
+                {formView === "resetPassword" && (
+                  <form onSubmit={handleSubmit(handleVerifyOTP)}>
+                    <FormLabel>Enter Code</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Code"
+                      {...register("otp", { required: "OTP is required" })}
+                    />
+                    {errors.otp && (
+                      <p className="text-red-500">{typeof errors.otp.message === "string" ? errors.otp.message : ""}</p>
+                    )}
+
+                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
+                      <button type="button" onClick={() => setFormView("sendOtp")} className="flex items-center" > <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back</button> <button type="button" onClick={() => {
+                        setFormView("sendOtp");
+
+                      }}>Resend Code</button>
+                    </div>
+
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Confirm Code
+                      </Button>
+                    </div>
+                  </form>)}
               </div>
             </div>
           </div>

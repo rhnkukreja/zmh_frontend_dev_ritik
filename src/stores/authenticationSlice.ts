@@ -2,10 +2,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
   LoginRequestDTO,
+  SendOtpDTO,
   SignUpRequestDTO,
+  VerifyOtpDTO,
 } from "../services/authentiction/auth.type";
 import { userService } from "../services/authentiction";
-import { Login, Register } from "@/types/users";
+import { Login, OTP, Register, verifiedOTP } from "@/types/users";
 import { persistor } from "./store";
 
 const name = "authentication";
@@ -49,7 +51,18 @@ export const signUp = createAsyncThunk<Register, SignUpRequestDTO>(
     return (await userService.signUp(userRequest)) as Register;
   }
 );
-
+export const sendOtp = createAsyncThunk<OTP, SendOtpDTO>(
+  `${name}/sendOtp`,
+  async (userRequest: SendOtpDTO) => {
+    return (await userService.sendOtp(userRequest)) as OTP;
+  }
+);
+export const verifyOtp = createAsyncThunk<verifiedOTP, VerifyOtpDTO>(
+  `${name}/verifyOtp`,
+  async (userRequest: VerifyOtpDTO) => {
+    return (await userService.verifyOtp(userRequest)) as verifiedOTP;
+  }
+);
 export const login = createAsyncThunk<Login, LoginRequestDTO>(
   `${name}/login`,
   async (userRequest: LoginRequestDTO) => {
@@ -124,7 +137,31 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to log in";
-      });
+      })
+      .addCase(sendOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(sendOtp.fulfilled, (state, action) => {
+        state.loading = false;
+
+      })
+      .addCase(sendOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to send OTP";
+      })
+      .addCase(verifyOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyOtp.fulfilled, (state, action) => {
+        state.loading = false;
+
+      })
+      .addCase(verifyOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to verify OTP";
+      })
   },
 });
 
