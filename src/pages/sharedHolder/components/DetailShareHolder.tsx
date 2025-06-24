@@ -316,7 +316,7 @@ const DetailShareHolder = () => {
                     selectedTab === "proposal" && (
                       <div>
                         <h3 className="font-semibold min-w-[150px] mb-2">
-                          Proposal Text
+                          Proposal Text 
                         </h3>
                         <p>{getSingleShareHolder.proposal_text}</p>
                       </div>

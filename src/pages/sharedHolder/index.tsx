@@ -306,10 +306,10 @@ function ShareHolderProposal() {
         ...filters,
         ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
       };
-   
+
     const dynamicURL = createDynamicURL(tabUrls[tab], updatedFilters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
-  
+
 
     if (tab === "no-action") {
       var { institution_name, global_search, ...restFilters } = filters;
@@ -843,7 +843,7 @@ function ShareHolderProposal() {
                       } catch (error) { }
                     }}
                   >
-                   
+
                     {finhub?.name || companyGlobalSearchName} {" "}
                     {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
                   </button>
@@ -864,7 +864,7 @@ function ShareHolderProposal() {
                       } catch (error) { }
                     }}
                   >
-                    View For All Companies
+                    View for All Companies
                   </button>
                 </div>
               </div>
@@ -874,7 +874,7 @@ function ShareHolderProposal() {
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center mt-3">
             {isAllCompanySelected === true ? (
               <div className="font-semibold text-xl">
-                All Shareholder Proposals
+                All Shareholder Proposals (Beta)
               </div>
             ) : (
               <div className="font-semibold text-xl">Shareholder Proposals</div>
@@ -2086,7 +2086,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("proponents")}
                             >
-                             Proponent Analytics
+                              Proponent Analytics
                             </button>
                           </div>
 
@@ -2433,10 +2433,10 @@ function ShareHolderProposal() {
                                       {noAction?.proponent || "-"}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.category}
+                                      {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.category}
                                     </Table.Td>
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {noAction?.sub_category}
+                                      {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.sub_category}
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
                                       {noAction?.staff_response}
