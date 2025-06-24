@@ -126,7 +126,9 @@ const Main: React.FC = () => {
           otp: data.otp,
         })
       ).unwrap();
-      if (response.message) {
+
+
+      if (response.message === "Password reset successful!") {
         toast.success(response.message);
         setFormView("login")
       }
@@ -158,13 +160,17 @@ const Main: React.FC = () => {
             <div className="mt-10">
               <div className="text-2xl font-medium">
                 {formView === "login" ? "Sign In" :
-                  formView === "sendOtp" ? "Reset Password" : "Verify OTP"}
+                  formView === "sendOtp" ? "Reset Password" : "Enter Verification Code"}
               </div>
               {formView === "login" && <div className="mt-2.5 text-slate-600">
                 Don't have an account?
                 <Link className="ml-2 font-medium text-primary" to="/register">
                   Sign Up
                 </Link>
+              </div>}
+              {formView === "resetPassword" && <div className="mt-2.5 text-slate-600">
+               Verification code sent to your email
+                
               </div>}
 
               <div className="mt-6">
@@ -265,7 +271,7 @@ const Main: React.FC = () => {
                     {errors.email && (
                       <p className="text-red-500">{typeof errors.email?.message === "string" ? errors.email.message : ""}</p>
                     )}
-                    <FormLabel className="mt-4">Password*</FormLabel>
+                    <FormLabel className="mt-4">New Password*</FormLabel>
                     <div className="relative">
                       <FormInput
                         type={showPassword ? "text" : "password"}
@@ -327,8 +333,12 @@ const Main: React.FC = () => {
                     {errors.confirm_password && (
                       <p className="text-red-500">{typeof errors.confirm_password?.message === "string" ? errors.confirm_password.message : ""}</p>
                     )}
+
                     <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
-                      <button onClick={() => setFormView("login")} >Login</button>
+                      <button type="button" onClick={() => setFormView("login")} className="flex items-center" >  <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back To Login</button>
                     </div>
                     <div className="mt-5 text-center xl:mt-8 xl:text-left">
                       <Button
@@ -345,17 +355,17 @@ const Main: React.FC = () => {
                               }`}
                           />
                         )}
-                        {email ? "Resend " : "Next"}
+                        Send Verification Code
                       </Button>
                     </div>
                   </form>)}
                 {formView === "resetPassword" && (
                   <form onSubmit={handleSubmit(handleVerifyOTP)}>
-                    <FormLabel>Enter OTP</FormLabel>
+                    <FormLabel>Enter Code</FormLabel>
                     <FormInput
                       type="text"
                       className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                      placeholder="Enter OTP"
+                      placeholder="Enter Code"
                       {...register("otp", { required: "OTP is required" })}
                     />
                     {errors.otp && (
@@ -363,10 +373,13 @@ const Main: React.FC = () => {
                     )}
 
                     <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
-                      <button onClick={() => setFormView("sendOtp")} >Back</button> <button onClick={() => {
+                      <button type="button" onClick={() => setFormView("sendOtp")} className="flex items-center" > <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back</button> <button type="button" onClick={() => {
                         setFormView("sendOtp");
 
-                      }}>Resend OTP</button>
+                      }}>Resend Code</button>
                     </div>
 
                     <div className="mt-5 text-center xl:mt-8 xl:text-left">
@@ -384,7 +397,7 @@ const Main: React.FC = () => {
                               }`}
                           />
                         )}
-                        Verify OTP
+                        Confirm Code
                       </Button>
                     </div>
                   </form>)}
