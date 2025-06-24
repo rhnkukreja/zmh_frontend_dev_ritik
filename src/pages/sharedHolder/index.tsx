@@ -65,6 +65,7 @@ import FilterChips from "@/components/FilterChips";
 import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderProposalsAnalytics";
 import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -94,7 +95,7 @@ function ShareHolderProposal() {
   ]);
   const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
-
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const [isViewAnalysis, setIsViewAnalysis] = useState(true);
   const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">(
     "shareholders"
@@ -789,6 +790,7 @@ function ShareHolderProposal() {
   const defaultTabIndex = getDefaultTabIndex();
 
   const handleDownload = async () => {
+    setLoadingDownload(true)
     try {
       const file = await shareHolderProposalService.getAllShareholderAPIFile(
         createDynamicURL(
@@ -810,6 +812,7 @@ function ShareHolderProposal() {
       // ✅ Clean up
       URL.revokeObjectURL(url);
       document.body.removeChild(link);
+      setLoadingDownload(false);
     } catch (error) {
       console.error("Error downloading the file:", error);
     }
@@ -932,13 +935,17 @@ function ShareHolderProposal() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  {tab == "proposal" && <div className="hover:bg-slate-50 ml-2">
+                  {tab == "proposal" && !isAllCompanySelected && <div className="hover:bg-slate-50 ml-2">
                     <Tippy content="Download Excel" options={{ theme: "light" }}>
                       <div
                         className="box p-[5px] cursor-pointer"
-                        onClick={handleDownload}
+                        onClick={() => !loadingDownload && handleDownload()}
                       >
-                        <img alt="download-icon" src={downloadIcon} />
+                        {loadingDownload ? <Lucide
+                          icon="Loader"
+                          className="w-6 h-7  stroke-[1.3]  animate-spin
+"
+                        /> : <img alt="download-icon" src={downloadIcon} />}
                       </div>
                     </Tippy>
 

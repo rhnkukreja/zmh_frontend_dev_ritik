@@ -127,8 +127,7 @@ const Main: React.FC = () => {
         })
       ).unwrap();
 
-
-      if (response.message === "Password reset successful!") {
+      if (response.message === "Password reset successfully!") {
         toast.success(response.message);
         setFormView("login")
       }
