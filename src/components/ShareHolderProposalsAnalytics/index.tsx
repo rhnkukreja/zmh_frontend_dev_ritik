@@ -181,7 +181,9 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                     <ResponsiveContainer width="100%" height={250}>
                      
                        <ComposedChart
-                      data={[
+                      data={tab == "proposal" ? [
+                        ...yearlySummary?.filter((item) => item[chartKey] >= 2022),
+                      ]: [
                         ...yearlySummary?.filter((item) => item[chartKey] >= 2022),
                       ].reverse()}
                       margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
