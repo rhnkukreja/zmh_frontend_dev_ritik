@@ -16,6 +16,7 @@ import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 import { Controller, useForm } from "react-hook-form";
 import {
+    FormCheck,
     FormInput,
 } from "@/components/Base/Form";
 import TomSelect from "@/components/Base/TomSelect";
@@ -73,26 +74,26 @@ const index = () => {
     useEffect(() => {
         const fetchData = async () => {
             // if (allApplyFilter) {
-                setIsLoading(true);
-               
-                await dispatch(
-                    fetchVdsEuropeans(
-                        createDynamicURL(
-                            `${baseURL}/vds_european/`,
-                            allApplyFilter,
-                            undefined,
-                            page
-                        ) +
-                        (allApplyFilter.year ? "" : "&year=2025") +
-                        (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
-                    )
-                );
+            setIsLoading(true);
 
-                setFiltersLength(countValidFilters(allApplyFilter));
-                setSelectedChipFilters(generateFilterChips(allApplyFilter));
-                dispatch(setTempSearch(companyGlobalSearchName));
+            await dispatch(
+                fetchVdsEuropeans(
+                    createDynamicURL(
+                        `${baseURL}/vds_european/`,
+                        allApplyFilter,
+                        undefined,
+                        page
+                    ) +
+                    (allApplyFilter.year ? "" : "&year=2025") +
+                    (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
+                )
+            );
 
-                setIsLoading(false);
+            setFiltersLength(countValidFilters(allApplyFilter));
+            setSelectedChipFilters(generateFilterChips(allApplyFilter));
+            dispatch(setTempSearch(companyGlobalSearchName));
+
+            setIsLoading(false);
             // }
         };
 
@@ -379,8 +380,27 @@ const index = () => {
                                 </div>
 
                                 <div className="w-full">
+
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Institution
+                                        Institution   <div>  <FormCheck.Label>Select All</FormCheck.Label>
+                                            <FormCheck.Input
+                                                className="ml-1"
+                                                id="year"
+                                                checked={
+                                                    apiInstitutionDropdown?.institution.length > 0 && apiInstitutionDropdown?.institution.length ===
+                                                    watch("institution_name")?.length
+                                                }
+                                                type="checkbox"
+                                                onChange={(e) => {
+                                                    setValue(
+                                                        "institution_name",
+                                                        e.target.checked
+                                                            ? apiInstitutionDropdown?.institution
+                                                            : []
+                                                    );
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                     <Controller
                                         name="institution_name"
@@ -388,20 +408,20 @@ const index = () => {
                                         defaultValue={[]}
                                         render={({ field }) => (
                                             <MultiSelectDropdown
-                        data={ apiInstitutionDropdown?.institution}
-                        placeholder="Select Institutions"
-                        loading={getFundNameDropdownLoader}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => option.value);
-                          field.onChange(selectedValues);
-                           handleDropdownChange(
+                                                data={apiInstitutionDropdown?.institution}
+                                                placeholder="Select Institutions"
+                                                loading={getFundNameDropdownLoader}
+                                                onChange={(selectedOptions) => {
+                                                    const selectedValues = selectedOptions.map((option) => option.value);
+                                                    field.onChange(selectedValues);
+                                                    handleDropdownChange(
                                                         "institution_name",
                                                         selectedValues
                                                     );
 
-                        }}
-                        selectedOption={field.value || []}
-                      />
+                                                }}
+                                                selectedOption={field.value || []}
+                                            />
                                             // <TomSelect
                                             //     value={field.value || []}
                                             //     onChange={(value: any) => {
@@ -461,6 +481,9 @@ const index = () => {
                                             </TomSelect>
                                         )}
                                     />
+
+
+
                                 </div>
 
 
@@ -502,25 +525,43 @@ const index = () => {
 
                                 <div className="w-full">
                                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Vote
+                                        Vote <div>  <FormCheck.Label>Select All</FormCheck.Label>
+                                            <FormCheck.Input
+                                                className="ml-1"
+                                                id="vote"
+                                                checked={
+                                                    apiDependentDropdownOptions?.vote.length > 0 && apiDependentDropdownOptions?.vote.length ===
+                                                    watch("vote")?.length
+                                                }
+                                                type="checkbox"
+                                                onChange={(e) => {
+                                                    setValue(
+                                                        "vote",
+                                                        e.target.checked
+                                                            ? apiDependentDropdownOptions?.vote
+                                                            : []
+                                                    );
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                     <Controller
                                         name="vote"
                                         control={control}
                                         defaultValue={[]}
                                         render={({ field }) => (
-                                                <MultiSelectDropdown
-                        data={apiDependentDropdownOptions?.vote}
-                        placeholder="Select Vote"
-                        loading={getDynamicDropdownLoader}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => option.value);
-                          field.onChange(selectedValues);
-                          
+                                            <MultiSelectDropdown
+                                                data={apiDependentDropdownOptions?.vote}
+                                                placeholder="Select Vote"
+                                                loading={getDynamicDropdownLoader}
+                                                onChange={(selectedOptions) => {
+                                                    const selectedValues = selectedOptions.map((option) => option.value);
+                                                    field.onChange(selectedValues);
 
-                        }}
-                        selectedOption={field.value || []}
-                      />
+
+                                                }}
+                                                selectedOption={field.value || []}
+                                            />
                                             // <TomSelect
                                             //     value={field.value || []}
                                             //     onChange={(value) => {

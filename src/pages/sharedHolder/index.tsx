@@ -1064,7 +1064,7 @@ function ShareHolderProposal() {
                                   id="year"
                                   checked={
                                     apiDropdownOptions.year.length ===
-                                    watch("year")?.length
+                                    watch( tab === "withdrawn" ? "year" : "proxy_season")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
