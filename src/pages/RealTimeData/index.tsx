@@ -466,7 +466,25 @@ const index = () => {
                 </div>
                 <div className="mx-2">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                    <span className="font-semibold">Institution</span>
+                    <span className="font-semibold">Institution</span> <div>  <FormCheck.Label>Select All</FormCheck.Label>
+                                                                <FormCheck.Input
+                                                                    className="ml-1"
+                                                                    id="institution_name"
+                                                                    checked={
+                                                                        dropdownInstitutionValues?.institutes?.length > 0 && dropdownInstitutionValues?.institutes?.length ===
+                                                                        watch("institution_name")?.length
+                                                                    }
+                                                                    type="checkbox"
+                                                                    onChange={(e) => {
+                                                                        setValue(
+                                                                            "institution_name",
+                                                                            e.target.checked
+                                                                                ? dropdownInstitutionValues?.institutes
+                                                                                : []
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </div>
                   </div>
 
                   {/* <Controller
@@ -539,7 +557,25 @@ const index = () => {
 
                 <div className="mx-2">
                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                    <span className="font-semibold">Vote</span>
+                    <span className="font-semibold">Vote</span> <div>  <FormCheck.Label>Select All</FormCheck.Label>
+                                            <FormCheck.Input
+                                                className="ml-1"
+                                                id="vote"
+                                                checked={
+                                                    dropdownVotesValues?.votes?.length > 0 && dropdownVotesValues?.votes?.length ===
+                                                    watch("vote")?.length
+                                                }
+                                                type="checkbox"
+                                                onChange={(e) => {
+                                                    setValue(
+                                                        "vote",
+                                                        e.target.checked
+                                                            ? dropdownVotesValues?.votes
+                                                            : []
+                                                    );
+                                                }}
+                                            />
+                                        </div>
                   </div>
                   <Controller
                     name="vote"
