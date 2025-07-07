@@ -25,6 +25,16 @@ class VDSEuropeanService {
       result: result,
     };
   }
+
+  public async getVDSEuropeanAnalytics(url: string,body:object): Promise<{
+    response: any[];
+  }> {
+    const response = await axiosInstance.post(url,body);
+    return {
+      response: response.data,
+    };
+  }
+
 }
 
 export const vdsEuropeanService = new VDSEuropeanService();

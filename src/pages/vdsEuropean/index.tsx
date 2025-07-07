@@ -18,6 +18,7 @@ import { Controller, useForm } from "react-hook-form";
 import {
     FormCheck,
     FormInput,
+    FormSwitch,
 } from "@/components/Base/Form";
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
@@ -52,14 +53,18 @@ const index = () => {
     const [apiInstitutionDropdown, setApiInstitutionDropdown] = useState<any>({
         institution: [],
     });
-
+    const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
+    const [vdsEuropeansAnalytics, setVdsEuropeansAnalytics] = useState<any>([]);
     const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
     const [filtersLength, setFiltersLength] = useState<number>(0);
     const [dropdownValues, setDropdownValues] = useState<any>({
         company_name: [],
         institution: [],
+        index: []
     });
+    const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(false);
     const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
         useState<boolean>(false);
 
@@ -69,6 +74,7 @@ const index = () => {
             vote: [],
             category: [],
             year: [],
+            index: [],
         });
 
     useEffect(() => {
@@ -137,6 +143,7 @@ const index = () => {
             const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(paramFilter);
             if (res.result) {
                 setApiDependentDropdownOptions({ ...res.result });
+
             }
         } catch (error) {
             return error;
@@ -273,6 +280,43 @@ const index = () => {
     //     return resultString;
     // };
 
+    useEffect(() => {
+        const fetchAnalytics = async () => {
+            if (allApplyFilter) {
+          
+            const body = {
+                investor_company: allApplyFilter.institution_name ? allApplyFilter?.institution_name : "",
+                company_name: allApplyFilter?.company_name?.length > 0 ? allApplyFilter?.company_name[0] : "",
+                year: allApplyFilter?.year || "2025",
+                proponent_type: "",
+                proposal_type: "",
+                index_name: "",
+                country: ""
+
+            };
+            setIsAnalyticsLoading(true);
+            try {
+                const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
+                    `${baseURL}/api/proposal-voting-stats`,
+                    body
+                );
+
+                setVdsEuropeansAnalytics(response.response);
+
+            } catch (error) {
+                console.error("Error fetching analytics:", error);
+            } finally {
+                setIsAnalyticsLoading(false);
+            }
+            }
+        };
+
+        if (isViewAnalysis) {
+            fetchAnalytics();
+          
+        }
+    }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
+
     return (
         <>
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
@@ -294,7 +338,25 @@ const index = () => {
                             }
                         </span>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                    <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
+                        {count > 0 && (
+                            <h2 className="flex items-end font-semibold justify-end text-[13px] md:ml-auto mx-5">
+                                Count: {count.toLocaleString()}
+                            </h2>
+                        )}
+                        <div className="mt-2">
+
+                            <FormSwitch className="mb-2">
+                                <label className="text-md mr-3 font-semibold">Analytics</label>
+                                <FormSwitch.Input
+                                    id="view-analysis-switch"
+                                    type="checkbox"
+                                    checked={isViewAnalysis}
+                                    onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                                />
+                                <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
+                            </FormSwitch>
+                        </div>
                         <Popover className="inline-block">
                             {({ close }) => (
                                 <>
@@ -327,11 +389,7 @@ const index = () => {
                 }
 
 
-                {count > 0 && (
-                    <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
-                        Count: {count.toLocaleString()}
-                    </h2>
-                )}
+
 
                 {isFilterCollapse && (
                     <form onSubmit={handleSubmit(onSubmit)}>
@@ -586,7 +644,43 @@ const index = () => {
                                         )}
                                     />
                                 </div>
+                                <div className="w-full me-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                        <span className="font-semibold">Index</span>
+                                    </div>
+                                    <Controller
+                                        name="index"
+                                        control={control}
+                                        defaultValue={""}
+                                        render={({ field }) => (
 
+
+                                            <TomSelect
+                                                value={field.value || ""}
+                                                onChange={(value) => {
+                                                    field.onChange(value);
+                                                }}
+                                                options={{
+                                                    placeholder: "Select Index",
+                                                }}
+                                                className="w-full"
+                                                multiple={false}
+                                            >
+                                                {getDropdownLoader ? (
+                                                    <option value="--" disabled>
+                                                        Loading...
+                                                    </option>
+                                                ) : (
+                                                    <>
+                                                        {dropdownValues?.index?.map((index: string) => {
+                                                            return <option value={index}>{index}</option>;
+                                                        })}
+                                                    </>
+                                                )}
+                                            </TomSelect>
+                                        )}
+                                    />
+                                </div>
                                 <div className="w-full">
                                     <div className="text-left text-slate-500  font-semibold">Keyword</div>
                                     <Controller
@@ -623,6 +717,157 @@ const index = () => {
                         />
                     </div>
                 )}
+
+                {isViewAnalysis && <div className="mb-7">    <TableWrapper isLoading={allApplyFilter && isAnalyticsLoading}>
+                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
+                        <Table>
+                            <Table.Thead>
+                                <Table.Tr>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "17.5%" }}
+                                    >
+                                        Proposal
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "17.5%" }}
+                                    >
+                                        Meeting Date
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "5%" }}
+                                    >
+                                        Meeting type
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "25%" }}
+                                    >
+                                        Company Name
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "10%" }}
+                                    >
+                                        Security ID
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "30%" }}
+                                    >
+                                        Vote
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "30%" }}
+                                    >
+                                        Management Recommendation
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "30%" }}
+                                    >
+                                        Proposal No
+                                    </Table.Td>
+                                    <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "30%" }}
+                                    >
+                                        Country
+                                    </Table.Td>
+                                </Table.Tr>
+                            </Table.Thead>
+
+                            <Table.Tbody>
+                                {vdsEuropeansAnalytics?.sample_proposals?.length > 0 &&
+                                    vdsEuropeansAnalytics?.sample_proposals.map((vds: any, index: number) => (
+                                        <Table.Tr
+                                            key={index}
+                                            className={clsx(
+                                                "[&_td]:last:border-b-0",
+                                                "bg-white dark:bg-darkmode-600"
+                                            )}
+                                        >
+                                            <Table.Td
+                                                className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                                style={{ width: "17.5%" }}
+                                            >
+                                                {vds?.meeting_date}
+                                            </Table.Td>
+
+                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
+                                                <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
+                                            </Table.Td>
+
+                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
+                                                {vds?.company__name}
+                                            </Table.Td>
+
+                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
+                                                {vds?.security_id}
+                                            </Table.Td>
+
+                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
+                                                <div className="flex">
+                                                    {vds?.vote === "Split Vote" ? (
+                                                        <Tippy
+                                                            content={vds?.split_vote_counts}
+                                                            options={{ theme: "light" }}
+                                                        >
+                                                            {vds?.vote}
+                                                        </Tippy>
+                                                    ) : (
+                                                        <span
+                                                            className={clsx([
+                                                                (vds?.vote?.includes("Against") ||
+                                                                    vds.vote?.includes("Withhold")) &&
+                                                                "text-red-700 font-semibold ",
+                                                            ])}
+                                                        >
+                                                            {vds?.vote}
+                                                        </span>
+                                                    )}
+                                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                                        <span
+                                                            data-tooltip-id="my-tooltip-data-html"
+                                                            data-tooltip-html={vds?.notes}
+                                                        >
+                                                            <Lucide
+                                                                icon="Info"
+                                                                className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                            />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </Table.Td>
+                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                {convertToTitleCase(vds?.mgt_rec)}
+                                            </Table.Td>
+                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                {vds?.proposal_num}
+                                            </Table.Td>
+
+                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                {convertToTitleCase(vds?.country)}
+                                            </Table.Td>
+
+                                        </Table.Tr>))
+                                }
+                            </Table.Tbody>
+                            {VdsEuropeans?.length === 0 && (
+                                <div className="w-full">
+                                    <h1 className="mt-3">No Voting Data available</h1>
+                                </div>
+                            )}
+                        </Table>
+                    </div>
+                </TableWrapper>      </div>}
+
+
+
+
                 {VdsEuropeans?.length > 0 ? (
                     <div className="w-full">
                         <>
