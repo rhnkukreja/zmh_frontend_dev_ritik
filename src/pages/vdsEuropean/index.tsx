@@ -189,6 +189,9 @@ const index = () => {
 
 
     const onSubmit = async (npxFilter: any) => {
+        if (isViewAnalysis && !npxFilter?.institution_name?.length) {
+            toast.warning("Please Select Institution Name");
+        }
         if (npxFilter?.company_name?.length === 0 || !npxFilter?.company_name?.label) {
             toast.warning("Please Select Company Name");
             return;
@@ -283,37 +286,37 @@ const index = () => {
     useEffect(() => {
         const fetchAnalytics = async () => {
             if (allApplyFilter) {
-          
-            const body = {
-                investor_company: allApplyFilter.institution_name ? allApplyFilter?.institution_name : "",
-                company_name: allApplyFilter?.company_name?.length > 0 ? allApplyFilter?.company_name[0] : "",
-                year: allApplyFilter?.year || "2025",
-                proponent_type: "",
-                proposal_type: "",
-                index_name: "",
-                country: ""
 
-            };
-            setIsAnalyticsLoading(true);
-            try {
-                const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
-                    `${baseURL}/api/proposal-voting-stats`,
-                    body
-                );
+                const body = {
+                    investor_company: allApplyFilter.institution_name ? allApplyFilter?.institution_name[0] : "",
+                    company_name: allApplyFilter?.company_name?.length > 0 ? allApplyFilter?.company_name[0] : "",
+                    year: allApplyFilter?.year || "2025",
+                    proponent_type: "",
+                    proposal_type: "",
+                    index_name: "",
+                    country: ""
 
-                setVdsEuropeansAnalytics(response.response);
+                };
+                setIsAnalyticsLoading(true);
+                try {
+                    const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
+                        `${baseURL}/api/proposal-voting-stats`,
+                        body
+                    );
 
-            } catch (error) {
-                console.error("Error fetching analytics:", error);
-            } finally {
-                setIsAnalyticsLoading(false);
-            }
+                    setVdsEuropeansAnalytics(response.response);
+
+                } catch (error) {
+                    console.error("Error fetching analytics:", error);
+                } finally {
+                    setIsAnalyticsLoading(false);
+                }
             }
         };
 
         if (isViewAnalysis) {
             fetchAnalytics();
-          
+
         }
     }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
 
@@ -352,7 +355,12 @@ const index = () => {
                                     id="view-analysis-switch"
                                     type="checkbox"
                                     checked={isViewAnalysis}
-                                    onChange={(e) => setIsViewAnalysis(e.target.checked)}
+                                    onChange={(e) => {
+                                        if (!allApplyFilter.institution_name || allApplyFilter.institution_name?.length === 0) {
+                                            toast.warning("Please Select Institution to view Analytics");
+                                        }
+                                        else setIsViewAnalysis(e.target.checked)
+                                    }}
                                 />
                                 <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                             </FormSwitch>
@@ -620,31 +628,11 @@ const index = () => {
                                                 }}
                                                 selectedOption={field.value || []}
                                             />
-                                            // <TomSelect
-                                            //     value={field.value || []}
-                                            //     onChange={(value) => {
-                                            //         field.onChange(value);
-                                            //     }}
-                                            //     options={{ placeholder: "Select Vote" }}
-                                            //     className="w-full"
-                                            //     multiple
-                                            // >
-                                            //     {getDynamicDropdownLoader ? (
-                                            //         <option disabled>Loading...</option>
-                                            //     ) : (
-                                            //         apiDependentDropdownOptions?.vote?.map(
-                                            //             (vote: any) => (
-                                            //                 <option key={vote} value={vote}>
-                                            //                     {convertToTitleCase(vote)}
-                                            //                 </option>
-                                            //             )
-                                            //         )
-                                            //     )}
-                                            // </TomSelect>
+                                        
                                         )}
                                     />
                                 </div>
-                                <div className="w-full me-2">
+                 <div className="w-full me-2">
                                     <div className="text-left text-slate-500 flex justify-between mb-1">
                                         <span className="font-semibold">Index</span>
                                     </div>
@@ -658,10 +646,122 @@ const index = () => {
                                             <TomSelect
                                                 value={field.value || ""}
                                                 onChange={(value) => {
-                                                    field.onChange(value);
+                                                    // field.onChange(value);
                                                 }}
                                                 options={{
                                                     placeholder: "Select Index",
+                                                }}
+                                                className="w-full"
+                                                multiple={false}
+                                            >
+                                                {getDropdownLoader ? (
+                                                    <option value="--" disabled>
+                                                        Loading...
+                                                    </option>
+                                                ) : (
+                                                    <>
+                                                        {dropdownValues?.index?.map((index: string) => {
+                                                            return <option value={index}>{index}</option>;
+                                                        })}
+                                                    </>
+                                                )}
+                                            </TomSelect>
+                                        )}
+                                    />
+                                </div>
+                               
+                                 <div className="w-full me-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                        <span className="font-semibold">Proposal Type</span>
+                                    </div>
+                                    <Controller
+                                        name="proposal_type"
+                                        control={control}
+                                        defaultValue={""}
+                                        render={({ field }) => (
+
+
+                                            <TomSelect
+                                                value={field.value || ""}
+                                                onChange={(value) => {
+                                                    // field.onChange(value);
+                                                }}
+                                                options={{
+                                                    placeholder: "Select Proposal Type",
+                                                }}
+                                                className="w-full"
+                                                multiple={false}
+                                            >
+                                                {getDropdownLoader ? (
+                                                    <option value="--" disabled>
+                                                        Loading...
+                                                    </option>
+                                                ) : (
+                                                    <>
+                                                        {dropdownValues?.index?.map((index: string) => {
+                                                            return <option value={index}>{index}</option>;
+                                                        })}
+                                                    </>
+                                                )}
+                                            </TomSelect>
+                                        )}
+                                    />
+                                </div>
+                                 <div className="w-full me-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                        <span className="font-semibold">Proponent Type </span>
+                                    </div>
+                                    <Controller
+                                        name="proponent_type "
+                                        control={control}
+                                        defaultValue={""}
+                                        render={({ field }) => (
+
+
+                                            <TomSelect
+                                                value={field.value || ""}
+                                                onChange={(value) => {
+                                                    // field.onChange(value);
+                                                }}
+                                                options={{
+                                                    placeholder: "Select Proposal Type",
+                                                }}
+                                                className="w-full"
+                                                multiple={false}
+                                            >
+                                                {getDropdownLoader ? (
+                                                    <option value="--" disabled>
+                                                        Loading...
+                                                    </option>
+                                                ) : (
+                                                    <>
+                                                        {dropdownValues?.index?.map((index: string) => {
+                                                            return <option value={index}>{index}</option>;
+                                                        })}
+                                                    </>
+                                                )}
+                                            </TomSelect>
+                                        )}
+                                    />
+                                </div>
+                                  <div className="w-full me-2">
+                                    <div className="text-left text-slate-500 flex justify-between mb-1">
+                                        <span className="font-semibold">Country</span>
+                                    </div>
+                                    <Controller
+                                        name="country"
+                                        control={control}
+                                        defaultValue={""}
+                                        render={({ field }) => (
+
+
+                                            <TomSelect
+                                                value={field.value || ""}
+                                                onChange={(value) => {
+                                                    // field.onChange(value);
+                                                }}
+                                                options={{
+                                                    placeholder: "Select Country",
                                                 }}
                                                 className="w-full"
                                                 multiple={false}
@@ -856,9 +956,9 @@ const index = () => {
                                         </Table.Tr>))
                                 }
                             </Table.Tbody>
-                            {VdsEuropeans?.length === 0 && (
+                            {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
                                 <div className="w-full">
-                                    <h1 className="mt-3">No Voting Data available</h1>
+                                    <h1 className="mt-3">No Data available</h1>
                                 </div>
                             )}
                         </Table>
