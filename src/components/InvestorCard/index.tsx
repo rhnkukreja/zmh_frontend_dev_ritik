@@ -7,7 +7,7 @@ import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { MegaphoneOff } from 'lucide-react';
-import { CircleSlash2 } from 'lucide-react';
+import Joyride from "react-joyride";
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -44,7 +44,7 @@ const index = () => {
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-
+  const [run, setRun] = useState(true);
   const [searchParams] = useSearchParams();
   const { dashboardDataList, investorCardLoading, page, tempSearch, percent } =
     useAppSelector((state) => state.dashboard);
@@ -53,6 +53,20 @@ const index = () => {
     (state: RootState) => state.authentiction
   );
 
+ const steps = [
+    {
+      target: ".step-1",
+      content: "This is the first step!",
+    },
+    {
+      target: ".step-2",
+      content: "Here's your second step.",
+    },
+    {
+      target: ".step-3",
+      content: "Finish here!",
+    },
+  ];
 
   const navigate = useNavigate();
 
@@ -204,6 +218,18 @@ const index = () => {
 
   return (
     <>
+     <Joyride
+        steps={steps}
+        run={run}
+        continuous
+        showProgress
+        showSkipButton
+        styles={{
+          options: {
+            zIndex: 10000,
+          },
+        }}
+      />
       {location.pathname !== "/" && (
         <Button
           onClick={() => {
@@ -240,8 +266,9 @@ const index = () => {
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
-                      className="box p-[5px] cursor-pointer"
+                      className="box p-[5px] cursor-pointer step-1"
                       onClick={convertDivTableToCSV}
+                      
                     >
                       <img alt="download-icon" src={downloadIcon} />
                     </div>
@@ -249,7 +276,7 @@ const index = () => {
                   {locationPathName === "/" && (
                     <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
-                        className="box p-2 cursor-pointer"
+                        className="box p-2 cursor-pointer step-2"
                         onClick={() =>
                           window.open("investor-details", "_blank")
                         }
