@@ -288,13 +288,13 @@ const index = () => {
             if (allApplyFilter) {
 
                 const body = {
-                    investor_company: allApplyFilter.institution_name ? allApplyFilter?.institution_name[0] : "",
-                    company_name: allApplyFilter?.company_name?.length > 0 ? allApplyFilter?.company_name[0] : "",
-                    year: allApplyFilter?.year || "2025",
-                    proponent_type: "",
-                    proposal_type: "",
-                    index_name: "",
-                    country: ""
+                    investor_company: allApplyFilter.institution_name ? allApplyFilter?.institution_name : [],
+                    company_name: allApplyFilter?.company_name?.length > 0 ? allApplyFilter?.company_name : [],
+                    year: allApplyFilter?.year ? [allApplyFilter?.year] : ["2025"],
+                    proponent_type: [],
+                    proposal_type: [],
+                    index_name: [],
+                    country: []
 
                 };
                 setIsAnalyticsLoading(true);
