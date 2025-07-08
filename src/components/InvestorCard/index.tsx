@@ -56,15 +56,15 @@ const index = () => {
  const steps = [
     {
       target: ".step-1",
-      content: "This is the first step!",
+      content: "Click here to download the data in Excel format.",
     },
     {
       target: ".step-2",
-      content: "Here's your second step.",
+      content: "Click here to open the investor details in a new tab.",
     },
     {
       target: ".step-3",
-      content: "Finish here!",
+      content: "Click here to switch year.",
     },
   ];
 
@@ -215,6 +215,21 @@ const index = () => {
     const index = getSelectedTabIndex();
     setSelectedIndex(index);
   }, [selectedYear])
+ const handleJoyrideCallback = (data) => {
+  const { type, step } = data;
+
+  if (type === 'step:before') {
+    const offset = 300; // custom scroll offset
+
+    const target = document.querySelector(step.target);
+    if (target) {
+      const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  }
+};
+
+
 
   return (
     <>
@@ -224,9 +239,14 @@ const index = () => {
         continuous
         showProgress
         showSkipButton
+         disableScrolling
+         callback={handleJoyrideCallback}
         styles={{
           options: {
             zIndex: 10000,
+             arrowColor: '#e3ffeb',
+            primaryColor: 'rgb(149 22 57)',
+            textColor: '#000'
           },
         }}
       />
@@ -302,7 +322,7 @@ const index = () => {
                           <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
                                    last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
                             <Tab.Button
-                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer "
                               as="button"
                               onClick={() => handleAGMYearTab(tab, getSelectedTabIndex())}>
                               {tab}
@@ -657,7 +677,7 @@ const index = () => {
                     >
                       2
                     </sup>
-                    <p id="footnote">
+                    <p id="footnote" className="step-3">
                       As disclosed by the investor in the last three years.
                     </p>
                   </span>
