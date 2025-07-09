@@ -907,7 +907,7 @@ const index = () => {
 
                                 <Table.Tbody>
                                     {vdsEuropeansAnalytics?.sample_proposals?.length > 0 &&
-                                        vdsEuropeansAnalytics?.sample_proposals.slice(0, 10).map((vds: any, index: number) => (
+                                        vdsEuropeansAnalytics?.sample_proposals.map((vds: any, index: number) => (
                                             <Table.Tr
                                                 key={index}
                                                 className={clsx(
