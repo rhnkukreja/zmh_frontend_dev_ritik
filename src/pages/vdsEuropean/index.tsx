@@ -365,7 +365,7 @@ const index = () => {
                     proponent_type: [],
                     proposal_type: [],
                     index_name: allAnalyticsFilter?.index_name ? [allAnalyticsFilter.index_name] : [],
-                    country: []
+                    country: ["USA"]
 
                 };
                 setIsAnalyticsLoading(true);
@@ -434,11 +434,7 @@ const index = () => {
                         : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                         }`}
                     onClick={() => {
-                        if
-                            (!allAnalyticsFilter?.institution_name || allAnalyticsFilter?.institution_name?.length === 0) {
-                            toast.warning("Please Select Institution Name to view Analytics");
-
-                        }
+                       
                         setIsViewAnalysis(true)
                         onFilterClear()
                     }}
@@ -533,6 +529,7 @@ const index = () => {
                                                     isClearable={true}
                                                     exactUrl={"get_vds_european_dropdown_values/?company_name="}
                                                     value={field.value}
+                                                    removeCount={isViewAnalysis}
                                                     onChange={(value: any) => {
                                                         field.onChange(value);
                                                       !isViewAnalysis &&  handleDropdownChange(
@@ -653,7 +650,6 @@ const index = () => {
                                             {isViewAnalysis && <div> <Controller
                                                 name="index_name"
                                                 control={control}
-                                                defaultValue={[]}
                                                 render={({ field }) => (
 
                                                     <TomSelect
@@ -738,7 +734,7 @@ const index = () => {
                                                             // field.onChange(value);
                                                         }}
                                                         options={{
-                                                            placeholder: "Select Proposal Type",
+                                                            placeholder: "Select Proponent Type",
                                                         }}
                                                         className="w-full"
                                                         multiple={false}
@@ -758,7 +754,7 @@ const index = () => {
                                                 )}
                                             />
                                         </div>
-                                        <div className="w-full me-2">
+                                        {/* <div className="w-full me-2">
                                             <div className="text-left text-slate-500 flex justify-between mb-1">
                                                 <span className="font-semibold">Country</span>
                                             </div>
@@ -794,7 +790,7 @@ const index = () => {
                                                     </TomSelect>
                                                 )}
                                             />
-                                        </div>
+                                        </div> */}
                                     </div> :
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                         <div className="w-full">
@@ -885,7 +881,8 @@ const index = () => {
                 )}
 
                 {isViewAnalysis ?
-                    <div className="mb-7">    <TableWrapper isLoading={isAnalyticsLoading}>
+                    <div className="mb-7"> 
+                    {vdsEuropeansAnalytics?.sample_proposals?.length > 0  &&   <TableWrapper isLoading={isAnalyticsLoading}>
                         <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
                             <Table>
                                 <Table.Thead>
@@ -948,8 +945,7 @@ const index = () => {
                                 </Table.Thead>
 
                                 <Table.Tbody>
-                                    {vdsEuropeansAnalytics?.sample_proposals?.length > 0 &&
-                                        vdsEuropeansAnalytics?.sample_proposals.map((vds: any, index: number) => (
+                                    {vdsEuropeansAnalytics?.sample_proposals.map((vds: any, index: number) => (
                                             <Table.Tr
                                                 key={index}
                                                 className={clsx(
@@ -1047,19 +1043,22 @@ const index = () => {
                                             </Table.Tr>))
                                     }
                                 </Table.Tbody>
-                                {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
-                                    <div className="w-full">
-                                        <h1 className="mt-3">No Data available</h1>
-                                    </div>
-                                )}
+                               
                             </Table>
                         </div>
-                    </TableWrapper>
+                    </TableWrapper>}
+                     {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
+                                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                            
+                            
+                        </div>
+                                )}
                     </div>
 
                     :
 
-                    VdsEuropeans?.length > 0 ? (
+                    VdsEuropeans?.length > 0 ? 
+                    (
                         <div className="w-full">
                             <>
                                 <div className="">

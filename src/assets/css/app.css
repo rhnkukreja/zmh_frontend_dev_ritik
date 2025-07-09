@@ -241,7 +241,11 @@ option[data-label="*"] {
   color: red !important;
   font-weight: bold;
 }
-
+.ts-wrapper.plugin-remove_button:not(.rtl) .item {
+background-color: #e2e8f0 !important;
+    padding-left: 7px;
+    border-radius: 4px;
+}
 /* .ts-wrapper .ts-control .ts-dropdown .clear-button {
   left: 350px !important;
   font-size: 19px !important;
