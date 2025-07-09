@@ -47,7 +47,9 @@ const index = () => {
     const [searchParams] = useSearchParams();
     const searchTicker = searchParams.get("ticker");
     const [allApplyFilter, setallApplyFilter] = useState<any>("");
+    const [allAnalyticsFilter, setAllAnalyticsFilter] = useState<any>("");
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+       const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>({});
     const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
         useState<boolean>(false);
     const [apiInstitutionDropdown, setApiInstitutionDropdown] = useState<any>({
@@ -76,7 +78,12 @@ const index = () => {
             year: [],
             index: [],
         });
-
+ const toggleExpand = (index: number) => {
+        setExpandedRows((prev) => ({
+            ...prev,
+            [index]: !prev[index], 
+        }));
+    };
     useEffect(() => {
         const fetchData = async () => {
             // if (allApplyFilter) {
@@ -110,7 +117,7 @@ const index = () => {
 
     useEffect(() => {
         getDependentDropdown();
-    }, [dropdownValues]);
+    }, [dropdownValues?.company_name]);
 
     const {
         handleSubmit,
@@ -127,6 +134,7 @@ const index = () => {
             year: "",
         },
     });
+
 
 
     const getDependentDropdown = async () => {
@@ -189,12 +197,19 @@ const index = () => {
 
 
     const onSubmit = async (npxFilter: any) => {
-        if (isViewAnalysis && !npxFilter?.institution_name?.length) {
-            toast.warning("Please Select Institution Name");
+
+        if (isViewAnalysis) {
+            onAnalyticsSubmit(npxFilter);
+            return;
         }
+        console.log("npxFilter=>", npxFilter);
         if (npxFilter?.company_name?.length === 0 || !npxFilter?.company_name?.label) {
             toast.warning("Please Select Company Name");
             return;
+        }
+        if (npxFilter?.year === " " || npxFilter?.year === "") {
+            toast.warning("Please Select Year");
+            return
         }
         setallApplyFilter({
             company_name: [npxFilter?.company_name?.label],
@@ -207,10 +222,37 @@ const index = () => {
         dispatch(resetPage());
     };
 
+    const onAnalyticsSubmit = async (data: any) => {
+
+        if (isViewAnalysis && !data?.institution_name?.length) {
+            toast.warning("Please Select Institution Name");
+            return
+        }
+        console.log("data=>", data);
+        setAllAnalyticsFilter({ ...data, company_name: [data?.company_name?.label], })
+
+
+    };
+
     const onFilterClear = () => {
-        resetFormValues();
-        reset();
-        setallApplyFilter({});
+        if (isViewAnalysis) {
+            const updatedData = {
+                company_name: [],
+                institution_name: [],
+                year: "",
+                proponent_type: [],
+                proposal_type: [],
+                index_name: [],
+                country: []
+            }
+
+            setAllAnalyticsFilter(updatedData);
+        }
+        else {
+            resetFormValues();
+            reset();
+            setallApplyFilter({});
+        }
 
         dispatch(resetPage());
         dispatch(
@@ -236,7 +278,7 @@ const index = () => {
         setValue("institution_name", []);
         setValue("vote", []);
         setValue("category", []);
-        setValue("year", " ");
+        setValue("year", "");
         setValue("keyword", "");
     };
 
@@ -257,6 +299,25 @@ const index = () => {
     };
 
     const handleRemoveChip = (removeKey: any, removeValue: any) => {
+        if (isViewAnalysis) {
+            const updatedFilters = { ...allAnalyticsFilter };
+
+            if (Array.isArray(updatedFilters[removeKey])) {
+                updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+                    (item) => item !== removeValue
+                );
+            } else if (updatedFilters[removeKey] === removeValue) {
+                if (removeKey === "year") {
+                    updatedFilters[removeKey] = " ";
+                } else {
+                    updatedFilters[removeKey] = "";
+                }
+            }
+            setValue(removeKey, updatedFilters[removeKey]);
+            setAllAnalyticsFilter(updatedFilters);
+            return;
+        }
+
         const updatedFilters = { ...allApplyFilter };
 
         if (Array.isArray(updatedFilters[removeKey])) {
@@ -274,6 +335,7 @@ const index = () => {
         setValue(removeKey, updatedFilters[removeKey]);
         // dispatch(setAllFilters(updatedFilters));
         setallApplyFilter(updatedFilters);
+
     }
 
     // const getSplitContents = (items: any) => {
@@ -285,12 +347,12 @@ const index = () => {
 
     useEffect(() => {
         const fetchAnalytics = async () => {
-            if (allApplyFilter) {
+            if (allAnalyticsFilter) {
 
                 const body = {
-                    investor_company: allApplyFilter.institution_name ? allApplyFilter?.institution_name : [],
-                    company_name: allApplyFilter?.company_name?.length > 0 ? allApplyFilter?.company_name : [],
-                    year: allApplyFilter?.year ? [allApplyFilter?.year] : ["2025"],
+                    investor_company: allAnalyticsFilter.institution_name ? allAnalyticsFilter?.institution_name : [],
+                    company_name: allAnalyticsFilter?.company_name?.length > 0 ? allAnalyticsFilter?.company_name : [],
+                    year: allAnalyticsFilter?.year ? [Number(allAnalyticsFilter?.year)] : [2025],
                     proponent_type: [],
                     proposal_type: [],
                     index_name: [],
@@ -316,12 +378,48 @@ const index = () => {
 
         if (isViewAnalysis) {
             fetchAnalytics();
-
+            setFiltersLength(countValidFilters(allAnalyticsFilter));
+            setSelectedChipFilters(generateFilterChips(allAnalyticsFilter));
         }
-    }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
+    }, [isViewAnalysis, allAnalyticsFilter]);
 
     return (
         <>
+            <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
+                <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === false
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                        }`}
+                    onClick={() => {
+                        setIsViewAnalysis(false)
+                        onFilterClear()
+                    }
+                    }
+                >
+                    Voting Data
+
+                </button>
+                <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === true
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                        }`}
+                    onClick={() => {
+                        if
+                            (!allAnalyticsFilter?.institution_name || allAnalyticsFilter?.institution_name?.length === 0) {
+                            toast.warning("Please Select Institution Name to view Analytics");
+
+                        }
+                        setIsViewAnalysis(true)
+                        onFilterClear()
+                    }}
+
+                >
+                    Analytics
+                </button>
+            </div>
+
             <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
             </div>
             <div className="p-5 mt-1 box">
@@ -329,16 +427,7 @@ const index = () => {
                     <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                         <span>
                             <h1 className="text-lg font-bold">Voting Data (Beta)</h1>
-                            {
-                                VdsEuropeans?.length > 0 &&
-                                <p className=" italic"> Meeting Date: {VdsEuropeans[0]?.meeting_date
-                                    ? new Intl.DateTimeFormat("en-US", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    }).format(new Date(VdsEuropeans[0].meeting_date))
-                                    : ""} </p>
-                            }
+
                         </span>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
@@ -347,24 +436,7 @@ const index = () => {
                                 Count: {count.toLocaleString()}
                             </h2>
                         )}
-                        <div className="mt-2">
 
-                            <FormSwitch className="mb-2">
-                                <label className="text-md mr-3 font-semibold">Analytics</label>
-                                <FormSwitch.Input
-                                    id="view-analysis-switch"
-                                    type="checkbox"
-                                    checked={isViewAnalysis}
-                                    onChange={(e) => {
-                                        if (!allApplyFilter.institution_name || allApplyFilter.institution_name?.length === 0) {
-                                            toast.warning("Please Select Institution to view Analytics");
-                                        }
-                                        else setIsViewAnalysis(e.target.checked)
-                                    }}
-                                />
-                                <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
-                            </FormSwitch>
-                        </div>
                         <Popover className="inline-block">
                             {({ close }) => (
                                 <>
@@ -400,413 +472,365 @@ const index = () => {
 
 
                 {isFilterCollapse && (
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="filter-section mb-5">
-                            <div className="flex items-center justify-end mt-2 mb-3">
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                        onFilterClear();
-                                    }}
-                                    type="button"
-                                    className="w-32 mx-2"
-                                >
-                                    Clear
-                                </Button>
-                                <Button variant="primary" className="w-32 mx-2" type="submit">
-                                    Apply
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                                <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Company*
-                                    </div>
-                                    <Controller
-                                        name="company_name"
-                                        control={control}
-                                        defaultValue={[]}
-                                        render={({ field }) => (
-                                            <CompanySelect
-                                                isClearable={true}
-                                                exactUrl={"get_vds_european_dropdown_values/?company_name="}
-                                                value={field.value}
-                                                onChange={(value: any) => {
-                                                    field.onChange(value);
-                                                    handleDropdownChange(
-                                                        "company_name",
-                                                        value?.label
-                                                    );
-                                                    getInstituionDependentDropdown(value?.label);
-                                                }}
-                                            />
+                    <div>
 
-                                        )}
-                                    />
+                        <form onSubmit={handleSubmit(onSubmit)}>
+                            <div className="filter-section mb-5">
+                                <div className="flex items-center justify-end mt-2 mb-3">
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => {
+                                            onFilterClear();
+                                        }}
+                                        type="button"
+                                        className="w-32 mx-2"
+                                    >
+                                        Clear
+                                    </Button>
+                                    <Button variant="primary" className="w-32 mx-2" type="submit">
+                                        Apply
+                                    </Button>
                                 </div>
-
-                                <div className="w-full">
-
-                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Institution   <div>  <FormCheck.Label>Select All</FormCheck.Label>
-                                            <FormCheck.Input
-                                                className="ml-1"
-                                                id="year"
-                                                checked={
-                                                    apiInstitutionDropdown?.institution.length > 0 && apiInstitutionDropdown?.institution.length ===
-                                                    watch("institution_name")?.length
-                                                }
-                                                type="checkbox"
-                                                onChange={(e) => {
-                                                    setValue(
-                                                        "institution_name",
-                                                        e.target.checked
-                                                            ? apiInstitutionDropdown?.institution
-                                                            : []
-                                                    );
-                                                }}
-                                            />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                    <div className="w-full">
+                                        <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                                            Company*
                                         </div>
+                                        <Controller
+                                            name="company_name"
+                                            control={control}
+                                            defaultValue={[]}
+                                            render={({ field }) => (
+                                                <CompanySelect
+                                                    isClearable={true}
+                                                    exactUrl={"get_vds_european_dropdown_values/?company_name="}
+                                                    value={field.value}
+                                                    onChange={(value: any) => {
+                                                        field.onChange(value);
+                                                        handleDropdownChange(
+                                                            "company_name",
+                                                            value?.label
+                                                        );
+                                                        getInstituionDependentDropdown(value?.label);
+                                                    }}
+                                                />
+
+                                            )}
+                                        />
                                     </div>
-                                    <Controller
-                                        name="institution_name"
-                                        control={control}
-                                        defaultValue={[]}
-                                        render={({ field }) => (
-                                            <MultiSelectDropdown
-                                                data={apiInstitutionDropdown?.institution}
-                                                placeholder="Select Institutions"
-                                                loading={getFundNameDropdownLoader}
-                                                onChange={(selectedOptions) => {
-                                                    const selectedValues = selectedOptions.map((option) => option.value);
-                                                    field.onChange(selectedValues);
-                                                    handleDropdownChange(
-                                                        "institution_name",
-                                                        selectedValues
-                                                    );
 
-                                                }}
-                                                selectedOption={field.value || []}
-                                            />
-                                            // <TomSelect
-                                            //     value={field.value || []}
-                                            //     onChange={(value: any) => {
-                                            //         field.onChange(value);
-                                            //         handleDropdownChange(
-                                            //             "institution_name",
-                                            //             value?.target?.value
-                                            //         );
-                                            //     }}
-                                            //     options={{ placeholder: "Select Institution Name" }}
-                                            //     className="w-full"
-                                            //     multiple
-                                            // >
-                                            //     {getFundNameDropdownLoader ? (
-                                            //         <option disabled>Loading...</option>
-                                            //     ) : (
-                                            //         apiInstitutionDropdown?.institution?.map(
-                                            //             (institution: any) => (
-                                            //                 <option key={institution} value={institution}>
-                                            //                     {institution}
-                                            //                 </option>
-                                            //             )
-                                            //         )
-                                            //     )}
-                                            // </TomSelect>
-                                        )}
-                                    />
-                                </div>
+                                    <div className="w-full">
 
-                                <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Year
-                                    </div>
-                                    <Controller
-                                        name="year"
-                                        control={control}
-                                        defaultValue={""} // Default should be an empty string instead of an array
-                                        render={({ field }) => (
-                                            <TomSelect
-                                                value={field.value || ""} // Ensure value is a string
-                                                onChange={(value) => {
-                                                    field.onChange(value); // Set a string value instead of an array
-                                                }}
-                                                options={{ placeholder: "Select Year", allowEmptyOption: true }}
-                                                className="w-full"
-                                            // multiple
-                                            >
-                                                {getDynamicDropdownLoader ? (
-                                                    <option disabled>Loading...</option>
-                                                ) : (
-                                                    apiDependentDropdownOptions?.year?.map((year: any) => (
-                                                        <option key={year} value={year}>
-                                                            {year}
-                                                        </option>
-                                                    ))
-                                                )}
-                                            </TomSelect>
-                                        )}
-                                    />
-
-
-
-                                </div>
-
-
-                                {/* <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Category
-                                    </div>
-                                    <Controller
-                                        name="category"
-                                        control={control}
-                                        defaultValue={[]}
-                                        render={({ field }) => (
-                                            <TomSelect
-                                                value={field.value || []}
-                                                onChange={(value) => {
-                                                    field.onChange(value);
-                                                }}
-                                                options={{ placeholder: "Select Vote Category" }}
-                                                className="w-full"
-                                                multiple
-                                            >
-                                                {getDynamicDropdownLoader ? (
-                                                    <option disabled>Loading...</option>
-                                                ) : (
-                                                    apiDependentDropdownOptions?.category?.map(
-                                                        (category: any) => (
-                                                            <option key={category} value={category}>
-                                                                {convertToTitleCase(category)}
-                                                            </option>
-                                                        )
-                                                    )
-                                                )}
-                                            </TomSelect>
-                                        )}
-                                    />
-                                </div> */}
-
-
-
-                                <div className="w-full">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                        Vote <div>  <FormCheck.Label>Select All</FormCheck.Label>
-                                            <FormCheck.Input
-                                                className="ml-1"
-                                                id="vote"
-                                                checked={
-                                                    apiDependentDropdownOptions?.vote.length > 0 && apiDependentDropdownOptions?.vote.length ===
-                                                    watch("vote")?.length
-                                                }
-                                                type="checkbox"
-                                                onChange={(e) => {
-                                                    setValue(
-                                                        "vote",
-                                                        e.target.checked
-                                                            ? apiDependentDropdownOptions?.vote
-                                                            : []
-                                                    );
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <Controller
-                                        name="vote"
-                                        control={control}
-                                        defaultValue={[]}
-                                        render={({ field }) => (
-                                            <MultiSelectDropdown
-                                                data={apiDependentDropdownOptions?.vote}
-                                                placeholder="Select Vote"
-                                                loading={getDynamicDropdownLoader}
-                                                onChange={(selectedOptions) => {
-                                                    const selectedValues = selectedOptions.map((option) => option.value);
-                                                    field.onChange(selectedValues);
-
-
-                                                }}
-                                                selectedOption={field.value || []}
-                                            />
-                                        
-                                        )}
-                                    />
-                                </div>
-                 <div className="w-full me-2">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
-                                        <span className="font-semibold">Index</span>
-                                    </div>
-                                    <Controller
-                                        name="index"
-                                        control={control}
-                                        defaultValue={""}
-                                        render={({ field }) => (
-
-
-                                            <TomSelect
-                                                value={field.value || ""}
-                                                onChange={(value) => {
-                                                    // field.onChange(value);
-                                                }}
-                                                options={{
-                                                    placeholder: "Select Index",
-                                                }}
-                                                className="w-full"
-                                                multiple={false}
-                                            >
-                                                {getDropdownLoader ? (
-                                                    <option value="--" disabled>
-                                                        Loading...
-                                                    </option>
-                                                ) : (
-                                                    <>
-                                                        {dropdownValues?.index?.map((index: string) => {
-                                                            return <option value={index}>{index}</option>;
-                                                        })}
-                                                    </>
-                                                )}
-                                            </TomSelect>
-                                        )}
-                                    />
-                                </div>
-                               
-                                 <div className="w-full me-2">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
-                                        <span className="font-semibold">Proposal Type</span>
-                                    </div>
-                                    <Controller
-                                        name="proposal_type"
-                                        control={control}
-                                        defaultValue={""}
-                                        render={({ field }) => (
-
-
-                                            <TomSelect
-                                                value={field.value || ""}
-                                                onChange={(value) => {
-                                                    // field.onChange(value);
-                                                }}
-                                                options={{
-                                                    placeholder: "Select Proposal Type",
-                                                }}
-                                                className="w-full"
-                                                multiple={false}
-                                            >
-                                                {getDropdownLoader ? (
-                                                    <option value="--" disabled>
-                                                        Loading...
-                                                    </option>
-                                                ) : (
-                                                    <>
-                                                        {dropdownValues?.index?.map((index: string) => {
-                                                            return <option value={index}>{index}</option>;
-                                                        })}
-                                                    </>
-                                                )}
-                                            </TomSelect>
-                                        )}
-                                    />
-                                </div>
-                                 <div className="w-full me-2">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
-                                        <span className="font-semibold">Proponent Type </span>
-                                    </div>
-                                    <Controller
-                                        name="proponent_type "
-                                        control={control}
-                                        defaultValue={""}
-                                        render={({ field }) => (
-
-
-                                            <TomSelect
-                                                value={field.value || ""}
-                                                onChange={(value) => {
-                                                    // field.onChange(value);
-                                                }}
-                                                options={{
-                                                    placeholder: "Select Proposal Type",
-                                                }}
-                                                className="w-full"
-                                                multiple={false}
-                                            >
-                                                {getDropdownLoader ? (
-                                                    <option value="--" disabled>
-                                                        Loading...
-                                                    </option>
-                                                ) : (
-                                                    <>
-                                                        {dropdownValues?.index?.map((index: string) => {
-                                                            return <option value={index}>{index}</option>;
-                                                        })}
-                                                    </>
-                                                )}
-                                            </TomSelect>
-                                        )}
-                                    />
-                                </div>
-                                  <div className="w-full me-2">
-                                    <div className="text-left text-slate-500 flex justify-between mb-1">
-                                        <span className="font-semibold">Country</span>
-                                    </div>
-                                    <Controller
-                                        name="country"
-                                        control={control}
-                                        defaultValue={""}
-                                        render={({ field }) => (
-
-
-                                            <TomSelect
-                                                value={field.value || ""}
-                                                onChange={(value) => {
-                                                    // field.onChange(value);
-                                                }}
-                                                options={{
-                                                    placeholder: "Select Country",
-                                                }}
-                                                className="w-full"
-                                                multiple={false}
-                                            >
-                                                {getDropdownLoader ? (
-                                                    <option value="--" disabled>
-                                                        Loading...
-                                                    </option>
-                                                ) : (
-                                                    <>
-                                                        {dropdownValues?.index?.map((index: string) => {
-                                                            return <option value={index}>{index}</option>;
-                                                        })}
-                                                    </>
-                                                )}
-                                            </TomSelect>
-                                        )}
-                                    />
-                                </div>
-                                <div className="w-full">
-                                    <div className="text-left text-slate-500  font-semibold">Keyword</div>
-                                    <Controller
-                                        name="keyword"
-                                        control={control}
-                                        defaultValue=""
-                                        render={({ field }) => (
-                                            <FormInput
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        e.preventDefault();
-                                                        handleSubmit(onSubmit)();
+                                        <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                                            Institution   <div>  <FormCheck.Label>Select All</FormCheck.Label>
+                                                <FormCheck.Input
+                                                    className="ml-1"
+                                                    id="year"
+                                                    checked={
+                                                        apiInstitutionDropdown?.institution.length > 0 && apiInstitutionDropdown?.institution.length ===
+                                                        watch("institution_name")?.length
                                                     }
-                                                }}
-                                                value={field.value?.toString() || ""}
-                                                onChange={field.onChange}
-                                                type="text"
-                                                className="mt-1"
-                                                placeholder="Search Keyword"
-                                            />
-                                        )}
-                                    />
+                                                    type="checkbox"
+                                                    onChange={(e) => {
+                                                        setValue(
+                                                            "institution_name",
+                                                            e.target.checked
+                                                                ? apiInstitutionDropdown?.institution
+                                                                : []
+                                                        );
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <Controller
+                                            name="institution_name"
+                                            control={control}
+                                            defaultValue={[]}
+                                            render={({ field }) => (
+                                                <MultiSelectDropdown
+                                                    data={apiInstitutionDropdown?.institution}
+                                                    placeholder="Select Institutions"
+                                                    loading={getFundNameDropdownLoader}
+                                                    onChange={(selectedOptions) => {
+                                                        const selectedValues = selectedOptions.map((option) => option.value);
+                                                        field.onChange(selectedValues);
+                                                        handleDropdownChange(
+                                                            "institution_name",
+                                                            selectedValues
+                                                        );
+
+                                                    }}
+                                                    selectedOption={field.value || []}
+                                                />
+
+                                            )}
+                                        />
+                                    </div>
+
+                                    <div className="w-full">
+                                        <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                                            Year
+                                        </div>
+                                        <Controller
+                                            name="year"
+                                            control={control}
+                                            defaultValue={""} // Default should be an empty string instead of an array
+                                            render={({ field }) => (
+                                                <TomSelect
+                                                    value={field.value || ""} // Ensure value is a string
+                                                    onChange={(value) => {
+                                                        field.onChange(value); // Set a string value instead of an array
+                                                    }}
+                                                    options={{ placeholder: "Select Year", allowEmptyOption: true }}
+                                                    className="w-full"
+                                                // multiple
+                                                >
+                                                    {getDynamicDropdownLoader ? (
+                                                        <option disabled>Loading...</option>
+                                                    ) : (
+                                                        apiDependentDropdownOptions?.year?.map((year: any) => (
+                                                            <option key={year} value={year}>
+                                                                {year}
+                                                            </option>
+                                                        ))
+                                                    )}
+                                                </TomSelect>
+                                            )}
+                                        />
+
+
+
+                                    </div>
                                 </div>
+                                {isViewAnalysis ?
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+
+                                        <div className="w-full me-2">
+                                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                                                <span className="font-semibold">Index </span>
+                                            </div>
+                                            {isViewAnalysis && <div> <Controller
+                                                name="index_name"
+                                                control={control}
+                                                defaultValue={[]}
+                                                render={({ field }) => (
+
+                                                    <TomSelect
+                                                        value={field.value || ""}
+                                                        onChange={(value) => {
+                                                            field.onChange(value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Index",
+                                                        }}
+                                                        className="w-full"
+                                                        multiple={false}
+                                                    >
+                                                        {getDropdownLoader ? (
+                                                            <option value="--" disabled>
+                                                                Loading...
+                                                            </option>
+                                                        ) : (
+                                                            <>
+                                                                {dropdownValues?.index?.map((index: string) => {
+                                                                    return <option value={index}>{index}</option>;
+                                                                })}
+                                                            </>
+                                                        )}
+                                                    </TomSelect>
+                                                )}
+                                            /></div>}
+                                        </div>
+
+                                        <div className="w-full me-2">
+                                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                                                <span className="font-semibold">Proposal Type</span>
+                                            </div>
+                                            {isViewAnalysis && <div><Controller
+                                                name="proposal_type"
+                                                control={control}
+                                                defaultValue={[]}
+                                                render={({ field }) => (
+
+
+                                                    <TomSelect
+                                                        value={field.value || ""}
+                                                        onChange={(value) => {
+                                                            // field.onChange(value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Proposal Type",
+                                                        }}
+                                                        className="w-full"
+                                                        multiple={false}
+                                                    >
+                                                        {getDropdownLoader ? (
+                                                            <option value="--" disabled>
+                                                                Loading...
+                                                            </option>
+                                                        ) : (
+                                                            <>
+                                                                {dropdownValues?.index?.map((index: string) => {
+                                                                    return <option value={index}>{index}</option>;
+                                                                })}
+                                                            </>
+                                                        )}
+                                                    </TomSelect>
+                                                )}
+                                            /></div>}
+                                        </div>
+                                        <div className="w-full me-2">
+                                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                                                <span className="font-semibold">Proponent Type </span>
+                                            </div>
+                                            <Controller
+                                                name="proponent_type"
+                                                control={control}
+                                                defaultValue={[]}
+                                                render={({ field }) => (
+
+
+                                                    <TomSelect
+                                                        value={field.value || ""}
+                                                        onChange={(value) => {
+                                                            // field.onChange(value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Proposal Type",
+                                                        }}
+                                                        className="w-full"
+                                                        multiple={false}
+                                                    >
+                                                        {getDropdownLoader ? (
+                                                            <option value="--" disabled>
+                                                                Loading...
+                                                            </option>
+                                                        ) : (
+                                                            <>
+                                                                {dropdownValues?.index?.map((index: string) => {
+                                                                    return <option value={index}>{index}</option>;
+                                                                })}
+                                                            </>
+                                                        )}
+                                                    </TomSelect>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="w-full me-2">
+                                            <div className="text-left text-slate-500 flex justify-between mb-1">
+                                                <span className="font-semibold">Country</span>
+                                            </div>
+                                            <Controller
+                                                name="country"
+                                                control={control}
+
+                                                render={({ field }) => (
+
+
+                                                    <TomSelect
+                                                        value={field.value || ""}
+                                                        onChange={(value) => {
+                                                            // field.onChange(value);
+                                                        }}
+                                                        options={{
+                                                            placeholder: "Select Country",
+                                                        }}
+                                                        className="w-full"
+                                                        multiple={false}
+                                                    >
+                                                        {getDropdownLoader ? (
+                                                            <option value="--" disabled>
+                                                                Loading...
+                                                            </option>
+                                                        ) : (
+                                                            <>
+                                                                {dropdownValues?.index?.map((index: string) => {
+                                                                    return <option value={index}>{index}</option>;
+                                                                })}
+                                                            </>
+                                                        )}
+                                                    </TomSelect>
+                                                )}
+                                            />
+                                        </div>
+                                    </div> :
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                        <div className="w-full">
+                                            <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                                                Vote <div>  <FormCheck.Label>Select All</FormCheck.Label>
+                                                    <FormCheck.Input
+                                                        className="ml-1"
+                                                        id="vote"
+                                                        checked={
+                                                            apiDependentDropdownOptions?.vote.length > 0 && apiDependentDropdownOptions?.vote.length ===
+                                                            watch("vote")?.length
+                                                        }
+                                                        type="checkbox"
+                                                        onChange={(e) => {
+                                                            setValue(
+                                                                "vote",
+                                                                e.target.checked
+                                                                    ? apiDependentDropdownOptions?.vote
+                                                                    : []
+                                                            );
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <Controller
+                                                name="vote"
+                                                control={control}
+                                                defaultValue={[]}
+                                                render={({ field }) => (
+                                                    <MultiSelectDropdown
+                                                        data={apiDependentDropdownOptions?.vote}
+                                                        placeholder="Select Vote"
+                                                        loading={getDynamicDropdownLoader}
+                                                        onChange={(selectedOptions) => {
+                                                            const selectedValues = selectedOptions.map((option) => option.value);
+                                                            field.onChange(selectedValues);
+
+
+                                                        }}
+                                                        selectedOption={field.value || []}
+                                                    />
+
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="w-full">
+                                            <div className="text-left text-slate-500  font-semibold">Keyword</div>
+                                            <Controller
+                                                name="keyword"
+                                                control={control}
+                                                defaultValue=""
+                                                render={({ field }) => (
+                                                    <FormInput
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === "Enter") {
+                                                                e.preventDefault();
+                                                                handleSubmit(onSubmit)();
+                                                            }
+                                                        }}
+                                                        value={field.value?.toString() || ""}
+                                                        onChange={field.onChange}
+                                                        type="text"
+                                                        className="mt-1"
+                                                        placeholder="Search Keyword"
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+
+                                }
                             </div>
-                        </div>
-                    </form>
+                        </form>
+
+
+                    </div>
+
+
                 )}
                 {isLoading && (
                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
@@ -818,320 +842,350 @@ const index = () => {
                     </div>
                 )}
 
-                {isViewAnalysis && <div className="mb-7">    <TableWrapper isLoading={allApplyFilter && isAnalyticsLoading}>
-                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
-                        <Table>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "17.5%" }}
-                                    >
-                                        Proposal
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "17.5%" }}
-                                    >
-                                        Meeting Date
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "5%" }}
-                                    >
-                                        Meeting type
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "25%" }}
-                                    >
-                                        Company Name
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "10%" }}
-                                    >
-                                        Security ID
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "30%" }}
-                                    >
-                                        Vote
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "30%" }}
-                                    >
-                                        Management Recommendation
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "30%" }}
-                                    >
-                                        Proposal No
-                                    </Table.Td>
-                                    <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "30%" }}
-                                    >
-                                        Country
-                                    </Table.Td>
-                                </Table.Tr>
-                            </Table.Thead>
-
-                            <Table.Tbody>
-                                {vdsEuropeansAnalytics?.sample_proposals?.length > 0 &&
-                                    vdsEuropeansAnalytics?.sample_proposals.map((vds: any, index: number) => (
-                                        <Table.Tr
-                                            key={index}
-                                            className={clsx(
-                                                "[&_td]:last:border-b-0",
-                                                "bg-white dark:bg-darkmode-600"
-                                            )}
+                {isViewAnalysis ?
+                    <div className="mb-7">    <TableWrapper isLoading={isAnalyticsLoading}>
+                        <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
+                            <Table>
+                                <Table.Thead>
+                                    <Table.Tr>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "17.5%" }}
                                         >
-                                            <Table.Td
-                                                className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                                style={{ width: "17.5%" }}
-                                            >
-                                                {vds?.meeting_date}
-                                            </Table.Td>
+                                            Proposal
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "17.5%" }}
+                                        >
+                                            Meeting Date
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "5%" }}
+                                        >
+                                            Meeting type
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "25%" }}
+                                        >
+                                            Company Name
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "10%" }}
+                                        >
+                                            Security ID
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "30%" }}
+                                        >
+                                            Vote
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "30%" }}
+                                        >
+                                            Management Recommendation
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "30%" }}
+                                        >
+                                            Proposal No
+                                        </Table.Td>
+                                        <Table.Td
+                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                            style={{ width: "30%" }}
+                                        >
+                                            Country
+                                        </Table.Td>
+                                    </Table.Tr>
+                                </Table.Thead>
 
-                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
-                                                <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
-                                            </Table.Td>
-
-                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
-                                                {vds?.company__name}
-                                            </Table.Td>
-
-                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
-                                                {vds?.security_id}
-                                            </Table.Td>
-
-                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
-                                                <div className="flex">
-                                                    {vds?.vote === "Split Vote" ? (
-                                                        <Tippy
-                                                            content={vds?.split_vote_counts}
-                                                            options={{ theme: "light" }}
-                                                        >
-                                                            {vds?.vote}
-                                                        </Tippy>
-                                                    ) : (
-                                                        <span
-                                                            className={clsx([
-                                                                (vds?.vote?.includes("Against") ||
-                                                                    vds.vote?.includes("Withhold")) &&
-                                                                "text-red-700 font-semibold ",
-                                                            ])}
-                                                        >
-                                                            {vds?.vote}
-                                                        </span>
-                                                    )}
-                                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                                        <span
-                                                            data-tooltip-id="my-tooltip-data-html"
-                                                            data-tooltip-html={vds?.notes}
-                                                        >
-                                                            <Lucide
-                                                                icon="Info"
-                                                                className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                            />
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </Table.Td>
-                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
-                                                {convertToTitleCase(vds?.mgt_rec)}
-                                            </Table.Td>
-                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
-                                                {vds?.proposal_num}
-                                            </Table.Td>
-
-                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
-                                                {convertToTitleCase(vds?.country)}
-                                            </Table.Td>
-
-                                        </Table.Tr>))
-                                }
-                            </Table.Tbody>
-                            {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
-                                <div className="w-full">
-                                    <h1 className="mt-3">No Data available</h1>
-                                </div>
-                            )}
-                        </Table>
-                    </div>
-                </TableWrapper>      </div>}
-
-
-
-
-                {VdsEuropeans?.length > 0 ? (
-                    <div className="w-full">
-                        <>
-                            <div className="">
-                                <div>
-                                    <TableWrapper isLoading={allApplyFilter && loading}>
-                                        <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                                            <Table>
-                                                <Table.Thead>
-                                                    <Table.Tr>
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }}
-                                                        >
-                                                            Institution
-                                                        </Table.Td>
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "17.5%" }}
-                                                        >
-                                                            Meeting Type
-                                                        </Table.Td>
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "5%" }}
-                                                        >
-                                                            No.
-                                                        </Table.Td>
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "25%" }}
-                                                        >
-                                                            Proposal
-                                                        </Table.Td>
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "10%" }}
-                                                        >
-                                                            Management Recommendation
-                                                        </Table.Td>
-                                                        <Table.Td
-                                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                            style={{ width: "30%" }}
-                                                        >
-                                                            Vote Cast
-                                                        </Table.Td>
-                                                    </Table.Tr>
-                                                </Table.Thead>
-
-                                                <Table.Tbody>
-                                                    {VdsEuropeans?.length > 0 && (() => {
-                                                        let lastInstitutionName = '';
-                                                        let toggle = false;
-
-                                                        return VdsEuropeans.map((vds: any, index: number) => {
-                                                            const currentInstitution = vds?.excel_institution_name;
-
-                                                            if (currentInstitution !== lastInstitutionName) {
-                                                                toggle = !toggle;
-                                                                lastInstitutionName = currentInstitution;
-                                                            }
-
-                                                            return (
-                                                                <Table.Tr
-                                                                    key={vds?.id}
-                                                                    className={clsx(
-                                                                        "[&_td]:last:border-b-0",
-                                                                        toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
-                                                                    )}
-                                                                >
-                                                                    <Table.Td
-                                                                        className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                                                        style={{ width: "17.5%" }}
-                                                                    >
-                                                                        {vds?.excel_institution_name}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
-                                                                        <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
-                                                                        {vds?.proposal_num}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
-                                                                        {vds?.proposal}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
-                                                                        {convertToTitleCase(vds?.mgt_rec)}
-                                                                    </Table.Td>
-
-                                                                    <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
-                                                                        <div className="flex">
-                                                                            {vds?.vote === "Split Vote" ? (
-                                                                                <Tippy
-                                                                                    content={vds?.split_vote_counts}
-                                                                                    options={{ theme: "light" }}
-                                                                                >
-                                                                                    {vds?.vote}
-                                                                                </Tippy>
-                                                                            ) : (
-                                                                                <span
-                                                                                    className={clsx([
-                                                                                        (vds?.vote?.includes("Against") ||
-                                                                                            vds.vote?.includes("Withhold")) &&
-                                                                                        "text-red-700 font-semibold ",
-                                                                                    ])}
-                                                                                >
-                                                                                    {vds?.vote}
-                                                                                </span>
-                                                                            )}
-                                                                            {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                                                                <span
-                                                                                    data-tooltip-id="my-tooltip-data-html"
-                                                                                    data-tooltip-html={vds?.notes}
-                                                                                >
-                                                                                    <Lucide
-                                                                                        icon="Info"
-                                                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                                    />
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </Table.Td>
-                                                                </Table.Tr>
-                                                            );
-                                                        });
-                                                    })()}
-                                                </Table.Tbody>
-                                                {VdsEuropeans?.length === 0 && (
-                                                    <div className="w-full">
-                                                        <h1 className="mt-3">No Voting Data available</h1>
-                                                    </div>
+                                <Table.Tbody>
+                                    {vdsEuropeansAnalytics?.sample_proposals?.length > 0 &&
+                                        vdsEuropeansAnalytics?.sample_proposals.slice(0, 10).map((vds: any, index: number) => (
+                                            <Table.Tr
+                                                key={index}
+                                                className={clsx(
+                                                    "[&_td]:last:border-b-0",
+                                                    "bg-white dark:bg-darkmode-600"
                                                 )}
-                                            </Table>
-                                        </div>
-                                    </TableWrapper>
-                                </div>
-                                <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                                    <CPagination
-                                        page={page}
-                                        totalPages={totalPages}
-                                        handleNextPage={handleNextPage}
-                                        handlePageChange={handlePageChange}
-                                        handlePreviousPage={handlePreviousPage}
-                                    />
-                                </div>
-                            </div>
-                        </>
+                                            >
+                                                <Table.Td
+                                                    className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                                    style={{ width: "17.5%" }}
+                                                >
+                                                    {vds?.proposal.length > 50 ? (
+                                                        <span>
+                                                            {expandedRows[index]
+                                                                ? vds?.proposal
+                                                                : vds?.proposal.slice(0, 50) + "..."}
+                                                            <button
+                                                                onClick={() => toggleExpand(index)}
+                                                                className="ml-1 text-blue-500 flex-shrink-0 inline-flex items-center"
+                                                            >
+                                                                <Lucide
+                                                                    icon={expandedRows[index] ? "ChevronUp" : "ChevronDown"}
+                                                                    className="w-4 h-4"
+                                                                />
+                                                            </button>
+                                                        </span>
+                                                    ) : (
+                                                        vds?.proposal
+                                                    )}
+
+                                                </Table.Td>
+                                                <Table.Td
+                                                    className="whitespace-nowrap overflow-hidden text-ellipsis"
+
+                                                >
+                                                    {vds?.meeting_date}
+                                                </Table.Td>
+
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
+                                                    <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
+                                                </Table.Td>
+
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
+                                                    {vds?.company__name}
+                                                </Table.Td>
+
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
+                                                    {vds?.security_id}
+                                                </Table.Td>
+
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
+                                                    <div className="flex">
+                                                        {vds?.vote === "Split Vote" ? (
+                                                            <Tippy
+                                                                content={vds?.split_vote_counts}
+                                                                options={{ theme: "light" }}
+                                                            >
+                                                                {vds?.vote}
+                                                            </Tippy>
+                                                        ) : (
+                                                            <span
+                                                                className={clsx([
+                                                                    (vds?.vote?.includes("Against") ||
+                                                                        vds.vote?.includes("Withhold")) &&
+                                                                    "text-red-700 font-semibold ",
+                                                                ])}
+                                                            >
+                                                                {vds?.vote}
+                                                            </span>
+                                                        )}
+                                                        {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                                            <span
+                                                                data-tooltip-id="my-tooltip-data-html"
+                                                                data-tooltip-html={vds?.notes}
+                                                            >
+                                                                <Lucide
+                                                                    icon="Info"
+                                                                    className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                />
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </Table.Td>
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
+                                                    {convertToTitleCase(vds?.mgt_rec)}
+                                                </Table.Td>
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
+                                                    {vds?.proposal_num}
+                                                </Table.Td>
+
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
+                                                    {convertToTitleCase(vds?.country)}
+                                                </Table.Td>
+
+                                            </Table.Tr>))
+                                    }
+                                </Table.Tbody>
+                                {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
+                                    <div className="w-full">
+                                        <h1 className="mt-3">No Data available</h1>
+                                    </div>
+                                )}
+                            </Table>
+                        </div>
+                    </TableWrapper>
                     </div>
-                ) : (
-                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        {
-                            loading && <LoadingIcon
-                                color="#800000"
-                                icon="three-dots"
-                                className="w-16 h-16"
-                            />
-                        }
-                        {/* <h1 className="font-semibold"></h1> */}
-                    </div>
-                )}
+
+                    :
+
+                    VdsEuropeans?.length > 0 ? (
+                        <div className="w-full">
+                            <>
+                                <div className="">
+                                    <div>
+                                        <TableWrapper isLoading={allApplyFilter && loading}>
+                                            <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                                                <Table>
+                                                    <Table.Thead>
+                                                        <Table.Tr>
+                                                            <Table.Td
+                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                style={{ width: "17.5%" }}
+                                                            >
+                                                                Institution
+                                                            </Table.Td>
+                                                            <Table.Td
+                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                style={{ width: "17.5%" }}
+                                                            >
+                                                                Meeting Type
+                                                            </Table.Td>
+                                                            <Table.Td
+                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                style={{ width: "5%" }}
+                                                            >
+                                                                No.
+                                                            </Table.Td>
+                                                            <Table.Td
+                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                style={{ width: "25%" }}
+                                                            >
+                                                                Proposal
+                                                            </Table.Td>
+                                                            <Table.Td
+                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                style={{ width: "10%" }}
+                                                            >
+                                                                Management Recommendation
+                                                            </Table.Td>
+                                                            <Table.Td
+                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                style={{ width: "30%" }}
+                                                            >
+                                                                Vote Cast
+                                                            </Table.Td>
+                                                        </Table.Tr>
+                                                    </Table.Thead>
+
+                                                    <Table.Tbody>
+                                                        {VdsEuropeans?.length > 0 && (() => {
+                                                            let lastInstitutionName = '';
+                                                            let toggle = false;
+
+                                                            return VdsEuropeans.map((vds: any, index: number) => {
+                                                                const currentInstitution = vds?.excel_institution_name;
+
+                                                                if (currentInstitution !== lastInstitutionName) {
+                                                                    toggle = !toggle;
+                                                                    lastInstitutionName = currentInstitution;
+                                                                }
+
+                                                                return (
+                                                                    <Table.Tr
+                                                                        key={vds?.id}
+                                                                        className={clsx(
+                                                                            "[&_td]:last:border-b-0",
+                                                                            toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
+                                                                        )}
+                                                                    >
+                                                                        <Table.Td
+                                                                            className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                                                            style={{ width: "17.5%" }}
+                                                                        >
+                                                                            {vds?.excel_institution_name}
+                                                                        </Table.Td>
+
+                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
+                                                                            <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
+                                                                        </Table.Td>
+
+                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
+                                                                            {vds?.proposal_num}
+                                                                        </Table.Td>
+
+                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
+                                                                            {vds?.proposal}
+                                                                        </Table.Td>
+
+                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                                            {convertToTitleCase(vds?.mgt_rec)}
+                                                                        </Table.Td>
+
+                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
+                                                                            <div className="flex">
+                                                                                {vds?.vote === "Split Vote" ? (
+                                                                                    <Tippy
+                                                                                        content={vds?.split_vote_counts}
+                                                                                        options={{ theme: "light" }}
+                                                                                    >
+                                                                                        {vds?.vote}
+                                                                                    </Tippy>
+                                                                                ) : (
+                                                                                    <span
+                                                                                        className={clsx([
+                                                                                            (vds?.vote?.includes("Against") ||
+                                                                                                vds.vote?.includes("Withhold")) &&
+                                                                                            "text-red-700 font-semibold ",
+                                                                                        ])}
+                                                                                    >
+                                                                                        {vds?.vote}
+                                                                                    </span>
+                                                                                )}
+                                                                                {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                                                                    <span
+                                                                                        data-tooltip-id="my-tooltip-data-html"
+                                                                                        data-tooltip-html={vds?.notes}
+                                                                                    >
+                                                                                        <Lucide
+                                                                                            icon="Info"
+                                                                                            className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                                        />
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </Table.Td>
+                                                                    </Table.Tr>
+                                                                );
+                                                            });
+                                                        })()}
+                                                    </Table.Tbody>
+                                                    {VdsEuropeans?.length === 0 && (
+                                                        <div className="w-full">
+                                                            <h1 className="mt-3">No Voting Data available</h1>
+                                                        </div>
+                                                    )}
+                                                </Table>
+                                            </div>
+                                        </TableWrapper>
+                                    </div>
+                                    <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                        <CPagination
+                                            page={page}
+                                            totalPages={totalPages}
+                                            handleNextPage={handleNextPage}
+                                            handlePageChange={handlePageChange}
+                                            handlePreviousPage={handlePreviousPage}
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        </div>
+                    ) : (
+                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                            {
+                                loading && <LoadingIcon
+                                    color="#800000"
+                                    icon="three-dots"
+                                    className="w-16 h-16"
+                                />
+                            }
+                            {/* <h1 className="font-semibold"></h1> */}
+                        </div>
+                    )
+
+
+
+
+                }
             </div>
 
             <Tooltip
