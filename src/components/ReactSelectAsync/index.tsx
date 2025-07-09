@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import AsyncSelect from "react-select/async";
-import _ from "lodash";
+import _, { remove } from "lodash";
 import { dashboardService } from "@/services/dashboard";
 import { MultiValue } from "react-select";
 
@@ -26,6 +26,7 @@ interface CompanySelectProps {
   isClearable?: boolean;
   exactUrl?: string;
   arrayKeyName?: string;
+  removeCount?:boolean
 }
 
 const fetchOptions = async (
@@ -33,8 +34,13 @@ const fetchOptions = async (
   isInstitution?: boolean,
   companyGlobalSearchName?: string,
   exactUrl?: string,
-  arrayKeyName?: string
+  arrayKeyName?: string,
+  removeCount?: boolean,
 ): Promise<OptionType[]> => {
+  function removeCountInBrackets(value: string ): string {
+ 
+  return removeCount?  value.replace(/\s\(\d+\)$/, "") : value;
+}
   try {
     const response = isInstitution
       ? await dashboardService.fetchInstitutionByName(
@@ -54,8 +60,8 @@ const fetchOptions = async (
       }));
     } else {
       return response.results.map((company: any) => ({
-        value: company?.id ?? company,
-        label: company?.name ?? company,
+        value: company?.id ?? removeCountInBrackets(company),
+        label: removeCountInBrackets(company?.name ?? company),
       }));
     }
   } catch (error) {
@@ -76,6 +82,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   isClearable,
   exactUrl,
   arrayKeyName,
+  removeCount,
 }) => {
   const [inputValue, setInputValue] = useState("");
    const [ defaultOptions, setDefaultOptions] = useState([])
@@ -96,7 +103,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       },
       300
     ),
-    [companyGlobalSearchName]
+    [companyGlobalSearchName,removeCount]
   );
 useEffect(() => {
   const fetchDefaultOptions = async () => {
@@ -106,7 +113,9 @@ useEffect(() => {
         isInstitution,
         companyGlobalSearchName,
         exactUrl,
-        arrayKeyName
+        arrayKeyName,
+        removeCount,
+
       );
       setDefaultOptions(options);
 
@@ -116,7 +125,7 @@ useEffect(() => {
   };
 
   fetchDefaultOptions();
-}, []);
+}, [removeCount]);
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
   };
@@ -149,6 +158,7 @@ useEffect(() => {
     }),
     menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
   };
+
 
   return (
     <AsyncSelect
