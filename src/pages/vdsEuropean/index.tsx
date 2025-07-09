@@ -33,6 +33,7 @@ import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { peerAnalysisService } from "@/services/peerAnalysis";
 
 const index = () => {
     const dispatch: AppDispatch = useAppDispatch();
@@ -49,7 +50,7 @@ const index = () => {
     const [allApplyFilter, setallApplyFilter] = useState<any>("");
     const [allAnalyticsFilter, setAllAnalyticsFilter] = useState<any>("");
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
-       const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>({});
+    const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>({});
     const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
         useState<boolean>(false);
     const [apiInstitutionDropdown, setApiInstitutionDropdown] = useState<any>({
@@ -70,6 +71,7 @@ const index = () => {
     const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
         useState<boolean>(false);
 
+
     const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
         useState<any>({
             institution: [],
@@ -78,15 +80,15 @@ const index = () => {
             year: [],
             index: [],
         });
- const toggleExpand = (index: number) => {
+    const toggleExpand = (index: number) => {
         setExpandedRows((prev) => ({
             ...prev,
-            [index]: !prev[index], 
+            [index]: !prev[index],
         }));
     };
     useEffect(() => {
         const fetchData = async () => {
-            // if (allApplyFilter) {
+            if (allApplyFilter) {
             setIsLoading(true);
 
             await dispatch(
@@ -96,9 +98,10 @@ const index = () => {
                         allApplyFilter,
                         undefined,
                         page
-                    ) +
-                    (allApplyFilter.year ? "" : "&year=2025") +
-                    (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
+                    ) 
+                    // +
+                    // (allApplyFilter.year ? "" : "&year=2025") +
+                    // (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
                 )
             );
 
@@ -107,7 +110,7 @@ const index = () => {
             dispatch(setTempSearch(companyGlobalSearchName));
 
             setIsLoading(false);
-            // }
+            }
         };
 
         fetchData();
@@ -202,7 +205,7 @@ const index = () => {
             onAnalyticsSubmit(npxFilter);
             return;
         }
-        console.log("npxFilter=>", npxFilter);
+  
         if (npxFilter?.company_name?.length === 0 || !npxFilter?.company_name?.label) {
             toast.warning("Please Select Company Name");
             return;
@@ -228,8 +231,14 @@ const index = () => {
             toast.warning("Please Select Institution Name");
             return
         }
-        console.log("data=>", data);
-        setAllAnalyticsFilter({ ...data, company_name: [data?.company_name?.label], })
+       
+       setAllAnalyticsFilter({
+  ...data,
+  ...(data?.company_name?.label && {
+    company_name: [data.company_name.label],
+  }),
+});
+
 
 
     };
@@ -355,7 +364,7 @@ const index = () => {
                     year: allAnalyticsFilter?.year ? [Number(allAnalyticsFilter?.year)] : [2025],
                     proponent_type: [],
                     proposal_type: [],
-                    index_name: [],
+                    index_name: allAnalyticsFilter?.index_name ? [allAnalyticsFilter.index_name] : [],
                     country: []
 
                 };
@@ -383,6 +392,25 @@ const index = () => {
         }
     }, [isViewAnalysis, allAnalyticsFilter]);
 
+    const getAllCaseStudyDropdowns = async () => {
+        try {
+            setGetDropdownLoader(true);
+            const res = await peerAnalysisService.getPeerAnalysisDropdownValues();
+            if (res.result) {
+                setApiDependentDropdownOptions({ ...res.result });
+            }
+        } catch (error) {
+            return error;
+        } finally {
+              setGetDropdownLoader(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isViewAnalysis) {
+        getAllCaseStudyDropdowns();}
+    }, [isViewAnalysis]);
+   
     return (
         <>
             <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
@@ -494,7 +522,7 @@ const index = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                     <div className="w-full">
                                         <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                            Company*
+                                            Company {!isViewAnalysis && "*"}
                                         </div>
                                         <Controller
                                             name="company_name"
@@ -507,11 +535,11 @@ const index = () => {
                                                     value={field.value}
                                                     onChange={(value: any) => {
                                                         field.onChange(value);
-                                                        handleDropdownChange(
+                                                      !isViewAnalysis &&  handleDropdownChange(
                                                             "company_name",
                                                             value?.label
                                                         );
-                                                        getInstituionDependentDropdown(value?.label);
+                                                       !isViewAnalysis && getInstituionDependentDropdown(value?.label);
                                                     }}
                                                 />
 
@@ -527,15 +555,28 @@ const index = () => {
                                                     className="ml-1"
                                                     id="year"
                                                     checked={
-                                                        apiInstitutionDropdown?.institution.length > 0 && apiInstitutionDropdown?.institution.length ===
-                                                        watch("institution_name")?.length
-                                                    }
+  (() => {
+    const institutionDropdown = isViewAnalysis
+      ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name)
+      : apiInstitutionDropdown?.institution
+
+    return (
+      Array.isArray(institutionDropdown) &&
+      institutionDropdown.length > 0 &&
+      institutionDropdown.length === watch("institution_name")?.length
+    );
+  })()
+}
+
                                                     type="checkbox"
                                                     onChange={(e) => {
+                                                        const institutionDropdown = isViewAnalysis
+      ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name)
+      : apiInstitutionDropdown?.institution
                                                         setValue(
                                                             "institution_name",
                                                             e.target.checked
-                                                                ? apiInstitutionDropdown?.institution
+                                                                ? institutionDropdown
                                                                 : []
                                                         );
                                                     }}
@@ -548,7 +589,7 @@ const index = () => {
                                             defaultValue={[]}
                                             render={({ field }) => (
                                                 <MultiSelectDropdown
-                                                    data={apiInstitutionDropdown?.institution}
+                                                    data={isViewAnalysis ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name) : apiInstitutionDropdown?.institution}
                                                     placeholder="Select Institutions"
                                                     loading={getFundNameDropdownLoader}
                                                     onChange={(selectedOptions) => {
@@ -619,6 +660,7 @@ const index = () => {
                                                         value={field.value || ""}
                                                         onChange={(value) => {
                                                             field.onChange(value);
+                                                            
                                                         }}
                                                         options={{
                                                             placeholder: "Select Index",
@@ -632,7 +674,7 @@ const index = () => {
                                                             </option>
                                                         ) : (
                                                             <>
-                                                                {dropdownValues?.index?.map((index: string) => {
+                                                                {apiDependentDropdownOptions?.index?.map((index: string) => {
                                                                     return <option value={index}>{index}</option>;
                                                                 })}
                                                             </>
@@ -762,7 +804,7 @@ const index = () => {
                                                         className="ml-1"
                                                         id="vote"
                                                         checked={
-                                                            apiDependentDropdownOptions?.vote.length > 0 && apiDependentDropdownOptions?.vote.length ===
+                                                            apiDependentDropdownOptions?.vote?.length > 0 && apiDependentDropdownOptions?.vote.length ===
                                                             watch("vote")?.length
                                                         }
                                                         type="checkbox"
