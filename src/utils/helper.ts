@@ -378,6 +378,9 @@ function convertToTitleCase(str: string): string {
   else if (str == "proponent_type") {
     return "Proponent Type"
   }
+   else if (str == "index_name") {
+    return "Index"
+  }
    else if (str == "proposal_keywords_mapping") {
     return "Proposal Keywords"
   }
