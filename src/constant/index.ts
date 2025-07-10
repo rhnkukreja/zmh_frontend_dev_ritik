@@ -63,6 +63,13 @@ export const no_header_company = [
   "engagement-question",
   "voting-guidelines",
 ];
+export const proponent_type = ["shareholder", "management"];
+export const proposal_type = ["elect directors", "say on pay", "auditor"];
+export const proposal_keywords =  { 
+  "elect directors": ["elect director", "elect"],
+   "say on pay": ["executive compensation", "named executive compensation", "compensation"],
+    "auditor": ["ratify auditor", "auditor"] 
+  };
 
 export const subSidebarRoutes = ["/notes"];
 

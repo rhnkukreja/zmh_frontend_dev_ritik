@@ -372,6 +372,15 @@ function convertToTitleCase(str: string): string {
   else if (str == "date_range") {
     return "Date Range"
   }
+  else if (str == "proposal_type") {
+    return "Proposal Type"
+  }
+  else if (str == "proponent_type") {
+    return "Proponent Type"
+  }
+   else if (str == "proposal_keywords_mapping") {
+    return "Proposal Keywords"
+  }
   else if (str == "outcome_percentage") {
     return "Outcome Percentage"
   }
