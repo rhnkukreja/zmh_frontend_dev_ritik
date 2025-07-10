@@ -47,8 +47,8 @@ const index = () => {
 
     const [searchParams] = useSearchParams();
     const searchTicker = searchParams.get("ticker");
-    const [allApplyFilter, setallApplyFilter] = useState<any>("");
-    const [allAnalyticsFilter, setAllAnalyticsFilter] = useState<any>("");
+    const [allApplyFilter, setallApplyFilter] = useState<any>({});
+    const [allAnalyticsFilter, setAllAnalyticsFilter] = useState<any>({});
     const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
     const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>({});
     const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
@@ -68,7 +68,6 @@ const index = () => {
     const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(false);
-    const [selectedProposalType, setSelectedProposalType] = useState<string>("");
     const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
         useState<boolean>(false);
     const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
@@ -85,9 +84,18 @@ const index = () => {
             [index]: !prev[index],
         }));
     };
+ const hasAnyValidFilter=(filterObj: Record<string, any>): boolean =>{
+  return Object.values(filterObj || {}).some((val) => {
+    if (Array.isArray(val)) return val.length > 0;
+    if (typeof val === "string") return val.trim() !== "";
+    if (typeof val === "number") return !isNaN(val);
+    return !!val; 
+  });
+}
+
     useEffect(() => {
         const fetchData = async () => {
-            if (allApplyFilter) {
+            if (hasAnyValidFilter(allApplyFilter)) {
                 setIsLoading(true);
 
                 await dispatch(
@@ -98,9 +106,7 @@ const index = () => {
                             undefined,
                             page
                         )
-                        // +
-                        // (allApplyFilter.year ? "" : "&year=2025") +
-                        // (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
+                       
                     )
                 );
 
@@ -134,8 +140,7 @@ const index = () => {
             vote: [],
             category: [],
             year: "",
-            // proponent_type: [],
-            // proposal_type: [],
+           
         },
     });
 
@@ -151,6 +156,7 @@ const index = () => {
             setValue("year", 2024);
         }
         try {
+            if (dropdownValues?.company_name?.length === 0 || dropdownValues?.company_name === "") return
             setGetDynamicDropdownLoader(true);
             const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(paramFilter);
             if (res.result) {
@@ -201,7 +207,7 @@ const index = () => {
 
 
     const onSubmit = async (npxFilter: any) => {
-
+    
         if (isViewAnalysis) {
             onAnalyticsSubmit(npxFilter);
             return;
@@ -224,6 +230,7 @@ const index = () => {
             keyword: npxFilter?.keyword,
         });
         dispatch(resetPage());
+        setIsFilterCollapse(false);
     };
 
     const onAnalyticsSubmit = async (data: any) => {
@@ -244,27 +251,21 @@ const index = () => {
 
     };
 
-    const onFilterClear = () => {
-        if (isViewAnalysis) {
-            const updatedData = {
-                company_name: [],
-                institution_name: [],
-                year: "",
-                proponent_type: [],
-                proposal_type: [],
-                index_name: [],
-                country: []
-            }
-
-            setAllAnalyticsFilter(updatedData);
+    const onFilterClear = (onAnalyticsTab) => {
+        setSelectedChipFilters([])
+        setFiltersLength(0)
+         reset();
+           resetFormValues();
+        if ( onAnalyticsTab ) {
+           
+            setAllAnalyticsFilter({});
+            
         }
         else {
-            resetFormValues();
-            reset();
+          
+           
             setallApplyFilter({});
-        }
-
-        dispatch(resetPage());
+             dispatch(resetPage());
         dispatch(
             fetchVdsEuropeans(
                 createDynamicURL(`${baseURL}/vds_european/`, undefined, undefined, page)
@@ -280,6 +281,9 @@ const index = () => {
         setApiInstitutionDropdown({
             institution: [],
         })
+        }
+
+       
 
     };
 
@@ -348,21 +352,17 @@ const index = () => {
 
     }
 
-    // const getSplitContents = (items: any) => {
-    //     const resultString = Object.entries(items)
-    //         .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
-    //         .join(", ");
-    //     return resultString;
-    // };
+   
 
     useEffect(() => {
         const fetchAnalytics = async () => {
-            if (allAnalyticsFilter) {
+            if (hasAnyValidFilter(allAnalyticsFilter)) {
 
                 const body = {
-                    investor_company: allAnalyticsFilter.institution_name ? allAnalyticsFilter?.institution_name : [],
+                    investor_company: allAnalyticsFilter?.institution_name ? allAnalyticsFilter?.institution_name : [],
                     company_name: allAnalyticsFilter?.company_name?.length > 0 ? allAnalyticsFilter?.company_name : [],
-                    year: allAnalyticsFilter?.year ? [Number(allAnalyticsFilter?.year)] : [2025],
+                   
+                    year: allAnalyticsFilter?.year ? [Number(allAnalyticsFilter?.year)] : [],
                     proponent_type: allAnalyticsFilter?.proponent_type ? allAnalyticsFilter?.proponent_type : [],
                     proposal_type: allAnalyticsFilter?.proposal_type ? allAnalyticsFilter?.proposal_type : [],
                     index_name: allAnalyticsFilter?.index_name ? [allAnalyticsFilter.index_name] : [],
@@ -370,8 +370,9 @@ const index = () => {
                 
 
                 };
-                setIsAnalyticsLoading(true);
+               
                 try {
+                     setIsAnalyticsLoading(true);
                     const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
                         `${baseURL}/api/proposal-voting-stats`,
                         body
@@ -392,7 +393,7 @@ const index = () => {
             setFiltersLength(countValidFilters(allAnalyticsFilter));
             setSelectedChipFilters(generateFilterChips(allAnalyticsFilter));
         }
-    }, [isViewAnalysis, allAnalyticsFilter]);
+    }, [allAnalyticsFilter]);
 
     const getAllCaseStudyDropdowns = async () => {
         try {
@@ -424,7 +425,8 @@ const index = () => {
                         }`}
                     onClick={() => {
                         setIsViewAnalysis(false)
-                        onFilterClear()
+                        onFilterClear(false)
+                        setIsFilterCollapse(true)
                     }
                     }
                 >
@@ -439,7 +441,8 @@ const index = () => {
                     onClick={() => {
 
                         setIsViewAnalysis(true)
-                        onFilterClear()
+                        setIsFilterCollapse(true)
+                        onFilterClear(true)
                     }}
 
                 >
@@ -507,7 +510,8 @@ const index = () => {
                                     <Button
                                         variant="secondary"
                                         onClick={() => {
-                                            onFilterClear();
+                                            setIsFilterCollapse(false)
+                                            onFilterClear(isViewAnalysis);
                                         }}
                                         type="button"
                                         className="w-32 mx-2"
@@ -519,9 +523,9 @@ const index = () => {
                                     </Button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                                    <div className="w-full">
+                                <div className="w-full">
                                         <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                                            Company {!isViewAnalysis && "*"}
+                                            Company*
                                         </div>
                                         <Controller
                                             name="company_name"
@@ -532,7 +536,7 @@ const index = () => {
                                                     isClearable={true}
                                                     exactUrl={"get_vds_european_dropdown_values/?company_name="}
                                                     value={field.value}
-                                                    removeCount={isViewAnalysis}
+                                                    
                                                     onChange={(value: any) => {
                                                         field.onChange(value);
                                                         !isViewAnalysis && handleDropdownChange(
@@ -695,7 +699,7 @@ const index = () => {
                                                         value={field.value || ""}
                                                         onChange={(value) => {
                                                             field.onChange(value);
-                                                            setSelectedProposalType(value?.target?.value ||value)
+                                                          
                                                         }}
                                                         options={{
                                                             placeholder: "Select Proposal Type",
@@ -752,44 +756,7 @@ const index = () => {
                                                 )}
                                             />
                                         </div>
-                                        {/* <div className="w-full me-2">
-                                            <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                <span className="font-semibold">Proposal keywords</span>
-                                            </div>
-                                            <Controller
-                                                name="proposal_keywords_mapping"
-                                                control={control}
-
-                                                render={({ field }) => (
-
-
-                                                    <TomSelect
-                                                        value={field.value || ""}
-                                                        onChange={(value) => {
-                                                            field.onChange(value);
-                                                        }}
-                                                        options={{
-                                                            placeholder: "Select Keywords",
-                                                        }}
-                                                        className="w-full"
-                                                        multiple={false}
-                                                        disabled={selectedProposalType ? true : false}
-                                                    >
-                                                        {getDropdownLoader ? (
-                                                            <option value="--" disabled>
-                                                                Loading...
-                                                            </option>
-                                                        ) : (
-                                                            <>
-                                                                {proposal_keywords[selectedProposalType]?.map((ele: string) => {
-                                                                    return <option value={ele}>{convertToTitleCase(ele)}</option>;
-                                                                })}
-                                                            </>
-                                                        )}
-                                                    </TomSelect>
-                                                )}
-                                            />
-                                        </div> */}
+                                        
                                     </div> :
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                         <div className="w-full">
@@ -881,8 +848,8 @@ const index = () => {
 
                 {isViewAnalysis ?
                     <div className="mb-7">
-                        {vdsEuropeansAnalytics?.sample_proposals?.length > 0 && <TableWrapper isLoading={isAnalyticsLoading}>
-                            <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
+                        <TableWrapper isLoading={isAnalyticsLoading}>
+                            {vdsEuropeansAnalytics?.sample_proposals?.length > 0 && <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
                                 <Table>
                                     <Table.Thead>
                                         <Table.Tr>
@@ -910,12 +877,7 @@ const index = () => {
                                             >
                                                 Company Name
                                             </Table.Td>
-                                            <Table.Td
-                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                style={{ width: "10%" }}
-                                            >
-                                                Security ID
-                                            </Table.Td>
+                                           
                                             <Table.Td
                                                 className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                 style={{ width: "30%" }}
@@ -991,9 +953,7 @@ const index = () => {
                                                     {vds?.company__name}
                                                 </Table.Td>
 
-                                                <Table.Td className="py-2 border-dashed dark:bg-transparent" >
-                                                    {vds?.security_id}
-                                                </Table.Td>
+                                              
 
                                                 <Table.Td className="py-2 border-dashed dark:bg-transparent" >
                                                     <div className="flex">
@@ -1036,7 +996,7 @@ const index = () => {
                                                 </Table.Td>
 
                                                 <Table.Td className="py-2 border-dashed dark:bg-transparent" >
-                                                    {convertToTitleCase(vds?.country)}
+                                                    {vds?.country}
                                                 </Table.Td>
 
                                             </Table.Tr>))
@@ -1044,14 +1004,25 @@ const index = () => {
                                     </Table.Tbody>
 
                                 </Table>
-                            </div>
-                        </TableWrapper>}
+                            </div>}
+                        </TableWrapper>
                         {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
                             <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
 
 
                             </div>
                         )}
+                          
+                {/* {isAnalyticsLoading && (
+                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                  <LoadingIcon
+                    color="#800000"
+                    icon="three-dots"
+                    className="w-16 h-16"
+                  />
+                  </div>
+                )} */}
+              
                     </div>
 
                     :
