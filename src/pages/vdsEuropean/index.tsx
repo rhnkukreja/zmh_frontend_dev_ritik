@@ -367,7 +367,7 @@ const index = () => {
                     proposal_type: allAnalyticsFilter?.proposal_type ? allAnalyticsFilter?.proposal_type : [],
                     index_name: allAnalyticsFilter?.index_name ? [allAnalyticsFilter.index_name] : [],
                     country: ["USA"],
-                    proposal_keywords_mapping: allAnalyticsFilter?.proposal_keywords_mapping ? allAnalyticsFilter?.proposal_keywords_mapping : [],
+                
 
                 };
                 setIsAnalyticsLoading(true);
@@ -752,7 +752,7 @@ const index = () => {
                                                 )}
                                             />
                                         </div>
-                                        <div className="w-full me-2">
+                                        {/* <div className="w-full me-2">
                                             <div className="text-left text-slate-500 flex justify-between mb-1">
                                                 <span className="font-semibold">Proposal keywords</span>
                                             </div>
@@ -789,7 +789,7 @@ const index = () => {
                                                     </TomSelect>
                                                 )}
                                             />
-                                        </div>
+                                        </div> */}
                                     </div> :
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                         <div className="w-full">
