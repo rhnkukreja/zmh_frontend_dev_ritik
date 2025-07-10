@@ -703,12 +703,16 @@ const index = () => {
                                                         className="w-full"
                                                         multiple={false}
                                                     >
-                                                       
+                                                        {getDropdownLoader ? (
+                                                            <option value="--" disabled>
+                                                                Loading...
+                                                            </option>
+                                                        ) : (
                                                             <>
                                                                 {proposal_type.map((ele: string) => {
                                                                     return <option value={ele}>{convertToTitleCase(ele)}</option>;
                                                                 })}
-                                                            </>
+                                                            </>)}
                                                         
                                                     </TomSelect>
                                                 )}
@@ -733,12 +737,16 @@ const index = () => {
                                                         className="w-full"
                                                         multiple={false}
                                                     >
-                                                       
+                                                        {getDropdownLoader ? (
+                                                            <option value="--" disabled>
+                                                                Loading...
+                                                            </option>
+                                                        ) : (
                                                             <>
                                                                 {proponent_type?.map((ele: string) => {
                                                                     return <option value={ele}>{convertToTitleCase(ele)}</option>;
                                                                 })}
-                                                            </>
+                                                            </>)}
                                                     
                                                     </TomSelect>
                                                 )}
@@ -774,7 +782,7 @@ const index = () => {
                                                         ) : (
                                                             <>
                                                                 {proposal_keywords[selectedProposalType]?.map((ele: string) => {
-                                                                    return <option value={ele}>{ele}</option>;
+                                                                    return <option value={ele}>{convertToTitleCase(ele)}</option>;
                                                                 })}
                                                             </>
                                                         )}
