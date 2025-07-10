@@ -9,7 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { baseURL } from "@/constant";
+import { baseURL, proponent_type , proposal_type ,proposal_keywords} from "@/constant";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
@@ -68,10 +68,9 @@ const index = () => {
     const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(false);
+    const [selectedProposalType, setSelectedProposalType] = useState<string>("");
     const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
         useState<boolean>(false);
-
-
     const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
         useState<any>({
             institution: [],
@@ -89,27 +88,27 @@ const index = () => {
     useEffect(() => {
         const fetchData = async () => {
             if (allApplyFilter) {
-            setIsLoading(true);
+                setIsLoading(true);
 
-            await dispatch(
-                fetchVdsEuropeans(
-                    createDynamicURL(
-                        `${baseURL}/vds_european/`,
-                        allApplyFilter,
-                        undefined,
-                        page
-                    ) 
-                    // +
-                    // (allApplyFilter.year ? "" : "&year=2025") +
-                    // (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
-                )
-            );
+                await dispatch(
+                    fetchVdsEuropeans(
+                        createDynamicURL(
+                            `${baseURL}/vds_european/`,
+                            allApplyFilter,
+                            undefined,
+                            page
+                        )
+                        // +
+                        // (allApplyFilter.year ? "" : "&year=2025") +
+                        // (allApplyFilter.company_name && allApplyFilter.company_name.length > 0 ? "" : "&company_name=all")
+                    )
+                );
 
-            setFiltersLength(countValidFilters(allApplyFilter));
-            setSelectedChipFilters(generateFilterChips(allApplyFilter));
-            dispatch(setTempSearch(companyGlobalSearchName));
+                setFiltersLength(countValidFilters(allApplyFilter));
+                setSelectedChipFilters(generateFilterChips(allApplyFilter));
+                dispatch(setTempSearch(companyGlobalSearchName));
 
-            setIsLoading(false);
+                setIsLoading(false);
             }
         };
 
@@ -135,10 +134,12 @@ const index = () => {
             vote: [],
             category: [],
             year: "",
+            // proponent_type: [],
+            // proposal_type: [],
         },
     });
 
-
+    
 
     const getDependentDropdown = async () => {
         const paramFilter = {
@@ -205,7 +206,7 @@ const index = () => {
             onAnalyticsSubmit(npxFilter);
             return;
         }
-  
+
         if (npxFilter?.company_name?.length === 0 || !npxFilter?.company_name?.label) {
             toast.warning("Please Select Company Name");
             return;
@@ -231,13 +232,13 @@ const index = () => {
             toast.warning("Please Select Institution Name");
             return
         }
-       
-       setAllAnalyticsFilter({
-  ...data,
-  ...(data?.company_name?.label && {
-    company_name: [data.company_name.label],
-  }),
-});
+
+        setAllAnalyticsFilter({
+            ...data,
+            ...(data?.company_name?.label && {
+                company_name: [data.company_name.label],
+            }),
+        });
 
 
 
@@ -362,10 +363,11 @@ const index = () => {
                     investor_company: allAnalyticsFilter.institution_name ? allAnalyticsFilter?.institution_name : [],
                     company_name: allAnalyticsFilter?.company_name?.length > 0 ? allAnalyticsFilter?.company_name : [],
                     year: allAnalyticsFilter?.year ? [Number(allAnalyticsFilter?.year)] : [2025],
-                    proponent_type: [],
-                    proposal_type: [],
+                    proponent_type: allAnalyticsFilter?.proponent_type ? allAnalyticsFilter?.proponent_type : [],
+                    proposal_type: allAnalyticsFilter?.proposal_type ? allAnalyticsFilter?.proposal_type : [],
                     index_name: allAnalyticsFilter?.index_name ? [allAnalyticsFilter.index_name] : [],
-                    country: ["USA"]
+                    country: ["USA"],
+                    proposal_keywords_mapping: allAnalyticsFilter?.proposal_keywords_mapping ? allAnalyticsFilter?.proposal_keywords_mapping : [],
 
                 };
                 setIsAnalyticsLoading(true);
@@ -402,15 +404,16 @@ const index = () => {
         } catch (error) {
             return error;
         } finally {
-              setGetDropdownLoader(false);
+            setGetDropdownLoader(false);
         }
     };
 
     useEffect(() => {
         if (isViewAnalysis) {
-        getAllCaseStudyDropdowns();}
+            getAllCaseStudyDropdowns();
+        }
     }, [isViewAnalysis]);
-   
+
     return (
         <>
             <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
@@ -434,7 +437,7 @@ const index = () => {
                         : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                         }`}
                     onClick={() => {
-                       
+
                         setIsViewAnalysis(true)
                         onFilterClear()
                     }}
@@ -532,11 +535,11 @@ const index = () => {
                                                     removeCount={isViewAnalysis}
                                                     onChange={(value: any) => {
                                                         field.onChange(value);
-                                                      !isViewAnalysis &&  handleDropdownChange(
+                                                        !isViewAnalysis && handleDropdownChange(
                                                             "company_name",
                                                             value?.label
                                                         );
-                                                       !isViewAnalysis && getInstituionDependentDropdown(value?.label);
+                                                        !isViewAnalysis && getInstituionDependentDropdown(value?.label);
                                                     }}
                                                 />
 
@@ -552,24 +555,24 @@ const index = () => {
                                                     className="ml-1"
                                                     id="year"
                                                     checked={
-  (() => {
-    const institutionDropdown = isViewAnalysis
-      ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name)
-      : apiInstitutionDropdown?.institution
+                                                        (() => {
+                                                            const institutionDropdown = isViewAnalysis
+                                                                ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name)
+                                                                : apiInstitutionDropdown?.institution
 
-    return (
-      Array.isArray(institutionDropdown) &&
-      institutionDropdown.length > 0 &&
-      institutionDropdown.length === watch("institution_name")?.length
-    );
-  })()
-}
+                                                            return (
+                                                                Array.isArray(institutionDropdown) &&
+                                                                institutionDropdown.length > 0 &&
+                                                                institutionDropdown.length === watch("institution_name")?.length
+                                                            );
+                                                        })()
+                                                    }
 
                                                     type="checkbox"
                                                     onChange={(e) => {
                                                         const institutionDropdown = isViewAnalysis
-      ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name)
-      : apiInstitutionDropdown?.institution
+                                                            ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name)
+                                                            : apiInstitutionDropdown?.institution
                                                         setValue(
                                                             "institution_name",
                                                             e.target.checked
@@ -656,7 +659,7 @@ const index = () => {
                                                         value={field.value || ""}
                                                         onChange={(value) => {
                                                             field.onChange(value);
-                                                            
+
                                                         }}
                                                         options={{
                                                             placeholder: "Select Index",
@@ -687,14 +690,12 @@ const index = () => {
                                             {isViewAnalysis && <div><Controller
                                                 name="proposal_type"
                                                 control={control}
-                                                defaultValue={[]}
                                                 render={({ field }) => (
-
-
                                                     <TomSelect
                                                         value={field.value || ""}
                                                         onChange={(value) => {
-                                                            // field.onChange(value);
+                                                            field.onChange(value);
+                                                            setSelectedProposalType(value?.target?.value ||value)
                                                         }}
                                                         options={{
                                                             placeholder: "Select Proposal Type",
@@ -702,17 +703,13 @@ const index = () => {
                                                         className="w-full"
                                                         multiple={false}
                                                     >
-                                                        {getDropdownLoader ? (
-                                                            <option value="--" disabled>
-                                                                Loading...
-                                                            </option>
-                                                        ) : (
+                                                       
                                                             <>
-                                                                {dropdownValues?.index?.map((index: string) => {
-                                                                    return <option value={index}>{index}</option>;
+                                                                {proposal_type.map((ele: string) => {
+                                                                    return <option value={ele}>{convertToTitleCase(ele)}</option>;
                                                                 })}
                                                             </>
-                                                        )}
+                                                        
                                                     </TomSelect>
                                                 )}
                                             /></div>}
@@ -724,14 +721,11 @@ const index = () => {
                                             <Controller
                                                 name="proponent_type"
                                                 control={control}
-                                                defaultValue={[]}
                                                 render={({ field }) => (
-
-
                                                     <TomSelect
                                                         value={field.value || ""}
                                                         onChange={(value) => {
-                                                            // field.onChange(value);
+                                                            field.onChange(value);
                                                         }}
                                                         options={{
                                                             placeholder: "Select Proponent Type",
@@ -739,27 +733,23 @@ const index = () => {
                                                         className="w-full"
                                                         multiple={false}
                                                     >
-                                                        {getDropdownLoader ? (
-                                                            <option value="--" disabled>
-                                                                Loading...
-                                                            </option>
-                                                        ) : (
+                                                       
                                                             <>
-                                                                {dropdownValues?.index?.map((index: string) => {
-                                                                    return <option value={index}>{index}</option>;
+                                                                {proponent_type?.map((ele: string) => {
+                                                                    return <option value={ele}>{convertToTitleCase(ele)}</option>;
                                                                 })}
                                                             </>
-                                                        )}
+                                                    
                                                     </TomSelect>
                                                 )}
                                             />
                                         </div>
-                                        {/* <div className="w-full me-2">
+                                        <div className="w-full me-2">
                                             <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                <span className="font-semibold">Country</span>
+                                                <span className="font-semibold">Proposal keywords</span>
                                             </div>
                                             <Controller
-                                                name="country"
+                                                name="proposal_keywords_mapping"
                                                 control={control}
 
                                                 render={({ field }) => (
@@ -768,13 +758,14 @@ const index = () => {
                                                     <TomSelect
                                                         value={field.value || ""}
                                                         onChange={(value) => {
-                                                            // field.onChange(value);
+                                                            field.onChange(value);
                                                         }}
                                                         options={{
-                                                            placeholder: "Select Country",
+                                                            placeholder: "Select Keywords",
                                                         }}
                                                         className="w-full"
                                                         multiple={false}
+                                                        disabled={selectedProposalType ? true : false}
                                                     >
                                                         {getDropdownLoader ? (
                                                             <option value="--" disabled>
@@ -782,15 +773,15 @@ const index = () => {
                                                             </option>
                                                         ) : (
                                                             <>
-                                                                {dropdownValues?.index?.map((index: string) => {
-                                                                    return <option value={index}>{index}</option>;
+                                                                {proposal_keywords[selectedProposalType]?.map((ele: string) => {
+                                                                    return <option value={ele}>{ele}</option>;
                                                                 })}
                                                             </>
                                                         )}
                                                     </TomSelect>
                                                 )}
                                             />
-                                        </div> */}
+                                        </div>
                                     </div> :
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                         <div className="w-full">
@@ -881,71 +872,71 @@ const index = () => {
                 )}
 
                 {isViewAnalysis ?
-                    <div className="mb-7"> 
-                    {vdsEuropeansAnalytics?.sample_proposals?.length > 0  &&   <TableWrapper isLoading={isAnalyticsLoading}>
-                        <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
-                            <Table>
-                                <Table.Thead>
-                                    <Table.Tr>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "17.5%" }}
-                                        >
-                                            Proposal
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "17.5%" }}
-                                        >
-                                            Meeting Date
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "5%" }}
-                                        >
-                                            Meeting type
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "25%" }}
-                                        >
-                                            Company Name
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "10%" }}
-                                        >
-                                            Security ID
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "30%" }}
-                                        >
-                                            Vote
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "30%" }}
-                                        >
-                                            Management Recommendation
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "30%" }}
-                                        >
-                                            Proposal No
-                                        </Table.Td>
-                                        <Table.Td
-                                            className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                            style={{ width: "30%" }}
-                                        >
-                                            Country
-                                        </Table.Td>
-                                    </Table.Tr>
-                                </Table.Thead>
+                    <div className="mb-7">
+                        {vdsEuropeansAnalytics?.sample_proposals?.length > 0 && <TableWrapper isLoading={isAnalyticsLoading}>
+                            <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll ">
+                                <Table>
+                                    <Table.Thead>
+                                        <Table.Tr>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "17.5%" }}
+                                            >
+                                                Proposal
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "17.5%" }}
+                                            >
+                                                Meeting Date
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "5%" }}
+                                            >
+                                                Meeting type
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "25%" }}
+                                            >
+                                                Company Name
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "10%" }}
+                                            >
+                                                Security ID
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "30%" }}
+                                            >
+                                                Vote
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "30%" }}
+                                            >
+                                                Management Recommendation
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "30%" }}
+                                            >
+                                                Proposal No
+                                            </Table.Td>
+                                            <Table.Td
+                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                style={{ width: "30%" }}
+                                            >
+                                                Country
+                                            </Table.Td>
+                                        </Table.Tr>
+                                    </Table.Thead>
 
-                                <Table.Tbody>
-                                    {vdsEuropeansAnalytics?.sample_proposals.map((vds: any, index: number) => (
+                                    <Table.Tbody>
+                                        {vdsEuropeansAnalytics?.sample_proposals.map((vds: any, index: number) => (
                                             <Table.Tr
                                                 key={index}
                                                 className={clsx(
@@ -1041,187 +1032,187 @@ const index = () => {
                                                 </Table.Td>
 
                                             </Table.Tr>))
-                                    }
-                                </Table.Tbody>
-                               
-                            </Table>
-                        </div>
-                    </TableWrapper>}
-                     {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
-                                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            
-                            
-                        </div>
-                                )}
+                                        }
+                                    </Table.Tbody>
+
+                                </Table>
+                            </div>
+                        </TableWrapper>}
+                        {(!vdsEuropeansAnalytics?.sample_proposals || (vdsEuropeansAnalytics?.sample_proposals?.length === 0 && !isAnalyticsLoading)) && (
+                            <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+
+
+                            </div>
+                        )}
                     </div>
 
                     :
 
-                    VdsEuropeans?.length > 0 ? 
-                    (
-                        <div className="w-full">
-                            <>
-                                <div className="">
-                                    <div>
-                                        <TableWrapper isLoading={allApplyFilter && loading}>
-                                            <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                                                <Table>
-                                                    <Table.Thead>
-                                                        <Table.Tr>
-                                                            <Table.Td
-                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                style={{ width: "17.5%" }}
-                                                            >
-                                                                Institution
-                                                            </Table.Td>
-                                                            <Table.Td
-                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                style={{ width: "17.5%" }}
-                                                            >
-                                                                Meeting Type
-                                                            </Table.Td>
-                                                            <Table.Td
-                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                style={{ width: "5%" }}
-                                                            >
-                                                                No.
-                                                            </Table.Td>
-                                                            <Table.Td
-                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                style={{ width: "25%" }}
-                                                            >
-                                                                Proposal
-                                                            </Table.Td>
-                                                            <Table.Td
-                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                style={{ width: "10%" }}
-                                                            >
-                                                                Management Recommendation
-                                                            </Table.Td>
-                                                            <Table.Td
-                                                                className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                                                style={{ width: "30%" }}
-                                                            >
-                                                                Vote Cast
-                                                            </Table.Td>
-                                                        </Table.Tr>
-                                                    </Table.Thead>
+                    VdsEuropeans?.length > 0 ?
+                        (
+                            <div className="w-full">
+                                <>
+                                    <div className="">
+                                        <div>
+                                            <TableWrapper isLoading={allApplyFilter && loading}>
+                                                <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                                                    <Table>
+                                                        <Table.Thead>
+                                                            <Table.Tr>
+                                                                <Table.Td
+                                                                    className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                    style={{ width: "17.5%" }}
+                                                                >
+                                                                    Institution
+                                                                </Table.Td>
+                                                                <Table.Td
+                                                                    className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                    style={{ width: "17.5%" }}
+                                                                >
+                                                                    Meeting Type
+                                                                </Table.Td>
+                                                                <Table.Td
+                                                                    className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                    style={{ width: "5%" }}
+                                                                >
+                                                                    No.
+                                                                </Table.Td>
+                                                                <Table.Td
+                                                                    className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                    style={{ width: "25%" }}
+                                                                >
+                                                                    Proposal
+                                                                </Table.Td>
+                                                                <Table.Td
+                                                                    className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                    style={{ width: "10%" }}
+                                                                >
+                                                                    Management Recommendation
+                                                                </Table.Td>
+                                                                <Table.Td
+                                                                    className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                                                    style={{ width: "30%" }}
+                                                                >
+                                                                    Vote Cast
+                                                                </Table.Td>
+                                                            </Table.Tr>
+                                                        </Table.Thead>
 
-                                                    <Table.Tbody>
-                                                        {VdsEuropeans?.length > 0 && (() => {
-                                                            let lastInstitutionName = '';
-                                                            let toggle = false;
+                                                        <Table.Tbody>
+                                                            {VdsEuropeans?.length > 0 && (() => {
+                                                                let lastInstitutionName = '';
+                                                                let toggle = false;
 
-                                                            return VdsEuropeans.map((vds: any, index: number) => {
-                                                                const currentInstitution = vds?.excel_institution_name;
+                                                                return VdsEuropeans.map((vds: any, index: number) => {
+                                                                    const currentInstitution = vds?.excel_institution_name;
 
-                                                                if (currentInstitution !== lastInstitutionName) {
-                                                                    toggle = !toggle;
-                                                                    lastInstitutionName = currentInstitution;
-                                                                }
+                                                                    if (currentInstitution !== lastInstitutionName) {
+                                                                        toggle = !toggle;
+                                                                        lastInstitutionName = currentInstitution;
+                                                                    }
 
-                                                                return (
-                                                                    <Table.Tr
-                                                                        key={vds?.id}
-                                                                        className={clsx(
-                                                                            "[&_td]:last:border-b-0",
-                                                                            toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
-                                                                        )}
-                                                                    >
-                                                                        <Table.Td
-                                                                            className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                                                            style={{ width: "17.5%" }}
+                                                                    return (
+                                                                        <Table.Tr
+                                                                            key={vds?.id}
+                                                                            className={clsx(
+                                                                                "[&_td]:last:border-b-0",
+                                                                                toggle ? "bg-white dark:bg-darkmode-600" : "bg-gray-200 dark:bg-darkmode-900"
+                                                                            )}
                                                                         >
-                                                                            {vds?.excel_institution_name}
-                                                                        </Table.Td>
+                                                                            <Table.Td
+                                                                                className="whitespace-nowrap overflow-hidden text-ellipsis"
+                                                                                style={{ width: "17.5%" }}
+                                                                            >
+                                                                                {vds?.excel_institution_name}
+                                                                            </Table.Td>
 
-                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
-                                                                            <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
-                                                                        </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "17.5%" }}>
+                                                                                <div className="flex">{convertToTitleCase(vds?.meeting_type)}</div>
+                                                                            </Table.Td>
 
-                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
-                                                                            {vds?.proposal_num}
-                                                                        </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "5%" }}>
+                                                                                {vds?.proposal_num}
+                                                                            </Table.Td>
 
-                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
-                                                                            {vds?.proposal}
-                                                                        </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "25%" }}>
+                                                                                {vds?.proposal}
+                                                                            </Table.Td>
 
-                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
-                                                                            {convertToTitleCase(vds?.mgt_rec)}
-                                                                        </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "10%" }}>
+                                                                                {convertToTitleCase(vds?.mgt_rec)}
+                                                                            </Table.Td>
 
-                                                                        <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
-                                                                            <div className="flex">
-                                                                                {vds?.vote === "Split Vote" ? (
-                                                                                    <Tippy
-                                                                                        content={vds?.split_vote_counts}
-                                                                                        options={{ theme: "light" }}
-                                                                                    >
-                                                                                        {vds?.vote}
-                                                                                    </Tippy>
-                                                                                ) : (
-                                                                                    <span
-                                                                                        className={clsx([
-                                                                                            (vds?.vote?.includes("Against") ||
-                                                                                                vds.vote?.includes("Withhold")) &&
-                                                                                            "text-red-700 font-semibold ",
-                                                                                        ])}
-                                                                                    >
-                                                                                        {vds?.vote}
-                                                                                    </span>
-                                                                                )}
-                                                                                {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                                                                    <span
-                                                                                        data-tooltip-id="my-tooltip-data-html"
-                                                                                        data-tooltip-html={vds?.notes}
-                                                                                    >
-                                                                                        <Lucide
-                                                                                            icon="Info"
-                                                                                            className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
-                                                                                        />
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </Table.Td>
-                                                                    </Table.Tr>
-                                                                );
-                                                            });
-                                                        })()}
-                                                    </Table.Tbody>
-                                                    {VdsEuropeans?.length === 0 && (
-                                                        <div className="w-full">
-                                                            <h1 className="mt-3">No Voting Data available</h1>
-                                                        </div>
-                                                    )}
-                                                </Table>
-                                            </div>
-                                        </TableWrapper>
+                                                                            <Table.Td className="py-2 border-dashed dark:bg-transparent" style={{ width: "30%" }}>
+                                                                                <div className="flex">
+                                                                                    {vds?.vote === "Split Vote" ? (
+                                                                                        <Tippy
+                                                                                            content={vds?.split_vote_counts}
+                                                                                            options={{ theme: "light" }}
+                                                                                        >
+                                                                                            {vds?.vote}
+                                                                                        </Tippy>
+                                                                                    ) : (
+                                                                                        <span
+                                                                                            className={clsx([
+                                                                                                (vds?.vote?.includes("Against") ||
+                                                                                                    vds.vote?.includes("Withhold")) &&
+                                                                                                "text-red-700 font-semibold ",
+                                                                                            ])}
+                                                                                        >
+                                                                                            {vds?.vote}
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                                                                        <span
+                                                                                            data-tooltip-id="my-tooltip-data-html"
+                                                                                            data-tooltip-html={vds?.notes}
+                                                                                        >
+                                                                                            <Lucide
+                                                                                                icon="Info"
+                                                                                                className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer"
+                                                                                            />
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                    );
+                                                                });
+                                                            })()}
+                                                        </Table.Tbody>
+                                                        {VdsEuropeans?.length === 0 && (
+                                                            <div className="w-full">
+                                                                <h1 className="mt-3">No Voting Data available</h1>
+                                                            </div>
+                                                        )}
+                                                    </Table>
+                                                </div>
+                                            </TableWrapper>
+                                        </div>
+                                        <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                            <CPagination
+                                                page={page}
+                                                totalPages={totalPages}
+                                                handleNextPage={handleNextPage}
+                                                handlePageChange={handlePageChange}
+                                                handlePreviousPage={handlePreviousPage}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                                        <CPagination
-                                            page={page}
-                                            totalPages={totalPages}
-                                            handleNextPage={handleNextPage}
-                                            handlePageChange={handlePageChange}
-                                            handlePreviousPage={handlePreviousPage}
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        </div>
-                    ) : (
-                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                            {
-                                loading && <LoadingIcon
-                                    color="#800000"
-                                    icon="three-dots"
-                                    className="w-16 h-16"
-                                />
-                            }
-                            {/* <h1 className="font-semibold"></h1> */}
-                        </div>
-                    )
+                                </>
+                            </div>
+                        ) : (
+                            <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                {
+                                    loading && <LoadingIcon
+                                        color="#800000"
+                                        icon="three-dots"
+                                        className="w-16 h-16"
+                                    />
+                                }
+                                {/* <h1 className="font-semibold"></h1> */}
+                            </div>
+                        )
 
 
 
