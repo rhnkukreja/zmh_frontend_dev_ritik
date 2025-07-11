@@ -891,7 +891,85 @@ const index = () => {
         )}
 
         {isViewAnalysis ? (
+
+            
           <div className="mb-7">
+              {
+              vdsEuropeansAnalytics?.by_institution
+              ?.length > 0 &&
+              
+                <div className="grid grid-cols-1 md:grid-cols-2  gap-6 mb-6">
+              {
+                vdsEuropeansAnalytics?.by_institution.map((institution) => (
+                  <div
+                    key={institution.institution_id}
+                    className="bg-gray-100 p-4 rounded-lg shadow-md"
+                  >
+                    <h4 className="text-md font-semibold mb-2">
+                      {institution.institution_name}
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-300">
+                        <thead className="bg-gray-200">
+                          <tr>
+                            <th className="border p-2 text-left">Metric</th>
+                            <th className="border p-2 text-center">Count</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border p-2">Total Proposals</td>
+                            <td className="border p-2 text-center">
+                              {formatNumberWithCommas(
+                                institution.total_proposals
+                              )}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="border p-2">For Votes</td>
+                            <td className="border p-2 text-center">
+                              {formatNumberWithCommas(institution.for_votes)}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="border p-2">Against Votes</td>
+                            <td className="border p-2 text-center">
+                              {formatNumberWithCommas(
+                                institution.against_votes
+                              )}
+                            </td>
+                          </tr>
+
+                          <tr>
+                            <td className="border p-2">
+                              Aligned with Management
+                            </td>
+                            <td className="border p-2 text-center">
+                              {formatNumberWithCommas(
+                                institution.aligned_with_mgmt
+                              )}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="border p-2">Alignment Percentage</td>
+                            <td className="border p-2 text-center">
+                              {institution.alignment_percentage}%
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="border p-2">Support Percentage</td>
+                            <td className="border p-2 text-center">
+                              {institution.support_percentage}%
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))
+            }
+              </div>
+              }
             <TableWrapper isLoading={isAnalyticsLoading}>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                 <Table>
@@ -1161,79 +1239,9 @@ const index = () => {
                   </div>
                 )} */}
 
-            <div className="grid grid-cols-1 md:grid-cols-2  gap-6 mt-6">
-              {Array.isArray(vdsEuropeansAnalytics?.by_institution) &&
-              vdsEuropeansAnalytics?.by_institution
-              ?.length > 0 && (
-                vdsEuropeansAnalytics.by_institution.map((institution) => (
-                  <div
-                    key={institution.institution_id}
-                    className="bg-gray-100 p-4 rounded-lg shadow-md"
-                  >
-                    <h4 className="text-md font-semibold mb-2">
-                      {institution.institution_name}
-                    </h4>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
-                        <thead className="bg-gray-200">
-                          <tr>
-                            <th className="border p-2 text-left">Metric</th>
-                            <th className="border p-2 text-center">Count</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border p-2">Total Proposals</td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(
-                                institution.total_proposals
-                              )}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">For Votes</td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(institution.for_votes)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">Against Votes</td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(
-                                institution.against_votes
-                              )}
-                            </td>
-                          </tr>
-
-                          <tr>
-                            <td className="border p-2">
-                              Aligned with Management
-                            </td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(
-                                institution.aligned_with_mgmt
-                              )}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">Alignment Percentage</td>
-                            <td className="border p-2 text-center">
-                              {institution.alignment_percentage}%
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">Support Percentage</td>
-                            <td className="border p-2 text-center">
-                              {institution.support_percentage}%
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))
-              ) }
-            </div>
+          
+            
+            
           </div>
         ) : VdsEuropeans?.length > 0 ? (
           <div className="w-full">
