@@ -106,7 +106,7 @@ useEffect(() => {
   const fetchDefaultOptions = async () => {
     try {
       const options = await fetchOptions(
-        "a",
+        "amaz",
         isInstitution,
         companyGlobalSearchName,
         exactUrl,
