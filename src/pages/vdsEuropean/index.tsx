@@ -40,6 +40,7 @@ import clsx from "clsx";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { peerAnalysisService } from "@/services/peerAnalysis";
+import { i } from "vite/dist/node/types.d-aGj9QkWt";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -77,6 +78,7 @@ const index = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(false);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+  const [analyticsPage, setAnalyticsPage] = useState<number>(1);
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
     useState<boolean>(false);
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
@@ -312,19 +314,38 @@ const index = () => {
   };
 
   const handleNextPage = () => {
-    if (page < totalPages) {
-      dispatch(setPage(page + 1));
+    if (isViewAnalysis) {
+      const currentPage = vdsEuropeansAnalytics?.pagination?.current_page;
+      const totalPages = vdsEuropeansAnalytics?.pagination?.total_pages;
+      if (currentPage < totalPages) {
+        setAnalyticsPage(currentPage + 1);
+      }
+    } else {
+      if (page < totalPages) {
+        dispatch(setPage(page + 1));
+      }
     }
   };
 
   const handlePreviousPage = () => {
-    if (page > 1) {
-      dispatch(setPage(page - 1));
+    if (isViewAnalysis) {
+      const currentPage = vdsEuropeansAnalytics?.pagination?.current_page;
+      if (currentPage > 1) {
+        setAnalyticsPage(currentPage - 1);
+      }
+    } else {
+      if (page > 1) {
+        dispatch(setPage(page - 1));
+      }
     }
   };
 
   const handlePageChange = (newPage: number) => {
-    dispatch(setPage(newPage));
+    if (isViewAnalysis) {
+      setAnalyticsPage(newPage);
+    } else {
+      dispatch(setPage(newPage));
+    }
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
@@ -373,24 +394,22 @@ const index = () => {
           investor_company: allAnalyticsFilter?.institution_name
             ? allAnalyticsFilter?.institution_name
             : [],
-          company_name:
-            allAnalyticsFilter?.company_name?.length > 0
-              ? allAnalyticsFilter?.company_name
+          year:
+            allAnalyticsFilter?.analyticsYear.length > 0
+              ? allAnalyticsFilter?.analyticsYear
               : [],
-
-          year: allAnalyticsFilter?.year
-            ? [Number(allAnalyticsFilter?.year)]
-            : [],
           proponent_type: allAnalyticsFilter?.proponent_type
             ? allAnalyticsFilter?.proponent_type
             : [],
           proposal_type: allAnalyticsFilter?.proposal_type
             ? allAnalyticsFilter?.proposal_type
             : [],
-          index_name: allAnalyticsFilter?.index_name
-            ? [allAnalyticsFilter.index_name]
-            : [],
+          index_name:
+            allAnalyticsFilter?.index_name.length > 0
+              ? allAnalyticsFilter.index_name
+              : [],
           country: ["USA"],
+          page: analyticsPage || 1,
         };
 
         try {
@@ -408,13 +427,12 @@ const index = () => {
         }
       }
     };
-
     if (isViewAnalysis) {
       fetchAnalytics();
       setFiltersLength(countValidFilters(allAnalyticsFilter));
       setSelectedChipFilters(generateFilterChips(allAnalyticsFilter));
     }
-  }, [allAnalyticsFilter]);
+  }, [allAnalyticsFilter, analyticsPage]);
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -537,40 +555,43 @@ const index = () => {
                     Apply
                   </Button>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                  <div className="w-full">
-                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                      Company*
+                  {!isViewAnalysis && (
+                    <div className="w-full">
+                      <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                        Company*
+                      </div>
+                      <Controller
+                        name="company_name"
+                        control={control}
+                        defaultValue={[]}
+                        render={({ field }) => (
+                          <CompanySelect
+                            isClearable={true}
+                            exactUrl={
+                              "get_vds_european_dropdown_values/?company_name="
+                            }
+                            value={field.value}
+                            onChange={(value: any) => {
+                              field.onChange(value);
+                              !isViewAnalysis &&
+                                handleDropdownChange(
+                                  "company_name",
+                                  value?.label
+                                );
+                              !isViewAnalysis &&
+                                getInstituionDependentDropdown(value?.label);
+                            }}
+                          />
+                        )}
+                      />
                     </div>
-                    <Controller
-                      name="company_name"
-                      control={control}
-                      defaultValue={[]}
-                      render={({ field }) => (
-                        <CompanySelect
-                          isClearable={true}
-                          exactUrl={
-                            "get_vds_european_dropdown_values/?company_name="
-                          }
-                          value={field.value}
-                          onChange={(value: any) => {
-                            field.onChange(value);
-                            !isViewAnalysis &&
-                              handleDropdownChange(
-                                "company_name",
-                                value?.label
-                              );
-                            !isViewAnalysis &&
-                              getInstituionDependentDropdown(value?.label);
-                          }}
-                        />
-                      )}
-                    />
-                  </div>
+                  )}
 
                   <div className="w-full">
                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                      Institution{" "}
+                      Institution{isViewAnalysis && "*"}
                       <div>
                         {" "}
                         <FormCheck.Label>Select All</FormCheck.Label>
@@ -637,48 +658,124 @@ const index = () => {
                     />
                   </div>
 
-                  <div className="w-full">
-                    <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
-                      Year
-                    </div>
-                    <Controller
-                      name="year"
-                      control={control}
-                      defaultValue={""} // Default should be an empty string instead of an array
-                      render={({ field }) => (
-                        <TomSelect
-                          value={field.value || ""} // Ensure value is a string
-                          onChange={(value) => {
-                            field.onChange(value); // Set a string value instead of an array
-                          }}
-                          options={{
-                            placeholder: "Select Year",
-                            allowEmptyOption: true,
-                          }}
-                          className="w-full"
-                          // multiple
-                        >
-                          {getDynamicDropdownLoader ? (
-                            <option disabled>Loading...</option>
-                          ) : (
-                            apiDependentDropdownOptions?.year?.map(
-                              (year: any) => (
-                                <option key={year} value={year}>
-                                  {year}
-                                </option>
+                  {isViewAnalysis ? null : (
+                    <div className="w-full">
+                      <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                        <div>Year</div>
+                      </div>
+
+                      <Controller
+                        name="year"
+                        control={control}
+                        defaultValue={""} // Default should be an empty string instead of an array
+                        render={({ field }) => (
+                          <TomSelect
+                            value={field.value || ""} // Ensure value is a string
+                            onChange={(value) => {
+                              field.onChange(value); // Set a string value instead of an array
+                            }}
+                            options={{
+                              placeholder: "Select Year",
+                              allowEmptyOption: true,
+                            }}
+                            className="w-full"
+                            // multiple
+                          >
+                            {getDynamicDropdownLoader ? (
+                              <option disabled>Loading...</option>
+                            ) : (
+                              apiDependentDropdownOptions?.year?.map(
+                                (year: any) => (
+                                  <option key={year} value={year}>
+                                    {year}
+                                  </option>
+                                )
                               )
-                            )
+                            )}
+                          </TomSelect>
+                        )}
+                      />
+                    </div>
+                  )}
+                  {isViewAnalysis ? (
+                    <div className="w-full">
+                      <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
+                        <div>Year</div>
+                        <div>
+                          {" "}
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="analyticsYear"
+                            checked={
+                              apiDependentDropdownOptions?.year?.length > 0 &&
+                              apiDependentDropdownOptions?.year?.length ===
+                                watch("analyticsYear")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "analyticsYear",
+                                e.target.checked
+                                  ? apiDependentDropdownOptions?.year
+                                  : []
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {isViewAnalysis && (
+                        <Controller
+                          name="analyticsYear"
+                          control={control}
+                          defaultValue={""} // Default should be an empty string instead of an array
+                          render={({ field }) => (
+                            <MultiSelectDropdown
+                              data={apiDependentDropdownOptions?.year}
+                              placeholder="Select Year"
+                              loading={getDynamicDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map(
+                                  (option) => option.value
+                                );
+                                field.onChange(selectedValues);
+                              }}
+                              selectedOption={field.value || []}
+                            />
                           )}
-                        </TomSelect>
+                        />
                       )}
-                    />
-                  </div>
-                </div>
-                {isViewAnalysis ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                    </div>
+                  ) : (
+                    ""
+                  )}
+                  {isViewAnalysis ? (
                     <div className="w-full me-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
                         <span className="font-semibold">Index </span>
+                        <div>
+                          {" "}
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="index_name"
+                            checked={
+                              apiDependentDropdownOptions?.index?.length > 0 &&
+                              apiDependentDropdownOptions?.index?.length ===
+                                watch("index_name")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "index_name",
+                                e.target.checked
+                                  ? apiDependentDropdownOptions?.index
+                                  : []
+                              );
+                            }}
+                          />
+                        </div>
                       </div>
                       {isViewAnalysis && (
                         <div>
@@ -687,42 +784,55 @@ const index = () => {
                             name="index_name"
                             control={control}
                             render={({ field }) => (
-                              <TomSelect
-                                value={field.value || ""}
-                                onChange={(value) => {
-                                  field.onChange(value);
-                                }}
-                                options={{
-                                  placeholder: "Select Index",
-                                }}
-                                className="w-full"
-                                multiple={false}
-                              >
-                                {getDropdownLoader ? (
-                                  <option value="--" disabled>
-                                    Loading...
-                                  </option>
-                                ) : (
-                                  <>
-                                    {apiDependentDropdownOptions?.index?.map(
-                                      (index: string) => {
-                                        return (
-                                          <option value={index}>{index}</option>
-                                        );
-                                      }
-                                    )}
-                                  </>
+                              <MultiSelectDropdown
+                                data={apiDependentDropdownOptions?.index?.map(
+                                  (item: any) => item
                                 )}
-                              </TomSelect>
+                                placeholder="Select Index"
+                                loading={false}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map(
+                                    (option) => option.value
+                                  );
+                                  field.onChange(selectedValues);
+                                }}
+                                selectedOption={field.value || []}
+                              />
                             )}
                           />
                         </div>
                       )}
                     </div>
+                  ) : (
+                    ""
+                  )}
+                </div>
 
+                {isViewAnalysis ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                     <div className="w-full me-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
                         <span className="font-semibold">Proposal Type</span>
+                        <div>
+                          {" "}
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="proposal_type"
+                            checked={
+                              proposal_type?.length > 0 &&
+                              proposal_type?.length ===
+                                watch("proposal_type")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "proposal_type",
+                                e.target.checked ? proposal_type : []
+                              );
+                            }}
+                          />
+                        </div>
                       </div>
                       {isViewAnalysis && (
                         <div>
@@ -730,33 +840,47 @@ const index = () => {
                             name="proposal_type"
                             control={control}
                             render={({ field }) => (
-                              <TomSelect
-                                value={field.value || ""}
-                                onChange={(value) => {
-                                  field.onChange(value);
-                                }}
-                                options={{
-                                  placeholder: "Select Proposal Type",
-                                }}
-                                className="w-full"
-                                multiple={false}
-                              >
-                                {getDropdownLoader ? (
-                                  <option value="--" disabled>
-                                    Loading...
-                                  </option>
-                                ) : (
-                                  <>
-                                    {proposal_type.map((ele: string) => {
-                                      return (
-                                        <option value={ele}>
-                                          {convertToTitleCase(ele)}
-                                        </option>
-                                      );
-                                    })}
-                                  </>
+                              <MultiSelectDropdown
+                                data={proposal_type.map((item: any) =>
+                                  convertToTitleCase(item)
                                 )}
-                              </TomSelect>
+                                placeholder="Select Proposal Type"
+                                loading={false}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map(
+                                    (option) => option.value
+                                  );
+                                  field.onChange(selectedValues);
+                                }}
+                                selectedOption={field.value || []}
+                              />
+                              //   <TomSelect
+                              //     value={field.value || ""}
+                              //     onChange={(value) => {
+                              //       field.onChange(value);
+                              //     }}
+                              //     options={{
+                              //       placeholder: "Select Proposal Type",
+                              //     }}
+                              //     className="w-full"
+                              //     multiple={true}
+                              //   >
+                              //     {getDropdownLoader ? (
+                              //       <option value="--" disabled>
+                              //         Loading...
+                              //       </option>
+                              //     ) : (
+                              //       <>
+                              //         {proposal_type.map((ele: string) => {
+                              //           return (
+                              //             <option value={ele}>
+                              //               {convertToTitleCase(ele)}
+                              //             </option>
+                              //           );
+                              //         })}
+                              //       </>
+                              //     )}
+                              //   </TomSelect>
                             )}
                           />
                         </div>
@@ -765,38 +889,72 @@ const index = () => {
                     <div className="w-full me-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
                         <span className="font-semibold">Proponent Type </span>
+                        <div>
+                          {" "}
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="proponent_type"
+                            checked={
+                              proponent_type?.length > 0 &&
+                              proponent_type?.length ===
+                                watch("proponent_type")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "proponent_type",
+                                e.target.checked ? proponent_type : []
+                              );
+                            }}
+                          />
+                        </div>
                       </div>
                       <Controller
                         name="proponent_type"
                         control={control}
                         render={({ field }) => (
-                          <TomSelect
-                            value={field.value || ""}
-                            onChange={(value) => {
-                              field.onChange(value);
-                            }}
-                            options={{
-                              placeholder: "Select Proponent Type",
-                            }}
-                            className="w-full"
-                            multiple={false}
-                          >
-                            {getDropdownLoader ? (
-                              <option value="--" disabled>
-                                Loading...
-                              </option>
-                            ) : (
-                              <>
-                                {proponent_type?.map((ele: string) => {
-                                  return (
-                                    <option value={ele}>
-                                      {convertToTitleCase(ele)}
-                                    </option>
-                                  );
-                                })}
-                              </>
+                          <MultiSelectDropdown
+                            data={proponent_type?.map((item: any) =>
+                              convertToTitleCase(item)
                             )}
-                          </TomSelect>
+                            placeholder="Select Proponent Type"
+                            loading={false}
+                            onChange={(selectedOptions) => {
+                              const selectedValues = selectedOptions.map(
+                                (option) => option.value
+                              );
+                              field.onChange(selectedValues);
+                            }}
+                            selectedOption={field.value || []}
+                          />
+                          //   <TomSelect
+                          //     value={field.value || ""}
+                          //     onChange={(value) => {
+                          //       field.onChange(value);
+                          //     }}
+                          //     options={{
+                          //       placeholder: "Select Proponent Type",
+                          //     }}
+                          //     className="w-full"
+                          //     multiple={true}
+                          //   >
+                          //     {getDropdownLoader ? (
+                          //       <option value="--" disabled>
+                          //         Loading...
+                          //       </option>
+                          //     ) : (
+                          //       <>
+                          //         {proponent_type?.map((ele: string) => {
+                          //           return (
+                          //             <option value={ele}>
+                          //               {convertToTitleCase(ele)}
+                          //             </option>
+                          //           );
+                          //         })}
+                          //       </>
+                          //     )}
+                          //   </TomSelect>
                         )}
                       />
                     </div>
@@ -891,16 +1049,10 @@ const index = () => {
         )}
 
         {isViewAnalysis ? (
-
-            
           <div className="mb-7">
-              {
-              vdsEuropeansAnalytics?.by_institution
-              ?.length > 0 &&
-              
-                <div className="grid grid-cols-1 md:grid-cols-2  gap-6 mb-6">
-              {
-                vdsEuropeansAnalytics?.by_institution.map((institution) => (
+            {vdsEuropeansAnalytics?.by_institution?.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2  gap-6 mb-6">
+                {vdsEuropeansAnalytics?.by_institution.map((institution) => (
                   <div
                     key={institution.institution_id}
                     className="bg-gray-100 p-4 rounded-lg shadow-md"
@@ -966,10 +1118,9 @@ const index = () => {
                       </table>
                     </div>
                   </div>
-                ))
-            }
+                ))}
               </div>
-              }
+            )}
             <TableWrapper isLoading={isAnalyticsLoading}>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                 <Table>
@@ -994,7 +1145,6 @@ const index = () => {
                             <>
                               <Table.Tr
                                 className={`bg-gray-100 dark:bg-darkmode-700 sticky z-10 my-10`}
-                             
                                 style={{ top: 50 }}
                               >
                                 <Table.Td
@@ -1088,11 +1238,8 @@ const index = () => {
 
                                     {ele.sample_proposals?.length > 0 &&
                                       (() => {
-                                       
-
                                         return ele.sample_proposals.map(
                                           (vds) => {
-                                            
                                             return (
                                               <Table.Tr
                                                 key={index}
@@ -1221,6 +1368,19 @@ const index = () => {
                   </Table.Tbody>
                 </Table>
               </div>
+              {vdsEuropeansAnalytics?.by_company?.length > 0 && (
+                <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                  <CPagination
+                    page={vdsEuropeansAnalytics?.pagination?.current_page || 1}
+                    totalPages={
+                      vdsEuropeansAnalytics?.pagination?.total_pages || 1
+                    }
+                    handleNextPage={handleNextPage}
+                    handlePageChange={handlePageChange}
+                    handlePreviousPage={handlePreviousPage}
+                  />
+                </div>
+              )}
             </TableWrapper>
 
             {(!vdsEuropeansAnalytics?.by_company ||
@@ -1238,10 +1398,6 @@ const index = () => {
                   />
                   </div>
                 )} */}
-
-          
-            
-            
           </div>
         ) : VdsEuropeans?.length > 0 ? (
           <div className="w-full">
