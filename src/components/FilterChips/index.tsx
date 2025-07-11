@@ -12,6 +12,15 @@ interface FilterChipsProps {
 const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
   if (!filters.length) return null;
   const { tab } = useAppSelector((state) => state.sharedHolderNoAction);
+  const changeCase = (str: string) => {
+    if (
+      str === "institution_name" ||
+      str === "proponent_type" ||
+      str === "proposal_type"
+    ) {
+      return false;
+    } else return true;
+  };
   return (
     <div className="flex flex-wrap gap-2.5 px-5 py-2">
       {filters.map((filter, index) => (
@@ -34,7 +43,9 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
               : convertToTitleCase(filter.key)}
             :
           </span>
-          <span className="font-bold">{convertToTitleCase(String(filter.value))}</span>
+          <span className="font-bold">
+            {changeCase(filter.key) ? convertToTitleCase(String(filter.value)): filter.value}
+          </span>
           <Lucide
             icon="X"
             className="w-4 h-4 text-red-500 -mr-1 cursor-pointer"

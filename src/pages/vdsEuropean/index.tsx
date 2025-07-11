@@ -278,6 +278,7 @@ const index = () => {
     resetFormValues();
     if (onAnalyticsTab) {
       setAllAnalyticsFilter({});
+      setVdsEuropeansAnalytics({})
     } else {
       setallApplyFilter({});
       dispatch(resetPage());
@@ -390,6 +391,7 @@ const index = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       if (hasAnyValidFilter(allAnalyticsFilter)) {
+        console.log("Fetching analytics with filters:", allAnalyticsFilter);
         const body = {
           investor_company: allAnalyticsFilter?.institution_name
             ? allAnalyticsFilter?.institution_name
@@ -425,6 +427,8 @@ const index = () => {
         } finally {
           setIsAnalyticsLoading(false);
         }
+      }else{
+        setVdsEuropeansAnalytics({});
       }
     };
     if (isViewAnalysis) {
@@ -466,7 +470,7 @@ const index = () => {
           onClick={() => {
             setIsViewAnalysis(false);
             onFilterClear(false);
-            setIsFilterCollapse(true);
+           
           }}
         >
           Voting Data
@@ -496,7 +500,7 @@ const index = () => {
             </span>
           </div>
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
-            {count > 0 && (
+            {!isViewAnalysis && count > 0 && (
               <h2 className="flex items-end font-semibold justify-end text-[13px] md:ml-auto mx-5">
                 Count: {count.toLocaleString()}
               </h2>
@@ -842,7 +846,7 @@ const index = () => {
                             render={({ field }) => (
                               <MultiSelectDropdown
                                 data={proposal_type.map((item: any) =>
-                                  convertToTitleCase(item)
+                                  item
                                 )}
                                 placeholder="Select Proposal Type"
                                 loading={false}
@@ -854,33 +858,7 @@ const index = () => {
                                 }}
                                 selectedOption={field.value || []}
                               />
-                              //   <TomSelect
-                              //     value={field.value || ""}
-                              //     onChange={(value) => {
-                              //       field.onChange(value);
-                              //     }}
-                              //     options={{
-                              //       placeholder: "Select Proposal Type",
-                              //     }}
-                              //     className="w-full"
-                              //     multiple={true}
-                              //   >
-                              //     {getDropdownLoader ? (
-                              //       <option value="--" disabled>
-                              //         Loading...
-                              //       </option>
-                              //     ) : (
-                              //       <>
-                              //         {proposal_type.map((ele: string) => {
-                              //           return (
-                              //             <option value={ele}>
-                              //               {convertToTitleCase(ele)}
-                              //             </option>
-                              //           );
-                              //         })}
-                              //       </>
-                              //     )}
-                              //   </TomSelect>
+                             
                             )}
                           />
                         </div>
@@ -916,7 +894,7 @@ const index = () => {
                         render={({ field }) => (
                           <MultiSelectDropdown
                             data={proponent_type?.map((item: any) =>
-                              convertToTitleCase(item)
+                              item
                             )}
                             placeholder="Select Proponent Type"
                             loading={false}
@@ -928,33 +906,7 @@ const index = () => {
                             }}
                             selectedOption={field.value || []}
                           />
-                          //   <TomSelect
-                          //     value={field.value || ""}
-                          //     onChange={(value) => {
-                          //       field.onChange(value);
-                          //     }}
-                          //     options={{
-                          //       placeholder: "Select Proponent Type",
-                          //     }}
-                          //     className="w-full"
-                          //     multiple={true}
-                          //   >
-                          //     {getDropdownLoader ? (
-                          //       <option value="--" disabled>
-                          //         Loading...
-                          //       </option>
-                          //     ) : (
-                          //       <>
-                          //         {proponent_type?.map((ele: string) => {
-                          //           return (
-                          //             <option value={ele}>
-                          //               {convertToTitleCase(ele)}
-                          //             </option>
-                          //           );
-                          //         })}
-                          //       </>
-                          //     )}
-                          //   </TomSelect>
+                          
                         )}
                       />
                     </div>
