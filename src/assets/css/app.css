@@ -236,7 +236,9 @@ a.side-menu__link.side-menu__link--active svg {
   top: -10px !important;
   left: 12px !important; 
 }
-
+.custom_keywords .css-1nmdiq5-menu{
+  display: none;
+}
 option[data-label="*"] {
   color: red !important;
   font-weight: bold;
