@@ -41,6 +41,7 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import { i } from "vite/dist/node/types.d-aGj9QkWt";
+import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -278,7 +279,7 @@ const index = () => {
     resetFormValues();
     if (onAnalyticsTab) {
       setAllAnalyticsFilter({});
-      setVdsEuropeansAnalytics({})
+      setVdsEuropeansAnalytics({});
     } else {
       setallApplyFilter({});
       dispatch(resetPage());
@@ -312,6 +313,10 @@ const index = () => {
     setValue("category", []);
     setValue("year", "");
     setValue("keyword", "");
+    setValue("analyticsYear", []);
+    setValue("index_name", []);
+    setValue("proponent_type", []);
+    setValue("proposal_type", []);
   };
 
   const handleNextPage = () => {
@@ -391,7 +396,6 @@ const index = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       if (hasAnyValidFilter(allAnalyticsFilter)) {
-        
         const body = {
           investor_company: allAnalyticsFilter?.institution_name
             ? allAnalyticsFilter?.institution_name
@@ -404,18 +408,23 @@ const index = () => {
             ? allAnalyticsFilter?.proponent_type
             : [],
           proposal_type: allAnalyticsFilter?.proposal_type
-            ? allAnalyticsFilter?.proposal_type
+            ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+                item.toLowerCase()
+              )
             : [],
           index_name:
             allAnalyticsFilter?.index_name?.length > 0
               ? allAnalyticsFilter.index_name
+              : [],
+          custom_keywords:
+            allAnalyticsFilter?.custom_keywords?.length > 0
+              ? allAnalyticsFilter.custom_keywords
               : [],
           country: ["USA"],
           page: analyticsPage || 1,
         };
 
         try {
-                 
           setIsAnalyticsLoading(true);
           const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
             `${baseURL}/api/proposal-voting-stats`,
@@ -428,8 +437,7 @@ const index = () => {
         } finally {
           setIsAnalyticsLoading(false);
         }
-      }else{
-        
+      } else {
         setVdsEuropeansAnalytics({});
       }
     };
@@ -472,7 +480,6 @@ const index = () => {
           onClick={() => {
             setIsViewAnalysis(false);
             onFilterClear(false);
-           
           }}
         >
           Voting Data
@@ -549,7 +556,6 @@ const index = () => {
                   <Button
                     variant="secondary"
                     onClick={() => {
-                     
                       onFilterClear(isViewAnalysis);
                     }}
                     type="button"
@@ -848,19 +854,18 @@ const index = () => {
                             render={({ field }) => (
                               <MultiSelectDropdown
                                 data={proposal_type.map((item: any) =>
-                                  item
+                                  convertToTitleCase(item)
                                 )}
                                 placeholder="Select Proposal Type"
                                 loading={false}
                                 onChange={(selectedOptions) => {
                                   const selectedValues = selectedOptions.map(
-                                    (option) => option.value
+                                    (option) => convertToTitleCase(option.value)
                                   );
                                   field.onChange(selectedValues);
                                 }}
                                 selectedOption={field.value || []}
                               />
-                             
                             )}
                           />
                         </div>
@@ -896,21 +901,42 @@ const index = () => {
                         render={({ field }) => (
                           <MultiSelectDropdown
                             data={proponent_type?.map((item: any) =>
-                              item
+                              convertToTitleCase(item)
                             )}
                             placeholder="Select Proponent Type"
                             loading={false}
                             onChange={(selectedOptions) => {
                               const selectedValues = selectedOptions.map(
-                                (option) => option.value
+                                (option) => convertToTitleCase(option.value)
                               );
                               field.onChange(selectedValues);
                             }}
                             selectedOption={field.value || []}
                           />
-                          
                         )}
                       />
+                    </div>
+                    <div className="w-full me-2">
+                      <div className="text-left text-slate-500 flex justify-between mb-1">
+                        <span className="font-semibold">Keywords</span>
+                      </div>
+                      <div></div>
+                      {isViewAnalysis && (
+                        <div>
+                          <Controller
+                            name="custom_keywords"
+                            control={control}
+                            render={({ field }) => (
+                              <CreatableInputSelect
+                                value={field.value || []}
+                                onChange={(val) => {
+                                  field.onChange(val);
+                                }}
+                              />
+                            )}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -1015,67 +1041,84 @@ const index = () => {
                       {institution.institution_name}
                     </h4>
                     <div className="overflow-x-auto">
-                    {isAnalyticsLoading ?
-                    <div className="flex items-center justify-center ">   <LoadingIcon
-              color="#800000"
-              icon="three-dots"
-              className="w-16 h-16"
-            /> </div> :   <table className="w-full border-collapse border border-gray-300">
-                        <thead className="bg-gray-200">
-                          <tr>
-                            <th className="border p-2 text-left">Metric</th>
-                            <th className="border p-2 text-center">Count</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border p-2">Total Proposals</td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(
-                                institution.total_proposals
-                              )}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">For Votes</td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(institution.for_votes)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">Against Votes</td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(
-                                institution.against_votes
-                              )}
-                            </td>
-                          </tr>
+                      {isAnalyticsLoading ? (
+                        <div className="flex items-center justify-center ">
+                          {" "}
+                          <LoadingIcon
+                            color="#800000"
+                            icon="three-dots"
+                            className="w-16 h-16"
+                          />{" "}
+                        </div>
+                      ) : (
+                        <table className="w-full border-collapse border border-gray-300">
+                          <thead className="bg-gray-200">
+                            <tr>
+                              <th className="border p-2 text-left">Metric</th>
+                              <th className="border p-2 text-center">Count</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border p-2">Total Proposals</td>
+                              <td className="border p-2 text-center">
+                                {formatNumberWithCommas(
+                                  institution.total_proposals
+                                )}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="border p-2">
+                                No of Unique Companies
+                              </td>
+                              <td className="border p-2 text-center">
+                                {formatNumberWithCommas(
+                                  vdsEuropeansAnalytics?.total_companies
+                                )}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="border p-2">For Votes</td>
+                              <td className="border p-2 text-center">
+                                {formatNumberWithCommas(institution.for_votes)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="border p-2">Against Votes</td>
+                              <td className="border p-2 text-center">
+                                {formatNumberWithCommas(
+                                  institution.against_votes
+                                )}
+                              </td>
+                            </tr>
 
-                          <tr>
-                            <td className="border p-2">
-                              Aligned with Management
-                            </td>
-                            <td className="border p-2 text-center">
-                              {formatNumberWithCommas(
-                                institution.aligned_with_mgmt
-                              )}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">Alignment Percentage</td>
-                            <td className="border p-2 text-center">
-                              {institution.alignment_percentage}%
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">Support Percentage</td>
-                            <td className="border p-2 text-center">
-                              {institution.support_percentage}%
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>}
-                   
+                            <tr>
+                              <td className="border p-2">
+                                Aligned with Management
+                              </td>
+                              <td className="border p-2 text-center">
+                                {formatNumberWithCommas(
+                                  institution.aligned_with_mgmt
+                                )}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="border p-2">
+                                Alignment Percentage
+                              </td>
+                              <td className="border p-2 text-center">
+                                {institution.alignment_percentage}%
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="border p-2">Support Percentage</td>
+                              <td className="border p-2 text-center">
+                                {institution.support_percentage}%
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1346,7 +1389,9 @@ const index = () => {
             {(!vdsEuropeansAnalytics?.by_company ||
               (vdsEuropeansAnalytics?.by_company?.length === 0 &&
                 !isAnalyticsLoading)) && (
-              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center"></div>
+              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                {vdsEuropeansAnalytics?.message}
+              </div>
             )}
 
             {/* {isAnalyticsLoading && (
