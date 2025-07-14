@@ -317,6 +317,7 @@ const index = () => {
     setValue("index_name", []);
     setValue("proponent_type", []);
     setValue("proposal_type", []);
+    setValue("custom_keywords", []);
   };
 
   const handleNextPage = () => {
