@@ -1,7 +1,7 @@
 // components/CreatableInputSelect.tsx
 import React from "react";
 import CreatableSelect from "react-select/creatable";
-import { MultiValue } from "react-select";
+import { MultiValue, components } from "react-select";
 
 export interface OptionType {
   label: string;
@@ -10,8 +10,8 @@ export interface OptionType {
 
 interface CreatableInputSelectProps {
   placeholder?: string;
-  value: string[]; // Accept array of strings
-  onChange: (options: string[]) => void; // Return array of strings
+  value: string[];
+  onChange: (options: string[]) => void;
 }
 
 const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
@@ -19,7 +19,6 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
   value,
   onChange,
 }) => {
-  // Convert string[] to OptionType[] for react-select
   const selectOptions: OptionType[] = value.map((val) => ({
     label: val,
     value: val,
@@ -36,8 +35,14 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
       placeholder={placeholder}
       value={selectOptions}
       onChange={handleChange}
-      openMenuOnFocus={false}
-      openMenuOnClick={false}
+      openMenuOnFocus={false} // allow typing but no dropdown on focus
+      openMenuOnClick={false} 
+    
+      components={{
+        DropdownIndicator: () => null, // remove dropdown arrow
+        IndicatorSeparator: () => null, // remove separator
+         NoOptionsMessage: () => null,
+      }}
       className="basic-multi-select"
       classNamePrefix="select"
     />

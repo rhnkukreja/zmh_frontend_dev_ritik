@@ -64,6 +64,7 @@ export const no_header_company = [
   "voting-guidelines",
 ];
 export const proponent_type = ["shareholder", "management"];
+export const meeting_type = ["Proxy Contest", "Annual"];
 export const proposal_type = ["elect directors", "say on pay", "auditor"];
 export const proposal_keywords =  { 
   "elect directors": ["elect director", "elect"],

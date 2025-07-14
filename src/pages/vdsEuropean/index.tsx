@@ -14,6 +14,7 @@ import {
   proponent_type,
   proposal_type,
   proposal_keywords,
+  meeting_type,
 } from "@/constant";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
@@ -318,6 +319,7 @@ const index = () => {
     setValue("proponent_type", []);
     setValue("proposal_type", []);
     setValue("custom_keywords", []);
+    setValue("meeting_type", []);
   };
 
   const handleNextPage = () => {
@@ -420,6 +422,9 @@ const index = () => {
           custom_keywords:
             allAnalyticsFilter?.custom_keywords?.length > 0
               ? allAnalyticsFilter.custom_keywords
+              : [],
+              meeting_type:  allAnalyticsFilter?.meeting_type?.length > 0
+              ? allAnalyticsFilter.meeting_type
               : [],
           country: ["USA"],
           page: analyticsPage || 1,
@@ -917,7 +922,52 @@ const index = () => {
                         )}
                       />
                     </div>
-                    <div className="w-full me-2">
+                      <div className="w-full me-2">
+                      <div className="text-left text-slate-500 flex justify-between mb-1 ">
+                        <span className="font-semibold">Meeting Type </span>
+                        <div>
+                          {" "}
+                          <FormCheck.Label>Select All</FormCheck.Label>
+                          <FormCheck.Input
+                            className="ml-1"
+                            id="meeting_type"
+                            checked={
+                              meeting_type?.length > 0 &&
+                              meeting_type?.length ===
+                                watch("meeting_type")?.length
+                            }
+                            type="checkbox"
+                            onChange={(e) => {
+                              setValue(
+                                "meeting_type",
+                                e.target.checked ? meeting_type : []
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <Controller
+                        name="meeting_type"
+                        control={control}
+                        render={({ field }) => (
+                          <MultiSelectDropdown
+                            data={meeting_type?.map((item: any) =>
+                              convertToTitleCase(item)
+                            )}
+                            placeholder="Select Meeting Type"
+                            loading={false}
+                            onChange={(selectedOptions) => {
+                              const selectedValues = selectedOptions.map(
+                                (option) => convertToTitleCase(option.value)
+                              );
+                              field.onChange(selectedValues);
+                            }}
+                            selectedOption={field.value || []}
+                          />
+                        )}
+                      />
+                    </div>
+                    <div className="w-full me-2 custom_keywords">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
                         <span className="font-semibold">Keywords</span>
                       </div>
