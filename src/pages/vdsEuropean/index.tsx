@@ -391,13 +391,13 @@ const index = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       if (hasAnyValidFilter(allAnalyticsFilter)) {
-        console.log("Fetching analytics with filters:", allAnalyticsFilter);
+        
         const body = {
           investor_company: allAnalyticsFilter?.institution_name
             ? allAnalyticsFilter?.institution_name
             : [],
           year:
-            allAnalyticsFilter?.analyticsYear.length > 0
+            allAnalyticsFilter?.analyticsYear?.length > 0
               ? allAnalyticsFilter?.analyticsYear
               : [],
           proponent_type: allAnalyticsFilter?.proponent_type
@@ -407,7 +407,7 @@ const index = () => {
             ? allAnalyticsFilter?.proposal_type
             : [],
           index_name:
-            allAnalyticsFilter?.index_name.length > 0
+            allAnalyticsFilter?.index_name?.length > 0
               ? allAnalyticsFilter.index_name
               : [],
           country: ["USA"],
@@ -415,6 +415,7 @@ const index = () => {
         };
 
         try {
+                 
           setIsAnalyticsLoading(true);
           const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
             `${baseURL}/api/proposal-voting-stats`,
@@ -428,6 +429,7 @@ const index = () => {
           setIsAnalyticsLoading(false);
         }
       }else{
+        
         setVdsEuropeansAnalytics({});
       }
     };
@@ -547,7 +549,7 @@ const index = () => {
                   <Button
                     variant="secondary"
                     onClick={() => {
-                      setIsFilterCollapse(false);
+                     
                       onFilterClear(isViewAnalysis);
                     }}
                     type="button"
@@ -1013,7 +1015,12 @@ const index = () => {
                       {institution.institution_name}
                     </h4>
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
+                    {isAnalyticsLoading ?
+                    <div className="flex items-center justify-center ">   <LoadingIcon
+              color="#800000"
+              icon="three-dots"
+              className="w-16 h-16"
+            /> </div> :   <table className="w-full border-collapse border border-gray-300">
                         <thead className="bg-gray-200">
                           <tr>
                             <th className="border p-2 text-left">Metric</th>
@@ -1067,7 +1074,8 @@ const index = () => {
                             </td>
                           </tr>
                         </tbody>
-                      </table>
+                      </table>}
+                   
                     </div>
                   </div>
                 ))}
