@@ -381,6 +381,9 @@ function convertToTitleCase(str: string): string {
    else if (str == "index_name") {
     return "Index"
   }
+   else if (str == "custom_keywords") {
+    return "Keyword"
+  }
    else if (str == "analyticsYear") {
     return "Year"
   }
