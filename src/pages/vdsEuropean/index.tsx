@@ -412,8 +412,8 @@ const index = () => {
             : [],
           proposal_type: allAnalyticsFilter?.proposal_type
             ? allAnalyticsFilter?.proposal_type.map((item: any) =>
-                item.toLowerCase()
-              )
+              item.toLowerCase()
+            )
             : [],
           index_name:
             allAnalyticsFilter?.index_name?.length > 0
@@ -423,9 +423,9 @@ const index = () => {
             allAnalyticsFilter?.custom_keywords?.length > 0
               ? allAnalyticsFilter.custom_keywords
               : [],
-              meeting_type:  allAnalyticsFilter?.meeting_type?.length > 0
-              ? allAnalyticsFilter.meeting_type
-              : [],
+          meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
+            ? allAnalyticsFilter.meeting_type
+            : [],
           country: ["USA"],
           page: analyticsPage || 1,
         };
@@ -478,11 +478,10 @@ const index = () => {
     <>
       <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
         <button
-          className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-            isViewAnalysis === false
+          className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === false
               ? "bg-primary text-white shadow"
               : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-          }`}
+            }`}
           onClick={() => {
             setIsViewAnalysis(false);
             onFilterClear(false);
@@ -491,11 +490,10 @@ const index = () => {
           Voting Data
         </button>
         <button
-          className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-            isViewAnalysis === true
+          className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === true
               ? "bg-primary text-white shadow"
               : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-          }`}
+            }`}
           onClick={() => {
             setIsViewAnalysis(true);
             setIsFilterCollapse(true);
@@ -610,7 +608,7 @@ const index = () => {
                   <div className="w-full">
                     <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
                       Institution{isViewAnalysis && "*"}
-                      <div>
+                      {/* <div>
                         {" "}
                         <FormCheck.Label>Select All</FormCheck.Label>
                         <FormCheck.Input
@@ -643,7 +641,7 @@ const index = () => {
                             );
                           }}
                         />
-                      </div>
+                      </div> */}
                     </div>
                     <Controller
                       name="institution_name"
@@ -654,8 +652,8 @@ const index = () => {
                           data={
                             isViewAnalysis
                               ? apiDependentDropdownOptions?.institutes?.map(
-                                  (item: any) => item.institution_name
-                                )
+                                (item: any) => item.institution_name
+                              )
                               : apiInstitutionDropdown?.institution
                           }
                           placeholder="Select Institutions"
@@ -697,7 +695,7 @@ const index = () => {
                               allowEmptyOption: true,
                             }}
                             className="w-full"
-                            // multiple
+                          // multiple
                           >
                             {getDynamicDropdownLoader ? (
                               <option disabled>Loading...</option>
@@ -719,7 +717,7 @@ const index = () => {
                     <div className="w-full">
                       <div className="text-left text-slate-500 flex justify-between mb-1 font-semibold">
                         <div>Year</div>
-                        <div>
+                        {/* <div>
                           {" "}
                           <FormCheck.Label>Select All</FormCheck.Label>
                           <FormCheck.Input
@@ -740,7 +738,7 @@ const index = () => {
                               );
                             }}
                           />
-                        </div>
+                        </div> */}
                       </div>
 
                       {isViewAnalysis && (
@@ -781,7 +779,7 @@ const index = () => {
                             checked={
                               apiDependentDropdownOptions?.index?.length > 0 &&
                               apiDependentDropdownOptions?.index?.length ===
-                                watch("index_name")?.length
+                              watch("index_name")?.length
                             }
                             type="checkbox"
                             onChange={(e) => {
@@ -827,7 +825,7 @@ const index = () => {
                 </div>
 
                 {isViewAnalysis ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
                     <div className="w-full me-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1">
                         <span className="font-semibold">Proposal Type</span>
@@ -840,7 +838,7 @@ const index = () => {
                             checked={
                               proposal_type?.length > 0 &&
                               proposal_type?.length ===
-                                watch("proposal_type")?.length
+                              watch("proposal_type")?.length
                             }
                             type="checkbox"
                             onChange={(e) => {
@@ -889,7 +887,7 @@ const index = () => {
                             checked={
                               proponent_type?.length > 0 &&
                               proponent_type?.length ===
-                                watch("proponent_type")?.length
+                              watch("proponent_type")?.length
                             }
                             type="checkbox"
                             onChange={(e) => {
@@ -922,7 +920,7 @@ const index = () => {
                         )}
                       />
                     </div>
-                      <div className="w-full me-2">
+                    <div className="w-full me-2">
                       <div className="text-left text-slate-500 flex justify-between mb-1 ">
                         <span className="font-semibold">Meeting Type </span>
                         <div>
@@ -934,7 +932,7 @@ const index = () => {
                             checked={
                               meeting_type?.length > 0 &&
                               meeting_type?.length ===
-                                watch("meeting_type")?.length
+                              watch("meeting_type")?.length
                             }
                             type="checkbox"
                             onChange={(e) => {
@@ -1004,7 +1002,7 @@ const index = () => {
                             checked={
                               apiDependentDropdownOptions?.vote?.length > 0 &&
                               apiDependentDropdownOptions?.vote.length ===
-                                watch("vote")?.length
+                              watch("vote")?.length
                             }
                             type="checkbox"
                             onChange={(e) => {
@@ -1213,7 +1211,7 @@ const index = () => {
                                       }
                                     >
                                       {" "}
-                                      {ele.company_name}
+                                      {`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}
                                       <button className="ml-2 text-blue-500">
                                         {openGroups[ele.company_name] ? (
                                           <Lucide
@@ -1241,34 +1239,15 @@ const index = () => {
                                     >
                                       <Table.Td
                                         className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
+                                        style={{ width: "30%" }}
+                                      >
+                                        Proposal No.
+                                      </Table.Td>
+                                      <Table.Td
+                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                         style={{ width: "17.5%" }}
                                       >
                                         Proposal
-                                      </Table.Td>
-                                      <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "17.5%" }}
-                                      >
-                                        Meeting Date
-                                      </Table.Td>
-                                      <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "5%" }}
-                                      >
-                                        Meeting type
-                                      </Table.Td>
-                                      <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "25%" }}
-                                      >
-                                        Company Name
-                                      </Table.Td>
-
-                                      <Table.Td
-                                        className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                                        style={{ width: "30%" }}
-                                      >
-                                        Vote
                                       </Table.Td>
                                       <Table.Td
                                         className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
@@ -1276,18 +1255,20 @@ const index = () => {
                                       >
                                         Management Recommendation
                                       </Table.Td>
+
                                       <Table.Td
                                         className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                         style={{ width: "30%" }}
                                       >
-                                        Proposal No
+                                        Vote Cast
                                       </Table.Td>
-                                      <Table.Td
+
+                                      {/* <Table.Td
                                         className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                         style={{ width: "30%" }}
                                       >
                                         Country
-                                      </Table.Td>
+                                      </Table.Td> */}
                                     </Table.Tr>
 
                                     {ele.sample_proposals?.length > 0 &&
@@ -1302,6 +1283,9 @@ const index = () => {
                                                   "bg-white dark:bg-darkmode-600"
                                                 )}
                                               >
+                                                <Table.Td className="py-2 border-dashed dark:bg-transparent">
+                                                  {vds?.proposal_num}
+                                                </Table.Td>
                                                 <Table.Td
                                                   className="whitespace-nowrap overflow-hidden text-ellipsis"
                                                   style={{ width: "17.5%" }}
@@ -1311,9 +1295,9 @@ const index = () => {
                                                       {expandedRows[index]
                                                         ? vds?.proposal
                                                         : vds?.proposal.slice(
-                                                            0,
-                                                            50
-                                                          ) + "..."}
+                                                          0,
+                                                          50
+                                                        ) + "..."}
                                                       <button
                                                         onClick={() =>
                                                           toggleExpand(index)
@@ -1333,27 +1317,18 @@ const index = () => {
                                                   ) : (
                                                     vds?.proposal
                                                   )}
-                                                </Table.Td>
-                                                <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis">
-                                                  {vds?.meeting_date}
-                                                </Table.Td>
 
-                                                <Table.Td className="py-2 border-dashed dark:bg-transparent">
-                                                  <div className="flex">
-                                                    {convertToTitleCase(
-                                                      vds?.meeting_type
-                                                    )}
-                                                  </div>
                                                 </Table.Td>
-
                                                 <Table.Td className="py-2 border-dashed dark:bg-transparent">
-                                                  {vds?.company__name}
+                                                  {convertToTitleCase(
+                                                    vds?.mgt_rec
+                                                  )}
                                                 </Table.Td>
 
                                                 <Table.Td className="py-2 border-dashed dark:bg-transparent">
                                                   <div className="flex">
                                                     {vds?.vote ===
-                                                    "Split Vote" ? (
+                                                      "Split Vote" ? (
                                                       <Tippy
                                                         content={
                                                           vds?.split_vote_counts
@@ -1373,7 +1348,7 @@ const index = () => {
                                                             vds.vote?.includes(
                                                               "Withhold"
                                                             )) &&
-                                                            "text-red-700 font-semibold ",
+                                                          "text-red-700 font-semibold ",
                                                         ])}
                                                       >
                                                         {vds?.vote}
@@ -1381,7 +1356,7 @@ const index = () => {
                                                     )}
                                                     {vds?.notes &&
                                                       vds.notes.toLowerCase() !==
-                                                        "nan" && (
+                                                      "nan" && (
                                                         <span
                                                           data-tooltip-id="my-tooltip-data-html"
                                                           data-tooltip-html={
@@ -1396,18 +1371,9 @@ const index = () => {
                                                       )}
                                                   </div>
                                                 </Table.Td>
-                                                <Table.Td className="py-2 border-dashed dark:bg-transparent">
-                                                  {convertToTitleCase(
-                                                    vds?.mgt_rec
-                                                  )}
-                                                </Table.Td>
-                                                <Table.Td className="py-2 border-dashed dark:bg-transparent">
-                                                  {vds?.proposal_num}
-                                                </Table.Td>
-
-                                                <Table.Td className="py-2 border-dashed dark:bg-transparent">
+                                                {/* <Table.Td className="py-2 border-dashed dark:bg-transparent">
                                                   {vds?.country}
-                                                </Table.Td>
+                                                </Table.Td> */}
                                               </Table.Tr>
                                             );
                                           }
@@ -1440,10 +1406,10 @@ const index = () => {
             {(!vdsEuropeansAnalytics?.by_company ||
               (vdsEuropeansAnalytics?.by_company?.length === 0 &&
                 !isAnalyticsLoading)) && (
-              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                {vdsEuropeansAnalytics?.message}
-              </div>
-            )}
+                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                  {vdsEuropeansAnalytics?.message}
+                </div>
+              )}
 
             {/* {isAnalyticsLoading && (
                     <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
@@ -1592,7 +1558,7 @@ const index = () => {
                                                   vds.vote?.includes(
                                                     "Withhold"
                                                   )) &&
-                                                  "text-red-700 font-semibold ",
+                                                "text-red-700 font-semibold ",
                                               ])}
                                             >
                                               {vds?.vote}
@@ -1600,7 +1566,7 @@ const index = () => {
                                           )}
                                           {vds?.notes &&
                                             vds.notes.toLowerCase() !==
-                                              "nan" && (
+                                            "nan" && (
                                               <span
                                                 data-tooltip-id="my-tooltip-data-html"
                                                 data-tooltip-html={vds?.notes}
