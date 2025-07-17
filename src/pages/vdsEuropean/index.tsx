@@ -495,8 +495,8 @@ const index = () => {
       <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
         <button
           className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === false
-            ? "bg-primary text-white shadow"
-            : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+              ? "bg-primary text-white shadow"
+              : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
             }`}
           onClick={() => {
             setIsViewAnalysis(false);
@@ -509,8 +509,8 @@ const index = () => {
         </button>
         <button
           className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === true
-            ? "bg-primary text-white shadow"
-            : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+              ? "bg-primary text-white shadow"
+              : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
             }`}
           onClick={() => {
             setIsViewAnalysis(true);
