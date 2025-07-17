@@ -970,18 +970,8 @@ const index = () => {
             {isViewAnalysis && vdsEuropeansAnalytics?.by_company && vdsEuropeansAnalytics.by_company.length > 0 && (
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
                 <div className="divide-y divide-gray-100">
-                  {vdsEuropeansAnalytics.by_company
-                    .slice()
-                    .sort((a, b) => {
-                      // Extract year from meeting_date (format: '14 May, 2024')
-                      const getYear = (item) => {
-                        const match = item.meeting_date && item.meeting_date.match(/\d{4}/);
-                        return match ? parseInt(match[0], 10) : 0;
-                      };
-                      return getYear(b) - getYear(a);
-                    })
-                    .map((ele, index) => (
-                      <div key={ele.company_id || index} className="py-2">
+                  {vdsEuropeansAnalytics.by_company.map((ele, index) => (
+                    <div key={ele.company_id || index} className="py-2">
                         <div
                           className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
                           onClick={() => toggleGroup(ele.company_name)}
