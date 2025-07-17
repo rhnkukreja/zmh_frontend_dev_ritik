@@ -266,7 +266,7 @@ const index = () => {
     setallApplyFilter({
       company_name: [npxFilter?.company_name?.label],
       institution_name: npxFilter?.institution_name,
-      vote: npxFilter?.vote,
+      vote_types: npxFilter?.vote,
       category: npxFilter?.category,
       year: npxFilter?.year,
       keyword: npxFilter?.keyword,
@@ -286,6 +286,7 @@ const index = () => {
       ...(data?.company_name?.label && {
         company_name: [data.company_name.label],
       }),
+      vote_types: data?.vote || [], // always set vote_types
     });
   };
 
@@ -442,6 +443,7 @@ const index = () => {
           meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
             ? allAnalyticsFilter.meeting_type
             : [],
+          vote_types: allAnalyticsFilter?.vote_types || [], // ensure vote_types is sent
           country: ["USA"],
           page: analyticsPage || 1,
         };
@@ -968,73 +970,83 @@ const index = () => {
             {isViewAnalysis && vdsEuropeansAnalytics?.by_company && vdsEuropeansAnalytics.by_company.length > 0 && (
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
                 <div className="divide-y divide-gray-100">
-                  {vdsEuropeansAnalytics.by_company.map((ele, index) => (
-                    <div key={ele.company_id || index} className="py-2">
-                      <div
-                        className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
-                        onClick={() => toggleGroup(ele.company_name)}
-                      >
-                        <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
-                        <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
-                      </div>
-                      {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                        <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
-                          <table className="min-w-full">
-                            <thead>
-                              <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
-                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                                <th className="px-4 py-2 text-left font-semibold">Management Recommendation</th>
-                                <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                              {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                                  <td className="px-4 py-2">{vds?.proposal_num}</td>
-                                  <td className="px-4 py-2">
-                                    {vds?.proposal && vds?.proposal.length > 50 ? (
-                                      <span>
-                                        {expandedRows[index]
-                                          ? vds?.proposal
-                                          : vds?.proposal.slice(0, 50) + "..."}
-                                        <button
-                                          onClick={() => toggleExpand(index)}
-                                          className="ml-1 text-primary underline text-xs"
-                                        >
-                                          {expandedRows[index] ? 'Show less' : 'Show more'}
-                                        </button>
-                                      </span>
-                                    ) : (
-                                      vds?.proposal
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                  <td className="px-4 py-2">
-                                    <span className={clsx([
-                                      (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                      "text-red-700 font-semibold ",
-                                    ])}>
-                                      {vds?.vote}
-                                    </span>
-                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                      <span
-                                        data-tooltip-id="my-tooltip-data-html"
-                                        data-tooltip-html={vds?.notes}
-                                        className="ml-2 text-xs text-blue-700 underline cursor-pointer"
-                                      >
-                                        Note
-                                      </span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                  {vdsEuropeansAnalytics.by_company
+                    .slice()
+                    .sort((a, b) => {
+                      // Extract year from meeting_date (format: '14 May, 2024')
+                      const getYear = (item) => {
+                        const match = item.meeting_date && item.meeting_date.match(/\d{4}/);
+                        return match ? parseInt(match[0], 10) : 0;
+                      };
+                      return getYear(b) - getYear(a);
+                    })
+                    .map((ele, index) => (
+                      <div key={ele.company_id || index} className="py-2">
+                        <div
+                          className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
+                          onClick={() => toggleGroup(ele.company_name)}
+                        >
+                          <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                          <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
+                          <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                            <table className="min-w-full">
+                              <thead>
+                                <tr className="bg-primary text-white text-sm">
+                                  <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
+                                  <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                                  <th className="px-4 py-2 text-left font-semibold">Management Recommendation</th>
+                                  <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                                {ele.sample_proposals.map((vds, vdsIdx) => (
+                                  <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
+                                    <td className="px-4 py-2">{vds?.proposal_num}</td>
+                                    <td className="px-4 py-2">
+                                      {vds?.proposal && vds?.proposal.length > 50 ? (
+                                        <span>
+                                          {expandedRows[index]
+                                            ? vds?.proposal
+                                            : vds?.proposal.slice(0, 50) + "..."}
+                                          <button
+                                            onClick={() => toggleExpand(index)}
+                                            className="ml-1 text-primary underline text-xs"
+                                          >
+                                            {expandedRows[index] ? 'Show less' : 'Show more'}
+                                          </button>
+                                        </span>
+                                      ) : (
+                                        vds?.proposal
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-4 py-2">
+                                      <span className={clsx([
+                                        (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                        "text-red-700 font-semibold ",
+                                      ])}>
+                                        {vds?.vote}
+                                      </span>
+                                      {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                        <span
+                                          data-tooltip-id="my-tooltip-data-html"
+                                          data-tooltip-html={vds?.notes}
+                                          className="ml-2 text-xs text-blue-700 underline cursor-pointer"
+                                        >
+                                          Note
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                 </div>
                 {vdsEuropeansAnalytics?.by_company?.length > 0 && (
                   <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
