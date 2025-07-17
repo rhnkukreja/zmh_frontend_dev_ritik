@@ -485,8 +485,8 @@ const index = () => {
       <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
         <button
           className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === false
-              ? "bg-primary text-white shadow"
-              : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+            ? "bg-primary text-white shadow"
+            : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
             }`}
           onClick={() => {
             setIsViewAnalysis(false);
@@ -499,8 +499,8 @@ const index = () => {
         </button>
         <button
           className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === true
-              ? "bg-primary text-white shadow"
-              : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+            ? "bg-primary text-white shadow"
+            : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
             }`}
           onClick={() => {
             setIsViewAnalysis(true);
@@ -891,104 +891,256 @@ const index = () => {
           </div>
         )}
 
-        {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
-        <TableWrapper isLoading={allApplyFilter && loading}>
-          <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-            <Table>
-              <Table.Thead>
-                <Table.Tr className="sticky top-0 z-20 bg-primary/90 text-white shadow-md">
-                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "17.5%" }}>Institution</Table.Td>
-                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "17.5%" }}>Meeting Type</Table.Td>
-                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "5%" }}>No.</Table.Td>
-                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "25%" }}>Proposal</Table.Td>
-                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "30%" }}>Vote Cast</Table.Td>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {loading ? (
-                  Array.from({ length: 8 }).map((_, i) => (
-                    <Table.Tr key={i} className="animate-pulse">
-                      {Array.from({ length: 6 }).map((_, j) => (
-                        <Table.Td key={j}><Skeleton height={24} /></Table.Td>
+        {/* ANALYTICS TABLE (by_institution) */}
+        {isViewAnalysis && vdsEuropeansAnalytics?.by_institution && (
+          Object.keys(vdsEuropeansAnalytics.by_institution).length === 0 ? (
+            <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
+          ) : (
+            <div className="mb-8">
+              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                <table className="min-w-full rounded-2xl overflow-hidden">
+                  <thead>
+                    <tr className="bg-primary text-white text-base">
+                      <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Metric</th>
+                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year, idx, arr) => (
+                        <th key={year} className={`px-6 py-3 text-center font-semibold ${idx === arr.length - 1 ? 'rounded-tr-2xl' : ''}`}>{year}</th>
                       ))}
-                    </Table.Tr>
-                  ))
-                ) : VdsEuropeans?.length > 0 ? (
-                  (() => {
-                    let lastInstitutionName = "";
-                    let toggle = false;
-                    return VdsEuropeans.map((vds: any, index: number) => {
-                      const currentInstitution = vds?.excel_institution_name;
-                      if (currentInstitution !== lastInstitutionName) {
-                        toggle = !toggle;
-                        lastInstitutionName = currentInstitution;
-                      }
-                      return (
-                        <Table.Tr
-                          key={vds?.id}
-                          className={clsx(
-                            "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
-                            toggle ? "bg-white" : "bg-gray-50"
-                          )}
-                        >
-                          <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis font-semibold text-primary/80">
-                            {vds?.excel_institution_name}
-                          </Table.Td>
-                          <Table.Td className="py-2 border-dashed">
-                            <span className="inline-block px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                              {convertToTitleCase(vds?.meeting_type)}
-                            </span>
-                          </Table.Td>
-                          <Table.Td className="py-2 border-dashed">
-                            <span className="inline-block px-2 py-1 rounded-full bg-gray-200 text-gray-700 text-xs font-bold">
-                              {vds?.proposal_num}
-                            </span>
-                          </Table.Td>
-                          <Table.Td className="py-2 border-dashed">
-                            <span className="block truncate" title={vds?.proposal}>{vds?.proposal}</span>
-                          </Table.Td>
-                          <Table.Td className="py-2 border-dashed">
-                            <span className="inline-block px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
-                              {convertToTitleCase(vds?.mgt_rec)}
-                            </span>
-                          </Table.Td>
-                          <Table.Td className="py-2 border-dashed">
-                            <div className="flex items-center gap-2">
-                              {vds?.vote === "Split Vote" ? (
-                                <Tippy content={vds?.split_vote_counts} options={{ theme: "light" }}>
-                                  <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">{vds?.vote}</span>
-                                </Tippy>
-                              ) : (
-                                <span className={clsx(
-                                  "inline-block px-2 py-1 rounded-full text-xs font-bold",
-                                  (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) ? "bg-red-100 text-red-700" : "bg-primary/10 text-primary"
-                                )}>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-700 text-base divide-y divide-gray-100">
+                    <tr>
+                      <td className="px-6 py-3 font-medium bg-gray-50">No. of unique companies</td>
+                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => (
+                        <td key={year} className="px-6 py-3 text-center bg-gray-50 text-gray-400">-</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 font-medium">Total proposals voted</td>
+                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                        return <td key={year} className="px-6 py-3 text-center">{inst ? inst.total_proposals.toLocaleString() : '-'}</td>;
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 font-medium">No. of FOR votes <span className="text-xs text-gray-400">*</span></td>
+                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                        return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.for_votes.toLocaleString()} (${inst.for_percentage}%)` : '-'}</td>;
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes <span className="text-xs text-gray-400">*</span></td>
+                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                        return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.against_votes.toLocaleString()} (${inst.against_percentage}%)` : '-'}</td>;
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 font-medium">Alignment with management</td>
+                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                        return <td key={year} className="px-6 py-3 text-center">{inst ? inst.aligned_with_mgmt : '-'}</td>;
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 font-medium">Alignment percentage</td>
+                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                        return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.alignment_percentage}%` : '-'}</td>;
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="text-xs text-gray-400 mt-2 ml-2">* (percentage of total proposal voted)</div>
+              </div>
+            </div>
+          )
+        )}
+        {/* COLLAPSIBLE COMPANY LIST (by_company) */}
+        {isViewAnalysis && vdsEuropeansAnalytics?.by_company && vdsEuropeansAnalytics.by_company.length > 0 && (
+          <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
+            <div className="divide-y divide-gray-100">
+              {vdsEuropeansAnalytics.by_company.map((ele, index) => (
+                <div key={ele.company_id || index} className="py-2">
+                  <div
+                    className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
+                    onClick={() => toggleGroup(ele.company_name)}
+                  >
+                    <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                    <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
+                  </div>
+                  {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
+                    <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="bg-primary text-white text-sm">
+                            <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
+                            <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                            <th className="px-4 py-2 text-left font-semibold">Management Recommendation</th>
+                            <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                          {ele.sample_proposals.map((vds, vdsIdx) => (
+                            <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
+                              <td className="px-4 py-2">{vds?.proposal_num}</td>
+                              <td className="px-4 py-2">
+                                {vds?.proposal && vds?.proposal.length > 50 ? (
+                                  <span>
+                                    {expandedRows[index]
+                                      ? vds?.proposal
+                                      : vds?.proposal.slice(0, 50) + "..."}
+                                    <button
+                                      onClick={() => toggleExpand(index)}
+                                      className="ml-1 text-primary underline text-xs"
+                                    >
+                                      {expandedRows[index] ? 'Show less' : 'Show more'}
+                                    </button>
+                                  </span>
+                                ) : (
+                                  vds?.proposal
+                                )}
+                              </td>
+                              <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
+                              <td className="px-4 py-2">
+                                <span className={clsx([
+                                  (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                    "text-red-700 font-semibold ",
+                                ])}>
                                   {vds?.vote}
                                 </span>
-                              )}
-                              {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                <span data-tooltip-id="my-tooltip-data-html" data-tooltip-html={vds?.notes}>
-                                  <Lucide icon="Info" className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer" />
-                                </span>
-                              )}
-                            </div>
-                          </Table.Td>
-                        </Table.Tr>
-                      );
-                    });
-                  })()
-                ) : (
-                  <Table.Tr>
-                    <Table.Td colSpan={6} className="text-center py-10 text-gray-400 text-lg font-semibold">
-                      <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-                      No Voting Data available. Try adjusting your filters!
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-              </Table.Tbody>
-            </Table>
+                                {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                  <span
+                                    data-tooltip-id="my-tooltip-data-html"
+                                    data-tooltip-html={vds?.notes}
+                                    className="ml-2 text-xs text-blue-700 underline cursor-pointer"
+                                  >
+                                    Note
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {vdsEuropeansAnalytics?.by_company?.length > 0 && (
+              <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                <CPagination
+                  page={vdsEuropeansAnalytics?.pagination?.current_page || 1}
+                  totalPages={vdsEuropeansAnalytics?.pagination?.total_pages || 1}
+                  handleNextPage={handleNextPage}
+                  handlePageChange={handlePageChange}
+                  handlePreviousPage={handlePreviousPage}
+                />
+              </div>
+            )}
           </div>
-        </TableWrapper>
+        )}
+        {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
+        {!isViewAnalysis && (
+          <TableWrapper isLoading={allApplyFilter && loading}>
+            <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+              <Table>
+                <Table.Thead>
+                  <Table.Tr className="sticky top-0 z-20 bg-primary/90 text-white shadow-md">
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "17.5%" }}>Institution</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "17.5%" }}>Meeting Type</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "5%" }}>No.</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "25%" }}>Proposal</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]" style={{ width: "30%" }}>Vote Cast</Table.Td>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {loading ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <Table.Tr key={i} className="animate-pulse">
+                        {Array.from({ length: 6 }).map((_, j) => (
+                          <Table.Td key={j}><Skeleton height={24} /></Table.Td>
+                        ))}
+                      </Table.Tr>
+                    ))
+                  ) : VdsEuropeans?.length > 0 ? (
+                    (() => {
+                      let lastInstitutionName = "";
+                      let toggle = false;
+                      return VdsEuropeans.map((vds: any, index: number) => {
+                        const currentInstitution = vds?.excel_institution_name;
+                        if (currentInstitution !== lastInstitutionName) {
+                          toggle = !toggle;
+                          lastInstitutionName = currentInstitution;
+                        }
+                        return (
+                          <Table.Tr
+                            key={vds?.id}
+                            className={clsx(
+                              "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
+                              toggle ? "bg-white" : "bg-gray-50"
+                            )}
+                          >
+                            <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis font-semibold text-primary/80">
+                              {vds?.excel_institution_name}
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <span className="inline-block px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                                {convertToTitleCase(vds?.meeting_type)}
+                              </span>
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <span className="inline-block px-2 py-1 rounded-full bg-gray-200 text-gray-700 text-xs font-bold">
+                                {vds?.proposal_num}
+                              </span>
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <span className="block truncate" title={vds?.proposal}>{vds?.proposal}</span>
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <span className="inline-block px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                                {convertToTitleCase(vds?.mgt_rec)}
+                              </span>
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <div className="flex items-center gap-2">
+                                {vds?.vote === "Split Vote" ? (
+                                  <Tippy content={vds?.split_vote_counts} options={{ theme: "light" }}>
+                                    <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">{vds?.vote}</span>
+                                  </Tippy>
+                                ) : (
+                                  <span className={clsx(
+                                    "inline-block px-2 py-1 rounded-full text-xs font-bold",
+                                    (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) ? "bg-red-100 text-red-700" : "bg-primary/10 text-primary"
+                                  )}>
+                                    {vds?.vote}
+                                  </span>
+                                )}
+                                {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                  <span data-tooltip-id="my-tooltip-data-html" data-tooltip-html={vds?.notes}>
+                                    <Lucide icon="Info" className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800 cursor-pointer" />
+                                  </span>
+                                )}
+                              </div>
+                            </Table.Td>
+                          </Table.Tr>
+                        );
+                      });
+                    })()
+                  ) : (
+                    <Table.Tr>
+                      <Table.Td colSpan={6} className="text-center py-10 text-gray-400 text-lg font-semibold">
+                        <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+                        No Voting Data available. Try adjusting your filters!
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
+                </Table.Tbody>
+              </Table>
+            </div>
+          </TableWrapper>
+        )}
 
         {VdsEuropeans?.length > 0 && (
           <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
