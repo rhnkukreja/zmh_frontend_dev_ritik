@@ -8,13 +8,12 @@ import {
   generateFilterChips,
 } from "@/utils/helper";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   baseURL,
   proponent_type,
   proposal_type,
-  proposal_keywords,
   meeting_type,
 } from "@/constant";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -22,7 +21,7 @@ import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 import { Controller, useForm } from "react-hook-form";
-import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
+import { FormInput } from "@/components/Base/Form";
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
@@ -30,25 +29,23 @@ import CompanySelect from "@/components/ReactSelectAsync";
 import {
   fetchVdsEuropeans,
   resetPage,
-  setAllFilters,
   setPage,
 } from "@/stores/vdsEuropeanSlice";
 import { vdsEuropeanService } from "@/services/vdsEuropean";
 import { setTempSearch } from "@/stores/dashboardSlice";
-import FilterChips from "@/components/FilterChips";
 import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { peerAnalysisService } from "@/services/peerAnalysis";
-import { i } from "vite/dist/node/types.d-aGj9QkWt";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import Pill from "@/components/Pill";
-import { FaFilter, FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
+import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -97,6 +94,7 @@ const index = () => {
       year: [],
       index: [],
     });
+  const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
   const toggleExpand = (index: number) => {
     setExpandedRows((prev) => ({
@@ -150,6 +148,18 @@ const index = () => {
   useEffect(() => {
     getDependentDropdown();
   }, [dropdownValues?.company_name]);
+
+  useEffect(() => {
+    const fetchInstitutions = async () => {
+      try {
+        const data = await getVdsEuropeanDropdownValues();
+        setInstitutionOptions(data.institution || []);
+      } catch (error) {
+        setInstitutionOptions([]);
+      }
+    };
+    fetchInstitutions();
+  }, []);
 
   const {
     handleSubmit,
@@ -617,9 +627,7 @@ const index = () => {
                     defaultValue={[]}
                     render={({ field }) => (
                       <MultiSelectDropdown
-                        data={isViewAnalysis
-                          ? apiDependentDropdownOptions?.institutes?.map((item: any) => item.institution_name)
-                          : apiInstitutionDropdown?.institution}
+                        data={institutionOptions}
                         placeholder="Select Institutions"
                         loading={getFundNameDropdownLoader}
                         onChange={(selectedOptions) => {
@@ -891,155 +899,157 @@ const index = () => {
           </div>
         )}
 
-        {/* ANALYTICS TABLE (by_institution) */}
-        {isViewAnalysis && vdsEuropeansAnalytics?.by_institution && (
-          Object.keys(vdsEuropeansAnalytics.by_institution).length === 0 ? (
-            <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
-          ) : (
-            <div className="mb-8">
-              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                <table className="min-w-full rounded-2xl overflow-hidden">
-                  <thead>
-                    <tr className="bg-primary text-white text-base">
-                      <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Metric</th>
-                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year, idx, arr) => (
-                        <th key={year} className={`px-6 py-3 text-center font-semibold ${idx === arr.length - 1 ? 'rounded-tr-2xl' : ''}`}>{year}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-700 text-base divide-y divide-gray-100">
-                    <tr>
-                      <td className="px-6 py-3 font-medium bg-gray-50">No. of unique companies</td>
-                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => (
-                        <td key={year} className="px-6 py-3 text-center bg-gray-50 text-gray-400">-</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 font-medium">Total proposals voted</td>
-                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                        return <td key={year} className="px-6 py-3 text-center">{inst ? inst.total_proposals.toLocaleString() : '-'}</td>;
-                      })}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 font-medium">No. of FOR votes <span className="text-xs text-gray-400">*</span></td>
-                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                        return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.for_votes.toLocaleString()} (${inst.for_percentage}%)` : '-'}</td>;
-                      })}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes <span className="text-xs text-gray-400">*</span></td>
-                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                        return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.against_votes.toLocaleString()} (${inst.against_percentage}%)` : '-'}</td>;
-                      })}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 font-medium">Alignment with management</td>
-                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                        return <td key={year} className="px-6 py-3 text-center">{inst ? inst.aligned_with_mgmt : '-'}</td>;
-                      })}
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 font-medium">Alignment percentage</td>
-                      {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                        const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                        return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.alignment_percentage}%` : '-'}</td>;
-                      })}
-                    </tr>
-                  </tbody>
-                </table>
-                <div className="text-xs text-gray-400 mt-2 ml-2">* (percentage of total proposal voted)</div>
-              </div>
+        {/* ANALYTICS TABLE (by_institution) and COLLAPSIBLE COMPANY LIST (by_company) with loader */}
+        {isViewAnalysis && isAnalyticsLoading ? (
+          <div className="flex justify-center items-center min-h-[300px]">
+            <div className="rounded-2xl shadow-lg bg-white p-8 border border-gray-100 flex flex-col items-center">
+              <LoadingIcon className="w-12 h-12 text-primary" />
             </div>
-          )
-        )}
-        {/* COLLAPSIBLE COMPANY LIST (by_company) */}
-        {isViewAnalysis && vdsEuropeansAnalytics?.by_company && vdsEuropeansAnalytics.by_company.length > 0 && (
-          <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
-            <div className="divide-y divide-gray-100">
-              {vdsEuropeansAnalytics.by_company.map((ele, index) => (
-                <div key={ele.company_id || index} className="py-2">
-                  <div
-                    className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
-                    onClick={() => toggleGroup(ele.company_name)}
-                  >
-                    <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
-                    <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
-                  </div>
-                  {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                    <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
-                      <table className="min-w-full">
-                        <thead>
-                          <tr className="bg-primary text-white text-sm">
-                            <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
-                            <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                            <th className="px-4 py-2 text-left font-semibold">Management Recommendation</th>
-                            <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                          {ele.sample_proposals.map((vds, vdsIdx) => (
-                            <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                              <td className="px-4 py-2">{vds?.proposal_num}</td>
-                              <td className="px-4 py-2">
-                                {vds?.proposal && vds?.proposal.length > 50 ? (
-                                  <span>
-                                    {expandedRows[index]
-                                      ? vds?.proposal
-                                      : vds?.proposal.slice(0, 50) + "..."}
-                                    <button
-                                      onClick={() => toggleExpand(index)}
-                                      className="ml-1 text-primary underline text-xs"
-                                    >
-                                      {expandedRows[index] ? 'Show less' : 'Show more'}
-                                    </button>
-                                  </span>
-                                ) : (
-                                  vds?.proposal
-                                )}
-                              </td>
-                              <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
-                              <td className="px-4 py-2">
-                                <span className={clsx([
-                                  (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                    "text-red-700 font-semibold ",
-                                ])}>
-                                  {vds?.vote}
-                                </span>
-                                {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                  <span
-                                    data-tooltip-id="my-tooltip-data-html"
-                                    data-tooltip-html={vds?.notes}
-                                    className="ml-2 text-xs text-blue-700 underline cursor-pointer"
-                                  >
-                                    Note
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
+          </div>
+        ) : (
+          <>
+            {isViewAnalysis && vdsEuropeansAnalytics?.by_institution && (
+              Object.keys(vdsEuropeansAnalytics.by_institution).length === 0 ? (
+                <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
+              ) : (
+                <div className="mb-8">
+                  <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                    <table className="min-w-full rounded-2xl overflow-hidden">
+                      <thead>
+                        <tr className="bg-primary text-white text-base">
+                          <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Metric</th>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year, idx, arr) => (
+                            <th key={year} className={`px-6 py-3 text-center font-semibold ${idx === arr.length - 1 ? 'rounded-tr-2xl' : ''}`}>{year}</th>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                        </tr>
+                      </thead>
+                      <tbody className="text-gray-700 text-base divide-y divide-gray-100">
+                        <tr>
+                          <td className="px-6 py-3 font-medium">Total proposals voted</td>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                            return <td key={year} className="px-6 py-3 text-center">{inst ? inst.total_proposals.toLocaleString() : '-'}</td>;
+                          })}
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-3 font-medium">No. of FOR votes <span className="text-xs text-gray-400">*</span></td>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                            return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.for_votes.toLocaleString()} (${inst.for_percentage}%)` : '-'}</td>;
+                          })}
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes <span className="text-xs text-gray-400">*</span></td>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                            return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.against_votes.toLocaleString()} (${inst.against_percentage}%)` : '-'}</td>;
+                          })}
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-3 font-medium">Alignment with management</td>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                            return <td key={year} className="px-6 py-3 text-center">{inst ? inst.aligned_with_mgmt : '-'}</td>;
+                          })}
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-3 font-medium">Alignment percentage</td>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
+                            return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.alignment_percentage}%` : '-'}</td>;
+                          })}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              ))}
-            </div>
-            {vdsEuropeansAnalytics?.by_company?.length > 0 && (
-              <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                <CPagination
-                  page={vdsEuropeansAnalytics?.pagination?.current_page || 1}
-                  totalPages={vdsEuropeansAnalytics?.pagination?.total_pages || 1}
-                  handleNextPage={handleNextPage}
-                  handlePageChange={handlePageChange}
-                  handlePreviousPage={handlePreviousPage}
-                />
+              )
+            )}
+            {isViewAnalysis && vdsEuropeansAnalytics?.by_company && vdsEuropeansAnalytics.by_company.length > 0 && (
+              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
+                <div className="divide-y divide-gray-100">
+                  {vdsEuropeansAnalytics.by_company.map((ele, index) => (
+                    <div key={ele.company_id || index} className="py-2">
+                      <div
+                        className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
+                        onClick={() => toggleGroup(ele.company_name)}
+                      >
+                        <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                        <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
+                      </div>
+                      {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
+                        <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                          <table className="min-w-full">
+                            <thead>
+                              <tr className="bg-primary text-white text-sm">
+                                <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
+                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                                <th className="px-4 py-2 text-left font-semibold">Management Recommendation</th>
+                                <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                              </tr>
+                            </thead>
+                            <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                              {ele.sample_proposals.map((vds, vdsIdx) => (
+                                <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
+                                  <td className="px-4 py-2">{vds?.proposal_num}</td>
+                                  <td className="px-4 py-2">
+                                    {vds?.proposal && vds?.proposal.length > 50 ? (
+                                      <span>
+                                        {expandedRows[index]
+                                          ? vds?.proposal
+                                          : vds?.proposal.slice(0, 50) + "..."}
+                                        <button
+                                          onClick={() => toggleExpand(index)}
+                                          className="ml-1 text-primary underline text-xs"
+                                        >
+                                          {expandedRows[index] ? 'Show less' : 'Show more'}
+                                        </button>
+                                      </span>
+                                    ) : (
+                                      vds?.proposal
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                  <td className="px-4 py-2">
+                                    <span className={clsx([
+                                      (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                      "text-red-700 font-semibold ",
+                                    ])}>
+                                      {vds?.vote}
+                                    </span>
+                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                      <span
+                                        data-tooltip-id="my-tooltip-data-html"
+                                        data-tooltip-html={vds?.notes}
+                                        className="ml-2 text-xs text-blue-700 underline cursor-pointer"
+                                      >
+                                        Note
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {vdsEuropeansAnalytics?.by_company?.length > 0 && (
+                  <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                    <CPagination
+                      page={vdsEuropeansAnalytics?.pagination?.current_page || 1}
+                      totalPages={vdsEuropeansAnalytics?.pagination?.total_pages || 1}
+                      handleNextPage={handleNextPage}
+                      handlePageChange={handlePageChange}
+                      handlePreviousPage={handlePreviousPage}
+                    />
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
         {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
         {!isViewAnalysis && (
