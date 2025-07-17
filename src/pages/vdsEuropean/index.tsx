@@ -905,7 +905,7 @@ const index = () => {
         {isViewAnalysis && isAnalyticsLoading ? (
           <div className="flex justify-center items-center min-h-[300px]">
             <div className="rounded-2xl shadow-lg bg-white p-8 border border-gray-100 flex flex-col items-center">
-              <LoadingIcon className="w-12 h-12 text-primary" />
+              <LoadingIcon icon="three-dots" className="w-12 h-12 text-primary" />
             </div>
           </div>
         ) : (
@@ -1023,7 +1023,7 @@ const index = () => {
                                         <span
                                           data-tooltip-id="my-tooltip-data-html"
                                           data-tooltip-html={vds?.notes}
-                                          className="ml-2 text-xs text-blue-700 underline cursor-pointer"
+                                          className="ml-2 text-xs text-gray-600 underline cursor-pointer hover:text-primary"
                                         >
                                           Note
                                         </span>
