@@ -72,7 +72,7 @@ const index = () => {
   });
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [vdsEuropeansAnalytics, setVdsEuropeansAnalytics] = useState<any>([]);
-  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(true);
+  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [dropdownValues, setDropdownValues] = useState<any>({
     company_name: [],
@@ -81,7 +81,7 @@ const index = () => {
   });
   const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(false);
+  const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(true);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const [analyticsPage, setAnalyticsPage] = useState<number>(1);
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
@@ -93,6 +93,7 @@ const index = () => {
       category: [],
       year: [],
       index: [],
+      company_name: [],
     });
   const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
@@ -174,13 +175,15 @@ const index = () => {
       vote: [],
       category: [],
       year: "",
+      company_name: [],
     },
   });
 
   const getDependentDropdown = async () => {
     const paramFilter = {
-      company_name:
-        dropdownValues?.company_name !== ""
+      company_name: Array.isArray(dropdownValues?.company_name)
+        ? dropdownValues?.company_name
+        : dropdownValues?.company_name
           ? [dropdownValues?.company_name]
           : [],
       institution_name: dropdownValues?.institution_name,
@@ -193,11 +196,7 @@ const index = () => {
       setValue("year", 2024);
     }
     try {
-      if (
-        dropdownValues?.company_name?.length === 0 ||
-        dropdownValues?.company_name === ""
-      )
-        return;
+      if (!paramFilter.company_name.length) return;
       setGetDynamicDropdownLoader(true);
       const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues(
         paramFilter
@@ -251,11 +250,7 @@ const index = () => {
       onAnalyticsSubmit(npxFilter);
       return;
     }
-
-    if (
-      npxFilter?.company_name?.length === 0 ||
-      !npxFilter?.company_name?.label
-    ) {
+    if (!npxFilter?.company_name || npxFilter?.company_name.length === 0) {
       toast.warning("Please Select Company Name");
       return;
     }
@@ -264,7 +259,7 @@ const index = () => {
       return;
     }
     setallApplyFilter({
-      company_name: [npxFilter?.company_name?.label],
+      company_name: npxFilter?.company_name, // Already a flat array
       institution_name: npxFilter?.institution_name,
       vote_types: npxFilter?.vote,
       category: npxFilter?.category,
@@ -280,12 +275,9 @@ const index = () => {
       toast.warning("Please Select Institution Name");
       return;
     }
-
     setAllAnalyticsFilter({
       ...data,
-      ...(data?.company_name?.label && {
-        company_name: [data.company_name.label],
-      }),
+      company_name: data?.company_name || [], // Always a flat array
       vote_types: data?.vote || [], // always set vote_types
     });
   };
@@ -295,8 +287,18 @@ const index = () => {
     setFiltersLength(0);
     reset();
     resetFormValues();
+    setDropdownValues({
+      company_name: [],
+      institution: [],
+      index: [],
+    });
     if (onAnalyticsTab) {
-      setAllAnalyticsFilter({});
+      setAllAnalyticsFilter({
+        institution_name: ["BlackRock, Inc."],
+        index_name: ["S&P 500"],
+      });
+      setValue("institution_name", ["BlackRock, Inc."]);
+      setValue("index_name", ["S&P 500"]);
       setVdsEuropeansAnalytics({});
     } else {
       setallApplyFilter({});
@@ -337,6 +339,11 @@ const index = () => {
     setValue("proposal_type", []);
     setValue("custom_keywords", []);
     setValue("meeting_type", []);
+    setDropdownValues({
+      company_name: [],
+      institution: [],
+      index: [],
+    });
   };
 
   const handleNextPage = () => {
@@ -415,11 +422,12 @@ const index = () => {
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      if (hasAnyValidFilter(allAnalyticsFilter)) {
+      if (isViewAnalysis && allAnalyticsFilter?.institution_name && allAnalyticsFilter.institution_name.length > 0) {
         const body = {
-          investor_company: allAnalyticsFilter?.institution_name
-            ? allAnalyticsFilter?.institution_name
-            : [],
+          investor_company: allAnalyticsFilter?.institution_name?.length
+            ? allAnalyticsFilter.institution_name
+            : allAnalyticsFilter.company_name || [],
+          // Remove company_name from the payload
           year:
             allAnalyticsFilter?.analyticsYear?.length > 0
               ? allAnalyticsFilter?.analyticsYear
@@ -443,7 +451,7 @@ const index = () => {
           meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
             ? allAnalyticsFilter.meeting_type
             : [],
-          vote_types: allAnalyticsFilter?.vote_types || [], // ensure vote_types is sent
+          vote_types: allAnalyticsFilter?.vote_types || [],
           country: ["USA"],
           page: analyticsPage || 1,
         };
@@ -454,23 +462,36 @@ const index = () => {
             `${baseURL}/api/proposal-voting-stats`,
             body
           );
-
           setVdsEuropeansAnalytics(response.response);
         } catch (error) {
           console.error("Error fetching analytics:", error);
         } finally {
           setIsAnalyticsLoading(false);
         }
-      } else {
-        setVdsEuropeansAnalytics({});
       }
     };
-    if (isViewAnalysis) {
-      fetchAnalytics();
-      setFiltersLength(countValidFilters(allAnalyticsFilter));
-      setSelectedChipFilters(generateFilterChips(allAnalyticsFilter));
+    fetchAnalytics();
+    let filterForChips = allAnalyticsFilter;
+    if (isViewAnalysis && filterForChips.vote) {
+      const { vote, ...rest } = filterForChips;
+      filterForChips = rest;
     }
+    setFiltersLength(countValidFilters(filterForChips));
+    setSelectedChipFilters(generateFilterChips(filterForChips));
   }, [allAnalyticsFilter, analyticsPage]);
+
+  // On initial mount, set default analytics filter to BlackRock and S&P 500
+  useEffect(() => {
+    if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
+      setAllAnalyticsFilter({
+        institution_name: ["BlackRock, Inc."],
+        index_name: ["S&P 500"],
+      });
+      setValue("institution_name", ["BlackRock, Inc."]);
+      setValue("index_name", ["S&P 500"]);
+    }
+    // eslint-disable-next-line
+  }, [isViewAnalysis]);
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -492,60 +513,10 @@ const index = () => {
     }
   }, [isViewAnalysis]);
 
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
   return (
     <>
-      <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
-        <button
-          className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === false
-              ? "bg-primary text-white shadow"
-              : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-            }`}
-          onClick={() => {
-            setIsViewAnalysis(false);
-            // Only reset analytics filters when switching to company tab
-            setAllAnalyticsFilter({});
-            setVdsEuropeansAnalytics({});
-          }}
-        >
-          Search By Company
-        </button>
-        <button
-          className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isViewAnalysis === true
-              ? "bg-primary text-white shadow"
-              : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-            }`}
-          onClick={() => {
-            setIsViewAnalysis(true);
-            setIsFilterCollapse(true);
-            // Only reset company filters when switching to analytics tab
-            setallApplyFilter({});
-            dispatch(resetPage());
-            dispatch(
-              fetchVdsEuropeans(
-                createDynamicURL(
-                  `${baseURL}/vds_european/`,
-                  undefined,
-                  undefined,
-                  page
-                )
-              )
-            );
-
-            setApiDependentDropdownOptions({
-              institution: [],
-              vote: [],
-              category: [],
-              year: [],
-            });
-            setApiInstitutionDropdown({
-              institution: [],
-            });
-          }}
-        >
-          Search By Institution
-        </button>
-      </div>
-
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
       <div className="p-5 mt-1 box">
         <div className="flex flex-col p-5  sm:flex-row gap-y-2">
@@ -564,64 +535,71 @@ const index = () => {
               </h2>
             )}
 
-            <Popover className="inline-block">
-              {({ close }) => (
-                <>
-                  <Popover.Button
-                    as={Button}
-                    variant="outline-secondary"
-                    className="w-full sm:w-auto"
-                    onClick={handleCollapseFilter}
-                  >
-                    <Lucide
-                      icon="ArrowDownWideNarrow"
-                      className="stroke-[1.3] w-4 h-4 mr-2"
-                    />
-                    Filter
-                    <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                      {filtersLength}
-                    </div>
-                  </Popover.Button>
-                </>
+            <div className="flex items-center gap-2">
+              <Popover className="inline-block">
+                {({ close }) => (
+                  <>
+                    <Popover.Button
+                      as={Button}
+                      variant="outline-secondary"
+                      className="w-full sm:w-auto"
+                      onClick={handleCollapseFilter}
+                    >
+                      <Lucide
+                        icon="ArrowDownWideNarrow"
+                        className="stroke-[1.3] w-4 h-4 mr-2"
+                      />
+                      Filter
+                      <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                        {filtersLength}
+                      </div>
+                    </Popover.Button>
+                  </>
+                )}
+              </Popover>
+              {isFilterCollapse && (
+                <Button
+                  variant={showAdvancedFilters ? "primary" : "outline-secondary"}
+                  className={`flex items-center gap-2 ${showAdvancedFilters ? 'text-white' : ''}`}
+                  onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                  type="button"
+                >
+                  <Lucide icon="Settings" className="w-4 h-4" />
+                  Advanced Filters
+                </Button>
               )}
-            </Popover>
+            </div>
           </div>
         </div>
 
-        {/* FILTER CARD */}
+        {/* Filter Pills immediately after filter card, before data */}
+        {selectedChipFilters?.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {selectedChipFilters.map((chip, idx) => (
+              <span key={idx} className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20">
+                {chip.label}
+                <button
+                  type="button"
+                  className="ml-2 text-primary hover:text-red-600 transition-colors"
+                  onClick={() => handleRemoveChip(chip.key, chip.value)}
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+            {/* Filter Toggle and Advanced Filters Button */}
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className={`grid gap-6 ${isViewAnalysis ? 'md:grid-cols-4' : 'md:grid-cols-3'} grid-cols-1`}>
-                {/* Company Select (Company mode only) */}
-                {!isViewAnalysis && (
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaBuilding className="text-gray-400" /> Company*
-                    </label>
-                    <Controller
-                      name="company_name"
-                      control={control}
-                      defaultValue={[]}
-                      render={({ field }) => (
-                        <CompanySelect
-                          isClearable={true}
-                          exactUrl={"get_vds_european_dropdown_values/?company_name="}
-                          value={field.value}
-                          onChange={(value: any) => {
-                            field.onChange(value);
-                            !isViewAnalysis && handleDropdownChange("company_name", value?.label);
-                            !isViewAnalysis && getInstituionDependentDropdown(value?.label);
-                          }}
-                        />
-                      )}
-                    />
-                  </div>
-                )}
-                {/* Institution Select */}
+              {/* Main 4 fields in a single row */}
+              <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
+                {/* Institution */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaUniversity className="text-gray-400" /> Institution{isViewAnalysis && "*"}
+                    <FaUniversity className="text-gray-400" /> Institution*
                   </label>
                   <Controller
                     name="institution_name"
@@ -642,97 +620,19 @@ const index = () => {
                     )}
                   />
                 </div>
-                {/* Year Select (Company mode) */}
-                {!isViewAnalysis && (
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaCalendarAlt className="text-gray-400" /> Year
-                    </label>
-                    <Controller
-                      name="year"
-                      control={control}
-                      defaultValue={""}
-                      render={({ field }) => (
-                        <TomSelect
-                          value={field.value || ""}
-                          onChange={(value) => field.onChange(value)}
-                          options={{ placeholder: "Select Year", allowEmptyOption: true }}
-                          className="w-full"
-                        >
-                          {getDynamicDropdownLoader ? (
-                            <option disabled>Loading...</option>
-                          ) : (
-                            apiDependentDropdownOptions?.year?.map((year: any) => (
-                              <option key={year} value={year}>{year}</option>
-                            ))
-                          )}
-                        </TomSelect>
-                      )}
-                    />
-                  </div>
-                )}
-                {/* Year Select (Analytics mode) */}
-                {isViewAnalysis && (
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaCalendarAlt className="text-gray-400" /> Year
-                    </label>
-                    <Controller
-                      name="analyticsYear"
-                      control={control}
-                      defaultValue={[]}
-                      render={({ field }) => (
-                        <MultiSelectDropdown
-                          data={apiDependentDropdownOptions?.year}
-                          placeholder="Select Year"
-                          loading={getDynamicDropdownLoader}
-                          onChange={(selectedOptions) => {
-                            const selectedValues = selectedOptions.map((option) => option.value);
-                            field.onChange(selectedValues);
-                          }}
-                          selectedOption={field.value || []}
-                        />
-                      )}
-                    />
-                  </div>
-                )}
-                {/* Index (Analytics mode) */}
-                {isViewAnalysis && (
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaLayerGroup className="text-gray-400" /> Index
-                    </label>
-                    <Controller
-                      name="index_name"
-                      control={control}
-                      render={({ field }) => (
-                        <MultiSelectDropdown
-                          data={apiDependentDropdownOptions?.index?.map((item: any) => item)}
-                          placeholder="Select Index"
-                          loading={false}
-                          onChange={(selectedOptions) => {
-                            const selectedValues = selectedOptions.map((option) => option.value);
-                            field.onChange(selectedValues);
-                          }}
-                          selectedOption={field.value || []}
-                        />
-                      )}
-                    />
-                  </div>
-                )}
-                {/* Vote */}
+                {/* Year */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaHandshake className="text-gray-400" /> Vote
+                    <FaCalendarAlt className="text-gray-400" /> Year
                   </label>
                   <Controller
-                    name="vote"
+                    name="analyticsYear"
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
                       <MultiSelectDropdown
-                        data={isViewAnalysis ? ["For", "Against", "Withhold"] : apiDependentDropdownOptions?.vote}
-                        placeholder="Select Vote"
+                        data={apiDependentDropdownOptions?.year}
+                        placeholder="Select Year"
                         loading={getDynamicDropdownLoader}
                         onChange={(selectedOptions) => {
                           const selectedValues = selectedOptions.map((option) => option.value);
@@ -743,22 +643,70 @@ const index = () => {
                     )}
                   />
                 </div>
-                {/* Proposal Type (Analytics mode) */}
-                {isViewAnalysis && (
+                {/* Index */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaLayerGroup className="text-gray-400" /> Index
+                  </label>
+                  <Controller
+                    name="index_name"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={apiDependentDropdownOptions?.index?.map((item: any) => item)}
+                        placeholder="Select Index"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Proposal Type */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaListUl className="text-gray-400" /> Proposal Type
+                  </label>
+                  <Controller
+                    name="proposal_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={proposal_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Proposal Type"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+              {/* Advanced Filters (collapsible, below main row) */}
+              {showAdvancedFilters && (
+                <div className="grid gap-6 md:grid-cols-4 grid-cols-1 mt-6">
+                  {/* Vote */}
                   <div>
                     <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaListUl className="text-gray-400" /> Proposal Type
+                      <FaHandshake className="text-gray-400" /> Vote
                     </label>
                     <Controller
-                      name="proposal_type"
+                      name="vote"
                       control={control}
+                      defaultValue={[]}
                       render={({ field }) => (
                         <MultiSelectDropdown
-                          data={proposal_type.map((item: any) => convertToTitleCase(item))}
-                          placeholder="Select Proposal Type"
-                          loading={false}
+                          data={["For", "Against", "Withhold"]}
+                          placeholder="Select Vote"
+                          loading={getDynamicDropdownLoader}
                           onChange={(selectedOptions) => {
-                            const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                            const selectedValues = selectedOptions.map((option) => option.value);
                             field.onChange(selectedValues);
                           }}
                           selectedOption={field.value || []}
@@ -766,9 +714,7 @@ const index = () => {
                       )}
                     />
                   </div>
-                )}
-                {/* Proponent Type (Analytics mode) */}
-                {isViewAnalysis && (
+                  {/* Proponent Type */}
                   <div>
                     <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                       <FaUserTie className="text-gray-400" /> Proponent Type
@@ -790,9 +736,7 @@ const index = () => {
                       )}
                     />
                   </div>
-                )}
-                {/* Meeting Type (Analytics mode) */}
-                {isViewAnalysis && (
+                  {/* Meeting Type */}
                   <div>
                     <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                       <FaTags className="text-gray-400" /> Meeting Type
@@ -814,9 +758,7 @@ const index = () => {
                       )}
                     />
                   </div>
-                )}
-                {/* Custom Keywords (Analytics mode) */}
-                {isViewAnalysis && (
+                  {/* Keywords */}
                   <div>
                     <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                       <FaTags className="text-gray-400" /> Keywords
@@ -832,46 +774,10 @@ const index = () => {
                       )}
                     />
                   </div>
-                )}
-                {/* Keyword (Company mode) */}
-                {!isViewAnalysis && (
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaTags className="text-gray-400" /> Keyword
-                    </label>
-                    <Controller
-                      name="keyword"
-                      control={control}
-                      defaultValue={""}
-                      render={({ field }) => (
-                        <FormInput
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleSubmit(onSubmit)();
-                            }
-                          }}
-                          value={field.value?.toString() || ""}
-                          onChange={field.onChange}
-                          type="text"
-                          className="mt-1"
-                          placeholder="Search Keyword"
-                        />
-                      )}
-                    />
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
               {/* Buttons */}
               <div className="flex justify-end gap-3 mt-6">
-                <Button
-                  variant="secondary"
-                  onClick={() => { onFilterClear(isViewAnalysis); }}
-                  type="button"
-                  className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-gray-100 transition-all"
-                >
-                  <MdOutlineClear className="text-lg" /> Clear
-                </Button>
                 <Button
                   variant="primary"
                   className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
@@ -880,23 +786,6 @@ const index = () => {
                   <FaSearch className="text-lg" /> Apply
                 </Button>
               </div>
-              {/* Filter Chips */}
-              {selectedChipFilters?.length > 0 && (
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {selectedChipFilters.map((chip, idx) => (
-                    <span key={idx} className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20">
-                      {chip.label}
-                      <button
-                        type="button"
-                        className="ml-2 text-primary hover:text-red-600 transition-colors"
-                        onClick={() => handleRemoveChip(chip.key, chip.value)}
-                      >
-                        <FaTimes className="text-xs" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </form>
           </div>
         )}
@@ -919,9 +808,9 @@ const index = () => {
                     <table className="min-w-full rounded-2xl overflow-hidden">
                       <thead>
                         <tr className="bg-primary text-white text-base">
-                          <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Metric</th>
+                          <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Summary</th>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year, idx, arr) => (
-                            <th key={year} className={`px-6 py-3 text-center font-semibold ${idx === arr.length - 1 ? 'rounded-tr-2xl' : ''}`}>{year}</th>
+                            <th key={year} className={`px-6 py-3 text-right font-semibold ${idx === arr.length - 1 ? 'rounded-tr-2xl' : ''}`}>{year}</th>
                           ))}
                         </tr>
                       </thead>
@@ -930,35 +819,35 @@ const index = () => {
                           <td className="px-6 py-3 font-medium">Total proposals voted</td>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
                             const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-center">{inst ? inst.total_proposals.toLocaleString() : '-'}</td>;
+                            return <td key={year} className="px-6 py-3 text-right">{inst ? inst.total_proposals.toLocaleString() : '-'}</td>;
                           })}
                         </tr>
                         <tr>
                           <td className="px-6 py-3 font-medium">No. of FOR votes <span className="text-xs text-gray-400">*</span></td>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
                             const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.for_votes.toLocaleString()} (${inst.for_percentage}%)` : '-'}</td>;
+                            return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.for_votes.toLocaleString()} (${inst.for_percentage}%)` : '-'}</td>;
                           })}
                         </tr>
                         <tr>
                           <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes <span className="text-xs text-gray-400">*</span></td>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
                             const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.against_votes.toLocaleString()} (${inst.against_percentage}%)` : '-'}</td>;
+                            return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.against_votes.toLocaleString()} (${inst.against_percentage}%)` : '-'}</td>;
                           })}
                         </tr>
                         <tr>
                           <td className="px-6 py-3 font-medium">Alignment with management</td>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
                             const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-center">{inst ? inst.aligned_with_mgmt : '-'}</td>;
+                            return <td key={year} className="px-6 py-3 text-right">{inst ? inst.aligned_with_mgmt : '-'}</td>;
                           })}
                         </tr>
                         <tr>
                           <td className="px-6 py-3 font-medium">Alignment percentage</td>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
                             const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-center">{inst ? `${inst.alignment_percentage}%` : '-'}</td>;
+                            return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.alignment_percentage}%` : '-'}</td>;
                           })}
                         </tr>
                       </tbody>
@@ -972,71 +861,57 @@ const index = () => {
                 <div className="divide-y divide-gray-100">
                   {vdsEuropeansAnalytics.by_company.map((ele, index) => (
                     <div key={ele.company_id || index} className="py-2">
-                        <div
-                          className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
-                          onClick={() => toggleGroup(ele.company_name)}
-                        >
-                          <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
-                          <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
-                        </div>
-                        {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                          <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
-                            <table className="min-w-full">
-                              <thead>
-                                <tr className="bg-primary text-white text-sm">
-                                  <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
-                                  <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                                  <th className="px-4 py-2 text-left font-semibold">Management Recommendation</th>
-                                  <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
-                                </tr>
-                              </thead>
-                              <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                                {ele.sample_proposals.map((vds, vdsIdx) => (
-                                  <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                                    <td className="px-4 py-2">{vds?.proposal_num}</td>
-                                    <td className="px-4 py-2">
-                                      {vds?.proposal && vds?.proposal.length > 50 ? (
-                                        <span>
-                                          {expandedRows[index]
-                                            ? vds?.proposal
-                                            : vds?.proposal.slice(0, 50) + "..."}
-                                          <button
-                                            onClick={() => toggleExpand(index)}
-                                            className="ml-1 text-primary underline text-xs"
-                                          >
-                                            {expandedRows[index] ? 'Show less' : 'Show more'}
-                                          </button>
-                                        </span>
-                                      ) : (
-                                        vds?.proposal
-                                      )}
-                                    </td>
-                                    <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-4 py-2">
-                                      <span className={clsx([
-                                        (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                        "text-red-700 font-semibold ",
-                                      ])}>
-                                        {vds?.vote}
-                                      </span>
-                                      {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                        <span
-                                          data-tooltip-id="my-tooltip-data-html"
-                                          data-tooltip-html={vds?.notes}
-                                          className="ml-2 text-xs text-gray-600 underline cursor-pointer hover:text-primary"
-                                        >
-                                          Note
-                                        </span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                      <div
+                        className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
+                        onClick={() => toggleGroup(ele.company_name)}
+                      >
+                        <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                        <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
                       </div>
-                    ))}
+                      {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
+                        <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                          <table className="min-w-full">
+                            <thead>
+                              <tr className="bg-primary text-white text-sm">
+                                <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
+                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                                <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
+                                <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                              </tr>
+                            </thead>
+                            <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                              {ele.sample_proposals.map((vds, vdsIdx) => (
+                                <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
+                                  <td className="px-4 py-2">{vds?.proposal_num}</td>
+                                  <td className="px-4 py-2">
+                                    {vds?.proposal}
+                                  </td>
+                                  <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                  <td className="px-4 py-2 flex items-center">
+                                    <span className={clsx([
+                                      (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                      "text-red-700 font-semibold",
+                                    ])}>
+                                      {vds?.vote}
+                                    </span>
+                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                      <span
+                                        data-tooltip-id="my-tooltip-data-html"
+                                        data-tooltip-html={vds?.notes}
+                                        className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
+                                      >
+                                        <Lucide icon="Info" className="w-4 h-4" />
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 {vdsEuropeansAnalytics?.by_company?.length > 0 && (
                   <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
