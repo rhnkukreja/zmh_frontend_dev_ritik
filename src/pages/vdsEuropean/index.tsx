@@ -248,6 +248,7 @@ const index = () => {
   const onSubmit = async (npxFilter: any) => {
     if (isViewAnalysis) {
       onAnalyticsSubmit(npxFilter);
+      setIsFilterCollapse(false); // Ensure filter panel collapses in analytics mode
       return;
     }
     if (!npxFilter?.company_name || npxFilter?.company_name.length === 0) {
@@ -805,7 +806,7 @@ const index = () => {
               ) : (
                 <div className="mb-8">
                   <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                    <table className="min-w-full rounded-2xl overflow-hidden">
+                    <table className="w-[70%] mx-auto rounded-xl overflow-hidden">
                       <thead>
                         <tr className="bg-primary text-white text-base">
                           <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Summary</th>
