@@ -104,11 +104,6 @@ const initialState: any = {
       title: "Voting Data",
     },
     {
-      icon: "Vote",
-      pathname: "/2025-shareholder-meetings",
-      title: "2025 Shareholder Meetings",
-    },
-    {
       icon: "ShieldAlert",
       pathname: "/proxy-contest",
       title: "Proxy Contest",
