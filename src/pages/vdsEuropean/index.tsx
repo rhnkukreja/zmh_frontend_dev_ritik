@@ -838,6 +838,12 @@ const index = () => {
                           })}
                         </tr>
                         <tr>
+                          <td className="px-6 py-3 font-medium">No. of unique companies</td>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => (
+                            <td key={year} className="px-6 py-3 text-right">{vdsEuropeansAnalytics.total_companies ? vdsEuropeansAnalytics.total_companies.toLocaleString() : '-'}</td>
+                          ))}
+                        </tr>
+                        <tr>
                           <td className="px-6 py-3 font-medium">Alignment with management</td>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
                             const inst = vdsEuropeansAnalytics.by_institution[year][0];
