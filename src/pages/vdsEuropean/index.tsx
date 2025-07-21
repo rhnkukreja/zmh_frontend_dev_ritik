@@ -386,18 +386,26 @@ const index = () => {
     if (isViewAnalysis) {
       const updatedFilters = { ...allAnalyticsFilter };
 
-      if (Array.isArray(updatedFilters[removeKey])) {
+      // Special handling for vote_type <-> vote field
+      if (removeKey === "vote_type") {
+        updatedFilters[removeKey] = (updatedFilters[removeKey] || []).filter(
+          (item: any) => item !== removeValue
+        );
+        // Also update the form field "vote"
+        setValue("vote", updatedFilters[removeKey]);
+      } else if (Array.isArray(updatedFilters[removeKey])) {
         updatedFilters[removeKey] = updatedFilters[removeKey].filter(
           (item) => item !== removeValue
         );
+        setValue(removeKey, updatedFilters[removeKey]);
       } else if (updatedFilters[removeKey] === removeValue) {
         if (removeKey === "year") {
           updatedFilters[removeKey] = " ";
         } else {
           updatedFilters[removeKey] = "";
         }
+        setValue(removeKey, updatedFilters[removeKey]);
       }
-      setValue(removeKey, updatedFilters[removeKey]);
       setAllAnalyticsFilter(updatedFilters);
       return;
     }
