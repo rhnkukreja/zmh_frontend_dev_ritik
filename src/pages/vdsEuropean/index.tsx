@@ -838,6 +838,28 @@ const index = () => {
                           })}
                         </tr>
                         <tr>
+                          <td className="px-6 py-3 font-medium">No. of unique companies</td>
+                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+                            // Try to find the by_company entry for this year
+                            let yearCompanies = '-';
+                            if (Array.isArray(vdsEuropeansAnalytics.by_company)) {
+                              const yearEntry = vdsEuropeansAnalytics.by_company.find(
+                                (entry) => String(entry.year) === String(year)
+                              );
+                              if (yearEntry && typeof yearEntry.total_companies === 'number') {
+                                yearCompanies = yearEntry.total_companies.toLocaleString();
+                              }
+                            }
+                            // Fallback to total_companies if not found
+                            if (yearCompanies === '-' && vdsEuropeansAnalytics.total_companies) {
+                              yearCompanies = vdsEuropeansAnalytics.total_companies.toLocaleString();
+                            }
+                            return (
+                              <td key={year} className="px-6 py-3 text-right">{yearCompanies}</td>
+                            );
+                          })}
+                        </tr>
+                        <tr>
                           <td className="px-6 py-3 font-medium">Alignment with management</td>
                           {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
                             const inst = vdsEuropeansAnalytics.by_institution[year][0];
@@ -860,58 +882,62 @@ const index = () => {
             {isViewAnalysis && vdsEuropeansAnalytics?.by_company && vdsEuropeansAnalytics.by_company.length > 0 && (
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
                 <div className="divide-y divide-gray-100">
-                  {vdsEuropeansAnalytics.by_company.map((ele, index) => (
-                    <div key={ele.company_id || index} className="py-2">
-                      <div
-                        className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
-                        onClick={() => toggleGroup(ele.company_name)}
-                      >
-                        <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
-                        <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
-                      </div>
-                      {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                        <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
-                          <table className="min-w-full">
-                            <thead>
-                              <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
-                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                                <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
-                                <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                              {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                                  <td className="px-4 py-2">{vds?.proposal_num}</td>
-                                  <td className="px-4 py-2">
-                                    {vds?.proposal}
-                                  </td>
-                                  <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                  <td className="px-4 py-2 flex items-center">
-                                    <span className={clsx([
-                                      (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                      "text-red-700 font-semibold",
-                                    ])}>
-                                      {vds?.vote}
-                                    </span>
-                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                      <span
-                                        data-tooltip-id="my-tooltip-data-html"
-                                        data-tooltip-html={vds?.notes}
-                                        className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
-                                      >
-                                        <Lucide icon="Info" className="w-4 h-4" />
-                                      </span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
+                  {vdsEuropeansAnalytics.by_company.map((yearEntry, yearIdx) => (
+                    Array.isArray(yearEntry.companies)
+                      ? yearEntry.companies.map((ele, index) => (
+                          <div key={ele.company_id || `${yearIdx}-${index}`} className="py-2">
+                            <div
+                              className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
+                              onClick={() => toggleGroup(ele.company_name)}
+                            >
+                              <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                              <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
+                            </div>
+                            {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
+                              <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                                <table className="min-w-full">
+                                  <thead>
+                                    <tr className="bg-primary text-white text-sm">
+                                      <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
+                                      <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                                      <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
+                                      <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                                    {ele.sample_proposals.map((vds, vdsIdx) => (
+                                      <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
+                                        <td className="px-4 py-2">{vds?.proposal_num}</td>
+                                        <td className="px-4 py-2">
+                                          {vds?.proposal}
+                                        </td>
+                                        <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                        <td className="px-4 py-2 flex items-center">
+                                          <span className={clsx([
+                                            (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                            "text-red-700 font-semibold",
+                                          ])}>
+                                            {vds?.vote}
+                                          </span>
+                                          {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                            <span
+                                              data-tooltip-id="my-tooltip-data-html"
+                                              data-tooltip-html={vds?.notes}
+                                              className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
+                                            >
+                                              <Lucide icon="Info" className="w-4 h-4" />
+                                            </span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      : null
                   ))}
                 </div>
                 {vdsEuropeansAnalytics?.by_company?.length > 0 && (

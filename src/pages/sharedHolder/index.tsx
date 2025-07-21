@@ -219,7 +219,7 @@ function ShareHolderProposal() {
       company_status: filters?.company_status,
       head_support: filters?.head_support,
       nl_exist: filters?.nl_exist,
-      index: filters?.index ?? " ",
+      index: filters?.index ?? undefined,
       global_search:
         filters?.global_search?.map((item: string) => ({
           value: item,
@@ -243,7 +243,7 @@ function ShareHolderProposal() {
     setValue("company_status", null);
     setValue("head_support", null);
     setValue("nl_exist", null);
-    setValue("index", " ");
+    setValue("index", undefined);
   };
 
   const navigate = useNavigate();
