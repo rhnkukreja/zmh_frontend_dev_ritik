@@ -262,7 +262,7 @@ const index = () => {
     setallApplyFilter({
       company_name: npxFilter?.company_name, // Already a flat array
       institution_name: npxFilter?.institution_name,
-      vote_types: npxFilter?.vote,
+      vote_type: npxFilter?.vote,
       category: npxFilter?.category,
       year: npxFilter?.year,
       keyword: npxFilter?.keyword,
@@ -279,7 +279,7 @@ const index = () => {
     setAllAnalyticsFilter({
       ...data,
       company_name: data?.company_name || [], // Always a flat array
-      vote_types: data?.vote || [], // always set vote_types
+      vote_type: data?.vote || [], // always set vote_types
     });
   };
 
@@ -452,7 +452,7 @@ const index = () => {
           meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
             ? allAnalyticsFilter.meeting_type
             : [],
-          vote_types: allAnalyticsFilter?.vote_types || [],
+          vote_type: allAnalyticsFilter?.vote_type || [],
           country: ["USA"],
           page: analyticsPage || 1,
         };

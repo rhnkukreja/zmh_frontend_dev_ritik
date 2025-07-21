@@ -353,7 +353,7 @@ function generateFilterChips(filters: Record<string, any>) {
     institution_name: "Institution",
     year: "Year",
     vote: "Vote",
-    vote_types: "Vote", // add this line
+    vote_type: "Vote",
     category: "Category",
     keyword: "Keyword",
     index_name: "Index",
