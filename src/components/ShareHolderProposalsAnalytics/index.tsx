@@ -141,6 +141,42 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
 
 
 
+    // Custom label for count and percentage together above the bar
+    const CountAndPercentLabel = (props: any) => {
+      const { x, width, value, index } = props;
+      const chartData = tab == "proposal"
+        ? yearlySummary?.filter((item) => item[chartKey] >= 2022)
+        : yearlySummary?.filter((item) => item[chartKey] >= 2022).reverse();
+      const data = chartData && chartData[index];
+      const count = value;
+      const percent = data && data.avg_support !== undefined ? data.avg_support : undefined;
+      const labelY = 20;
+      const lineY = labelY + 6; // 6px below the label
+      return (
+        <g>
+          <text
+            x={x + width / 2}
+            y={labelY}
+            textAnchor="middle"
+            fill="black"
+            fontSize={11}
+            fontWeight={500}
+          >
+            {count}
+            {percent !== undefined ? ` - ${percent.toFixed(1)}%` : ''}
+          </text>
+          <line
+            x1={x + width / 2 - 16}
+            x2={x + width / 2 + 16}
+            y1={lineY}
+            y2={lineY}
+            stroke="#888"
+            strokeWidth={2}
+          />
+        </g>
+      );
+    };
+
     return (
       <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
 
@@ -188,7 +224,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                       ].reverse()}
                       margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
                     >
-                        <XAxis dataKey={chartKey}  />
+                        <XAxis dataKey={chartKey} dy={12} height={40} />
                         <YAxis
                           yAxisId="left"
                           label={{
@@ -219,11 +255,10 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                         >
                           <LabelList
                             dataKey="count"
-                            position="top"
-                            fill="black"
-                            fontSize={12}
+                            content={CountAndPercentLabel}
                           />
                         </Bar>
+                        {/* Remove percentage label from inside the bar/line */}
                         {tab == "proposal" && (
                           <Line
                             yAxisId="right"
@@ -234,13 +269,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                             dot={{ r: 4 }}
                             name="Avg. Support (%)"
                           >
-                            <LabelList
-                              dataKey="avg_support"
-                              position="bottom"
-                              fill="white"
-                              fontSize={12}
-                              formatter={(value) => `${value.toFixed(1)}%`}
-                            />
+                            {/* No LabelList here, percentage is shown above the bar only */}
                           </Line>
                         )}
 
