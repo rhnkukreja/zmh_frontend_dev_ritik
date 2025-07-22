@@ -53,7 +53,7 @@ const ProponentsAnalyticsComponent: React.FC<
   };
   const format = (value: number) => {
     if (value === 0 && !value) return;
-    return `(${value.toFixed(2)}%)`;
+    return '';
   };
 
   const renderSummaryTable = () => (
@@ -149,34 +149,19 @@ const ProponentsAnalyticsComponent: React.FC<
                           )}
                         </td>
                         <td className="border px-4 py-2">
-                          {proponent.total_count}{" "}
-                          {tab !== "no-action" &&
-                            proponent.avg_support !== undefined &&
-                            format(proponent.avg_support)}
+                          {proponent.total_count}
                         </td>
                         <td className="border px-4 py-2">
-                          {envCount}{" "}
-                          {tab !== "no-action" &&
-                            envAvgSupport !== undefined &&
-                            format(envAvgSupport)}
+                          {envCount}
                         </td>
                         <td className="border px-4 py-2">
-                          {socCount}{" "}
-                          {tab !== "no-action" &&
-                            socAvgSupport !== undefined &&
-                            format(socAvgSupport)}
+                          {socCount}
                         </td>
                         <td className="border px-4 py-2">
-                          {govCount}{" "}
-                          {tab !== "no-action" &&
-                            govAvgSupport !== undefined &&
-                            format(govAvgSupport)}
+                          {govCount}
                         </td>
                         <td className="border px-4 py-2">
-                          {execComp}{" "}
-                          {tab !== "no-action" &&
-                            execAvgSupport !== undefined &&
-                            format(execAvgSupport)}
+                          {execComp}
                         </td>
                       </tr>
                     );

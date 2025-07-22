@@ -46,6 +46,7 @@ import { MdOutlineClear } from "react-icons/md";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
 import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
+import React from "react";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -71,7 +72,7 @@ const index = () => {
     institution: [],
   });
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
-  const [vdsEuropeansAnalytics, setVdsEuropeansAnalytics] = useState<any>([]);
+  const [vdsEuropeansAnalytics, setVdsEuropeansAnalytics] = useState<any>({});
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [dropdownValues, setDropdownValues] = useState<any>({
@@ -430,52 +431,53 @@ const index = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
     const fetchAnalytics = async () => {
       if (isViewAnalysis && allAnalyticsFilter?.institution_name && allAnalyticsFilter.institution_name.length > 0) {
-        const body = {
-          investor_company: allAnalyticsFilter?.institution_name?.length
-            ? allAnalyticsFilter.institution_name
-            : allAnalyticsFilter.company_name || [],
-          // Remove company_name from the payload
-          year:
-            allAnalyticsFilter?.analyticsYear?.length > 0
-              ? allAnalyticsFilter?.analyticsYear
-              : [],
-          proponent_type: allAnalyticsFilter?.proponent_type
-            ? allAnalyticsFilter?.proponent_type
-            : [],
-          proposal_type: allAnalyticsFilter?.proposal_type
-            ? allAnalyticsFilter?.proposal_type.map((item: any) =>
-              item.toLowerCase()
-            )
-            : [],
-          index_name:
-            allAnalyticsFilter?.index_name?.length > 0
-              ? allAnalyticsFilter.index_name
-              : [],
-          custom_keywords:
-            allAnalyticsFilter?.custom_keywords?.length > 0
-              ? allAnalyticsFilter.custom_keywords
-              : [],
-          meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
-            ? allAnalyticsFilter.meeting_type
-            : [],
-          vote_type: allAnalyticsFilter?.vote_type || [],
-          country: ["USA"],
-          page: analyticsPage || 1,
-        };
-
+        setIsAnalyticsLoading(true);
         try {
-          setIsAnalyticsLoading(true);
           const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
             `${baseURL}/api/proposal-voting-stats`,
-            body
+            {
+              investor_company: allAnalyticsFilter?.institution_name?.length
+                ? allAnalyticsFilter.institution_name
+                : allAnalyticsFilter.company_name || [],
+              year:
+                allAnalyticsFilter?.analyticsYear?.length > 0
+                  ? allAnalyticsFilter?.analyticsYear
+                  : [],
+              proponent_type: allAnalyticsFilter?.proponent_type
+                ? allAnalyticsFilter?.proponent_type
+                : [],
+              proposal_type: allAnalyticsFilter?.proposal_type
+                ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+                  item.toLowerCase()
+                )
+                : [],
+              index_name:
+                allAnalyticsFilter?.index_name?.length > 0
+                  ? allAnalyticsFilter.index_name
+                  : [],
+              custom_keywords:
+                allAnalyticsFilter?.custom_keywords?.length > 0
+                  ? allAnalyticsFilter.custom_keywords
+                  : [],
+              meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
+                ? allAnalyticsFilter.meeting_type
+                : [],
+              vote_type: allAnalyticsFilter?.vote_type || [],
+              country: ["USA"],
+              page: analyticsPage || 1,
+            }
           );
-          setVdsEuropeansAnalytics(response.response);
+          if (isMounted) {
+            setVdsEuropeansAnalytics(response.response);
+            setIsAnalyticsLoading(false); // Move here for instant UI update
+          }
         } catch (error) {
-          console.error("Error fetching analytics:", error);
-        } finally {
-          setIsAnalyticsLoading(false);
+          if (isMounted) {
+            setIsAnalyticsLoading(false);
+          }
         }
       }
     };
@@ -487,6 +489,7 @@ const index = () => {
     }
     setFiltersLength(countValidFilters(filterForChips));
     setSelectedChipFilters(generateFilterChips(filterForChips));
+    return () => { isMounted = false; };
   }, [allAnalyticsFilter, analyticsPage]);
 
   // On initial mount, set default analytics filter to BlackRock and S&P 500
@@ -523,6 +526,10 @@ const index = () => {
   }, [isViewAnalysis]);
 
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Debug: Log analytics state before render
+  console.log('vdsEuropeansAnalytics:', vdsEuropeansAnalytics);
+  console.log('isAnalyticsLoading:', isAnalyticsLoading);
 
   return (
     <>
@@ -800,168 +807,92 @@ const index = () => {
         )}
 
         {/* ANALYTICS TABLE (by_institution) and COLLAPSIBLE COMPANY LIST (by_company) with loader */}
-        {isViewAnalysis && isAnalyticsLoading ? (
+        {isViewAnalysis && isAnalyticsLoading && (
           <div className="flex justify-center items-center min-h-[300px]">
             <div className="rounded-2xl shadow-lg bg-white p-8 border border-gray-100 flex flex-col items-center">
               <LoadingIcon icon="three-dots" className="w-12 h-12 text-primary" />
             </div>
           </div>
-        ) : (
-          <>
-            {isViewAnalysis && vdsEuropeansAnalytics?.by_institution && (
-              Object.keys(vdsEuropeansAnalytics.by_institution).length === 0 ? (
-                <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
-              ) : (
-                <div className="mb-8">
-                  <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                    <table className="w-[70%] mx-auto rounded-xl overflow-hidden">
-                      <thead>
-                        <tr className="bg-primary text-white text-base">
-                          <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Summary</th>
-                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year, idx, arr) => (
-                            <th key={year} className={`px-6 py-3 text-right font-semibold ${idx === arr.length - 1 ? 'rounded-tr-2xl' : ''}`}>{year}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="text-gray-700 text-base divide-y divide-gray-100">
-                        <tr>
-                          <td className="px-6 py-3 font-medium">Total proposals voted</td>
-                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-right">{inst ? inst.total_proposals.toLocaleString() : '-'}</td>;
-                          })}
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-3 font-medium">No. of FOR votes <span className="text-xs text-gray-400">*</span></td>
-                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.for_votes.toLocaleString()} (${inst.for_percentage}%)` : '-'}</td>;
-                          })}
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes <span className="text-xs text-gray-400">*</span></td>
-                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.against_votes.toLocaleString()} (${inst.against_percentage}%)` : '-'}</td>;
-                          })}
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-3 font-medium">No. of unique companies</td>
-                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                            // Try to find the by_company entry for this year
-                            let yearCompanies = '-';
-                            if (Array.isArray(vdsEuropeansAnalytics.by_company)) {
-                              const yearEntry = vdsEuropeansAnalytics.by_company.find(
-                                (entry) => String(entry.year) === String(year)
-                              );
-                              if (yearEntry && typeof yearEntry.total_companies === 'number') {
-                                yearCompanies = yearEntry.total_companies.toLocaleString();
-                              }
-                            }
-                            // Fallback to total_companies if not found
-                            if (yearCompanies === '-' && vdsEuropeansAnalytics.total_companies) {
-                              yearCompanies = vdsEuropeansAnalytics.total_companies.toLocaleString();
-                            }
-                            return (
-                              <td key={year} className="px-6 py-3 text-right">{yearCompanies}</td>
-                            );
-                          })}
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-3 font-medium">Alignment with management</td>
-                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-right">{inst ? inst.aligned_with_mgmt : '-'}</td>;
-                          })}
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-3 font-medium">Alignment percentage</td>
-                          {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
-                            const inst = vdsEuropeansAnalytics.by_institution[year][0];
-                            return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.alignment_percentage}%` : '-'}</td>;
-                          })}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )
-            )}
-            {isViewAnalysis && vdsEuropeansAnalytics?.by_company && vdsEuropeansAnalytics.by_company.length > 0 && (
-              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
-                <div className="divide-y divide-gray-100">
-                  {vdsEuropeansAnalytics.by_company.map((yearEntry, yearIdx) => (
-                    Array.isArray(yearEntry.companies)
-                      ? yearEntry.companies.map((ele, index) => (
-                          <div key={ele.company_id || `${yearIdx}-${index}`} className="py-2">
-                            <div
-                              className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
-                              onClick={() => toggleGroup(ele.company_name)}
-                            >
-                              <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
-                              <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
-                            </div>
-                            {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                              <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
-                                <table className="min-w-full">
-                                  <thead>
-                                    <tr className="bg-primary text-white text-sm">
-                                      <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
-                                      <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                                      <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
-                                      <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                                    {ele.sample_proposals.map((vds, vdsIdx) => (
-                                      <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                                        <td className="px-4 py-2">{vds?.proposal_num}</td>
-                                        <td className="px-4 py-2">
-                                          {vds?.proposal}
-                                        </td>
-                                        <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                        <td className="px-4 py-2 flex items-center">
-                                          <span className={clsx([
-                                            (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                            "text-red-700 font-semibold",
-                                          ])}>
-                                            {vds?.vote}
-                                          </span>
-                                          {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                            <span
-                                              data-tooltip-id="my-tooltip-data-html"
-                                              data-tooltip-html={vds?.notes}
-                                              className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
-                                            >
-                                              <Lucide icon="Info" className="w-4 h-4" />
-                                            </span>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
+        )}
+        {isViewAnalysis && !isAnalyticsLoading && vdsEuropeansAnalytics && typeof vdsEuropeansAnalytics === 'object' && vdsEuropeansAnalytics.by_institution && Object.keys(vdsEuropeansAnalytics.by_institution).length > 0 && (
+          <AnalyticsTableMemo vdsEuropeansAnalytics={vdsEuropeansAnalytics} openGroups={openGroups} toggleGroup={toggleGroup} />
+        )}
+        {isViewAnalysis && !isAnalyticsLoading && vdsEuropeansAnalytics && typeof vdsEuropeansAnalytics === 'object' && vdsEuropeansAnalytics.by_company && Array.isArray(vdsEuropeansAnalytics.by_company) && vdsEuropeansAnalytics.by_company.length > 0 && (
+          <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
+            <div className="divide-y divide-gray-100">
+              {vdsEuropeansAnalytics.by_company.map((yearEntry, yearIdx) => (
+                Array.isArray(yearEntry.companies)
+                  ? yearEntry.companies.map((ele, index) => (
+                      <div key={ele.company_id || `${yearIdx}-${index}`} className="py-2">
+                        <div
+                          className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
+                          onClick={() => toggleGroup(ele.company_name)}
+                        >
+                          <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                          <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
+                        </div>
+                        {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
+                          <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                            <table className="min-w-full">
+                              <thead>
+                                <tr className="bg-primary text-white text-sm">
+                                  <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
+                                  <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                                  <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
+                                  <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                                {ele.sample_proposals.map((vds, vdsIdx) => (
+                                  <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
+                                    <td className="px-4 py-2">{vds?.proposal_num}</td>
+                                    <td className="px-4 py-2">
+                                      {vds?.proposal}
+                                    </td>
+                                    <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-4 py-2 flex items-center">
+                                      <span className={clsx([
+                                        (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                        "text-red-700 font-semibold",
+                                      ])}>
+                                        {vds?.vote}
+                                      </span>
+                                      {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                        <span
+                                          data-tooltip-id="my-tooltip-data-html"
+                                          data-tooltip-html={vds?.notes}
+                                          className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
+                                        >
+                                          <Lucide icon="Info" className="w-4 h-4" />
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                        ))
-                      : null
-                  ))}
-                </div>
-                {vdsEuropeansAnalytics?.by_company?.length > 0 && (
-                  <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                    <CPagination
-                      page={vdsEuropeansAnalytics?.pagination?.current_page || 1}
-                      totalPages={vdsEuropeansAnalytics?.pagination?.total_pages || 1}
-                      handleNextPage={handleNextPage}
-                      handlePageChange={handlePageChange}
-                      handlePreviousPage={handlePreviousPage}
-                    />
-                  </div>
-                )}
+                        )}
+                      </div>
+                    ))
+                  : null
+              ))}
+            </div>
+            {vdsEuropeansAnalytics?.by_company?.length > 0 && (
+              <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                <CPagination
+                  page={vdsEuropeansAnalytics?.pagination?.current_page || 1}
+                  totalPages={vdsEuropeansAnalytics?.pagination?.total_pages || 1}
+                  handleNextPage={handleNextPage}
+                  handlePageChange={handlePageChange}
+                  handlePreviousPage={handlePreviousPage}
+                />
               </div>
             )}
-          </>
+          </div>
+        )}
+        {isViewAnalysis && !isAnalyticsLoading && vdsEuropeansAnalytics && typeof vdsEuropeansAnalytics === 'object' && (!vdsEuropeansAnalytics.by_institution || Object.keys(vdsEuropeansAnalytics.by_institution).length === 0) && (
+          <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
         )}
         {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
         {!isViewAnalysis && (
@@ -1092,5 +1023,81 @@ const index = () => {
     </>
   );
 };
+
+const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => (
+  <div className="mb-8">
+    <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+      <table className="w-[70%] mx-auto rounded-xl overflow-hidden">
+        <thead>
+          <tr className="bg-primary text-white text-base">
+            <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl">Summary</th>
+            {Object.keys(vdsEuropeansAnalytics.by_institution).map((year, idx, arr) => (
+              <th key={year} className={`px-6 py-3 text-right font-semibold ${idx === arr.length - 1 ? 'rounded-tr-2xl' : ''}`}>{year}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="text-gray-700 text-base divide-y divide-gray-100">
+          <tr>
+            <td className="px-6 py-3 font-medium">Total proposals voted</td>
+            {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+              const inst = vdsEuropeansAnalytics.by_institution[year][0];
+              return <td key={year} className="px-6 py-3 text-right">{inst ? inst.total_proposals.toLocaleString() : '-'}</td>;
+            })}
+          </tr>
+          <tr>
+            <td className="px-6 py-3 font-medium">No. of FOR votes <span className="text-xs text-gray-400">*</span></td>
+            {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+              const inst = vdsEuropeansAnalytics.by_institution[year][0];
+              return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.for_votes.toLocaleString()} (${inst.for_percentage}%)` : '-'}</td>;
+            })}
+          </tr>
+          <tr>
+            <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes <span className="text-xs text-gray-400">*</span></td>
+            {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+              const inst = vdsEuropeansAnalytics.by_institution[year][0];
+              return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.against_votes.toLocaleString()} (${inst.against_percentage}%)` : '-'}</td>;
+            })}
+          </tr>
+          <tr>
+            <td className="px-6 py-3 font-medium">No. of unique companies</td>
+            {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+              let yearCompanies = '-';
+              if (Array.isArray(vdsEuropeansAnalytics.by_company)) {
+                const yearEntry = vdsEuropeansAnalytics.by_company.find(
+                  (entry) => String(entry.year) === String(year)
+                );
+                if (yearEntry && typeof yearEntry.total_companies === 'number') {
+                  yearCompanies = yearEntry.total_companies.toLocaleString();
+                }
+              }
+              if (yearCompanies === '-' && vdsEuropeansAnalytics.total_companies) {
+                yearCompanies = vdsEuropeansAnalytics.total_companies.toLocaleString();
+              }
+              return (
+                <td key={year} className="px-6 py-3 text-right">{yearCompanies}</td>
+              );
+            })}
+          </tr>
+          <tr>
+            <td className="px-6 py-3 font-medium">Alignment with management</td>
+            {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+              const inst = vdsEuropeansAnalytics.by_institution[year][0];
+              return <td key={year} className="px-6 py-3 text-right">{inst ? inst.aligned_with_mgmt : '-'}</td>;
+            })}
+          </tr>
+          <tr>
+            <td className="px-6 py-3 font-medium">Alignment percentage</td>
+            {Object.keys(vdsEuropeansAnalytics.by_institution).map((year) => {
+              const inst = vdsEuropeansAnalytics.by_institution[year][0];
+              return <td key={year} className="px-6 py-3 text-right">{inst ? `${inst.alignment_percentage}%` : '-'}</td>;
+            })}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+const AnalyticsTableMemo = React.memo(AnalyticsTable);
 
 export default index;
