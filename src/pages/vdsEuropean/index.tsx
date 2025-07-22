@@ -1065,7 +1065,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             </tr>
           </thead>
           <tbody className="text-gray-700 text-base divide-y divide-gray-100">
-            <tr>
+            {/* <tr>
               <td className="px-6 py-3 font-medium">No. of unique companies</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
@@ -1077,7 +1077,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                   );
                 })
               ))}
-            </tr>
+            </tr> */}
             <tr>
               <td className="px-6 py-3 font-medium">No of proposals</td>
               {institutions.map((institution) => (
