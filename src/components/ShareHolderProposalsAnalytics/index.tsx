@@ -18,9 +18,10 @@ import {
 import LoadingIcon from "../Base/LoadingIcon";
 
 import OutcomePieChart from "../OutcomePieChart";
+import Lucide from "../Base/Lucide";
 
 interface ShareHolderProposalAnalyticsComponentProps {
-  proposalCounts: { [key: string]: number };
+  proposalCounts: { total_proposals: number;[key: string]: any };
   topSubcategories: { [key: string]: any[] };
   topCategories: any[];
   yearlySummary: any[];
@@ -67,7 +68,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
     const formatWithCommas = (value: number): string => {
       return value.toLocaleString();
     };
-const chartKey = tab === "proposal"  ? "proxy_season" : "year"
+    const chartKey = tab === "proposal" ? "proxy_season" : "year"
     if (
       !isDataAvailable(proposalCounts) &&
       !isDataAvailable(topSubcategories) &&
@@ -83,7 +84,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
       );
     }
     const [outcomeData, setOutcomeData] = useState([]);
-  
+
 
 
 
@@ -131,7 +132,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
         };
       })
     );
- 
+
 
 
     if (!yearlySummary) {
@@ -179,15 +180,24 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
 
     return (
       <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
-
         <h2 className="text-2xl font-semibold mb-6 text-gray-800">
           {tab == "proposal"
             ? "Shareholder Proposal Analytics (Beta)"
             : "No Action Letter Analytics (Beta) "}
         </h2>
-        {loading ? (
+        {proposalCounts === 0 ? (
+          <div className="flex flex-col items-center justify-center h-96">
+            <Lucide
+              icon="FileSearch"
+              className="w-12 h-12 text-gray-300 mb-2"
+            />
+            <div className="text-lg font-medium">No data found</div>
+            <div className="text-sm text-gray-500 mt-1">
+              Try adjusting your filters or search criteria
+            </div>
+          </div>
+        ) : loading ? (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-            {" "}
             <LoadingIcon
               color="#800000"
               icon="three-dots"
@@ -215,15 +225,14 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                     </p>
                   ) : (
                     <ResponsiveContainer width="100%" height={250}>
-                     
-                       <ComposedChart
-                      data={tab == "proposal" ? [
-                        ...yearlySummary?.filter((item) => item[chartKey] >= 2022),
-                      ]: [
-                        ...yearlySummary?.filter((item) => item[chartKey] >= 2022),
-                      ].reverse()}
-                      margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
-                    >
+                      <ComposedChart
+                        data={
+                          tab == "proposal"
+                            ? [...yearlySummary?.filter((item) => item[chartKey] >= 2022)]
+                            : [...yearlySummary?.filter((item) => item[chartKey] >= 2022)].reverse()
+                        }
+                        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                      >
                         <XAxis dataKey={chartKey} dy={12} height={40} />
                         <YAxis
                           yAxisId="left"
@@ -258,7 +267,6 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                             content={CountAndPercentLabel}
                           />
                         </Bar>
-                        {/* Remove percentage label from inside the bar/line */}
                         {tab == "proposal" && (
                           <Line
                             yAxisId="right"
@@ -268,11 +276,8 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                             strokeWidth={2}
                             dot={{ r: 4 }}
                             name="Avg. Support (%)"
-                          >
-                            {/* No LabelList here, percentage is shown above the bar only */}
-                          </Line>
+                          />
                         )}
-
                         {tab == "proposal" && <Legend />}
                       </ComposedChart>
                     </ResponsiveContainer>
@@ -281,7 +286,6 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                   <p className="text-gray-500">No data available</p>
                 )}
               </div>
-
 
               {/* 2. Proposal Distribution Pie Chart */}
               <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
@@ -363,52 +367,6 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                     Outcome Distribution
                   </h3>
                   <OutcomePieChart pieChartOutcome={pieChartOutcome} />
-                  {/* <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={outcomeData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={75}
-                      label={({
-                        cx,
-                        cy,
-                        midAngle,
-                        innerRadius,
-                        outerRadius,
-                        name,
-                        value,
-                        index,
-                      }) => {
-                        const RADIAN = Math.PI / 180;
-                        const radius =
-                          innerRadius + (outerRadius - innerRadius) * 1.1;
-                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                        return (
-                          <text
-                            x={x}
-                            y={y}
-                            fill={outcomeData[index].color}
-                            textAnchor={x > cx ? "start" : "end"}
-                            dominantBaseline="central"
-                            fontSize={13}
-                          >
-                            {`${name}: ${formatWithCommas(value)}`}
-                          </text>
-                        );
-                      }}
-                      labelLine={false}
-                    >
-                      {outcomeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer> */}
                 </div>
               )}
             </div>
