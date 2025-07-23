@@ -844,6 +844,7 @@ const index = () => {
                                   <th className="px-4 py-2 text-left font-semibold">Proposal</th>
                                   <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
                                   <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                                  <th className="px-4 py-2 text-left font-semibold">Institution Name</th>
                                 </tr>
                               </thead>
                               <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -871,6 +872,7 @@ const index = () => {
                                         </span>
                                       )}
                                     </td>
+                                    <td className="px-4 py-2">{vds?.institution_name}</td>
                                   </tr>
                                 ))}
                               </tbody>
