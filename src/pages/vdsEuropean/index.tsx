@@ -623,15 +623,14 @@ const index = () => {
                     defaultValue={[]}
                     render={({ field }) => (
                       <MultiSelectDropdown
-                        data={institutionOptions}
+                        data={institutionOptions.map(option => ({
+                          value: option,
+                          label: option,
+                          isDisabled: field.value?.length >= 3 && !field.value.includes(option)
+                        }))}
                         placeholder="Select Institutions"
                         loading={getFundNameDropdownLoader}
                         onChange={(selectedOptions) => {
-                          // Limit to 5 institutions
-                          if (selectedOptions.length > 5) {
-                            toast.warning("You can select a maximum of 5 institutions");
-                            return;
-                          }
                           const selectedValues = selectedOptions.map((option) => option.value);
                           field.onChange(selectedValues);
                           handleDropdownChange("institution_name", selectedValues);
@@ -1043,7 +1042,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
   return (
     <div className="mb-8">
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-        <table className="w-[90%] mx-auto rounded-xl overflow-hidden">
+        <table className="w-[100%] mx-auto rounded-xl overflow-hidden">
           <thead>
             <tr className="bg-primary text-white text-base">
               <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl"></th>

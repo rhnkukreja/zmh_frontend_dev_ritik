@@ -347,7 +347,7 @@ function ShareHolderProposal() {
     if (isCompanySelected) {
       dispatch(selectUnSelectAllCompany(false));
       dispatch(setIsCompanySelected(false));
-      setIsViewAnalysis(false);
+      setIsViewAnalysis(true);
     }
   }, [isCompanySelected]);
   useEffect(() => {
@@ -475,10 +475,10 @@ function ShareHolderProposal() {
 
   useEffect(() => {
     if (tab == "proposal" && proposalCount == 0) {
-      setIsViewAnalysis(false);
+      setIsViewAnalysis(true);
     }
     if (tab == "no-action" && noActionCount == 0) {
-      setIsViewAnalysis(false);
+      setIsViewAnalysis(true);
     }
 
     // if (tempTab !== tab) {
@@ -1064,7 +1064,7 @@ function ShareHolderProposal() {
                                   id="year"
                                   checked={
                                     apiDropdownOptions.year.length ===
-                                    watch( tab === "withdrawn" ? "year" : "proxy_season")?.length
+                                    watch(tab === "withdrawn" ? "year" : "proxy_season")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
@@ -2036,7 +2036,7 @@ function ShareHolderProposal() {
                           dispatch(setTabs("withdrawn"));
                           dispatch(resetPage());
                           clearNoActionFilter();
-                          setIsViewAnalysis(false);
+                          setIsViewAnalysis(true);
                           setTempTab("withdrawn");
                         }}
                       >
