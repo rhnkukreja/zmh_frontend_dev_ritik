@@ -209,7 +209,8 @@ function ShareHolderProposal() {
       sub_category: filters.sub_category,
       status: filters.status,
       keyword: filters.keyword,
-      year: filters.year,
+      // Ensure year is always an array of strings
+      year: filters.year ? filters.year.map(String) : [],
       proponent_name: filters?.proponent_name,
       ready_for_review: filters?.ready_for_review,
       check_status: filters?.check_status,
@@ -1017,7 +1018,6 @@ function ShareHolderProposal() {
 
               {selectedChipFilters?.length > 0 && (
                 <>
-
                   <FilterChips
                     filters={selectedChipFilters}
                     onRemove={handleRemoveChip}
@@ -1086,36 +1086,16 @@ function ShareHolderProposal() {
                           defaultValue={[]}
                           render={({ field }) => (
                             <MultiSelectDropdown
-                              data={apiDropdownOptions.year}
+                              data={apiDropdownOptions.year?.map(String) || []}
                               placeholder={`Select ${tab === "withdrawn" ? "" : "Proxy"} Year`}
                               loading={getDropdownLoader}
                               onChange={(selectedOptions) => {
-                                const selectedValues = selectedOptions.map((option) => option.value);
+                                // Always convert to string
+                                const selectedValues = selectedOptions.map((option) => String(option.value));
                                 field.onChange(selectedValues);
-
-
-
                               }}
                               selectedOption={field.value || []}
-
                             />
-                            // <TomSelect
-                            //   value={field.value || []}
-                            //   onChange={field.onChange}
-                            //   options={{ placeholder: `Select ${tab === "withdrawn" ? "" : "Proxy"} Year` }}
-                            //   className="w-full"
-                            //   multiple
-                            // >
-                            //   {getDropdownLoader ? (
-                            //     <option disabled>Loading...</option>
-                            //   ) : (
-                            //     apiDropdownOptions.year?.map((year) => (
-                            //       <option key={year} value={year}>
-                            //         {year}
-                            //       </option>
-                            //     ))
-                            //   )}
-                            // </TomSelect>
                           )}
                         />
                       </div>

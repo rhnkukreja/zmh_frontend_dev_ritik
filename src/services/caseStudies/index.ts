@@ -32,7 +32,7 @@ class CaseStudiesService {
       : `/get_case_studies_dropdown_values/`;
 
     const response = await axiosInstance.get(url);
-
+    console.log("Response from getCaseStudiesDropdownValues:", response.data);
     return {
       result: response.data,
     };

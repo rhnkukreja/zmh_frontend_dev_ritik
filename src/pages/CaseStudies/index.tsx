@@ -115,7 +115,8 @@ function CaseStudies() {
       keyword: filters?.keyword,
       market: filters?.market,
       sector: filters?.sector,
-      year: filters?.year,
+      // Ensure year is always an array of strings
+      year: filters?.year ? filters.year.map(String) : [],
       institution_name: filters?.institution_name,
       global_search:
         filters?.global_search?.map((item: string) => ({
@@ -235,9 +236,14 @@ function CaseStudies() {
   };
 
   const onSubmit = async (caseStudyFilters: CaseStudyFilter) => {
+    // Remove index if empty or blank
+    const filtersToApply = { ...caseStudyFilters };
+    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "") {
+      delete filtersToApply.index;
+    }
     dispatch(
       setAllFilters({
-        ...caseStudyFilters,
+        ...filtersToApply,
         institution_name: searchTerms,
         global_search: isAllCompanySelected
           ? Array.isArray(caseStudyFilters?.global_search) &&
@@ -348,11 +354,10 @@ function CaseStudies() {
       setValue("market", ["USA"]); 
       dispatch(
         setAllFilters({
-          year: [2024],
+          year: ["2024"],
           market: ["USA"],
         })
       );
-      
     }
     else {
       setValue("year", []);
@@ -379,13 +384,17 @@ function CaseStudies() {
       );
     } else if (updatedFilters[removeKey] === removeValue) {
       if(removeKey === "index"){
-        updatedFilters[removeKey] = " ";
+        // Remove index completely if empty or blank
+        delete updatedFilters[removeKey];
+        setValue(removeKey, undefined);
       }else {
         updatedFilters[removeKey] = "";
+        setValue(removeKey, "");
       }
+    } else {
+      setValue(removeKey, updatedFilters[removeKey]);
     }
 
-    setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   }
 
@@ -600,40 +609,17 @@ function CaseStudies() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                             <MultiSelectDropdown
-                                                    data={apiDropdownOptions.year}
-                                                    placeholder="Select Year"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
-                            // <TomSelect
-                            //   value={field.value || []}
-                            //   onChange={(value) => handleFieldChange(value, field)}
-                            //   options={{ placeholder: "Select Year" }}
-                            //   className="w-full"
-                            //   multiple
-                            
-                            // >
-                            //   {getDropdownLoader ? (
-                            //     <option value="--" disabled>
-                            //       Loading...
-                            //     </option>
-                            //   ) : (
-                            //     apiDropdownOptions.year.map((year) => (
-                            //       <option key={year} value={year}>
-                            //         {year}
-                            //       </option>
-                            //     ))
-                            //   )}
-                            // </TomSelect>
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.year?.map(String) || []}
+                              placeholder="Select Year"
+                              loading={apiDropdownOptions?.year?.length === 0}
+                              onChange={(selectedOptions) => {
+                                // Always convert to string
+                                const selectedValues = selectedOptions.map((option) => String(option.value));
+                                field.onChange(selectedValues);
+                              }}
+                              selectedOption={field.value || []}
+                            />
                           )}
                         />
                       </div>
