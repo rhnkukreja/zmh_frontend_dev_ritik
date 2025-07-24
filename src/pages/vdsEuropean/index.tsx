@@ -532,9 +532,11 @@ const index = () => {
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
+        analyticsYear: ["2025"],
       });
       setValue("institution_name", ["BlackRock, Inc."]);
       setValue("index_name", ["S&P 500"]);
+      setValue("analyticsYear", ["2025"]);
     }
     // eslint-disable-next-line
   }, [isViewAnalysis]);
@@ -1080,8 +1082,8 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
         <table className="w-[100%] mx-auto rounded-xl overflow-hidden">
           <thead>
-            <tr className="bg-primary text-white text-base">
-              <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl"></th>
+            <tr className="bg-primary/90 text-white text-base">
+              <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>Summary</th>
               {institutions.map((institution) => (
                 <th key={institution.institution_id} colSpan={years.length} className="px-6 py-3 text-center font-semibold">
                   {institution.institution_name}
@@ -1089,11 +1091,10 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
               ))}
             </tr>
             <tr className="bg-primary/90 text-white text-base">
-              <th className="px-6 py-3 text-left font-semibold"></th>
               {institutions.map((institution) => (
-                years.map((year: any) => (
+                years.map((year) => (
                   <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
-                    {year}
+                    {String(year)}
                   </th>
                 ))
               ))}
@@ -1116,7 +1117,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">No of proposals</td>
               {institutions.map((institution) => (
-                years.map((year) => {
+                years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
@@ -1129,7 +1130,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">No. of FOR votes</td>
               {institutions.map((institution) => (
-                years.map((year) => {
+                years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
@@ -1142,7 +1143,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes</td>
               {institutions.map((institution) => (
-                years.map((year) => {
+                years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
@@ -1155,7 +1156,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">Alignment with management</td>
               {institutions.map((institution) => (
-                years.map((year) => {
+                years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
@@ -1168,7 +1169,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">Alignment percentage</td>
               {institutions.map((institution) => (
-                years.map((year) => {
+                years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">

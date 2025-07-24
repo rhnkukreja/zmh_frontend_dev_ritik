@@ -87,8 +87,8 @@ function CaseStudies() {
     searchParams.get("institution_name")
       ? [searchParams.get("institution_name")]
       : filters.institution_name.length > 0
-      ? filters.institution_name
-      : []
+        ? filters.institution_name
+        : []
   );
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
@@ -284,7 +284,7 @@ function CaseStudies() {
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
           global_search: savedSearch?.global_search,
-        index: user?.saved_search?.index,
+          index: user?.saved_search?.index,
 
         })
       );
@@ -342,16 +342,15 @@ function CaseStudies() {
     if (isAllCompanySelected) {
       return `/get_case_studies_dropdown_values/`;
     } else {
-      return `/get_case_studies_dropdown_values/?global_search=${
-        companyGlobalSearchName || filters?.global_search?.[0]
-      }`;
+      return `/get_case_studies_dropdown_values/?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
+        }`;
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
   const handleViewAllChange = async (event: any) => {
-    if(event?.target?.checked){
+    if (event?.target?.checked) {
       setValue("year", ["2024"]);
-      setValue("market", ["USA"]); 
+      setValue("market", ["USA"]);
       dispatch(
         setAllFilters({
           year: ["2024"],
@@ -361,7 +360,7 @@ function CaseStudies() {
     }
     else {
       setValue("year", []);
-      setValue("market", []); 
+      setValue("market", []);
       dispatch(
         setAllFilters({
           market: [],
@@ -371,8 +370,8 @@ function CaseStudies() {
       );
     }
     try {
-      dispatch( selectUnSelectAllCompany(!isAllCompanySelected));
-    } catch (error) {}
+      dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
+    } catch (error) { }
   }
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
@@ -383,11 +382,11 @@ function CaseStudies() {
         (item) => item !== removeValue
       );
     } else if (updatedFilters[removeKey] === removeValue) {
-      if(removeKey === "index"){
+      if (removeKey === "index") {
         // Remove index completely if empty or blank
         delete updatedFilters[removeKey];
         setValue(removeKey, undefined);
-      }else {
+      } else {
         updatedFilters[removeKey] = "";
         setValue(removeKey, "");
       }
@@ -546,12 +545,12 @@ function CaseStudies() {
                 </>
               }
 
-            {count > 0 && (
+              {count > 0 && (
                 <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
                   Count: {count.toLocaleString()}
                 </h2>
               )}
-              
+
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="filter-section mb-5">
@@ -574,16 +573,15 @@ function CaseStudies() {
                       </Button>
                     </div>
                     <div
-                      className={`grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ${
-                        isAllCompanySelected
-                          ? "md:grid-cols-3"
-                          : " md:grid-cols-2"
-                      }`}
+                      className={`grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ${isAllCompanySelected
+                        ? "md:grid-cols-3"
+                        : " md:grid-cols-2"
+                        }`}
                     >
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                        <span className="font-semibold">Year</span>
-                          
+                          <span className="font-semibold">Year</span>
+
                           {apiDropdownOptions.year.length > 0 && (
                             <FormCheck className="mr-2">
                               <FormCheck.Label>Select All</FormCheck.Label>
@@ -629,50 +627,30 @@ function CaseStudies() {
                           <span className="font-semibold">Index</span>
                         </div>
                         <Controller
-                          name="index"
+                          name="index_name"
                           control={control}
-                          defaultValue={""}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || ""}
-                              onChange={(value) => {
-                                field.onChange(value);
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.index?.map((item: any) => item)}
+                              placeholder="Select Index"
+                              loading={false}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
                               }}
-                              options={{
-                                placeholder: "Select Index",
-                              }}
-                              className="w-full"
-                              multiple={false}
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.index?.map(
-                                    (index: string) => {
-                                      return (
-                                        <option value={index}>
-                                          {index}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
+                              selectedOption={field.value || []}
+                            />
                           )}
                         />
                       </div>
 
-                      
+
 
                       {isAllCompanySelected === true && (
                         <div className="w-full mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                            <span className="font-semibold">Select Companies</span>
+                              <span className="font-semibold">Select Companies</span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -696,7 +674,7 @@ function CaseStudies() {
                       {isAllCompanySelected && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Country</span>
+                            <span className="font-semibold">Country</span>
                             {apiDropdownOptions.market.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -711,9 +689,9 @@ function CaseStudies() {
                                   onChange={(e) =>
                                     e.target.checked
                                       ? setValue(
-                                          "market",
-                                          apiDropdownOptions.market
-                                        )
+                                        "market",
+                                        apiDropdownOptions.market
+                                      )
                                       : setValue("market", [])
                                   }
                                 />
@@ -725,20 +703,20 @@ function CaseStudies() {
                             control={control}
                             defaultValue={[]}
                             render={({ field }) => (
-                                 <MultiSelectDropdown
-                                                    data={apiDropdownOptions.market}
-                                                    placeholder="Select Country"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                              <MultiSelectDropdown
+                                data={apiDropdownOptions.market}
+                                placeholder="Select Country"
+                                loading={getDropdownLoader}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
+                                  handleFieldChange(selectedValues, field)
+
+
+                                }}
+                                selectedOption={field.value || []}
+
+                              />
                               // <TomSelect
                               //   value={field.value || []}
                               //   // onChange={(value) => field.onChange(value)}
@@ -767,7 +745,7 @@ function CaseStudies() {
                       {isAllCompanySelected === true && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Sector</span>
+                            <span className="font-semibold">Sector</span>
                             {apiDropdownOptions.sector.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -782,9 +760,9 @@ function CaseStudies() {
                                   onChange={(e) =>
                                     e.target.checked
                                       ? setValue(
-                                          "sector",
-                                          apiDropdownOptions.sector
-                                        )
+                                        "sector",
+                                        apiDropdownOptions.sector
+                                      )
                                       : setValue("sector", [])
                                   }
                                 />
@@ -796,20 +774,20 @@ function CaseStudies() {
                             control={control}
                             defaultValue={[]}
                             render={({ field }) => (
-                                 <MultiSelectDropdown
-                                                    data={apiDropdownOptions.sector}
-                                                    placeholder="Select Sector"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                              <MultiSelectDropdown
+                                data={apiDropdownOptions.sector}
+                                placeholder="Select Sector"
+                                loading={getDropdownLoader}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
+                                  handleFieldChange(selectedValues, field)
+
+
+                                }}
+                                selectedOption={field.value || []}
+
+                              />
                               // <TomSelect
                               //   value={field.value || []}
                               //   // onChange={(value) => field.onChange(value)}
@@ -852,9 +830,9 @@ function CaseStudies() {
                                 onChange={(e) =>
                                   e.target.checked
                                     ? setValue(
-                                        "themes",
-                                        apiDropdownOptions.themes
-                                      )
+                                      "themes",
+                                      apiDropdownOptions.themes
+                                    )
                                     : setValue("themes", [])
                                 }
                               />
@@ -866,20 +844,20 @@ function CaseStudies() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                               <MultiSelectDropdown
-                                                    data={apiDropdownOptions.themes}
-                                                    placeholder="Select Themes"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions.themes}
+                              placeholder="Select Themes"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+                                handleFieldChange(selectedValues, field)
+
+
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   // onChange={(value) => field.onChange(value)}
@@ -908,7 +886,7 @@ function CaseStudies() {
                         <div className="mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                          <span className="font-semibold">Alternate Companies</span>
+                              <span className="font-semibold">Alternate Companies</span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -930,7 +908,7 @@ function CaseStudies() {
                         <>
                           <div className="mx-2">
                             <div className="flex-1 w-full text-slate-500">
-                          <span className="font-semibold">Approval Status</span>
+                              <span className="font-semibold">Approval Status</span>
                               <div className="mt-2 flex flex-col sm:flex-row">
                                 <Controller
                                   name="approval_status"
@@ -1008,7 +986,7 @@ function CaseStudies() {
                 </form>
               )}
 
-              
+
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>

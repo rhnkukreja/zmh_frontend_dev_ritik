@@ -884,39 +884,19 @@ function PeerAnalysis() {
                           <span className="font-semibold">Index</span>
                         </div>
                         <Controller
-                          name="index"
+                          name="index_name"
                           control={control}
-                          defaultValue={""}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || ""}
-                              onChange={(value) => {
-                                field.onChange(value);
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.index?.map((item: any) => item)}
+                              placeholder="Select Index"
+                              loading={false}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
                               }}
-                              options={{
-                                placeholder: "Select Index",
-                              }}
-                              className="w-full"
-                              multiple={false}
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.index?.map(
-                                    (index: string) => {
-                                      return (
-                                        <option value={index}>
-                                          {index}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
+                              selectedOption={field.value || []}
+                            />
                           )}
                         />
                       </div>
