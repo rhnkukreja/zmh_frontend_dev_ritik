@@ -821,17 +821,6 @@ function ShareHolderProposal() {
 
   return (
     <>
-    //! ANALYTICS CODE BELOW
-      {/* <div className="flex flex-col items-center justify-center">
-        <Lucide
-          icon="FileSearch"
-          className="w-12 h-12 text-gray-300 mb-2"
-        />
-        <div className="text-lg font-medium">No data found</div>
-        <div className="text-sm text-gray-500 mt-1">
-          Try adjusting your filters or search criteria
-        </div>
-      </div> */}
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="overflow-auto xl:overflow-visible mt-4">
