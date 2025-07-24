@@ -130,7 +130,7 @@ const index = () => {
         Object.entries(parsed).forEach(([key, value]) => {
           setValue(key, value);
         });
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -527,7 +527,7 @@ const index = () => {
             setValue(key, value);
           });
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
@@ -868,7 +868,11 @@ const index = () => {
                         className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
                         onClick={() => toggleGroup(ele.company_name)}
                       >
-                        <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                        <span>
+                          {`${ele.meeting_date} - ${ele.company_name}`}
+                          {ele.meeting_type?.trim() && ` (${ele.meeting_type})`}
+                        </span>
+
                         <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
                       </div>
                       {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
