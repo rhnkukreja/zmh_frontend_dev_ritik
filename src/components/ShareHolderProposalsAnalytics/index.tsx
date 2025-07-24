@@ -185,7 +185,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
             ? "Shareholder Proposal Analytics (Beta)"
             : "No Action Letter Analytics (Beta) "}
         </h2>
-        {proposalCounts === 0 ? (
+        {proposalCounts.total_proposals === 0 ? (
           <div className="flex flex-col items-center justify-center h-96">
             <Lucide
               icon="FileSearch"
@@ -221,7 +221,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                 {isDataAvailable(yearlySummary) ? (
                   yearlySummary.length === 1 ? (
                     <p className="text-lg font-semibold text-gray-700">
-                      {formatNumberWithCommas(yearlySummary[0].count)} Proposals
+                      {formatNumberWithCommas(yearlySummary[0].count)} {yearlySummary[0].count === 1 ? 'Proposal' : 'Proposals'}
                     </p>
                   ) : (
                     <ResponsiveContainer width="100%" height={250}>

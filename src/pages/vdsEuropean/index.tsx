@@ -119,6 +119,21 @@ const index = () => {
     });
   };
 
+  // Restore filters from localStorage on mount
+  useEffect(() => {
+    const savedFilters = localStorage.getItem("vdsEuropeanFilters");
+    if (savedFilters) {
+      try {
+        const parsed = JSON.parse(savedFilters);
+        setallApplyFilter(parsed);
+        // Set form values as well
+        Object.entries(parsed).forEach(([key, value]) => {
+          setValue(key, value);
+        });
+      } catch (e) {}
+    }
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       if (hasAnyValidFilter(allApplyFilter)) {
@@ -260,14 +275,17 @@ const index = () => {
       toast.warning("Please Select Year");
       return;
     }
-    setallApplyFilter({
+    const filterObj = {
       company_name: npxFilter?.company_name, // Already a flat array
       institution_name: npxFilter?.institution_name,
       vote_type: npxFilter?.vote,
       category: npxFilter?.category,
       year: npxFilter?.year,
       keyword: npxFilter?.keyword,
-    });
+    };
+    setallApplyFilter(filterObj);
+    // Save to localStorage
+    localStorage.setItem("vdsEuropeanFilters", JSON.stringify(filterObj));
     dispatch(resetPage());
     setIsFilterCollapse(false);
   };
@@ -277,11 +295,14 @@ const index = () => {
       toast.warning("Please Select Institution Name");
       return;
     }
-    setAllAnalyticsFilter({
+    const analyticsObj = {
       ...data,
       company_name: data?.company_name || [], // Always a flat array
       vote_type: data?.vote || [], // always set vote_types
-    });
+    };
+    setAllAnalyticsFilter(analyticsObj);
+    // Save analytics filters to localStorage
+    localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(analyticsObj));
   };
 
   const onFilterClear = (onAnalyticsTab) => {
@@ -302,6 +323,7 @@ const index = () => {
       setValue("institution_name", ["BlackRock, Inc."]);
       setValue("index_name", ["S&P 500"]);
       setVdsEuropeansAnalytics({});
+      localStorage.removeItem("vdsEuropeanAnalyticsFilters");
     } else {
       setallApplyFilter({});
       dispatch(resetPage());
@@ -325,6 +347,7 @@ const index = () => {
       setApiInstitutionDropdown({
         institution: [],
       });
+      localStorage.removeItem("vdsEuropeanFilters");
     }
   };
 
@@ -492,9 +515,20 @@ const index = () => {
     return () => { isMounted = false; };
   }, [allAnalyticsFilter, analyticsPage]);
 
-  // On initial mount, set default analytics filter to BlackRock and S&P 500
+  // On initial mount, set default analytics filter to BlackRock and S&P 500, or restore from localStorage
   useEffect(() => {
     if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
+      const savedAnalytics = localStorage.getItem("vdsEuropeanAnalyticsFilters");
+      if (savedAnalytics) {
+        try {
+          const parsed = JSON.parse(savedAnalytics);
+          setAllAnalyticsFilter(parsed);
+          Object.entries(parsed).forEach(([key, value]) => {
+            setValue(key, value);
+          });
+          return;
+        } catch (e) {}
+      }
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
@@ -651,7 +685,7 @@ const index = () => {
                     defaultValue={[]}
                     render={({ field }) => (
                       <MultiSelectDropdown
-                        data={apiDependentDropdownOptions?.year}
+                        data={["2024", "2025"]}
                         placeholder="Select Year"
                         loading={getDynamicDropdownLoader}
                         onChange={(selectedOptions) => {
@@ -827,60 +861,60 @@ const index = () => {
               {vdsEuropeansAnalytics.by_company.map((yearEntry, yearIdx) => (
                 Array.isArray(yearEntry.companies)
                   ? yearEntry.companies.map((ele, index) => (
-                      <div key={ele.company_id || `${yearIdx}-${index}`} className="py-2">
-                        <div
-                          className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
-                          onClick={() => toggleGroup(ele.company_name)}
-                        >
-                          <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
-                          <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
-                        </div>
-                        {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                          <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
-                            <table className="min-w-full">
-                              <thead>
-                                <tr className="bg-primary text-white text-sm">
-                                  <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
-                                  <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                                  <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
-                                  <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
-                                  <th className="px-4 py-2 text-left font-semibold">Institution Name</th>
-                                </tr>
-                              </thead>
-                              <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                                {ele.sample_proposals.map((vds, vdsIdx) => (
-                                  <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                                    <td className="px-4 py-2">{vds?.proposal_num}</td>
-                                    <td className="px-4 py-2">
-                                      {vds?.proposal}
-                                    </td>
-                                    <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-4 py-2 flex items-center">
-                                      <span className={clsx([
-                                        (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                        "text-red-700 font-semibold",
-                                      ])}>
-                                        {vds?.vote}
-                                      </span>
-                                      {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                        <span
-                                          data-tooltip-id="my-tooltip-data-html"
-                                          data-tooltip-html={vds?.notes}
-                                          className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
-                                        >
-                                          <Lucide icon="Info" className="w-4 h-4" />
-                                        </span>
-                                      )}
-                                    </td>
-                                    <td className="px-4 py-2">{vds?.institution_name}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                    <div key={ele.company_id || `${yearIdx}-${index}`} className="py-2">
+                      <div
+                        className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-primary/5 transition font-semibold text-base"
+                        onClick={() => toggleGroup(ele.company_name)}
+                      >
+                        <span>{`${ele.meeting_date}  - ${ele.company_name}  (${ele.meeting_type})`}</span>
+                        <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
                       </div>
-                    ))
+                      {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
+                        <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                          <table className="min-w-full">
+                            <thead>
+                              <tr className="bg-primary text-white text-sm">
+                                <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
+                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                                <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
+                                <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
+                                <th className="px-4 py-2 text-left font-semibold">Institution Name</th>
+                              </tr>
+                            </thead>
+                            <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                              {ele.sample_proposals.map((vds, vdsIdx) => (
+                                <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
+                                  <td className="px-4 py-2">{vds?.proposal_num}</td>
+                                  <td className="px-4 py-2">
+                                    {vds?.proposal}
+                                  </td>
+                                  <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                  <td className="px-4 py-2 flex items-center">
+                                    <span className={clsx([
+                                      (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                      "text-red-700 font-semibold",
+                                    ])}>
+                                      {vds?.vote}
+                                    </span>
+                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                      <span
+                                        data-tooltip-id="my-tooltip-data-html"
+                                        data-tooltip-html={vds?.notes}
+                                        className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
+                                      >
+                                        <Lucide icon="Info" className="w-4 h-4" />
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2">{vds?.institution_name}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))
                   : null
               ))}
             </div>
@@ -1033,14 +1067,14 @@ const index = () => {
 const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
   // Get all institutions and years
   const institutions = vdsEuropeansAnalytics.by_institution || [];
-  
+
   // Get all unique years across all institutions
   const allYears = new Set();
   institutions.forEach(inst => {
     Object.keys(inst.years).forEach(year => allYears.add(year));
   });
   const years = Array.from(allYears).sort();
-  
+
   return (
     <div className="mb-8">
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
