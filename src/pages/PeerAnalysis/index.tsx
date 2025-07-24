@@ -112,7 +112,6 @@ function PeerAnalysis() {
       country: filters.country,
       institutes: filters?.institutes,
       index: filters?.index ?? " "
-
     },
   });
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
@@ -334,9 +333,14 @@ function PeerAnalysis() {
   };
 
   const onSubmit = async (peerAnalysisFilters: PeerAnalysisFilter) => {
+    // Remove index if empty or blank
+    const filtersToApply = { ...peerAnalysisFilters };
+    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "") {
+      delete filtersToApply.index;
+    }
     dispatch(
       setAllFilters({
-        ...peerAnalysisFilters,
+        ...filtersToApply,
         institution_name: selectedInstitution,
         global_search: isAllCompanySelected
           ? Array.isArray(peerAnalysisFilters?.global_search) &&
@@ -398,20 +402,24 @@ function PeerAnalysis() {
       );
     } else if (updatedFilters[removeKey] === removeValue) {
       if (removeKey === "index") {
-        updatedFilters[removeKey] = " ";
+        // Remove index completely if empty or blank
+        delete updatedFilters[removeKey];
+        setValue(removeKey, undefined);
       } else {
         updatedFilters[removeKey] = "";
+        setValue(removeKey, "");
       }
+    } else {
+      setValue(removeKey, updatedFilters[removeKey]);
     }
 
-    setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   }
 
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-        
+
         <div className="col-span-12">
           <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
             {isAllCompanySelected === true ? (
@@ -647,20 +655,17 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                               <MultiSelectDropdown
-                                                    data={apiDropdownOptions?.year}
-                                                    placeholder="Select Year"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.year?.map(String) || []}
+                              placeholder="Select Year"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   onChange={(value) => {
@@ -735,20 +740,20 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                             <MultiSelectDropdown
-                                                    data={apiDropdownOptions?.category}
-                                                    placeholder="Select Category"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                      
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.category}
+                              placeholder="Select Category"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+
+
+
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   onChange={(value) => {
@@ -825,20 +830,20 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                             <MultiSelectDropdown
-                                                    data={apiDropdownOptions?.country}
-                                                    placeholder="Select Country"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                  
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.country}
+                              placeholder="Select Country"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+
+
+
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   onChange={(value) => {
