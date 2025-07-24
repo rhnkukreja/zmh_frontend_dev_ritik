@@ -758,7 +758,7 @@ const index = () => {
                       defaultValue={[]}
                       render={({ field }) => (
                         <MultiSelectDropdown
-                          data={["For", "Against", "Withhold"]}
+                          data={["For", "Against", "Abstain"]}
                           placeholder="Select Vote"
                           loading={getDynamicDropdownLoader}
                           onChange={(selectedOptions) => {
