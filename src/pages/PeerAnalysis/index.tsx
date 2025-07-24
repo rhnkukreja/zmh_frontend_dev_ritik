@@ -884,7 +884,7 @@ function PeerAnalysis() {
                           <span className="font-semibold">Index</span>
                         </div>
                         <Controller
-                          name="index_name"
+                          name="index"
                           control={control}
                           render={({ field }) => (
                             <MultiSelectDropdown

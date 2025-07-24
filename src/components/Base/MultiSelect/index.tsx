@@ -13,7 +13,7 @@ interface MultiSelectDropdownProps {
   placeholder?: string;
   onChange: (selectedOptions: Option[]) => void;
   loading?: boolean;
-  selectedOption?: string[] | Option[]; // Can be array of strings or Option objects
+  selectedOption?: string[] | Option[] | any; // Can be array of strings or Option objects
 }
 
 const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
