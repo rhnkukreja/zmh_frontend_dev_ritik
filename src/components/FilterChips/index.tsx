@@ -7,10 +7,12 @@ import { useAppSelector } from "@/stores/hooks";
 interface FilterChipsProps {
   filters: { key: string; value: string | number }[];
   onRemove: (key: string, value: string | number) => void;
+  showProxyYear?: boolean; // true only for ShareHolder page
 }
 
-const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
+const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyYear }) => {
   if (!filters.length) return null;
+  // Only use tab for ShareHolder page, otherwise ignore
   const { tab } = useAppSelector((state) => state.sharedHolderNoAction);
   const changeCase = (str: string) => {
     if (
@@ -34,17 +36,21 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
           <span className="font-semibold text-gray-600">
             {filter.key === "outcome_percentage"
               ? "Shareholder Meeting Held"
-              : (filter.key === "proxy_season" || filter.key === "year") &&
-                tab !== "withdrawn"
+              : (filter.key === "proxy_season" || filter.key === "year") && showProxyYear && tab !== "withdrawn"
               ? "Proxy Year"
-              : (filter.key === "proxy_season" || filter.key === "year") &&
-                tab == "withdrawn"
+              : (filter.key === "proxy_season" || filter.key === "year") && showProxyYear && tab == "withdrawn"
+              ? "Year"
+              : (filter.key === "proxy_season" || filter.key === "year") && !showProxyYear
               ? "Year"
               : convertToTitleCase(filter.key)}
             :
           </span>
           <span className="font-bold">
-            {changeCase(filter.key) ? String(filter.value) : filter.value}
+            {filter.value === undefined || filter.value === null || filter.value === "" || (Array.isArray(filter.value) && filter.value.length === 0)
+              ? "-"
+              : changeCase(filter.key)
+                ? String(filter.value)
+                : filter.value}
           </span>
           <Lucide
             icon="X"
