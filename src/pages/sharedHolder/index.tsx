@@ -66,6 +66,7 @@ import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderPropo
 import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import Pill from "@/components/Pill";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -873,26 +874,21 @@ function ShareHolderProposal() {
                 </div>
               </div>
             </div>
-
           </div>
-          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center mt-3">
-            {isAllCompanySelected === true ? (
-              <div className="font-semibold text-xl">
-                All Shareholder Proposals (Beta)
-              </div>
-            ) : (
-              <div className="font-semibold text-xl">Shareholder Proposals</div>
-            )}
 
-
-          </div>
-          <div className="flex gap-4">
-
-
-          </div>
           <div className="mt-3.5 relative">
-            <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top: "60px" }}>
+            <div className="flex flex-col box box--stacked bg-white p-5">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+                {isAllCompanySelected === true ? (
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    All Shareholder Proposals
+                    <Pill text="Beta" />
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-xl">Shareholder Proposals</div>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top: "60px" }}>
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -2087,19 +2083,19 @@ function ShareHolderProposal() {
                         </div>
                       )}
                       <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px] rounded-lg">
                           <Table>
                             <Table.Thead>
-                              <Table.Tr>
-                                <Table.Td className="py-2 text-left w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              <Table.Tr className="sticky top-0 z-20 bg-primary text-white shadow-md">
+                                <Table.Td className="px-4 py-2 text-left font-semibold">
                                   Proxy Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  <Table.Td className="px-4 py-2 text-left font-semibold">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="px-4 py-2 text-left font-semibold">
                                   Proponent
                                 </Table.Td>
                                 <Table.Td
@@ -2109,17 +2105,17 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]"
+                                  className="px-4 py-2 text-left font-semibold"
                                 >
                                   % Support*
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="px-4 py-2 text-left font-semibold">
                                   Vote Details
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="px-4 py-2 text-left font-semibold">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 odd:pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="px-4 py-2 text-left font-semibold">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2363,28 +2359,28 @@ function ShareHolderProposal() {
                         <div className="overflow-auto max-h-[400px]">
                           <Table>
                             <Table.Thead>
-                              <Table.Tr>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              <Table.Tr className="sticky top-0 z-20 bg-primary/90 text-white shadow-md">
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                                   Proxy Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2  w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                                   Category
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                                   Sub Category
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2416,7 +2412,7 @@ function ShareHolderProposal() {
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
                                       {noAction?.staff_response}
-                                    </Table.Td>
+                                    </Table.Td> 
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex gap-3 justify-center">
                                         <Tippy

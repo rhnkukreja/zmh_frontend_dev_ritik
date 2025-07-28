@@ -19,6 +19,7 @@ import LoadingIcon from "../Base/LoadingIcon";
 
 import OutcomePieChart from "../OutcomePieChart";
 import Lucide from "../Base/Lucide";
+import Pill from "../Pill";
 
 interface ShareHolderProposalAnalyticsComponentProps {
   proposalCounts: { total_proposals: number;[key: string]: any };
@@ -180,11 +181,15 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
 
     return (
       <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-          {tab == "proposal"
-            ? "Shareholder Proposal Analytics (Beta)"
-            : "No Action Letter Analytics (Beta) "}
-        </h2>
+        {tab == "proposal"
+          ? <h1 className="text-xl font-semibold flex items-center gap-2 mb-4">
+            All Shareholder Proposals
+            <Pill text="Beta" />
+          </h1>
+          : <h1 className="text-xl font-semibold flex items-center gap-2  mb-4">
+            All No Action Letters
+            <Pill text="Beta" />
+          </h1>}
         {proposalCounts.total_proposals === 0 ? (
           <div className="flex flex-col items-center justify-center h-96">
             <Lucide
@@ -212,7 +217,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                 } gap-6 mb-12`}
             >
               {/* 1. Yearly Proposal Trends - Bar Chart */}
-              <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
                   {tab == "proposal"
                     ? "Yearly Proposal Trend"
@@ -288,7 +293,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               </div>
 
               {/* 2. Proposal Distribution Pie Chart */}
-              <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
                   {tab == "proposal"
                     ? "Proposal Distribution by Category"
@@ -362,7 +367,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
 
               {/* 3. Outcome Distribution Pie Chart */}
               {tab !== "proposal" && (
-                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                   <h3 className="text-lg font-semibold mb-4">
                     Outcome Distribution
                   </h3>
@@ -378,16 +383,16 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                   ([category, subcategories]) => (
                     <div
                       key={category}
-                      className="bg-gray-100 p-4 rounded-lg shadow-md"
+                      className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100"
                     >
                       <h4 className="text-md font-semibold mb-2">
                         {category === "Environment" ? "Environmental" : category}
                       </h4>
                       {isDataAvailable(subcategories) ? (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto rounded-lg">
                           <table className="w-full border-collapse border border-gray-300">
-                            <thead className="bg-gray-200">
-                              <tr>
+                            <thead>
+                              <tr className="bg-primary text-white text-base">
                                 <th className="border p-2 text-left">
                                   Subcategory
                                 </th>

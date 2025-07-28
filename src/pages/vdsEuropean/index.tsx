@@ -1086,7 +1086,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
         <table className="w-[100%] mx-auto rounded-xl overflow-hidden">
           <thead>
-            <tr className="bg-primary/90 text-white text-base">
+            <tr className="bg-primary text-white text-base">
               <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>Summary</th>
               {institutions.map((institution) => (
                 <th key={institution.institution_id} colSpan={years.length} className="px-6 py-3 text-center font-semibold">
@@ -1094,7 +1094,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                 </th>
               ))}
             </tr>
-            <tr className="bg-primary/90 text-white text-base">
+            <tr className="bg-primary text-white text-base">
               {institutions.map((institution) => (
                 years.map((year) => (
                   <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">

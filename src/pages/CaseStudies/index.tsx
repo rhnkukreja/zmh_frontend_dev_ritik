@@ -408,59 +408,71 @@ function CaseStudies() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            {isAllCompanySelected === true ? (
-              <div className="font-semibold text-xl">All Case Studies</div>
-            ) : (
-              <div className="font-semibold text-xl">Case Studies</div>
-            )}
-
-            <div className="flex items-center justify-center">
-              <Tippy
-                content="All Companies"
-                options={{
-                  theme: "light",
-                }}
-              >
-                <div className="">
-                  <FormSwitch>
-                    <label className="text-md mr-3 font-semibold">
-                      View All
-                    </label>
-                    <FormSwitch.Input
-                      id="checkbox-switch-7"
-                      type="checkbox"
-                      checked={isAllCompanySelected}
-                      onChange={async (e) => {
-                        handleViewAllChange(e)
-                      }}
-                    />
-                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
-                  </FormSwitch>
-                </div>
-              </Tippy>
-              {user?.user_type === "Admin" && (
-                <div className="flex justify-end my-3">
-                  <Button
-                    onClick={() => {
-                      setSelectedCaseStudies(null);
-                      setAddNewCaseStudyModalVisible(true);
+          <div className="overflow-auto xl:overflow-visible mt-4">
+            <div className="w-full pt-5">
+              <div>
+                <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                      isAllCompanySelected === false
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                    onClick={async (e) => {
+                      if (isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: false } });
+                      }
                     }}
-                    variant="primary"
-                    className="bg-theme-2 border-bg-theme-2 "
                   >
-                    <Lucide
-                      icon="PenLine"
-                      className="stroke-[1.3] w-4 h-4 mr-2"
-                    />
-                    Add New Case Studies
-                  </Button>
+                    {companyGlobalSearchName || "Company"} Case Studies
+                  </button>
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                      isAllCompanySelected === true
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                    onClick={async (e) => {
+                      if (!isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: true } });
+                      }
+                    }}
+                  >
+                    All Case Studies
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
-          <div className="mt-3.5">
-            <div className="flex flex-col box box--stacked">
+          <div className="mt-3.5 relative">
+            <div className="flex flex-col box box--stacked bg-white p-5">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+                {isAllCompanySelected === true ? (
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    All Case Studies
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-xl">Case Studies</div>
+                )}
+                {user?.user_type === "Admin" && (
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => {
+                        setSelectedCaseStudies(null);
+                        setAddNewCaseStudyModalVisible(true);
+                      }}
+                      variant="primary"
+                      className="bg-theme-2 border-bg-theme-2"
+                    >
+                      <Lucide
+                        icon="PenLine"
+                        className="stroke-[1.3] w-4 h-4 mr-2"
+                      />
+                      Add New Case Studies
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2">
                 <div className="flex">
                   <MultiSearchBar
@@ -990,29 +1002,29 @@ function CaseStudies() {
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
-                  <div className="overflow-auto max-h-[400px]">
-                    <Table>
+                  <div className="overflow-auto max-h-[400px] rounded-lg">
+                    <Table className="rounded-lg">
                       <Table.Thead>
-                        <Table.Tr>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                        <Table.Tr className="bg-primary text-white text-sm">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Institution
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Year
                           </Table.Td>
                           {isAllCompanySelected && (
-                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                            <Table.Td className="px-4 py-2 text-left font-semibold">
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Theme
                           </Table.Td>
 
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Industry
                           </Table.Td>
-                          <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Details
                           </Table.Td>
                         </Table.Tr>

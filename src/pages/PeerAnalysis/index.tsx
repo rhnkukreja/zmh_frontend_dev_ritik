@@ -63,7 +63,7 @@ function PeerAnalysis() {
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [viewAll, setViewAll] = useState<boolean>(false);
-  const [isViewAnalysis, setIsViewAnalysis] = useState(false);
+  const [isViewAnalysis, setIsViewAnalysis] = useState(true);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
@@ -421,44 +421,54 @@ function PeerAnalysis() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
 
         <div className="col-span-12">
-          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            {isAllCompanySelected === true ? (
-              <div className="font-semibold text-xl">
-                All Engagement Details
-              </div>
-            ) : (
-              <div className="font-semibold text-xl">Engagement Detail</div>
-            )}
-
-            <div className="flex items-center">
-              <Tippy
-                content="All Companies"
-                options={{
-                  theme: "light",
-                }}
-              >
-                <div className="mt-2">
-                  <FormSwitch>
-                    <label className="text-md mr-3 font-semibold">
-                      View All
-                    </label>
-                    <FormSwitch.Input
-                      id="checkbox-switch-7"
-                      type="checkbox"
-                      checked={isAllCompanySelected}
-                      onChange={async (e) => {
-                        handleViewAllChange(e);
-                      }}
-                    />
-                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
-                  </FormSwitch>
+          <div className="overflow-auto xl:overflow-visible mt-4">
+            <div className="w-full pt-5">
+              <div>
+                <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                      isAllCompanySelected === false
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                    onClick={async (e) => {
+                      if (isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: false } });
+                      }
+                    }}
+                  >
+                    {companyGlobalSearchName || "Company"} Engagement Details
+                  </button>
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                      isAllCompanySelected === true
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                    onClick={async (e) => {
+                      if (!isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: true } });
+                      }
+                    }}
+                  >
+                    All Engagement Details
+                  </button>
                 </div>
-              </Tippy>
+              </div>
             </div>
           </div>
 
-          <div className="mt-3.5">
-            <div className="flex flex-col box box--stacked">
+          <div className="mt-3.5 relative">
+            <div className="flex flex-col box box--stacked bg-white p-5">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+                {isAllCompanySelected === true ? (
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    All Engagement Details
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-xl">Engagement Details</div>
+                )}
+              </div>
 
               <div className="grid grid-cols-6 xs:grid-cols-1 gap-4 md:grid-cols-3 p-4">
                 <div className="mx-2">
@@ -996,40 +1006,40 @@ function PeerAnalysis() {
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
-                  <div className="overflow-auto max-h-[400px]">
+                  <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
-                        <Table.Tr>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                        <Table.Tr className="bg-primary text-white text-sm">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Institution
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Year
                           </Table.Td>
                           {isAllCompanySelected && (
-                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                            <Table.Td className="px-4 py-2 text-left font-semibold">
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Country
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Sector
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Environmental
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Social
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Governance
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
 
-                      <Table.Tbody>
+                      <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                         {peerAnalysisData?.length > 0 &&
                           peerAnalysisData?.map((peer: TypesPeerAnalysis) => (
                             <Table.Tr key={peer?.id}>
