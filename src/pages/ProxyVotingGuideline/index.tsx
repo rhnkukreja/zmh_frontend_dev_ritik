@@ -37,6 +37,9 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { useNavigate } from "react-router-dom";
 import UploadFile from "@/components/UploadFile";
 import FilterChips from "@/components/FilterChips";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
+import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 interface ProxyGuidelineFilter {
@@ -301,7 +304,7 @@ function ProxyGuideline() {
 
                   <div className="flex items-start">
                     <a
-                      className="p-2 bg-blue-600
+                      className="p-2 bg-primary
                    border-white border-2 text-white rounded-md "
 
                       onClick={() => {
@@ -359,33 +362,13 @@ function ProxyGuideline() {
 
                         <Popover.Panel placement="bottom-end">
                           <form onSubmit={handleSubmit(onSubmit)}>
-                            <div className="p-2">
-                              <div className="flex items-center mt-4">
-                                <Button
-                                  variant="secondary"
-                                  onClick={() => {
-                                    close();
-                                    onFilterClear();
-                                  }}
-                                  className="w-32 ml-auto"
-                                >
-                                  Clear
-                                </Button>
-                                <Button
-                                  type="submit"
-                                  variant="primary"
-                                  className="w-32 ml-2"
-                                  onClick={() => {
-                                    close();
-                                  }}
-                                >
-                                  Apply
-                                </Button>
-                              </div>
+                            <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                               <div className="mt-3">
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    <span className="font-semibold">Year</span>
+                                    <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                                      <FaCalendarAlt className="text-gray-400" /> Year
+                                    </span>
                                     {guidelineFilterOptions?.year?.length >
                                       0 && (
                                         <div>
@@ -464,7 +447,9 @@ function ProxyGuideline() {
                                 </div>
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    <span className="font-semibold">Region</span>
+                                    <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                                      <FaLayerGroup className="text-gray-400" /> Region
+                                    </span>
                                     {guidelineFilterOptions?.region?.length >
                                       0 && (
                                         <div>
@@ -542,6 +527,31 @@ function ProxyGuideline() {
                                   />
                                 </div>
                               </div>
+                              
+                              {/* Buttons */}
+                              <div className="flex justify-end gap-3 mt-6">
+                                <Button
+                                  variant="outline-secondary"
+                                  onClick={() => {
+                                    close();
+                                    onFilterClear();
+                                  }}
+                                  className="w-36"
+                                  type="button"
+                                >
+                                  <MdOutlineClear className="text-lg mr-1" /> Clear
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  variant="primary"
+                                  className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
+                                  onClick={() => {
+                                    close();
+                                  }}
+                                >
+                                  <FaSearch className="text-lg" /> Apply
+                                </Button>
+                              </div>
                             </div>
                           </form>
                         </Popover.Panel>
@@ -569,33 +579,33 @@ function ProxyGuideline() {
               <div className="overflow-auto xl:overflow-visible px-5">
 
                 <TableWrapper isLoading={loading}>
-                  <div className="overflow-auto max-h-[400px]">
+                  <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
-                        <Table.Tr>
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                        <Table.Tr className="bg-primary text-white text-sm">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Institution
                           </Table.Td>
-                          <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Year
                           </Table.Td>
                           {user?.user_type === "Admin" && (
-                            <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            <Table.Td className="px-4 py-2 text-left font-semibold">
                               Category
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            <Table.Td className="px-4 py-2 text-left font-semibold">
                               Sub Category
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className=" py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            <Table.Td className="px-4 py-2 text-left font-semibold">
                               Section
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                            <Table.Td className="px-4 py-2 text-left font-semibold">
                               Policy Guideline
                             </Table.Td>
                           )}
@@ -603,12 +613,12 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                          <Table.Td className="py-2  font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          <Table.Td className="px-4 py-2 text-left font-semibold">
                             Details
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
-                      <Table.Tbody>
+                      <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                         {proxyVotingGuidelines?.length > 0 &&
                           uniqueGuidelines(proxyVotingGuidelines)?.map(
                             (guideline: ProxyVotingGuideline) => (

@@ -39,6 +39,9 @@ import { peerAnalysisService } from "@/services/peerAnalysis";
 import clsx from "clsx";
 import ChartComponent from "@/components/EnagementDetailsDialog";
 import FilterChips from "@/components/FilterChips";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
+import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 
@@ -607,29 +610,13 @@ function PeerAnalysis() {
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="filter-section mb-5">
-                    <div className="flex items-center justify-end mt-2 mb-4">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          onFilterClear();
-                        }}
-                        className="w-32 mx-2"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-32 mx-2"
-                        type="submit"
-                      >
-                        Apply
-                      </Button>
-                    </div>
+                  <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-3' : 'md:grid-cols-3'])}>
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Year</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaCalendarAlt className="text-gray-400" /> Year
+                          </span>
                           {apiDropdownOptions?.year?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -711,7 +698,9 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Category</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaTags className="text-gray-400" /> Category
+                          </span>
 
 
                           {apiDropdownOptions?.category?.length >
@@ -801,7 +790,9 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className=" font-semibold">Country</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaLayerGroup className="text-gray-400" /> Country
+                          </span>
 
 
                           {apiDropdownOptions?.country?.length >
@@ -891,7 +882,9 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Index</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaLayerGroup className="text-gray-400" /> Index
+                          </span>
                         </div>
                         <Controller
                           name="index"
@@ -914,7 +907,9 @@ function PeerAnalysis() {
                         isAllCompanySelected === true &&
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">Sector</span>
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaBuilding className="text-gray-400" /> Sector
+                            </span>
                             {apiDropdownOptions?.sector?.length >
                               0 && (
                                 <div>
@@ -997,6 +992,28 @@ function PeerAnalysis() {
                           />
                         </div>
                       }
+                    </div>
+                    
+                    {/* Buttons */}
+                    <div className="flex justify-end gap-3 mt-6">
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => {
+                          onFilterClear();
+                          close();
+                        }}
+                        className="w-36"
+                        type="button"
+                      >
+                        <MdOutlineClear className="text-lg mr-1" /> Clear
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
+                        type="submit"
+                      >
+                        <FaSearch className="text-lg" /> Apply
+                      </Button>
                     </div>
                   </div>
                 </form>
