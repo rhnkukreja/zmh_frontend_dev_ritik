@@ -392,7 +392,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                         <div className="overflow-x-auto rounded-lg">
                           <table className="w-full border-collapse border border-gray-300">
                             <thead>
-                              <tr className="bg-primary text-white text-base">
+                              <tr className="bg-primary text-white text-sm">
                                 <th className="border p-2 text-left">
                                   Subcategory
                                 </th>

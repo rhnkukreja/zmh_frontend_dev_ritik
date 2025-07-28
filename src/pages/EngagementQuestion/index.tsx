@@ -430,31 +430,7 @@ function Main() {
                       </Popover.Button>
                       <Popover.Panel placement="bottom-end">
                         <form onSubmit={handleSubmit(onSubmit)}>
-                          <div className="p-2">
-                            <div className="flex items-center mt-4">
-                              <Button
-                                variant="secondary"
-                                onClick={() => {
-                                  dispatch(resetFilter());
-                                  dispatch(resetPage());
-                                  resetForm();
-                                  close();
-                                }}
-                                className="w-32 ml-auto"
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                type="submit"
-                                variant="primary"
-                                className="w-32 ml-2"
-                                onClick={() => {
-                                  close();
-                                }}
-                              >
-                                Apply
-                              </Button>
-                            </div>
+                          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
 
                             <div className="mt-3">
                               <div className="w-full my-2">
@@ -590,6 +566,33 @@ function Main() {
                                   )}
                                 />
                               </div>
+                            </div>
+                            
+                            {/* Buttons */}
+                            <div className="flex justify-end gap-3 mt-6">
+                              <Button
+                                variant="outline-secondary"
+                                onClick={() => {
+                                  dispatch(resetFilter());
+                                  dispatch(resetPage());
+                                  resetForm();
+                                  close();
+                                }}
+                                className="w-36"
+                                type="button"
+                              >
+                                Clear
+                              </Button>
+                              <Button
+                                type="submit"
+                                variant="primary"
+                                className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
+                                onClick={() => {
+                                  close();
+                                }}
+                              >
+                                Apply
+                              </Button>
                             </div>
                           </div>
                         </form>
