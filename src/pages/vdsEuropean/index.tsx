@@ -561,7 +561,6 @@ const index = () => {
     }
   }, [isViewAnalysis]);
 
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Debug: Log analytics state before render
   console.log('vdsEuropeansAnalytics:', vdsEuropeansAnalytics);
@@ -609,17 +608,6 @@ const index = () => {
                   </>
                 )}
               </Popover>
-              {isFilterCollapse && (
-                <Button
-                  variant={showAdvancedFilters ? "primary" : "outline-secondary"}
-                  className={`flex items-center gap-2 ${showAdvancedFilters ? 'text-white' : ''}`}
-                  onClick={() => setShowAdvancedFilters((prev) => !prev)}
-                  type="button"
-                >
-                  <Lucide icon="Settings" className="w-4 h-4" />
-                  Advanced Filters
-                </Button>
-              )}
             </div>
           </div>
         </div>
@@ -646,7 +634,7 @@ const index = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
             {/* Filter Toggle and Advanced Filters Button */}
             <form onSubmit={handleSubmit(onSubmit)}>
-              {/* Main 4 fields in a single row */}
+              {/* All filters in multiple rows */}
               <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
                 {/* Institution */}
                 <div>
@@ -744,94 +732,122 @@ const index = () => {
                   />
                 </div>
               </div>
-              {/* Advanced Filters (collapsible, below main row) */}
-              {showAdvancedFilters && (
-                <div className="grid gap-6 md:grid-cols-4 grid-cols-1 mt-6">
-                  {/* Vote */}
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaHandshake className="text-gray-400" /> Vote
-                    </label>
-                    <Controller
-                      name="vote"
-                      control={control}
-                      defaultValue={[]}
-                      render={({ field }) => (
-                        <MultiSelectDropdown
-                          data={["For", "Against", "Abstain"]}
-                          placeholder="Select Vote"
-                          loading={getDynamicDropdownLoader}
-                          onChange={(selectedOptions) => {
-                            const selectedValues = selectedOptions.map((option) => option.value);
-                            field.onChange(selectedValues);
-                          }}
-                          selectedOption={field.value || []}
-                        />
-                      )}
-                    />
-                  </div>
-                  {/* Proponent Type */}
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaUserTie className="text-gray-400" /> Proponent Type
-                    </label>
-                    <Controller
-                      name="proponent_type"
-                      control={control}
-                      render={({ field }) => (
-                        <MultiSelectDropdown
-                          data={proponent_type.map((item: any) => convertToTitleCase(item))}
-                          placeholder="Select Proponent Type"
-                          loading={false}
-                          onChange={(selectedOptions) => {
-                            const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                            field.onChange(selectedValues);
-                          }}
-                          selectedOption={field.value || []}
-                        />
-                      )}
-                    />
-                  </div>
-                  {/* Meeting Type */}
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaTags className="text-gray-400" /> Meeting Type
-                    </label>
-                    <Controller
-                      name="meeting_type"
-                      control={control}
-                      render={({ field }) => (
-                        <MultiSelectDropdown
-                          data={meeting_type.map((item: any) => convertToTitleCase(item))}
-                          placeholder="Select Meeting Type"
-                          loading={false}
-                          onChange={(selectedOptions) => {
-                            const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                            field.onChange(selectedValues);
-                          }}
-                          selectedOption={field.value || []}
-                        />
-                      )}
-                    />
-                  </div>
-                  {/* Keywords */}
-                  <div>
-                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                      <FaTags className="text-gray-400" /> Keywords
-                    </label>
-                    <Controller
-                      name="custom_keywords"
-                      control={control}
-                      render={({ field }) => (
-                        <CreatableInputSelect
-                          value={field.value || []}
-                          onChange={(val) => field.onChange(val)}
-                        />
-                      )}
-                    />
-                  </div>
+              {/* Second row with 3 columns */}
+              <div className="grid gap-6 md:grid-cols-3 grid-cols-1 mt-6">
+                {/* Vote */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaHandshake className="text-gray-400" /> Vote
+                  </label>
+                  <Controller
+                    name="vote"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={["For", "Against", "Abstain"]}
+                        placeholder="Select Vote"
+                        loading={getDynamicDropdownLoader}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
                 </div>
-              )}
+                {/* Proponent Type */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaUserTie className="text-gray-400" /> Proponent Type
+                  </label>
+                  <Controller
+                    name="proponent_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={proponent_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Proponent Type"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Meeting Type */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaTags className="text-gray-400" /> Meeting Type
+                  </label>
+                  <Controller
+                    name="meeting_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={meeting_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Meeting Type"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+              {/* Company Name and Keywords in separate row with 2 columns */}
+              <div className="grid gap-6 md:grid-cols-2 grid-cols-1 mt-6">
+                {/* Company Name */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaBuilding className="text-gray-400" /> Company Name
+                  </label>
+                  <Controller
+                    name="company_name"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={institutionOptions.map(option => ({
+                          value: option,
+                          label: option
+                        }))}
+                        placeholder="Select Companies"
+                        loading={getFundNameDropdownLoader}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                        isSearchable={true}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Keywords */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaTags className="text-gray-400" /> Keywords
+                  </label>
+                  <Controller
+                    name="custom_keywords"
+                    control={control}
+                    render={({ field }) => (
+                      <CreatableInputSelect
+                        value={field.value || []}
+                        onChange={(val) => field.onChange(val)}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
               {/* Buttons */}
               <div className="flex justify-end gap-3 mt-6">
                 <Button

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, PieChart } from "lucide-react";
 import React, { Dispatch, SetStateAction, useState } from "react";
 import LoadingIcon from "../Base/LoadingIcon";
+import Lucide from "../Base/Lucide";
 
 import { Pie, ResponsiveContainer } from "recharts";
 import OutcomePieChart from "../OutcomePieChart";
@@ -32,10 +33,15 @@ const ProponentsAnalyticsComponent: React.FC<
 
     if (!isDataAvailable(topProponents)) {
       return (
-        <div className="flex items-center justify-center h-full mb-10">
-          <h2 className="text-xl font-semibold text-gray-600">
-            No Analytics Available
-          </h2>
+        <div className="flex flex-col items-center justify-center py-12">
+          <Lucide
+            icon="FileSearch"
+            className="w-12 h-12 text-gray-300 mb-2"
+          />
+          <div className="text-lg font-medium">No data found</div>
+          <div className="text-sm text-gray-500 mt-1">
+            Try adjusting your filters or search criteria
+          </div>
         </div>
       );
     }
