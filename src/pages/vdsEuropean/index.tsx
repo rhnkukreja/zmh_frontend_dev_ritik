@@ -297,7 +297,9 @@ const index = () => {
     }
     const analyticsObj = {
       ...data,
-      company_name: data?.company_name || [], // Always a flat array
+      company_name: Array.isArray(data?.company_name) && data.company_name.length > 0
+        ? data.company_name.map((item: any) => item.label || item.value || item)
+        : [],
       vote_type: data?.vote || [], // always set vote_types
     };
     setAllAnalyticsFilter(analyticsObj);
@@ -465,6 +467,9 @@ const index = () => {
               investor_company: allAnalyticsFilter?.institution_name?.length
                 ? allAnalyticsFilter.institution_name
                 : allAnalyticsFilter.company_name || [],
+              company_name: allAnalyticsFilter?.company_name?.length > 0
+                ? allAnalyticsFilter.company_name
+                : [],
               year:
                 allAnalyticsFilter?.analyticsYear?.length > 0
                   ? allAnalyticsFilter?.analyticsYear
@@ -814,19 +819,13 @@ const index = () => {
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={institutionOptions.map(option => ({
-                          value: option,
-                          label: option
-                        }))}
-                        placeholder="Select Companies"
-                        loading={getFundNameDropdownLoader}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => option.value);
-                          field.onChange(selectedValues);
+                      <CompanySelect
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
                         }}
-                        selectedOption={field.value || []}
-                        isSearchable={true}
+                        isMulti={true}
+                        placeholder="Search Companies"
                       />
                     )}
                   />
