@@ -252,6 +252,29 @@ function ShareHolderProposal() {
 
   const navigate = useNavigate();
 
+  // Helper function to check if analytics data is available
+  const isAnalyticsDataAvailable = () => {
+    if (tab === "proposal") {
+      // For proposal tab, check if there's actual meaningful data
+      const hasProposalCount = proposalsAnalytics?.total_proposals?.total_proposals && proposalsAnalytics.total_proposals.total_proposals > 0;
+      const hasCategories = proposalsAnalytics?.topCategories && Array.isArray(proposalsAnalytics.topCategories) && proposalsAnalytics.topCategories.length > 0;
+      const hasSubcategories = proposalsAnalytics?.topSubcategories && typeof proposalsAnalytics.topSubcategories === 'object' && Object.keys(proposalsAnalytics.topSubcategories).length > 0;
+      const hasYearlySummary = proposalsAnalytics?.yearlySummary && Array.isArray(proposalsAnalytics.yearlySummary) && proposalsAnalytics.yearlySummary.length > 0;
+      const hasProponents = proposalsAnalytics?.topProponents && Array.isArray(proposalsAnalytics.topProponents) && proposalsAnalytics.topProponents.length > 0;
+      
+      return hasProposalCount || hasCategories || hasSubcategories || hasYearlySummary || hasProponents;
+    } else {
+      // For no-action/withdrawn tabs, check regular data
+      const hasProposalCount = proposalCounts?.total_proposals && proposalCounts.total_proposals > 0;
+      const hasCategories = topCategories && Array.isArray(topCategories) && topCategories.length > 0;
+      const hasSubcategories = topSubcategories && typeof topSubcategories === 'object' && Object.keys(topSubcategories).length > 0;
+      const hasYearlySummary = yearlySummary && Array.isArray(yearlySummary) && yearlySummary.length > 0;
+      const hasProponents = topProponents && Array.isArray(topProponents) && topProponents.length > 0;
+      
+      return hasProposalCount || hasCategories || hasSubcategories || hasYearlySummary || hasProponents;
+    }
+  };
+
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
     setIsFilterCollapse(!isFilterCollapse);
@@ -2074,27 +2097,71 @@ function ShareHolderProposal() {
 
                           {/* Content */}
                           <div>
-
-                            {activeTab === "shareholders" ? (
-                              <ShareHolderProposalAnalyticsComponent
-                                proposalCounts={proposalsAnalytics?.total_proposals}
-                                topSubcategories={proposalsAnalytics?.topSubcategories}
-                                topCategories={proposalsAnalytics?.topCategories}
-                                yearlySummary={proposalsAnalytics?.yearlySummary}
-                                tab={tab}
-                                isAllCompanySelected={isAllCompanySelected}
-                                loading={loadingAnalytics}
-                              />
+                            {loadingAnalytics ? (
+                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                <LoadingIcon
+                                  color="#800000"
+                                  icon="three-dots"
+                                  className="w-16 h-16"
+                                />
+                              </div>
+                            ) : !isAnalyticsDataAvailable() ? (
+                              <div className="flex flex-col items-center justify-center py-12">
+                                <Lucide
+                                  icon="FileSearch"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No data found</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Try adjusting your filters or search criteria
+                                </div>
+                              </div>
+                            ) : activeTab === "shareholders" ? (
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="FileSearch"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No data found</div>
+                                  <div className="text-sm text-gray-500 mt-1">
+                                    Try adjusting your filters or search criteria
+                                  </div>
+                                </div>
+                              ) : (
+                                <ShareHolderProposalAnalyticsComponent
+                                  proposalCounts={proposalsAnalytics?.total_proposals}
+                                  topSubcategories={proposalsAnalytics?.topSubcategories}
+                                  topCategories={proposalsAnalytics?.topCategories}
+                                  yearlySummary={proposalsAnalytics?.yearlySummary}
+                                  tab={tab}
+                                  isAllCompanySelected={isAllCompanySelected}
+                                  loading={loadingAnalytics}
+                                />
+                              )
                             ) : (
-                              <ProponentsAnalyticsComponent
-                                topProponents={proposalsAnalytics?.topProponents}
-                                handleSearch={handleSearch}
-                                setSearchTerms={setSearchTerms}
-                                tab={tab}
-                                loading={loadingAnalytics}
-                                pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
-                                filters={filters}
-                              />
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="FileSearch"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No data found</div>
+                                  <div className="text-sm text-gray-500 mt-1">
+                                    Try adjusting your filters or search criteria
+                                  </div>
+                                </div>
+                              ) : (
+                                <ProponentsAnalyticsComponent
+                                  topProponents={proposalsAnalytics?.topProponents}
+                                  handleSearch={handleSearch}
+                                  setSearchTerms={setSearchTerms}
+                                  tab={tab}
+                                  loading={loadingAnalytics}
+                                  pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
+                                  filters={filters}
+                                />
+                              )
                             )}
                           </div>
                         </div>
@@ -2285,16 +2352,22 @@ function ShareHolderProposal() {
                                 )}
                             </Table.Tbody>
                             {shareHolderProposal?.length === 0 && (
-                              <div className="flex flex-col items-center justify-center">
-                                <Lucide
-                                  icon="FileSearch"
-                                  className="w-12 h-12 text-gray-300 mb-2"
-                                />
-                                <div className="text-lg font-medium">No data found</div>
-                                <div className="text-sm text-gray-500 mt-1">
-                                  Try adjusting your filters or search criteria
-                                </div>
-                              </div>
+                              <Table.Tbody>
+                                <Table.Tr>
+                                  <Table.Td colSpan={isAllCompanySelected ? 7 : 6} className="text-center py-12">
+                                    <div className="flex flex-col items-center justify-center">
+                                      <Lucide
+                                        icon="FileSearch"
+                                        className="w-12 h-12 text-gray-300 mb-2"
+                                      />
+                                      <div className="text-lg font-medium">No data found</div>
+                                      <div className="text-sm text-gray-500 mt-1">
+                                        Try adjusting your filters or search criteria
+                                      </div>
+                                    </div>
+                                  </Table.Td>
+                                </Table.Tr>
+                              </Table.Tbody>
                             )}
                           </Table>
                         </div>
@@ -2347,27 +2420,72 @@ function ShareHolderProposal() {
 
                           {/* Content */}
                           <div>
-                            {activeTab === "shareholders" ? (
-                              <ShareHolderProposalAnalyticsComponent
-                                proposalCounts={proposalCounts}
-                                topSubcategories={topSubcategories}
-                                topCategories={topCategories}
-                                yearlySummary={yearlySummary}
-                                tab={tab}
-                                pieChartOutcome={pieChartOutcome}
-                                isAllCompanySelected={isAllCompanySelected}
-                                loading={loading}
-                              />
+                            {loading ? (
+                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                <LoadingIcon
+                                  color="#800000"
+                                  icon="three-dots"
+                                  className="w-16 h-16"
+                                />
+                              </div>
+                            ) : !isAnalyticsDataAvailable() ? (
+                              <div className="flex flex-col items-center justify-center py-12">
+                                <Lucide
+                                  icon="FileSearch"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No data found</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Try adjusting your filters or search criteria
+                                </div>
+                              </div>
+                            ) : activeTab === "shareholders" ? (
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="FileSearch"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No data found</div>
+                                  <div className="text-sm text-gray-500 mt-1">
+                                    Try adjusting your filters or search criteria
+                                  </div>
+                                </div>
+                              ) : (
+                                <ShareHolderProposalAnalyticsComponent
+                                  proposalCounts={proposalCounts}
+                                  topSubcategories={topSubcategories}
+                                  topCategories={topCategories}
+                                  yearlySummary={yearlySummary}
+                                  tab={tab}
+                                  pieChartOutcome={pieChartOutcome}
+                                  isAllCompanySelected={isAllCompanySelected}
+                                  loading={loading}
+                                />
+                              )
                             ) : (
-                              <ProponentsAnalyticsComponent
-                                topProponents={topProponents}
-                                handleSearch={handleSearch}
-                                setSearchTerms={setSearchTerms}
-                                tab={tab}
-                                loading={loading}
-                                pieChartOutcome={pieChartOutcome}
-                                filters={filters}
-                              />
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="FileSearch"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No data found</div>
+                                  <div className="text-sm text-gray-500 mt-1">
+                                    Try adjusting your filters or search criteria
+                                  </div>
+                                </div>
+                              ) : (
+                                <ProponentsAnalyticsComponent
+                                  topProponents={topProponents}
+                                  handleSearch={handleSearch}
+                                  setSearchTerms={setSearchTerms}
+                                  tab={tab}
+                                  loading={loading}
+                                  pieChartOutcome={pieChartOutcome}
+                                  filters={filters}
+                                />
+                              )
                             )}
                           </div>
                         </div>

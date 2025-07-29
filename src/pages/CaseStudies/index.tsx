@@ -440,7 +440,7 @@ function CaseStudies() {
                       }
                     }}
                   >
-                    All Case Studies
+                   View For All Companies
                   </button>
                 </div>
               </div>
@@ -1153,9 +1153,22 @@ function CaseStudies() {
                           })}
                       </Table.Tbody>
                       {caseStudies?.length === 0 && (
-                        <div className="w-full">
-                          <h1 className="mt-3">No Records Found..</h1>
-                        </div>
+                        <Table.Tbody>
+                          <Table.Tr>
+                            <Table.Td colSpan={isAllCompanySelected ? 6 : 5} className="text-center py-12">
+                              <div className="flex flex-col items-center justify-center">
+                                <Lucide
+                                  icon="FileSearch"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No data found</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Try adjusting your filters or search criteria
+                                </div>
+                              </div>
+                            </Table.Td>
+                          </Table.Tr>
+                        </Table.Tbody>
                       )}
                     </Table>
                   </div>

@@ -429,11 +429,10 @@ function PeerAnalysis() {
               <div>
                 <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
                   <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-                      isAllCompanySelected === false
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
                         ? "bg-primary text-white shadow"
                         : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
+                      }`}
                     onClick={async (e) => {
                       if (isAllCompanySelected) {
                         handleViewAllChange({ target: { checked: false } });
@@ -443,18 +442,17 @@ function PeerAnalysis() {
                     {companyGlobalSearchName || "Company"} Engagement Details
                   </button>
                   <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-                      isAllCompanySelected === true
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
                         ? "bg-primary text-white shadow"
                         : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
+                      }`}
                     onClick={async (e) => {
                       if (!isAllCompanySelected) {
                         handleViewAllChange({ target: { checked: true } });
                       }
                     }}
                   >
-                    All Engagement Details
+                    View For All Companies
                   </button>
                 </div>
               </div>
@@ -993,7 +991,7 @@ function PeerAnalysis() {
                         </div>
                       }
                     </div>
-                    
+
                     {/* Buttons */}
                     <div className="flex justify-end gap-3 mt-6">
                       <Button
@@ -1019,7 +1017,22 @@ function PeerAnalysis() {
                 </form>
               )}
 
-              {isViewAnalysis && <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />}
+              {isViewAnalysis && (
+                peerAnalysisData?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Lucide
+                      icon="FileSearch"
+                      className="w-12 h-12 text-gray-300 mb-2"
+                    />
+                    <div className="text-lg font-medium">No data found</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Try adjusting your filters or search criteria
+                    </div>
+                  </div>
+                ) : (
+                  <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />
+                )
+              )}
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
@@ -1124,6 +1137,24 @@ function PeerAnalysis() {
                             </Table.Tr>
                           ))}
                       </Table.Tbody>
+                      {peerAnalysisData?.length === 0 && (
+                        <Table.Tbody>
+                          <Table.Tr>
+                            <Table.Td colSpan={isAllCompanySelected ? 8 : 7} className="text-center py-12">
+                              <div className="flex flex-col items-center justify-center">
+                                <Lucide
+                                  icon="FileSearch"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No data found</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Try adjusting your filters or search criteria
+                                </div>
+                              </div>
+                            </Table.Td>
+                          </Table.Tr>
+                        </Table.Tbody>
+                      )}
                     </Table>
                   </div>
                 </TableWrapper>
