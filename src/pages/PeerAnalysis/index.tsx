@@ -468,7 +468,7 @@ function PeerAnalysis() {
                     All Engagement Details
                   </h1>
                 ) : (
-                  <div className="font-semibold text-xl">Engagement Details</div>
+                  <div className="font-semibold text-lg">Engagement Details</div>
                 )}
               </div>
 
@@ -1022,13 +1022,10 @@ function PeerAnalysis() {
                 peerAnalysisData?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Lucide
-                      icon="FileSearch"
+                      icon="BarChart3"
                       className="w-12 h-12 text-gray-300 mb-2"
                     />
-                    <div className="text-lg font-medium">No data found</div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      Try adjusting your filters or search criteria
-                    </div>
+                    <div className="text-lg font-medium">No Analytics found</div>
                   </div>
                 ) : (
                   <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />
@@ -1040,31 +1037,31 @@ function PeerAnalysis() {
                   <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
-                        <Table.Tr className="bg-primary text-white text-sm">
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                        <Table.Tr className="bg-primary text-white">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Institution
                           </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Year
                           </Table.Td>
                           {isAllCompanySelected && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Country
                           </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Sector
                           </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Environmental
                           </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Social
                           </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Governance
                           </Table.Td>
                         </Table.Tr>

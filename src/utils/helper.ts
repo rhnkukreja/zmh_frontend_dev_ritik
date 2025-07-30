@@ -357,7 +357,7 @@ function generateFilterChips(filters: Record<string, any>) {
     vote_type: "Vote",
     category: "Category",
     keyword: "Keyword",
-    index_name: "Index",
+    index: "Index",
     proposal_type: "Proposal Type",
     proponent_type: "Proponent Type",
     meeting_type: "Meeting Type",
@@ -401,7 +401,7 @@ function convertToTitleCase(str: string): string {
   else if (str == "proponent_type") {
     return "Proponent Type"
   }
-  else if (str == "index_name") {
+  else if (str == "index") {
     return "Index"
   }
   else if (str == "custom_keywords") {
