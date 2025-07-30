@@ -350,6 +350,7 @@ function countValidFilters(filters: FilterObject): number {
 function generateFilterChips(filters: Record<string, any>) {
   const mapping: Record<string, string> = {
     company_name: "Company",
+    company_names: "Company",
     institution_name: "Institution",
     year: "Year",
     vote: "Vote",
@@ -386,7 +387,7 @@ function convertToTitleCase(str: string): string {
   if (!str) {
     return "";
   }
-  if (str == "global_search" || str == "company_name") {
+  if (str == "global_search" || str == "company_name" || str == "company_names") {
     return "Company"
   } else if (str == "institution_name") {
     return "Institution"

@@ -403,6 +403,7 @@ function PeerAnalysis() {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
         (item) => item !== removeValue
       );
+      setValue(removeKey, updatedFilters[removeKey]);
     } else if (updatedFilters[removeKey] === removeValue) {
       if (removeKey === "index") {
         // Remove index completely if empty or blank
