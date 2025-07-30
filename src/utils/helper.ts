@@ -358,11 +358,13 @@ function generateFilterChips(filters: Record<string, any>) {
     category: "Category",
     keyword: "Keyword",
     index: "Index",
+    index_name: "Index",
     proposal_type: "Proposal Type",
     proponent_type: "Proponent Type",
     meeting_type: "Meeting Type",
     custom_keywords: "Keywords",
     analyticsYear: "Year",
+    date_range: "Date Range",
   };
 
   return Object.entries(filters)

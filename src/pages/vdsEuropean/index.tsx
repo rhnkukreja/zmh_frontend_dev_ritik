@@ -46,6 +46,7 @@ import { MdOutlineClear } from "react-icons/md";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
 import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
+import Litepicker from "@/components/Base/Litepicker";
 import React from "react";
 
 const index = () => {
@@ -192,6 +193,7 @@ const index = () => {
       category: [],
       year: "",
       company_name: [],
+      date_range: "",
     },
   });
 
@@ -282,6 +284,7 @@ const index = () => {
       category: npxFilter?.category,
       year: npxFilter?.year,
       keyword: npxFilter?.keyword,
+      date_range: npxFilter?.date_range,
     };
     setallApplyFilter(filterObj);
     // Save to localStorage
@@ -301,6 +304,7 @@ const index = () => {
         ? data.company_name.map((item: any) => item.label || item.value || item)
         : [],
       vote_type: data?.vote || [], // always set vote_types
+      date_range: data?.date_range || null, // include date_range
     };
     setAllAnalyticsFilter(analyticsObj);
     // Save analytics filters to localStorage
@@ -360,6 +364,7 @@ const index = () => {
     setValue("category", []);
     setValue("year", "");
     setValue("keyword", "");
+    setValue("date_range", "");
     setValue("analyticsYear", []);
     setValue("index_name", []);
     setValue("proponent_type", []);
@@ -494,6 +499,7 @@ const index = () => {
                 ? allAnalyticsFilter.meeting_type
                 : [],
               vote_type: allAnalyticsFilter?.vote_type || [],
+              date_range: allAnalyticsFilter?.date_range || null,
               country: ["USA"],
               page: analyticsPage || 1,
             }
@@ -807,8 +813,8 @@ const index = () => {
                   />
                 </div>
               </div>
-              {/* Company Name and Keywords in separate row with 2 columns */}
-              <div className="grid gap-6 md:grid-cols-2 grid-cols-1 mt-6">
+              {/* Company Name, Date Range and Keywords in separate row with 3 columns */}
+              <div className="grid gap-6 md:grid-cols-3 grid-cols-1 mt-6">
                 {/* Company Name */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -829,6 +835,45 @@ const index = () => {
                       />
                     )}
                   />
+                </div>
+                {/* Date Range */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaCalendarAlt className="text-gray-400" /> Date Range
+                  </label>
+                  <div className="relative">
+                    <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                      <Lucide icon="Calendar" className="w-4 h-4" />
+                    </div>
+                    <Controller
+                      name="date_range"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <Litepicker
+                          value={field.value}
+                          onChange={(date) => field.onChange(date)}
+                          placeholder="Select Date Range"
+                          options={{
+                            autoApply: false,
+                            singleMode: false,
+                            numberOfColumns: 2,
+                            numberOfMonths: 2,
+                            showWeekNumbers: true,
+                            dropdowns: {
+                              minYear: 1990,
+                              maxYear: null,
+                              months: true,
+                              years: true,
+                            },
+                            maxDate: new Date().toISOString().split("T")[0],
+                            minDate: "2020-01-01",
+                          }}
+                          className="pl-12"
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
                 {/* Keywords */}
                 <div>
