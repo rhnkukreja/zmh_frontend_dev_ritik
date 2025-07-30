@@ -98,6 +98,11 @@ const initialState: any = {
       pathname: "/shareholder-proposal",
       title: "Shareholder Proposals",
     },
+    // {
+    //   icon: "Vote",
+    //   pathname: "/2025-shareholder-meetings",
+    //   title: "2025 Shareholder Meetings",
+    // },
     {
       icon: "ActivitySquare",
       pathname: "/voting-data",
