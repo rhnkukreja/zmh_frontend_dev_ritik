@@ -48,11 +48,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             <table className="w-full rounded-lg shadow-md">
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-semibold">Institution</th>
-                                        <th className="px-4 py-2 text-left font-semibold">Unique Companies</th>
-                                        <th className="px-4 py-2 text-left font-semibold">Environmental</th>
-                                        <th className="px-4 py-2 text-left font-semibold">Social</th>
-                                        <th className="px-4 py-2 text-left font-semibold">Governance</th>
+                                        <th className="px-4 py-2 text-left font-medium">Institution</th>
+                                        <th className="px-4 py-2 text-left font-medium">Unique Companies</th>
+                                        <th className="px-4 py-2 text-left font-medium">Environmental</th>
+                                        <th className="px-4 py-2 text-left font-medium">Social</th>
+                                        <th className="px-4 py-2 text-left font-medium">Governance</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -102,13 +102,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-lg font-semibold mb-2">Governance Topics</h3>
+                            <h3 className="text-md font-semibold mb-2">Governance</h3>
                             <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-semibold">Topic</th>
-                                        <th className="px-4 py-2 text-left font-semibold">Count</th>
-                                        <th className="px-4 py-2 text-left font-semibold">%</th>
+                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-4 py-2 text-left font-medium">Count</th>
+                                        <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -124,13 +124,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                         </div>
 
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-lg font-semibold mb-2">Environmental Topics</h3>
+                            <h3 className="text-md font-semibold mb-2">Environmental</h3>
                             <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-semibold">Topic</th>
-                                        <th className="px-4 py-2 text-left font-semibold">Count</th>
-                                        <th className="px-4 py-2 text-left font-semibold">%</th>
+                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-4 py-2 text-left font-medium">Count</th>
+                                        <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -145,13 +145,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             </table>
                         </div>
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-lg font-semibold mb-2">Social Topics</h3>
+                            <h3 className="text-md font-semibold mb-2">Social</h3>
                             <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-semibold">Topic</th>
-                                        <th className="px-4 py-2 text-left font-semibold">Count</th>
-                                        <th className="px-4 py-2 text-left font-semibold">%</th>
+                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-4 py-2 text-left font-medium">Count</th>
+                                        <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
                                 </thead>
                                 <tbody>

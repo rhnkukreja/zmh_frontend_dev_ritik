@@ -57,7 +57,7 @@ interface CaseStudyFilter {
   approval_status: string;
   caspio_company_name: string;
   [key: string]: any;
-  index?: string;
+  index?: string | string[];
 }
 function CaseStudies() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -129,7 +129,7 @@ function CaseStudies() {
       vote: filters?.vote,
       approval_status: filters?.approval_status,
       caspio_company_name: filters?.caspio_company_name,
-      index: filters?.index ?? " "
+      index: filters?.index || []
     },
   });
 
@@ -144,7 +144,7 @@ function CaseStudies() {
     setValue("vote", []);
     setValue("approval_status", "");
     setValue("caspio_company_name", "");
-    setValue("index", " ");
+    setValue("index", []);
   };
 
   useEffect(() => {
@@ -238,11 +238,14 @@ function CaseStudies() {
   };
 
   const onSubmit = async (caseStudyFilters: CaseStudyFilter) => {
-    // Remove index if empty or blank
     const filtersToApply = { ...caseStudyFilters };
-    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "") {
+    
+    // Remove index if empty or blank
+    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "" || 
+        (Array.isArray(filtersToApply.index) && filtersToApply.index.length === 0)) {
       delete filtersToApply.index;
     }
+    
     dispatch(
       setAllFilters({
         ...filtersToApply,
@@ -273,7 +276,7 @@ function CaseStudies() {
       setValue("caspio_company_name", savedSearch?.caspio_company_name || "");
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
-      setValue("index", user?.saved_search?.index || "");
+      setValue("index", user?.saved_search?.index || []);
       dispatch(
         setAllFilters({
           keyword: savedSearch?.keyword || "",
@@ -628,7 +631,7 @@ function CaseStudies() {
                           </span>
                         </div>
                         <Controller
-                          name="index_name"
+                          name="index"
                           control={control}
                           render={({ field }) => (
                             <MultiSelectDropdown

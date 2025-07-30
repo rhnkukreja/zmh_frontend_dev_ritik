@@ -79,13 +79,10 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
       return (
         <div className="flex flex-col items-center justify-center py-12">
           <Lucide
-            icon="FileSearch"
+            icon="BarChart3"
             className="w-12 h-12 text-gray-300 mb-2"
           />
-          <div className="text-lg font-medium">No data found</div>
-          <div className="text-sm text-gray-500 mt-1">
-            Try adjusting your filters or search criteria
-          </div>
+          <div className="text-lg font-medium">No Analytics found</div>
         </div>
       );
     }
@@ -198,13 +195,10 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
         {proposalCounts.total_proposals === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Lucide
-              icon="FileSearch"
+              icon="BarChart3"
               className="w-12 h-12 text-gray-300 mb-2"
             />
-            <div className="text-lg font-medium">No data found</div>
-            <div className="text-sm text-gray-500 mt-1">
-              Try adjusting your filters or search criteria
-            </div>
+            <div className="text-lg font-medium">No Analytics found</div>
           </div>
         ) : loading ? (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
@@ -394,14 +388,14 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                         {category === "Environment" ? "Environmental" : category}
                       </h4>
                       {isDataAvailable(subcategories) ? (
-                        <div className="overflow-x-auto rounded-lg">
+                        <div className="overflow-x-auto">
                           <table className="w-full border-collapse border border-gray-300">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
-                                <th className="border p-2 text-left">
+                                <th className="px-4 py-2 text-left font-medium">
                                   Subcategory
                                 </th>
-                                <th className="border p-2">Count</th>
+                                <th className="px-4 py-2 text-left font-medium">Count</th>
                               </tr>
                             </thead>
                             <tbody>

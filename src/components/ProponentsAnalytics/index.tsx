@@ -35,13 +35,10 @@ const ProponentsAnalyticsComponent: React.FC<
       return (
         <div className="flex flex-col items-center justify-center py-12">
           <Lucide
-            icon="FileSearch"
+            icon="BarChart3"
             className="w-12 h-12 text-gray-300 mb-2"
           />
-          <div className="text-lg font-medium">No data found</div>
-          <div className="text-sm text-gray-500 mt-1">
-            Try adjusting your filters or search criteria
-          </div>
+          <div className="text-lg font-medium">No Analytics found</div>
         </div>
       );
     }
@@ -87,13 +84,13 @@ const ProponentsAnalyticsComponent: React.FC<
                 <table className="min-w-full rounded-lg">
                   <thead className="bg-primary text-white text-sm">
                     <tr>
-                      <th className="px-4 py-2 text-left font-semibold">#</th> {/* New column */}
-                      <th className="px-4 py-2 text-left font-semibold">Proponents</th>
-                      <th className="px-4 py-2 text-left font-semibold"># of Proposals</th>
-                      <th className="px-4 py-2 text-left font-semibold">Environmental</th>
-                      <th className="px-4 py-2 text-left font-semibold w-36">Social</th>
-                      <th className="px-4 py-2 text-left font-semibold w-36">Governance</th>
-                      <th className="px-4 py-2 text-left font-semibold w-36">
+                      <th className="px-4 py-2 text-left font-medium">#</th> {/* New column */}
+                      <th className="px-4 py-2 text-left font-medium">Proponents</th>
+                      <th className="px-4 py-2 text-left font-medium"># of Proposals</th>
+                      <th className="px-4 py-2 text-left font-medium">Environmental</th>
+                      <th className="px-4 py-2 text-left font-medium w-36">Social</th>
+                      <th className="px-4 py-2 text-left font-medium w-36">Governance</th>
+                      <th className="px-4 py-2 text-left font-medium w-36">
                         Executive Compensation
                       </th>
                     </tr>
@@ -288,8 +285,8 @@ const ProponentsAnalyticsComponent: React.FC<
               <table className="w-full border-collapse border border-gray-300 text-sm">
                 <thead className="bg-gray-200">
                   <tr>
-                    <th className="border p-2 text-left">Subcategory</th>
-                    <th className="border p-2 text-center">Count</th>
+                    <th className="px-4 py-2 text-left font-medium">Subcategory</th>
+                    <th className="px-4 py-2 text-left font-medium">Count</th>
                   </tr>
                 </thead>
                 <tbody>

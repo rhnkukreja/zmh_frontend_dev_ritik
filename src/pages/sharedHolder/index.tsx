@@ -910,7 +910,7 @@ function ShareHolderProposal() {
                     <Pill text="Beta" />
                   </h1>
                 ) : (
-                  <div className="font-semibold text-xl">Shareholder Proposals</div>
+                  <div className="font-semibold text-lg">Shareholder Proposals</div>
                 )}
               </div>
               <div className="flex flex-col sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top: "60px" }}>
@@ -1340,8 +1340,10 @@ function ShareHolderProposal() {
 
                       {isAllCompanySelected && (
                         <div className="w-full">
-                          <div className="text-left text-slate-500 font-semibold">
-                            Companies
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaBuilding className="text-gray-400" /> Companies
+                            </span>
                           </div>
                           <Controller
                             name="global_search"
@@ -1387,7 +1389,9 @@ function ShareHolderProposal() {
                       {tab === "proposal" && (
                         <div className="me-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">Shareholder Meeting Held</span>
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaCalendarAlt className="text-gray-400" /> Shareholder Meeting Held
+                            </span>
                           </div>
 
                           <div className="mt-3">
@@ -2108,25 +2112,19 @@ function ShareHolderProposal() {
                             ) : !isAnalyticsDataAvailable() ? (
                               <div className="flex flex-col items-center justify-center py-12">
                                 <Lucide
-                                  icon="FileSearch"
+                                  icon="BarChart3"
                                   className="w-12 h-12 text-gray-300 mb-2"
                                 />
-                                <div className="text-lg font-medium">No data found</div>
-                                <div className="text-sm text-gray-500 mt-1">
-                                  Try adjusting your filters or search criteria
-                                </div>
+                                <div className="text-lg font-medium">No Analytics found</div>
                               </div>
                             ) : activeTab === "shareholders" ? (
                               shareHolderProposal?.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12">
                                   <Lucide
-                                    icon="FileSearch"
+                                    icon="BarChart3"
                                     className="w-12 h-12 text-gray-300 mb-2"
                                   />
-                                  <div className="text-lg font-medium">No data found</div>
-                                  <div className="text-sm text-gray-500 mt-1">
-                                    Try adjusting your filters or search criteria
-                                  </div>
+                                  <div className="text-lg font-medium">No Analytics found</div>
                                 </div>
                               ) : (
                                 <ShareHolderProposalAnalyticsComponent
@@ -2143,13 +2141,10 @@ function ShareHolderProposal() {
                               shareHolderProposal?.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12">
                                   <Lucide
-                                    icon="FileSearch"
+                                    icon="BarChart3"
                                     className="w-12 h-12 text-gray-300 mb-2"
                                   />
-                                  <div className="text-lg font-medium">No data found</div>
-                                  <div className="text-sm text-gray-500 mt-1">
-                                    Try adjusting your filters or search criteria
-                                  </div>
+                                  <div className="text-lg font-medium">No Analytics found</div>
                                 </div>
                               ) : (
                                 <ProponentsAnalyticsComponent
@@ -2171,15 +2166,15 @@ function ShareHolderProposal() {
                           <Table>
                             <Table.Thead>
                               <Table.Tr className="sticky top-0 z-20 bg-primary text-white shadow-md">
-                                <Table.Td className="px-4 py-2 text-left font-semibold">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Proxy Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="px-4 py-2 text-left font-semibold">
+                                  <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="px-4 py-2 text-left font-semibold">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Proponent
                                 </Table.Td>
                                 <Table.Td
@@ -2189,17 +2184,17 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="px-4 py-2 text-left font-semibold"
+                                  className="py-3 px-4 text-left font-medium text-sm border-0"
                                 >
                                   % Support*
                                 </Table.Td>
-                                <Table.Td className="px-4 py-2 text-left font-semibold">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Vote Details
                                 </Table.Td>
-                                <Table.Td className="px-4 py-2 text-left font-semibold">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="px-4 py-2 text-left font-semibold">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2431,25 +2426,19 @@ function ShareHolderProposal() {
                             ) : !isAnalyticsDataAvailable() ? (
                               <div className="flex flex-col items-center justify-center py-12">
                                 <Lucide
-                                  icon="FileSearch"
+                                  icon="BarChart3"
                                   className="w-12 h-12 text-gray-300 mb-2"
                                 />
-                                <div className="text-lg font-medium">No data found</div>
-                                <div className="text-sm text-gray-500 mt-1">
-                                  Try adjusting your filters or search criteria
-                                </div>
+                                <div className="text-lg font-medium">No Analytics found</div>
                               </div>
                             ) : activeTab === "shareholders" ? (
                               shareHolderProposal?.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12">
                                   <Lucide
-                                    icon="FileSearch"
+                                    icon="BarChart3"
                                     className="w-12 h-12 text-gray-300 mb-2"
                                   />
-                                  <div className="text-lg font-medium">No data found</div>
-                                  <div className="text-sm text-gray-500 mt-1">
-                                    Try adjusting your filters or search criteria
-                                  </div>
+                                  <div className="text-lg font-medium">No Analytics found</div>
                                 </div>
                               ) : (
                                 <ShareHolderProposalAnalyticsComponent
@@ -2467,13 +2456,10 @@ function ShareHolderProposal() {
                               shareHolderProposal?.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12">
                                   <Lucide
-                                    icon="FileSearch"
+                                    icon="BarChart3"
                                     className="w-12 h-12 text-gray-300 mb-2"
                                   />
-                                  <div className="text-lg font-medium">No data found</div>
-                                  <div className="text-sm text-gray-500 mt-1">
-                                    Try adjusting your filters or search criteria
-                                  </div>
+                                  <div className="text-lg font-medium">No Analytics found</div>
                                 </div>
                               ) : (
                                 <ProponentsAnalyticsComponent
@@ -2491,31 +2477,31 @@ function ShareHolderProposal() {
                         </div>
                       )}
                       <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px] rounded-lg">
                           <Table>
                             <Table.Thead>
-                              <Table.Tr className="sticky top-0 z-20 bg-primary/90 text-white shadow-md">
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                              <Table.Tr className="sticky top-0 z-20 bg-primary text-white shadow-md">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Proxy Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                                  <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Category
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Sub Category
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2624,25 +2610,25 @@ function ShareHolderProposal() {
                         </div>
                       )}
                       <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px] rounded-lg">
                           <Table>
                             <Table.Thead>
-                              <Table.Tr>
-                                <Table.Td className="py-2 w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              <Table.Tr className="bg-primary text-white">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2 w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm text-center border-0">
                                   Details
                                 </Table.Td>
                               </Table.Tr>

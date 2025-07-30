@@ -18,6 +18,7 @@ export interface CaseStudyFilter {
   approval_status: string;
   caspio_company_name: string;
   [key: string]: any;
+  index?: string | string[];
 }
 
 export interface CaseStudies {
