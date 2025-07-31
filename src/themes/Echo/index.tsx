@@ -22,10 +22,11 @@ import ActivitiesPanel from "@/components/ActivitiesPanel";
 import localStorageHelper, {
   createDynamicURL,
   filterMenu,
+  getCustomRelativeDate,
 } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
-import { FilterX, Mail, BellRing} from "lucide-react";
+import { FilterX, Mail, BellRing } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -59,7 +60,8 @@ function Main() {
   const { user, finhub } = useAppSelector((state) => state.authentiction);
   const { selectedGroup } = useAppSelector((state) => state.notes);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
-const selectedName = selectedGroup?.institutionName || selectedGroup?.companyName || ""
+  const selectedName =
+    selectedGroup?.institutionName || selectedGroup?.companyName || "";
   const { companySearchAndUpdate } = useCompanySearch();
 
   const { noCompanyHeaderRoutes } = useAppSelector((state) => state.theme);
@@ -104,8 +106,8 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   const [isFrameLoading, setIsFrameLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
-  const [whatsNewFormVisible, setWhatsNewFormVisible] = useState<boolean>(false);
-
+  const [whatsNewFormVisible, setWhatsNewFormVisible] =
+    useState<boolean>(false);
 
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -187,7 +189,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     if (!location.pathname.includes("/engagement-question")) {
       dispatch(resetEngagementQuestions());
     }
-    
+
     if (!location.pathname.includes("/engagement-detail")) {
       dispatch(resetPeerAnalysis());
     }
@@ -284,11 +286,33 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
   const [modulesData, setModulesData] = useState<any>({});
-  const [notificationData, setNotificationData] = useState<any>([]);
-
+  const [notificationData, setNotificationData] = useState<any>({});
+  const dummyData = {
+          notification_status: false,
+          notifications: [
+            {
+              text: "10 Case Studies added for AXA Group.",
+              date: "July 31, 2025",
+              viewed: true,
+              module: "Case Studies",
+            },
+            {
+              text: "1 Shareholder Proposal added for The Humane Society of the United States.",
+              date: "July 30, 2025",
+              viewed: false,
+              module: "Shareholder Proposal",
+            },
+            {
+              text: "1 Shareholder Proposal added for John Chevedden.",
+              date: "July 23, 2025",
+              viewed: true,
+              module: "Shareholder Proposal",
+            },
+          ],
+        }
   useEffect(() => {
     getModulesCount();
-    getNotificationList(finhub?.name,null);
+    getNotificationList();
   }, [companyGlobalSearchName]);
 
   const getModulesCount = async () => {
@@ -305,10 +329,13 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     }
   };
 
-  const getNotificationList = async (companyName:string ,status?: boolean) => {
+  const getNotificationList = async () => {
     try {
-      
-      const res = await dashboardService.getNotifications(companyName,status);
+   
+      const param = notificationData?.notification_status === false
+        ? "?mark_viewed=true"
+        : "";
+      const res = await dashboardService.getNotifications(param);
       if (res?.result) {
         setNotificationData(res?.result);
       }
@@ -317,13 +344,13 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     } finally {
     }
   };
-
+console.log(notificationData ,"data")
   const getTotalNotificationsCount = (): number => {
-    const totalCount = notificationData?.notifications?.reduce((acc, group) => {
-      return acc + (group.count || 0);
-    }, 0);  
-    return totalCount || 0;
-  }
+    const totalCount = notificationData?.notifications?.filter(
+      (item) => item.viewed === false
+    );
+    return totalCount?.length || 0;
+  };
 
   return (
     <div
@@ -443,7 +470,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        } else if (menu.title === "What's New") {
+                        } else if (menu.title === "Email Alert") {
                           setWhatsNewFormVisible(true);
                         } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
@@ -786,87 +813,55 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
 
                   <Menu>
                     <Menu.Button>
-                      <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
-                      onClick={() => {
-                         !notificationData?.notification_status && getNotificationList(finhub?.name,true)
+                      <div
+                        className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
+                        onClick={() => {
+                          !notificationData?.notification_status &&
+                            getNotificationList();
                         }}
-                        >
+                      >
                         {/* <img src={notificationIcon} alt="ai icon" /> */}
                         <BellRing
                           strokeWidth={1.5}
                           className={`w-8 h-8 mr-2`}
                         />
-                        {!notificationData?.notification_status && getTotalNotificationsCount() > 0 &&
-                          <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-3 text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[30px]">{getTotalNotificationsCount() || 0}</span>
-                        }
+                        {!notificationData?.notification_status &&
+                          getTotalNotificationsCount() > 0 && (
+                            <span className="bg-[#DC661F] absolute rounded-2xl w-[20px] h-[20px] text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[30px]">
+                              {getTotalNotificationsCount()}
+                            </span>
+                          )}
                       </div>
                     </Menu.Button>
 
                     <Menu.Items className="w-[500px] p-4 space-y-1">
                       {notificationData?.notifications?.length > 0 ? (
-                        notificationData?.notifications?.map((group, i) => (
-                              <Disclosure key={i}>
-                                {({ open }) => (
-                                  <>
-                                    <Disclosure.Button className="w-full mt-1 flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-50 transition-all">
-                                      <div className="flex items-center">
-                                        <BellRing
-                                          strokeWidth={1}
-                                          className={`w-6 h-6 text-red-500 mr-2 ${group?.results?.length > 0 ? "animate-[ring_1s_ease-in-out_infinite]" : ""}`}
-
-                                        />
-                                        <div className="text-left">
-                                          <h2 className="text-sm font-semibold text-gray-800">
-                                            {group.module}
-                                          </h2>
-                                          {/* <p className="text-xs text-gray-500">
-                                            {group.count} new
-                                          </p> */}
-                                        </div>
-                                      </div>
-                                  {
-                                    group?.results?.length > 0 &&
-                                    <span className="text-xs text-gray-400">
-                                      {open ? "▲" : "▼"}
-                                    </span>
-                                  }
-                                      
-                                    </Disclosure.Button>
-                                    {
-                                      group?.results?.length > 0 &&
-                                      <Disclosure.Panel className="px-4 py-3 bg-gray-50 border border-t-0 border-gray-200 rounded-b-lg">
-                                      <div className="overflow-y-auto max-h-[400px] space-y-2">
-                                        {group?.results?.map((item) => (
-                                          <div
-                                            key={item.record_id}
-                                            className="bg-white p-3 rounded-md border shadow hover:shadow-md transition cursor-pointer"
-                                            onClick={() =>
-                                             item?.navigate_url && window.open(
-                                                item?.navigate_url,
-                                                "_blank"
-                                              )
-                                            }
-                                          >
-                                            <div className="flex items-start">
-                                              <div>
-                                              <BellRing
-                                                strokeWidth={1}
-                                                className="w-4 h-4 mr-2 mt-1 text-blue-500 animate-[ring_1s_ease-in-out_infinite]"
-                                              />
-                                              </div>
-                                              <p className="text-sm text-gray-700">
-                                                {item?.message}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </Disclosure.Panel>
-                                    }
-                                    
-                                  </>
+                        notificationData?.notifications?.map((noti, i) => (
+                          <div className="py-3">
+                            <div className=" flex items-center justify-between gap-4  text-left">
+                              <p
+                                className={`text-sm cursor-pointer ${
+                                  noti.viewed
+                                    ? "text-gray-700"
+                                    : "text-gray-800 font-extrabold "
+                                }"`}
+                              >
+                                {noti?.text}
+                              </p>
+                              <div className="flex flex-col items-end ">
+                                {!noti.viewed && (
+                                  <Lucide
+                                    icon="Dot"
+                                    className="stroke-[11] w-[18px] h-[18px] text-[#DC661F]"
+                                  />
                                 )}
-                              </Disclosure>
+
+                                <p className="text-xs text-gray-400">
+                                  {getCustomRelativeDate(noti.date)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         ))
                       ) : (
                         <div className="flex items-center justify-center">

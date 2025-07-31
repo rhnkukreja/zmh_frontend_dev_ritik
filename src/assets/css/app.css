@@ -289,7 +289,9 @@ background-color: #e2e8f0 !important;
   font-size: 25px !important;
   position: absolute !important; /* Ensure it's positioned correctly */
 }
-
+.email-alert .css-13cymwt-control{
+  background-color: transparent !important;
+}
 .tom-select .items {
   width: 48rem !important;
 }
