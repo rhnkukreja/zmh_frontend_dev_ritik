@@ -116,7 +116,7 @@ const initialState: any = {
     {
       icon: "HelpCircle",
       pathname: "#",
-      title: "What's New",
+      title: "Email Alert",
     },
     
     // {
