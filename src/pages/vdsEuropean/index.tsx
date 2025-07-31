@@ -126,12 +126,22 @@ const index = () => {
     if (savedFilters) {
       try {
         const parsed = JSON.parse(savedFilters);
+        // If no date_range in saved filters, set default
+        if (!parsed.date_range) {
+          parsed.date_range = getDefaultDateRange();
+        }
         setallApplyFilter(parsed);
         // Set form values as well
         Object.entries(parsed).forEach(([key, value]) => {
           setValue(key, value);
         });
-      } catch (e) { }
+      } catch (e) { 
+        // If parsing fails, set default date range
+        setValue("date_range", getDefaultDateRange());
+      }
+    } else {
+      // If no saved filters, set default date range
+      setValue("date_range", getDefaultDateRange());
     }
   }, []);
 
@@ -179,6 +189,18 @@ const index = () => {
     fetchInstitutions();
   }, []);
 
+  // Calculate default date range: Jan 2024 to one day before current date
+  const getDefaultDateRange = () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    const startDate = "2024-01-01";
+    const endDate = yesterday.toISOString().split("T")[0];
+    
+    return `${startDate} - ${endDate}`;
+  };
+
   const {
     handleSubmit,
     control,
@@ -193,7 +215,7 @@ const index = () => {
       category: [],
       year: "",
       company_name: [],
-      date_range: "",
+      date_range: getDefaultDateRange(),
     },
   });
 
@@ -364,7 +386,7 @@ const index = () => {
     setValue("category", []);
     setValue("year", "");
     setValue("keyword", "");
-    setValue("date_range", "");
+    setValue("date_range", getDefaultDateRange());
     setValue("analyticsYear", []);
     setValue("index_name", []);
     setValue("proponent_type", []);
@@ -533,6 +555,10 @@ const index = () => {
       if (savedAnalytics) {
         try {
           const parsed = JSON.parse(savedAnalytics);
+          // If no date_range in saved analytics filters, set default
+          if (!parsed.date_range) {
+            parsed.date_range = getDefaultDateRange();
+          }
           setAllAnalyticsFilter(parsed);
           Object.entries(parsed).forEach(([key, value]) => {
             setValue(key, value);
@@ -544,10 +570,12 @@ const index = () => {
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
         analyticsYear: ["2025"],
+        date_range: getDefaultDateRange(),
       });
       setValue("institution_name", ["BlackRock, Inc."]);
       setValue("index_name", ["S&P 500"]);
       setValue("analyticsYear", ["2025"]);
+      setValue("date_range", getDefaultDateRange());
     }
     // eslint-disable-next-line
   }, [isViewAnalysis]);
@@ -867,7 +895,14 @@ const index = () => {
                               years: true,
                             },
                             maxDate: new Date().toISOString().split("T")[0],
-                            minDate: "2020-01-01",
+                            minDate: "2024-01-01",
+                            startDate: "2024-01-01",
+                            endDate: (() => {
+                              const today = new Date();
+                              const yesterday = new Date(today);
+                              yesterday.setDate(today.getDate() - 1);
+                              return yesterday.toISOString().split("T")[0];
+                            })(),
                           }}
                           className="pl-12"
                         />
