@@ -817,9 +817,8 @@ console.log(notificationData ,"data")
                       <div
                         className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
                         onClick={() => {
-                        
+                          setOpen(true);
                           if (!notificationData?.notification_status) {
-                            setOpen(true);
                             getNotificationList();
                           }
                         }}
@@ -880,11 +879,13 @@ console.log(notificationData ,"data")
                               </div>
                             ))
                           ) : (
-                            <div className="flex items-center justify-center">
-                              <BellRing
-                                strokeWidth={1}
-                                className="w-4 h-4 mr-2 mt-1"
-                              />
+                            <div className="flex items-center justify-center h-[100%]">
+                             
+                               <img
+                                        src={notificationIcon}
+                                        alt="ai icon"
+                                        className="w-4 h-4 mr-2 opacity-[0.7]"
+                                      />
                               <h1>No Notifications Found.</h1>
                             </div>
                           )}
