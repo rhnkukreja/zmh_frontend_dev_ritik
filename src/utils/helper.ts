@@ -289,20 +289,19 @@ const getDateWithoutTime = (datetimeString?: string): string => {
   return dayjs(datetimeString).format("YYYY-MM-DD");
 };
 
-const getCustomRelativeDate = (dateStr: string) => {
+const getCustomRelativeDate = (dateStr: string): string => {
   const now = dayjs().startOf("day");
   const date = dayjs(dateStr).startOf("day");
 
   const diff = now.diff(date, "day");
 
-  switch (diff) {
-    case 0:
-      return "Today";
-    case 1:
-      return "Yesterday";
-    default:
-      return `${diff} days ago`;
-  }
+  if (diff === 0) {
+    return `Today, ${date.format("MMM D")}`; 
+  } else if (diff === 1) {
+    return `Yesterday, ${date.format("MMM D")}`; 
+  } else {
+    return `${date.format("dddd")}, ${date.format("MMM D")}`; 
+  } 
 };
 
 const filterMenu = (menuItems: (string | FormattedMenu)[]) => {

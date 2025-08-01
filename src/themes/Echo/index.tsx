@@ -26,13 +26,12 @@ import localStorageHelper, {
 } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
-import { FilterX, Mail, BellRing } from "lucide-react";
+import { BellRing, FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
-import notificationIcon from "@/assets/images/zmh-images/notification_icon.png";
-
+import notificationIcon from "@/assets/images/zmh-images/bell-icon.png";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
@@ -54,6 +53,7 @@ import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { dashboardService } from "@/services/dashboard";
 import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
+import Drawer from "@/components/Base/Headless/Drawer";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -87,6 +87,7 @@ function Main() {
   const [activitiesPanel, setActivitiesPanel] = useState(false);
   const [compactMenuOnHover, setCompactMenuOnHover] = useState(false);
   const [activeMobileMenu, setActiveMobileMenu] = useState(false);
+  const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [formattedMenu, setFormattedMenu] = useState<
@@ -288,27 +289,27 @@ function Main() {
   const [modulesData, setModulesData] = useState<any>({});
   const [notificationData, setNotificationData] = useState<any>({});
   const dummyData = {
-          notification_status: false,
-          notifications: [
-            {
-              text: "10 Case Studies added for AXA Group.",
+    notification_status: false,
+    notifications: [
+      {
+        text: "10 Case Studies added for AXA Group.",
               date: "July 31, 2025",
-              viewed: true,
-              module: "Case Studies",
-            },
-            {
-              text: "1 Shareholder Proposal added for The Humane Society of the United States.",
-              date: "July 30, 2025",
-              viewed: false,
-              module: "Shareholder Proposal",
-            },
-            {
-              text: "1 Shareholder Proposal added for John Chevedden.",
-              date: "July 23, 2025",
-              viewed: true,
-              module: "Shareholder Proposal",
-            },
-          ],
+        viewed: true,
+        module: "Case Studies",
+      },
+      {
+        text: "1 Shareholder Proposal added for The Humane Society of the United States.",
+        date: "July 30, 2025",
+        viewed: false,
+        module: "Shareholder Proposal",
+      },
+      {
+        text: "1 Shareholder Proposal added for John Chevedden.",
+        date: "July 23, 2025",
+        viewed: true,
+        module: "Shareholder Proposal",
+      },
+    ],
         }
   useEffect(() => {
     getModulesCount();
@@ -333,8 +334,8 @@ function Main() {
     try {
    
       const param = notificationData?.notification_status === false
-        ? "?mark_viewed=true"
-        : "";
+          ? "?mark_viewed=true"
+          : "";
       const res = await dashboardService.getNotifications(param);
       if (res?.result) {
         setNotificationData(res?.result);
@@ -816,63 +817,80 @@ console.log(notificationData ,"data")
                       <div
                         className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
                         onClick={() => {
-                          !notificationData?.notification_status &&
+                        
+                          if (!notificationData?.notification_status) {
+                            setOpen(true);
                             getNotificationList();
+                          }
                         }}
                       >
-                        {/* <img src={notificationIcon} alt="ai icon" /> */}
-                        <BellRing
-                          strokeWidth={1.5}
-                          className={`w-8 h-8 mr-2`}
+                        <img
+                          src={notificationIcon}
+                          alt="ai icon"
+                          className=" w-[30px] h-[30px]"
                         />
+
                         {!notificationData?.notification_status &&
                           getTotalNotificationsCount() > 0 && (
-                            <span className="bg-[#DC661F] absolute rounded-2xl w-[20px] h-[20px] text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[30px]">
+                            <span className="bg-[#DC661F] absolute rounded-2xl w-[20px] h-[20px] text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[20px]">
                               {getTotalNotificationsCount()}
                             </span>
                           )}
                       </div>
                     </Menu.Button>
-
-                    <Menu.Items className="w-[500px] p-4 space-y-1">
-                      {notificationData?.notifications?.length > 0 ? (
-                        notificationData?.notifications?.map((noti, i) => (
-                          <div className="py-3">
-                            <div className=" flex items-center justify-between gap-4  text-left">
-                              <p
-                                className={`text-sm cursor-pointer ${
-                                  noti.viewed
-                                    ? "text-gray-700"
-                                    : "text-gray-800 font-extrabold "
-                                }"`}
-                              >
-                                {noti?.text}
-                              </p>
-                              <div className="flex flex-col items-end ">
-                                {!noti.viewed && (
-                                  <Lucide
-                                    icon="Dot"
-                                    className="stroke-[11] w-[18px] h-[18px] text-[#DC661F]"
-                                  />
-                                )}
-
-                                <p className="text-xs text-gray-400">
+                    <Drawer
+                      open={open}
+                      setOpen={setOpen}
+                      children={
+                        <>
+                          {notificationData?.notifications?.length > 0 ? (
+                            notificationData?.notifications?.map((noti, i) => (
+                              <div className="py-3">
+                                <p className="text-xs text-gray-400 pb-2">
                                   {getCustomRelativeDate(noti.date)}
                                 </p>
+                                <div className=" flex items-center  gap-4  text-left">
+                                  <div className="flex flex-col items-end relative">
+                                    {!noti.viewed && (
+                                      <Lucide
+                                        icon="Dot"
+                                        className="stroke-[11] w-[18px] absolute top-[-7px] left-[-7px] text-[#DC661F] absolute"
+                                      />
+                                    )}
+
+                                    <div className="bg-[rgb(245,231,235)] rounded-md p-3">
+                                      <img
+                                        src={notificationIcon}
+                                        alt="ai icon"
+                                        className=" w-[20px] h-[20px] opacity-[0.7]"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="w-[78%] flex-1">
+                                    <p
+                                      className={`text-sm cursor-pointer text-gray-700`}
+                                    >
+                                      {noti?.text}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      {noti.date}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
+                            ))
+                          ) : (
+                            <div className="flex items-center justify-center">
+                              <BellRing
+                                strokeWidth={1}
+                                className="w-4 h-4 mr-2 mt-1"
+                              />
+                              <h1>No Notifications Found.</h1>
                             </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <BellRing
-                            strokeWidth={1}
-                            className="w-4 h-4 mr-2 mt-1"
-                          />
-                          <h1>No Notifications Found.</h1>
-                        </div>
-                      )}
-                    </Menu.Items>
+                          )}
+                        </>
+                      }
+                    />
                   </Menu>
 
                   {/* <a
