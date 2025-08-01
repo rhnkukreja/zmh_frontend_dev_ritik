@@ -59,6 +59,21 @@ const index = () => {
     const [caseProxyModalVisible, setCaseProxyModalVisible] =
         useState<boolean>(false);
     const [caseProxyModalData, setCaseProxyModalData] = useState<any>(null);
+
+    // New state for proxy contest companies table
+    const [proxyContestCompanies, setProxyContestCompanies] = useState<any[]>([]);
+    const [proxyContestLoading, setProxyContestLoading] = useState<boolean>(false);
+    const [proxyContestPage, setProxyContestPage] = useState<number>(1);
+    const [proxyContestTotal, setProxyContestTotal] = useState<number>(0);
+    const pageSize = 30;
+
+    // Modal states for different icon clicks
+    const [detailsModalVisible, setDetailsModalVisible] = useState<boolean>(false);
+    const [modalType, setModalType] = useState<string>('');
+    const [modalTitle, setModalTitle] = useState<string>('');
+    const [selectedCompany, setSelectedCompany] = useState<any>(null);
+    const [modalData, setModalData] = useState<any>(null);
+    const [modalLoading, setModalLoading] = useState<boolean>(false);
     const companyDetails = agmSummaryProxyContest?.company ? agmSummaryProxyContest?.company[0] : "";
     const companyName = Object.keys(companyDetails)[0];
     const meetingDetails = companyDetails[companyName];
@@ -101,9 +116,128 @@ const index = () => {
         }
     };
 
+    const fetchProxyContestCompanies = async (page: number = 1) => {
+        setProxyContestLoading(true);
+        try {
+            console.log(`Fetching proxy contest companies for page: ${page}`); // Debug log
+            const response = await fetch(`${baseURL}/api/proxy-contest-companies/?page=${page}&page_size=${pageSize}`, {
+                headers: {
+                    'Authorization': `JWT ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(`API Response for page ${page}:`, data); // Debug log
+            setProxyContestCompanies(data.results || []);
+            setProxyContestTotal(data.count || 0);
+        } catch (error) {
+            toast.error("Failed to fetch proxy contest companies");
+            console.error("Error fetching proxy contest companies:", error);
+        } finally {
+            setProxyContestLoading(false);
+        }
+    };
+
+    const handleProxyContestNextPage = () => {
+        if (proxyContestPage < Math.ceil(proxyContestTotal / pageSize)) {
+            const nextPage = proxyContestPage + 1;
+            setProxyContestPage(nextPage);
+            fetchProxyContestCompanies(nextPage);
+        }
+    };
+
+    const handleProxyContestPreviousPage = () => {
+        if (proxyContestPage > 1) {
+            const prevPage = proxyContestPage - 1;
+            setProxyContestPage(prevPage);
+            fetchProxyContestCompanies(prevPage);
+        }
+    };
+
+    const handleProxyContestPageChange = (newPage: number) => {
+        setProxyContestPage(newPage);
+        fetchProxyContestCompanies(newPage);
+    };
+
+    // Handle icon clicks to open modals with different content
+    const handleIconClick = async (company: any, type: string) => {
+        setSelectedCompany(company);
+        setModalType(type);
+        setModalLoading(true);
+        setDetailsModalVisible(true);
+
+        try {
+            let apiUrl = '';
+            switch (type) {
+                case 'documents':
+                    setModalTitle('Documents');
+                    apiUrl = `${baseURL}/activism_tables/?company_name=${encodeURIComponent(company.company_name)}`;
+                    break;
+
+                case 'meeting_details':
+                    setModalTitle('Meeting Details');
+                    apiUrl = `${baseURL}/voting_report_8k/?company_name=${encodeURIComponent(company.company_name)}`;
+                    break;
+
+                case 'case_studies':
+                    setModalTitle('Case Studies');
+                    apiUrl = `${baseURL}/case_studies/?company_name=${encodeURIComponent(company.company_name)}`;
+                    break;
+
+                default:
+                    break;
+            }
+
+            // Make direct API call
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `JWT ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(`Modal API Response for ${type}:`, data);
+
+            // Set the appropriate data based on type
+            switch (type) {
+                case 'documents':
+                    // The /activism_tables/ API returns Activism_Presentation for documents
+                    setModalData(data?.Activism_Presentation || []);
+                    break;
+                case 'meeting_details':
+                    // Extract Activism_Presentation from the response
+                    setModalData(data?.Activism_Presentation || []);
+                    break;
+                case 'case_studies':
+                    setModalData(data?.results || []);
+                    break;
+                default:
+                    setModalData([]);
+            }
+
+        } catch (error) {
+            toast.error("Failed to fetch data");
+            console.error("Error fetching modal data:", error);
+            setModalData([]);
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
 
     useEffect(() => {
         getModulesCount();
+        fetchProxyContestCompanies(1);
         return () => {
             setValue("company_name", []);
             const applyFilter = { company_name: [], top: 'true', institution_clear: false };
@@ -454,78 +588,122 @@ const index = () => {
 
                             <Tab.Panels className="mt-5">
                                 <Tab.Panel className="leading-relaxed">
-                                    <div className="">
-                                        <div className="p-2">
+                                    {/* Proxy Contest Companies Table */}
+                                    <div className="box p-5 mb-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-lg font-medium">Proxy Contest Companies</h2>
+                                        </div>
 
-                                            <form onSubmit={handleSubmit(onSubmitTopFive)}>
+                                        {proxyContestLoading ? (
+                                            <div className="h-52 flex items-center justify-center">
+                                                <LoadingIcon icon="oval" className="w-8 h-8" />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <TableWrapper isLoading={proxyContestLoading}>
+                                                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                                                        <Table>
+                                                            <Table.Thead>
+                                                                <Table.Tr className="bg-primary text-white text-sm">
+                                                                    <Table.Td className="px-4 py-2 font-semibold">Year</Table.Td>
+                                                                    <Table.Td className="px-4 py-2 font-semibold">Company Name</Table.Td>
+                                                                    <Table.Td className="px-4 py-2 font-semibold">Meeting Date</Table.Td>
+                                                                    <Table.Td className="px-4 py-2 font-semibold">Icons</Table.Td>
+                                                                </Table.Tr>
+                                                            </Table.Thead>
+                                                            <Table.Tbody>
+                                                                {proxyContestCompanies?.length > 0 ? (
+                                                                    proxyContestCompanies.map((company, index) => (
+                                                                        <Table.Tr
+                                                                            key={`${company.company_id}-${index}`}
+                                                                            className="[&_td]:last:border-b-0 transition-all hover:bg-primary/5"
+                                                                        >
+                                                                            <Table.Td className="py-2 border-dashed">
+                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                                                                                        {company.year}
+                                                                                    </span>
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed">
+                                                                                <div className="font-semibold text-primary/80">
+                                                                                    {company.company_name}
+                                                                                </div>
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed">
+                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-bold">
+                                                                                        {new Date(company.meeting_date).toLocaleDateString()}
+                                                                                    </span>
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 border-dashed">
+                                                                                <div className="flex gap-2">
+                                                                                    {company.is_documents && (
+                                                                                        <Tippy content="Documents">
+                                                                                            <div
+                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 cursor-pointer hover:bg-blue-200 transition-colors"
+                                                                                                onClick={() => handleIconClick(company, 'documents')}
+                                                                                            >
+                                                                                                <Lucide icon="FileText" className="w-4 h-4" />
+                                                                                            </div>
+                                                                                        </Tippy>
+                                                                                    )}
+                                                                                    {company.is_meeting_details && (
+                                                                                        <Tippy content="Meeting Details">
+                                                                                            <div
+                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 cursor-pointer hover:bg-purple-200 transition-colors"
+                                                                                                onClick={() => handleIconClick(company, 'meeting_details')}
+                                                                                            >
+                                                                                                <Lucide icon="Calendar" className="w-4 h-4" />
+                                                                                            </div>
+                                                                                        </Tippy>
+                                                                                    )}
+                                                                                    {company.is_case_studies && (
+                                                                                        <Tippy content="Case Studies">
+                                                                                            <div
+                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-700 cursor-pointer hover:bg-orange-200 transition-colors"
+                                                                                                onClick={() => handleIconClick(company, 'case_studies')}
+                                                                                            >
+                                                                                                <Lucide icon="BookOpen" className="w-4 h-4" />
+                                                                                            </div>
+                                                                                        </Tippy>
+                                                                                    )}
+                                                                                </div>
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                    ))
+                                                                ) : (
+                                                                    <Table.Tr>
+                                                                        <Table.Td colSpan={4} className="text-center py-10 text-gray-400 text-lg font-semibold">
+                                                                            <Lucide icon="Search" className="mx-auto mb-2 text-4xl text-primary/60" />
+                                                                            No Proxy Contest Companies available.
+                                                                        </Table.Td>
+                                                                    </Table.Tr>
+                                                                )}
+                                                            </Table.Tbody>
+                                                        </Table>
+                                                    </div>
+                                                </TableWrapper>
 
-                                                <div className="flex items-end gap-4">
-                                                    <div className="w-4/12">
-                                                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Select Company*
-                                                        </div>
-                                                        <Controller
-                                                            name="company_name"
-                                                            control={control}
-                                                            defaultValue={[]}
-                                                            render={({ field }) => (
-                                                                <TomSelect
-
-                                                                    value={field.value || []}
-                                                                    onChange={(event) => {
-                                                                        field.onChange(event);
-                                                                        getAllInstitutionDropdown({ "company_name": [event?.target?.value] });
-                                                                        // setCompanyHeaderName(event?.target?.value);
-                                                                    }}
-                                                                    options={{ placeholder: "Company" }}
-                                                                    className="w-full"
-
-                                                                >
-                                                                    {
-                                                                        apiDropdownOptions.company?.map((company: any) => (
-                                                                            <option key={company} value={company}>
-                                                                                {company}
-                                                                            </option>
-                                                                        ))
-                                                                    }
-                                                                </TomSelect>
-                                                            )}
+                                                {proxyContestTotal > pageSize && (
+                                                    <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                                        <CPagination
+                                                            page={proxyContestPage}
+                                                            totalPages={Math.ceil(proxyContestTotal / pageSize)}
+                                                            handleNextPage={handleProxyContestNextPage}
+                                                            handlePageChange={handleProxyContestPageChange}
+                                                            handlePreviousPage={handleProxyContestPreviousPage}
                                                         />
                                                     </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
 
-                                                    <div className="flex items-center mt-7">
-                                                        <Button
-                                                            type="button"
-                                                            variant="secondary"
-                                                            onClick={() => {
-                                                                onTopFiveFilterClear();
-                                                            }}
-                                                            className="w-32 ml-auto"
-                                                        >
-                                                            Clear
-                                                        </Button>
-                                                        <Button
-                                                            type="submit"
-                                                            variant="primary"
-                                                            className="w-32 ml-2"
-                                                        >
-                                                            Apply
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </form>
-
-                                        </div>
-                                        <div className="font-bold text-2xl pt-4">
-                                            {companyHeaderName}{" "}
-                                            {proxyContestReleaseDetails?.Activism_Presentation?.[0]?.year ? (
-                                                <>({proxyContestReleaseDetails.Activism_Presentation[0].year})</>
-                                            ) : proxyContestReleaseDetails?.Activism_ISS_GL?.[0]?.year ? (
-                                                <>({proxyContestReleaseDetails.Activism_ISS_GL[0].year})</>
-                                            ) : null}
-                                        </div>
-
-
+                                    <div className="font-bold text-2xl pt-4">
+                                        {companyHeaderName}{" "}
+                                        {proxyContestReleaseDetails?.Activism_Presentation?.[0]?.year ? (
+                                            <>({proxyContestReleaseDetails.Activism_Presentation[0].year})</>
+                                        ) : proxyContestReleaseDetails?.Activism_ISS_GL?.[0]?.year ? (
+                                            <>({proxyContestReleaseDetails.Activism_ISS_GL[0].year})</>
+                                        ) : null}
                                     </div>
 
                                     {/* AGM Summary Table */}
@@ -1453,15 +1631,7 @@ const index = () => {
                                     {/* Proxy Contest Table */}
 
 
-                                    {/* No Filters Record */}
 
-                                    {(proxyContestTopFilter.company_name?.length === 0 && !proxyContestTopFiveLoading) && (
-                                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                            <h1 className="font-semibold"></h1>
-                                        </div>
-                                    )}
-
-                                    {/* No Filters Record */}
 
 
 
@@ -1489,6 +1659,197 @@ const index = () => {
                     file_name={currentPdfName}
                 />
             )}
+
+            {/* Details Modal - Smaller and Better Design */}
+            {detailsModalVisible && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary to-primary/80 text-white">
+                            <div>
+                                <h2 className="text-lg font-semibold">{modalTitle}</h2>
+                                <p className="text-sm text-white/80 mt-1">
+                                    {selectedCompany?.company_name} - {selectedCompany?.year}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setDetailsModalVisible(false)}
+                                className="text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/20"
+                            >
+                                <Lucide icon="X" className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
+                            {modalLoading ? (
+                                <div className="flex items-center justify-center h-40">
+                                    <div className="text-center">
+                                        <LoadingIcon icon="oval" className="w-8 h-8 mx-auto mb-2" />
+                                        <p className="text-gray-500">Loading data...</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    {modalData && modalData.length > 0 ? (
+                                        <TableWrapper>
+                                            <div className="overflow-x-auto">
+                                                <Table>
+                                                    <Table.Thead>
+                                                        <Table.Tr>
+                                                            {modalType === 'documents' && (
+                                                                <>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Document Name
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Year
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                                        View
+                                                                    </Table.Td>
+                                                                </>
+                                                            )}
+                                                            {modalType === 'meeting_details' && (
+                                                                <>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Document Name
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Year
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                                        View
+                                                                    </Table.Td>
+                                                                </>
+                                                            )}
+                                                            {modalType === 'case_studies' && (
+                                                                <>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Institution
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Year
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Company
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Theme
+                                                                    </Table.Td>
+                                                                </>
+                                                            )}
+                                                        </Table.Tr>
+                                                    </Table.Thead>
+                                                    <Table.Tbody>
+                                                        {modalData.map((item: any, index: number) => (
+                                                            <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                {modalType === 'documents' && (
+                                                                    <>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            <h1
+                                                                                onClick={() => {
+                                                                                    if (item?.document_url) {
+                                                                                        gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                        setPdfVisible(true);
+                                                                                        setDetailsModalVisible(false);
+                                                                                    }
+                                                                                }}
+                                                                                className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
+                                                                            >
+                                                                                {item?.document_name || 'Unnamed Document'}
+                                                                            </h1>
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.year || 'N/A'}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed text-center">
+                                                                            {item?.document_url && (
+                                                                                <Tippy content="View Document" options={{ theme: "light" }}>
+                                                                                    <Lucide
+                                                                                        onClick={() => {
+                                                                                            gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                            setPdfVisible(true);
+                                                                                            setDetailsModalVisible(false);
+                                                                                        }}
+                                                                                        icon="Eye"
+                                                                                        className="w-4 h-4 stroke-[1.3] cursor-pointer text-blue-600 hover:text-blue-800"
+                                                                                    />
+                                                                                </Tippy>
+                                                                            )}
+                                                                        </Table.Td>
+                                                                    </>
+                                                                )}
+                                                                {modalType === 'meeting_details' && (
+                                                                    <>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            <h1
+                                                                                onClick={() => {
+                                                                                    if (item?.document_url) {
+                                                                                        gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                        setPdfVisible(true);
+                                                                                        setDetailsModalVisible(false);
+                                                                                    }
+                                                                                }}
+                                                                                className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
+                                                                            >
+                                                                                {item?.document_name || 'Unnamed Document'}
+                                                                            </h1>
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.year || 'N/A'}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed text-center">
+                                                                            {item?.document_url && (
+                                                                                <Tippy content="View Document" options={{ theme: "light" }}>
+                                                                                    <Lucide
+                                                                                        onClick={() => {
+                                                                                            gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                            setPdfVisible(true);
+                                                                                            setDetailsModalVisible(false);
+                                                                                        }}
+                                                                                        icon="Eye"
+                                                                                        className="w-4 h-4 stroke-[1.3] cursor-pointer text-blue-600 hover:text-blue-800"
+                                                                                    />
+                                                                                </Tippy>
+                                                                            )}
+                                                                        </Table.Td>
+                                                                    </>
+                                                                )}
+                                                                {modalType === 'case_studies' && (
+                                                                    <>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.institution_name || 'N/A'}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.year || 'N/A'}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.company_name || 'N/A'}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.theme || 'N/A'}
+                                                                        </Table.Td>
+                                                                    </>
+                                                                )}
+                                                            </Table.Tr>
+                                                        ))}
+                                                    </Table.Tbody>
+                                                </Table>
+                                            </div>
+                                        </TableWrapper>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Data Available</h3>
+                                            <p className="text-gray-500">No {modalTitle.toLowerCase()} found for {selectedCompany?.company_name}.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
         </>
     );
