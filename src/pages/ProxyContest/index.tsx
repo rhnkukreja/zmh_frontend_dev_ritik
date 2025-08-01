@@ -18,6 +18,7 @@ import {
     setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
+import axios from "axios";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
@@ -176,43 +177,46 @@ const index = () => {
             switch (type) {
                 case 'documents':
                     setModalTitle('Documents');
-                    apiUrl = `${baseURL}/activism_tables/?company_name=${encodeURIComponent(company.company_name)}`;
+                    apiUrl = `/activism_tables/?company_name=${encodeURIComponent(company.company_name)}`;
                     break;
 
                 case 'meeting_details':
                     setModalTitle('Meeting Details');
-                    apiUrl = `${baseURL}/voting_report_8k/?company_name=${encodeURIComponent(company.company_name)}`;
+                    apiUrl = `/voting_report_8k/?company_name=${encodeURIComponent(company.company_name)}`;
                     break;
 
                 case 'case_studies':
                     setModalTitle('Case Studies');
-                    apiUrl = `${baseURL}/case_studies/?company_name=${encodeURIComponent(company.company_name)}`;
+                    apiUrl = `/case_studies/?company_name=${encodeURIComponent(company.company_name)}`;
+                    break;
+
+                case 'proxy_advisory_firm_recommendation':
+                    setModalTitle('Proxy Advisory Firm Recommendation');
+                    apiUrl = `/activism_tables/?company_name=${encodeURIComponent(company.company_name)}`;
                     break;
 
                 default:
                     break;
             }
 
-            // Make direct API call
-            const response = await fetch(apiUrl, {
+            // Create custom axios instance to avoid global error interceptor
+            const customAxios = axios.create({
+                baseURL: baseURL,
                 headers: {
                     'Authorization': `JWT ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json',
                 }
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const response = await customAxios.get(apiUrl);
+            const data = response.data;
             console.log(`Modal API Response for ${type}:`, data);
 
             // Set the appropriate data based on type
             switch (type) {
                 case 'documents':
-                    // The /activism_tables/ API returns Activism_Presentation for documents
-                    setModalData(data?.Activism_Presentation || []);
+                    // The /activism_tables/ API returns the full response object with Activism_Presentation and Activism_Press_Release
+                    setModalData(data);
                     break;
                 case 'meeting_details':
                     // Extract Activism_Presentation from the response
@@ -221,13 +225,16 @@ const index = () => {
                 case 'case_studies':
                     setModalData(data?.results || []);
                     break;
+                case 'proxy_advisory_firm_recommendation':
+                    // Extract Activism_ISS_GL from the response
+                    setModalData(data?.Activism_ISS_GL || []);
+                    break;
                 default:
                     setModalData([]);
             }
 
         } catch (error) {
-            toast.error("Failed to fetch data");
-            console.error("Error fetching modal data:", error);
+            console.log(`No data available for ${type} - this is normal`);
             setModalData([]);
         } finally {
             setModalLoading(false);
@@ -608,7 +615,7 @@ const index = () => {
                                                                     <Table.Td className="px-4 py-2 font-semibold">Year</Table.Td>
                                                                     <Table.Td className="px-4 py-2 font-semibold">Company Name</Table.Td>
                                                                     <Table.Td className="px-4 py-2 font-semibold">Meeting Date</Table.Td>
-                                                                    <Table.Td className="px-4 py-2 font-semibold">Icons</Table.Td>
+                                                                    <Table.Td className="px-4 py-2 font-semibold">Actions</Table.Td>
                                                                 </Table.Tr>
                                                             </Table.Thead>
                                                             <Table.Tbody>
@@ -619,52 +626,89 @@ const index = () => {
                                                                             className="[&_td]:last:border-b-0 transition-all hover:bg-primary/5"
                                                                         >
                                                                             <Table.Td className="py-2 border-dashed">
-                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                                                                                        {company.year}
-                                                                                    </span>
+                                                                                <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                                    {company.year}
+                                                                                </span>
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
-                                                                                <div className="font-semibold text-primary/80">
+                                                                                <div 
+                                                                                    className="font-semibold cursor-pointer hover:underline transition-colors"
+                                                                                    onClick={() => {
+                                                                                        navigate(`/proxy-contest-detail/${company.company_id}`, { 
+                                                                                            state: { 
+                                                                                                company: company,
+                                                                                                companyName: company.company_name,
+                                                                                                year: company.year,
+                                                                                                meetingDate: company.meeting_date
+                                                                                            } 
+                                                                                        });
+                                                                                    }}
+                                                                                >
                                                                                     {company.company_name}
                                                                                 </div>
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
-                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-bold">
-                                                                                        {new Date(company.meeting_date).toLocaleDateString()}
-                                                                                    </span>
+                                                                                <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                                                                                    {new Date(company.meeting_date).toLocaleDateString('en-US')}
+                                                                                </span>
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
                                                                                 <div className="flex gap-2">
-                                                                                    {company.is_documents && (
-                                                                                        <Tippy content="Documents">
-                                                                                            <div
-                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 cursor-pointer hover:bg-blue-200 transition-colors"
-                                                                                                onClick={() => handleIconClick(company, 'documents')}
-                                                                                            >
-                                                                                                <Lucide icon="FileText" className="w-4 h-4" />
-                                                                                            </div>
-                                                                                        </Tippy>
-                                                                                    )}
-                                                                                    {company.is_meeting_details && (
-                                                                                        <Tippy content="Meeting Details">
-                                                                                            <div
-                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 cursor-pointer hover:bg-purple-200 transition-colors"
-                                                                                                onClick={() => handleIconClick(company, 'meeting_details')}
-                                                                                            >
-                                                                                                <Lucide icon="Calendar" className="w-4 h-4" />
-                                                                                            </div>
-                                                                                        </Tippy>
-                                                                                    )}
-                                                                                    {company.is_case_studies && (
-                                                                                        <Tippy content="Case Studies">
-                                                                                            <div
-                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-700 cursor-pointer hover:bg-orange-200 transition-colors"
-                                                                                                onClick={() => handleIconClick(company, 'case_studies')}
-                                                                                            >
-                                                                                                <Lucide icon="BookOpen" className="w-4 h-4" />
-                                                                                            </div>
-                                                                                        </Tippy>
-                                                                                    )}
+                                                                                    {/* Documents Icon - Always visible */}
+                                                                                    <Tippy content={company.is_documents ? "Documents" : "Not Available"}>
+                                                                                        <div
+                                                                                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                                                                                                company.is_documents 
+                                                                                                    ? "bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200" 
+                                                                                                    : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                                                                                            }`}
+                                                                                            onClick={company.is_documents ? () => handleIconClick({...company, year: company.year}, 'documents') : undefined}
+                                                                                        >
+                                                                                            <Lucide icon="FileText" className="w-4 h-4" />
+                                                                                        </div>
+                                                                                    </Tippy>
+                                                                                    
+                                                                                    {/* Proxy Advisory Firm Recommendation Icon - Always visible */}
+                                                                                    <Tippy content={company.is_proxy_advisory_firm_recommendation ? "Proxy Advisory Firm Recommendation" : "Not Available"}>
+                                                                                        <div 
+                                                                                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                                                                                                company.is_proxy_advisory_firm_recommendation 
+                                                                                                    ? "bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200" 
+                                                                                                    : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                                                                                            }`}
+                                                                                            onClick={company.is_proxy_advisory_firm_recommendation ? () => handleIconClick({...company, year: company.year}, 'proxy_advisory_firm_recommendation') : undefined}
+                                                                                        >
+                                                                                            <Lucide icon="Shield" className="w-4 h-4" />
+                                                                                        </div>
+                                                                                    </Tippy>
+                                                                                    
+                                                                                    {/* Meeting Details Icon - Always visible */}
+                                                                                    <Tippy content={company.is_meeting_details ? "Meeting Details" : "Not Available"}>
+                                                                                        <div
+                                                                                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                                                                                                company.is_meeting_details 
+                                                                                                    ? "bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200" 
+                                                                                                    : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                                                                                            }`}
+                                                                                            onClick={company.is_meeting_details ? () => handleIconClick({...company, year: company.year}, 'meeting_details') : undefined}
+                                                                                        >
+                                                                                            <Lucide icon="Calendar" className="w-4 h-4" />
+                                                                                        </div>
+                                                                                    </Tippy>
+                                                                                    
+                                                                                    {/* Case Studies Icon - Always visible */}
+                                                                                    <Tippy content={company.is_case_studies ? "Case Studies" : "Not Available"}>
+                                                                                        <div
+                                                                                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                                                                                                company.is_case_studies 
+                                                                                                    ? "bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200" 
+                                                                                                    : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                                                                                            }`}
+                                                                                            onClick={company.is_case_studies ? () => handleIconClick({...company, year: company.year}, 'case_studies') : undefined}
+                                                                                        >
+                                                                                            <Lucide icon="BookOpen" className="w-4 h-4" />
+                                                                                        </div>
+                                                                                    </Tippy>
                                                                                 </div>
                                                                             </Table.Td>
                                                                         </Table.Tr>
@@ -941,6 +985,17 @@ const index = () => {
                                                                                     </Table.Td>
                                                                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
                                                                                         <div className="flex gap-3 justify-center">
+                                                                                            {item?.is_proxy_advisory_firm_recommendation && (
+                                                                                                <Tippy
+                                                                                                    content="Proxy Advisory Firm Recommendation"
+                                                                                                    options={{ theme: "light" }}
+                                                                                                >
+                                                                                                    <Lucide
+                                                                                                        icon="FileText"
+                                                                                                        className="w-4 h-4 mr-1.5 stroke-[1.3] text-blue-600"
+                                                                                                    />
+                                                                                                </Tippy>
+                                                                                            )}
                                                                                             <Tippy
                                                                                                 content="See Details"
                                                                                                 options={{ theme: "light" }}
@@ -1689,153 +1744,336 @@ const index = () => {
                                 </div>
                             ) : (
                                 <div>
-                                    {modalData && modalData.length > 0 ? (
-                                        <TableWrapper>
-                                            <div className="overflow-x-auto">
-                                                <Table>
-                                                    <Table.Thead>
-                                                        <Table.Tr>
-                                                            {modalType === 'documents' && (
-                                                                <>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                        Document Name
-                                                                    </Table.Td>
+                                    {modalData && (modalData.Activism_Presentation?.length > 0 || modalData.Activism_Press_Release?.length > 0 || (Array.isArray(modalData) && modalData.length > 0)) ? (
+                                        <div className="space-y-6">
+                                            {/* Handle documents modal with structured data */}
+                                            {modalType === 'documents' && modalData.Activism_Presentation && (
+                                                <>
+                                                    {/* Activism Presentation Section */}
+                                                    {modalData.Activism_Presentation?.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Activism Presentation
+                                                            </h3>
+                                                            <TableWrapper>
+                                                                <div className="overflow-x-auto">
+                                                                    <Table>
+                                                                        <Table.Thead>
+                                                                            <Table.Tr>
+                                                                                <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                    Document Name
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                    Year
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                                                    View
+                                                                                </Table.Td>
+                                                                            </Table.Tr>
+                                                                        </Table.Thead>
+                                                                        <Table.Tbody>
+                                                                            {modalData.Activism_Presentation.map((item: any, index: number) => (
+                                                                                <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                    <Table.Td className="py-2 border-dashed">
+                                                                                        <h1
+                                                                                            onClick={() => {
+                                                                                                if (item?.document_url) {
+                                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                                    setPdfVisible(true);
+                                                                                                    setDetailsModalVisible(false);
+                                                                                                }
+                                                                                            }}
+                                                                                            className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
+                                                                                        >
+                                                                                            {item?.document_name || 'Unnamed Document'}
+                                                                                        </h1>
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed">
+                                                                                        {item?.year || 'N/A'}
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed text-center">
+                                                                                        {item?.document_url && (
+                                                                                            <Tippy content="View Document" options={{ theme: "light" }}>
+                                                                                                <Lucide
+                                                                                                    onClick={() => {
+                                                                                                        gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                                        setPdfVisible(true);
+                                                                                                        setDetailsModalVisible(false);
+                                                                                                    }}
+                                                                                                    icon="Eye"
+                                                                                                    className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
+                                                                                                />
+                                                                                            </Tippy>
+                                                                                        )}
+                                                                                    </Table.Td>
+                                                                                </Table.Tr>
+                                                                            ))}
+                                                                        </Table.Tbody>
+                                                                    </Table>
+                                                                </div>
+                                                            </TableWrapper>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Activism Press Release Section */}
+                                                    {modalData.Activism_Press_Release?.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Activism Press Release
+                                                            </h3>
+                                                            <TableWrapper>
+                                                                <div className="overflow-x-auto">
+                                                                    <Table>
+                                                                        <Table.Thead>
+                                                                            <Table.Tr>
+                                                                                <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                    Document Name
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                    Year
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                                                    View
+                                                                                </Table.Td>
+                                                                            </Table.Tr>
+                                                                        </Table.Thead>
+                                                                        <Table.Tbody>
+                                                                            {modalData.Activism_Press_Release.map((item: any, index: number) => (
+                                                                                <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                    <Table.Td className="py-2 border-dashed">
+                                                                                        <h1
+                                                                                            onClick={() => {
+                                                                                                if (item?.document_url) {
+                                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                                    setPdfVisible(true);
+                                                                                                    setDetailsModalVisible(false);
+                                                                                                }
+                                                                                            }}
+                                                                                            className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
+                                                                                        >
+                                                                                            {item?.document_name || 'Unnamed Document'}
+                                                                                        </h1>
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed">
+                                                                                        {item?.year || 'N/A'}
+                                                                                    </Table.Td>
+                                                                                    <Table.Td className="py-2 border-dashed text-center">
+                                                                                        {item?.document_url && (
+                                                                                            <Tippy content="View Document" options={{ theme: "light" }}>
+                                                                                                <Lucide
+                                                                                                    onClick={() => {
+                                                                                                        gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                                        setPdfVisible(true);
+                                                                                                        setDetailsModalVisible(false);
+                                                                                                    }}
+                                                                                                    icon="Eye"
+                                                                                                    className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
+                                                                                                />
+                                                                                            </Tippy>
+                                                                                        )}
+                                                                                    </Table.Td>
+                                                                                </Table.Tr>
+                                                                            ))}
+                                                                        </Table.Tbody>
+                                                                    </Table>
+                                                                </div>
+                                                            </TableWrapper>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+
+                                            {/* Handle proxy advisory firm recommendation modal */}
+                                            {modalType === 'proxy_advisory_firm_recommendation' && Array.isArray(modalData) && (
+                                                <TableWrapper>
+                                                    <div className="overflow-x-auto">
+                                                        <Table>
+                                                            <Table.Thead>
+                                                                <Table.Tr>
                                                                     <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
                                                                         Year
                                                                     </Table.Td>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
-                                                                        View
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Type
                                                                     </Table.Td>
-                                                                </>
-                                                            )}
-                                                            {modalType === 'meeting_details' && (
-                                                                <>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                        Document Name
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Management
                                                                     </Table.Td>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                        Year
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Activist
                                                                     </Table.Td>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
-                                                                        View
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
+                                                                        Split
                                                                     </Table.Td>
-                                                                </>
-                                                            )}
-                                                            {modalType === 'case_studies' && (
-                                                                <>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                        Institution
-                                                                    </Table.Td>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                        Year
-                                                                    </Table.Td>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                        Company
-                                                                    </Table.Td>
-                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                        Theme
-                                                                    </Table.Td>
-                                                                </>
-                                                            )}
-                                                        </Table.Tr>
-                                                    </Table.Thead>
-                                                    <Table.Tbody>
-                                                        {modalData.map((item: any, index: number) => (
-                                                            <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
-                                                                {modalType === 'documents' && (
-                                                                    <>
-                                                                        <Table.Td className="py-2 border-dashed">
-                                                                            <h1
-                                                                                onClick={() => {
-                                                                                    if (item?.document_url) {
-                                                                                        gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                                        setPdfVisible(true);
-                                                                                        setDetailsModalVisible(false);
-                                                                                    }
-                                                                                }}
-                                                                                className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
-                                                                            >
-                                                                                {item?.document_name || 'Unnamed Document'}
-                                                                            </h1>
-                                                                        </Table.Td>
+                                                                </Table.Tr>
+                                                            </Table.Thead>
+                                                            <Table.Tbody>
+                                                                {modalData.map((item: any, index: number) => (
+                                                                    <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
                                                                         <Table.Td className="py-2 border-dashed">
                                                                             {item?.year || 'N/A'}
                                                                         </Table.Td>
                                                                         <Table.Td className="py-2 border-dashed text-center">
-                                                                            {item?.document_url && (
-                                                                                <Tippy content="View Document" options={{ theme: "light" }}>
-                                                                                    <Lucide
-                                                                                        onClick={() => {
-                                                                                            gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                                            setPdfVisible(true);
-                                                                                            setDetailsModalVisible(false);
-                                                                                        }}
-                                                                                        icon="Eye"
-                                                                                        className="w-4 h-4 stroke-[1.3] cursor-pointer text-blue-600 hover:text-blue-800"
-                                                                                    />
-                                                                                </Tippy>
-                                                                            )}
-                                                                        </Table.Td>
-                                                                    </>
-                                                                )}
-                                                                {modalType === 'meeting_details' && (
-                                                                    <>
-                                                                        <Table.Td className="py-2 border-dashed">
-                                                                            <h1
-                                                                                onClick={() => {
-                                                                                    if (item?.document_url) {
-                                                                                        gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                                        setPdfVisible(true);
-                                                                                        setDetailsModalVisible(false);
-                                                                                    }
-                                                                                }}
-                                                                                className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
-                                                                            >
-                                                                                {item?.document_name || 'Unnamed Document'}
-                                                                            </h1>
-                                                                        </Table.Td>
-                                                                        <Table.Td className="py-2 border-dashed">
-                                                                            {item?.year || 'N/A'}
+                                                                            <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                                {item?.type || 'N/A'}
+                                                                            </span>
                                                                         </Table.Td>
                                                                         <Table.Td className="py-2 border-dashed text-center">
-                                                                            {item?.document_url && (
-                                                                                <Tippy content="View Document" options={{ theme: "light" }}>
-                                                                                    <Lucide
-                                                                                        onClick={() => {
-                                                                                            gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                                            setPdfVisible(true);
-                                                                                            setDetailsModalVisible(false);
-                                                                                        }}
-                                                                                        icon="Eye"
-                                                                                        className="w-4 h-4 stroke-[1.3] cursor-pointer text-blue-600 hover:text-blue-800"
-                                                                                    />
-                                                                                </Tippy>
+                                                                            {item?.management && (
+                                                                                <div className="flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
                                                                             )}
                                                                         </Table.Td>
-                                                                    </>
-                                                                )}
-                                                                {modalType === 'case_studies' && (
-                                                                    <>
-                                                                        <Table.Td className="py-2 border-dashed">
-                                                                            {item?.institution_name || 'N/A'}
+                                                                        <Table.Td className="py-2 border-dashed text-center">
+                                                                            {item?.activist && (
+                                                                                <div className="flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="py-2 border-dashed">
-                                                                            {item?.year || 'N/A'}
+                                                                        <Table.Td className="py-2 border-dashed text-center">
+                                                                            {item?.split && (
+                                                                                <div className="flex items-center justify-center">
+                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                        &#10004;
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </Table.Td>
-                                                                        <Table.Td className="py-2 border-dashed">
-                                                                            {item?.company_name || 'N/A'}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="py-2 border-dashed">
-                                                                            {item?.theme || 'N/A'}
-                                                                        </Table.Td>
-                                                                    </>
-                                                                )}
-                                                            </Table.Tr>
-                                                        ))}
-                                                    </Table.Tbody>
-                                                </Table>
-                                            </div>
-                                        </TableWrapper>
+                                                                    </Table.Tr>
+                                                                ))}
+                                                            </Table.Tbody>
+                                                        </Table>
+                                                    </div>
+                                                </TableWrapper>
+                                            )}
+
+                                            {/* Handle other modal types (meeting_details, case_studies) with array data */}
+                                            {(modalType === 'meeting_details' || modalType === 'case_studies') && Array.isArray(modalData) && (
+                                                <TableWrapper>
+                                                    <div className="overflow-x-auto">
+                                                        <Table>
+                                                            <Table.Thead>
+                                                                <Table.Tr>
+                                                                    {modalType === 'meeting_details' && (
+                                                                        <>
+                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                Document Name
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                Year
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                                                View
+                                                                            </Table.Td>
+                                                                        </>
+                                                                    )}
+                                                                    {modalType === 'case_studies' && (
+                                                                        <>
+                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                Institution
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                Year
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                                Theme
+                                                                            </Table.Td>
+                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                                                View
+                                                                            </Table.Td>
+                                                                        </>
+                                                                    )}
+                                                                </Table.Tr>
+                                                            </Table.Thead>
+                                                            <Table.Tbody>
+                                                                {modalData.map((item: any, index: number) => (
+                                                                    <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                        {modalType === 'meeting_details' && (
+                                                                            <>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    <h1
+                                                                                        onClick={() => {
+                                                                                            if (item?.document_url) {
+                                                                                                gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                                setPdfVisible(true);
+                                                                                                setDetailsModalVisible(false);
+                                                                                            }
+                                                                                        }}
+                                                                                        className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
+                                                                                    >
+                                                                                        {item?.document_name || 'Unnamed Document'}
+                                                                                    </h1>
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    {item?.year || 'N/A'}
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed text-center">
+                                                                                    {item?.document_url && (
+                                                                                        <Tippy content="View Document" options={{ theme: "light" }}>
+                                                                                            <Lucide
+                                                                                                onClick={() => {
+                                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                                    setPdfVisible(true);
+                                                                                                    setDetailsModalVisible(false);
+                                                                                                }}
+                                                                                                icon="Eye"
+                                                                                                className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
+                                                                                            />
+                                                                                        </Tippy>
+                                                                                    )}
+                                                                                </Table.Td>
+                                                                            </>
+                                                                        )}
+                                                                        {modalType === 'case_studies' && (
+                                                                            <>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    <div className="flex items-center">
+                                                                                        {item?.institution_logo_url ? (
+                                                                                            <img
+                                                                                                alt="Institution Logo"
+                                                                                                className="w-6 h-6 rounded-full object-contain mr-3"
+                                                                                                src={item?.institution_logo_url}
+                                                                                            />
+                                                                                        ) : (
+                                                                                            <div className="w-6 h-6 rounded-full bg-gray-200 mr-3"></div>
+                                                                                        )}
+                                                                                        <span>{item?.institution_name || 'N/A'}</span>
+                                                                                    </div>
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    {item?.year || 'N/A'}
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    {item?.esg_themes || 'N/A'}
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed text-center">
+                                                                                    <Tippy content="View Details" options={{ theme: "light" }}>
+                                                                                        <Lucide
+                                                                                            onClick={() => {
+                                                                                                setCaseProxyModalVisible(true);
+                                                                                                setCaseProxyModalData(item);
+                                                                                            }}
+                                                                                            icon="Eye"
+                                                                                            className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
+                                                                                        />
+                                                                                    </Tippy>
+                                                                                </Table.Td>
+                                                                            </>
+                                                                        )}
+                                                                    </Table.Tr>
+                                                                ))}
+                                                            </Table.Tbody>
+                                                        </Table>
+                                                    </div>
+                                                </TableWrapper>
+                                            )}
+                                        </div>
                                     ) : (
                                         <div className="text-center py-12">
                                             <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
