@@ -134,16 +134,18 @@ const ProxyContestDetail = () => {
                     <div className="flex items-center gap-4">
                         <Button
                             onClick={() => navigate('/proxy-contest')}
-                            variant="secondary"
+                            variant="primary"
                             className="flex items-center gap-2"
                         >
                             <ChevronLeft size={18} />
                             Back
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">{company.company_name}</h1>
-                            <p className="text-gray-600">
-                                Year: {company.year} | Meeting Date: {new Date(company.meeting_date).toLocaleDateString('en-US')}
+                            <div className="font-bold text-2xl pt-4">
+                                {company.company_name}
+                            </div>
+                            <p className="text-gray-600 mt-2">
+                                Meeting Date: {new Date(company.meeting_date).toLocaleDateString('en-US')}
                             </p>
                         </div>
                     </div>
@@ -151,7 +153,7 @@ const ProxyContestDetail = () => {
 
                 {loading ? (
                     <div className="h-96 flex items-center justify-center">
-                        <LoadingIcon icon="oval" className="w-12 h-12" />
+                        <LoadingIcon icon="three-dots" className="w-12 h-12" />
                     </div>
                 ) : (
                     <div className="space-y-6">
@@ -167,63 +169,120 @@ const ProxyContestDetail = () => {
                                         <Table>
                                             <Table.Thead>
                                                 <Table.Tr>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                        Year
+                                                    <Table.Td
+                                                        rowSpan={2}
+                                                        className="px-6 py-3 font-semibold h-[60px] border-r border-gray-200 bg-gray-50 text-gray-700 text-left"
+                                                    >
+                                                        Company
                                                     </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
-                                                        Type
+                                                    <Table.Td
+                                                        colSpan={3}
+                                                        className="px-6 py-3 font-semibold h-[30px] border-r border-gray-200 bg-gray-50 text-gray-700 text-center"
+                                                    >
+                                                        ISS
                                                     </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
+                                                    <Table.Td
+                                                        colSpan={3}
+                                                        className="px-6 py-3 font-semibold h-[30px] bg-gray-50 text-gray-700 text-center"
+                                                    >
+                                                        GL
+                                                    </Table.Td>
+                                                </Table.Tr>
+                                                <Table.Tr>
+                                                    <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
                                                         Management
                                                     </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
+                                                    <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
                                                         Activist
                                                     </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center">
+                                                    <Table.Td className="px-4 py-2 font-medium h-[30px] border-r border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                        Split
+                                                    </Table.Td>
+                                                    <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                        Management
+                                                    </Table.Td>
+                                                    <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                        Activist
+                                                    </Table.Td>
+                                                    <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
                                                         Split
                                                     </Table.Td>
                                                 </Table.Tr>
                                             </Table.Thead>
                                             <Table.Tbody>
-                                                {proxyAdvisoryData.map((item: any, index: number) => (
-                                                    <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
-                                                        <Table.Td className="py-2 border-dashed">
-                                                            {item?.year || 'N/A'}
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed text-center">
-                                                            <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                                {item?.type || 'N/A'}
-                                                            </span>
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed text-center">
-                                                            {item?.management && (
-                                                                <div className="flex items-center justify-center">
-                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
-                                                                        &#10004;
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed text-center">
-                                                            {item?.activist && (
-                                                                <div className="flex items-center justify-center">
-                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
-                                                                        &#10004;
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed text-center">
-                                                            {item?.split && (
-                                                                <div className="flex items-center justify-center">
-                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
-                                                                        &#10004;
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </Table.Td>
-                                                    </Table.Tr>
-                                                ))}
+                                                {(() => {
+                                                    // Group data by company_tent to show all unique companies
+                                                    const companies = [...new Set(proxyAdvisoryData.map((item: any) => item.company_tent))];
+                                                    
+                                                    return companies.map((companyName: string, index: number) => {
+                                                        const issData = proxyAdvisoryData.find((item: any) => item.type === 'ISS' && item.company_tent === companyName);
+                                                        const glData = proxyAdvisoryData.find((item: any) => item.type === 'GL' && item.company_tent === companyName);
+                                                        
+                                                        return (
+                                                            <Table.Tr key={index} className="hover:bg-gray-50 border-b border-gray-100">
+                                                                <Table.Td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-100">
+                                                                    {companyName || companyName || 'N/A'}
+                                                                </Table.Td>
+                                                                {/* ISS columns */}
+                                                                <Table.Td className="px-4 py-4 text-center">
+                                                                    {issData?.management && (
+                                                                        <div className="flex items-center justify-center">
+                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                &#10004;
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </Table.Td>
+                                                                <Table.Td className="px-4 py-4 text-center">
+                                                                    {issData?.activist && (
+                                                                        <div className="flex items-center justify-center">
+                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                &#10004;
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </Table.Td>
+                                                                <Table.Td className="px-4 py-4 text-center border-r border-gray-100">
+                                                                    {issData?.split && (
+                                                                        <div className="flex items-center justify-center">
+                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                &#10004;
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </Table.Td>
+                                                                {/* GL columns */}
+                                                                <Table.Td className="px-4 py-4 text-center">
+                                                                    {glData?.management && (
+                                                                        <div className="flex items-center justify-center">
+                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                &#10004;
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </Table.Td>
+                                                                <Table.Td className="px-4 py-4 text-center">
+                                                                    {glData?.activist && (
+                                                                        <div className="flex items-center justify-center">
+                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                &#10004;
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </Table.Td>
+                                                                <Table.Td className="px-4 py-4 text-center">
+                                                                    {glData?.split && (
+                                                                        <div className="flex items-center justify-center">
+                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                &#10004;
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </Table.Td>
+                                                            </Table.Tr>
+                                                        );
+                                                    });
+                                                })()}
                                             </Table.Tbody>
                                         </Table>
                                     </div>

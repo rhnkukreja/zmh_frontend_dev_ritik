@@ -126,23 +126,17 @@ const index = () => {
     if (savedFilters) {
       try {
         const parsed = JSON.parse(savedFilters);
-        // If no date_range in saved filters, set default
-        if (!parsed.date_range) {
-          parsed.date_range = getDefaultDateRange();
-        }
         setallApplyFilter(parsed);
         // Set form values as well
         Object.entries(parsed).forEach(([key, value]) => {
           setValue(key, value);
         });
       } catch (e) { 
-        // If parsing fails, set default date range
-        setValue("date_range", getDefaultDateRange());
+        // If parsing fails, do nothing - let user set filters manually
+        console.log("Error parsing saved filters:", e);
       }
-    } else {
-      // If no saved filters, set default date range
-      setValue("date_range", getDefaultDateRange());
     }
+    // Don't set default date range automatically - let user choose
   }, []);
 
   useEffect(() => {
@@ -215,9 +209,64 @@ const index = () => {
       category: [],
       year: "",
       company_name: [],
-      date_range: getDefaultDateRange(),
+      date_range: "",
     },
   });
+
+  // Watch for changes in date_range and year to implement mutual exclusivity
+  const watchedDateRange = watch("date_range");
+  const watchedYear = watch("year");
+  const watchedAnalyticsYear = watch("analyticsYear");
+  
+  // Track previous values to determine which field changed
+  const [prevDateRange, setPrevDateRange] = useState("");
+  const [prevYear, setPrevYear] = useState("");
+  const [prevAnalyticsYear, setPrevAnalyticsYear] = useState([]);
+
+  // Implement mutual exclusivity between date_range and year filters
+  useEffect(() => {
+    const currentDateRange = watchedDateRange || "";
+    const currentYear = watchedYear || "";
+    const currentAnalyticsYear = watchedAnalyticsYear || [];
+    
+    // Check if date_range changed and has a value
+    if (currentDateRange !== prevDateRange && currentDateRange.trim() !== "") {
+      // Date range was set, clear both year fields if they have values
+      if (currentYear.trim() !== "") {
+        setValue("year", "");
+      }
+      if (currentAnalyticsYear.length > 0) {
+        setValue("analyticsYear", []);
+      }
+    }
+    
+    // Check if year changed and has a value
+    if (currentYear !== prevYear && currentYear.trim() !== "") {
+      // Year was set, clear date_range and analyticsYear if they have values
+      if (currentDateRange.trim() !== "") {
+        setValue("date_range", "");
+      }
+      if (currentAnalyticsYear.length > 0) {
+        setValue("analyticsYear", []);
+      }
+    }
+    
+    // Check if analyticsYear changed and has a value
+    if (JSON.stringify(currentAnalyticsYear) !== JSON.stringify(prevAnalyticsYear) && currentAnalyticsYear.length > 0) {
+      // Analytics year was set, clear date_range and regular year if they have values
+      if (currentDateRange.trim() !== "") {
+        setValue("date_range", "");
+      }
+      if (currentYear.trim() !== "") {
+        setValue("year", "");
+      }
+    }
+    
+    // Update previous values
+    setPrevDateRange(currentDateRange);
+    setPrevYear(currentYear);
+    setPrevAnalyticsYear(currentAnalyticsYear);
+  }, [watchedDateRange, watchedYear, watchedAnalyticsYear, prevDateRange, prevYear, prevAnalyticsYear, setValue]);
 
   const getDependentDropdown = async () => {
     const paramFilter = {
@@ -295,19 +344,32 @@ const index = () => {
       toast.warning("Please Select Company Name");
       return;
     }
-    if (npxFilter?.year === " " || npxFilter?.year === "") {
-      toast.warning("Please Select Year");
+    
+    // Check if either year or date_range is provided (mutual exclusivity)
+    const hasYear = npxFilter?.year && npxFilter?.year.trim() !== "";
+    const hasDateRange = npxFilter?.date_range && npxFilter?.date_range.trim() !== "";
+    
+    if (!hasYear && !hasDateRange) {
+      toast.warning("Please Select either Year or Date Range");
       return;
     }
+    
     const filterObj = {
       company_name: npxFilter?.company_name, // Already a flat array
       institution_name: npxFilter?.institution_name,
       vote_type: npxFilter?.vote,
       category: npxFilter?.category,
-      year: npxFilter?.year,
       keyword: npxFilter?.keyword,
-      date_range: npxFilter?.date_range,
     };
+    
+    // Add only the active filter (year OR date_range, not both)
+    if (hasDateRange) {
+      filterObj.date_range = npxFilter?.date_range;
+      // Explicitly exclude year when date_range is selected
+    } else if (hasYear) {
+      filterObj.year = npxFilter?.year;
+      // Explicitly exclude date_range when year is selected
+    }
     setallApplyFilter(filterObj);
     // Save to localStorage
     localStorage.setItem("vdsEuropeanFilters", JSON.stringify(filterObj));
@@ -320,14 +382,29 @@ const index = () => {
       toast.warning("Please Select Institution Name");
       return;
     }
+    
+    // Check mutual exclusivity for analytics as well
+    const hasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
+    const hasDateRange = data?.date_range && data?.date_range.trim() !== "";
+    
     const analyticsObj = {
-      ...data,
+      institution_name: data?.institution_name || [],
+      index_name: data?.index_name || [],
       company_name: Array.isArray(data?.company_name) && data.company_name.length > 0
         ? data.company_name.map((item: any) => item.label || item.value || item)
         : [],
       vote_type: data?.vote || [], // always set vote_types
-      date_range: data?.date_range || null, // include date_range
     };
+    
+    // Add only the active filter (analyticsYear OR date_range, not both)
+    if (hasDateRange) {
+      analyticsObj.date_range = data?.date_range;
+      // Explicitly exclude year when date_range is selected
+    } else if (hasYear) {
+      analyticsObj.analyticsYear = data?.analyticsYear;
+      // Explicitly exclude date_range when year is selected
+    }
+    
     setAllAnalyticsFilter(analyticsObj);
     // Save analytics filters to localStorage
     localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(analyticsObj));
@@ -386,7 +463,7 @@ const index = () => {
     setValue("category", []);
     setValue("year", "");
     setValue("keyword", "");
-    setValue("date_range", getDefaultDateRange());
+    setValue("date_range", "");
     setValue("analyticsYear", []);
     setValue("index_name", []);
     setValue("proponent_type", []);
@@ -555,10 +632,6 @@ const index = () => {
       if (savedAnalytics) {
         try {
           const parsed = JSON.parse(savedAnalytics);
-          // If no date_range in saved analytics filters, set default
-          if (!parsed.date_range) {
-            parsed.date_range = getDefaultDateRange();
-          }
           setAllAnalyticsFilter(parsed);
           Object.entries(parsed).forEach(([key, value]) => {
             setValue(key, value);
@@ -570,12 +643,12 @@ const index = () => {
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
         analyticsYear: ["2025"],
-        date_range: getDefaultDateRange(),
+        date_range: "",
       });
       setValue("institution_name", ["BlackRock, Inc."]);
       setValue("index_name", ["S&P 500"]);
       setValue("analyticsYear", ["2025"]);
-      setValue("date_range", getDefaultDateRange());
+      setValue("date_range", "");
     }
     // eslint-disable-next-line
   }, [isViewAnalysis]);
@@ -1273,6 +1346,20 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
                       {yearData ? `${yearData.alignment_percentage}%` : '-'}
+                    </td>
+                  );
+                })
+              ))}
+            </tr>
+            <tr>
+              <td className="px-6 py-3 font-medium">Data as of</td>
+              {institutions.map((institution) => (
+                years.map((year: any) => {
+                  const yearData = institution.years[year];
+                  const dateRange = yearData?.date_range;
+                  return (
+                    <td key={`${institution.institution_id}-${year}-date`} className="px-6 py-3 text-center">
+                      {dateRange ? `${dateRange.start_meeting} - ${dateRange.end_meeting}` : '-'}
                     </td>
                   );
                 })
