@@ -221,8 +221,8 @@ const index = () => {
                     setModalData(data);
                     break;
                 case 'meeting_details':
-                    // Extract Activism_Presentation from the response
-                    setModalData(data?.Activism_Presentation || []);
+                    // Set the full response data for meeting details
+                    setModalData(data);
                     break;
                 case 'case_studies':
                     setModalData(data?.results || []);
@@ -585,11 +585,9 @@ const index = () => {
                 Back
             </Button> */}
 
-            <div className="p-5 mt-1 box">
+            <div className="p-5 pt-0 mt-1 box">
 
                 <div className="w-full">
-                    <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                    </div>
                     <>
                         <Tab.Group selectedIndex={getSelectedTabIndex()}>
                             <Tab.List variant="link-tabs">
@@ -598,11 +596,7 @@ const index = () => {
                             <Tab.Panels className="mt-5">
                                 <Tab.Panel className="leading-relaxed">
                                     {/* Proxy Contest Companies Table */}
-                                    <div className="box p-5 mb-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h2 className="text-lg font-medium">Proxy Contest Companies</h2>
-                                        </div>
-
+                                    <div>
                                         {proxyContestLoading ? (
                                             <div className="h-52 flex items-center justify-center">
                                                 <LoadingIcon icon="three-dots" className="w-8 h-8" />
@@ -610,7 +604,7 @@ const index = () => {
                                         ) : (
                                             <>
                                                 <TableWrapper isLoading={proxyContestLoading}>
-                                                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                                                    <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
                                                         <Table>
                                                             <Table.Thead>
                                                                 <Table.Tr className="bg-primary text-white text-sm">
@@ -650,10 +644,13 @@ const index = () => {
                                                                                 </div>
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
-                                                                                <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
-                                                                                    {/* {new Date(company.meeting_date).toLocaleDateString('en-US')} */}
-                                                                                    {company.meeting_date}
-                                                                                </span>
+                                                                                {company.meeting_date ? (
+                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                                                                                        {company.meeting_date}
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    <span className="text-gray-400 text-xs">-</span>
+                                                                                )}
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
                                                                                 <div className="flex gap-2">
@@ -1752,7 +1749,12 @@ const index = () => {
                                 </div>
                             ) : (
                                 <div>
-                                    {modalData && (modalData.Activism_Presentation?.length > 0 || modalData.Activism_Press_Release?.length > 0 || (Array.isArray(modalData) && modalData.length > 0)) ? (
+                                    {modalData && (
+                                        modalData.Activism_Presentation?.length > 0 || 
+                                        modalData.Activism_Press_Release?.length > 0 || 
+                                        (Array.isArray(modalData) && modalData.length > 0) ||
+                                        (modalType === 'meeting_details' && (modalData.company || modalData.nominees || modalData.proposals))
+                                    ) ? (
                                         <div className="space-y-6">
                                             {/* Handle documents modal with structured data */}
                                             {modalType === 'documents' && modalData.Activism_Presentation && (
@@ -1960,7 +1962,7 @@ const index = () => {
                                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                                     {issData?.management && (
                                                                                         <div className="flex items-center justify-center">
-                                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                                 &#10004;
                                                                                             </div>
                                                                                         </div>
@@ -1969,7 +1971,7 @@ const index = () => {
                                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                                     {issData?.activist && (
                                                                                         <div className="flex items-center justify-center">
-                                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                                 &#10004;
                                                                                             </div>
                                                                                         </div>
@@ -1978,7 +1980,7 @@ const index = () => {
                                                                                 <Table.Td className="px-4 py-4 text-center border-r border-gray-200">
                                                                                     {issData?.split && (
                                                                                         <div className="flex items-center justify-center">
-                                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                                 &#10004;
                                                                                             </div>
                                                                                         </div>
@@ -1988,7 +1990,7 @@ const index = () => {
                                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                                     {glData?.management && (
                                                                                         <div className="flex items-center justify-center">
-                                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                                 &#10004;
                                                                                             </div>
                                                                                         </div>
@@ -1997,7 +1999,7 @@ const index = () => {
                                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                                     {glData?.activist && (
                                                                                         <div className="flex items-center justify-center">
-                                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                                 &#10004;
                                                                                             </div>
                                                                                         </div>
@@ -2006,7 +2008,7 @@ const index = () => {
                                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                                     {glData?.split && (
                                                                                         <div className="flex items-center justify-center">
-                                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                                 &#10004;
                                                                                             </div>
                                                                                         </div>
@@ -2022,119 +2024,158 @@ const index = () => {
                                                 </TableWrapper>
                                             )}
 
-                                            {/* Handle other modal types (meeting_details, case_studies) with array data */}
-                                            {(modalType === 'meeting_details' || modalType === 'case_studies') && Array.isArray(modalData) && (
+                                            {/* Handle meeting details modal with special structure */}
+                                            {modalType === 'meeting_details' && modalData && (
+                                                <div className="space-y-6">
+                                                    {/* Company Information */}
+                                                    {modalData.company && modalData.company.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Company Information
+                                                            </h3>
+                                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                                {modalData.company.map((companyInfo: any, index: number) => {
+                                                                    const companyName = Object.keys(companyInfo)[0];
+                                                                    const meetingInfo = companyInfo[companyName];
+                                                                    return (
+                                                                        <div key={index} className="text-sm">
+                                                                            <p><strong>Company:</strong> {companyName}</p>
+                                                                            <p><strong>Meeting:</strong> {meetingInfo}</p>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Nominees Section */}
+                                                    {modalData.nominees && modalData.nominees.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Nominees
+                                                            </h3>
+                                                            <TableWrapper>
+                                                                <div className="overflow-x-auto">
+                                                                    <Table>
+                                                                        <Table.Thead>
+                                                                            <Table.Tr>
+                                                                                {modalData.nominees_headers?.map((header: any, index: number) => (
+                                                                                    <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] ${index === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                                        {header.header}
+                                                                                    </Table.Td>
+                                                                                ))}
+                                                                            </Table.Tr>
+                                                                        </Table.Thead>
+                                                                        <Table.Tbody>
+                                                                            {modalData.nominees.map((nominee: any, index: number) => (
+                                                                                <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                    {modalData.nominees_headers?.map((header: any, headerIndex: number) => (
+                                                                                        <Table.Td key={headerIndex} className={`py-2 border-dashed ${headerIndex === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                                            {nominee[header.field] || 'N/A'}
+                                                                                        </Table.Td>
+                                                                                    ))}
+                                                                                </Table.Tr>
+                                                                            ))}
+                                                                        </Table.Tbody>
+                                                                    </Table>
+                                                                </div>
+                                                            </TableWrapper>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Proposals Section */}
+                                                    {modalData.proposals && modalData.proposals.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Proposals
+                                                            </h3>
+                                                            <TableWrapper>
+                                                                <div className="overflow-x-auto">
+                                                                    <Table>
+                                                                        <Table.Thead>
+                                                                            <Table.Tr>
+                                                                                {modalData.proposals_headers?.map((header: any, index: number) => (
+                                                                                    <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] ${index === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                                        {header.header}
+                                                                                    </Table.Td>
+                                                                                ))}
+                                                                            </Table.Tr>
+                                                                        </Table.Thead>
+                                                                        <Table.Tbody>
+                                                                            {modalData.proposals.map((proposal: any, index: number) => (
+                                                                                <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                    {modalData.proposals_headers?.map((header: any, headerIndex: number) => (
+                                                                                        <Table.Td key={headerIndex} className={`py-2 border-dashed ${headerIndex === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                                            {proposal[header.field] || 'N/A'}
+                                                                                        </Table.Td>
+                                                                                    ))}
+                                                                                </Table.Tr>
+                                                                            ))}
+                                                                        </Table.Tbody>
+                                                                    </Table>
+                                                                </div>
+                                                            </TableWrapper>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Handle case studies modal with array data */}
+                                            {modalType === 'case_studies' && Array.isArray(modalData) && (
                                                 <TableWrapper>
                                                     <div className="overflow-x-auto">
                                                         <Table>
                                                             <Table.Thead>
                                                                 <Table.Tr>
-                                                                    {modalType === 'meeting_details' && (
-                                                                        <>
-                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                                Document Name
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                                Year
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
-                                                                                View
-                                                                            </Table.Td>
-                                                                        </>
-                                                                    )}
-                                                                    {modalType === 'case_studies' && (
-                                                                        <>
-                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                                Institution
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                                Year
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                                                Theme
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
-                                                                                View
-                                                                            </Table.Td>
-                                                                        </>
-                                                                    )}
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Institution
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Year
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                                        Theme
+                                                                    </Table.Td>
+                                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                                        View
+                                                                    </Table.Td>
                                                                 </Table.Tr>
                                                             </Table.Thead>
                                                             <Table.Tbody>
                                                                 {modalData.map((item: any, index: number) => (
                                                                     <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
-                                                                        {modalType === 'meeting_details' && (
-                                                                            <>
-                                                                                <Table.Td className="py-2 border-dashed">
-                                                                                    <h1
-                                                                                        onClick={() => {
-                                                                                            if (item?.document_url) {
-                                                                                                gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                                                setPdfVisible(true);
-                                                                                                setDetailsModalVisible(false);
-                                                                                            }
-                                                                                        }}
-                                                                                        className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
-                                                                                    >
-                                                                                        {item?.document_name || 'Unnamed Document'}
-                                                                                    </h1>
-                                                                                </Table.Td>
-                                                                                <Table.Td className="py-2 border-dashed">
-                                                                                    {item?.year || 'N/A'}
-                                                                                </Table.Td>
-                                                                                <Table.Td className="py-2 border-dashed text-center">
-                                                                                    {item?.document_url && (
-                                                                                        <Tippy content="View Document" options={{ theme: "light" }}>
-                                                                                            <Lucide
-                                                                                                onClick={() => {
-                                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                                                    setPdfVisible(true);
-                                                                                                    setDetailsModalVisible(false);
-                                                                                                }}
-                                                                                                icon="Eye"
-                                                                                                className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
-                                                                                            />
-                                                                                        </Tippy>
-                                                                                    )}
-                                                                                </Table.Td>
-                                                                            </>
-                                                                        )}
-                                                                        {modalType === 'case_studies' && (
-                                                                            <>
-                                                                                <Table.Td className="py-2 border-dashed">
-                                                                                    <div className="flex items-center">
-                                                                                        {item?.institution_logo_url ? (
-                                                                                            <img
-                                                                                                alt="Institution Logo"
-                                                                                                className="w-6 h-6 rounded-full object-contain mr-3"
-                                                                                                src={item?.institution_logo_url}
-                                                                                            />
-                                                                                        ) : (
-                                                                                            <div className="w-6 h-6 rounded-full bg-gray-200 mr-3"></div>
-                                                                                        )}
-                                                                                        <span>{item?.institution_name || 'N/A'}</span>
-                                                                                    </div>
-                                                                                </Table.Td>
-                                                                                <Table.Td className="py-2 border-dashed">
-                                                                                    {item?.year || 'N/A'}
-                                                                                </Table.Td>
-                                                                                <Table.Td className="py-2 border-dashed">
-                                                                                    {item?.esg_themes || 'N/A'}
-                                                                                </Table.Td>
-                                                                                <Table.Td className="py-2 border-dashed text-center">
-                                                                                    <Tippy content="View Details" options={{ theme: "light" }}>
-                                                                                        <Lucide
-                                                                                            onClick={() => {
-                                                                                                setCaseProxyModalVisible(true);
-                                                                                                setCaseProxyModalData(item);
-                                                                                            }}
-                                                                                            icon="Eye"
-                                                                                            className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
-                                                                                        />
-                                                                                    </Tippy>
-                                                                                </Table.Td>
-                                                                            </>
-                                                                        )}
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            <div className="flex items-center">
+                                                                                {item?.institution_logo_url ? (
+                                                                                    <img
+                                                                                        alt="Institution Logo"
+                                                                                        className="w-6 h-6 rounded-full object-contain mr-3"
+                                                                                        src={item?.institution_logo_url}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="w-6 h-6 rounded-full bg-gray-200 mr-3"></div>
+                                                                                )}
+                                                                                <span>{item?.institution_name || 'N/A'}</span>
+                                                                            </div>
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.year || 'N/A'}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed">
+                                                                            {item?.esg_themes || 'N/A'}
+                                                                        </Table.Td>
+                                                                        <Table.Td className="py-2 border-dashed text-center">
+                                                                            <Tippy content="View Details" options={{ theme: "light" }}>
+                                                                                <Lucide
+                                                                                    onClick={() => {
+                                                                                        setCaseProxyModalVisible(true);
+                                                                                        setCaseProxyModalData(item);
+                                                                                    }}
+                                                                                    icon="Eye"
+                                                                                    className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
+                                                                                />
+                                                                            </Tippy>
+                                                                        </Table.Td>
                                                                     </Table.Tr>
                                                                 ))}
                                                             </Table.Tbody>
@@ -2144,11 +2185,13 @@ const index = () => {
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-12">
-                                            <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Data Available</h3>
-                                            <p className="text-gray-500">No {modalTitle.toLowerCase()} found for {selectedCompany?.company_name}.</p>
-                                        </div>
+                                        !modalLoading && (
+                                            <div className="text-center py-12">
+                                                <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                <h3 className="text-lg font-medium text-gray-900 mb-1">No Data Available</h3>
+                                                <p className="text-gray-500">No {modalTitle.toLowerCase()} found for {selectedCompany?.company_name}.</p>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             )}

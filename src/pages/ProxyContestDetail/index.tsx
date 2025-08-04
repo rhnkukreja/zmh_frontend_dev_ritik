@@ -26,7 +26,7 @@ const ProxyContestDetail = () => {
     // State for all data
     const [loading, setLoading] = useState(false);
     const [documentsData, setDocumentsData] = useState<any>(null);
-    const [meetingDetailsData, setMeetingDetailsData] = useState<any[]>([]);
+    const [meetingDetailsData, setMeetingDetailsData] = useState<any>(null);
     const [caseStudiesData, setCaseStudiesData] = useState<any[]>([]);
     const [proxyAdvisoryData, setProxyAdvisoryData] = useState<any[]>([]);
     
@@ -77,13 +77,13 @@ const ProxyContestDetail = () => {
                 }),
 
             // Fetch Meeting Details
-            customAxios.get(`/voting_report_8k/?company_name=${companyName}`)
+            customAxios.get(`/voting_report_8k/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&year=${encodeURIComponent(company.year)}`)
                 .then(response => {
-                    setMeetingDetailsData(response.data?.Activism_Presentation || []);
+                    setMeetingDetailsData(response.data);
                 })
                 .catch(error => {
                     console.log("Meeting details API error - this is normal if no data exists");
-                    setMeetingDetailsData([]);
+                    setMeetingDetailsData(null);
                 }),
 
             // Fetch Case Studies
@@ -145,7 +145,7 @@ const ProxyContestDetail = () => {
                                 {company.company_name}
                             </div>
                             <p className="text-gray-600 mt-2">
-                                Meeting Date: {new Date(company.meeting_date).toLocaleDateString('en-US')}
+                                Meeting Date: {company.meeting_date}
                             </p>
                         </div>
                     </div>
@@ -227,7 +227,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {issData?.management && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -236,7 +236,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {issData?.activist && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -245,7 +245,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center border-r border-gray-100">
                                                                     {issData?.split && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -255,7 +255,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {glData?.management && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -264,7 +264,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {glData?.activist && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -273,7 +273,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {glData?.split && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -410,66 +410,103 @@ const ProxyContestDetail = () => {
                         </div>
 
                         {/* Meeting Details */}
-                        {meetingDetailsData.length > 0 && (
+                        {meetingDetailsData && (meetingDetailsData.company || meetingDetailsData.nominees || meetingDetailsData.proposals) && (
                             <div className="box p-5">
                                 <div className="flex justify-between items-center mb-4">
                                     <h2 className="text-lg font-bold">Meeting Details</h2>
                                 </div>
-                                <TableWrapper>
-                                    <div className="overflow-x-auto">
-                                        <Table>
-                                            <Table.Thead>
-                                                <Table.Tr>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                        Document Name
-                                                    </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                        Year
-                                                    </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
-                                                        View
-                                                    </Table.Td>
-                                                </Table.Tr>
-                                            </Table.Thead>
-                                            <Table.Tbody>
-                                                {meetingDetailsData.map((item: any, index: number) => (
-                                                    <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
-                                                        <Table.Td className="py-2 border-dashed">
-                                                            <h1
-                                                                onClick={() => {
-                                                                    if (item?.document_url) {
-                                                                        gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                        setPdfVisible(true);
-                                                                    }
-                                                                }}
-                                                                className={`font-medium ${item?.document_url ? 'cursor-pointer hover:underline text-blue-600' : 'text-gray-700'}`}
-                                                            >
-                                                                {item?.document_name || 'Unnamed Document'}
-                                                            </h1>
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed">
-                                                            {item?.year || 'N/A'}
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed text-center">
-                                                            {item?.document_url && (
-                                                                <Tippy content="View Document" options={{ theme: "light" }}>
-                                                                    <Lucide
-                                                                        onClick={() => {
-                                                                            gotoDetailPage(item.document_url, item.document_name || 'Document');
-                                                                            setPdfVisible(true);
-                                                                        }}
-                                                                        icon="Eye"
-                                                                        className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
-                                                                    />
-                                                                </Tippy>
-                                                            )}
-                                                        </Table.Td>
-                                                    </Table.Tr>
-                                                ))}
-                                            </Table.Tbody>
-                                        </Table>
-                                    </div>
-                                </TableWrapper>
+                                <div className="space-y-6">
+                                    {/* Company Information */}
+                                    {meetingDetailsData.company && meetingDetailsData.company.length > 0 && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                Company Information
+                                            </h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                {meetingDetailsData.company.map((companyInfo: any, index: number) => {
+                                                    const companyName = Object.keys(companyInfo)[0];
+                                                    const meetingInfo = companyInfo[companyName];
+                                                    return (
+                                                        <div key={index} className="text-sm">
+                                                            <p><strong>Company:</strong> {companyName}</p>
+                                                            <p><strong>Meeting:</strong> {meetingInfo}</p>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Nominees Section */}
+                                    {meetingDetailsData.nominees && meetingDetailsData.nominees.length > 0 && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                Nominees
+                                            </h3>
+                                            <TableWrapper>
+                                                <div className="overflow-x-auto">
+                                                    <Table>
+                                                        <Table.Thead>
+                                                            <Table.Tr>
+                                                                {meetingDetailsData.nominees_headers?.map((header: any, index: number) => (
+                                                                    <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] ${index === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                        {header.header}
+                                                                    </Table.Td>
+                                                                ))}
+                                                            </Table.Tr>
+                                                        </Table.Thead>
+                                                        <Table.Tbody>
+                                                            {meetingDetailsData.nominees.map((nominee: any, index: number) => (
+                                                                <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                    {meetingDetailsData.nominees_headers?.map((header: any, headerIndex: number) => (
+                                                                        <Table.Td key={headerIndex} className={`py-2 border-dashed ${headerIndex === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                            {nominee[header.field] || 'N/A'}
+                                                                        </Table.Td>
+                                                                    ))}
+                                                                </Table.Tr>
+                                                            ))}
+                                                        </Table.Tbody>
+                                                    </Table>
+                                                </div>
+                                            </TableWrapper>
+                                        </div>
+                                    )}
+
+                                    {/* Proposals Section */}
+                                    {meetingDetailsData.proposals && meetingDetailsData.proposals.length > 0 && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                Proposals
+                                            </h3>
+                                            <TableWrapper>
+                                                <div className="overflow-x-auto">
+                                                    <Table>
+                                                        <Table.Thead>
+                                                            <Table.Tr>
+                                                                {meetingDetailsData.proposals_headers?.map((header: any, index: number) => (
+                                                                    <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] ${index === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                        {header.header}
+                                                                    </Table.Td>
+                                                                ))}
+                                                            </Table.Tr>
+                                                        </Table.Thead>
+                                                        <Table.Tbody>
+                                                            {meetingDetailsData.proposals.map((proposal: any, index: number) => (
+                                                                <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                    {meetingDetailsData.proposals_headers?.map((header: any, headerIndex: number) => (
+                                                                        <Table.Td key={headerIndex} className={`py-2 border-dashed ${headerIndex === 0 ? 'min-w-[250px] max-w-[300px]' : ''}`}>
+                                                                            {proposal[header.field] || 'N/A'}
+                                                                        </Table.Td>
+                                                                    ))}
+                                                                </Table.Tr>
+                                                            ))}
+                                                        </Table.Tbody>
+                                                    </Table>
+                                                </div>
+                                            </TableWrapper>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -553,7 +590,7 @@ const ProxyContestDetail = () => {
                          proxyAdvisoryData.length === 0 && 
                          (!documentsData?.Activism_Presentation?.length) && 
                          (!documentsData?.Activism_Press_Release?.length) && 
-                         meetingDetailsData.length === 0 && 
+                         (!meetingDetailsData || (!meetingDetailsData.company && !meetingDetailsData.nominees && !meetingDetailsData.proposals)) && 
                          caseStudiesData.length === 0 && (
                             <div className="box p-5">
                                 <div className="text-center py-12">
