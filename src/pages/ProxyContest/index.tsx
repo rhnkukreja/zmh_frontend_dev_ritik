@@ -585,11 +585,9 @@ const index = () => {
                 Back
             </Button> */}
 
-            <div className="p-5 mt-1 box">
+            <div className="p-5 pt-0 mt-1 box">
 
                 <div className="w-full">
-                    <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                    </div>
                     <>
                         <Tab.Group selectedIndex={getSelectedTabIndex()}>
                             <Tab.List variant="link-tabs">
@@ -598,11 +596,7 @@ const index = () => {
                             <Tab.Panels className="mt-5">
                                 <Tab.Panel className="leading-relaxed">
                                     {/* Proxy Contest Companies Table */}
-                                    <div className="box p-5 mb-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h2 className="text-lg font-medium">Proxy Contest Companies</h2>
-                                        </div>
-
+                                    <div>
                                         {proxyContestLoading ? (
                                             <div className="h-52 flex items-center justify-center">
                                                 <LoadingIcon icon="three-dots" className="w-8 h-8" />
@@ -610,7 +604,7 @@ const index = () => {
                                         ) : (
                                             <>
                                                 <TableWrapper isLoading={proxyContestLoading}>
-                                                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                                                    <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
                                                         <Table>
                                                             <Table.Thead>
                                                                 <Table.Tr className="bg-primary text-white text-sm">
@@ -650,9 +644,13 @@ const index = () => {
                                                                                 </div>
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
-                                                                                <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
-                                                                                    {company.meeting_date}
-                                                                                </span>
+                                                                                {company.meeting_date ? (
+                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                                                                                        {company.meeting_date}
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    <span className="text-gray-400 text-xs">-</span>
+                                                                                )}
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
                                                                                 <div className="flex gap-2">
