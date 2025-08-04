@@ -174,6 +174,8 @@ const index = () => {
 
         try {
             let apiUrl = '';
+            const encodedCompanyArray = encodeURIComponent(JSON.stringify([company.company_name]));
+            const encodedYear = encodeURIComponent(company.year);
             switch (type) {
                 case 'documents':
                     setModalTitle('Documents');
@@ -182,7 +184,7 @@ const index = () => {
 
                 case 'meeting_details':
                     setModalTitle('Meeting Details');
-                    apiUrl = `/voting_report_8k/?company_name=${encodeURIComponent(company.company_name)}`;
+                    apiUrl = `/voting_report_8k/?company_name=${encodedCompanyArray}&year=${encodedYear}`;
                     break;
 
                 case 'case_studies':
@@ -649,7 +651,8 @@ const index = () => {
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
                                                                                 <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
-                                                                                    {new Date(company.meeting_date).toLocaleDateString('en-US')}
+                                                                                    {/* {new Date(company.meeting_date).toLocaleDateString('en-US')} */}
+                                                                                    {company.meeting_date}
                                                                                 </span>
                                                                             </Table.Td>
                                                                             <Table.Td className="py-2 border-dashed">
