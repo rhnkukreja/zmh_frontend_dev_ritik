@@ -227,7 +227,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {issData?.management && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -236,7 +236,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {issData?.activist && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -245,7 +245,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center border-r border-gray-100">
                                                                     {issData?.split && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -255,7 +255,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {glData?.management && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -264,7 +264,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {glData?.activist && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
@@ -273,7 +273,7 @@ const ProxyContestDetail = () => {
                                                                 <Table.Td className="px-4 py-4 text-center">
                                                                     {glData?.split && (
                                                                         <div className="flex items-center justify-center">
-                                                                            <div className="bg-primary font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                            <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
                                                                                 &#10004;
                                                                             </div>
                                                                         </div>
