@@ -114,7 +114,7 @@ const initialState: any = {
       title: "Proxy Contest",
     },
     {
-      icon: "HelpCircle",
+      icon: "Mail",
       pathname: "#",
       title: "Email Alert",
     },
