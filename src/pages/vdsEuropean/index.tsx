@@ -632,7 +632,7 @@ const index = () => {
     const institution_name = query.get("institution_name");
 
     const analyticsYear = query.get("year");
-    console.log(institution_name ,analyticsYear  ,"=>here" )
+
 
     if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
       const savedAnalytics = localStorage.getItem("vdsEuropeanAnalyticsFilters");
