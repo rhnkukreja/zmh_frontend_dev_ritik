@@ -627,6 +627,13 @@ const index = () => {
 
   // On initial mount, set default analytics filter to BlackRock and S&P 500, or restore from localStorage
   useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+
+    const institution_name = query.get("institution_name");
+
+    const analyticsYear = query.get("year");
+
+
     if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
       const savedAnalytics = localStorage.getItem("vdsEuropeanAnalyticsFilters");
       if (savedAnalytics) {
@@ -639,6 +646,16 @@ const index = () => {
           return;
         } catch (e) { }
       }
+      if (institution_name) {
+      setAllAnalyticsFilter({
+        institution_name: [institution_name],
+        analyticsYear: analyticsYear ? [analyticsYear] : [],
+      });
+      setValue("institution_name", [institution_name]);
+      setValue("index_name", []);
+      setValue("analyticsYear", [analyticsYear]);
+      setValue("date_range", "");
+    }else{
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
@@ -650,9 +667,11 @@ const index = () => {
       setValue("analyticsYear", ["2025"]);
       setValue("date_range", "");
     }
+     
+    }
     // eslint-disable-next-line
   }, [isViewAnalysis]);
-
+ 
   const getAllCaseStudyDropdowns = async () => {
     try {
       setGetDropdownLoader(true);
