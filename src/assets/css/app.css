@@ -51,9 +51,39 @@ body {
 }
 .sticky-table {
   position: sticky;
-
   top: 0;
   z-index: 10;
+}
+
+/* Standardized Table Header Styles */
+.bg-header {
+  background-color: #f8fafc;
+  background-image: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.border-header {
+  border-color: #e2e8f0;
+}
+
+/* Table row hover effects */
+.table-row-hover:hover {
+  background-color: #f8fafc;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Standardized table cell padding and typography */
+.table-cell-standard {
+  padding: 12px 20px;
+  vertical-align: middle;
+}
+
+.table-header-standard {
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 *::-webkit-scrollbar {

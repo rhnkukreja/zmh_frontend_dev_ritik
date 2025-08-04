@@ -15,7 +15,7 @@ interface CreatableInputSelectProps {
 }
 
 const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
-  placeholder = "Type and press enter...",
+  placeholder = "Type Keywords",
   value,
   onChange,
 }) => {

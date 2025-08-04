@@ -3,14 +3,17 @@ import clsx from "clsx";
 import { convertToTitleCase } from "@/utils/helper";
 import Lucide from "../Base/Lucide";
 import { useAppSelector } from "@/stores/hooks";
+import { FaTimes } from "react-icons/fa";
 
 interface FilterChipsProps {
   filters: { key: string; value: string | number }[];
   onRemove: (key: string, value: string | number) => void;
+  showProxyYear?: boolean; // true only for ShareHolder page
 }
 
-const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
+const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyYear }) => {
   if (!filters.length) return null;
+  // Only use tab for ShareHolder page, otherwise ignore
   const { tab } = useAppSelector((state) => state.sharedHolderNoAction);
   const changeCase = (str: string) => {
     if (
@@ -26,31 +29,28 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove }) => {
       {filters.map((filter, index) => (
         <div
           key={index}
-          className={clsx([
-            "flex gap-2.5 items-center px-3.5 py-1.5 border rounded-lg border-slate-300 bg-slate-50/70",
-            "[&.active]:bg-primary/5 [&.active]:border-primary/50 [&.active]:text-primary [&:not(.active)_a]:hidden",
-          ])}
+          className={"flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20"}
         >
-          <span className="font-semibold text-gray-600">
+          <span>
             {filter.key === "outcome_percentage"
               ? "Shareholder Meeting Held"
-              : (filter.key === "proxy_season" || filter.key === "year") &&
-                tab !== "withdrawn"
-              ? "Proxy Year"
-              : (filter.key === "proxy_season" || filter.key === "year") &&
-                tab == "withdrawn"
-              ? "Year"
-              : convertToTitleCase(filter.key)}
+              : (filter.key === "proxy_season" || filter.key === "year") && showProxyYear && tab !== "withdrawn"
+                ? "Proxy Year"
+                : (filter.key === "proxy_season" || filter.key === "year") && showProxyYear && tab == "withdrawn"
+                  ? "Year"
+                  : (filter.key === "proxy_season" || filter.key === "year") && !showProxyYear
+                    ? "Year"
+                    : convertToTitleCase(filter.key)}
             :
           </span>
-          <span className="font-bold">
-            {changeCase(filter.key) ? convertToTitleCase(String(filter.value)): filter.value}
+          <span className="ml-2">
+            {filter.value === undefined || filter.value === null || filter.value === "" || (Array.isArray(filter.value) && filter.value.length === 0)
+              ? "-"
+              : changeCase(filter.key)
+                ? String(filter.value)
+                : filter.value}
           </span>
-          <Lucide
-            icon="X"
-            className="w-4 h-4 text-red-500 -mr-1 cursor-pointer"
-            onClick={() => onRemove(filter.key, filter.value)}
-          />
+          <FaTimes className="text-xs ml-2" onClick={() => onRemove(filter.key, filter.value)} />
         </div>
       ))}
     </div>

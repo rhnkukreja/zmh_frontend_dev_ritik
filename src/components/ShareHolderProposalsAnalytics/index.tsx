@@ -18,9 +18,11 @@ import {
 import LoadingIcon from "../Base/LoadingIcon";
 
 import OutcomePieChart from "../OutcomePieChart";
+import Lucide from "../Base/Lucide";
+import Pill from "../Pill";
 
 interface ShareHolderProposalAnalyticsComponentProps {
-  proposalCounts: { [key: string]: number };
+  proposalCounts: { total_proposals: number;[key: string]: any };
   topSubcategories: { [key: string]: any[] };
   topCategories: any[];
   yearlySummary: any[];
@@ -67,7 +69,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
     const formatWithCommas = (value: number): string => {
       return value.toLocaleString();
     };
-const chartKey = tab === "proposal"  ? "proxy_season" : "year"
+    const chartKey = tab === "proposal" ? "proxy_season" : "year"
     if (
       !isDataAvailable(proposalCounts) &&
       !isDataAvailable(topSubcategories) &&
@@ -75,15 +77,17 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
       !isDataAvailable(yearlySummary)
     ) {
       return (
-        <div className="flex items-center justify-center h-full mb-10">
-          <h2 className="text-xl font-semibold text-gray-600">
-            No Analytics Available
-          </h2>
+        <div className="flex flex-col items-center justify-center py-12">
+          <Lucide
+            icon="BarChart3"
+            className="w-12 h-12 text-gray-300 mb-2"
+          />
+          <div className="text-lg font-medium">No Analytics found</div>
         </div>
       );
     }
     const [outcomeData, setOutcomeData] = useState([]);
-  
+
 
 
 
@@ -131,7 +135,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
         };
       })
     );
- 
+
 
 
     if (!yearlySummary) {
@@ -141,17 +145,63 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
 
 
 
+    // Custom label for count and percentage together above the bar
+    const CountAndPercentLabel = (props: any) => {
+      const { x, width, value, index } = props;
+      const chartData = tab == "proposal"
+        ? yearlySummary?.filter((item) => item[chartKey] >= 2022)
+        : yearlySummary?.filter((item) => item[chartKey] >= 2022).reverse();
+      const data = chartData && chartData[index];
+      const count = value;
+      const percent = data && data.avg_support !== undefined ? data.avg_support : undefined;
+      const labelY = 20;
+      const lineY = labelY + 6; // 6px below the label
+      return (
+        <g>
+          <text
+            x={x + width / 2}
+            y={labelY}
+            textAnchor="middle"
+            fill="black"
+            fontSize={11}
+            fontWeight={500}
+          >
+            {count}
+            {percent !== undefined ? ` - ${percent.toFixed(1)}%` : ''}
+          </text>
+          <line
+            x1={x + width / 2 - 16}
+            x2={x + width / 2 + 16}
+            y1={lineY}
+            y2={lineY}
+            stroke="#888"
+            strokeWidth={2}
+          />
+        </g>
+      );
+    };
+
     return (
       <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
-
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-          {tab == "proposal"
-            ? "Shareholder Proposal Analytics (Beta)"
-            : "No Action Letter Analytics (Beta) "}
-        </h2>
-        {loading ? (
+        {tab == "proposal"
+          ? <h1 className="text-xl font-semibold flex items-center gap-2 mb-4">
+            All Shareholder Proposals
+            <Pill text="Beta" />
+          </h1>
+          : <h1 className="text-xl font-semibold flex items-center gap-2  mb-4">
+            All No Action Letters
+            <Pill text="Beta" />
+          </h1>}
+        {proposalCounts.total_proposals === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Lucide
+              icon="BarChart3"
+              className="w-12 h-12 text-gray-300 mb-2"
+            />
+            <div className="text-lg font-medium">No Analytics found</div>
+          </div>
+        ) : loading ? (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-            {" "}
             <LoadingIcon
               color="#800000"
               icon="three-dots"
@@ -166,7 +216,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                 } gap-6 mb-12`}
             >
               {/* 1. Yearly Proposal Trends - Bar Chart */}
-              <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
                   {tab == "proposal"
                     ? "Yearly Proposal Trend"
@@ -175,20 +225,19 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                 {isDataAvailable(yearlySummary) ? (
                   yearlySummary.length === 1 ? (
                     <p className="text-lg font-semibold text-gray-700">
-                      {formatNumberWithCommas(yearlySummary[0].count)} Proposals
+                      {formatNumberWithCommas(yearlySummary[0].count)} {yearlySummary[0].count === 1 ? 'Proposal' : 'Proposals'}
                     </p>
                   ) : (
                     <ResponsiveContainer width="100%" height={250}>
-                     
-                       <ComposedChart
-                      data={tab == "proposal" ? [
-                        ...yearlySummary?.filter((item) => item[chartKey] >= 2022),
-                      ]: [
-                        ...yearlySummary?.filter((item) => item[chartKey] >= 2022),
-                      ].reverse()}
-                      margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
-                    >
-                        <XAxis dataKey={chartKey}  />
+                      <ComposedChart
+                        data={
+                          tab == "proposal"
+                            ? [...yearlySummary?.filter((item) => item[chartKey] >= 2022)]
+                            : [...yearlySummary?.filter((item) => item[chartKey] >= 2022)].reverse()
+                        }
+                        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                      >
+                        <XAxis dataKey={chartKey} dy={12} height={40} />
                         <YAxis
                           yAxisId="left"
                           label={{
@@ -219,9 +268,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                         >
                           <LabelList
                             dataKey="count"
-                            position="top"
-                            fill="black"
-                            fontSize={12}
+                            content={CountAndPercentLabel}
                           />
                         </Bar>
                         {tab == "proposal" && (
@@ -233,17 +280,8 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                             strokeWidth={2}
                             dot={{ r: 4 }}
                             name="Avg. Support (%)"
-                          >
-                            <LabelList
-                              dataKey="avg_support"
-                              position="bottom"
-                              fill="white"
-                              fontSize={12}
-                              formatter={(value) => `${value.toFixed(1)}%`}
-                            />
-                          </Line>
+                          />
                         )}
-
                         {tab == "proposal" && <Legend />}
                       </ComposedChart>
                     </ResponsiveContainer>
@@ -253,9 +291,8 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                 )}
               </div>
 
-
               {/* 2. Proposal Distribution Pie Chart */}
-              <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+              <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
                   {tab == "proposal"
                     ? "Proposal Distribution by Category"
@@ -329,57 +366,11 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
 
               {/* 3. Outcome Distribution Pie Chart */}
               {tab !== "proposal" && (
-                <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col items-center w-full">
+                <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                   <h3 className="text-lg font-semibold mb-4">
                     Outcome Distribution
                   </h3>
                   <OutcomePieChart pieChartOutcome={pieChartOutcome} />
-                  {/* <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={outcomeData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={75}
-                      label={({
-                        cx,
-                        cy,
-                        midAngle,
-                        innerRadius,
-                        outerRadius,
-                        name,
-                        value,
-                        index,
-                      }) => {
-                        const RADIAN = Math.PI / 180;
-                        const radius =
-                          innerRadius + (outerRadius - innerRadius) * 1.1;
-                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                        return (
-                          <text
-                            x={x}
-                            y={y}
-                            fill={outcomeData[index].color}
-                            textAnchor={x > cx ? "start" : "end"}
-                            dominantBaseline="central"
-                            fontSize={13}
-                          >
-                            {`${name}: ${formatWithCommas(value)}`}
-                          </text>
-                        );
-                      }}
-                      labelLine={false}
-                    >
-                      {outcomeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer> */}
                 </div>
               )}
             </div>
@@ -391,7 +382,7 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                   ([category, subcategories]) => (
                     <div
                       key={category}
-                      className="bg-gray-100 p-4 rounded-lg shadow-md"
+                      className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100"
                     >
                       <h4 className="text-md font-semibold mb-2">
                         {category === "Environment" ? "Environmental" : category}
@@ -399,12 +390,12 @@ const chartKey = tab === "proposal"  ? "proxy_season" : "year"
                       {isDataAvailable(subcategories) ? (
                         <div className="overflow-x-auto">
                           <table className="w-full border-collapse border border-gray-300">
-                            <thead className="bg-gray-200">
-                              <tr>
-                                <th className="border p-2 text-left">
+                            <thead>
+                              <tr className="bg-primary text-white text-sm">
+                                <th className="px-4 py-2 text-left font-medium">
                                   Subcategory
                                 </th>
-                                <th className="border p-2">Count</th>
+                                <th className="px-4 py-2 text-left font-medium">Count</th>
                               </tr>
                             </thead>
                             <tbody>

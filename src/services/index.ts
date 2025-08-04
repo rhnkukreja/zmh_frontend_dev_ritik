@@ -92,6 +92,12 @@ class AxiosServiceConfig {
           let errorMessage = "";
 
           if (error.response) {
+            // Don't show toast for 404 errors - they're normal when no data exists
+            if (error.response.status === 404) {
+              console.log("404 error - no data found, this is normal");
+              return Promise.reject(error);
+            }
+
             const { data } = error.response as any;
             if (typeof data === "string") {
               errorMessage = data;

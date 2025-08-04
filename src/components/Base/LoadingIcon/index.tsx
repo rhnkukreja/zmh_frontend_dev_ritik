@@ -20,8 +20,8 @@ interface LoadingIconProps extends React.ComponentPropsWithoutRef<"span"> {
 }
 
 function LoadingIcon({
-  icon = "audio",
-  color = "#2d3748",
+  icon = "three-dots",
+  color = "#9f1239",
   ...computedProps
 }: LoadingIconProps) {
   const props = {

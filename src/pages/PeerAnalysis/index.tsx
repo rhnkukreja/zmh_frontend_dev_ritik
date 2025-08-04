@@ -39,6 +39,9 @@ import { peerAnalysisService } from "@/services/peerAnalysis";
 import clsx from "clsx";
 import ChartComponent from "@/components/EnagementDetailsDialog";
 import FilterChips from "@/components/FilterChips";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
+import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 
 
@@ -63,7 +66,7 @@ function PeerAnalysis() {
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [viewAll, setViewAll] = useState<boolean>(false);
-  const [isViewAnalysis, setIsViewAnalysis] = useState(false);
+  const [isViewAnalysis, setIsViewAnalysis] = useState(true);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
@@ -112,7 +115,6 @@ function PeerAnalysis() {
       country: filters.country,
       institutes: filters?.institutes,
       index: filters?.index ?? " "
-
     },
   });
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
@@ -334,9 +336,14 @@ function PeerAnalysis() {
   };
 
   const onSubmit = async (peerAnalysisFilters: PeerAnalysisFilter) => {
+    // Remove index if empty or blank
+    const filtersToApply = { ...peerAnalysisFilters };
+    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "") {
+      delete filtersToApply.index;
+    }
     dispatch(
       setAllFilters({
-        ...peerAnalysisFilters,
+        ...filtersToApply,
         institution_name: selectedInstitution,
         global_search: isAllCompanySelected
           ? Array.isArray(peerAnalysisFilters?.global_search) &&
@@ -396,61 +403,74 @@ function PeerAnalysis() {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
         (item) => item !== removeValue
       );
+      setValue(removeKey, updatedFilters[removeKey]);
     } else if (updatedFilters[removeKey] === removeValue) {
       if (removeKey === "index") {
-        updatedFilters[removeKey] = " ";
+        // Remove index completely if empty or blank
+        delete updatedFilters[removeKey];
+        setValue(removeKey, undefined);
       } else {
         updatedFilters[removeKey] = "";
+        setValue(removeKey, "");
       }
+    } else {
+      setValue(removeKey, updatedFilters[removeKey]);
     }
 
-    setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   }
 
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-        
-        <div className="col-span-12">
-          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            {isAllCompanySelected === true ? (
-              <div className="font-semibold text-xl">
-                All Engagement Details
-              </div>
-            ) : (
-              <div className="font-semibold text-xl">Engagement Detail</div>
-            )}
 
-            <div className="flex items-center">
-              <Tippy
-                content="All Companies"
-                options={{
-                  theme: "light",
-                }}
-              >
-                <div className="mt-2">
-                  <FormSwitch>
-                    <label className="text-md mr-3 font-semibold">
-                      View All
-                    </label>
-                    <FormSwitch.Input
-                      id="checkbox-switch-7"
-                      type="checkbox"
-                      checked={isAllCompanySelected}
-                      onChange={async (e) => {
-                        handleViewAllChange(e);
-                      }}
-                    />
-                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
-                  </FormSwitch>
+        <div className="col-span-12">
+          <div className="overflow-auto xl:overflow-visible mt-4">
+            <div className="w-full pt-5">
+              <div>
+                <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
+                    onClick={async (e) => {
+                      if (isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: false } });
+                      }
+                    }}
+                  >
+                    {companyGlobalSearchName || "Company"} Engagement Details
+                  </button>
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                        ? "bg-primary text-white shadow"
+                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
+                    onClick={async (e) => {
+                      if (!isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: true } });
+                      }
+                    }}
+                  >
+                    View For All Companies
+                  </button>
                 </div>
-              </Tippy>
+              </div>
             </div>
           </div>
 
-          <div className="mt-3.5">
-            <div className="flex flex-col box box--stacked">
+          <div className="mt-3.5 relative">
+            <div className="flex flex-col box box--stacked bg-white p-5">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+                {isAllCompanySelected === true ? (
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    All Engagement Details
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-lg">Engagement Details</div>
+                )}
+              </div>
 
               <div className="grid grid-cols-6 xs:grid-cols-1 gap-4 md:grid-cols-3 p-4">
                 <div className="mx-2">
@@ -589,29 +609,13 @@ function PeerAnalysis() {
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="filter-section mb-5">
-                    <div className="flex items-center justify-end mt-2 mb-4">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          onFilterClear();
-                        }}
-                        className="w-32 mx-2"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-32 mx-2"
-                        type="submit"
-                      >
-                        Apply
-                      </Button>
-                    </div>
+                  <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-3' : 'md:grid-cols-3'])}>
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Year</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaCalendarAlt className="text-gray-400" /> Year
+                          </span>
                           {apiDropdownOptions?.year?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -647,20 +651,17 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                               <MultiSelectDropdown
-                                                    data={apiDropdownOptions?.year}
-                                                    placeholder="Select Year"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.year?.map(String) || []}
+                              placeholder="Select Year"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   onChange={(value) => {
@@ -696,7 +697,9 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Category</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaTags className="text-gray-400" /> Category
+                          </span>
 
 
                           {apiDropdownOptions?.category?.length >
@@ -735,20 +738,20 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                             <MultiSelectDropdown
-                                                    data={apiDropdownOptions?.category}
-                                                    placeholder="Select Category"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                      
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.category}
+                              placeholder="Select Category"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+
+
+
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   onChange={(value) => {
@@ -786,7 +789,9 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className=" font-semibold">Country</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaLayerGroup className="text-gray-400" /> Country
+                          </span>
 
 
                           {apiDropdownOptions?.country?.length >
@@ -825,20 +830,20 @@ function PeerAnalysis() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                             <MultiSelectDropdown
-                                                    data={apiDropdownOptions?.country}
-                                                    placeholder="Select Country"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                  
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.country}
+                              placeholder="Select Country"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+
+
+
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   onChange={(value) => {
@@ -876,42 +881,24 @@ function PeerAnalysis() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Index</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaLayerGroup className="text-gray-400" /> Index
+                          </span>
                         </div>
                         <Controller
                           name="index"
                           control={control}
-                          defaultValue={""}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || ""}
-                              onChange={(value) => {
-                                field.onChange(value);
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.index?.map((item: any) => item)}
+                              placeholder="Select Index"
+                              loading={false}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
                               }}
-                              options={{
-                                placeholder: "Select Index",
-                              }}
-                              className="w-full"
-                              multiple={false}
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.index?.map(
-                                    (index: string) => {
-                                      return (
-                                        <option value={index}>
-                                          {index}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
+                              selectedOption={field.value || []}
+                            />
                           )}
                         />
                       </div>
@@ -919,7 +906,9 @@ function PeerAnalysis() {
                         isAllCompanySelected === true &&
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">Sector</span>
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaBuilding className="text-gray-400" /> Sector
+                            </span>
                             {apiDropdownOptions?.sector?.length >
                               0 && (
                                 <div>
@@ -1003,48 +992,82 @@ function PeerAnalysis() {
                         </div>
                       }
                     </div>
+
+                    {/* Buttons */}
+                    <div className="flex justify-end gap-3 mt-6">
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => {
+                          onFilterClear();
+                          close();
+                        }}
+                        className="w-36"
+                        type="button"
+                      >
+                        <MdOutlineClear className="text-lg mr-1" /> Clear
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
+                        type="submit"
+                      >
+                        <FaSearch className="text-lg" /> Apply
+                      </Button>
+                    </div>
                   </div>
                 </form>
               )}
 
-              {isViewAnalysis && <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />}
+              {isViewAnalysis && (
+                peerAnalysisData?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Lucide
+                      icon="BarChart3"
+                      className="w-12 h-12 text-gray-300 mb-2"
+                    />
+                    <div className="text-lg font-medium">No Analytics found</div>
+                  </div>
+                ) : (
+                  <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />
+                )
+              )}
 
               <div className=" px-5">
                 <TableWrapper isLoading={loading}>
-                  <div className="overflow-auto max-h-[400px]">
+                  <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
-                        <Table.Tr>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                        <Table.Tr className="bg-primary text-white">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Institution
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Year
                           </Table.Td>
                           {isAllCompanySelected && (
-                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                            <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Country
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Sector
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Environmental
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Social
                           </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
+                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                             Governance
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
 
-                      <Table.Tbody>
+                      <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                         {peerAnalysisData?.length > 0 &&
                           peerAnalysisData?.map((peer: TypesPeerAnalysis) => (
                             <Table.Tr key={peer?.id}>
@@ -1112,6 +1135,24 @@ function PeerAnalysis() {
                             </Table.Tr>
                           ))}
                       </Table.Tbody>
+                      {peerAnalysisData?.length === 0 && (
+                        <Table.Tbody>
+                          <Table.Tr>
+                            <Table.Td colSpan={isAllCompanySelected ? 8 : 7} className="text-center py-12">
+                              <div className="flex flex-col items-center justify-center">
+                                <Lucide
+                                  icon="FileSearch"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No data found</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Try adjusting your filters or search criteria
+                                </div>
+                              </div>
+                            </Table.Td>
+                          </Table.Tr>
+                        </Table.Tbody>
+                      )}
                     </Table>
                   </div>
                 </TableWrapper>

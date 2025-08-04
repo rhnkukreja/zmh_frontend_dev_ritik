@@ -362,24 +362,49 @@ function countValidFilters(filters: FilterObject): number {
 }
 
 
-function generateFilterChips(filterData: any) {
-  const selectedFilters: { key: string; value: any }[] = [];
-  Object.entries(filterData).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((item) => selectedFilters.push({ key, value: item }));
-    } else if (value !== undefined && value !== "" && value !== " " && value !== null) {
-      selectedFilters.push({ key, value: typeof value === "boolean" ? value.toString() : value });
-    }
-  });
+function generateFilterChips(filters: Record<string, any>) {
+  const mapping: Record<string, string> = {
+    company_name: "Company",
+    company_names: "Company",
+    institution_name: "Institution",
+    year: "Year",
+    vote: "Vote",
+    vote_type: "Vote",
+    category: "Category",
+    keyword: "Keyword",
+    index: "Index",
+    index_name: "Index",
+    proposal_type: "Proposal Type",
+    proponent_type: "Proponent Type",
+    meeting_type: "Meeting Type",
+    custom_keywords: "Keywords",
+    analyticsYear: "Year",
+    date_range: "Date Range",
+  };
 
-  return selectedFilters;
+  return Object.entries(filters)
+    .filter(([key, value]) => value && value.length !== 0 && value !== "")
+    .flatMap(([key, value]) => {
+      if (Array.isArray(value)) {
+        return value.map((v) => ({
+          key,
+          label: `${mapping[key] || key}: ${typeof v === 'object' && v.label ? v.label : v}`,
+          value: v,
+        }));
+      }
+      return {
+        key,
+        label: `${mapping[key] || key}: ${typeof value === 'object' && value.label ? value.label : value}`,
+        value,
+      };
+    });
 }
 
 function convertToTitleCase(str: string): string {
   if (!str) {
     return "";
   }
-  if (str == "global_search" || str == "company_name") {
+  if (str == "global_search" || str == "company_name" || str == "company_names") {
     return "Company"
   } else if (str == "institution_name") {
     return "Institution"
@@ -393,25 +418,25 @@ function convertToTitleCase(str: string): string {
   else if (str == "proponent_type") {
     return "Proponent Type"
   }
-   else if (str == "index_name") {
+  else if (str == "index") {
     return "Index"
   }
-   else if (str == "custom_keywords") {
+  else if (str == "custom_keywords") {
     return "Keyword"
   }
-   else if (str == "meeting_type") {
+  else if (str == "meeting_type") {
     return "Meeting Type"
   }
-   else if (str == "analyticsYear") {
+  else if (str == "analyticsYear") {
     return "Year"
   }
-   else if (str == "proposal_keywords_mapping") {
+  else if (str == "proposal_keywords_mapping") {
     return "Proposal Keywords"
   }
   else if (str == "outcome_percentage") {
     return "Outcome Percentage"
   }
-  
+
   return str
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase())
@@ -517,7 +542,7 @@ const cleanObject = (obj: Record<string, any>) => {
 };
 
 
-const groupByValue = (array: any ,key :string ,isCompany :boolean,selectedGroup :any) => {
+const groupByValue = (array: any, key: string, isCompany: boolean, selectedGroup: any) => {
   const grouped = array.reduce((acc, note) => {
     const companyName = note[key];
     if (!acc[companyName]) {
@@ -528,13 +553,13 @@ const groupByValue = (array: any ,key :string ,isCompany :boolean,selectedGroup 
   }, {});
 
   return Object.entries(grouped).map(([key, value]) => ({
- 
+
     institution_id: isCompany
       ? value[0]?.institution
       : selectedGroup?.institution_id,
     company_id: isCompany ? selectedGroup?.company_id : value[0]?.company,
-    institutionName:selectedGroup?.institutionName,
-    companyName:selectedGroup?.companyName,
+    institutionName: selectedGroup?.institutionName,
+    companyName: selectedGroup?.companyName,
     name: key,
     data: value as any[],
 

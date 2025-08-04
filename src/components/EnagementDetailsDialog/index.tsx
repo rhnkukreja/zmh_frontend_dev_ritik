@@ -43,38 +43,38 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                 <p className="text-center text-gray-500 text-lg">No Analytics available</p>
             ) : (
                 <>
-                    <div className="flex gap-6">
-                        <div className="w-3/5 overflow-auto max-h-80">
-                            <table className="w-full border-collapse border border-gray-300">
+                    <div className="flex gap-6 rounded-lg">
+                        <div className="w-3/5 overflow-auto max-h-80 rounded-lg">
+                            <table className="w-full rounded-lg shadow-md">
                                 <thead>
-                                    <tr className="bg-gray-100 text-gray-700">
-                                        <th className="border p-2 text-left">Institution</th>
-                                        <th className="border p-2">Unique Companies</th>
-                                        <th className="border p-2">Environmental</th>
-                                        <th className="border p-2">Social</th>
-                                        <th className="border p-2">Governance</th>
+                                    <tr className="bg-primary text-white text-sm">
+                                        <th className="px-4 py-2 text-left font-medium">Institution</th>
+                                        <th className="px-4 py-2 text-left font-medium">Unique Companies</th>
+                                        <th className="px-4 py-2 text-left font-medium">Environmental</th>
+                                        <th className="px-4 py-2 text-left font-medium">Social</th>
+                                        <th className="px-4 py-2 text-left font-medium">Governance</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                                     {investorData.map((investor, index) => (
                                         <tr key={index} className="text-center">
                                             <td
-                                                className="border p-2 text-left text-blue-600 cursor-pointer hover:underline"
+                                                className="p-2 text-left text-blue-600 cursor-pointer hover:underline"
                                                 onClick={() => handleSearch([investor.institution__institution])}
                                             >
                                                 {investor.institution__institution}
                                             </td>
-                                            <td className="border p-2">{formatNumberWithCommas(investor.unique_companies)}</td>
-                                            <td className="border p-2">{formatNumberWithCommas(investor.environmental)}</td>
-                                            <td className="border p-2">{formatNumberWithCommas(investor.social)}</td>
-                                            <td className="border p-2">{formatNumberWithCommas(investor.governance)}</td>
+                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.unique_companies)}</td>
+                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.environmental)}</td>
+                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.social)}</td>
+                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.governance)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
 
-                        <div className="w-6/12 flex items-center justify-center bg-gray-100 rounded-lg py-4 overflow-hidden">
+                        <div className="w-6/12 rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
                             {filteredPieChartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={260}  >
                                     <PieChart >
@@ -101,14 +101,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
 
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-                        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
-                            <h3 className="text-lg font-semibold mb-2">Governance Topics</h3>
-                            <table className="w-full border-collapse border border-gray-300">
+                        <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                            <h3 className="text-md font-semibold mb-2">Governance</h3>
+                            <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
-                                    <tr className="bg-gray-200 text-gray-700">
-                                        <th className="border p-2 text-left">Topic</th>
-                                        <th className="border p-2">Count</th>
-                                        <th className="border p-2">%</th>
+                                    <tr className="bg-primary text-white text-sm">
+                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-4 py-2 text-left font-medium">Count</th>
+                                        <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -123,14 +123,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             </table>
                         </div>
 
-                        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
-                            <h3 className="text-lg font-semibold mb-2">Environmental Topics</h3>
-                            <table className="w-full border-collapse border border-gray-300">
+                        <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                            <h3 className="text-md font-semibold mb-2">Environmental</h3>
+                            <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
-                                    <tr className="bg-gray-200 text-gray-700">
-                                        <th className="border p-2 text-left">Topic</th>
-                                        <th className="border p-2">Count</th>
-                                        <th className="border p-2">%</th>
+                                    <tr className="bg-primary text-white text-sm">
+                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-4 py-2 text-left font-medium">Count</th>
+                                        <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -144,14 +144,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 </tbody>
                             </table>
                         </div>
-                        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
-                            <h3 className="text-lg font-semibold mb-2">Social Topics</h3>
-                            <table className="w-full border-collapse border border-gray-300">
+                        <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                            <h3 className="text-md font-semibold mb-2">Social</h3>
+                            <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
-                                    <tr className="bg-gray-200 text-gray-700">
-                                        <th className="border p-2 text-left">Topic</th>
-                                        <th className="border p-2">Count</th>
-                                        <th className="border p-2">%</th>
+                                    <tr className="bg-primary text-white text-sm">
+                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-4 py-2 text-left font-medium">Count</th>
+                                        <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
                                 </thead>
                                 <tbody>

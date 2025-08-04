@@ -66,6 +66,9 @@ import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderPropo
 import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import Pill from "@/components/Pill";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
 
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -209,7 +212,8 @@ function ShareHolderProposal() {
       sub_category: filters.sub_category,
       status: filters.status,
       keyword: filters.keyword,
-      year: filters.year,
+      // Ensure year is always an array of strings
+      year: filters.year ? filters.year.map(String) : [],
       proponent_name: filters?.proponent_name,
       ready_for_review: filters?.ready_for_review,
       check_status: filters?.check_status,
@@ -219,7 +223,7 @@ function ShareHolderProposal() {
       company_status: filters?.company_status,
       head_support: filters?.head_support,
       nl_exist: filters?.nl_exist,
-      index: filters?.index ?? " ",
+      index: filters?.index ?? undefined,
       global_search:
         filters?.global_search?.map((item: string) => ({
           value: item,
@@ -243,10 +247,33 @@ function ShareHolderProposal() {
     setValue("company_status", null);
     setValue("head_support", null);
     setValue("nl_exist", null);
-    setValue("index", " ");
+    setValue("index", undefined);
   };
 
   const navigate = useNavigate();
+
+  // Helper function to check if analytics data is available
+  const isAnalyticsDataAvailable = () => {
+    if (tab === "proposal") {
+      // For proposal tab, check if there's actual meaningful data
+      const hasProposalCount = proposalsAnalytics?.total_proposals?.total_proposals && proposalsAnalytics.total_proposals.total_proposals > 0;
+      const hasCategories = proposalsAnalytics?.topCategories && Array.isArray(proposalsAnalytics.topCategories) && proposalsAnalytics.topCategories.length > 0;
+      const hasSubcategories = proposalsAnalytics?.topSubcategories && typeof proposalsAnalytics.topSubcategories === 'object' && Object.keys(proposalsAnalytics.topSubcategories).length > 0;
+      const hasYearlySummary = proposalsAnalytics?.yearlySummary && Array.isArray(proposalsAnalytics.yearlySummary) && proposalsAnalytics.yearlySummary.length > 0;
+      const hasProponents = proposalsAnalytics?.topProponents && Array.isArray(proposalsAnalytics.topProponents) && proposalsAnalytics.topProponents.length > 0;
+      
+      return hasProposalCount || hasCategories || hasSubcategories || hasYearlySummary || hasProponents;
+    } else {
+      // For no-action/withdrawn tabs, check regular data
+      const hasProposalCount = proposalCounts?.total_proposals && proposalCounts.total_proposals > 0;
+      const hasCategories = topCategories && Array.isArray(topCategories) && topCategories.length > 0;
+      const hasSubcategories = topSubcategories && typeof topSubcategories === 'object' && Object.keys(topSubcategories).length > 0;
+      const hasYearlySummary = yearlySummary && Array.isArray(yearlySummary) && yearlySummary.length > 0;
+      const hasProponents = topProponents && Array.isArray(topProponents) && topProponents.length > 0;
+      
+      return hasProposalCount || hasCategories || hasSubcategories || hasYearlySummary || hasProponents;
+    }
+  };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -347,7 +374,7 @@ function ShareHolderProposal() {
     if (isCompanySelected) {
       dispatch(selectUnSelectAllCompany(false));
       dispatch(setIsCompanySelected(false));
-      setIsViewAnalysis(false);
+      setIsViewAnalysis(true);
     }
   }, [isCompanySelected]);
   useEffect(() => {
@@ -475,10 +502,10 @@ function ShareHolderProposal() {
 
   useEffect(() => {
     if (tab == "proposal" && proposalCount == 0) {
-      setIsViewAnalysis(false);
+      setIsViewAnalysis(true);
     }
     if (tab == "no-action" && noActionCount == 0) {
-      setIsViewAnalysis(false);
+      setIsViewAnalysis(true);
     }
 
     // if (tempTab !== tab) {
@@ -872,26 +899,21 @@ function ShareHolderProposal() {
                 </div>
               </div>
             </div>
-
           </div>
-          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center mt-3">
-            {isAllCompanySelected === true ? (
-              <div className="font-semibold text-xl">
-                All Shareholder Proposals (Beta)
-              </div>
-            ) : (
-              <div className="font-semibold text-xl">Shareholder Proposals</div>
-            )}
 
-
-          </div>
-          <div className="flex gap-4">
-
-
-          </div>
           <div className="mt-3.5 relative">
-            <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col p-5  sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top: "60px" }}>
+            <div className="flex flex-col box box--stacked bg-white p-5">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+                {isAllCompanySelected === true ? (
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    All Shareholder Proposals
+                    <Pill text="Beta" />
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-lg">Shareholder Proposals</div>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-y-2 sticky z-10 bg-white " style={{ top: "60px" }}>
                 <div className="flex  ">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -1017,7 +1039,6 @@ function ShareHolderProposal() {
 
               {selectedChipFilters?.length > 0 && (
                 <>
-
                   <FilterChips
                     filters={selectedChipFilters}
                     onRemove={handleRemoveChip}
@@ -1027,26 +1048,7 @@ function ShareHolderProposal() {
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="filter-section mb-5">
-                    <div className="flex items-center justify-end mt-2 mb-3">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          onFilterClear();
-                          close();
-                        }}
-                        className="w-32 mx-2"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-32 mx-2"
-                        type="submit"
-                      >
-                        Apply
-                      </Button>
-                    </div>
+                  <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     <div
                       className={clsx([
                         "grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 md:grid-cols-4",
@@ -1054,7 +1056,9 @@ function ShareHolderProposal() {
                     >
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">{tab === "withdrawn" ? null : "Proxy "}Year</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaCalendarAlt className="text-gray-400" /> {tab === "withdrawn" ? null : "Proxy "}Year
+                          </span>
                           {apiDropdownOptions?.year?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -1064,7 +1068,7 @@ function ShareHolderProposal() {
                                   id="year"
                                   checked={
                                     apiDropdownOptions.year.length ===
-                                    watch( tab === "withdrawn" ? "year" : "proxy_season")?.length
+                                    watch(tab === "withdrawn" ? "year" : "proxy_season")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
@@ -1086,43 +1090,25 @@ function ShareHolderProposal() {
                           defaultValue={[]}
                           render={({ field }) => (
                             <MultiSelectDropdown
-                              data={apiDropdownOptions.year}
+                              data={apiDropdownOptions.year?.map(String) || []}
                               placeholder={`Select ${tab === "withdrawn" ? "" : "Proxy"} Year`}
                               loading={getDropdownLoader}
                               onChange={(selectedOptions) => {
-                                const selectedValues = selectedOptions.map((option) => option.value);
+                                // Always convert to string
+                                const selectedValues = selectedOptions.map((option) => String(option.value));
                                 field.onChange(selectedValues);
-
-
-
                               }}
                               selectedOption={field.value || []}
-
                             />
-                            // <TomSelect
-                            //   value={field.value || []}
-                            //   onChange={field.onChange}
-                            //   options={{ placeholder: `Select ${tab === "withdrawn" ? "" : "Proxy"} Year` }}
-                            //   className="w-full"
-                            //   multiple
-                            // >
-                            //   {getDropdownLoader ? (
-                            //     <option disabled>Loading...</option>
-                            //   ) : (
-                            //     apiDropdownOptions.year?.map((year) => (
-                            //       <option key={year} value={year}>
-                            //         {year}
-                            //       </option>
-                            //     ))
-                            //   )}
-                            // </TomSelect>
                           )}
                         />
                       </div>
 
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Category</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaTags className="text-gray-400" /> Category
+                          </span>
                           {apiDropdownOptions.category?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -1200,7 +1186,9 @@ function ShareHolderProposal() {
 
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Sub Category</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaListUl className="text-gray-400" /> Sub Category
+                          </span>
                           {apiSubCategoryDropdown.sub_category?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -1268,7 +1256,9 @@ function ShareHolderProposal() {
 
                       {/* <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Status</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaCheckCircle className="text-gray-400" /> Status
+                          </span>
                           {apiDropdownOptions.status?.length > 0 && (
                             <div>
                               <FormCheck className="mr-2">
@@ -1321,8 +1311,10 @@ function ShareHolderProposal() {
                       </div> */}
 
                       <div className="w-full">
-                        <div className="text-left text-slate-500 font-semibold">
-                          Keyword
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaTags className="text-gray-400" /> Keyword
+                          </span>
                         </div>
                         <Controller
                           name="keyword"
@@ -1348,8 +1340,10 @@ function ShareHolderProposal() {
 
                       {isAllCompanySelected && (
                         <div className="w-full">
-                          <div className="text-left text-slate-500 font-semibold">
-                            Companies
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaBuilding className="text-gray-400" /> Companies
+                            </span>
                           </div>
                           <Controller
                             name="global_search"
@@ -1370,40 +1364,24 @@ function ShareHolderProposal() {
                       {isAllCompanySelected && ((tab === "proposal" || tab === "no-action") && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">Index</span>
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaLayerGroup className="text-gray-400" /> Index
+                            </span>
                           </div>
                           <Controller
-                            name="index"
+                            name="index_name"
                             control={control}
-                            defaultValue={""}
                             render={({ field }) => (
-                              <TomSelect
-                                value={field.value || ""}
-                                onChange={(value) => {
-                                  field.onChange(value);
+                              <MultiSelectDropdown
+                                data={apiDropdownOptions?.index?.map((item: any) => item)}
+                                placeholder="Select Index"
+                                loading={false}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
                                 }}
-                                options={{
-                                  placeholder: "Select Index",
-                                }}
-                                className="w-full"
-                                multiple={false}
-                              >
-                                {getDropdownLoader ? (
-                                  <option value="--" disabled>
-                                    Loading...
-                                  </option>
-                                ) : (
-                                  <>
-                                    {apiDropdownOptions?.index?.map(
-                                      (index: string) => {
-                                        return (
-                                          <option value={index}>{index}</option>
-                                        );
-                                      }
-                                    )}
-                                  </>
-                                )}
-                              </TomSelect>
+                                selectedOption={field.value || []}
+                              />
                             )}
                           />
                         </div>
@@ -1411,7 +1389,9 @@ function ShareHolderProposal() {
                       {tab === "proposal" && (
                         <div className="me-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">Shareholder Meeting Held</span>
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaCalendarAlt className="text-gray-400" /> Shareholder Meeting Held
+                            </span>
                           </div>
 
                           <div className="mt-3">
@@ -1971,6 +1951,28 @@ function ShareHolderProposal() {
                         </>
                       )}
                     </div>
+                    
+                    {/* Buttons */}
+                    <div className="flex justify-end gap-3 mt-6">
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => {
+                          onFilterClear();
+                          close();
+                        }}
+                        className="w-36"
+                        type="button"
+                      >
+                        <MdOutlineClear className="text-lg mr-1" /> Clear
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
+                        type="submit"
+                      >
+                        <FaSearch className="text-lg" /> Apply
+                      </Button>
+                    </div>
                   </div>
                 </form>
               )}
@@ -2036,7 +2038,7 @@ function ShareHolderProposal() {
                           dispatch(setTabs("withdrawn"));
                           dispatch(resetPage());
                           clearNoActionFilter();
-                          setIsViewAnalysis(false);
+                          setIsViewAnalysis(true);
                           setTempTab("withdrawn");
                         }}
                       >
@@ -2099,45 +2101,80 @@ function ShareHolderProposal() {
 
                           {/* Content */}
                           <div>
-
-                            {activeTab === "shareholders" ? (
-                              <ShareHolderProposalAnalyticsComponent
-                                proposalCounts={proposalsAnalytics?.total_proposals}
-                                topSubcategories={proposalsAnalytics?.topSubcategories}
-                                topCategories={proposalsAnalytics?.topCategories}
-                                yearlySummary={proposalsAnalytics?.yearlySummary}
-                                tab={tab}
-                                isAllCompanySelected={isAllCompanySelected}
-                                loading={loadingAnalytics}
-                              />
+                            {loadingAnalytics ? (
+                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                <LoadingIcon
+                                  color="#800000"
+                                  icon="three-dots"
+                                  className="w-16 h-16"
+                                />
+                              </div>
+                            ) : !isAnalyticsDataAvailable() ? (
+                              <div className="flex flex-col items-center justify-center py-12">
+                                <Lucide
+                                  icon="BarChart3"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No Analytics found</div>
+                              </div>
+                            ) : activeTab === "shareholders" ? (
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="BarChart3"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No Analytics found</div>
+                                </div>
+                              ) : (
+                                <ShareHolderProposalAnalyticsComponent
+                                  proposalCounts={proposalsAnalytics?.total_proposals}
+                                  topSubcategories={proposalsAnalytics?.topSubcategories}
+                                  topCategories={proposalsAnalytics?.topCategories}
+                                  yearlySummary={proposalsAnalytics?.yearlySummary}
+                                  tab={tab}
+                                  isAllCompanySelected={isAllCompanySelected}
+                                  loading={loadingAnalytics}
+                                />
+                              )
                             ) : (
-                              <ProponentsAnalyticsComponent
-                                topProponents={proposalsAnalytics?.topProponents}
-                                handleSearch={handleSearch}
-                                setSearchTerms={setSearchTerms}
-                                tab={tab}
-                                loading={loadingAnalytics}
-                                pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
-                                filters={filters}
-                              />
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="BarChart3"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No Analytics found</div>
+                                </div>
+                              ) : (
+                                <ProponentsAnalyticsComponent
+                                  topProponents={proposalsAnalytics?.topProponents}
+                                  handleSearch={handleSearch}
+                                  setSearchTerms={setSearchTerms}
+                                  tab={tab}
+                                  loading={loadingAnalytics}
+                                  pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
+                                  filters={filters}
+                                />
+                              )
                             )}
                           </div>
                         </div>
                       )}
                       <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px] rounded-lg">
                           <Table>
                             <Table.Thead>
-                              <Table.Tr>
-                                <Table.Td className="py-2 text-left w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              <Table.Tr className="sticky top-0 z-20 bg-primary text-white shadow-md">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Proxy Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Proponent
                                 </Table.Td>
                                 <Table.Td
@@ -2147,17 +2184,17 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="py-2 cursor-pointer w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]"
+                                  className="py-3 px-4 text-left font-medium text-sm border-0"
                                 >
                                   % Support*
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Vote Details
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 odd:pl-[40px] font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2310,9 +2347,22 @@ function ShareHolderProposal() {
                                 )}
                             </Table.Tbody>
                             {shareHolderProposal?.length === 0 && (
-                              <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1>
-                              </div>
+                              <Table.Tbody>
+                                <Table.Tr>
+                                  <Table.Td colSpan={isAllCompanySelected ? 7 : 6} className="text-center py-12">
+                                    <div className="flex flex-col items-center justify-center">
+                                      <Lucide
+                                        icon="FileSearch"
+                                        className="w-12 h-12 text-gray-300 mb-2"
+                                      />
+                                      <div className="text-lg font-medium">No data found</div>
+                                      <div className="text-sm text-gray-500 mt-1">
+                                        Try adjusting your filters or search criteria
+                                      </div>
+                                    </div>
+                                  </Table.Td>
+                                </Table.Tr>
+                              </Table.Tbody>
                             )}
                           </Table>
                         </div>
@@ -2365,57 +2415,93 @@ function ShareHolderProposal() {
 
                           {/* Content */}
                           <div>
-                            {activeTab === "shareholders" ? (
-                              <ShareHolderProposalAnalyticsComponent
-                                proposalCounts={proposalCounts}
-                                topSubcategories={topSubcategories}
-                                topCategories={topCategories}
-                                yearlySummary={yearlySummary}
-                                tab={tab}
-                                pieChartOutcome={pieChartOutcome}
-                                isAllCompanySelected={isAllCompanySelected}
-                                loading={loading}
-                              />
+                            {loading ? (
+                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                                <LoadingIcon
+                                  color="#800000"
+                                  icon="three-dots"
+                                  className="w-16 h-16"
+                                />
+                              </div>
+                            ) : !isAnalyticsDataAvailable() ? (
+                              <div className="flex flex-col items-center justify-center py-12">
+                                <Lucide
+                                  icon="BarChart3"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No Analytics found</div>
+                              </div>
+                            ) : activeTab === "shareholders" ? (
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="BarChart3"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No Analytics found</div>
+                                </div>
+                              ) : (
+                                <ShareHolderProposalAnalyticsComponent
+                                  proposalCounts={proposalCounts}
+                                  topSubcategories={topSubcategories}
+                                  topCategories={topCategories}
+                                  yearlySummary={yearlySummary}
+                                  tab={tab}
+                                  pieChartOutcome={pieChartOutcome}
+                                  isAllCompanySelected={isAllCompanySelected}
+                                  loading={loading}
+                                />
+                              )
                             ) : (
-                              <ProponentsAnalyticsComponent
-                                topProponents={topProponents}
-                                handleSearch={handleSearch}
-                                setSearchTerms={setSearchTerms}
-                                tab={tab}
-                                loading={loading}
-                                pieChartOutcome={pieChartOutcome}
-                                filters={filters}
-                              />
+                              shareHolderProposal?.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                  <Lucide
+                                    icon="BarChart3"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No Analytics found</div>
+                                </div>
+                              ) : (
+                                <ProponentsAnalyticsComponent
+                                  topProponents={topProponents}
+                                  handleSearch={handleSearch}
+                                  setSearchTerms={setSearchTerms}
+                                  tab={tab}
+                                  loading={loading}
+                                  pieChartOutcome={pieChartOutcome}
+                                  filters={filters}
+                                />
+                              )
                             )}
                           </div>
                         </div>
                       )}
                       <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px] rounded-lg">
                           <Table>
                             <Table.Thead>
-                              <Table.Tr>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              <Table.Tr className="sticky top-0 z-20 bg-primary text-white shadow-md">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Proxy Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2  w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Category
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Sub Category
                                 </Table.Td>
-                                <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2447,7 +2533,7 @@ function ShareHolderProposal() {
                                     </Table.Td>
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
                                       {noAction?.staff_response}
-                                    </Table.Td>
+                                    </Table.Td> 
                                     <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                                       <div className="flex gap-3 justify-center">
                                         <Tippy
@@ -2486,8 +2572,15 @@ function ShareHolderProposal() {
                                 ))}
                             </Table.Tbody>
                             {shareHolderProposal?.length === 0 && (
-                              <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1>
+                              <div className="flex flex-col items-center justify-center">
+                                <Lucide
+                                  icon="FileSearch"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No data found</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Try adjusting your filters or search criteria
+                                </div>
                               </div>
                             )}
                           </Table>
@@ -2517,25 +2610,25 @@ function ShareHolderProposal() {
                         </div>
                       )}
                       <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px]">
+                        <div className="overflow-auto max-h-[400px] rounded-lg">
                           <Table>
                             <Table.Thead>
-                              <Table.Tr>
-                                <Table.Td className="py-2 w-1/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                              <Table.Tr className="bg-primary text-white">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Year
                                 </Table.Td>
                                 {isAllCompanySelected && (
-                                  <Table.Td className="py-2  w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                  <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                     Company
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2 w-4/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Proponent
                                 </Table.Td>
-                                <Table.Td className="py-2 w-2/12 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
                                   Outcome
                                 </Table.Td>
-                                <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 w-2/12 font-semibold h-[50px] text-center bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                                <Table.Td className="py-3 px-4 font-medium text-sm text-center border-0">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2600,8 +2693,15 @@ function ShareHolderProposal() {
                                 ))}
                             </Table.Tbody>
                             {shareHolderProposal?.length === 0 && (
-                              <div className="w-full">
-                                <h1 className="mt-3">No Records Found..</h1>
+                              <div className="flex flex-col items-center justify-center">
+                                <Lucide
+                                  icon="FileSearch"
+                                  className="w-12 h-12 text-gray-300 mb-2"
+                                />
+                                <div className="text-lg font-medium">No data found</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Try adjusting your filters or search criteria
+                                </div>
                               </div>
                             )}
                           </Table>
