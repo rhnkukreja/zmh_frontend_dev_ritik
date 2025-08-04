@@ -871,9 +871,7 @@ console.log(notificationData ,"data")
                                     >
                                       {noti?.text}
                                     </p>
-                                    <p className="text-xs text-gray-400">
-                                      {noti.date}
-                                    </p>
+                                  
                                   </div>
                                 </div>
                               </div>
