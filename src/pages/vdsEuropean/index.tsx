@@ -98,6 +98,8 @@ const index = () => {
       company_name: [],
     });
   const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [countryComponentKey, setCountryComponentKey] = useState<number>(0);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
   const toggleExpand = (index: number) => {
     setExpandedRows((prev) => ({
@@ -210,6 +212,7 @@ const index = () => {
       year: "",
       company_name: [],
       date_range: "",
+      country: [],
     },
   });
 
@@ -354,7 +357,17 @@ const index = () => {
       return;
     }
     
-    const filterObj = {
+    interface FilterObj {
+      company_name: any;
+      institution_name: any;
+      vote_type: any;
+      category: any;
+      keyword: any;
+      date_range?: any;
+      year?: any;
+    }
+
+    const filterObj: FilterObj = {
       company_name: npxFilter?.company_name, // Already a flat array
       institution_name: npxFilter?.institution_name,
       vote_type: npxFilter?.vote,
@@ -387,13 +400,32 @@ const index = () => {
     const hasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
     const hasDateRange = data?.date_range && data?.date_range.trim() !== "";
     
-    const analyticsObj = {
+    interface AnalyticsObj {
+      institution_name: any[];
+      index_name: any[];
+      company_name: any[];
+      vote_type: any[];
+      proposal_type?: any[];
+      proponent_type?: any[];
+      meeting_type?: any[];
+      custom_keywords?: any[];
+      country?: any[];
+      date_range?: string;
+      analyticsYear?: any;
+    }
+    
+    const analyticsObj: AnalyticsObj = {
       institution_name: data?.institution_name || [],
       index_name: data?.index_name || [],
       company_name: Array.isArray(data?.company_name) && data.company_name.length > 0
         ? data.company_name.map((item: any) => item.label || item.value || item)
         : [],
       vote_type: data?.vote || [], // always set vote_types
+      proposal_type: data?.proposal_type || [],
+      proponent_type: data?.proponent_type || [],
+      meeting_type: data?.meeting_type || [],
+      custom_keywords: data?.custom_keywords || [],
+      country: data?.country || [],
     };
     
     // Add only the active filter (analyticsYear OR date_range, not both)
@@ -470,6 +502,9 @@ const index = () => {
     setValue("proposal_type", []);
     setValue("custom_keywords", []);
     setValue("meeting_type", []);
+    setValue("country", []);
+    setSelectedCountries([]);
+    setCountryComponentKey(prev => prev + 1);
     setDropdownValues({
       company_name: [],
       institution: [],
@@ -513,6 +548,12 @@ const index = () => {
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    // Prevent removal of country filters
+    if (removeKey === "country") {
+      toast.error("One country must be selected at a time");
+      return;
+    }
+
     if (isViewAnalysis) {
       const updatedFilters = { ...allAnalyticsFilter };
 
@@ -765,7 +806,7 @@ const index = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
             {/* Filter Toggle and Advanced Filters Button */}
             <form onSubmit={handleSubmit(onSubmit)}>
-              {/* All filters in multiple rows */}
+              {/* First row: Institution, Year, Index, Date Range */}
               <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
                 {/* Institution */}
                 <div>
@@ -840,122 +881,6 @@ const index = () => {
                     )}
                   />
                 </div>
-                {/* Proposal Type */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaListUl className="text-gray-400" /> Proposal Type
-                  </label>
-                  <Controller
-                    name="proposal_type"
-                    control={control}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={proposal_type.map((item: any) => convertToTitleCase(item))}
-                        placeholder="Select Proposal Type"
-                        loading={false}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
-              {/* Second row with 3 columns */}
-              <div className="grid gap-6 md:grid-cols-3 grid-cols-1 mt-6">
-                {/* Vote */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaHandshake className="text-gray-400" /> Vote
-                  </label>
-                  <Controller
-                    name="vote"
-                    control={control}
-                    defaultValue={[]}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={["For", "Against", "Abstain"]}
-                        placeholder="Select Vote"
-                        loading={getDynamicDropdownLoader}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => option.value);
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-                {/* Proponent Type */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaUserTie className="text-gray-400" /> Proponent Type
-                  </label>
-                  <Controller
-                    name="proponent_type"
-                    control={control}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={proponent_type.map((item: any) => convertToTitleCase(item))}
-                        placeholder="Select Proponent Type"
-                        loading={false}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-                {/* Meeting Type */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaTags className="text-gray-400" /> Meeting Type
-                  </label>
-                  <Controller
-                    name="meeting_type"
-                    control={control}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={meeting_type.map((item: any) => convertToTitleCase(item))}
-                        placeholder="Select Meeting Type"
-                        loading={false}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
-              {/* Company Name, Date Range and Keywords in separate row with 3 columns */}
-              <div className="grid gap-6 md:grid-cols-3 grid-cols-1 mt-6">
-                {/* Company Name */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaBuilding className="text-gray-400" /> Company Name
-                  </label>
-                  <Controller
-                    name="company_name"
-                    control={control}
-                    defaultValue={[]}
-                    render={({ field }) => (
-                      <CompanySelect
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        isMulti={true}
-                        placeholder="Search Companies"
-                      />
-                    )}
-                  />
-                </div>
                 {/* Date Range */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -1001,6 +926,164 @@ const index = () => {
                       )}
                     />
                   </div>
+                </div>
+              </div>
+              {/* Second row: Company Name, Meeting Type, Proposal Category, Proponent, Vote */}
+              <div className="grid gap-6 md:grid-cols-5 grid-cols-1 mt-6">
+                {/* Company Name */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaBuilding className="text-gray-400" /> Company Name
+                  </label>
+                  <Controller
+                    name="company_name"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <CompanySelect
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        isMulti={true}
+                        placeholder="Search Companies"
+                      />
+                    )}
+                  />
+                </div>
+                {/* Meeting Type */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaTags className="text-gray-400" /> Meeting Type
+                  </label>
+                  <Controller
+                    name="meeting_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={meeting_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Meeting Type"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Proposal Category */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaListUl className="text-gray-400" /> Proposal Category
+                  </label>
+                  <Controller
+                    name="proposal_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={proposal_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Proposal Category"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Proponent */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaUserTie className="text-gray-400" /> Proponent
+                  </label>
+                  <Controller
+                    name="proponent_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={proponent_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Proponent"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Vote */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaHandshake className="text-gray-400" /> Vote
+                  </label>
+                  <Controller
+                    name="vote"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={["For", "Against", "Abstain"]}
+                        placeholder="Select Vote"
+                        loading={getDynamicDropdownLoader}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+              {/* Third row: Country, Keywords */}
+              <div className="grid gap-6 md:grid-cols-4 grid-cols-1 mt-6">
+                {/* Country */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaBuilding className="text-gray-400" /> Country
+                  </label>
+                  <Controller
+                    name="country"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => {
+                      // Use selectedCountries as the source of truth
+                      const currentCountries = selectedCountries.length > 0 ? selectedCountries : (field.value || []);
+                      
+                      return (
+                        <MultiSelectDropdown
+                          key={`country-${countryComponentKey}`} // Force re-render to reset component state
+                          data={["USA", "Canada", "UK", "Germany", "France", "Japan", "Australia"]}
+                          placeholder="Select Country"
+                          loading={false}
+                          onChange={(selectedOptions) => {
+                            const selectedValues = selectedOptions.map((option) => option.value);
+                            
+                            // Only allow adding new countries, never removing existing ones
+                            const isRemovalAttempt = currentCountries.some(val => !selectedValues.includes(val));
+                            
+                            if (isRemovalAttempt) {
+                              toast.error("One country must be selected at a time");
+                              // Force component to re-render with original values by incrementing key
+                              setCountryComponentKey(prev => prev + 1);
+                              return;
+                            }
+                            
+                            // Update both state and form field
+                            setSelectedCountries(selectedValues);
+                            field.onChange(selectedValues);
+                          }}
+                          selectedOption={currentCountries}
+                        />
+                      );
+                    }}
+                  />
                 </div>
                 {/* Keywords */}
                 <div>

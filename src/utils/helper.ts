@@ -374,10 +374,11 @@ function generateFilterChips(filters: Record<string, any>) {
     keyword: "Keyword",
     index: "Index",
     index_name: "Index",
-    proposal_type: "Proposal Type",
-    proponent_type: "Proponent Type",
+    proposal_type: "Proposal Category",
+    proponent_type: "Proponent",
     meeting_type: "Meeting Type",
     custom_keywords: "Keywords",
+    country: "Country",
     analyticsYear: "Year",
     date_range: "Date Range",
   };
@@ -413,10 +414,13 @@ function convertToTitleCase(str: string): string {
     return "Date Range"
   }
   else if (str == "proposal_type") {
-    return "Proposal Type"
+    return "Proposal Category"
   }
   else if (str == "proponent_type") {
-    return "Proponent Type"
+    return "Proponent"
+  }
+  else if (str == "country") {
+    return "Country"
   }
   else if (str == "index") {
     return "Index"
