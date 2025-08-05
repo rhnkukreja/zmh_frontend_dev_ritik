@@ -130,9 +130,26 @@ const index = () => {
         const parsed = JSON.parse(savedFilters);
         setallApplyFilter(parsed);
         // Set form values as well
-        Object.entries(parsed).forEach(([key, value]) => {
-          setValue(key, value);
-        });
+        // Restore all saved values at once using reset
+        const restoredValues = {
+          institution_name: parsed.institution_name || [],
+          vote: parsed.vote || [],
+          category: parsed.category || [],
+          year: parsed.year || "",
+          company_name: parsed.company_name || [],
+          date_range: parsed.date_range || "",
+          country: parsed.country || ["USA"],
+        };
+        
+        // Use setTimeout to ensure the reset happens after component mount
+        setTimeout(() => {
+          reset(restoredValues);
+        }, 100);
+        
+        // Also set selectedCountries if country is in saved filters
+        if (parsed.country) {
+          setSelectedCountries(parsed.country);
+        }
       } catch (e) { 
         // If parsing fails, do nothing - let user set filters manually
         console.log("Error parsing saved filters:", e);
@@ -212,7 +229,7 @@ const index = () => {
       year: "",
       company_name: [],
       date_range: "",
-      country: [],
+      country: ["USA"],
     },
   });
 
@@ -363,6 +380,7 @@ const index = () => {
       vote_type: any;
       category: any;
       keyword: any;
+      country: any;
       date_range?: any;
       year?: any;
     }
@@ -373,6 +391,7 @@ const index = () => {
       vote_type: npxFilter?.vote,
       category: npxFilter?.category,
       keyword: npxFilter?.keyword,
+      country: npxFilter?.country,
     };
     
     // Add only the active filter (year OR date_range, not both)
@@ -384,8 +403,13 @@ const index = () => {
       // Explicitly exclude date_range when year is selected
     }
     setallApplyFilter(filterObj);
-    // Save to localStorage
-    localStorage.setItem("vdsEuropeanFilters", JSON.stringify(filterObj));
+    // Save to localStorage including all filters
+    const completeFilterObj = {
+      ...filterObj,
+      vote: npxFilter?.vote, // Ensure vote filter is saved
+      country: npxFilter?.country || ["USA"] // Ensure country filter is saved with USA default
+    };
+    localStorage.setItem("vdsEuropeanFilters", JSON.stringify(completeFilterObj));
     dispatch(resetPage());
     setIsFilterCollapse(false);
   };
@@ -1028,7 +1052,11 @@ const index = () => {
                     defaultValue={[]}
                     render={({ field }) => (
                       <MultiSelectDropdown
-                        data={["For", "Against", "Abstain"]}
+                        data={[
+                          { value: "For", label: "For" },
+                          { value: "Against", label: "Against" },
+                          { value: "Withhold", label: "Withhold" }
+                        ]}
                         placeholder="Select Vote"
                         loading={getDynamicDropdownLoader}
                         onChange={(selectedOptions) => {
@@ -1372,7 +1400,14 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                   const dateRangeText = dateRange ? ` (${dateRange.start_meeting} - ${dateRange.end_meeting})` : '';
                   return (
                     <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
-                      {String(year)}{dateRangeText}
+                      <div className="flex flex-col">
+                        <div>{String(year)}</div>
+                        {dateRange && (
+                          <div className="text-xs font-normal mt-1">
+                            ({dateRange.start_meeting} - {dateRange.end_meeting})
+                          </div>
+                        )}
+                      </div>
                     </th>
                   );
                 })
@@ -1383,7 +1418,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">No. of unique companies</td>
               {institutions.map((institution) => (
-                years.map((year: any) => {
+                years.map((year: string | number) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
@@ -1396,7 +1431,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">No of proposals</td>
               {institutions.map((institution) => (
-                years.map((year: any) => {
+                years.map((year: string | number) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
