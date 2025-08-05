@@ -41,7 +41,7 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import Pill from "@/components/Pill";
-import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -1046,7 +1046,7 @@ const index = () => {
                 {/* Country */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaBuilding className="text-gray-400" /> Country
+                    <FaGlobe className="text-gray-400" /> Country
                   </label>
                   <Controller
                     name="country"
@@ -1366,11 +1366,16 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             </tr>
             <tr className="bg-primary text-white text-base">
               {institutions.map((institution) => (
-                years.map((year) => (
-                  <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
-                    {String(year)}
-                  </th>
-                ))
+                years.map((year) => {
+                  const yearData = institution.years[year];
+                  const dateRange = yearData?.date_range;
+                  const dateRangeText = dateRange ? ` (${dateRange.start_meeting} - ${dateRange.end_meeting})` : '';
+                  return (
+                    <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
+                      {String(year)}{dateRangeText}
+                    </th>
+                  );
+                })
               ))}
             </tr>
           </thead>
@@ -1448,20 +1453,6 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
                       {yearData ? `${yearData.alignment_percentage}%` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">Data as of</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  const dateRange = yearData?.date_range;
-                  return (
-                    <td key={`${institution.institution_id}-${year}-date`} className="px-6 py-3 text-center">
-                      {dateRange ? `${dateRange.start_meeting} - ${dateRange.end_meeting}` : '-'}
                     </td>
                   );
                 })
