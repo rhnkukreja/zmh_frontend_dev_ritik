@@ -534,7 +534,7 @@ const index = () => {
 
   const resetFormValues: any = () => {
     setValue("company_name", []);
-    setValue("institution_name", []);
+    setValue("institution_name", ["BlackRock, Inc."]);
     setValue("vote", []);
     setValue("category", []);
     setValue("year", "");
@@ -655,6 +655,16 @@ const index = () => {
         // Also update the form field "vote"
         setValue("vote", updatedFilters[removeKey]);
       } else if (Array.isArray(updatedFilters[removeKey])) {
+        // Check for minimum requirements before removing
+        if (removeKey === "institution_name" && updatedFilters[removeKey].length <= 1) {
+          toast.error("At least one institution must be selected");
+          return;
+        }
+        if (removeKey === "country" && updatedFilters[removeKey].length <= 1) {
+          toast.error("At least one country must be selected");
+          return;
+        }
+        
         updatedFilters[removeKey] = updatedFilters[removeKey].filter(
           (item) => item !== removeValue
         );
@@ -668,12 +678,23 @@ const index = () => {
         setValue(removeKey, updatedFilters[removeKey]);
       }
       setAllAnalyticsFilter(updatedFilters);
+      localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
       return;
     }
 
     const updatedFilters = { ...allApplyFilter };
 
     if (Array.isArray(updatedFilters[removeKey])) {
+      // Check for minimum requirements before removing
+      if (removeKey === "institution_name" && updatedFilters[removeKey].length <= 1) {
+        toast.error("At least one institution must be selected");
+        return;
+      }
+      if (removeKey === "country" && updatedFilters[removeKey].length <= 1) {
+        toast.error("At least one country must be selected");
+        return;
+      }
+      
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
         (item) => item !== removeValue
       );
@@ -686,8 +707,8 @@ const index = () => {
     }
 
     setValue(removeKey, updatedFilters[removeKey]);
-    // dispatch(setAllFilters(updatedFilters));
     setallApplyFilter(updatedFilters);
+    localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
   };
 
   useEffect(() => {
@@ -952,6 +973,13 @@ const index = () => {
                         loading={getFundNameDropdownLoader}
                         onChange={(selectedOptions) => {
                           const selectedValues = selectedOptions.map((option) => option.value);
+                          
+                          // Ensure at least one institution is always selected
+                          if (selectedValues.length === 0) {
+                            toast.error("At least one institution must be selected");
+                            return;
+                          }
+                          
                           field.onChange(selectedValues);
                           handleDropdownChange("institution_name", selectedValues);
                         }}
