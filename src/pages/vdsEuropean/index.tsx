@@ -619,6 +619,31 @@ const index = () => {
       return;
     }
 
+    // Handle institution filter removal with minimum one institution requirement
+    if (removeKey === "institution_name") {
+      const currentInstitutions = isViewAnalysis ? allAnalyticsFilter.institution_name || [] : allApplyFilter.institution_name || [];
+      if (currentInstitutions.length <= 1) {
+        toast.error("At least one institution must be selected");
+        return;
+      }
+      
+      // Remove the specific institution value
+      const updatedInstitutions = currentInstitutions.filter((institution: string) => institution !== removeValue);
+      
+      if (isViewAnalysis) {
+        const updatedFilters = { ...allAnalyticsFilter, institution_name: updatedInstitutions };
+        setAllAnalyticsFilter(updatedFilters);
+        setValue("institution_name", updatedInstitutions);
+        localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+      } else {
+        const updatedFilters = { ...allApplyFilter, institution_name: updatedInstitutions };
+        setallApplyFilter(updatedFilters);
+        setValue("institution_name", updatedInstitutions);
+        localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+      }
+      return;
+    }
+
     if (isViewAnalysis) {
       const updatedFilters = { ...allAnalyticsFilter };
 
