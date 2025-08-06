@@ -844,7 +844,7 @@ console.log(notificationData ,"data")
                         <>
                           {notificationData?.notifications?.length > 0 ? (
                             notificationData?.notifications?.map((noti, i) => (
-                              <div className="py-3">
+                              <div className="py-4  border-b">
                                 <p className="text-xs text-gray-400 pb-2">
                                   {getCustomRelativeDate(noti.date)}
                                 </p>
