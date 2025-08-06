@@ -36,6 +36,11 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import CaseProxyModal from "./CaseProxyModal";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import PdfViewer from "@/components/PdfView";
+import { getProxyContestDropdownValues } from "@/services/proxyContestDropdown";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { FaBuilding, FaCalendarAlt, FaTimes } from "react-icons/fa";
+import { Popover } from "@/components/Base/Headless";
+import { countValidFilters, generateFilterChips } from "@/utils/helper";
 
 const index = () => {
     const location = useLocation();
@@ -75,6 +80,16 @@ const index = () => {
     const [selectedCompany, setSelectedCompany] = useState<any>(null);
     const [modalData, setModalData] = useState<any>(null);
     const [modalLoading, setModalLoading] = useState<boolean>(false);
+    
+    // Filter states
+    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
+    const [filtersLength, setFiltersLength] = useState<number>(0);
+    const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+    const [allApplyFilter, setAllApplyFilter] = useState<any>({});
+    const [companyOptions, setCompanyOptions] = useState<string[]>([]);
+    const [yearOptions, setYearOptions] = useState<string[]>([]);
+    const [dropdownLoading, setDropdownLoading] = useState<boolean>(false);
+    
     const companyDetails = agmSummaryProxyContest?.company ? agmSummaryProxyContest?.company[0] : "";
     const companyName = Object.keys(companyDetails)[0];
     const meetingDetails = companyDetails[companyName];
@@ -90,8 +105,43 @@ const index = () => {
             defaultValues: {
                 company_name: 'Select',
                 institution_name: [],
+                company: [],
+                year: [],
             },
         });
+
+    // Fetch dropdown values
+    useEffect(() => {
+        const fetchDropdownData = async () => {
+            try {
+                setDropdownLoading(true);
+                const data = await getProxyContestDropdownValues();
+                console.log("Proxy Contest Dropdown API Response:", data); // Debug log
+                
+                // Extract companies from proxy_companies if available
+                const companies = data.proxy_companies ? 
+                    [...new Set(data.proxy_companies.map((company: any) => company.company_name).filter(Boolean))] : 
+                    [];
+                console.log("Extracted companies:", companies); // Debug log
+                console.log("Years from API:", data.years); // Debug log
+                
+                setCompanyOptions(companies);
+                setYearOptions(data.years || []);
+            } catch (error) {
+                console.error("Error fetching dropdown data:", error);
+                setCompanyOptions([]);
+                setYearOptions([]);
+            } finally {
+                setDropdownLoading(false);
+            }
+        };
+        fetchDropdownData();
+    }, []);
+
+    // Fetch initial data
+    useEffect(() => {
+        fetchProxyContestCompanies(1);
+    }, []);
 
     const gotoDetailPage = (pdf: string, pdf_name: string) => {
         setCurrentPdfDoc(pdf);
@@ -117,11 +167,25 @@ const index = () => {
         }
     };
 
-    const fetchProxyContestCompanies = async (page: number = 1) => {
+    const fetchProxyContestCompanies = async (page: number = 1, filters: any = {}) => {
         setProxyContestLoading(true);
         try {
             console.log(`Fetching proxy contest companies for page: ${page}`); // Debug log
-            const response = await fetch(`${baseURL}/api/proxy-contest-companies/?page=${page}&page_size=${pageSize}`, {
+            
+            // Build query parameters
+            const params = new URLSearchParams();
+            params.append('page', page.toString());
+            params.append('page_size', pageSize.toString());
+            
+            // Add filters to params
+            if (filters.company && filters.company.length > 0) {
+                params.append('company_name', JSON.stringify(filters.company));
+            }
+            if (filters.year && filters.year.length > 0) {
+                params.append('year', JSON.stringify(filters.year));
+            }
+            
+            const response = await fetch(`${baseURL}/api/proxy-contest-companies/?${params.toString()}`, {
                 headers: {
                     'Authorization': `JWT ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json',
@@ -148,7 +212,7 @@ const index = () => {
         if (proxyContestPage < Math.ceil(proxyContestTotal / pageSize)) {
             const nextPage = proxyContestPage + 1;
             setProxyContestPage(nextPage);
-            fetchProxyContestCompanies(nextPage);
+            fetchProxyContestCompanies(nextPage, allApplyFilter);
         }
     };
 
@@ -156,13 +220,71 @@ const index = () => {
         if (proxyContestPage > 1) {
             const prevPage = proxyContestPage - 1;
             setProxyContestPage(prevPage);
-            fetchProxyContestCompanies(prevPage);
+            fetchProxyContestCompanies(prevPage, allApplyFilter);
         }
     };
 
     const handleProxyContestPageChange = (newPage: number) => {
         setProxyContestPage(newPage);
-        fetchProxyContestCompanies(newPage);
+        fetchProxyContestCompanies(newPage, allApplyFilter);
+    };
+
+    // Filter functions
+    const handleCollapseFilter = () => {
+        setIsFilterCollapse(!isFilterCollapse);
+    };
+
+    const onFilterSubmit = (data: any) => {
+        const filterObj = {
+            company: data?.company || [],
+            year: data?.year || [],
+        };
+        
+        setAllApplyFilter(filterObj);
+        setFiltersLength(countValidFilters(filterObj));
+        setSelectedChipFilters(generateFilterChips(filterObj));
+        setProxyContestPage(1);
+        fetchProxyContestCompanies(1, filterObj);
+        setIsFilterCollapse(false);
+    };
+
+    const onFilterClear = () => {
+        setSelectedChipFilters([]);
+        setFiltersLength(0);
+        setAllApplyFilter({});
+        reset({
+            company: [],
+            year: [],
+        });
+        setProxyContestPage(1);
+        fetchProxyContestCompanies(1, {});
+    };
+
+    const handleRemoveChip = (removeKey: any, removeValue: any) => {
+        const currentFilters = { ...allApplyFilter };
+        
+        if (currentFilters[removeKey]) {
+            if (Array.isArray(currentFilters[removeKey])) {
+                currentFilters[removeKey] = currentFilters[removeKey].filter(
+                    (item: any) => item !== removeValue
+                );
+                if (currentFilters[removeKey].length === 0) {
+                    delete currentFilters[removeKey];
+                }
+            } else {
+                delete currentFilters[removeKey];
+            }
+        }
+        
+        setAllApplyFilter(currentFilters);
+        setFiltersLength(countValidFilters(currentFilters));
+        setSelectedChipFilters(generateFilterChips(currentFilters));
+        
+        // Update form values
+        setValue(removeKey, currentFilters[removeKey] || []);
+        
+        setProxyContestPage(1);
+        fetchProxyContestCompanies(1, currentFilters);
     };
 
     // Handle icon clicks to open modals with different content
@@ -425,7 +547,7 @@ const index = () => {
         });
     };
 
-    const onFilterClear = () => {
+    const onInstitutionFilterClear = () => {
         resetFormValues();
         const applyFilter = { institution_name: [], top: 'true', institution_clear: true };
         Object.entries(applyFilter).forEach(([key, value]) => {
@@ -595,8 +717,152 @@ const index = () => {
 
                             <Tab.Panels className="mt-5">
                                 <Tab.Panel className="leading-relaxed">
-                                    {/* Proxy Contest Companies Table - Hidden when global company is searched (except for default Amazon) */}
-                                    {(!companyGlobalSearchName || companyGlobalSearchName === 'Amazon.com, Inc.') && (
+                                    {/* Filter Section */}
+                                    <div className="p-5 mt-1 box">
+                                            <div className="flex flex-col p-5 sm:flex-row gap-y-2">
+                                                <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                                                    <span>
+                                                        <h1 className="text-lg font-bold flex items-center gap-2">
+                                                            Proxy Contest Companies
+                                                        </h1>
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
+                                                    {proxyContestTotal > 0 && (
+                                                        <h2 className="flex items-end font-semibold justify-end text-[13px] md:ml-auto mx-5">
+                                                            Count: {proxyContestTotal.toLocaleString()}
+                                                        </h2>
+                                                    )}
+
+                                                    <div className="flex items-center gap-2">
+                                                        <Popover className="inline-block">
+                                                            {({ close }) => (
+                                                                <>
+                                                                    <Popover.Button
+                                                                        as={Button}
+                                                                        variant="outline-secondary"
+                                                                        className="w-full sm:w-auto"
+                                                                        onClick={handleCollapseFilter}
+                                                                    >
+                                                                        <Lucide
+                                                                            icon="ArrowDownWideNarrow"
+                                                                            className="stroke-[1.3] w-4 h-4 mr-2"
+                                                                        />
+                                                                        Filter
+                                                                        <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                                                                            {filtersLength}
+                                                                        </div>
+                                                                    </Popover.Button>
+                                                                </>
+                                                            )}
+                                                        </Popover>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Filter Pills */}
+                                            {selectedChipFilters?.length > 0 && (
+                                                <div className="mb-4 flex flex-wrap gap-2">
+                                                    {selectedChipFilters.map((chip, idx) => (
+                                                        <span key={idx} className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20">
+                                                            {chip.label}
+                                                            <button
+                                                                type="button"
+                                                                className="ml-2 text-primary hover:text-red-600 transition-colors"
+                                                                onClick={() => handleRemoveChip(chip.key, chip.value)}
+                                                            >
+                                                                <FaTimes className="text-xs" />
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Filter Card */}
+                                            {isFilterCollapse && (
+                                                <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+                                                    <form onSubmit={handleSubmit(onFilterSubmit)}>
+                                                        <div className="grid gap-6 md:grid-cols-2 grid-cols-1">
+                                                            {/* Company Filter */}
+                                                            <div>
+                                                                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                                                                    <FaBuilding className="text-gray-400" /> Company
+                                                                </label>
+                                                                <Controller
+                                                                    name="company"
+                                                                    control={control}
+                                                                    defaultValue={[]}
+                                                                    render={({ field }) => (
+                                                                        <MultiSelectDropdown
+                                                                            data={companyOptions.map(option => ({
+                                                                                value: option,
+                                                                                label: option
+                                                                            }))}
+                                                                            placeholder="Select Company"
+                                                                            loading={dropdownLoading}
+                                                                            onChange={(selectedOptions) => {
+                                                                                const selectedValues = selectedOptions.map((option) => option.value);
+                                                                                field.onChange(selectedValues);
+                                                                            }}
+                                                                            selectedOption={field.value || []}
+                                                                        />
+                                                                    )}
+                                                                />
+                                                            </div>
+
+                                                            {/* Year Filter */}
+                                                            <div>
+                                                                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                                                                    <FaCalendarAlt className="text-gray-400" /> Year
+                                                                </label>
+                                                                <Controller
+                                                                    name="year"
+                                                                    control={control}
+                                                                    defaultValue={[]}
+                                                                    render={({ field }) => (
+                                                                        <MultiSelectDropdown
+                                                                            data={yearOptions.map(option => ({
+                                                                                value: option,
+                                                                                label: option
+                                                                            }))}
+                                                                            placeholder="Select Year"
+                                                                            loading={dropdownLoading}
+                                                                            onChange={(selectedOptions) => {
+                                                                                const selectedValues = selectedOptions.map((option) => option.value);
+                                                                                field.onChange(selectedValues);
+                                                                            }}
+                                                                            selectedOption={field.value || []}
+                                                                        />
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Buttons */}
+                                                        <div className="flex justify-end gap-3 mt-6">
+                                                            <Button
+                                                                type="button"
+                                                                variant="secondary"
+                                                                onClick={onFilterClear}
+                                                                className="w-24"
+                                                            >
+                                                                Clear
+                                                            </Button>
+                                                            <Button
+                                                                variant="primary"
+                                                                className="w-24"
+                                                                type="submit"
+                                                            >
+                                                                Apply
+                                                            </Button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                    {/* Proxy Contest Companies Table */}
+                                    <div className="p-5 mt-1 box">
                                         <div>
                                             {proxyContestLoading ? (
                                                 <div className="h-52 flex items-center justify-center">
@@ -749,7 +1015,7 @@ const index = () => {
                                                 </>
                                             )}
                                         </div>
-                                    )}
+                                    </div>
 
                                     <div className="font-bold text-2xl pt-4">
                                         {companyHeaderName}{" "}
@@ -1479,7 +1745,7 @@ const index = () => {
                                                                     type="button"
                                                                     variant="secondary"
                                                                     onClick={() => {
-                                                                        onFilterClear();
+                                                                        onInstitutionFilterClear();
                                                                     }}
                                                                     className="w-32 ml-auto"
                                                                 >
