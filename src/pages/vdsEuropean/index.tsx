@@ -1072,27 +1072,49 @@ const index = () => {
                   </div>
                 </div>
               </div>
-              {/* Second row: Company Name, Meeting Type, Proposal Category, Proponent, Vote */}
+              {/* Second row: Country, Meeting Type, Proposal Category, Proponent, Vote */}
               <div className="grid gap-6 md:grid-cols-5 grid-cols-1 mt-6">
-                {/* Company Name */}
+                {/* Country */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaBuilding className="text-gray-400" /> Company Name
+                    <FaGlobe className="text-gray-400" /> Country
                   </label>
                   <Controller
-                    name="company_name"
+                    name="country"
                     control={control}
                     defaultValue={[]}
-                    render={({ field }) => (
-                      <CompanySelect
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        isMulti={true}
-                        placeholder="Search Companies"
-                      />
-                    )}
+                    render={({ field }) => {
+                      // Use selectedCountries as the source of truth
+                      const currentCountries = selectedCountries.length > 0 ? selectedCountries : (field.value || []);
+                      
+                      return (
+                        <MultiSelectDropdown
+                          key={`country-${countryComponentKey}`} // Force re-render to reset component state
+                          data={countryOptions.map(option => ({
+                            value: option,
+                            label: option
+                          }))}
+                          placeholder="Select Country"
+                          loading={false}
+                          preventRemoveLastItem={true}
+                          fieldName="country"
+                          onChange={(selectedOptions) => {
+                            const selectedValues = selectedOptions.map((option) => option.value);
+                            
+                            // Ensure at least one country is always selected
+                            if (selectedValues.length === 0) {
+                              toast.error("At least one country must be selected");
+                              return;
+                            }
+                            
+                            // Update both state and form field
+                            setSelectedCountries(selectedValues);
+                            field.onChange(selectedValues);
+                          }}
+                          selectedOption={currentCountries}
+                        />
+                      );
+                    }}
                   />
                 </div>
                 {/* Meeting Type */}
@@ -1189,51 +1211,8 @@ const index = () => {
                   />
                 </div>
               </div>
-              {/* Third row: Country, Keywords */}
-              <div className="grid gap-6 md:grid-cols-4 grid-cols-1 mt-6">
-                {/* Country */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaGlobe className="text-gray-400" /> Country
-                  </label>
-                  <Controller
-                    name="country"
-                    control={control}
-                    defaultValue={[]}
-                    render={({ field }) => {
-                      // Use selectedCountries as the source of truth
-                      const currentCountries = selectedCountries.length > 0 ? selectedCountries : (field.value || []);
-                      
-                      return (
-                        <MultiSelectDropdown
-                          key={`country-${countryComponentKey}`} // Force re-render to reset component state
-                          data={countryOptions.map(option => ({
-                            value: option,
-                            label: option
-                          }))}
-                          placeholder="Select Country"
-                          loading={false}
-                          preventRemoveLastItem={true}
-                          fieldName="country"
-                          onChange={(selectedOptions) => {
-                            const selectedValues = selectedOptions.map((option) => option.value);
-                            
-                            // Ensure at least one country is always selected
-                            if (selectedValues.length === 0) {
-                              toast.error("At least one country must be selected");
-                              return;
-                            }
-                            
-                            // Update both state and form field
-                            setSelectedCountries(selectedValues);
-                            field.onChange(selectedValues);
-                          }}
-                          selectedOption={currentCountries}
-                        />
-                      );
-                    }}
-                  />
-                </div>
+              {/* Third row: Keywords */}
+              <div className="grid gap-6 md:grid-cols-1 grid-cols-1 mt-6">
                 {/* Keywords */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -1516,7 +1495,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr className="bg-primary text-white text-base">
               {institutions.map((institution) => (
                 years.map((year) => {
-                  const yearData = institution.years[year];
+                  const yearData = institution.years[year as string];
                   const dateRange = yearData?.date_range;
                   const dateRangeText = dateRange ? ` (${dateRange.start_meeting} - ${dateRange.end_meeting})` : '';
                   return (
