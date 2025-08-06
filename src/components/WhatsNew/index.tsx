@@ -99,7 +99,7 @@ const GetWhatsNew = ({
                       <>
                         {[
                           "Shareholder Proposals",
-                          "Voting Guidelines",
+                          "Proxy Voting Guidelines",
                           "Investor Profile",
                           "Case Studies",
                           "Engagement Details",
