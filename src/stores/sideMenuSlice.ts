@@ -160,7 +160,7 @@ const initialState: any = {
       title: "Knowledge Base",
     },
     {
-      icon: "Mail",
+      icon: "HelpCircle",
       pathname: "",
       title: "Help",
     },
