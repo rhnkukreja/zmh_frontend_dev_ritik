@@ -722,7 +722,7 @@ const index = () => {
                                     {/* Filter Section */}
 
                                     {/* Proxy Contest Companies Table */}
-                                    <div className="p-5 mt-1 box">
+                                    <div className="p-5 mt-1">
                                         <div>
                                             <div className="flex flex-col p-5 sm:flex-row gap-y-2">
                                                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
