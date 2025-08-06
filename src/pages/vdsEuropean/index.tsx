@@ -47,7 +47,7 @@ import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
 import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
 import Litepicker from "@/components/Base/Litepicker";
-import React from "react";
+import React, { useCallback } from "react";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -98,6 +98,7 @@ const index = () => {
       company_name: [],
     });
   const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
+  const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [countryComponentKey, setCountryComponentKey] = useState<number>(0);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
@@ -149,11 +150,22 @@ const index = () => {
         // Also set selectedCountries if country is in saved filters
         if (parsed.country) {
           setSelectedCountries(parsed.country);
+        } else {
+          // Set default country if no saved filters
+          setSelectedCountries(["USA"]);
         }
       } catch (e) { 
         // If parsing fails, do nothing - let user set filters manually
         console.log("Error parsing saved filters:", e);
+        // Set default country even if parsing fails
+        setSelectedCountries(["USA"]);
       }
+    } else {
+      // Set default country if no saved filters exist
+      setSelectedCountries(["USA"]);
+      // Also set default filter to show pills
+      setallApplyFilter({ country: ["USA"] });
+      setValue("country", ["USA"]);
     }
     // Don't set default date range automatically - let user choose
   }, []);
@@ -174,8 +186,11 @@ const index = () => {
           )
         );
 
-        setFiltersLength(countValidFilters(allApplyFilter));
-        setSelectedChipFilters(generateFilterChips(allApplyFilter));
+        // Only update chips for regular filters if not in analytics mode
+        if (!isViewAnalysis) {
+          setFiltersLength(countValidFilters(allApplyFilter));
+          setSelectedChipFilters(generateFilterChips(allApplyFilter));
+        }
         dispatch(setTempSearch(companyGlobalSearchName));
 
         setIsLoading(false);
@@ -184,22 +199,24 @@ const index = () => {
 
     fetchData();
     // console.log(watch("year"));
-  }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
+  }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
 
   useEffect(() => {
     getDependentDropdown();
   }, [dropdownValues?.company_name]);
 
   useEffect(() => {
-    const fetchInstitutions = async () => {
+    const fetchDropdownData = async () => {
       try {
         const data = await getVdsEuropeanDropdownValues();
         setInstitutionOptions(data.institution || []);
+        setCountryOptions(data.country || []);
       } catch (error) {
         setInstitutionOptions([]);
+        setCountryOptions([]);
       }
     };
-    fetchInstitutions();
+    fetchDropdownData();
   }, []);
 
   // Calculate default date range: Jan 2024 to one day before current date
@@ -480,19 +497,22 @@ const index = () => {
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
+        country: ["USA"],
       });
       setValue("institution_name", ["BlackRock, Inc."]);
       setValue("index_name", ["S&P 500"]);
+      setValue("country", ["USA"]);
+      setSelectedCountries(["USA"]);
       setVdsEuropeansAnalytics({});
       localStorage.removeItem("vdsEuropeanAnalyticsFilters");
     } else {
-      setallApplyFilter({});
+      setallApplyFilter({ country: ["USA"] });
       dispatch(resetPage());
       dispatch(
         fetchVdsEuropeans(
           createDynamicURL(
             `${baseURL}/vds_european/`,
-            undefined,
+            { country: ["USA"] },
             undefined,
             page
           )
@@ -526,8 +546,8 @@ const index = () => {
     setValue("proposal_type", []);
     setValue("custom_keywords", []);
     setValue("meeting_type", []);
-    setValue("country", []);
-    setSelectedCountries([]);
+    setValue("country", ["USA"]);
+    setSelectedCountries(["USA"]);
     setCountryComponentKey(prev => prev + 1);
     setDropdownValues({
       company_name: [],
@@ -572,9 +592,30 @@ const index = () => {
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
-    // Prevent removal of country filters
+    // Handle country filter removal with minimum one country requirement
     if (removeKey === "country") {
-      toast.error("One country must be selected at a time");
+      const currentCountries = isViewAnalysis ? allAnalyticsFilter.country || [] : allApplyFilter.country || [];
+      if (currentCountries.length <= 1) {
+        toast.error("At least one country must be selected");
+        return;
+      }
+      
+      // Remove the specific country value
+      const updatedCountries = currentCountries.filter((country: string) => country !== removeValue);
+      
+      if (isViewAnalysis) {
+        const updatedFilters = { ...allAnalyticsFilter, country: updatedCountries };
+        setAllAnalyticsFilter(updatedFilters);
+        setValue("country", updatedCountries);
+        setSelectedCountries(updatedCountries);
+        localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+      } else {
+        const updatedFilters = { ...allApplyFilter, country: updatedCountries };
+        setallApplyFilter(updatedFilters);
+        setValue("country", updatedCountries);
+        setSelectedCountries(updatedCountries);
+        localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+      }
       return;
     }
 
@@ -680,61 +721,95 @@ const index = () => {
       }
     };
     fetchAnalytics();
-    let filterForChips = allAnalyticsFilter;
-    if (isViewAnalysis && filterForChips.vote) {
-      const { vote, ...rest } = filterForChips;
-      filterForChips = rest;
+    
+    // Generate filter chips only when analytics filter changes
+    if (isViewAnalysis) {
+      let filterForChips = allAnalyticsFilter;
+      if (filterForChips.vote) {
+        const { vote, ...rest } = filterForChips;
+        filterForChips = rest;
+      }
+      setFiltersLength(countValidFilters(filterForChips));
+      setSelectedChipFilters(generateFilterChips(filterForChips));
     }
-    setFiltersLength(countValidFilters(filterForChips));
-    setSelectedChipFilters(generateFilterChips(filterForChips));
+    
     return () => { isMounted = false; };
-  }, [allAnalyticsFilter, analyticsPage]);
+  }, [allAnalyticsFilter, analyticsPage, isViewAnalysis]);
 
-  // On initial mount, set default analytics filter to BlackRock and S&P 500, or restore from localStorage
+  // Initialize analytics filters once on mount
   useEffect(() => {
+    if (!isViewAnalysis) return;
+    
+    // Only initialize if analytics filter is empty
+    if (Object.keys(allAnalyticsFilter).length > 0) return;
+
     const query = new URLSearchParams(window.location.search);
-
     const institution_name = query.get("institution_name");
-
     const analyticsYear = query.get("year");
 
-
-    if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
-      const savedAnalytics = localStorage.getItem("vdsEuropeanAnalyticsFilters");
-      if (savedAnalytics) {
-        try {
-          const parsed = JSON.parse(savedAnalytics);
-          setAllAnalyticsFilter(parsed);
-          Object.entries(parsed).forEach(([key, value]) => {
-            setValue(key, value);
-          });
-          return;
-        } catch (e) { }
+    // Try to restore from localStorage first
+    const savedAnalytics = localStorage.getItem("vdsEuropeanAnalyticsFilters");
+    if (savedAnalytics) {
+      try {
+        const parsed = JSON.parse(savedAnalytics);
+        const analyticsWithCountry = {
+          ...parsed,
+          country: parsed.country || ["USA"]
+        };
+        setAllAnalyticsFilter(analyticsWithCountry);
+        Object.entries(analyticsWithCountry).forEach(([key, value]) => {
+          setValue(key, value);
+        });
+        setSelectedCountries(analyticsWithCountry.country);
+        return;
+      } catch (e) {
+        console.log("Error parsing saved analytics filters:", e);
       }
-      if (institution_name) {
-      setAllAnalyticsFilter({
+    }
+
+    // Set defaults based on URL params or fallback to BlackRock + S&P 500
+    let defaultFilters;
+    if (institution_name) {
+      defaultFilters = {
         institution_name: [institution_name],
         analyticsYear: analyticsYear ? [analyticsYear] : [],
-      });
-      setValue("institution_name", [institution_name]);
-      setValue("index_name", []);
-      setValue("analyticsYear", [analyticsYear]);
-      setValue("date_range", "");
-    }else{
-      setAllAnalyticsFilter({
+        country: ["USA"],
+      };
+    } else {
+      defaultFilters = {
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
         analyticsYear: ["2025"],
         date_range: "",
+        country: ["USA"],
+      };
+    }
+
+    setAllAnalyticsFilter(defaultFilters);
+    Object.entries(defaultFilters).forEach(([key, value]) => {
+      setValue(key, value);
+    });
+    setSelectedCountries(["USA"]);
+  }, []); // Empty dependency array - only run once on mount
+
+  // Handle analytics mode initialization when switching modes
+  useEffect(() => {
+    if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
+      // Set default analytics filters if none exist
+      const defaultFilters = {
+        institution_name: ["BlackRock, Inc."],
+        index_name: ["S&P 500"],
+        analyticsYear: ["2025"],
+        date_range: "",
+        country: ["USA"],
+      };
+      
+      setAllAnalyticsFilter(defaultFilters);
+      Object.entries(defaultFilters).forEach(([key, value]) => {
+        setValue(key, value);
       });
-      setValue("institution_name", ["BlackRock, Inc."]);
-      setValue("index_name", ["S&P 500"]);
-      setValue("analyticsYear", ["2025"]);
-      setValue("date_range", "");
+      setSelectedCountries(["USA"]);
     }
-     
-    }
-    // eslint-disable-next-line
   }, [isViewAnalysis]);
  
   const getAllCaseStudyDropdowns = async () => {
@@ -1087,19 +1162,18 @@ const index = () => {
                       return (
                         <MultiSelectDropdown
                           key={`country-${countryComponentKey}`} // Force re-render to reset component state
-                          data={["USA", "Canada", "UK", "Germany", "France", "Japan", "Australia"]}
+                          data={countryOptions.map(option => ({
+                            value: option,
+                            label: option
+                          }))}
                           placeholder="Select Country"
                           loading={false}
                           onChange={(selectedOptions) => {
                             const selectedValues = selectedOptions.map((option) => option.value);
                             
-                            // Only allow adding new countries, never removing existing ones
-                            const isRemovalAttempt = currentCountries.some(val => !selectedValues.includes(val));
-                            
-                            if (isRemovalAttempt) {
-                              toast.error("One country must be selected at a time");
-                              // Force component to re-render with original values by incrementing key
-                              setCountryComponentKey(prev => prev + 1);
+                            // Ensure at least one country is always selected
+                            if (selectedValues.length === 0) {
+                              toast.error("At least one country must be selected");
                               return;
                             }
                             
