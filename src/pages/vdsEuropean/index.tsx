@@ -705,7 +705,7 @@ const index = () => {
                 : [],
               vote_type: allAnalyticsFilter?.vote_type || [],
               date_range: allAnalyticsFilter?.date_range || null,
-              country: ["USA"],
+              country: allAnalyticsFilter?.country || ["USA"],
               page: analyticsPage || 1,
             }
           );
