@@ -449,7 +449,7 @@ const index = () => {
       proposal_type?: any[];
       proponent_type?: any[];
       meeting_type?: any[];
-      proposal_keywords?: any[];
+      proposal_keyword?: any[];
       country?: any[];
       date_range?: string;
       analyticsYear?: any;
@@ -465,7 +465,7 @@ const index = () => {
       proposal_type: data?.proposal_type || [],
       proponent_type: data?.proponent_type || [],
       meeting_type: data?.meeting_type || [],
-      proposal_keywords: data?.proposal_keywords || [],
+      proposal_keyword: data?.proposal_keyword || [],
       country: data?.country || [],
     };
     
@@ -544,7 +544,7 @@ const index = () => {
     setValue("index_name", []);
     setValue("proponent_type", []);
     setValue("proposal_type", []);
-    setValue("proposal_keywords", []);
+    setValue("proposal_keyword", []);
     setValue("meeting_type", []);
     setValue("country", ["USA"]);
     setSelectedCountries(["USA"]);
@@ -732,9 +732,9 @@ const index = () => {
                 allAnalyticsFilter?.index_name?.length > 0
                   ? allAnalyticsFilter.index_name
                   : [],
-              proposal_keywords:
-                allAnalyticsFilter?.proposal_keywords?.length > 0
-                  ? allAnalyticsFilter.proposal_keywords
+              proposal_keyword:
+                allAnalyticsFilter?.proposal_keyword?.length > 0
+                  ? allAnalyticsFilter.proposal_keyword
                   : [],
               meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
                 ? allAnalyticsFilter.meeting_type
@@ -1219,7 +1219,7 @@ const index = () => {
                     <FaTags className="text-gray-400" /> Keywords
                   </label>
                   <Controller
-                    name="proposal_keywords"
+                    name="proposal_keyword"
                     control={control}
                     render={({ field }) => (
                       <CreatableInputSelect

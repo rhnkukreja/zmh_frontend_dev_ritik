@@ -728,8 +728,7 @@ const index = () => {
                                                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                     <span>
                                                         <h1 className="text-lg font-bold flex items-center gap-2">
-                                                            Voting Data
-
+                                                            Proxy Contest
                                                         </h1>
                                                     </span>
                                                 </div>

@@ -1,4 +1,4 @@
-import { characterColors, PAGE_SIZE } from "@/constant";
+import { characterColors, PAGE_SIZE, proposal_keywords } from "@/constant";
 import { FormattedMenu } from "@/themes/Echo/side-menu";
 import { FilterObject } from "@/types/common";
 import dayjs from "dayjs";
@@ -377,7 +377,7 @@ function generateFilterChips(filters: Record<string, any>) {
     proposal_type: "Proposal Category",
     proponent_type: "Proponent",
     meeting_type: "Meeting Type",
-    custom_keywords: "Keywords",
+    proposal_keyword: "Keywords",
     country: "Country",
     analyticsYear: "Year",
     date_range: "Date Range",
