@@ -142,7 +142,14 @@ const index = () => {
     // Fetch initial data
     useEffect(() => {
         fetchProxyContestCompanies(1);
+        
+        // Clear the preventAutoNavigation state after initial load
+        if (location.state?.preventAutoNavigation) {
+            navigate(location.pathname, { replace: true, state: {} });
+        }
     }, []);
+
+    // Auto-navigation is now handled directly in fetchProxyContestCompanies function
 
 
     const gotoDetailPage = (pdf: string, pdf_name: string) => {
@@ -200,6 +207,36 @@ const index = () => {
 
             const data = await response.json();
             console.log(`API Response for page ${page}:`, data); // Debug log
+            
+            // Check for auto-navigation immediately after getting data (only on page 1 and first load)
+            const shouldSkipAutoNavigation = sessionStorage.getItem('skipProxyContestAutoNav') === 'true';
+            const preventAutoNavigation = location.state?.preventAutoNavigation === true;
+            
+            if (companyGlobalSearchName && data.results && data.results.length > 0 && !shouldSkipAutoNavigation && !preventAutoNavigation && page === 1) {
+                const matchingCompany = data.results.find((company: any) => 
+                    company.company_name?.toLowerCase().trim() === companyGlobalSearchName.toLowerCase().trim()
+                );
+                
+                if (matchingCompany) {
+                    console.log(`Found matching company during API call: ${matchingCompany.company_name}, navigating immediately`);
+                    sessionStorage.setItem('skipProxyContestAutoNav', 'true');
+                    
+                    // Don't set the companies state, navigate immediately
+                    setProxyContestLoading(false);
+                    navigate(`/proxy-contest-detail/${matchingCompany.company_id}`, {
+                        state: {
+                            company: matchingCompany,
+                            companyName: matchingCompany.company_name,
+                            year: matchingCompany.year,
+                            meetingDate: matchingCompany.meeting_date,
+                            fromProxyContest: true
+                        }
+                    });
+                    return; // Exit early, don't set state
+                }
+            }
+            
+            // Only set state if we're not auto-navigating
             setProxyContestCompanies(data.results || []);
             setProxyContestTotal(data.count || 0);
         } catch (error) {
@@ -379,6 +416,12 @@ const index = () => {
             });
         }
     }, [])
+
+    // Reset auto-navigation flag when global company search changes
+    useEffect(() => {
+        // Clear the skip flag when company search changes to allow auto-navigation for new company
+        sessionStorage.removeItem('skipProxyContestAutoNav');
+    }, [companyGlobalSearchName]);
 
     useEffect(() => {
 
@@ -904,7 +947,8 @@ const index = () => {
                                                                                                     company: company,
                                                                                                     companyName: company.company_name,
                                                                                                     year: company.year,
-                                                                                                    meetingDate: company.meeting_date
+                                                                                                    meetingDate: company.meeting_date,
+                                                                                                    fromProxyContest: true
                                                                                                 }
                                                                                             });
                                                                                         }}
