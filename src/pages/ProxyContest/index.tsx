@@ -81,6 +81,9 @@ const index = () => {
     const [modalData, setModalData] = useState<any>(null);
     const [modalLoading, setModalLoading] = useState<boolean>(false);
     
+    // Navigation states
+    const [isNavigatingToDetail, setIsNavigatingToDetail] = useState<boolean>(false);
+    
     // Filter states
     const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
     const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -142,6 +145,47 @@ const index = () => {
     useEffect(() => {
         fetchProxyContestCompanies(1);
     }, []);
+
+    // Reset navigation state when component mounts or path changes
+    useEffect(() => {
+        if (location.pathname === '/proxy-contest') {
+            setIsNavigatingToDetail(false);
+        }
+    }, [location.pathname]);
+
+    // Check for global company search match and auto-navigate to detail page
+    useEffect(() => {
+        if (companyGlobalSearchName && 
+            proxyContestCompanies.length > 0 && 
+            location.pathname === '/proxy-contest' &&
+            !isNavigatingToDetail) { // Prevent multiple navigations
+            
+            // Find matching company in the proxy contest companies
+            const matchingCompany = proxyContestCompanies.find(company => 
+                company.company_name?.toLowerCase().trim() === companyGlobalSearchName?.toLowerCase().trim()
+            );
+            
+            if (matchingCompany) {
+                console.log("Found matching company for global search:", matchingCompany);
+                setIsNavigatingToDetail(true);
+                
+                // Add a small delay for smooth transition
+                setTimeout(() => {
+                    navigate(`/proxy-contest-detail/${matchingCompany.company_id}`, { 
+                        state: { 
+                            company: matchingCompany,
+                            companyName: matchingCompany.company_name,
+                            year: matchingCompany.year,
+                            meetingDate: matchingCompany.meeting_date,
+                            fromGlobalSearch: true,
+                            backTo: '/proxy-contest' // Explicit back route
+                        },
+                        replace: false // Use push navigation for proper back button
+                    });
+                }, 300); // Small delay for smooth transition
+            }
+        }
+    }, [companyGlobalSearchName, proxyContestCompanies, navigate, location.pathname, isNavigatingToDetail]);
 
     const gotoDetailPage = (pdf: string, pdf_name: string) => {
         setCurrentPdfDoc(pdf);
@@ -692,6 +736,14 @@ const index = () => {
 
     return (
         <>
+            {isNavigatingToDetail && (
+                <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="flex flex-col items-center">
+                        <LoadingIcon icon="oval" className="w-8 h-8" />
+                        <div className="mt-2 text-sm text-gray-600">Loading company details...</div>
+                    </div>
+                </div>
+            )}
             {/* <Button
                 onClick={() => {
                     navigate("/");
