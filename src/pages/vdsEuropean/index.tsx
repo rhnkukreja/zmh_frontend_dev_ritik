@@ -685,16 +685,6 @@ const index = () => {
     const updatedFilters = { ...allApplyFilter };
 
     if (Array.isArray(updatedFilters[removeKey])) {
-      // Check for minimum requirements before removing
-      if (removeKey === "institution_name" && updatedFilters[removeKey].length <= 1) {
-        toast.error("At least one institution must be selected");
-        return;
-      }
-      if (removeKey === "country" && updatedFilters[removeKey].length <= 1) {
-        toast.error("At least one country must be selected");
-        return;
-      }
-      
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
         (item) => item !== removeValue
       );
@@ -984,6 +974,8 @@ const index = () => {
                           handleDropdownChange("institution_name", selectedValues);
                         }}
                         selectedOption={field.value || []}
+                        preventRemoveLastItem={true}
+                        fieldName="institution"
                       />
                     )}
                   />
@@ -1221,6 +1213,8 @@ const index = () => {
                           }))}
                           placeholder="Select Country"
                           loading={false}
+                          preventRemoveLastItem={true}
+                          fieldName="country"
                           onChange={(selectedOptions) => {
                             const selectedValues = selectedOptions.map((option) => option.value);
                             
