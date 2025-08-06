@@ -1212,7 +1212,7 @@ const index = () => {
                 </div>
               </div>
               {/* Third row: Keywords */}
-              <div className="grid gap-6 md:grid-cols-1 grid-cols-1 mt-6">
+              <div className="grid gap-6 md:grid-cols-4 grid-cols-4 mt-6">
                 {/* Keywords */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
