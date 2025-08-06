@@ -120,7 +120,7 @@ const index = () => {
                 console.log("Proxy Contest Dropdown API Response:", data); // Debug log
 
                 // Extract companies from proxy_companies if available
-                const companies: string[] = data.proxy_companies ?
+                const companies: any[] = data.proxy_companies ?
                     [...new Set(data.proxy_companies.map((company: any) => company.company_name).filter(Boolean))] :
                     [];
                 console.log("Extracted companies:", companies); // Debug log
@@ -722,13 +722,14 @@ const index = () => {
                                     {/* Filter Section */}
 
                                     {/* Proxy Contest Companies Table */}
-                                    <div className="p-5 mt-1">
+                                    <div className="p-5 mt-1 box">
                                         <div>
                                             <div className="flex flex-col p-5 sm:flex-row gap-y-2">
                                                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                                                     <span>
                                                         <h1 className="text-lg font-bold flex items-center gap-2">
-                                                            Proxy Contest
+                                                            Voting Data
+
                                                         </h1>
                                                     </span>
                                                 </div>
