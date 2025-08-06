@@ -6,8 +6,10 @@ import Lucide from "../Base/Lucide";
 import Tippy from "../Base/Tippy";
 
 interface PdfViewerProps {
-  file: string;
-  file_name: string;
+  file?: string;
+  file_name?: string;
+  currentPdfDoc?: string;
+  currentPdfName?: string;
   pdfVisible: boolean;
   setPdfVisible: (visible: boolean) => void;
 }
@@ -15,9 +17,13 @@ interface PdfViewerProps {
 const PdfViewer: React.FC<PdfViewerProps> = ({
   file,
   file_name,
+  currentPdfDoc,
+  currentPdfName,
   pdfVisible,
   setPdfVisible,
 }) => {
+  const pdfFile = file || currentPdfDoc;
+  const pdfFileName = file_name || currentPdfName;
   const fileName = useMemo(() => {
     return file_name;
   }, [file_name]);

@@ -39,7 +39,7 @@ import { peerAnalysisService } from "@/services/peerAnalysis";
 import clsx from "clsx";
 import ChartComponent from "@/components/EnagementDetailsDialog";
 import FilterChips from "@/components/FilterChips";
-import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
@@ -790,7 +790,7 @@ function PeerAnalysis() {
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
                           <span className="flex items-center gap-2 text-slate-600 font-semibold">
-                            <FaLayerGroup className="text-gray-400" /> Country
+                            <FaGlobe className="text-gray-400" /> Country
                           </span>
 
 

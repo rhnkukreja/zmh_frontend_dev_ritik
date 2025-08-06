@@ -41,13 +41,13 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import Pill from "@/components/Pill";
-import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
 import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
 import Litepicker from "@/components/Base/Litepicker";
-import React from "react";
+import React, { useCallback } from "react";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -98,6 +98,9 @@ const index = () => {
       company_name: [],
     });
   const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
+  const [countryOptions, setCountryOptions] = useState<string[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [countryComponentKey, setCountryComponentKey] = useState<number>(0);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
   const toggleExpand = (index: number) => {
     setExpandedRows((prev) => ({
@@ -128,13 +131,41 @@ const index = () => {
         const parsed = JSON.parse(savedFilters);
         setallApplyFilter(parsed);
         // Set form values as well
-        Object.entries(parsed).forEach(([key, value]) => {
-          setValue(key, value);
-        });
+        // Restore all saved values at once using reset
+        const restoredValues = {
+          institution_name: parsed.institution_name || [],
+          vote: parsed.vote || [],
+          category: parsed.category || [],
+          year: parsed.year || "",
+          company_name: parsed.company_name || [],
+          date_range: parsed.date_range || "",
+          country: parsed.country || ["USA"],
+        };
+        
+        // Use setTimeout to ensure the reset happens after component mount
+        setTimeout(() => {
+          reset(restoredValues);
+        }, 100);
+        
+        // Also set selectedCountries if country is in saved filters
+        if (parsed.country) {
+          setSelectedCountries(parsed.country);
+        } else {
+          // Set default country if no saved filters
+          setSelectedCountries(["USA"]);
+        }
       } catch (e) { 
         // If parsing fails, do nothing - let user set filters manually
         console.log("Error parsing saved filters:", e);
+        // Set default country even if parsing fails
+        setSelectedCountries(["USA"]);
       }
+    } else {
+      // Set default country if no saved filters exist
+      setSelectedCountries(["USA"]);
+      // Also set default filter to show pills
+      setallApplyFilter({ country: ["USA"] });
+      setValue("country", ["USA"]);
     }
     // Don't set default date range automatically - let user choose
   }, []);
@@ -155,8 +186,11 @@ const index = () => {
           )
         );
 
-        setFiltersLength(countValidFilters(allApplyFilter));
-        setSelectedChipFilters(generateFilterChips(allApplyFilter));
+        // Only update chips for regular filters if not in analytics mode
+        if (!isViewAnalysis) {
+          setFiltersLength(countValidFilters(allApplyFilter));
+          setSelectedChipFilters(generateFilterChips(allApplyFilter));
+        }
         dispatch(setTempSearch(companyGlobalSearchName));
 
         setIsLoading(false);
@@ -165,22 +199,24 @@ const index = () => {
 
     fetchData();
     // console.log(watch("year"));
-  }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page]);
+  }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
 
   useEffect(() => {
     getDependentDropdown();
   }, [dropdownValues?.company_name]);
 
   useEffect(() => {
-    const fetchInstitutions = async () => {
+    const fetchDropdownData = async () => {
       try {
         const data = await getVdsEuropeanDropdownValues();
         setInstitutionOptions(data.institution || []);
+        setCountryOptions(data.country || []);
       } catch (error) {
         setInstitutionOptions([]);
+        setCountryOptions([]);
       }
     };
-    fetchInstitutions();
+    fetchDropdownData();
   }, []);
 
   // Calculate default date range: Jan 2024 to one day before current date
@@ -210,6 +246,7 @@ const index = () => {
       year: "",
       company_name: [],
       date_range: "",
+      country: ["USA"],
     },
   });
 
@@ -354,12 +391,24 @@ const index = () => {
       return;
     }
     
-    const filterObj = {
+    interface FilterObj {
+      company_name: any;
+      institution_name: any;
+      vote_type: any;
+      category: any;
+      keyword: any;
+      country: any;
+      date_range?: any;
+      year?: any;
+    }
+
+    const filterObj: FilterObj = {
       company_name: npxFilter?.company_name, // Already a flat array
       institution_name: npxFilter?.institution_name,
       vote_type: npxFilter?.vote,
       category: npxFilter?.category,
       keyword: npxFilter?.keyword,
+      country: npxFilter?.country,
     };
     
     // Add only the active filter (year OR date_range, not both)
@@ -371,8 +420,13 @@ const index = () => {
       // Explicitly exclude date_range when year is selected
     }
     setallApplyFilter(filterObj);
-    // Save to localStorage
-    localStorage.setItem("vdsEuropeanFilters", JSON.stringify(filterObj));
+    // Save to localStorage including all filters
+    const completeFilterObj = {
+      ...filterObj,
+      vote: npxFilter?.vote, // Ensure vote filter is saved
+      country: npxFilter?.country || ["USA"] // Ensure country filter is saved with USA default
+    };
+    localStorage.setItem("vdsEuropeanFilters", JSON.stringify(completeFilterObj));
     dispatch(resetPage());
     setIsFilterCollapse(false);
   };
@@ -387,13 +441,32 @@ const index = () => {
     const hasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
     const hasDateRange = data?.date_range && data?.date_range.trim() !== "";
     
-    const analyticsObj = {
+    interface AnalyticsObj {
+      institution_name: any[];
+      index_name: any[];
+      company_name: any[];
+      vote_type: any[];
+      proposal_type?: any[];
+      proponent_type?: any[];
+      meeting_type?: any[];
+      custom_keywords?: any[];
+      country?: any[];
+      date_range?: string;
+      analyticsYear?: any;
+    }
+    
+    const analyticsObj: AnalyticsObj = {
       institution_name: data?.institution_name || [],
       index_name: data?.index_name || [],
       company_name: Array.isArray(data?.company_name) && data.company_name.length > 0
         ? data.company_name.map((item: any) => item.label || item.value || item)
         : [],
       vote_type: data?.vote || [], // always set vote_types
+      proposal_type: data?.proposal_type || [],
+      proponent_type: data?.proponent_type || [],
+      meeting_type: data?.meeting_type || [],
+      custom_keywords: data?.custom_keywords || [],
+      country: data?.country || [],
     };
     
     // Add only the active filter (analyticsYear OR date_range, not both)
@@ -424,19 +497,22 @@ const index = () => {
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
+        country: ["USA"],
       });
       setValue("institution_name", ["BlackRock, Inc."]);
       setValue("index_name", ["S&P 500"]);
+      setValue("country", ["USA"]);
+      setSelectedCountries(["USA"]);
       setVdsEuropeansAnalytics({});
       localStorage.removeItem("vdsEuropeanAnalyticsFilters");
     } else {
-      setallApplyFilter({});
+      setallApplyFilter({ country: ["USA"] });
       dispatch(resetPage());
       dispatch(
         fetchVdsEuropeans(
           createDynamicURL(
             `${baseURL}/vds_european/`,
-            undefined,
+            { country: ["USA"] },
             undefined,
             page
           )
@@ -470,6 +546,9 @@ const index = () => {
     setValue("proposal_type", []);
     setValue("custom_keywords", []);
     setValue("meeting_type", []);
+    setValue("country", ["USA"]);
+    setSelectedCountries(["USA"]);
+    setCountryComponentKey(prev => prev + 1);
     setDropdownValues({
       company_name: [],
       institution: [],
@@ -513,6 +592,33 @@ const index = () => {
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    // Handle country filter removal with minimum one country requirement
+    if (removeKey === "country") {
+      const currentCountries = isViewAnalysis ? allAnalyticsFilter.country || [] : allApplyFilter.country || [];
+      if (currentCountries.length <= 1) {
+        toast.error("At least one country must be selected");
+        return;
+      }
+      
+      // Remove the specific country value
+      const updatedCountries = currentCountries.filter((country: string) => country !== removeValue);
+      
+      if (isViewAnalysis) {
+        const updatedFilters = { ...allAnalyticsFilter, country: updatedCountries };
+        setAllAnalyticsFilter(updatedFilters);
+        setValue("country", updatedCountries);
+        setSelectedCountries(updatedCountries);
+        localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+      } else {
+        const updatedFilters = { ...allApplyFilter, country: updatedCountries };
+        setallApplyFilter(updatedFilters);
+        setValue("country", updatedCountries);
+        setSelectedCountries(updatedCountries);
+        localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+      }
+      return;
+    }
+
     if (isViewAnalysis) {
       const updatedFilters = { ...allAnalyticsFilter };
 
@@ -615,61 +721,95 @@ const index = () => {
       }
     };
     fetchAnalytics();
-    let filterForChips = allAnalyticsFilter;
-    if (isViewAnalysis && filterForChips.vote) {
-      const { vote, ...rest } = filterForChips;
-      filterForChips = rest;
+    
+    // Generate filter chips only when analytics filter changes
+    if (isViewAnalysis) {
+      let filterForChips = allAnalyticsFilter;
+      if (filterForChips.vote) {
+        const { vote, ...rest } = filterForChips;
+        filterForChips = rest;
+      }
+      setFiltersLength(countValidFilters(filterForChips));
+      setSelectedChipFilters(generateFilterChips(filterForChips));
     }
-    setFiltersLength(countValidFilters(filterForChips));
-    setSelectedChipFilters(generateFilterChips(filterForChips));
+    
     return () => { isMounted = false; };
-  }, [allAnalyticsFilter, analyticsPage]);
+  }, [allAnalyticsFilter, analyticsPage, isViewAnalysis]);
 
-  // On initial mount, set default analytics filter to BlackRock and S&P 500, or restore from localStorage
+  // Initialize analytics filters once on mount
   useEffect(() => {
+    if (!isViewAnalysis) return;
+    
+    // Only initialize if analytics filter is empty
+    if (Object.keys(allAnalyticsFilter).length > 0) return;
+
     const query = new URLSearchParams(window.location.search);
-
     const institution_name = query.get("institution_name");
-
     const analyticsYear = query.get("year");
 
-
-    if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
-      const savedAnalytics = localStorage.getItem("vdsEuropeanAnalyticsFilters");
-      if (savedAnalytics) {
-        try {
-          const parsed = JSON.parse(savedAnalytics);
-          setAllAnalyticsFilter(parsed);
-          Object.entries(parsed).forEach(([key, value]) => {
-            setValue(key, value);
-          });
-          return;
-        } catch (e) { }
+    // Try to restore from localStorage first
+    const savedAnalytics = localStorage.getItem("vdsEuropeanAnalyticsFilters");
+    if (savedAnalytics) {
+      try {
+        const parsed = JSON.parse(savedAnalytics);
+        const analyticsWithCountry = {
+          ...parsed,
+          country: parsed.country || ["USA"]
+        };
+        setAllAnalyticsFilter(analyticsWithCountry);
+        Object.entries(analyticsWithCountry).forEach(([key, value]) => {
+          setValue(key, value);
+        });
+        setSelectedCountries(analyticsWithCountry.country);
+        return;
+      } catch (e) {
+        console.log("Error parsing saved analytics filters:", e);
       }
-      if (institution_name) {
-      setAllAnalyticsFilter({
+    }
+
+    // Set defaults based on URL params or fallback to BlackRock + S&P 500
+    let defaultFilters;
+    if (institution_name) {
+      defaultFilters = {
         institution_name: [institution_name],
         analyticsYear: analyticsYear ? [analyticsYear] : [],
-      });
-      setValue("institution_name", [institution_name]);
-      setValue("index_name", []);
-      setValue("analyticsYear", [analyticsYear]);
-      setValue("date_range", "");
-    }else{
-      setAllAnalyticsFilter({
+        country: ["USA"],
+      };
+    } else {
+      defaultFilters = {
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
         analyticsYear: ["2025"],
         date_range: "",
+        country: ["USA"],
+      };
+    }
+
+    setAllAnalyticsFilter(defaultFilters);
+    Object.entries(defaultFilters).forEach(([key, value]) => {
+      setValue(key, value);
+    });
+    setSelectedCountries(["USA"]);
+  }, []); // Empty dependency array - only run once on mount
+
+  // Handle analytics mode initialization when switching modes
+  useEffect(() => {
+    if (isViewAnalysis && Object.keys(allAnalyticsFilter).length === 0) {
+      // Set default analytics filters if none exist
+      const defaultFilters = {
+        institution_name: ["BlackRock, Inc."],
+        index_name: ["S&P 500"],
+        analyticsYear: ["2025"],
+        date_range: "",
+        country: ["USA"],
+      };
+      
+      setAllAnalyticsFilter(defaultFilters);
+      Object.entries(defaultFilters).forEach(([key, value]) => {
+        setValue(key, value);
       });
-      setValue("institution_name", ["BlackRock, Inc."]);
-      setValue("index_name", ["S&P 500"]);
-      setValue("analyticsYear", ["2025"]);
-      setValue("date_range", "");
+      setSelectedCountries(["USA"]);
     }
-     
-    }
-    // eslint-disable-next-line
   }, [isViewAnalysis]);
  
   const getAllCaseStudyDropdowns = async () => {
@@ -765,7 +905,7 @@ const index = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
             {/* Filter Toggle and Advanced Filters Button */}
             <form onSubmit={handleSubmit(onSubmit)}>
-              {/* All filters in multiple rows */}
+              {/* First row: Institution, Year, Index, Date Range */}
               <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
                 {/* Institution */}
                 <div>
@@ -840,122 +980,6 @@ const index = () => {
                     )}
                   />
                 </div>
-                {/* Proposal Type */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaListUl className="text-gray-400" /> Proposal Type
-                  </label>
-                  <Controller
-                    name="proposal_type"
-                    control={control}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={proposal_type.map((item: any) => convertToTitleCase(item))}
-                        placeholder="Select Proposal Type"
-                        loading={false}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
-              {/* Second row with 3 columns */}
-              <div className="grid gap-6 md:grid-cols-3 grid-cols-1 mt-6">
-                {/* Vote */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaHandshake className="text-gray-400" /> Vote
-                  </label>
-                  <Controller
-                    name="vote"
-                    control={control}
-                    defaultValue={[]}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={["For", "Against", "Abstain"]}
-                        placeholder="Select Vote"
-                        loading={getDynamicDropdownLoader}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => option.value);
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-                {/* Proponent Type */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaUserTie className="text-gray-400" /> Proponent Type
-                  </label>
-                  <Controller
-                    name="proponent_type"
-                    control={control}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={proponent_type.map((item: any) => convertToTitleCase(item))}
-                        placeholder="Select Proponent Type"
-                        loading={false}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-                {/* Meeting Type */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaTags className="text-gray-400" /> Meeting Type
-                  </label>
-                  <Controller
-                    name="meeting_type"
-                    control={control}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={meeting_type.map((item: any) => convertToTitleCase(item))}
-                        placeholder="Select Meeting Type"
-                        loading={false}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
-              {/* Company Name, Date Range and Keywords in separate row with 3 columns */}
-              <div className="grid gap-6 md:grid-cols-3 grid-cols-1 mt-6">
-                {/* Company Name */}
-                <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaBuilding className="text-gray-400" /> Company Name
-                  </label>
-                  <Controller
-                    name="company_name"
-                    control={control}
-                    defaultValue={[]}
-                    render={({ field }) => (
-                      <CompanySelect
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        isMulti={true}
-                        placeholder="Search Companies"
-                      />
-                    )}
-                  />
-                </div>
                 {/* Date Range */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -1001,6 +1025,167 @@ const index = () => {
                       )}
                     />
                   </div>
+                </div>
+              </div>
+              {/* Second row: Company Name, Meeting Type, Proposal Category, Proponent, Vote */}
+              <div className="grid gap-6 md:grid-cols-5 grid-cols-1 mt-6">
+                {/* Company Name */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaBuilding className="text-gray-400" /> Company Name
+                  </label>
+                  <Controller
+                    name="company_name"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <CompanySelect
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        isMulti={true}
+                        placeholder="Search Companies"
+                      />
+                    )}
+                  />
+                </div>
+                {/* Meeting Type */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaTags className="text-gray-400" /> Meeting Type
+                  </label>
+                  <Controller
+                    name="meeting_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={meeting_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Meeting Type"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Proposal Category */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaListUl className="text-gray-400" /> Proposal Category
+                  </label>
+                  <Controller
+                    name="proposal_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={proposal_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Proposal Category"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Proponent */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaUserTie className="text-gray-400" /> Proponent
+                  </label>
+                  <Controller
+                    name="proponent_type"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={proponent_type.map((item: any) => convertToTitleCase(item))}
+                        placeholder="Select Proponent"
+                        loading={false}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+                {/* Vote */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaHandshake className="text-gray-400" /> Vote
+                  </label>
+                  <Controller
+                    name="vote"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => (
+                      <MultiSelectDropdown
+                        data={[
+                          { value: "For", label: "For" },
+                          { value: "Against", label: "Against" },
+                          { value: "Withhold", label: "Withhold" }
+                        ]}
+                        placeholder="Select Vote"
+                        loading={getDynamicDropdownLoader}
+                        onChange={(selectedOptions) => {
+                          const selectedValues = selectedOptions.map((option) => option.value);
+                          field.onChange(selectedValues);
+                        }}
+                        selectedOption={field.value || []}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+              {/* Third row: Country, Keywords */}
+              <div className="grid gap-6 md:grid-cols-4 grid-cols-1 mt-6">
+                {/* Country */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaGlobe className="text-gray-400" /> Country
+                  </label>
+                  <Controller
+                    name="country"
+                    control={control}
+                    defaultValue={[]}
+                    render={({ field }) => {
+                      // Use selectedCountries as the source of truth
+                      const currentCountries = selectedCountries.length > 0 ? selectedCountries : (field.value || []);
+                      
+                      return (
+                        <MultiSelectDropdown
+                          key={`country-${countryComponentKey}`} // Force re-render to reset component state
+                          data={countryOptions.map(option => ({
+                            value: option,
+                            label: option
+                          }))}
+                          placeholder="Select Country"
+                          loading={false}
+                          onChange={(selectedOptions) => {
+                            const selectedValues = selectedOptions.map((option) => option.value);
+                            
+                            // Ensure at least one country is always selected
+                            if (selectedValues.length === 0) {
+                              toast.error("At least one country must be selected");
+                              return;
+                            }
+                            
+                            // Update both state and form field
+                            setSelectedCountries(selectedValues);
+                            field.onChange(selectedValues);
+                          }}
+                          selectedOption={currentCountries}
+                        />
+                      );
+                    }}
+                  />
                 </div>
                 {/* Keywords */}
                 <div>
@@ -1283,11 +1468,23 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             </tr>
             <tr className="bg-primary text-white text-base">
               {institutions.map((institution) => (
-                years.map((year) => (
-                  <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
-                    {String(year)}
-                  </th>
-                ))
+                years.map((year) => {
+                  const yearData = institution.years[year];
+                  const dateRange = yearData?.date_range;
+                  const dateRangeText = dateRange ? ` (${dateRange.start_meeting} - ${dateRange.end_meeting})` : '';
+                  return (
+                    <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
+                      <div className="flex flex-col">
+                        <div>{String(year)}</div>
+                        {dateRange && (
+                          <div className="text-xs font-normal mt-1">
+                            ({dateRange.start_meeting} - {dateRange.end_meeting})
+                          </div>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })
               ))}
             </tr>
           </thead>
@@ -1295,7 +1492,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">No. of unique companies</td>
               {institutions.map((institution) => (
-                years.map((year: any) => {
+                years.map((year: string | number) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
@@ -1308,7 +1505,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr>
               <td className="px-6 py-3 font-medium">No of proposals</td>
               {institutions.map((institution) => (
-                years.map((year: any) => {
+                years.map((year: string | number) => {
                   const yearData = institution.years[year];
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
@@ -1365,20 +1562,6 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
                       {yearData ? `${yearData.alignment_percentage}%` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">Data as of</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  const dateRange = yearData?.date_range;
-                  return (
-                    <td key={`${institution.institution_id}-${year}-date`} className="px-6 py-3 text-center">
-                      {dateRange ? `${dateRange.start_meeting} - ${dateRange.end_meeting}` : '-'}
                     </td>
                   );
                 })

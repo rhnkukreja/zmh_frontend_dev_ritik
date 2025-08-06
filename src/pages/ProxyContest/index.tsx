@@ -595,159 +595,161 @@ const index = () => {
 
                             <Tab.Panels className="mt-5">
                                 <Tab.Panel className="leading-relaxed">
-                                    {/* Proxy Contest Companies Table */}
-                                    <div>
-                                        {proxyContestLoading ? (
-                                            <div className="h-52 flex items-center justify-center">
-                                                <LoadingIcon icon="three-dots" className="w-8 h-8" />
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <TableWrapper isLoading={proxyContestLoading}>
-                                                    <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
-                                                        <Table>
-                                                            <Table.Thead>
-                                                                <Table.Tr className="bg-primary text-white text-sm">
-                                                                    <Table.Td className="px-4 py-2 font-semibold">Year</Table.Td>
-                                                                    <Table.Td className="px-4 py-2 font-semibold">Company Name</Table.Td>
-                                                                    <Table.Td className="px-4 py-2 font-semibold">Meeting Date</Table.Td>
-                                                                    <Table.Td className="px-4 py-2 font-semibold">Actions</Table.Td>
-                                                                </Table.Tr>
-                                                            </Table.Thead>
-                                                            <Table.Tbody>
-                                                                {proxyContestCompanies?.length > 0 ? (
-                                                                    proxyContestCompanies.map((company, index) => (
-                                                                        <Table.Tr
-                                                                            key={`${company.company_id}-${index}`}
-                                                                            className="[&_td]:last:border-b-0 transition-all hover:bg-primary/5"
-                                                                        >
-                                                                            <Table.Td className="py-2 border-dashed">
-                                                                                <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                                                    {company.year}
-                                                                                </span>
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 border-dashed">
-                                                                                <div 
-                                                                                    className="font-semibold cursor-pointer hover:underline transition-colors"
-                                                                                    onClick={() => {
-                                                                                        navigate(`/proxy-contest-detail/${company.company_id}`, { 
-                                                                                            state: { 
-                                                                                                company: company,
-                                                                                                companyName: company.company_name,
-                                                                                                year: company.year,
-                                                                                                meetingDate: company.meeting_date
-                                                                                            } 
-                                                                                        });
-                                                                                    }}
-                                                                                >
-                                                                                    {company.company_name}
-                                                                                </div>
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 border-dashed">
-                                                                                {company.meeting_date ? (
-                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
-                                                                                        {company.meeting_date}
+                                    {/* Proxy Contest Companies Table - Hidden when global company is searched (except for default Amazon) */}
+                                    {(!companyGlobalSearchName || companyGlobalSearchName === 'Amazon.com, Inc.') && (
+                                        <div>
+                                            {proxyContestLoading ? (
+                                                <div className="h-52 flex items-center justify-center">
+                                                    <LoadingIcon icon="three-dots" className="w-8 h-8" />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <TableWrapper isLoading={proxyContestLoading}>
+                                                        <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
+                                                            <Table>
+                                                                <Table.Thead>
+                                                                    <Table.Tr className="bg-primary text-white text-sm">
+                                                                        <Table.Td className="px-4 py-2 font-semibold">Year</Table.Td>
+                                                                        <Table.Td className="px-4 py-2 font-semibold">Company Name</Table.Td>
+                                                                        <Table.Td className="px-4 py-2 font-semibold">Meeting Date</Table.Td>
+                                                                        <Table.Td className="px-4 py-2 font-semibold">Actions</Table.Td>
+                                                                    </Table.Tr>
+                                                                </Table.Thead>
+                                                                <Table.Tbody>
+                                                                    {proxyContestCompanies?.length > 0 ? (
+                                                                        proxyContestCompanies.map((company, index) => (
+                                                                            <Table.Tr
+                                                                                key={`${company.company_id}-${index}`}
+                                                                                className="[&_td]:last:border-b-0 transition-all hover:bg-primary/5"
+                                                                            >
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                                        {company.year}
                                                                                     </span>
-                                                                                ) : (
-                                                                                    <span className="text-gray-400 text-xs">-</span>
-                                                                                )}
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 border-dashed">
-                                                                                <div className="flex gap-2">
-                                                                                    {/* Documents Icon - Always visible */}
-                                                                                    {company.is_documents ? (
-                                                                                        <Tippy content="Documents" options={{ theme: "light" }}>
-                                                                                            <div
-                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                                                                                onClick={() => handleIconClick({...company, year: company.year}, 'documents')}
-                                                                                            >
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    <div 
+                                                                                        className="font-semibold cursor-pointer hover:underline transition-colors"
+                                                                                        onClick={() => {
+                                                                                            navigate(`/proxy-contest-detail/${company.company_id}`, { 
+                                                                                                state: { 
+                                                                                                    company: company,
+                                                                                                    companyName: company.company_name,
+                                                                                                    year: company.year,
+                                                                                                    meetingDate: company.meeting_date
+                                                                                                } 
+                                                                                            });
+                                                                                        }}
+                                                                                    >
+                                                                                        {company.company_name}
+                                                                                    </div>
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    {company.meeting_date ? (
+                                                                                        <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                                                                                            {company.meeting_date}
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="text-gray-400 text-xs">-</span>
+                                                                                    )}
+                                                                                </Table.Td>
+                                                                                <Table.Td className="py-2 border-dashed">
+                                                                                    <div className="flex gap-2">
+                                                                                        {/* Documents Icon - Always visible */}
+                                                                                        {company.is_documents ? (
+                                                                                            <Tippy content="Documents" options={{ theme: "light" }}>
+                                                                                                <div
+                                                                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                                                    onClick={() => handleIconClick({...company, year: company.year}, 'documents')}
+                                                                                                >
+                                                                                                    <Lucide icon="FileText" className="w-4 h-4" />
+                                                                                                </div>
+                                                                                            </Tippy>
+                                                                                        ) : (
+                                                                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
                                                                                                 <Lucide icon="FileText" className="w-4 h-4" />
                                                                                             </div>
-                                                                                        </Tippy>
-                                                                                    ) : (
-                                                                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
-                                                                                            <Lucide icon="FileText" className="w-4 h-4" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    
-                                                                                    {/* Proxy Advisory Firm Recommendation Icon - Always visible */}
-                                                                                    {company.is_proxy_advisory_firm_recommendation ? (
-                                                                                        <Tippy content="Proxy Advisory Firm Recommendation" options={{ theme: "light" }}>
-                                                                                            <div 
-                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                                                                                onClick={() => handleIconClick({...company, year: company.year}, 'proxy_advisory_firm_recommendation')}
-                                                                                            >
+                                                                                        )}
+                                                                                        
+                                                                                        {/* Proxy Advisory Firm Recommendation Icon - Always visible */}
+                                                                                        {company.is_proxy_advisory_firm_recommendation ? (
+                                                                                            <Tippy content="Proxy Advisory Firm Recommendation" options={{ theme: "light" }}>
+                                                                                                <div 
+                                                                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                                                    onClick={() => handleIconClick({...company, year: company.year}, 'proxy_advisory_firm_recommendation')}
+                                                                                                >
+                                                                                                    <Lucide icon="Shield" className="w-4 h-4" />
+                                                                                                </div>
+                                                                                            </Tippy>
+                                                                                        ) : (
+                                                                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
                                                                                                 <Lucide icon="Shield" className="w-4 h-4" />
                                                                                             </div>
-                                                                                        </Tippy>
-                                                                                    ) : (
-                                                                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
-                                                                                            <Lucide icon="Shield" className="w-4 h-4" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    
-                                                                                    {/* Meeting Details Icon - Always visible */}
-                                                                                    {company.is_meeting_details ? (
-                                                                                        <Tippy content="Meeting Details" options={{ theme: "light" }}>
-                                                                                            <div
-                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                                                                                onClick={() => handleIconClick({...company, year: company.year}, 'meeting_details')}
-                                                                                            >
+                                                                                        )}
+                                                                                        
+                                                                                        {/* Meeting Details Icon - Always visible */}
+                                                                                        {company.is_meeting_details ? (
+                                                                                            <Tippy content="Meeting Details" options={{ theme: "light" }}>
+                                                                                                <div
+                                                                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                                                    onClick={() => handleIconClick({...company, year: company.year}, 'meeting_details')}
+                                                                                                >
+                                                                                                    <Lucide icon="Calendar" className="w-4 h-4" />
+                                                                                                </div>
+                                                                                            </Tippy>
+                                                                                        ) : (
+                                                                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
                                                                                                 <Lucide icon="Calendar" className="w-4 h-4" />
                                                                                             </div>
-                                                                                        </Tippy>
-                                                                                    ) : (
-                                                                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
-                                                                                            <Lucide icon="Calendar" className="w-4 h-4" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    
-                                                                                    {/* Case Studies Icon - Always visible */}
-                                                                                    {company.is_case_studies ? (
-                                                                                        <Tippy content="Case Studies" options={{ theme: "light" }}>
-                                                                                            <div
-                                                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                                                                                onClick={() => handleIconClick({...company, year: company.year}, 'case_studies')}
-                                                                                            >
+                                                                                        )}
+                                                                                        
+                                                                                        {/* Case Studies Icon - Always visible */}
+                                                                                        {company.is_case_studies ? (
+                                                                                            <Tippy content="Case Studies" options={{ theme: "light" }}>
+                                                                                                <div
+                                                                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                                                    onClick={() => handleIconClick({...company, year: company.year}, 'case_studies')}
+                                                                                                >
+                                                                                                    <Lucide icon="BookOpen" className="w-4 h-4" />
+                                                                                                </div>
+                                                                                            </Tippy>
+                                                                                        ) : (
+                                                                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
                                                                                                 <Lucide icon="BookOpen" className="w-4 h-4" />
                                                                                             </div>
-                                                                                        </Tippy>
-                                                                                    ) : (
-                                                                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
-                                                                                            <Lucide icon="BookOpen" className="w-4 h-4" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </Table.Td>
+                                                                            </Table.Tr>
+                                                                        ))
+                                                                    ) : (
+                                                                        <Table.Tr>
+                                                                            <Table.Td colSpan={4} className="text-center py-10 text-gray-400 text-lg font-semibold">
+                                                                                <Lucide icon="Search" className="mx-auto mb-2 text-4xl text-primary/60" />
+                                                                                No Proxy Contest Companies available.
                                                                             </Table.Td>
                                                                         </Table.Tr>
-                                                                    ))
-                                                                ) : (
-                                                                    <Table.Tr>
-                                                                        <Table.Td colSpan={4} className="text-center py-10 text-gray-400 text-lg font-semibold">
-                                                                            <Lucide icon="Search" className="mx-auto mb-2 text-4xl text-primary/60" />
-                                                                            No Proxy Contest Companies available.
-                                                                        </Table.Td>
-                                                                    </Table.Tr>
-                                                                )}
-                                                            </Table.Tbody>
-                                                        </Table>
-                                                    </div>
-                                                </TableWrapper>
+                                                                    )}
+                                                                </Table.Tbody>
+                                                            </Table>
+                                                        </div>
+                                                    </TableWrapper>
 
-                                                {proxyContestTotal > pageSize && (
-                                                    <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                                                        <CPagination
-                                                            page={proxyContestPage}
-                                                            totalPages={Math.ceil(proxyContestTotal / pageSize)}
-                                                            handleNextPage={handleProxyContestNextPage}
-                                                            handlePageChange={handleProxyContestPageChange}
-                                                            handlePreviousPage={handleProxyContestPreviousPage}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
+                                                    {proxyContestTotal > pageSize && (
+                                                        <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                                            <CPagination
+                                                                page={proxyContestPage}
+                                                                totalPages={Math.ceil(proxyContestTotal / pageSize)}
+                                                                handleNextPage={handleProxyContestNextPage}
+                                                                handlePageChange={handleProxyContestPageChange}
+                                                                handlePreviousPage={handleProxyContestPreviousPage}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
 
                                     <div className="font-bold text-2xl pt-4">
                                         {companyHeaderName}{" "}
