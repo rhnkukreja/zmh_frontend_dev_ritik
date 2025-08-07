@@ -261,7 +261,9 @@ a.side-menu__link.side-menu__link--active svg {
 .select__control--is-disabled{
   background-color: #c8c8c8 !important;
 }
-
+.recharts-label-list g line {
+  display: none;
+}
 .position-set{
   top: -10px !important;
   left: 12px !important; 

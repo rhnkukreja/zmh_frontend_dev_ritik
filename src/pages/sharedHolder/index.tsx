@@ -2078,7 +2078,7 @@ function ShareHolderProposal() {
                       )}
                       {isViewAnalysis && (
                         <div className="w-full pt-5">
-                          <div className="flex gap-4 mb-6 px-4">
+                          <div className="flex gap-4 mb-6 ">
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
                                 ? "bg-primary text-white shadow"
@@ -2194,7 +2194,7 @@ function ShareHolderProposal() {
                                 <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
                                   No Action Letters
                                 </Table.Td>
-                                <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                                <Table.Td className="py-3 px-4 text-center font-medium text-sm border-0">
                                   Details
                                 </Table.Td>
                               </Table.Tr>
@@ -2235,7 +2235,7 @@ function ShareHolderProposal() {
                                       >
                                         {noAction?.outcome_percentage}
                                       </Table.Td>
-                                      <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <Table.Td className="py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600 ">
                                         {noAction?.vote_details?.length > 0 && (
                                           <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
                                             <Grid3X3

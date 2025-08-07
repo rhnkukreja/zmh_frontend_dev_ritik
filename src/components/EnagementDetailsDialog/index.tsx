@@ -37,7 +37,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
 
 
     return (
-        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
+        <div className="relative bg-white px-6 w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
             <h2 className="text-xl font-semibold mb-4">Analytics</h2>
             {!isInvestorDataAvailable ? (
                 <p className="text-center text-gray-500 text-lg">No Analytics available</p>
@@ -49,10 +49,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
                                         <th className="px-4 py-2 text-left font-medium">Institution</th>
-                                        <th className="px-4 py-2 text-left font-medium">Unique Companies</th>
-                                        <th className="px-4 py-2 text-left font-medium">Environmental</th>
-                                        <th className="px-4 py-2 text-left font-medium">Social</th>
-                                        <th className="px-4 py-2 text-left font-medium">Governance</th>
+                                        <th className="px-4 py-2 text-center font-medium">Unique Companies</th>
+                                        <th className="px-4 py-2 text-center font-medium">Environmental</th>
+                                        <th className="px-4 py-2 text-center font-medium">Social</th>
+                                        <th className="px-4 py-2 text-center font-medium">Governance</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -106,7 +106,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-2 py-2 text-left font-medium">Topic</th>
                                         <th className="px-4 py-2 text-left font-medium">Count</th>
                                         <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
@@ -128,7 +128,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-2 py-2 text-left font-medium">Topic</th>
                                         <th className="px-4 py-2 text-left font-medium">Count</th>
                                         <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
@@ -149,7 +149,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             <table className="w-full border-collapse border border-gray-300 rounded-lg">
                                 <thead>
                                     <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
+                                        <th className="px-2 py-2 text-left font-medium">Topic</th>
                                         <th className="px-4 py-2 text-left font-medium">Count</th>
                                         <th className="px-4 py-2 text-left font-medium">%</th>
                                     </tr>
