@@ -182,7 +182,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
     };
 
     return (
-      <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
+      <div className="relative bg-white w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
         {tab == "proposal"
           ? <h1 className="text-xl font-semibold flex items-center gap-2 mb-4">
             All Shareholder Proposals
@@ -392,7 +392,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                           <table className="w-full border-collapse border border-gray-300">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-medium">
+                                <th className="px-2 py-2 text-left font-medium">
                                   Subcategory
                                 </th>
                                 <th className="px-4 py-2 text-left font-medium">Count</th>
