@@ -476,9 +476,9 @@ console.log(notificationData ,"data")
                         } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
-                          linkTo(menu, navigate);
+                          linkTo(menu, navigate, companyGlobalSearchName);
                         } else {
-                          linkTo(menu, navigate);
+                          linkTo(menu, navigate, companyGlobalSearchName);
                         }
                         setFormattedMenu([...formattedMenu]);
                       }}
@@ -605,7 +605,7 @@ console.log(notificationData ,"data")
                               ])}
                               onClick={(event: React.MouseEvent) => {
                                 event.preventDefault();
-                                linkTo(subMenu, navigate);
+                                linkTo(subMenu, navigate, companyGlobalSearchName);
                                 setFormattedMenu([...formattedMenu]);
                               }}
                             >
@@ -663,7 +663,7 @@ console.log(notificationData ,"data")
                                         ])}
                                         onClick={(event: React.MouseEvent) => {
                                           event.preventDefault();
-                                          linkTo(lastSubMenu, navigate);
+                                          linkTo(lastSubMenu, navigate, companyGlobalSearchName);
                                           setFormattedMenu([...formattedMenu]);
                                         }}
                                       >
