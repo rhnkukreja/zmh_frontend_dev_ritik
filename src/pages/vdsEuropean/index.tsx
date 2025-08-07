@@ -103,6 +103,78 @@ const index = () => {
   const [countryComponentKey, setCountryComponentKey] = useState<number>(0);
   const [isRestoringFromLocalStorage, setIsRestoringFromLocalStorage] = useState<boolean>(false);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
+  
+  // Helper function to check if proposal number has duplicates
+  const hasDuplicateProposalNumber = (proposalNum: string, allProposals: any[]) => {
+    if (!proposalNum || !allProposals) return false;
+    
+    const matchingProposals = allProposals.filter(proposal => 
+      proposal?.proposal_num === proposalNum
+    );
+    
+    return matchingProposals.length > 1;
+  };
+
+  // Helper function to get border styling for sequential duplicate proposals
+  const getSequentialBorderStyle = (proposalNum: string, allProposals: any[], currentIndex: number) => {
+    if (!proposalNum || !allProposals || !hasDuplicateProposalNumber(proposalNum, allProposals)) {
+      return {};
+    }
+
+    // Find all indices with the same proposal number
+    const matchingIndices = allProposals
+      .map((proposal, index) => ({ proposal, index }))
+      .filter(item => item.proposal?.proposal_num === proposalNum)
+      .map(item => item.index);
+
+    if (matchingIndices.length <= 1) return {};
+
+    // Check if current index is part of a sequential group
+    const isSequential = matchingIndices.some((startIndex, i) => {
+      if (i === matchingIndices.length - 1) return false;
+      const nextIndex = matchingIndices[i + 1];
+      return nextIndex === startIndex + 1 && (currentIndex === startIndex || currentIndex === nextIndex);
+    });
+
+    if (!isSequential) return {};
+
+    // Determine position in sequential group
+    const isFirst = matchingIndices.some((index, i) => 
+      index === currentIndex && 
+      (i === 0 || matchingIndices[i - 1] !== index - 1)
+    );
+    
+    const isLast = matchingIndices.some((index, i) => 
+      index === currentIndex && 
+      (i === matchingIndices.length - 1 || matchingIndices[i + 1] !== index + 1)
+    );
+
+    const isMiddle = !isFirst && !isLast && matchingIndices.includes(currentIndex);
+
+    let borderStyle: React.CSSProperties = {
+      backgroundColor: '#fef2f2',
+      borderLeft: '1px solid #9f1239',
+      borderRight: '1px solid #9f1239',
+    };
+
+    if (isFirst) {
+      borderStyle = { ...borderStyle, borderTop: '1px solid #9f1239' };
+    }
+    
+    if (isLast) {
+      borderStyle = { ...borderStyle, borderBottom: '1px solid #9f1239' };
+    }
+
+    if (isFirst && isLast) {
+      // Single row group (shouldn't happen with duplicates, but safety check)
+      borderStyle = {
+        backgroundColor: '#fef2f2',
+        border: '1px solid #9f1239',
+      };
+    }
+
+    return borderStyle;
+  };
   const toggleExpand = (index: number) => {
     setExpandedRows((prev) => ({
       ...prev,
@@ -555,13 +627,13 @@ const index = () => {
       vote: npxFilter?.vote, // Ensure vote filter is saved
       country: npxFilter?.country || ["USA"], // Ensure country filter is saved with USA default
       // Include all form fields to ensure complete restoration
-      analyticsYear: data?.analyticsYear || [],
-      index_name: data?.index_name || [],
-      meeting_type: data?.meeting_type || [],
-      proposal_type: data?.proposal_type || [],
-      proponent_type: data?.proponent_type || [],
-      proposal_keyword: data?.proposal_keyword || [],
-      keyword: data?.keyword || "",
+      analyticsYear: npxFilter?.analyticsYear || [],
+      index_name: npxFilter?.index_name || [],
+      meeting_type: npxFilter?.meeting_type || [],
+      proposal_type: npxFilter?.proposal_type || [],
+      proponent_type: npxFilter?.proponent_type || [],
+      proposal_keyword: npxFilter?.proposal_keyword || [],
+      keyword: npxFilter?.keyword || "",
     };
     localStorage.setItem("vdsEuropeanFilters", JSON.stringify(completeFilterObj));
     dispatch(resetPage());
@@ -1458,8 +1530,14 @@ const index = () => {
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                               {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                                  <td className="px-4 py-2 w-[12%] align-middle">{vds?.proposal_num}</td>
+                                <tr 
+                                  key={vds.proposal_id || vdsIdx} 
+                                  className="hover:bg-primary/10"
+                                  style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
+                                >
+                                  <td className="px-4 py-2 w-[12%] align-middle">
+                                    {vds?.proposal_num}
+                                  </td>
                                   <td className="px-4 py-2 w-[35%] align-middle">
                                     {vds?.proposal}
                                   </td>
@@ -1551,6 +1629,7 @@ const index = () => {
                               "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
                               toggle ? "bg-white" : "bg-gray-50"
                             )}
+                            style={getSequentialBorderStyle(vds?.proposal_num, VdsEuropeans, index)}
                           >
                             <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis font-semibold text-primary/80">
                               {vds?.excel_institution_name}

@@ -957,7 +957,6 @@ function ShareHolderProposal() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  {tab == "proposal" && !isAllCompanySelected && <div className="hover:bg-slate-50 ml-2">
                     <Tippy content="Download Excel" options={{ theme: "light" }}>
                       <div
                         className="box p-[5px] cursor-pointer"
@@ -970,8 +969,6 @@ function ShareHolderProposal() {
                         /> : <img alt="download-icon" src={downloadIcon} />}
                       </div>
                     </Tippy>
-
-                  </div>}
 
                   {/* {user?.saved_search?.["Shareholder Proposal"] !==
                     undefined && (
