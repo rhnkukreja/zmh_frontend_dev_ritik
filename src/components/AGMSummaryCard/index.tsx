@@ -310,8 +310,8 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
                                   key={headerIndex}
                                   // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
-                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-right",
-                                    headerIndex === 0 && "text-left w-[200px]", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
+                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-left",
+                                    headerIndex === 0 && "w-[200px]",
                                   ])}
                                 >
                                   {nomineeHeader.header}
@@ -339,8 +339,8 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
                                       <Table.Td
                                         key={headerIndex}
                                         className={clsx([
-                                          "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
-                                          headerIndex === 0 && "text-left ", headerIndex === 1 && "text-center ", headerIndex === 2 && "text-center ",
+                                          "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left",
+                                          headerIndex === 0 && "w-[200px]",
                                         ])}
                                       >
                                         <h1
@@ -385,8 +385,8 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
                               <Table.Td
                                 key={headerIndex}
                                 className={clsx([
-                                  "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-right",
-                                  headerIndex === 0 && "text-left w-[220px]", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
+                                  "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-left",
+                                  headerIndex === 0 && "w-[220px]",
                                 ])}
                               >
                                 {proposalHeader?.header}
@@ -414,8 +414,8 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
                                       <Table.Td
                                         key={headerIndex}
                                         className={clsx([
-                                          "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
-                                          headerIndex === 0 && "text-left", headerIndex === 1 && "text-center", headerIndex === 2 && "text-center ",
+                                          "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-left",
+                                          headerIndex === 0 && "w-[220px]",
                                         ])}
                                       >
                                         <h1
