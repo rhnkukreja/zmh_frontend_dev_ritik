@@ -97,7 +97,7 @@ export interface FilterObject {
 
 export type InformationType =
   | "Investor Profile"
-  | "Voting Guidelines"
+  | "Proxy Voting Guidelines"
   | "Voting Data";
 
 export interface RequestAdditionalDataForm {
