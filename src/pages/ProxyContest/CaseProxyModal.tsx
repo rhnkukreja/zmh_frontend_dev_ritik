@@ -1,10 +1,13 @@
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
-import LoadingWrapper from "@/components/LoadingWrapper";
-import { getSingleSingleCaseStudy } from "@/stores/caseStudySlice";
+import LoadingIcon from "@/components/Base/LoadingIcon";
+import Table from "@/components/Base/Table";
+import TableWrapper from "@/components/TableWrapper";
+import Tippy from "@/components/Base/Tippy";
+import { fetchCaseStudies } from "@/stores/caseStudySlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 interface CaseProxyModalProps {
   caseProxyModalVisible: boolean;
@@ -19,192 +22,179 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
 
-  const { singleCaseStudy, loading } = useAppSelector(
+  const { caseStudies, loading } = useAppSelector(
     (state) => state.caseStudies
   );
 
+  // State for detailed case study modal
+  const [detailedCaseStudy, setDetailedCaseStudy] = useState<any>(null);
+  const [showDetailedView, setShowDetailedView] = useState(false);
+
   useEffect(() => {
-    dispatch(getSingleSingleCaseStudy(Number(caseProxyModalData?.id!)));
-  }, [caseProxyModalData?.id!]);
+    if (caseProxyModalData?.company_name && caseProxyModalVisible) {
+      // Fetch case studies filtered by company name
+      const url = `/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}`;
+      dispatch(fetchCaseStudies(url));
+    }
+  }, [dispatch, caseProxyModalData?.company_name, caseProxyModalVisible]);
+
+  const handleModalClose = () => {
+    setShowDetailedView(false);
+    setDetailedCaseStudy(null);
+    setCaseProxyModalVisible(false);
+  };
 
   return (
     <Dialog
       size="xl"
       open={caseProxyModalVisible}
-      onClose={() => {
-        setCaseProxyModalVisible(false);
-      }}
+      onClose={handleModalClose}
     >
       <Dialog.Panel>
         <Dialog.Title>
-          <h2 className="mr-auto text-xl font-semibold">Case Study Detail</h2>
+          <h2 className="mr-auto text-xl font-semibold">
+            {showDetailedView ? "Case Study Detail" : "Case Studies"}
+          </h2>
           <div
-            onClick={() => {
-              setCaseProxyModalVisible(false);
-            }}
+            onClick={handleModalClose}
             className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
           >
             <Lucide icon="X" className="w-8 h-8 text-slate-400" />
           </div>
         </Dialog.Title>
-        <Dialog.Description className="px-6 py-4 space-y-6">
+        <Dialog.Description className="px-6 py-4">
           {loading ? (
-            <LoadingWrapper height={200} />
-          ) : (
+            <div className="flex items-center justify-center h-40">
+              <LoadingIcon icon="three-dots" className="w-8 h-8" />
+            </div>
+          ) : showDetailedView && detailedCaseStudy ? (
             <div className="space-y-4">
+              <div className="flex items-center mb-4">
+                <button
+                  onClick={() => setShowDetailedView(false)}
+                  className="flex items-center text-blue-600 hover:text-blue-800"
+                >
+                  <Lucide icon="ArrowLeft" className="w-4 h-4 mr-2" />
+                  Back to Case Studies
+                </button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {singleCaseStudy?.institution_name && (
+                {detailedCaseStudy?.institution_name && (
                   <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Institution
-                    </h3>
-                    <p>{singleCaseStudy?.institution_name}</p>
+                    <h3 className="font-semibold min-w-[150px] mb-2">Institution</h3>
+                    <p>{detailedCaseStudy?.institution_name}</p>
                   </div>
                 )}
-                {singleCaseStudy?.esg_themes && (
+                {detailedCaseStudy?.esg_themes && (
                   <div>
                     <h3 className="font-semibold min-w-[150px] mb-2">Theme</h3>
-                    <p>{singleCaseStudy?.esg_themes}</p>
+                    <p>{detailedCaseStudy?.esg_themes}</p>
                   </div>
                 )}
-                {singleCaseStudy?.industry && (
+                {detailedCaseStudy?.industry && (
                   <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Industry
-                    </h3>
-                    <p>{singleCaseStudy?.industry}</p>
+                    <h3 className="font-semibold min-w-[150px] mb-2">Industry</h3>
+                    <p>{detailedCaseStudy?.industry}</p>
                   </div>
                 )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {singleCaseStudy?.company_name && (
+                {detailedCaseStudy?.company_name && (
                   <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Company
-                    </h3>
-                    <p>{singleCaseStudy?.company_name}</p>
+                    <h3 className="font-semibold min-w-[150px] mb-2">Company</h3>
+                    <p>{detailedCaseStudy?.company_name}</p>
                   </div>
                 )}
-                {singleCaseStudy?.company_ticker && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Company Ticker
-                    </h3>
-                    <p>{singleCaseStudy?.company_ticker}</p>
-                  </div>
-                )}
-                {singleCaseStudy?.company_sector && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Company Sector
-                    </h3>
-                    <p>{singleCaseStudy?.company_sector}</p>
-                  </div>
-                )}
-                {singleCaseStudy?.year && (
+                {detailedCaseStudy?.year && (
                   <div>
                     <h3 className="font-semibold min-w-[150px] mb-2">Year</h3>
-                    <p>{singleCaseStudy?.year}</p>
+                    <p>{detailedCaseStudy?.year}</p>
                   </div>
                 )}
-                {singleCaseStudy?.market && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">Market</h3>
-                    <p>{singleCaseStudy?.market}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {singleCaseStudy?.proposal_type && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Proponent
-                    </h3>
-                    <p>{singleCaseStudy?.proposal_type}</p>
-                  </div>
-                )}
-                {singleCaseStudy?.resolution_engagement_topic && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Resolution
-                    </h3>
-                    <p>{singleCaseStudy?.resolution_engagement_topic}</p>
-                  </div>
-                )}
-                {singleCaseStudy?.vote && (
+                {detailedCaseStudy?.vote && (
                   <div>
                     <h3 className="font-semibold min-w-[150px] mb-2">Vote</h3>
-                    <p className="text-destructive">{singleCaseStudy?.vote}</p>
+                    <p className="text-destructive">{detailedCaseStudy?.vote}</p>
                   </div>
                 )}
               </div>
-
-              <div className="grid grid-cols-1  gap-4">
-                {singleCaseStudy?.engagement_details && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px]  mb-2">
-                      Engagement/Voting Details
-                    </h3>
-                    <p>{singleCaseStudy?.engagement_details}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1  gap-4">
-                {singleCaseStudy?.voting_rationale && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Rationale
-                    </h3>
-                    <p>{singleCaseStudy?.voting_rationale}</p>
-                  </div>
-                )}
-                {singleCaseStudy?.voting_details && (
-                  <div>
-                    <h3 className="font-semibold min-w-[150px] mb-2">
-                      Details
-                    </h3>
-                    <p>{singleCaseStudy?.voting_details}</p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-                  {singleCaseStudy?.urls_def14 && (
-                    <div>
-                      <h3 className="font-semibold">Proxy Statement</h3>
-                      <p className="mb-4">
-                        <a
-                          href={singleCaseStudy?.urls_def14}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 underline"
-                        >
-                          {singleCaseStudy?.urls_def14}
-                        </a>
-                      </p>
-                    </div>
-                  )}
-                  {singleCaseStudy?.urls_8k && (
-                    <div>
-                      <h3 className="font-semibold">Vote Report</h3>
-                      <p className="mb-4">
-                        <a
-                          href={singleCaseStudy?.urls_8k}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 underline"
-                        >
-                          {singleCaseStudy?.urls_8k}
-                        </a>
-                      </p>
-                    </div>
-                  )}
+              {detailedCaseStudy?.engagement_details && (
+                <div>
+                  <h3 className="font-semibold mb-2">Engagement/Voting Details</h3>
+                  <p>{detailedCaseStudy?.engagement_details}</p>
                 </div>
+              )}
+            </div>
+          ) : caseStudies.length > 0 ? (
+            <TableWrapper>
+              <div className="overflow-x-auto">
+                <Table>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Td className="py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700">
+                        Institution
+                      </Table.Td>
+                      <Table.Td className="py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700">
+                        Year
+                      </Table.Td>
+                      <Table.Td className="py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700">
+                        Theme
+                      </Table.Td>
+                      <Table.Td className="py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700">
+                        Industry
+                      </Table.Td>
+                      <Table.Td className="py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 text-center w-20">
+                        View
+                      </Table.Td>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {caseStudies.map((item: any, index: number) => (
+                      <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                        <Table.Td className="py-2 border-dashed">
+                          <div className="flex items-center">
+                            {item?.institution_logo_url ? (
+                              <img
+                                alt="Institution Logo"
+                                className="w-6 h-6 rounded-full object-contain mr-3"
+                                src={item?.institution_logo_url}
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-gray-200 mr-3"></div>
+                            )}
+                            <span>{item?.institution_name || 'N/A'}</span>
+                          </div>
+                        </Table.Td>
+                        <Table.Td className="py-2 border-dashed">
+                          {item?.year || 'N/A'}
+                        </Table.Td>
+                        <Table.Td className="py-2 border-dashed">
+                          {item?.esg_themes || 'N/A'}
+                        </Table.Td>
+                        <Table.Td className="py-2 border-dashed">
+                          {item?.industry || 'N/A'}
+                        </Table.Td>
+                        <Table.Td className="py-2 border-dashed text-center">
+                          <Tippy content="View Details" options={{ theme: "light" }}>
+                            <Lucide
+                              onClick={() => {
+                                setDetailedCaseStudy(item);
+                                setShowDetailedView(true);
+                              }}
+                              icon="Eye"
+                              className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
+                            />
+                          </Tippy>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
               </div>
+            </TableWrapper>
+          ) : (
+            <div className="text-center py-8">
+              <Lucide icon="BookOpen" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No Case Studies Found</h3>
+              <p className="text-gray-500">No case studies available for {caseProxyModalData?.company_name}.</p>
             </div>
           )}
         </Dialog.Description>

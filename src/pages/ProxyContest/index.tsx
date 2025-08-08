@@ -231,9 +231,12 @@ const index = () => {
     // Handle icon clicks for modal data
     const handleIconClick = async (company: any, type: string) => {
         if (type === 'case_studies') {
-            // For case studies, open the CaseProxyModal
+            // For case studies, we need to fetch case studies by company name
             setCaseProxyModalVisible(true);
-            setCaseProxyModalData({ id: company.company_id });
+            setCaseProxyModalData({ 
+                company_name: company.company_name,
+                company_id: company.company_id 
+            });
             return;
         }
 
@@ -500,12 +503,10 @@ const index = () => {
                                                             </div>
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
-                                                            {company.meeting_date ? (
+                                                            {company.meeting_date && (
                                                                 <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
                                                                     {company.meeting_date}
                                                                 </span>
-                                                            ) : (
-                                                                <span className="text-gray-400 text-xs">-</span>
                                                             )}
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
@@ -878,45 +879,72 @@ const index = () => {
                                                             {modalData.nominees && modalData.nominees.length > 0 && (
                                                                 <div>
                                                                     <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
-                                                                        Nominees ({modalData.nominees.length})
+                                                                        Nominees
                                                                     </h3>
-                                                                    <div className="text-sm text-gray-600">
-                                                                        <p>Nominees data available. Click "View Full Details" to see complete information.</p>
-                                                                    </div>
+                                                                    <TableWrapper>
+                                                                        <div className="overflow-x-auto">
+                                                                            <Table>
+                                                                                <Table.Thead>
+                                                                                    <Table.Tr>
+                                                                                        {modalData.nominees_headers?.map((header: any, index: number) => (
+                                                                                            <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                {header.header}
+                                                                                            </Table.Td>
+                                                                                        ))}
+                                                                                    </Table.Tr>
+                                                                                </Table.Thead>
+                                                                                <Table.Tbody>
+                                                                                    {modalData.nominees.map((nominee: any, index: number) => (
+                                                                                        <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                            {modalData.nominees_headers?.map((header: any, headerIndex: number) => (
+                                                                                                <Table.Td key={headerIndex} className={`py-2 border-dashed text-sm ${headerIndex === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                    {nominee[header.field] || 'N/A'}
+                                                                                                </Table.Td>
+                                                                                            ))}
+                                                                                        </Table.Tr>
+                                                                                    ))}
+                                                                                </Table.Tbody>
+                                                                            </Table>
+                                                                        </div>
+                                                                    </TableWrapper>
                                                                 </div>
                                                             )}
 
                                                             {modalData.proposals && modalData.proposals.length > 0 && (
                                                                 <div>
                                                                     <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
-                                                                        Proposals ({modalData.proposals.length})
+                                                                        Proposals
                                                                     </h3>
-                                                                    <div className="text-sm text-gray-600">
-                                                                        <p>Proposals data available. Click "View Full Details" to see complete information.</p>
-                                                                    </div>
+                                                                    <TableWrapper>
+                                                                        <div className="overflow-x-auto">
+                                                                            <Table>
+                                                                                <Table.Thead>
+                                                                                    <Table.Tr>
+                                                                                        {modalData.proposals_headers?.map((header: any, index: number) => (
+                                                                                            <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                {header.header}
+                                                                                            </Table.Td>
+                                                                                        ))}
+                                                                                    </Table.Tr>
+                                                                                </Table.Thead>
+                                                                                <Table.Tbody>
+                                                                                    {modalData.proposals.map((proposal: any, index: number) => (
+                                                                                        <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                            {modalData.proposals_headers?.map((header: any, headerIndex: number) => (
+                                                                                                <Table.Td key={headerIndex} className={`py-2 border-dashed text-sm ${headerIndex === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                    {proposal[header.field] || 'N/A'}
+                                                                                                </Table.Td>
+                                                                                            ))}
+                                                                                        </Table.Tr>
+                                                                                    ))}
+                                                                                </Table.Tbody>
+                                                                            </Table>
+                                                                        </div>
+                                                                    </TableWrapper>
                                                                 </div>
                                                             )}
 
-                                                            <div className="flex justify-center pt-4">
-                                                                <Button
-                                                                    variant="primary"
-                                                                    onClick={() => {
-                                                                        navigate(`/proxy-contest-detail/${selectedCompany.company_id}`, {
-                                                                            state: {
-                                                                                company: selectedCompany,
-                                                                                companyName: selectedCompany.company_name,
-                                                                                year: selectedCompany.year,
-                                                                                meetingDate: selectedCompany.meeting_date,
-                                                                                fromProxyContest: true
-                                                                            }
-                                                                        });
-                                                                    }}
-                                                                    className="flex items-center gap-2"
-                                                                >
-                                                                    <Lucide icon="ExternalLink" className="w-4 h-4" />
-                                                                    View Full Details
-                                                                </Button>
-                                                            </div>
+                
                                                         </div>
                                                     ) : (
                                                         <div className="text-center py-12">

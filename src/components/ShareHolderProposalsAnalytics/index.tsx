@@ -166,8 +166,12 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
             fontSize={11}
             fontWeight={500}
           >
-            {count}
-            {percent !== undefined ? ` - ${percent.toFixed(1)}%` : ''}
+            {count > 0 && (
+              <>
+                {count}
+                {percent !== undefined && percent > 0 ? ` - ${percent.toFixed(1)}%` : ''}
+              </>
+            )}
           </text>
           <line
             x1={x + width / 2 - 16}
