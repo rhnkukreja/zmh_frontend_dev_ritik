@@ -40,6 +40,10 @@ const onlyNumber = (string: string) => {
   }
 };
 
+const getCurrentYear = () => {
+  return new Date().getFullYear();
+};
+
 const formatCurrency = (number: number) => {
   if (number) {
     const formattedNumber = number.toString().replace(/\D/g, "");
@@ -664,5 +668,6 @@ export {
   generateFilterChips,
   cleanObject,
   groupByValue,
+  getCurrentYear,
 
 };

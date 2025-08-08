@@ -354,11 +354,11 @@ function CaseStudies() {
 
   const handleViewAllChange = async (event: any) => {
     if (event?.target?.checked) {
-      setValue("year", ["2024"]);
+      setValue("year", [new Date().getFullYear().toString()]);
       setValue("market", ["USA"]);
       dispatch(
         setAllFilters({
-          year: ["2024"],
+          year: [new Date().getFullYear().toString()],
           market: ["USA"],
         })
       );

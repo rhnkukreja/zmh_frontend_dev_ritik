@@ -520,7 +520,7 @@ const index = () => {
           : null,
     };
     if (dropdownValues?.institution_name && dropdownValues?.company_name) {
-      setValue("year", 2024);
+      setValue("year", new Date().getFullYear());
     }
     try {
       if (!paramFilter.company_name.length) return;
