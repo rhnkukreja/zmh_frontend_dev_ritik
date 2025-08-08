@@ -54,6 +54,12 @@ function Main() {
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<boolean[]>(() => {
+    return Object.keys(investorProfileEditableSectionsInvestors).map(
+      (_, idx) => idx === 0
+    );
+  });
+
   const navigate = useNavigate();
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -97,6 +103,15 @@ function Main() {
       console.error("Error updating profile:", error);
       toast.error("Something went wrong!");
     }
+  };
+  const areAllGroupsExpanded = () => {
+    return expandedSections.slice(1).every(Boolean);
+  };
+  const toggleAllGroups = () => {
+    const shouldExpand = !areAllGroupsExpanded();
+    setExpandedSections((prev) =>
+      prev.map((_, idx) => (idx === 0 ? true : shouldExpand))
+    );
   };
 
   useEffect(() => {
@@ -247,7 +262,7 @@ function Main() {
 
     validateImages();
   }, [singleInvesterProfile?.key_contacts]);
- 
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 ">
@@ -322,14 +337,22 @@ function Main() {
               </div>
             )}
           </div>
+
           <div className="mt-2 flex flex-col lg:flex-row  gap-x-2">
             <div
-              className=
-              {clsx(
+              className={clsx(
                 "flex flex-col w-full gap-y-2",
-                params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[54rem]",
-                params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]",
-                params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
+                params?.type! === "investor" &&
+                  user?.user_type === "Admin" &&
+                  "lg:w-[60%] 2xl:w-[54rem]",
+                params?.type! === "investor" &&
+                  user?.user_type !== "Admin" &&
+                  !singleInvesterProfile?.key_contacts &&
+                  "lg:w-[100%] 2xl:w-[80rem]",
+                params?.type! === "investor" &&
+                  user?.user_type !== "Admin" &&
+                  singleInvesterProfile?.key_contacts &&
+                  "lg:w-[60%] 2xl:w-[54rem]"
               )}
             >
               {params?.type === "investor" &&
@@ -346,22 +369,50 @@ function Main() {
                     }
 
                     return (
-                      <EditableSection
-                        key={index}
-                        fetchloading={loading}
-                        id={Number(params.id)}
-                        title={
-                          investorProfileEditableSectionsInvestors?.[typedKey]
-                            ?.value
-                        }
-                        type={params?.type!}
-                        renderHtml={
-                          value
-                            ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                            ?.replace(/\n/g, "<br />") || ""
-                        }
-                        field={key as keyof InvestersProfile}
-                      />
+                      <>
+                        <EditableSection
+                          key={index}
+                          fetchloading={loading}
+                          id={Number(params.id)}
+                          title={
+                            investorProfileEditableSectionsInvestors?.[typedKey]
+                              ?.value
+                          }
+                          type={params?.type!}
+                          renderHtml={
+                            value
+                              ?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                              ?.replace(/\n/g, "<br />") || ""
+                          }
+                          field={key as keyof InvestersProfile}
+                          expanded={expandedSections[index]}
+                          onToggle={() =>
+                            setExpandedSections((prev) =>
+                              prev.map((v, i) => (i === index ? !v : v))
+                            )
+                          }
+                        />
+                        {index === 0 && (
+                          <div className="my-2 flex justify-end">
+                            <button
+                              onClick={toggleAllGroups}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
+                            >
+                              <Lucide
+                                icon={
+                                  areAllGroupsExpanded()
+                                    ? "ChevronUp"
+                                    : "ChevronDown"
+                                }
+                                className="w-4 h-4"
+                              />
+                              {areAllGroupsExpanded()
+                                ? "Collapse All"
+                                : "Expand All"}
+                            </button>
+                          </div>
+                        )}
+                      </>
                     );
                   }
                 )}
@@ -408,190 +459,198 @@ function Main() {
                 )}
             </div>
 
-            {params?.type! === "investor" && ((user?.user_type === "Admin") || (user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts?.length > 0)) && (
-              <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
-                {singleInvesterProfile?.contact_email && (
-                  <div className="flex flex-col box mb-4 p-4 border border-gray-200 rounded-md">
-                    <h4 className="text-[18px] font-semibold text-left">
-                      {/\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
-                        ? "Team Contact Details"
-                        : "Link to Contact Form"}
-                    </h4>
-                    <a
-                      href={
-                        /\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
-                          ? `mailto:${singleInvesterProfile.contact_email}`
-                          : singleInvesterProfile.contact_email
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline mt-2 break-words"
-                    >
-                      {singleInvesterProfile.contact_email}
-                    </a>
-                  </div>
-                )}
-                <div className="flex flex-col box">
-                  <div
-                    className={clsx(
-                      "relative flex border-b-2 border-gray-100 flex-col px-4  sm:px-2 items-center  transition-all duration-300 ease-in-out overflow-hidden",
-                      isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
-                      !singleInvesterProfile?.key_contacts && "h-[120px]"
-                    )}
-                  // user?.user_type?.toLowerCase() === "admin"
-                  //     ? "h-[70px] mt-4"
-                  //     : "h-[70px] mt-4"
-                  >
-                    <div className="flex items-center justify-between  w-full h-full ">
-                      <h4 className="text-[18px]  font-semibold text-left ml-2 leading-none ">
-                        Key Contacts
+            {params?.type! === "investor" &&
+              (user?.user_type === "Admin" ||
+                (user?.user_type !== "Admin" &&
+                  singleInvesterProfile?.key_contacts?.length > 0)) && (
+                <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
+                  {singleInvesterProfile?.contact_email && (
+                    <div className="flex flex-col box mb-4 p-4 border border-gray-200 rounded-md">
+                      <h4 className="text-[18px] font-semibold text-left text-black">
+                        {/\S+@\S+\.\S+/.test(
+                          singleInvesterProfile.contact_email
+                        )
+                          ? "Team Contact Details"
+                          : "Link to Contact Form"}
                       </h4>
-                      {user?.user_type === "Admin" && (
-                        <div
-                          className="exclude-from-pdf ml-4 cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2 transition-colors duration-200 hover:bg-primary hover:text-white"
-                          onClick={toggleExpand}
-                        >
-                          <Lucide
-                            icon="FileText"
-                            className="stroke-[1.3] w-4 h-4 mr-1.5 "
-                          />
-                          Upload
+                      <a
+                        href={
+                          /\S+@\S+\.\S+/.test(
+                            singleInvesterProfile.contact_email
+                          )
+                            ? `mailto:${singleInvesterProfile.contact_email}`
+                            : singleInvesterProfile.contact_email
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline mt-2 break-words"
+                      >
+                        {singleInvesterProfile.contact_email}
+                      </a>
+                    </div>
+                  )}
+                  <div className="flex flex-col box">
+                    <div
+                      className={clsx(
+                        "relative flex border-b-2 border-gray-100 flex-col px-4  sm:px-2 items-center  transition-all duration-300 ease-in-out overflow-hidden",
+                        isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
+                        !singleInvesterProfile?.key_contacts && "h-[120px]"
+                      )}
+                      // user?.user_type?.toLowerCase() === "admin"
+                      //     ? "h-[70px] mt-4"
+                      //     : "h-[70px] mt-4"
+                    >
+                      <div className="flex items-center justify-between  w-full h-full ">
+                        <h4 className="text-[18px]  font-semibold text-left ml-2 leading-none text-black ">
+                          Key Contacts
+                        </h4>
+                        {user?.user_type === "Admin" && (
+                          <div
+                            className="exclude-from-pdf ml-4 cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2 transition-colors duration-200 hover:bg-primary hover:text-white"
+                            onClick={toggleExpand}
+                          >
+                            <Lucide
+                              icon="FileText"
+                              className="stroke-[1.3] w-4 h-4 mr-1.5 "
+                            />
+                            Upload
+                          </div>
+                        )}
+                      </div>
+                      {isExpanded && (
+                        <div className="w-full mt-3 max-h-[180px] exclude-from-pdf">
+                          <Dropzone
+                            ref={dropzoneSingleRef}
+                            options={{
+                              url: "/",
+                              autoProcessQueue: false,
+                              clickable: true,
+                              thumbnailWidth: 100,
+                              maxFiles: 1,
+
+                              acceptedFiles: ".xlsx",
+                            }}
+                            className="dropzone w-full flex flex-col justify-center items-center h-full "
+                          >
+                            <div className="text-sm font-semibold text-gray-800 mb-2">
+                              Drop files here or click to upload.
+                            </div>
+                            <div className="p-4 bg-gray-100 rounded-lg shadow-md">
+                              <div className="text-[0.8rem] leading-4 text-gray-600 mb-1">
+                                Only <span className="font-medium">xlsx</span>{" "}
+                                files are allowed.
+                              </div>
+                              <div className="text-[0.8rem] leading-4 text-gray-600">
+                                File should contain only 4 columns: <br />
+                                <span className="font-medium text-gray-800">
+                                  Name
+                                </span>
+                                ,
+                                <span className="font-medium text-gray-800">
+                                  Designation
+                                </span>
+                                ,
+                                <span className="font-medium text-gray-800">
+                                  LinkedIn
+                                </span>
+                                ,
+                                <span className="font-medium text-gray-800">
+                                  Image
+                                </span>
+                                .
+                              </div>
+                            </div>
+                          </Dropzone>
                         </div>
                       )}
+
+                      {(!singleInvesterProfile?.key_contacts ||
+                        singleInvesterProfile?.key_contacts?.length === 0) &&
+                        !loading && (
+                          <div className="p-5 flex items-center justify-center">
+                            <h1 className="">No Key Contacts Available</h1>
+                          </div>
+                        )}
                     </div>
-                    {isExpanded && (
-                      <div className="w-full mt-3 max-h-[180px] exclude-from-pdf">
-                        <Dropzone
-                          ref={dropzoneSingleRef}
-                          options={{
-                            url: "/",
-                            autoProcessQueue: false,
-                            clickable: true,
-                            thumbnailWidth: 100,
-                            maxFiles: 1,
-
-                            acceptedFiles: ".xlsx",
-                          }}
-                          className="dropzone w-full flex flex-col justify-center items-center h-full "
-                        >
-                          <div className="text-sm font-semibold text-gray-800 mb-2">
-                            Drop files here or click to upload.
-                          </div>
-                          <div className="p-4 bg-gray-100 rounded-lg shadow-md">
-                            <div className="text-[0.8rem] leading-4 text-gray-600 mb-1">
-                              Only <span className="font-medium">xlsx</span>{" "}
-                              files are allowed.
-                            </div>
-                            <div className="text-[0.8rem] leading-4 text-gray-600">
-                              File should contain only 4 columns: <br />
-                              <span className="font-medium text-gray-800">
-                                Name
-                              </span>
-                              ,
-                              <span className="font-medium text-gray-800">
-                                Designation
-                              </span>
-                              ,
-                              <span className="font-medium text-gray-800">
-                                LinkedIn
-                              </span>
-                              ,
-                              <span className="font-medium text-gray-800">
-                                Image
-                              </span>
-                              .
-                            </div>
-                          </div>
-                        </Dropzone>
-                      </div>
-                    )}
-
-                    {(!singleInvesterProfile?.key_contacts || singleInvesterProfile?.key_contacts?.length === 0) && !loading &&
-                      <div className="p-5 flex items-center justify-center">
-                        <h1 className="">No Key Contacts Available</h1>
-                      </div>
-
-                    }
-                  </div>
-                  <div className="max-h-auto">
-                    {loading ? (
-                      <div className="mt-[-20px]">
-                        <LoadingWrapper height={200} />
-                      </div>
-                    ) : (
-                      <>
-                        {singleInvesterProfile?.key_contacts?.map(
-                          (contacts: KeyContact, index: any) => (
-                            <div
-                              key={index}
-                              className="flex py-2  flex-col px-4  border-b-2 border-gray-100 "
-                            >
-                              <div className="flex  items-center   border-b border-dashed last:pb-0 last:mb-0 last:border-0">
-                                <div>
-                                  <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                                    {
-                                      //  contacts?.image ?
-                                      <img
-                                        alt="ZMH Analytics"
-                                        src={
-                                          validImages[contacts.name] ||
-                                          userLinkedinImage
-                                        }
+                    <div className="max-h-auto">
+                      {loading ? (
+                        <div className="mt-[-20px]">
+                          <LoadingWrapper height={200} />
+                        </div>
+                      ) : (
+                        <>
+                          {singleInvesterProfile?.key_contacts?.map(
+                            (contacts: KeyContact, index: any) => (
+                              <div
+                                key={index}
+                                className="flex py-2  flex-col px-4  border-b-2 border-gray-100 "
+                              >
+                                <div className="flex  items-center   border-b border-dashed last:pb-0 last:mb-0 last:border-0">
+                                  <div>
+                                    <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
+                                      {
+                                        //  contacts?.image ?
+                                        <img
+                                          alt="ZMH Analytics"
+                                          src={
+                                            validImages[contacts.name] ||
+                                            userLinkedinImage
+                                          }
+                                        />
+                                        //  :
+                                        // <img
+                                        //   alt="ZMH Analytics"
+                                        //   src={userLinkedinImage}
+                                        // />
+                                      }
+                                    </div>
+                                  </div>
+                                  <div className="ml-3.5 w-full">
+                                    <div className="flex items-center w-full">
+                                      <Tippy
+                                        content={contacts?.name || ""}
+                                        options={{
+                                          theme: "light",
+                                        }}
+                                      >
+                                        <div className="mr-4 font-medium md:max-w-[200px]">
+                                          {contacts?.name}
+                                        </div>
+                                      </Tippy>
+                                    </div>
+                                    <div className="flex items-center w-full mt-0.5">
+                                      <div
+                                        className="text-xs text-primary"
+                                        dangerouslySetInnerHTML={{
+                                          __html: contacts?.designation,
+                                        }}
                                       />
-                                      //  :
-                                      // <img
-                                      //   alt="ZMH Analytics"
-                                      //   src={userLinkedinImage}
-                                      // />
-                                    }
-                                  </div>
-                                </div>
-                                <div className="ml-3.5 w-full">
-                                  <div className="flex items-center w-full">
-                                    <Tippy
-                                      content={contacts?.name || ""}
-                                      options={{
-                                        theme: "light",
-                                      }}
-                                    >
-                                      <div className="mr-4 font-medium md:max-w-[200px]">
-                                        {contacts?.name}
-                                      </div>
-                                    </Tippy>
-                                  </div>
-                                  <div className="flex items-center w-full mt-0.5">
-                                    <div
-                                      className="text-xs text-primary"
-                                      dangerouslySetInnerHTML={{
-                                        __html: contacts?.designation,
-                                      }}
-                                    />
-                                    <Button
-                                      size="sm"
-                                      type="button"
-                                      variant="outline-primary"
-                                      className="ml-auto exclude-from-pdf"
-                                      onClick={() => {
-                                        window.open(
-                                          contacts?.linkedin,
-                                          "_blank"
-                                        );
-                                      }}
-                                    >
-                                      LinkedIn
-                                    </Button>
+                                      <Button
+                                        size="sm"
+                                        type="button"
+                                        variant="outline-primary"
+                                        className="ml-auto exclude-from-pdf"
+                                        onClick={() => {
+                                          window.open(
+                                            contacts?.linkedin,
+                                            "_blank"
+                                          );
+                                        }}
+                                      >
+                                        LinkedIn
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          )
-                        )}
-                      </>
-                    )}
+                            )
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </div>

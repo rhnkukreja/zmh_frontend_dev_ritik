@@ -18,6 +18,8 @@ interface EditableSectionProps {
   renderHtml: string;
 
   type: string;
+  expanded?: boolean; 
+  onToggle?: () => void;
 }
 
 const EditableSection: React.FC<EditableSectionProps> = ({
@@ -29,13 +31,14 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   renderHtml,
 
   type,
+   expanded,
+  onToggle,
 }) => {
 
   const dispatch = useAppDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState<string>(renderHtml);
   const [loading, setLoading] = useState(false);
-  const [expand, setExpand] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAppSelector((state) => state.authentiction);
@@ -118,14 +121,14 @@ useEffect(() => {
                 )}
               </>
             )} 
-           <button
-             onClick={() => setExpand(!expand)}
+        {title !== "Summary" && <button
+             onClick={onToggle}
              className="transition-colors duration-200 font-medium text-lg">
-            <Lucide icon={expand ? "ChevronUp" : "ChevronDown"} className="w-5 h-5" />
-            </button>
+            <Lucide icon={expanded ? "ChevronUp" : "ChevronDown"} className="w-5 h-5" />
+            </button>}
           </div>
           </div>
-          {expand && <>
+          {expanded && <>
  {isEditing ? (
             <div className="flex  flex-col px-4 py-3  ">
               <div ref={editorRef}>
