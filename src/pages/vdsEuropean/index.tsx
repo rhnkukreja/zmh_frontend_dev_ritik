@@ -101,7 +101,80 @@ const index = () => {
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [countryComponentKey, setCountryComponentKey] = useState<number>(0);
+  const [isRestoringFromLocalStorage, setIsRestoringFromLocalStorage] = useState<boolean>(false);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
+  
+  // Helper function to check if proposal number has duplicates
+  const hasDuplicateProposalNumber = (proposalNum: string, allProposals: any[]) => {
+    if (!proposalNum || !allProposals) return false;
+    
+    const matchingProposals = allProposals.filter(proposal => 
+      proposal?.proposal_num === proposalNum
+    );
+    
+    return matchingProposals.length > 1;
+  };
+
+  // Helper function to get border styling for sequential duplicate proposals
+  const getSequentialBorderStyle = (proposalNum: string, allProposals: any[], currentIndex: number) => {
+    if (!proposalNum || !allProposals || !hasDuplicateProposalNumber(proposalNum, allProposals)) {
+      return {};
+    }
+
+    // Find all indices with the same proposal number
+    const matchingIndices = allProposals
+      .map((proposal, index) => ({ proposal, index }))
+      .filter(item => item.proposal?.proposal_num === proposalNum)
+      .map(item => item.index);
+
+    if (matchingIndices.length <= 1) return {};
+
+    // Check if current index is part of a sequential group
+    const isSequential = matchingIndices.some((startIndex, i) => {
+      if (i === matchingIndices.length - 1) return false;
+      const nextIndex = matchingIndices[i + 1];
+      return nextIndex === startIndex + 1 && (currentIndex === startIndex || currentIndex === nextIndex);
+    });
+
+    if (!isSequential) return {};
+
+    // Determine position in sequential group
+    const isFirst = matchingIndices.some((index, i) => 
+      index === currentIndex && 
+      (i === 0 || matchingIndices[i - 1] !== index - 1)
+    );
+    
+    const isLast = matchingIndices.some((index, i) => 
+      index === currentIndex && 
+      (i === matchingIndices.length - 1 || matchingIndices[i + 1] !== index + 1)
+    );
+
+    const isMiddle = !isFirst && !isLast && matchingIndices.includes(currentIndex);
+
+    let borderStyle: React.CSSProperties = {
+      backgroundColor: '#fef2f2',
+      borderLeft: '1px solid #9f1239',
+      borderRight: '1px solid #9f1239',
+    };
+
+    if (isFirst) {
+      borderStyle = { ...borderStyle, borderTop: '1px solid #9f1239' };
+    }
+    
+    if (isLast) {
+      borderStyle = { ...borderStyle, borderBottom: '1px solid #9f1239' };
+    }
+
+    if (isFirst && isLast) {
+      // Single row group (shouldn't happen with duplicates, but safety check)
+      borderStyle = {
+        backgroundColor: '#fef2f2',
+        border: '1px solid #9f1239',
+      };
+    }
+
+    return borderStyle;
+  };
   const toggleExpand = (index: number) => {
     setExpandedRows((prev) => ({
       ...prev,
@@ -114,6 +187,52 @@ const index = () => {
       [company_name]: !prevState[company_name],
     }));
   };
+
+  const expandAllGroups = () => {
+    if (!vdsEuropeansAnalytics?.by_company) return;
+    
+    const allCompanyNames: string[] = [];
+    vdsEuropeansAnalytics.by_company.forEach((yearEntry: any) => {
+      if (Array.isArray(yearEntry.companies)) {
+        yearEntry.companies.forEach((company: any) => {
+          if (company.company_name) {
+            allCompanyNames.push(company.company_name);
+          }
+        });
+      }
+    });
+
+    const allExpanded = allCompanyNames.every(name => openGroups[name]);
+    
+    if (allExpanded) {
+      // Collapse all
+      setOpenGroups({});
+    } else {
+      // Expand all
+      const newOpenGroups: { [key: string]: boolean } = {};
+      allCompanyNames.forEach(name => {
+        newOpenGroups[name] = true;
+      });
+      setOpenGroups(newOpenGroups);
+    }
+  };
+
+  const areAllGroupsExpanded = () => {
+    if (!vdsEuropeansAnalytics?.by_company) return false;
+    
+    const allCompanyNames: string[] = [];
+    vdsEuropeansAnalytics.by_company.forEach((yearEntry: any) => {
+      if (Array.isArray(yearEntry.companies)) {
+        yearEntry.companies.forEach((company: any) => {
+          if (company.company_name) {
+            allCompanyNames.push(company.company_name);
+          }
+        });
+      }
+    });
+
+    return allCompanyNames.length > 0 && allCompanyNames.every(name => openGroups[name]);
+  };
   const hasAnyValidFilter = (filterObj: Record<string, any>): boolean => {
     return Object.values(filterObj || {}).some((val) => {
       if (Array.isArray(val)) return val.length > 0;
@@ -125,26 +244,74 @@ const index = () => {
 
   // Restore filters from localStorage on mount
   useEffect(() => {
+    // Check for analytics filters first since we start in analytics view
+    const savedAnalyticsFilters = localStorage.getItem("vdsEuropeanAnalyticsFilters");
+    if (savedAnalyticsFilters && isViewAnalysis) {
+      try {
+        const parsed = JSON.parse(savedAnalyticsFilters);
+        setIsRestoringFromLocalStorage(true);
+        setAllAnalyticsFilter(parsed);
+        
+        // Restore form values
+        setTimeout(() => {
+          Object.entries(parsed).forEach(([key, value]) => {
+            setValue(key, value);
+          });
+          
+          // Generate filter chips from restored analytics data
+          setSelectedChipFilters(generateFilterChips(parsed));
+          setFiltersLength(countValidFilters(parsed));
+          setSelectedCountries(parsed.country || ["USA"]);
+          setIsRestoringFromLocalStorage(false);
+        }, 100);
+        
+        return; // Exit early if analytics filters were restored
+      } catch (e) {
+        console.log("Error parsing saved analytics filters:", e);
+        setIsRestoringFromLocalStorage(false);
+      }
+    }
+
+    // Check for regular filters if no analytics filters or not in analytics view
     const savedFilters = localStorage.getItem("vdsEuropeanFilters");
     if (savedFilters) {
       try {
         const parsed = JSON.parse(savedFilters);
+        setIsRestoringFromLocalStorage(true);
         setallApplyFilter(parsed);
-        // Set form values as well
-        // Restore all saved values at once using reset
+        
+        // Restore all saved values with proper field mapping
         const restoredValues = {
           institution_name: parsed.institution_name || [],
           vote: parsed.vote || [],
           category: parsed.category || [],
           year: parsed.year || "",
+          analyticsYear: parsed.analyticsYear || [],
           company_name: parsed.company_name || [],
           date_range: parsed.date_range || "",
           country: parsed.country || ["USA"],
+          index_name: parsed.index_name || [],
+          meeting_type: parsed.meeting_type || [],
+          proposal_type: parsed.proposal_type || [],
+          proponent_type: parsed.proponent_type || [],
+          proposal_keyword: parsed.proposal_keyword || [],
+          keyword: parsed.keyword || "",
         };
         
         // Use setTimeout to ensure the reset happens after component mount
         setTimeout(() => {
           reset(restoredValues);
+          // Generate filter chips from restored data
+          setSelectedChipFilters(generateFilterChips(parsed));
+          // Set filters length for the filter button badge
+          setFiltersLength(countValidFilters(parsed));
+          
+          // If we're in analytics view, also set analytics filters
+          if (isViewAnalysis) {
+            setAllAnalyticsFilter(parsed);
+          }
+          
+          setIsRestoringFromLocalStorage(false);
         }, 100);
         
         // Also set selectedCountries if country is in saved filters
@@ -159,13 +326,30 @@ const index = () => {
         console.log("Error parsing saved filters:", e);
         // Set default country even if parsing fails
         setSelectedCountries(["USA"]);
+        setIsRestoringFromLocalStorage(false);
       }
     } else {
-      // Set default country if no saved filters exist
+      // Set default country and date range if no saved filters exist
+      const getDefaultDateRange = () => {
+        const now = new Date();
+        const usDate = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        const startDate = "2025-01-01";
+        const endDate = usDate.toISOString().split("T")[0];
+        return `${startDate} - ${endDate}`;
+      };
+      
+      const defaultFilters = { 
+        country: ["USA"],
+        date_range: getDefaultDateRange()
+      };
+      
       setSelectedCountries(["USA"]);
-      // Also set default filter to show pills
-      setallApplyFilter({ country: ["USA"] });
+      setallApplyFilter(defaultFilters);
       setValue("country", ["USA"]);
+      setValue("date_range", getDefaultDateRange());
+      // Generate filter chips for default filters
+      setSelectedChipFilters(generateFilterChips(defaultFilters));
+      setFiltersLength(2);
     }
     // Don't set default date range automatically - let user choose
   }, []);
@@ -187,7 +371,8 @@ const index = () => {
         );
 
         // Only update chips for regular filters if not in analytics mode
-        if (!isViewAnalysis) {
+        // Don't overwrite chips if they were just restored from localStorage
+        if (!isViewAnalysis && !isRestoringFromLocalStorage) {
           setFiltersLength(countValidFilters(allApplyFilter));
           setSelectedChipFilters(generateFilterChips(allApplyFilter));
         }
@@ -200,6 +385,22 @@ const index = () => {
     fetchData();
     // console.log(watch("year"));
   }, [companyGlobalSearchTicker, searchTicker, allApplyFilter, page, isViewAnalysis]);
+
+  // Ensure filter chips are always displayed when we have valid filters
+  useEffect(() => {
+    if (!isViewAnalysis && hasAnyValidFilter(allApplyFilter) && selectedChipFilters.length === 0 && !isRestoringFromLocalStorage) {
+      setSelectedChipFilters(generateFilterChips(allApplyFilter));
+      setFiltersLength(countValidFilters(allApplyFilter));
+    }
+  }, [allApplyFilter, selectedChipFilters.length, isRestoringFromLocalStorage, isViewAnalysis]);
+
+  // Ensure filter chips are displayed for analytics filters
+  useEffect(() => {
+    if (isViewAnalysis && hasAnyValidFilter(allAnalyticsFilter) && selectedChipFilters.length === 0 && !isRestoringFromLocalStorage) {
+      setSelectedChipFilters(generateFilterChips(allAnalyticsFilter));
+      setFiltersLength(countValidFilters(allAnalyticsFilter));
+    }
+  }, [isViewAnalysis, allAnalyticsFilter, selectedChipFilters.length, isRestoringFromLocalStorage]);
 
   useEffect(() => {
     getDependentDropdown();
@@ -424,7 +625,15 @@ const index = () => {
     const completeFilterObj = {
       ...filterObj,
       vote: npxFilter?.vote, // Ensure vote filter is saved
-      country: npxFilter?.country || ["USA"] // Ensure country filter is saved with USA default
+      country: npxFilter?.country || ["USA"], // Ensure country filter is saved with USA default
+      // Include all form fields to ensure complete restoration
+      analyticsYear: npxFilter?.analyticsYear || [],
+      index_name: npxFilter?.index_name || [],
+      meeting_type: npxFilter?.meeting_type || [],
+      proposal_type: npxFilter?.proposal_type || [],
+      proponent_type: npxFilter?.proponent_type || [],
+      proposal_keyword: npxFilter?.proposal_keyword || [],
+      keyword: npxFilter?.keyword || "",
     };
     localStorage.setItem("vdsEuropeanFilters", JSON.stringify(completeFilterObj));
     dispatch(resetPage());
@@ -792,14 +1001,23 @@ const index = () => {
           ...parsed,
           country: parsed.country || ["USA"]
         };
+        setIsRestoringFromLocalStorage(true);
         setAllAnalyticsFilter(analyticsWithCountry);
         Object.entries(analyticsWithCountry).forEach(([key, value]) => {
           setValue(key, value);
         });
         setSelectedCountries(analyticsWithCountry.country);
+        // Generate filter chips from restored analytics data
+        setSelectedChipFilters(generateFilterChips(analyticsWithCountry));
+        // Set filters length for the filter button badge
+        setFiltersLength(countValidFilters(analyticsWithCountry));
+        setTimeout(() => {
+          setIsRestoringFromLocalStorage(false);
+        }, 200);
         return;
       } catch (e) {
         console.log("Error parsing saved analytics filters:", e);
+        setIsRestoringFromLocalStorage(false);
       }
     }
 
@@ -812,11 +1030,20 @@ const index = () => {
         country: ["USA"],
       };
     } else {
+      // Get default date range for analytics
+      const getDefaultDateRange = () => {
+        const now = new Date();
+        const usDate = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        const startDate = "2025-01-01";
+        const endDate = usDate.toISOString().split("T")[0];
+        return `${startDate} - ${endDate}`;
+      };
+      
       defaultFilters = {
         institution_name: ["BlackRock, Inc."],
         index_name: ["S&P 500"],
-        analyticsYear: ["2025"],
-        date_range: "",
+        analyticsYear: [],
+        date_range: getDefaultDateRange(),
         country: ["USA"],
       };
     }
@@ -1049,20 +1276,26 @@ const index = () => {
                             numberOfColumns: 2,
                             numberOfMonths: 2,
                             showWeekNumbers: true,
+                            splitView: true,
                             dropdowns: {
-                              minYear: 1990,
-                              maxYear: null,
+                              minYear: 2023,
+                              maxYear: 2025,
                               months: true,
                               years: true,
                             },
-                            maxDate: new Date().toISOString().split("T")[0],
-                            minDate: "2024-01-01",
-                            startDate: "2024-01-01",
+                            maxDate: (() => {
+                              // Get current US date (considering Pakistan is ahead by ~10-11 hours)
+                              const now = new Date();
+                              const usDate = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+                              return usDate.toISOString().split("T")[0];
+                            })(),
+                            minDate: "2023-01-01",
+                            startDate: "2025-01-01",
                             endDate: (() => {
-                              const today = new Date();
-                              const yesterday = new Date(today);
-                              yesterday.setDate(today.getDate() - 1);
-                              return yesterday.toISOString().split("T")[0];
+                              // Get current US date (considering Pakistan is ahead by ~10-11 hours)
+                              const now = new Date();
+                              const usDate = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+                              return usDate.toISOString().split("T")[0];
                             })(),
                           }}
                           className="pl-12"
@@ -1257,6 +1490,16 @@ const index = () => {
         )}
         {isViewAnalysis && !isAnalyticsLoading && vdsEuropeansAnalytics && typeof vdsEuropeansAnalytics === 'object' && vdsEuropeansAnalytics.by_company && Array.isArray(vdsEuropeansAnalytics.by_company) && vdsEuropeansAnalytics.by_company.length > 0 && (
           <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
+            {/* Expand All Button */}
+            <div className="flex justify-end mb-4 px-4 pt-4">
+              <button
+                onClick={expandAllGroups}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
+              >
+                <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
+                {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
+              </button>
+            </div>
             <div className="divide-y divide-gray-100">
               {vdsEuropeansAnalytics.by_company.map((yearEntry, yearIdx) => (
                 Array.isArray(yearEntry.companies)
@@ -1275,42 +1518,50 @@ const index = () => {
                       </div>
                       {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
                         <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
-                          <table className="min-w-full">
+                          <table className="min-w-full table-fixed">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-semibold">Proposal No.</th>
-                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                                <th className="px-4 py-2 text-left font-semibold">Mgmt Rec</th>
-                                <th className="px-4 py-2 text-left font-semibold">Vote Cast</th>
-                                <th className="px-4 py-2 text-left font-semibold">Institution Name</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[12%]">Proposal No.</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[35%]">Proposal</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[15%]">Mgmt Rec</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[15%]">Vote Cast</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[23%]">Institution Name</th>
                               </tr>
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                               {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <tr key={vds.proposal_id || vdsIdx} className="hover:bg-primary/10">
-                                  <td className="px-4 py-2">{vds?.proposal_num}</td>
-                                  <td className="px-4 py-2">
+                                <tr 
+                                  key={vds.proposal_id || vdsIdx} 
+                                  className="hover:bg-primary/10"
+                                  style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
+                                >
+                                  <td className="px-4 py-2 w-[12%] align-middle">
+                                    {vds?.proposal_num}
+                                  </td>
+                                  <td className="px-4 py-2 w-[35%] align-middle">
                                     {vds?.proposal}
                                   </td>
-                                  <td className="px-4 py-2">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                  <td className="px-4 py-2 flex items-center">
-                                    <span className={clsx([
-                                      (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                      "text-red-700 font-semibold",
-                                    ])}>
-                                      {vds?.vote}
-                                    </span>
-                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                      <span
-                                        data-tooltip-id="my-tooltip-data-html"
-                                        data-tooltip-html={vds?.notes}
-                                        className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
-                                      >
-                                        <Lucide icon="Info" className="w-4 h-4" />
+                                  <td className="px-4 py-2 w-[15%] align-middle">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                  <td className="px-4 py-2 w-[15%] align-middle">
+                                    <div className="flex items-center">
+                                      <span className={clsx([
+                                        (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                        "text-red-700 font-semibold",
+                                      ])}>
+                                        {vds?.vote}
                                       </span>
-                                    )}
+                                      {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                        <span
+                                          data-tooltip-id="my-tooltip-data-html"
+                                          data-tooltip-html={vds?.notes}
+                                          className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
+                                        >
+                                          <Lucide icon="Info" className="w-4 h-4" />
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
-                                  <td className="px-4 py-2">{vds?.institution_name}</td>
+                                  <td className="px-4 py-2 w-[23%] align-middle">{vds?.institution_name}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1378,6 +1629,7 @@ const index = () => {
                               "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
                               toggle ? "bg-white" : "bg-gray-50"
                             )}
+                            style={getSequentialBorderStyle(vds?.proposal_num, VdsEuropeans, index)}
                           >
                             <Table.Td className="whitespace-nowrap overflow-hidden text-ellipsis font-semibold text-primary/80">
                               {vds?.excel_institution_name}

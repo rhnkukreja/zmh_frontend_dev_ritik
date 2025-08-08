@@ -113,11 +113,6 @@ const initialState: any = {
       pathname: "/proxy-contest",
       title: "Proxy Contest",
     },
-    {
-      icon: "Mail",
-      pathname: "#",
-      title: "Email Alert",
-    },
     
     // {
     //   icon: "PanelTopClose",
@@ -158,6 +153,11 @@ const initialState: any = {
       icon: "FileText",
       pathname: "/notes",
       title: "Knowledge Base",
+    },
+    {
+      icon: "Mail",
+      pathname: "#",
+      title: "Email Alert",
     },
     {
       icon: "HelpCircle",

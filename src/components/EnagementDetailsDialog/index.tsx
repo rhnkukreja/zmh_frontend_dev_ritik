@@ -37,7 +37,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
 
 
     return (
-        <div className="relative bg-white px-6 w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
+        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl flex flex-col mb-10">
             <h2 className="text-xl font-semibold mb-4">Analytics</h2>
             {!isInvestorDataAvailable ? (
                 <p className="text-center text-gray-500 text-lg">No Analytics available</p>

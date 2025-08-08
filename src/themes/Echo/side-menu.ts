@@ -76,7 +76,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   return formattedMenu;
 };
 
-const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
+const linkTo = (menu: FormattedMenu, navigate: NavigateFunction, companyGlobalSearchName?: string) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {
@@ -90,7 +90,12 @@ const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
     }
     // Navigate to pathname if it's defined and not "Notes"
     else if (menu.pathname !== undefined && menu.pathname !== "Notes") {
-      navigate(menu.pathname);
+      // Add globalCompany parameter for Proxy Contest when global search is active
+      if (menu.title === "Proxy Contest" && companyGlobalSearchName) {
+        navigate(`${menu.pathname}?globalCompany=${encodeURIComponent(companyGlobalSearchName)}`);
+      } else {
+        navigate(menu.pathname);
+      }
     }
   }
 };
