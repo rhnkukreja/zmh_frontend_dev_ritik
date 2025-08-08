@@ -12,7 +12,9 @@ interface FilterChipsProps {
   currentPage?: string; // to identify which page is using the component
 }
 
+
 const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyYear, currentPage }) => {
+
   if (!filters.length) return null;
   // Only use tab for ShareHolder page, otherwise ignore
   const { tab } = useAppSelector((state) => 
@@ -60,11 +62,14 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyY
       {filters.map((filter, index) => (
         <div
           key={index}
-          className={"flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20"}
+          className={
+            "flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20"
+          }
         >
           <span>
             {filter.key === "outcome_percentage"
               ? "Shareholder Meeting Held"
+
               : (filter.key === "proxy_season" || filter.key === "year") && showProxyYear && tab !== "withdrawn"
                 ? "Proxy Year"
                 : (filter.key === "proxy_season" || filter.key === "year") && showProxyYear && tab == "withdrawn"
@@ -75,13 +80,21 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyY
             :
           </span>
           <span className="ml-2">
-            {filter.value === undefined || filter.value === null || filter.value === "" || (Array.isArray(filter.value) && filter.value.length === 0)
+            {filter.value === undefined ||
+            filter.value === null ||
+            filter.value === "" ||
+            (Array.isArray(filter.value) && filter.value.length === 0)
               ? "-"
+              : filter.value === "no" || filter.value === "yes"
+              ? convertToTitleCase(filter.value)
               : changeCase(filter.key)
-                ? String(filter.value)
-                : filter.value}
+              ? String(filter.value)
+              : filter.value}
           </span>
-          <FaTimes className="text-xs ml-2" onClick={() => onRemove(filter.key, filter.value)} />
+          <FaTimes
+            className="text-xs ml-2"
+            onClick={() => onRemove(filter.key, filter.value)}
+          />
         </div>
       ))}
     </div>

@@ -20,6 +20,8 @@ interface EditableSectionProps {
   type: string;
   expanded?: boolean; 
   onToggle?: () => void;
+  toggleAllGroups?: () => void;
+  areAllGroupsExpanded?: () => boolean;
 }
 
 const EditableSection: React.FC<EditableSectionProps> = ({
@@ -31,8 +33,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   renderHtml,
 
   type,
-   expanded,
+  expanded,
   onToggle,
+  toggleAllGroups,
+  areAllGroupsExpanded,
 }) => {
 
   const dispatch = useAppDispatch();
@@ -88,7 +92,12 @@ useEffect(() => {
         <LoadingWrapper height={300} />
       ) : (
         <>
-          <div className="flex flex-row justify-between items-center px-4 py-3.5 border-b-2 border-gray-100 ">
+         <div
+         className={`flex flex-row justify-between items-center px-4 py-3.5 border-b-2 border-gray-100 ${
+        title !== "Summary" && "bg-gray-50 hover:bg-primary/5 cursor-pointer"
+        }`}
+          onClick={title !== "Summary" && onToggle}
+       >
             <h4 className="text-[18px]  font-semibold text-left py-1 leading-none text-black ">
               {title} 
             </h4>
@@ -121,11 +130,18 @@ useEffect(() => {
                 )}
               </>
             )} 
-        {title !== "Summary" && <button
-             onClick={onToggle}
-             className="transition-colors duration-200 font-medium text-lg">
-            <Lucide icon={expanded ? "ChevronUp" : "ChevronDown"} className="w-5 h-5" />
-            </button>}
+        {title == "Summary" ?
+         <button onClick={toggleAllGroups}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
+                            >
+                           
+                           {areAllGroupsExpanded() ? "Collapse All" : "Expand All"} 
+                           <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
+                          </button>
+        :<button
+             className="transition-colors  duration-200 font-medium text-lg">
+             <span className="ml-2 text-primary font-bold">{expanded ? '▲' : '▼'}</span>
+       </button>}
           </div>
           </div>
           {expanded && <>

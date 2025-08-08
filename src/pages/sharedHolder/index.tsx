@@ -1375,6 +1375,8 @@ function ShareHolderProposal() {
                                 onChange={field.onChange}
                                 isMulti
                                 className="mt-1"
+                                isHideCurrentCompany={true}
+                                currentCompany={finhub?.name || companyGlobalSearchName}
                               />
                             )}
                           />
