@@ -309,7 +309,7 @@ function ProxyGuideline() {
 
                       onClick={() => {
                         gotoDetailPage(
-                          'https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Overboarding_Document/Overboarding Policy for Top Investors (Updated)_Overboarding_Document.pdf',
+                          'https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2025.pdf',
                           'Key Overboarding Policies'
                         );
 

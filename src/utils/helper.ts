@@ -381,6 +381,10 @@ function generateFilterChips(filters: Record<string, any>) {
     country: "Country",
     analyticsYear: "Year",
     date_range: "Date Range",
+    themes: "Themes",
+    market: "Country",
+    sector: "Sector",
+    region: "Region",
   };
 
   // Define the order of filters as they appear in the UI

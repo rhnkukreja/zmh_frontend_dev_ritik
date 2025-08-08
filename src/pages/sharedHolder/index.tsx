@@ -1039,6 +1039,8 @@ function ShareHolderProposal() {
                   <FilterChips
                     filters={selectedChipFilters}
                     onRemove={handleRemoveChip}
+                    showProxyYear={true}
+                    currentPage="shareHolder"
                   />
                 </>
               )}

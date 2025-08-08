@@ -559,7 +559,11 @@ function CaseStudies() {
               {
                 selectedChipFilters?.length > 0 &&
                 <>
-                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
+                  <FilterChips 
+                    filters={selectedChipFilters} 
+                    onRemove={handleRemoveChip} 
+                    currentPage="caseStudies"
+                  />
                 </>
               }
 

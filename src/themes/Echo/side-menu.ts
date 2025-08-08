@@ -90,12 +90,7 @@ const linkTo = (menu: FormattedMenu, navigate: NavigateFunction, companyGlobalSe
     }
     // Navigate to pathname if it's defined and not "Notes"
     else if (menu.pathname !== undefined && menu.pathname !== "Notes") {
-      // Add globalCompany parameter for Proxy Contest when global search is active
-      if (menu.title === "Proxy Contest" && companyGlobalSearchName) {
-        navigate(`${menu.pathname}?globalCompany=${encodeURIComponent(companyGlobalSearchName)}`);
-      } else {
-        navigate(menu.pathname);
-      }
+      navigate(menu.pathname);
     }
   }
 };

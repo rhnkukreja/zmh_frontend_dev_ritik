@@ -34,6 +34,8 @@ import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import FilterChips from "@/components/FilterChips";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { FaSearch } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
 
 interface InvestorProfileFilter {
   region: string[];
@@ -289,18 +291,20 @@ function Main() {
                                     onFilterClear();
                                     close();
                                   }}
-                                  className="w-32 ml-auto"
+                                  className="w-32 ml-auto flex items-center gap-2"
                                 >
+                                  <MdOutlineClear className="text-lg" />
                                   Clear
                                 </Button>
                                 <Button
                                   type="submit"
                                   variant="primary"
-                                  className="w-32 ml-2"
+                                  className="w-32 ml-2 flex items-center gap-2"
                                   onClick={() => {
                                     close();
                                   }}
                                 >
+                                  <FaSearch className="text-sm" />
                                   Apply
                                 </Button>
                               </div>
