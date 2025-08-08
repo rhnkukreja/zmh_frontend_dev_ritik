@@ -348,15 +348,7 @@ const toggleAllGroups = () => {
                 params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
               )}
             >
-                   <div className="mb-2 flex justify-end">
-          <button
-  onClick={toggleAllGroups}
-  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
->
-  <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
-  {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
-</button>
-</div>
+                  
               {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors)?.map(
                   (key, index) => {
@@ -386,12 +378,14 @@ const toggleAllGroups = () => {
                             ?.replace(/\n/g, "<br />") || ""
                         }
                         field={key as keyof InvestersProfile}
-                         expanded={expandedSections[index]}
-      onToggle={() =>
-        setExpandedSections(prev =>
-          prev.map((v, i) => (i === index ? !v : v))
-        )
-      }
+                        expanded={expandedSections[index]}
+                        onToggle={() =>
+                         setExpandedSections(prev =>
+                         prev.map((v, i) => (i === index ? !v : v))
+                         )}
+                         toggleAllGroups={toggleAllGroups}
+                         areAllGroupsExpanded={areAllGroupsExpanded}
+      
                       />
                     );
                   }

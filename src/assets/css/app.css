@@ -264,6 +264,9 @@ a.side-menu__link.side-menu__link--active svg {
 .recharts-label-list g line {
   display: none;
 }
+.tom-select.ts-wrapper.multi.has-items .ts-control{
+  padding-right: 2rem !important;
+}
 .position-set{
   top: -10px !important;
   left: 12px !important; 
