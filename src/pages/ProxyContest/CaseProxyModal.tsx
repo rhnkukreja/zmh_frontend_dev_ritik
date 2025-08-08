@@ -33,7 +33,7 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
   useEffect(() => {
     if (caseProxyModalData?.company_name && caseProxyModalVisible) {
       // Fetch case studies filtered by company name
-      const url = `/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}`;
+      const url = `/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}&themes=${encodeURIComponent('Proxy Contest/M&A')}`;
       dispatch(fetchCaseStudies(url));
     }
   }, [dispatch, caseProxyModalData?.company_name, caseProxyModalVisible]);
@@ -85,10 +85,10 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
                     <p>{detailedCaseStudy?.institution_name}</p>
                   </div>
                 )}
-                {detailedCaseStudy?.esg_themes && (
+                {(detailedCaseStudy?.esg_themes || detailedCaseStudy?.esg_themes === null || detailedCaseStudy?.esg_themes === undefined) && (
                   <div>
                     <h3 className="font-semibold min-w-[150px] mb-2">Theme</h3>
-                    <p>{detailedCaseStudy?.esg_themes}</p>
+                    <p>{detailedCaseStudy?.esg_themes && detailedCaseStudy?.esg_themes !== 'N/A' ? detailedCaseStudy?.esg_themes : (detailedCaseStudy?.esg_themes === 'N/A' ? '' : 'Proxy Contest/M&A')}</p>
                   </div>
                 )}
                 {detailedCaseStudy?.industry && (
@@ -167,7 +167,7 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
                           {item?.year || 'N/A'}
                         </Table.Td>
                         <Table.Td className="py-2 border-dashed">
-                          {item?.esg_themes || 'N/A'}
+                          {item?.esg_themes && item?.esg_themes !== 'N/A' ? item?.esg_themes : (item?.esg_themes === 'N/A' ? '' : 'Proxy Contest/M&A')}
                         </Table.Td>
                         <Table.Td className="py-2 border-dashed">
                           {item?.industry || 'N/A'}

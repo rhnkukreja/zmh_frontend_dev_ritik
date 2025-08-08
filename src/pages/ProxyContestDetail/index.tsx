@@ -97,7 +97,7 @@ const ProxyContestDetail = () => {
                 }),
 
             // Fetch Case Studies
-            customAxios.get(`/case_studies/?company_name=${companyName}`)
+            customAxios.get(`/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}&themes=${encodeURIComponent('Proxy Contest/M&A')}`)
                 .then(response => {
                     setCaseStudiesData(response.data?.results || []);
                 })
@@ -574,7 +574,7 @@ const ProxyContestDetail = () => {
                                                             {item?.year || 'N/A'}
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
-                                                            {item?.esg_themes || 'N/A'}
+                                                            {item?.esg_themes && item?.esg_themes !== 'N/A' ? item?.esg_themes : (item?.esg_themes === 'N/A' ? '' : 'Proxy Contest/M&A')}
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
                                                             {item?.industry || 'N/A'}
