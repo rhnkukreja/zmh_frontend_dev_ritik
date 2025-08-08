@@ -63,7 +63,7 @@ const ProponentsAnalyticsComponent: React.FC<
     const renderSummaryTable = () => (
       <div className="overflow-x-auto mt-2">
         <h3 className="text-lg font-semibold mb-2">Top Proponents</h3>
-        <h4 className="text-lg mb-4">Includes proposals filed on behalf of other proponents</h4>
+        <h4 className="text-base mb-4">Includes proposals filed on behalf of other proponents</h4>
         {loading ? (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
             {" "}
