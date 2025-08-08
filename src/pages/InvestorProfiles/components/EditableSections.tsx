@@ -18,6 +18,8 @@ interface EditableSectionProps {
   renderHtml: string;
 
   type: string;
+  expanded?: boolean; 
+  onToggle?: () => void;
 }
 
 const EditableSection: React.FC<EditableSectionProps> = ({
@@ -29,6 +31,8 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   renderHtml,
 
   type,
+   expanded,
+  onToggle,
 }) => {
 
   const dispatch = useAppDispatch();
@@ -85,10 +89,10 @@ useEffect(() => {
       ) : (
         <>
           <div className="flex flex-row justify-between items-center px-4 py-3.5 border-b-2 border-gray-100 ">
-            <h4 className="text-[18px]  font-semibold text-left py-1 leading-none ">
+            <h4 className="text-[18px]  font-semibold text-left py-1 leading-none text-black ">
               {title} 
             </h4>
-
+          <div>
             {user?.user_type === "Admin" && (
               <>
                 {isEditing === true ? (
@@ -116,9 +120,16 @@ useEffect(() => {
                   </Button>
                 )}
               </>
-            )}
+            )} 
+        {title !== "Summary" && <button
+             onClick={onToggle}
+             className="transition-colors duration-200 font-medium text-lg">
+            <Lucide icon={expanded ? "ChevronUp" : "ChevronDown"} className="w-5 h-5" />
+            </button>}
           </div>
-          {isEditing ? (
+          </div>
+          {expanded && <>
+ {isEditing ? (
             <div className="flex  flex-col px-4 py-3  ">
               <div ref={editorRef}>
                
@@ -154,6 +165,8 @@ useEffect(() => {
               ) : null}
             </>
           )}
+          </>}
+         
         </>
       )}
     </div>
