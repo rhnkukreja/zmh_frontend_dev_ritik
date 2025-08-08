@@ -53,7 +53,7 @@ const initialState: ProxyVotingGuidelineSlice = {
   page: 1,
   summaryPage: 1,
   guidelineFilterOptions: {
-    year: ["2025", "2024", "2023"],
+    year: [new Date().getFullYear().toString(), (new Date().getFullYear() - 1).toString(), (new Date().getFullYear() - 2).toString()],
     region: ["North America", "EMEA", "APAC"],
   },
 

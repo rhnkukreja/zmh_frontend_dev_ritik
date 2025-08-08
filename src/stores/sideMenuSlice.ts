@@ -150,14 +150,14 @@ const initialState: any = {
       isAdmin: true,
     },
     {
-      icon: "FileText",
-      pathname: "/notes",
-      title: "Knowledge Base",
-    },
-    {
       icon: "Mail",
       pathname: "#",
       title: "Email Alert",
+    },
+    {
+      icon: "FileText",
+      pathname: "/notes",
+      title: "Knowledge Base",
     },
     {
       icon: "HelpCircle",

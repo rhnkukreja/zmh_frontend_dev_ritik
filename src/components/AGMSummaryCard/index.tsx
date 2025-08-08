@@ -135,7 +135,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
     //       },
     // })
     window.open(
-      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? 2024}`,
+      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? new Date().getFullYear()}`,
       "_blank"
     );
   };
@@ -148,7 +148,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
     //       },
     // })
     window.open(
-      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? 2024}`,
+      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? new Date().getFullYear()}`,
       "_blank"
     );
   };

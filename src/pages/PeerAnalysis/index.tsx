@@ -369,11 +369,11 @@ function PeerAnalysis() {
   const handleViewAllChange = async (event: any) => {
     if (event?.target?.checked) {
       setViewAll(true)
-      setValue("year", ["2024"]);
+      setValue("year", [new Date().getFullYear().toString()]);
       setValue("country", ["USA"]);
       dispatch(
         setAllFilters({
-          year: [2024],
+          year: [new Date().getFullYear()],
           country: ["USA"],
         })
       );
@@ -792,38 +792,6 @@ function PeerAnalysis() {
                           <span className="flex items-center gap-2 text-slate-600 font-semibold">
                             <FaGlobe className="text-gray-400" /> Country
                           </span>
-
-
-                          {apiDropdownOptions?.country?.length >
-                            0 && (
-                              <div>
-                                <FormCheck className="mr-2">
-                                  <FormCheck.Label>
-                                    Select All
-                                  </FormCheck.Label>
-                                  <FormCheck.Input
-                                    className="ml-1"
-                                    id={`country`}
-                                    checked={
-                                      apiDropdownOptions?.country
-                                        ?.length ===
-                                      watch("country")?.length
-                                    }
-                                    type="checkbox"
-                                    onChange={(e) => {
-                                      if (e.target.checked === true) {
-                                        setValue(
-                                          "country",
-                                          apiDropdownOptions?.country
-                                        );
-                                      } else {
-                                        setValue("country", []);
-                                      }
-                                    }}
-                                  />
-                                </FormCheck>
-                              </div>
-                            )}
                         </div>
                         <Controller
                           name="country"
@@ -909,36 +877,6 @@ function PeerAnalysis() {
                             <span className="flex items-center gap-2 text-slate-600 font-semibold">
                               <FaBuilding className="text-gray-400" /> Sector
                             </span>
-                            {apiDropdownOptions?.sector?.length >
-                              0 && (
-                                <div>
-                                  <FormCheck className="mr-2">
-                                    <FormCheck.Label>
-                                      Select All
-                                    </FormCheck.Label>
-                                    <FormCheck.Input
-                                      className="ml-1"
-                                      id={`sector`}
-                                      checked={
-                                        apiDropdownOptions?.sector
-                                          ?.length ===
-                                        watch("sector")?.length
-                                      }
-                                      type="checkbox"
-                                      onChange={(e) => {
-                                        if (e.target.checked === true) {
-                                          setValue(
-                                            "sector",
-                                            apiDropdownOptions?.sector
-                                          );
-                                        } else {
-                                          setValue("sector", []);
-                                        }
-                                      }}
-                                    />
-                                  </FormCheck>
-                                </div>
-                              )}
                           </div>
                           <Controller
                             name="sector"

@@ -40,6 +40,10 @@ const onlyNumber = (string: string) => {
   }
 };
 
+const getCurrentYear = () => {
+  return new Date().getFullYear();
+};
+
 const formatCurrency = (number: number) => {
   if (number) {
     const formattedNumber = number.toString().replace(/\D/g, "");
@@ -381,6 +385,10 @@ function generateFilterChips(filters: Record<string, any>) {
     country: "Country",
     analyticsYear: "Year",
     date_range: "Date Range",
+    themes: "Themes",
+    market: "Country",
+    sector: "Sector",
+    region: "Region",
   };
 
   // Define the order of filters as they appear in the UI
@@ -663,5 +671,6 @@ export {
   generateFilterChips,
   cleanObject,
   groupByValue,
+  getCurrentYear,
 
 };

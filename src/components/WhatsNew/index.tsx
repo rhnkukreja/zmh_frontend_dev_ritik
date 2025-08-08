@@ -87,14 +87,14 @@ const GetWhatsNew = ({
             <div className="grid grid-cols-1 gap-4">
               <div className="w-full">
                 <FormCheck.Label className="block text-[0.9rem] font-semibold text-slate-500 mb-2 text-left">
-                  Modules*
+                  Modules
                 </FormCheck.Label>
                 <div className="grid grid-cols-2 gap-4">
                   <Controller
                     name="modules"
                     control={control}
                     defaultValue={[]}
-                    rules={{ required: "Modules is required" }}
+                    rules={{}}
                     render={({ field, fieldState: { error } }) => (
                       <>
                         {[
@@ -147,13 +147,13 @@ const GetWhatsNew = ({
 
               <div className="w-full email-alert">
                 <FormCheck.Label className="block text-[0.9rem] font-semibold text-slate-500 mb-2 text-left">
-                  Company*
+                  Company
                 </FormCheck.Label>
              <div className="text-left">
                   <Controller
                     name="company"
                     control={control}
-                    rules={{ required: "Company is required" }}
+                    rules={{}}
                     render={({ field, fieldState: { error } }) => (
                     <>  <CompanySelect
                         value={field.value}
@@ -176,13 +176,13 @@ const GetWhatsNew = ({
               </div>
                <div className="w-full">
                 <FormCheck.Label className="block text-[0.9rem] font-semibold text-slate-500 mb-2 text-left">
-                  Schedule*
+                  Schedule
                 </FormCheck.Label>
                
                   <Controller
                     name="schedule"
                     control={control}
-                    rules={{ required: "Schedule is required" }}
+                    rules={{}}
                     render={({ field, fieldState: { error } }) => (
                       <>
                          <div className="flex flex-col sm:flex-row py-2">

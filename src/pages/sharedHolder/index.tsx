@@ -335,7 +335,14 @@ function ShareHolderProposal() {
         ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
       };
 
-    const dynamicURL = createDynamicURL(tabUrls[tab], updatedFilters, undefined, page);
+    // Create a copy of filters and ensure index is not transformed to index_name
+    const shareholderFilters = { ...updatedFilters };
+    if (shareholderFilters.index_name && !shareholderFilters.index) {
+      shareholderFilters.index = shareholderFilters.index_name;
+      delete shareholderFilters.index_name;
+    }
+    
+    const dynamicURL = createDynamicURL(tabUrls[tab], shareholderFilters, undefined, page);
     dispatch(fetchShareHolderProposal(dynamicURL));
 
 
@@ -391,8 +398,15 @@ function ShareHolderProposal() {
           ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] }),
         };
 
+        // Create a copy of filters and ensure index is not transformed to index_name
+        const shareholderFilters = { ...updatedFilters };
+        if (shareholderFilters.index_name && !shareholderFilters.index) {
+          shareholderFilters.index = shareholderFilters.index_name;
+          delete shareholderFilters.index_name;
+        }
+
         const dynamicURL =
-          createDynamicURL(tabUrls[tab], updatedFilters, undefined, page) +
+          createDynamicURL(tabUrls[tab], shareholderFilters, undefined, page) +
           (isViewAnalysis && tab === "proposal" ? "&analytics_data=true" : "");
 
         const response = await shareHolderProposalService.getShareHolderProposal(dynamicURL);
@@ -432,11 +446,18 @@ function ShareHolderProposal() {
           ...filters,
           ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
         };
+      // Create a copy of filters and ensure index is not transformed to index_name
+      const shareholderFilters = { ...updatedFilters };
+      if (shareholderFilters.index_name && !shareholderFilters.index) {
+        shareholderFilters.index = shareholderFilters.index_name;
+        delete shareholderFilters.index_name;
+      }
+
       const proposalResponse =
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/def14a/`,
-            updatedFilters,
+            shareholderFilters,
             undefined,
             page
           )
@@ -449,7 +470,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/no_action/`,
-            updatedFilters,
+            shareholderFilters,
             undefined,
             page
           )
@@ -462,7 +483,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/withdrawn/`,
-            updatedFilters,
+            shareholderFilters,
             undefined,
             page
           )
@@ -1039,6 +1060,8 @@ function ShareHolderProposal() {
                   <FilterChips
                     filters={selectedChipFilters}
                     onRemove={handleRemoveChip}
+                    showProxyYear={true}
+                    currentPage="shareHolder"
                   />
                 </>
               )}
@@ -1368,7 +1391,7 @@ function ShareHolderProposal() {
                             </span>
                           </div>
                           <Controller
-                            name="index_name"
+                            name="index"
                             control={control}
                             render={({ field }) => (
                               <MultiSelectDropdown
@@ -2183,7 +2206,7 @@ function ShareHolderProposal() {
                                       behavior: "smooth",
                                     });
                                   }}
-                                  className="py-3 px-4 text-left font-medium text-sm border-0"
+                                  className="py-3 px-4 text-center font-medium text-sm border-0"
                                 >
                                   % Support*
                                 </Table.Td>

@@ -15,7 +15,8 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import PdfViewer from "@/components/PdfView";
 import { getProxyContestDropdownValues } from "@/services/proxyContestDropdown";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
-import { FaBuilding, FaCalendarAlt, FaTimes } from "react-icons/fa";
+import { FaBuilding, FaCalendarAlt, FaTimes, FaSearch } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
 import { Popover } from "@/components/Base/Headless";
 
 const index = () => {
@@ -229,6 +230,16 @@ const index = () => {
 
     // Handle icon clicks for modal data
     const handleIconClick = async (company: any, type: string) => {
+        if (type === 'case_studies') {
+            // For case studies, we need to fetch case studies by company name
+            setCaseProxyModalVisible(true);
+            setCaseProxyModalData({ 
+                company_name: company.company_name,
+                company_id: company.company_id 
+            });
+            return;
+        }
+
         setSelectedCompany(company);
         setModalType(type);
         setModalLoading(true);
@@ -243,7 +254,23 @@ const index = () => {
         setModalTitle(titles[type as keyof typeof titles] || 'Details');
 
         try {
-            const response = await fetch(`${baseURL}/api/proxy-contest-company-details/${company.company_id}/?type=${type}`, {
+            let apiUrl = '';
+            const companyName = encodeURIComponent(company.company_name);
+            
+            // Use the correct API endpoints based on type
+            switch (type) {
+                case 'documents':
+                case 'proxy_advisory_firm_recommendation':
+                    apiUrl = `${baseURL}/activism_tables/?company_name=${companyName}`;
+                    break;
+                case 'meeting_details':
+                    apiUrl = `${baseURL}/voting_report_8k/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&year=${encodeURIComponent(company.year)}`;
+                    break;
+                default:
+                    throw new Error(`Unknown modal type: ${type}`);
+            }
+
+            const response = await fetch(apiUrl, {
                 headers: {
                     'Authorization': `JWT ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json',
@@ -255,7 +282,21 @@ const index = () => {
             }
 
             const data = await response.json();
-            setModalData(data);
+            
+            // Process data based on type
+            let processedData = data;
+            if (type === 'documents') {
+                processedData = {
+                    presentations: data?.Activism_Presentation || [],
+                    press_releases: data?.Activism_Press_Release || []
+                };
+            } else if (type === 'proxy_advisory_firm_recommendation') {
+                processedData = {
+                    recommendations: data?.Activism_ISS_GL || []
+                };
+            }
+            
+            setModalData(processedData);
         } catch (error) {
             console.error('Error fetching modal data:', error);
             toast.error('Failed to fetch details');
@@ -394,15 +435,17 @@ const index = () => {
                                         type="button"
                                         variant="secondary"
                                         onClick={onFilterClear}
-                                        className="w-24"
+                                        className="w-32 flex items-center gap-2"
                                     >
+                                        <MdOutlineClear className="text-lg" />
                                         Clear
                                     </Button>
                                     <Button
                                         variant="primary"
-                                        className="w-24"
+                                        className="w-32 flex items-center gap-2"
                                         type="submit"
                                     >
+                                        <FaSearch className="text-sm" />
                                         Apply
                                     </Button>
                                 </div>
@@ -460,12 +503,10 @@ const index = () => {
                                                             </div>
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
-                                                            {company.meeting_date ? (
+                                                            {company.meeting_date && (
                                                                 <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
                                                                     {company.meeting_date}
                                                                 </span>
-                                                            ) : (
-                                                                <span className="text-gray-400 text-xs">-</span>
                                                             )}
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
@@ -610,11 +651,310 @@ const index = () => {
                             ) : (
                                 <div>
                                     {modalData ? (
-                                        <div className="text-center py-12">
-                                            <p className="text-gray-500">Modal content will be displayed here based on the type: {modalType}</p>
-                                            <pre className="text-xs text-left mt-4 bg-gray-100 p-4 rounded overflow-auto max-h-60">
-                                                {JSON.stringify(modalData, null, 2)}
-                                            </pre>
+                                        <div>
+                                            {modalType === 'documents' && (
+                                                <div className="space-y-6">
+                                                    {modalData.presentations?.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Company and Investor Presentations
+                                                            </h3>
+                                                            <div className="space-y-2">
+                                                                {modalData.presentations.map((item: any, index: number) => (
+                                                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                                        <span className="font-medium">{item.document_name || 'Unnamed Document'}</span>
+                                                                        {item.document_url && (
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                    setPdfVisible(true);
+                                                                                    setDetailsModalVisible(false);
+                                                                                }}
+                                                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                                            >
+                                                                                View PDF
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {modalData.press_releases?.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Press Releases
+                                                            </h3>
+                                                            <div className="space-y-2">
+                                                                {modalData.press_releases.map((item: any, index: number) => (
+                                                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                                        <span className="font-medium">{item.document_name || 'Unnamed Document'}</span>
+                                                                        {item.document_url && (
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                    setPdfVisible(true);
+                                                                                    setDetailsModalVisible(false);
+                                                                                }}
+                                                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                                            >
+                                                                                View PDF
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {(!modalData.presentations?.length && !modalData.press_releases?.length) && (
+                                                        <div className="text-center py-12">
+                                                            <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Documents Available</h3>
+                                                            <p className="text-gray-500">No documents found for {selectedCompany?.company_name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {modalType === 'proxy_advisory_firm_recommendation' && (
+                                                <div>
+                                                    {modalData.recommendations?.length > 0 ? (
+                                                        <TableWrapper>
+                                                            <div className="overflow-x-auto">
+                                                                <Table>
+                                                                    <Table.Thead>
+                                                                        <Table.Tr>
+                                                                            <Table.Td
+                                                                                rowSpan={2}
+                                                                                className="px-6 py-3 font-semibold h-[60px] border-r border-gray-200 bg-gray-50 text-gray-700 text-left"
+                                                                            >
+                                                                                Company
+                                                                            </Table.Td>
+                                                                            <Table.Td
+                                                                                colSpan={3}
+                                                                                className="px-6 py-3 font-semibold h-[30px] border-r border-gray-200 bg-gray-50 text-gray-700 text-center"
+                                                                            >
+                                                                                ISS
+                                                                            </Table.Td>
+                                                                            <Table.Td
+                                                                                colSpan={3}
+                                                                                className="px-6 py-3 font-semibold h-[30px] bg-gray-50 text-gray-700 text-center"
+                                                                            >
+                                                                                GL
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                        <Table.Tr>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Management
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Activist
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-r border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Split
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Management
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Activist
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Split
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                    </Table.Thead>
+                                                                    <Table.Tbody>
+                                                                        {(() => {
+                                                                            // Group data by company_tent to show all unique companies
+                                                                            const companies = [...new Set(modalData.recommendations.map((item: any) => item.company_tent))];
+                                                                            
+                                                                            return companies.map((companyName: string, index: number) => {
+                                                                                const issData = modalData.recommendations.find((item: any) => item.type === 'ISS' && item.company_tent === companyName);
+                                                                                const glData = modalData.recommendations.find((item: any) => item.type === 'GL' && item.company_tent === companyName);
+                                                                                
+                                                                                return (
+                                                                                    <Table.Tr key={index} className="hover:bg-gray-50 border-b border-gray-100">
+                                                                                        <Table.Td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-100">
+                                                                                            {companyName || 'N/A'}
+                                                                                        </Table.Td>
+                                                                                        {/* ISS columns */}
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {issData?.management && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {issData?.activist && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center border-r border-gray-100">
+                                                                                            {issData?.split && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        {/* GL columns */}
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {glData?.management && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {glData?.activist && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {glData?.split && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                    </Table.Tr>
+                                                                                );
+                                                                            });
+                                                                        })()}
+                                                                    </Table.Tbody>
+                                                                </Table>
+                                                            </div>
+                                                        </TableWrapper>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <Lucide icon="Shield" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Recommendations Available</h3>
+                                                            <p className="text-gray-500">No proxy advisory firm recommendations found for {selectedCompany?.company_name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {modalType === 'meeting_details' && (
+                                                <div>
+                                                    {modalData && (modalData.company || modalData.nominees || modalData.proposals) ? (
+                                                        <div className="space-y-6">
+                                                            {modalData.company && modalData.company.length > 0 && (
+                                                                <div>
+                                                                    <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                        Company Information
+                                                                    </h3>
+                                                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                                                        {modalData.company.map((companyInfo: any, index: number) => {
+                                                                            const companyName = Object.keys(companyInfo)[0];
+                                                                            const meetingInfo = companyInfo[companyName];
+                                                                            return (
+                                                                                <div key={index} className="text-sm">
+                                                                                    <p><strong>Company:</strong> {companyName}</p>
+                                                                                    <p><strong>Meeting:</strong> {meetingInfo}</p>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {modalData.nominees && modalData.nominees.length > 0 && (
+                                                                <div>
+                                                                    <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                        Nominees
+                                                                    </h3>
+                                                                    <TableWrapper>
+                                                                        <div className="overflow-x-auto">
+                                                                            <Table>
+                                                                                <Table.Thead>
+                                                                                    <Table.Tr>
+                                                                                        {modalData.nominees_headers?.map((header: any, index: number) => (
+                                                                                            <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                {header.header}
+                                                                                            </Table.Td>
+                                                                                        ))}
+                                                                                    </Table.Tr>
+                                                                                </Table.Thead>
+                                                                                <Table.Tbody>
+                                                                                    {modalData.nominees.map((nominee: any, index: number) => (
+                                                                                        <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                            {modalData.nominees_headers?.map((header: any, headerIndex: number) => (
+                                                                                                <Table.Td key={headerIndex} className={`py-2 border-dashed text-sm ${headerIndex === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                    {nominee[header.field] || 'N/A'}
+                                                                                                </Table.Td>
+                                                                                            ))}
+                                                                                        </Table.Tr>
+                                                                                    ))}
+                                                                                </Table.Tbody>
+                                                                            </Table>
+                                                                        </div>
+                                                                    </TableWrapper>
+                                                                </div>
+                                                            )}
+
+                                                            {modalData.proposals && modalData.proposals.length > 0 && (
+                                                                <div>
+                                                                    <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                        Proposals
+                                                                    </h3>
+                                                                    <TableWrapper>
+                                                                        <div className="overflow-x-auto">
+                                                                            <Table>
+                                                                                <Table.Thead>
+                                                                                    <Table.Tr>
+                                                                                        {modalData.proposals_headers?.map((header: any, index: number) => (
+                                                                                            <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                {header.header}
+                                                                                            </Table.Td>
+                                                                                        ))}
+                                                                                    </Table.Tr>
+                                                                                </Table.Thead>
+                                                                                <Table.Tbody>
+                                                                                    {modalData.proposals.map((proposal: any, index: number) => (
+                                                                                        <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                            {modalData.proposals_headers?.map((header: any, headerIndex: number) => (
+                                                                                                <Table.Td key={headerIndex} className={`py-2 border-dashed text-sm ${headerIndex === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                    {proposal[header.field] || 'N/A'}
+                                                                                                </Table.Td>
+                                                                                            ))}
+                                                                                        </Table.Tr>
+                                                                                    ))}
+                                                                                </Table.Tbody>
+                                                                            </Table>
+                                                                        </div>
+                                                                    </TableWrapper>
+                                                                </div>
+                                                            )}
+
+                
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <Lucide icon="Calendar" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Meeting Details Available</h3>
+                                                            <p className="text-gray-500">No meeting details found for {selectedCompany?.company_name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="text-center py-12">
