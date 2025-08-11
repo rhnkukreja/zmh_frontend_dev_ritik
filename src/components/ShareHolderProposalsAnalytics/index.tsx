@@ -228,9 +228,9 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                 </h3>
                 {isDataAvailable(yearlySummary) ? (
                   yearlySummary.length === 1 ? (
-                    <p className="text-lg font-semibold text-gray-700">
-                      {formatNumberWithCommas(yearlySummary[0].count)} {yearlySummary[0].count === 1 ? 'Proposal' : 'Proposals'}
-                    </p>
+                  <Pill text={`${formatNumberWithCommas(yearlySummary[0].count)} ${yearlySummary[0].count === 1 ? 'Proposal' : 'Proposals'}`} />
+                     
+                    
                   ) : (
                     <ResponsiveContainer width="100%" height={250}>
                       <ComposedChart
@@ -380,7 +380,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
             </div>
 
             {/* Row: Tables for Top Subcategories */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {isDataAvailable(Object.entries(topSubcategories)) ? (
                 Object.entries(topSubcategories).map(
                   ([category, subcategories]) => (
