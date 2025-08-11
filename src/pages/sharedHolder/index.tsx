@@ -14,6 +14,7 @@ import {
   countValidFilters,
   createDynamicURL,
   downloadFileByServer,
+  downloadFileFromAPI,
   downloadXlsxFile,
   generateFilterChips,
 } from "@/utils/helper";
@@ -837,34 +838,33 @@ function ShareHolderProposal() {
 
   const defaultTabIndex = getDefaultTabIndex();
 
-  const handleDownload = async () => {
-    setLoadingDownload(true)
-    try {
-      const file = await shareHolderProposalService.getAllShareholderAPIFile(
-        createDynamicURL(
-          `${baseURL}/shareholder_proposal/def14a/`,
-          filters,
-          undefined,
-          page
-        ) + "&download=true"
-      );
+ const handleDownload = () => {
+  let tabURL = "";
+  let fileName = "";
 
-      // ✅ Access the blob correctly
-      const url = URL.createObjectURL(file.result);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "shareholder_proposals.xlsx";
-      document.body.appendChild(link);
-      link.click();
+  switch (tab) {
+    case "proposal":
+      tabURL = "/shareholder_proposal/def14a/";
+      fileName = "shareholder_proposals.xlsx";
+      break;
+    case "no-action":
+      tabURL = "/shareholder_proposal/no_action/";
+      fileName = "no_action_letters.xlsx";
+      break;
+    case "withdrawn":
+      tabURL = "/shareholder_proposal/withdrawn/";
+      fileName = "withdrawn.xlsx";
+      break;
+  }
 
-      // ✅ Clean up
-      URL.revokeObjectURL(url);
-      document.body.removeChild(link);
-      setLoadingDownload(false);
-    } catch (error) {
-      console.error("Error downloading the file:", error);
-    }
-  };
+  downloadFileFromAPI({
+    url: createDynamicURL(`${baseURL}${tabURL}`, filters, undefined, page),
+    fileName,
+    setLoading: setLoadingDownload,
+    serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
+  });
+};
+
 
 
   return (
