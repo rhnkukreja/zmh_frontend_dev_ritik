@@ -333,6 +333,32 @@ const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   return filteredMenuItems;
 };
 
+export const downloadFileFromAPI = async ({
+  url,
+  fileName,
+  setLoading,
+  serviceMethod
+}) => {
+  setLoading(true);
+  try {
+    const file = await serviceMethod(url + "&download=true");
+
+    const blobUrl = URL.createObjectURL(file.result);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+
+    URL.revokeObjectURL(blobUrl);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error downloading file:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 // const downloadCSV = (csvContent: any, name: string) => {
 //   const blob = new Blob([csvContent], { type: "text/csv" });
 //   const url = window.URL.createObjectURL(blob);
