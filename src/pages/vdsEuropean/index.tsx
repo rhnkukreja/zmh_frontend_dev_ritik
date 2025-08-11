@@ -290,7 +290,7 @@ const index = () => {
           company_name: parsed.company_name || [],
           date_range: parsed.date_range || "",
           country: parsed.country || ["USA"],
-          index_name: parsed.index_name || [],
+          index: parsed.index || [],
           meeting_type: parsed.meeting_type || [],
           proposal_type: parsed.proposal_type || [],
           proponent_type: parsed.proponent_type || [],
@@ -628,7 +628,7 @@ const index = () => {
       country: npxFilter?.country || ["USA"], // Ensure country filter is saved with USA default
       // Include all form fields to ensure complete restoration
       analyticsYear: npxFilter?.analyticsYear || [],
-      index_name: npxFilter?.index_name || [],
+      index: npxFilter?.index || [],
       meeting_type: npxFilter?.meeting_type || [],
       proposal_type: npxFilter?.proposal_type || [],
       proponent_type: npxFilter?.proponent_type || [],
@@ -652,7 +652,7 @@ const index = () => {
     
     interface AnalyticsObj {
       institution_name: any[];
-      index_name: any[];
+      index: any[];
       company_name: any[];
       vote_type: any[];
       proposal_type?: any[];
@@ -666,7 +666,7 @@ const index = () => {
     
     const analyticsObj: AnalyticsObj = {
       institution_name: data?.institution_name || [],
-      index_name: data?.index_name || [],
+      index: data?.index || [],
       company_name: Array.isArray(data?.company_name) && data.company_name.length > 0
         ? data.company_name.map((item: any) => item.label || item.value || item)
         : [],
@@ -705,11 +705,11 @@ const index = () => {
     if (onAnalyticsTab) {
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
-        index_name: ["S&P 500"],
+        index: ["S&P 500"],
         country: ["USA"],
       });
       setValue("institution_name", ["BlackRock, Inc."]);
-      setValue("index_name", ["S&P 500"]);
+      setValue("index", ["S&P 500"]);
       setValue("country", ["USA"]);
       setSelectedCountries(["USA"]);
       setVdsEuropeansAnalytics({});
@@ -750,7 +750,7 @@ const index = () => {
     setValue("keyword", "");
     setValue("date_range", "");
     setValue("analyticsYear", []);
-    setValue("index_name", []);
+    setValue("index", []);
     setValue("proponent_type", []);
     setValue("proposal_type", []);
     setValue("proposal_keyword", []);
@@ -937,9 +937,9 @@ const index = () => {
                   item.toLowerCase()
                 )
                 : [],
-              index_name:
-                allAnalyticsFilter?.index_name?.length > 0
-                  ? allAnalyticsFilter.index_name
+              index:
+                allAnalyticsFilter?.index?.length > 0
+                  ? allAnalyticsFilter.index
                   : [],
               proposal_keyword:
                 allAnalyticsFilter?.proposal_keyword?.length > 0
@@ -1041,7 +1041,7 @@ const index = () => {
       
       defaultFilters = {
         institution_name: ["BlackRock, Inc."],
-        index_name: ["S&P 500"],
+        index: ["S&P 500"],
         analyticsYear: [],
         date_range: getDefaultDateRange(),
         country: ["USA"],
@@ -1061,7 +1061,7 @@ const index = () => {
       // Set default analytics filters if none exist
       const defaultFilters = {
         institution_name: ["BlackRock, Inc."],
-        index_name: ["S&P 500"],
+        index: ["S&P 500"],
         analyticsYear: ["2025"],
         date_range: "",
         country: ["USA"],
@@ -1236,7 +1236,7 @@ const index = () => {
                     <FaLayerGroup className="text-gray-400" /> Index
                   </label>
                   <Controller
-                    name="index_name"
+                    name="index"
                     control={control}
                     render={({ field }) => (
                       <MultiSelectDropdown

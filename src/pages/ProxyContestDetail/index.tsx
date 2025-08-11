@@ -97,7 +97,7 @@ const ProxyContestDetail = () => {
                 }),
 
             // Fetch Case Studies
-            customAxios.get(`/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}&themes=${encodeURIComponent('Proxy Contest/M&A')}`)
+            customAxios.get(`/case_studies/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&themes=${encodeURIComponent('Proxy Contest/M&A')}`)
                 .then(response => {
                     setCaseStudiesData(response.data?.results || []);
                 })
