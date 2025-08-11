@@ -132,7 +132,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     const fetchDefaultOptions = async () => {
       try {
         const options = await fetchOptions(
-          "amaz",
+          "a",
           isInstitution,
           companyGlobalSearchName,
           exactUrl,

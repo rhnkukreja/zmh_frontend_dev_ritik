@@ -43,7 +43,7 @@ class DashboardService {
       } else {
         url = `/company/?${
           companyName ? `company_name=${companyName}&` : ""
-        }all=true`;
+        }index=${encodeURIComponent('["100"]')}&all=true`;
       }
       const response = await axiosInstance.get(url);
       if(exactUrl){
@@ -257,7 +257,7 @@ class DashboardService {
   public async getCompanyName(companyName?: any): Promise<{
     result: any;
   }> {
-    const url = `/company/?${companyName ? `company_name=${companyName}&` : ""}all=true`
+    const url = `/company/?${companyName ? `company_name=${companyName}&` : ""}index=${encodeURIComponent('["100"]')}&all=true`
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );
