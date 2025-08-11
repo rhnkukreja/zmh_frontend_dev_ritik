@@ -28,6 +28,7 @@ interface CompanySelectProps {
   arrayKeyName?: string;
   isHideCurrentCompany?: boolean;
   currentCompany?: string;
+  currentFilters?: any;
 }
 
 const fetchOptions = async (
@@ -37,7 +38,8 @@ const fetchOptions = async (
   exactUrl?: string,
   arrayKeyName?: string,
   isHideCurrentCompany?: boolean,
-  currentCompany?: string
+  currentCompany?: string,
+  currentFilters?: any
 ): Promise<OptionType[]> => {
 
   try {
@@ -49,7 +51,8 @@ const fetchOptions = async (
       : await dashboardService.fetchCompanyByName(
           inputValue,
           exactUrl,
-          arrayKeyName
+          arrayKeyName,
+          currentFilters
         );
 
     if (isInstitution) {
@@ -91,6 +94,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   arrayKeyName,
   isHideCurrentCompany = false,
   currentCompany = "",
+  currentFilters,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
@@ -105,7 +109,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           exactUrl,
           arrayKeyName,
           isHideCurrentCompany,
-          currentCompany
+          currentCompany,
+          currentFilters
         ).then((options) => {
           callback(options);
         });
@@ -119,6 +124,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       arrayKeyName,
       isHideCurrentCompany,
       currentCompany,
+      currentFilters,
     ]
   );
 
@@ -132,7 +138,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           exactUrl,
           arrayKeyName,
           isHideCurrentCompany,
-          currentCompany
+          currentCompany,
+          currentFilters
         );
         setDefaultOptions(options);
       } catch (error) {
@@ -141,7 +148,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     };
 
     fetchDefaultOptions();
-}, []);
+}, [currentFilters]);
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
   };

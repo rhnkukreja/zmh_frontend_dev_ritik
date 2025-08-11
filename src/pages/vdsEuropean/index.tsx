@@ -449,6 +449,25 @@ const index = () => {
     
     // Fetch vote and year options with default institution (BlackRock)
     getInstitutionDependentOptions(["BlackRock, Inc."]);
+    
+    // Fix: Make default API call for company filter with correct parameters
+    // This will call: https://api.zmhadvisors.com/company/?company_name=a&index=["100"]
+    const fetchDefaultCompanies = async () => {
+      try {
+        const res = await vdsEuropeanService.getDefaultCompanyDropdownValues({
+          company_name: "a",
+          index: ["100"]
+        });
+        if (res.result) {
+          const companies = res.result.company_name || res.result.company || [];
+          setCompanyOptions(companies);
+        }
+      } catch (error) {
+        console.error("Error fetching default companies:", error);
+        setCompanyOptions([]);
+      }
+    };
+    fetchDefaultCompanies();
   }, []);
 
   // Calculate default date range: Jan 2024 to one day before current date
@@ -613,12 +632,14 @@ const index = () => {
     // Set new timeout for debouncing
     const newTimeout = setTimeout(async () => {
       try {
-        const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues({
+        // Fix: Use the correct API call format for search
+        // This will call: https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=["BlackRock, Inc."]&company_name=app
+        const res = await vdsEuropeanService.getCompanySearchDropdownValues({
           institution_name: institutionNames || ["BlackRock, Inc."],
           company_name: searchTerm // Send as string for search
         });
         if (res.result) {
-          const companies = res.result.company || [];
+          const companies = res.result.company_name || res.result.company || [];
           console.log("Company search API response:", companies);
           
           // Store the full company objects for proper handling
@@ -1404,27 +1425,23 @@ const index = () => {
                             getCompanyDependentOptions(companyNames, currentInstitutions);
                           }
                         }}
-                        onInputChange={(searchTerm) => {
-                          const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
-                          searchCompanies(searchTerm, currentInstitutions);
+                        // Fix: Use exactUrl to override the default API call and pass current filters
+                        exactUrl="get_vds_european_dropdown_values_with_filters/"
+                        arrayKeyName="company"
+                        // Pass current form values as additional context
+                        currentFilters={{
+                          institution_name: watch("institution_name") || ["BlackRock, Inc."],
+                          index: watch("index") || [],
+                          vote: watch("vote") || [],
+                          country: watch("country") || ["USA"],
+                          analyticsYear: watch("analyticsYear") || [],
+                          year: watch("year") || "",
+                          date_range: watch("date_range") || "",
+                          proposal_type: watch("proposal_type") || [],
+                          proponent_type: watch("proponent_type") || [],
+                          meeting_type: watch("meeting_type") || [],
+                          proposal_keyword: watch("proposal_keyword") || []
                         }}
-                        options={companyOptions.map(company => {
-                          if (typeof company === 'object') {
-                            // Extract name from company object
-                            const name = company.name || company.company_name || company.label || company.value || String(company.id);
-                            return {
-                              value: name,
-                              label: name
-                            };
-                          } else {
-                            // Handle simple string case
-                            return {
-                              value: company,
-                              label: company
-                            };
-                          }
-                        })}
-                        isLoading={companySearchLoading}
                         placeholder="Search Companies"
                         isMulti={true}
                       />
