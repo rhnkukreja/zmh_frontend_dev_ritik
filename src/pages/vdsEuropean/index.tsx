@@ -657,15 +657,29 @@ const index = () => {
   };
 
   // Function to get dependent options when company is selected
-  const getCompanyDependentOptions = async (companyNames: string[], institutionNames: string[]) => {
+  const getCompanyDependentOptions = async (companyNames: any[], institutionNames: string[]) => {
     if (!companyNames || companyNames.length === 0) return;
     
     try {
       setGetDynamicDropdownLoader(true);
-      const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues({
+      
+      // Fix: Include all current filters when company is selected
+      const currentFilters = {
         institution_name: institutionNames || ["BlackRock, Inc."],
-        company_name: companyNames // Send as array for selection
-      });
+        company_name: companyNames, // Send as array for selection
+        index: watch("index") || [],
+        vote: watch("vote") || [],
+        country: watch("country") || ["USA"],
+        analyticsYear: watch("analyticsYear") || [],
+        year: watch("year") || "",
+        date_range: watch("date_range") || "",
+        proposal_type: watch("proposal_type") || [],
+        proponent_type: watch("proponent_type") || [],
+        meeting_type: watch("meeting_type") || [],
+        proposal_keyword: watch("proposal_keyword") || []
+      };
+      
+      const res = await vdsEuropeanService.getCompanySelectionDropdownValues(currentFilters);
       if (res.result) {
         // Update other dependent dropdowns if needed
         setApiDependentDropdownOptions(prev => ({ ...prev, ...res.result }));
@@ -1413,9 +1427,10 @@ const index = () => {
                         })}
                         onChange={(selectedCompanies) => {
                           // Extract company names for form storage and API calls
-                          const companyNames = selectedCompanies ? selectedCompanies.map(company => 
+                          const companiesArray = Array.isArray(selectedCompanies) ? selectedCompanies : (selectedCompanies ? [selectedCompanies] : []);
+                          const companyNames = companiesArray.map(company => 
                             typeof company === 'string' ? company : company.label || company.value
-                          ) : [];
+                          );
                           
                           field.onChange(companyNames);
                           

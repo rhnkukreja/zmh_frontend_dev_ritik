@@ -55,6 +55,20 @@ class VDSEuropeanService {
     };
   }
 
+  public async getCompanySelectionDropdownValues(paramFilter?: any): Promise<{
+    result: any;
+  }> {
+    // Fix: Use the correct endpoint for company selection with all filters
+    // This will call: https://api.zmhadvisors.com/get_vds_european_dropdown_values/ with all current filters
+    const response = await axiosInstance.get(
+      createDynamicURL(`/get_vds_european_dropdown_values/`, paramFilter)
+    );
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
   public async getVDSEuropeanAnalytics(url: string,body:object): Promise<{
     response: any[];
   }> {
