@@ -223,8 +223,10 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
                   {tab == "proposal"
-                    ? "Yearly Proposal Trend"
-                    : "No Action Letter Trend"}
+                    ? "Yearly Proposal"
+                    : "No Action Letter"}
+                  {(isDataAvailable(yearlySummary) && 
+                  yearlySummary.length > 1) && " Trend"}
                 </h3>
                 {isDataAvailable(yearlySummary) ? (
                   yearlySummary.length === 1 ? (
