@@ -32,6 +32,7 @@ import { persistor, RootState } from "@/stores/store";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
 import notificationIcon from "@/assets/images/zmh-images/bell-icon.png";
+import notificationIcon2 from "@/assets/images/zmh-images/side-bell.png";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
@@ -859,7 +860,7 @@ console.log(notificationData ,"data")
 
                                     <div className="bg-[rgb(245,231,235)] rounded-md p-3">
                                       <img
-                                        src={notificationIcon}
+                                        src={notificationIcon2}
                                         alt="ai icon"
                                         className=" w-[20px] h-[20px] opacity-[0.7]"
                                       />

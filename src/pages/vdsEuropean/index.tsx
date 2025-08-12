@@ -1646,8 +1646,8 @@ const index = () => {
                 onClick={expandAllGroups}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
               >
-                <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
                 {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
+                 <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
               </button>
             </div>
             <div className="divide-y divide-gray-100">
