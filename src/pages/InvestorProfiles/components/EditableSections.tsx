@@ -118,8 +118,10 @@ useEffect(() => {
                     variant="secondary"
                     elevated
                     size="sm"
-                    className="px-3 exclude-from-pdf"
-                    onClick={() => setIsEditing(true)}
+                    className="px-3 exclude-from-pdf mr-3"
+                    onClick={() =>{ setIsEditing(true)
+                     
+                    }}
                   >
                     <Lucide
                       icon="PenSquare"
@@ -144,12 +146,14 @@ useEffect(() => {
        </button>}
           </div>
           </div>
-          {expanded && <>
- {isEditing ? (
+          {expanded  && <>
+           {isEditing ? (
             <div className="flex  flex-col px-4 py-3  ">
               <div ref={editorRef}>
-               
-                <ClassicEditor  value={value} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing} />
+                <p className="hidden">Edit</p>
+             <div>
+                <ClassicEditor  value={value} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled ={user?.user_type !== "Admin" || !isEditing} />
+              </div>
               </div>
               <div className="flex justify-end mt-4">
                 <Button
@@ -172,13 +176,14 @@ useEffect(() => {
             </div>
           ) : (
             <>
+            <p className="hidden">view</p>
               {renderHtml ? (
                 <div className="flex flex-col px-4 py-3">
                 <div className="html-link">
                   <ClassicEditor value={renderHtml} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing}  />
                 </div>
                 </div>
-              ) : null}
+              ):null}
             </>
           )}
           </>}
