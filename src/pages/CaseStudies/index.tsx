@@ -2,14 +2,14 @@ import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
-
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { convertToTitleCase, countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
+import { convertToTitleCase, countValidFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -42,6 +42,7 @@ import FilterChips from "@/components/FilterChips";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
 
 interface CaseStudyFilter {
   keyword: string;
@@ -97,7 +98,7 @@ function CaseStudies() {
   const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
     null
   );
-
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [addNewCaseStudyModalVisible, setAddNewCaseStudyModalVisible] =
     useState<boolean>(false);
@@ -409,7 +410,19 @@ function CaseStudies() {
     // dispatch(setAllFilters(updatedFilters));
     return field.onChange(event);
   }
-
+const handleDownload = async () => {
+     downloadFileFromAPI({
+    url: createDynamicURL(
+      `${baseURL}/case_studies/`,
+      filters,
+      undefined,
+      page
+    ),
+    fileName: "case_studies.xlsx",
+    setLoading: setLoadingDownload,
+    serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
+  });
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -496,6 +509,7 @@ function CaseStudies() {
                   />
 
                   <div className="hover:bg-slate-50">
+                    
                     <Button onClick={handleClearAllFilter}>
                       <Tippy
                         content="Clear Filters"
@@ -534,7 +548,20 @@ function CaseStudies() {
                       </Button>
                     </div>
                   )}
+                  <Tippy content="Download Excel" options={{ theme: "light" }}>
+                      <div
+                        className="box p-[5px] cursor-pointer"
+                        onClick={() => !loadingDownload && handleDownload()}
+                      >
+                        {loadingDownload ? <Lucide
+                          icon="Loader"
+                          className="w-6 h-7  stroke-[1.3]  animate-spin
+"
+                        /> : <img alt="download-icon" src={downloadIcon} />}
+                      </div>
+                    </Tippy>
                   <Popover className="inline-block">
+                    
                     <>
                       <Popover.Button
                         as={Button}

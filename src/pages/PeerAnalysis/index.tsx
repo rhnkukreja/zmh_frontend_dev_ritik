@@ -15,7 +15,7 @@ import {
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
+import { countValidFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -43,7 +43,8 @@ import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCirc
 import { MdOutlineClear } from "react-icons/md";
 import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
-
+import { shareHolderProposalService } from "@/services/shareholderProposal";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -124,7 +125,7 @@ function PeerAnalysis() {
     setIsFilterCollapse(!isFilterCollapse);
   };
   const [selectedInstitution, setSelectedInstitution] = useState<string[]>([""]);
-
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const getAllCaseStudyDropdowns = async () => {
     try {
       setGetDropdownLoader(true);
@@ -419,7 +420,14 @@ function PeerAnalysis() {
 
     dispatch(setAllFilters(updatedFilters));
   }
-
+const handleDownload = async () => {
+    downloadFileFromAPI({
+    url:  createDynamicURL(`${baseURL}/peer_analysis/`,filters,undefined,page),
+    fileName: "engagement-details.xlsx",
+    setLoading: setLoadingDownload,
+    serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
+  });
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -559,6 +567,18 @@ function PeerAnalysis() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                  <Tippy content="Download Excel" options={{ theme: "light" }}>
+                      <div
+                        className="box p-[5px] cursor-pointer"
+                        onClick={() => !loadingDownload && handleDownload()}
+                      >
+                        {loadingDownload ? <Lucide
+                          icon="Loader"
+                          className="w-6 h-7  stroke-[1.3]  animate-spin
+"
+                        /> : <img alt="download-icon" src={downloadIcon} />}
+                      </div>
+                    </Tippy>
                   <FormSwitch>
                     <label className="text-md mr-3 font-semibold">Analytics</label>
                     <FormSwitch.Input
