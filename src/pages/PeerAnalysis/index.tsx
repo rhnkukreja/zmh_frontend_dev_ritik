@@ -625,7 +625,7 @@ function PeerAnalysis() {
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     <div className="flex justify-between items-center gap-2 mb-6">
-                      <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                      <h3 className="text-lg fontxg-semibold text-slate-700">Filters</h3>
                       <div className="flex gap-2 items-center">
                         <Button
                           variant="outline-secondary"
@@ -986,7 +986,7 @@ function PeerAnalysis() {
               )}
 
               <div id="data-listing" className="flex justify-between items-center mb-4 px-5">
-                <h3 className="text-lg font-semibold mb-4">Data Listing</h3>
+                <h3 className="text-lg font-semibold mb-4">Engagement Details</h3>
                 <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <div
                     className="box p-[5px] cursor-pointer"
