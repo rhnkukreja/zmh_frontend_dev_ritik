@@ -2275,7 +2275,7 @@ function ShareHolderProposal() {
                                     </span>
                                   </StandardizedTable.Cell>
                                   <StandardizedTable.Cell className="text-center">
-                                    <span>
+                                    <span className="font-bold text-red-600">
                                       {noAction?.outcome_percentage}
                                     </span>
                                   </StandardizedTable.Cell>
@@ -2317,7 +2317,21 @@ function ShareHolderProposal() {
                                     ])}
                                   >
                                     {noAction?.nl_exist === true && (
-                                      <span className="text-xs font-bold">
+                                      <span
+                                        className="text-xs font-bold"
+                                        onClick={() => {
+                                          const id =
+                                            noAction?.nl_exist === true
+                                              ? noAction?.no_action_link
+                                                ?.split("/")
+                                                .filter(Boolean)
+                                                .pop()
+                                              : 0;
+                                          noAction?.nl_exist === true &&
+                                            navigate(
+                                              `/shareholder-proposal/${id}?url=shareholder_proposal/no_action`
+                                            )
+                                        }}>
                                         Yes
                                       </span>
                                     )}
