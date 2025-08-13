@@ -2275,7 +2275,9 @@ function ShareHolderProposal() {
                                     </span>
                                   </StandardizedTable.Cell>
                                   <StandardizedTable.Cell className="text-center">
-                                    <span className="font-bold text-red-600">
+                                    <span className={clsx([
+                                      `py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-center`,
+                                    ])}>
                                       {noAction?.outcome_percentage}
                                     </span>
                                   </StandardizedTable.Cell>
