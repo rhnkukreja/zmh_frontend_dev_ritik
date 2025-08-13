@@ -17,6 +17,7 @@ import {
   setAllFilters,
   setFilter,
   setPage,
+  selectUnSelectAllCompany,
 } from "@/stores/engagementQuestionSlice";
 
 import CPagination from "@/components/Pagination";
@@ -53,6 +54,7 @@ function Main() {
     totalPages,
     engagementQuestionFilterOptions,
     filters,
+    isAllCompanySelected,
   } = useAppSelector((state) => state.engagementQuestions);
 
   const { handleSubmit, control, reset, setValue, watch } =
@@ -68,7 +70,7 @@ function Main() {
     setValue("year", []);
   };
 
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
 
   const [selectedEngagementQuestion, setSelectedEngagementQuestion] =
     useState<EngagementQuestions | null>(null);
@@ -269,31 +271,95 @@ function Main() {
       dispatch(setFilter({ key: key as any, value: value as any }));
     });
   }
+
+  const handleViewAllChange = async (event: any) => {
+    if (event?.target?.checked) {
+      // When switching to "All Companies" view
+      dispatch(
+        setFilter({
+          key: "global_search",
+          value: [],
+        })
+      );
+    } else {
+      // When switching to single company view
+      dispatch(
+        setFilter({
+          key: "global_search",
+          value: [companyGlobalSearchName],
+        })
+      );
+    }
+    try {
+      dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
+    } catch (error) {}
+  };
   
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
-        <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="font-semibold text-xl">Engagement Questions</div>
-
-          {user?.user_type === "Admin" && (
-            <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-              <Button
-                onClick={() => {
-                  setAddNewEngagementQuestionModalVisible(true);
-                }}
-                variant="primary"
-                className="bg-theme-2 border-bg-theme-2"
-              >
-                <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
-                Add New Engagement Question
-              </Button>
+        <div className="overflow-auto xl:overflow-visible mt-4">
+          <div className="w-full pt-5">
+            <div>
+              <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
+                <button
+                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                    isAllCompanySelected === false
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                  }`}
+                  onClick={async (e) => {
+                    if (isAllCompanySelected) {
+                      handleViewAllChange({ target: { checked: false } });
+                    }
+                  }}
+                >
+                  {companyGlobalSearchName || "Company"} Engagement Questions
+                </button>
+                <button
+                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                    isAllCompanySelected === true
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                  }`}
+                  onClick={async (e) => {
+                    if (!isAllCompanySelected) {
+                      handleViewAllChange({ target: { checked: true } });
+                    }
+                  }}
+                >
+                  All Engagement Questions
+                </button>
+              </div>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="mt-3.5">
-          <div className="flex flex-col box box--stacked">
+        <div className="mt-3.5 relative">
+          <div className="flex flex-col box box--stacked bg-white p-5">
+            <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+              {isAllCompanySelected === true ? (
+                <h1 className="text-lg font-bold flex items-center gap-2">
+                  All Engagement Questions
+                </h1>
+              ) : (
+                <div className="font-semibold text-xl">Engagement Questions</div>
+              )}
+              {user?.user_type === "Admin" && (
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => {
+                      setAddNewEngagementQuestionModalVisible(true);
+                    }}
+                    variant="primary"
+                    className="bg-theme-2 border-bg-theme-2"
+                  >
+                    <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
+                    Add New Engagement Question
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="flex flex-col px-5 pt-5  sm:flex-row gap-y-2">
               <div className="flex  ">
                 <MultiSearchBar
@@ -344,6 +410,29 @@ function Main() {
                     <Button onClick={getSavedSearches}>Previous Search</Button>
                   </div>
                 )}
+
+                {/* Clear and Apply buttons outside filter */}
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => {
+                    dispatch(resetFilter());
+                    dispatch(resetPage());
+                    resetForm();
+                  }}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                  type="button"
+                >
+                  Clear
+                </Button>
+                
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit(onSubmit)}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  Apply
+                </Button>
+
                 <Popover className="inline-block">
                   {({ close }) => (
                     <>
@@ -364,33 +453,13 @@ function Main() {
                       </Popover.Button>
                       <Popover.Panel placement="bottom-end">
                         <form onSubmit={handleSubmit(onSubmit)}>
-                          <div className="p-2">
-                            <div className="flex items-center mt-4">
-                              <Button
-                                variant="secondary"
-                                onClick={() => {
-                                  dispatch(resetFilter());
-                                  dispatch(resetPage());
-                                  resetForm();
-                                  close();
-                                }}
-                                className="w-32 ml-auto"
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                type="submit"
-                                variant="primary"
-                                className="w-32 ml-2"
-                                onClick={() => {
-                                  close();
-                                }}
-                              >
-                                Apply
-                              </Button>
+                          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+                            {/* Filter Content */}
+                            <div className="mb-6">
+                              <h4 className="text-base font-semibold text-slate-700">Filters</h4>
                             </div>
 
-                            <div className="mt-3">
+                            <div>
                               <div className="w-full my-2">
                                 <div className="text-left text-slate-500 flex justify-between mb-1">
                                 <span className="font-semibold">Year</span>
@@ -525,6 +594,7 @@ function Main() {
                                 />
                               </div>
                             </div>
+                            
                           </div>
                         </form>
                       </Popover.Panel>

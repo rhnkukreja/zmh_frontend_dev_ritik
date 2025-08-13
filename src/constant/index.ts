@@ -63,11 +63,18 @@ export const no_header_company = [
   "engagement-question",
   "voting-guidelines",
 ];
+export const proponent_type = ["shareholder", "management"];
+export const meeting_type = ["Proxy Contest", "Annual", "Special"];
+export const proposal_type = ["elect directors", "say on pay", "auditor"];
+export const proposal_keywords =  { 
+  "elect directors": ["elect director", "elect"],
+   "say on pay": ["executive compensation", "named executive compensation", "compensation"],
+    "auditor": ["ratify auditor", "auditor"] 
+  };
 
 export const subSidebarRoutes = ["/notes"];
 
 export const pageTitles: Record<string, string | null> = {
-  "/proxy-contest": "Proxy Contest",
   "/notes": "Notes",
   "/investor-profile": null,
   "/engagement-question": null,

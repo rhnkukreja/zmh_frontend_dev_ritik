@@ -56,7 +56,7 @@ const initialState: PeerAnalysis = {
   },
   filterOptions: {
     category: ["Social", "Governance", "Environment"],
-    year: ["2023", "2024"],
+    year: [(new Date().getFullYear() - 1).toString(), new Date().getFullYear().toString()],
   },
   count: 0,
 

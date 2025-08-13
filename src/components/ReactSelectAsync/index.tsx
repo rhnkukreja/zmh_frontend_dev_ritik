@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import AsyncSelect from "react-select/async";
-import _ from "lodash";
+import _, { remove } from "lodash";
 import { dashboardService } from "@/services/dashboard";
 import { MultiValue } from "react-select";
 
@@ -26,6 +26,9 @@ interface CompanySelectProps {
   isClearable?: boolean;
   exactUrl?: string;
   arrayKeyName?: string;
+  isHideCurrentCompany?: boolean;
+  currentCompany?: string;
+  currentFilters?: any;
 }
 
 const fetchOptions = async (
@@ -33,8 +36,12 @@ const fetchOptions = async (
   isInstitution?: boolean,
   companyGlobalSearchName?: string,
   exactUrl?: string,
-  arrayKeyName?: string
+  arrayKeyName?: string,
+  isHideCurrentCompany?: boolean,
+  currentCompany?: string,
+  currentFilters?: any
 ): Promise<OptionType[]> => {
+
   try {
     const response = isInstitution
       ? await dashboardService.fetchInstitutionByName(
@@ -44,7 +51,8 @@ const fetchOptions = async (
       : await dashboardService.fetchCompanyByName(
           inputValue,
           exactUrl,
-          arrayKeyName
+          arrayKeyName,
+          currentFilters
         );
 
     if (isInstitution) {
@@ -53,6 +61,14 @@ const fetchOptions = async (
         label: institution,
       }));
     } else {
+      if (isHideCurrentCompany && currentCompany) {
+        return response.results
+          .filter((company: any) => company.name !== currentCompany)
+          .map((company: any) => ({
+            value: company?.id ?? company,
+            label: company?.name ?? company,
+          }));
+      }
       return response.results.map((company: any) => ({
         value: company?.id ?? company,
         label: company?.name ?? company,
@@ -76,9 +92,12 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   isClearable,
   exactUrl,
   arrayKeyName,
+  isHideCurrentCompany = false,
+  currentCompany = "",
+  currentFilters,
 }) => {
   const [inputValue, setInputValue] = useState("");
-   const [ defaultOptions, setDefaultOptions] = useState([])
+  const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
 
   const loadOptions = useCallback(
     _.debounce(
@@ -88,35 +107,48 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           isInstitution,
           companyGlobalSearchName,
           exactUrl,
-          arrayKeyName
+          arrayKeyName,
+          isHideCurrentCompany,
+          currentCompany,
+          currentFilters
         ).then((options) => {
           callback(options);
-         
         });
       },
       300
     ),
-    [companyGlobalSearchName]
+    [
+      companyGlobalSearchName,
+      isInstitution,
+      exactUrl,
+      arrayKeyName,
+      isHideCurrentCompany,
+      currentCompany,
+      currentFilters,
+    ]
   );
-useEffect(() => {
-  const fetchDefaultOptions = async () => {
-    try {
-      const options = await fetchOptions(
-        "a",
-        isInstitution,
-        companyGlobalSearchName,
-        exactUrl,
-        arrayKeyName
-      );
-      setDefaultOptions(options);
 
-    } catch (error) {
-      console.error("Error fetching default options:", error);
-    }
-  };
+  useEffect(() => {
+    const fetchDefaultOptions = async () => {
+      try {
+        const options = await fetchOptions(
+          "a",
+          isInstitution,
+          companyGlobalSearchName,
+          exactUrl,
+          arrayKeyName,
+          isHideCurrentCompany,
+          currentCompany,
+          currentFilters
+        );
+        setDefaultOptions(options);
+      } catch (error) {
+        console.error("Error fetching default options:", error);
+      }
+    };
 
-  fetchDefaultOptions();
-}, []);
+    fetchDefaultOptions();
+}, [currentFilters]);
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
   };
@@ -149,6 +181,7 @@ useEffect(() => {
     }),
     menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
   };
+
 
   return (
     <AsyncSelect

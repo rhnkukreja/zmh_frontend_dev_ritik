@@ -57,7 +57,7 @@ const DetailCaseStudies = () => {
                   <p>{singleCaseStudy?.institution_name}</p>
                 </div>
               )}
-              {singleCaseStudy?.esg_themes && (
+              {(singleCaseStudy?.esg_themes && singleCaseStudy?.esg_themes !== 'N/A') && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Theme</h3>
                   <p>{singleCaseStudy?.esg_themes}</p>

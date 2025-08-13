@@ -5,22 +5,61 @@ import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 
 class DashboardService {
-  public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?:string): Promise<{
+  public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?:string, currentFilters?: any): Promise<{
     results: CompanyData[];
   }> {
     let results = [];
     let url = "";
     if (companyName !== "") {
       if (exactUrl) {
-        url = `/${exactUrl}${companyName}`;
+        // Fix: Handle VDS European dropdown case with institution parameter and current filters
+        if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
+          const params = new URLSearchParams();
+          
+          // Add institution_name
+          const institutionName = currentFilters?.institution_name || ["BlackRock, Inc."];
+          params.append('institution_name', JSON.stringify(institutionName));
+          
+          // Add company_name for search
+          params.append('company_name', companyName);
+          
+          // Add all current filters if they have values
+          if (currentFilters) {
+            Object.entries(currentFilters).forEach(([key, value]) => {
+              if (key !== 'institution_name' && key !== 'company_name') {
+                if (Array.isArray(value) && value.length > 0) {
+                  params.append(key, JSON.stringify(value));
+                } else if (value && typeof value === 'string' && value.trim() !== '') {
+                  params.append(key, value);
+                }
+              }
+            });
+          }
+          
+          url = `/get_vds_european_dropdown_values/?${params.toString()}`;
+        } else {
+          url = `/${exactUrl}${companyName}`;
+        }
       } else {
         url = `/company/?${
           companyName ? `company_name=${companyName}&` : ""
-        }all=true`;
+        }index=${encodeURIComponent('["100"]')}&all=true`;
       }
       const response = await axiosInstance.get(url);
       if(exactUrl){
-        results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
+        if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
+          // Fix: For VDS European, the data comes in a different format
+          results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
+          // Convert array of strings to objects with name property for consistency
+          if (Array.isArray(results)) {
+            results = results.map(company => ({
+              name: company,
+              id: company // Use name as ID for consistency
+            }));
+          }
+        } else {
+          results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
+        }
       }else {
         results = response.data;
       }
@@ -218,7 +257,7 @@ class DashboardService {
   public async getCompanyName(companyName?: any): Promise<{
     result: any;
   }> {
-    const url = `/company/?${companyName ? `company_name=${companyName}&` : ""}all=true`
+    const url = `/company/?${companyName ? `company_name=${companyName}&` : ""}index=${encodeURIComponent('["100"]')}&all=true`
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );
@@ -228,10 +267,10 @@ class DashboardService {
     };
   }
 
-  public async getNotifications(companyName: string, status?: boolean): Promise<{
+  public async getNotifications(param): Promise<{
     result: any;
   }> {
-    const url = status ? `/whats_new/notifications/?global_search=${companyName}&status=${status}` : `whats_new/notifications/?global_search=${companyName}`
+    const url = "/notifications/"+param
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );

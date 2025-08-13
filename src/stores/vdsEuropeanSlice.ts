@@ -26,6 +26,12 @@ interface VdsEuropeanSlice {
   count: number;
   page: number;
   filters: VdsEuropeanFilters;
+  // Analytics state
+  analytics: any;
+  analyticsLoading: boolean;
+  analyticsError: string | null;
+  analyticsPage: number;
+  analyticsFilters: any;
 }
 
 const initialState: VdsEuropeanSlice = {
@@ -40,7 +46,13 @@ const initialState: VdsEuropeanSlice = {
     institution_name: [],
     region: [],
   },
-  count: 0
+  count: 0,
+  // Analytics state
+  analytics: {},
+  analyticsLoading: false,
+  analyticsError: null,
+  analyticsPage: 1,
+  analyticsFilters: {},
 };
 
 export const fetchVdsEuropeans = createAsyncThunk<
@@ -48,6 +60,13 @@ export const fetchVdsEuropeans = createAsyncThunk<
   string
 >(`${name}/fetchVdsEuropeans`, async (url: string) => {
   return await vdsEuropeanService.getVDSEuropean(url);
+});
+
+export const fetchVdsEuropeanAnalytics = createAsyncThunk<
+  any,
+  { url: string; body: any }
+>(`${name}/fetchVdsEuropeanAnalytics`, async ({ url, body }) => {
+  return await vdsEuropeanService.getVDSEuropeanAnalytics(url, body);
 });
 
 
@@ -85,6 +104,19 @@ const VdsEuropeanSlice = createSlice({
       state.filters = initialState.filters;
       state.page = 1;
     },
+
+    setAnalyticsPage(state, action: PayloadAction<number>) {
+      state.analyticsPage = action.payload;
+    },
+    resetAnalyticsPage(state) {
+      state.analyticsPage = 1;
+    },
+    setAnalyticsFilters(state, action: PayloadAction<any>) {
+      state.analyticsFilters = action.payload;
+    },
+    resetAnalyticsFilters(state) {
+      state.analyticsFilters = {};
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -114,6 +146,18 @@ const VdsEuropeanSlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch voting guidelines";
       })
+      .addCase(fetchVdsEuropeanAnalytics.pending, (state) => {
+        state.analyticsLoading = true;
+        state.analyticsError = null;
+      })
+      .addCase(fetchVdsEuropeanAnalytics.fulfilled, (state, action) => {
+        state.analyticsLoading = false;
+        state.analytics = action.payload.response;
+      })
+      .addCase(fetchVdsEuropeanAnalytics.rejected, (state, action) => {
+        state.analyticsLoading = false;
+        state.analyticsError = action.error.message || "Failed to fetch analytics";
+      })
   },
 });
 
@@ -125,4 +169,8 @@ export const {
   resetFilter,
   setAllFilters,
   resetVdsEuropeans,
+  setAnalyticsPage,
+  resetAnalyticsPage,
+  setAnalyticsFilters,
+  resetAnalyticsFilters,
 } = VdsEuropeanSlice.actions;

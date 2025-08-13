@@ -2,14 +2,14 @@ import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
-
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { convertToTitleCase, countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
+import { convertToTitleCase, countValidFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
@@ -39,7 +39,12 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 import clsx from "clsx";
 import FilterChips from "@/components/FilterChips";
+import StandardizedFilterPills from "@/components/StandardizedFilterPills";
+import StandardizedTable from "@/components/StandardizedTable";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
 
 interface CaseStudyFilter {
   keyword: string;
@@ -55,7 +60,7 @@ interface CaseStudyFilter {
   approval_status: string;
   caspio_company_name: string;
   [key: string]: any;
-  index?: string;
+  index?: string | string[];
 }
 function CaseStudies() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -87,15 +92,15 @@ function CaseStudies() {
     searchParams.get("institution_name")
       ? [searchParams.get("institution_name")]
       : filters.institution_name.length > 0
-      ? filters.institution_name
-      : []
+        ? filters.institution_name
+        : []
   );
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
     null
   );
-
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [addNewCaseStudyModalVisible, setAddNewCaseStudyModalVisible] =
     useState<boolean>(false);
@@ -115,7 +120,8 @@ function CaseStudies() {
       keyword: filters?.keyword,
       market: filters?.market,
       sector: filters?.sector,
-      year: filters?.year,
+      // Ensure year is always an array of strings
+      year: filters?.year ? filters.year.map(String) : [],
       institution_name: filters?.institution_name,
       global_search:
         filters?.global_search?.map((item: string) => ({
@@ -126,7 +132,7 @@ function CaseStudies() {
       vote: filters?.vote,
       approval_status: filters?.approval_status,
       caspio_company_name: filters?.caspio_company_name,
-      index: filters?.index ?? " "
+      index: filters?.index || []
     },
   });
 
@@ -141,7 +147,7 @@ function CaseStudies() {
     setValue("vote", []);
     setValue("approval_status", "");
     setValue("caspio_company_name", "");
-    setValue("index", " ");
+    setValue("index", []);
   };
 
   useEffect(() => {
@@ -235,9 +241,17 @@ function CaseStudies() {
   };
 
   const onSubmit = async (caseStudyFilters: CaseStudyFilter) => {
+    const filtersToApply = { ...caseStudyFilters };
+
+    // Remove index if empty or blank
+    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "" ||
+      (Array.isArray(filtersToApply.index) && filtersToApply.index.length === 0)) {
+      delete filtersToApply.index;
+    }
+
     dispatch(
       setAllFilters({
-        ...caseStudyFilters,
+        ...filtersToApply,
         institution_name: searchTerms,
         global_search: isAllCompanySelected
           ? Array.isArray(caseStudyFilters?.global_search) &&
@@ -265,7 +279,7 @@ function CaseStudies() {
       setValue("caspio_company_name", savedSearch?.caspio_company_name || "");
       setValue("proposal_type", savedSearch?.proposal_type || []);
       setValue("vote", savedSearch?.vote || []);
-      setValue("index", user?.saved_search?.index || "");
+      setValue("index", user?.saved_search?.index || []);
       dispatch(
         setAllFilters({
           keyword: savedSearch?.keyword || "",
@@ -278,7 +292,7 @@ function CaseStudies() {
           proposal_type: savedSearch?.proposal_type || [],
           vote: savedSearch?.vote || [],
           global_search: savedSearch?.global_search,
-        index: user?.saved_search?.index,
+          index: user?.saved_search?.index,
 
         })
       );
@@ -336,27 +350,25 @@ function CaseStudies() {
     if (isAllCompanySelected) {
       return `/get_case_studies_dropdown_values/`;
     } else {
-      return `/get_case_studies_dropdown_values/?global_search=${
-        companyGlobalSearchName || filters?.global_search?.[0]
-      }`;
+      return `/get_case_studies_dropdown_values/?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
+        }`;
     }
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
   const handleViewAllChange = async (event: any) => {
-    if(event?.target?.checked){
-      setValue("year", ["2024"]);
-      setValue("market", ["USA"]); 
+    if (event?.target?.checked) {
+      setValue("year", [new Date().getFullYear().toString()]);
+      setValue("market", ["USA"]);
       dispatch(
         setAllFilters({
-          year: [2024],
+          year: [new Date().getFullYear().toString()],
           market: ["USA"],
         })
       );
-      
     }
     else {
       setValue("year", []);
-      setValue("market", []); 
+      setValue("market", []);
       dispatch(
         setAllFilters({
           market: [],
@@ -366,8 +378,8 @@ function CaseStudies() {
       );
     }
     try {
-      dispatch( selectUnSelectAllCompany(!isAllCompanySelected));
-    } catch (error) {}
+      dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
+    } catch (error) { }
   }
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
@@ -377,15 +389,20 @@ function CaseStudies() {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
         (item) => item !== removeValue
       );
+      setValue(removeKey, updatedFilters[removeKey]);
     } else if (updatedFilters[removeKey] === removeValue) {
-      if(removeKey === "index"){
-        updatedFilters[removeKey] = " ";
-      }else {
+      if (removeKey === "index") {
+        // Remove index completely if empty or blank
+        delete updatedFilters[removeKey];
+        setValue(removeKey, undefined);
+      } else {
         updatedFilters[removeKey] = "";
+        setValue(removeKey, "");
       }
+    } else {
+      setValue(removeKey, updatedFilters[removeKey]);
     }
 
-    setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   }
 
@@ -395,65 +412,87 @@ function CaseStudies() {
     // dispatch(setAllFilters(updatedFilters));
     return field.onChange(event);
   }
-
+  const handleDownload = async () => {
+    downloadFileFromAPI({
+      url: createDynamicURL(
+        `${baseURL}/case_studies/`,
+        filters,
+        undefined,
+        page
+      ),
+      fileName: "case_studies.xlsx",
+      setLoading: setLoadingDownload,
+      serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
+    });
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex  flex-row justify-between md:h-10  gap-y-3 items-center">
-            {isAllCompanySelected === true ? (
-              <div className="font-semibold text-xl">All Case Studies</div>
-            ) : (
-              <div className="font-semibold text-xl">Case Studies</div>
-            )}
-
-            <div className="flex items-center justify-center">
-              <Tippy
-                content="All Companies"
-                options={{
-                  theme: "light",
-                }}
-              >
-                <div className="">
-                  <FormSwitch>
-                    <label className="text-md mr-3 font-semibold">
-                      View All
-                    </label>
-                    <FormSwitch.Input
-                      id="checkbox-switch-7"
-                      type="checkbox"
-                      checked={isAllCompanySelected}
-                      onChange={async (e) => {
-                        handleViewAllChange(e)
-                      }}
-                    />
-                    <FormSwitch.Label htmlFor="checkbox-switch-7"></FormSwitch.Label>
-                  </FormSwitch>
-                </div>
-              </Tippy>
-              {user?.user_type === "Admin" && (
-                <div className="flex justify-end my-3">
-                  <Button
-                    onClick={() => {
-                      setSelectedCaseStudies(null);
-                      setAddNewCaseStudyModalVisible(true);
+          <div className="overflow-auto xl:overflow-visible mt-4">
+            <div className="w-full">
+              <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow">
+                {isAllCompanySelected === true ? (
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    All Case Studies
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-xl">Case Studies</div>
+                )}
+                <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
+                    onClick={async (e) => {
+                      if (isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: false } });
+                      }
                     }}
-                    variant="primary"
-                    className="bg-theme-2 border-bg-theme-2 "
                   >
-                    <Lucide
-                      icon="PenLine"
-                      className="stroke-[1.3] w-4 h-4 mr-2"
-                    />
-                    Add New Case Studies
-                  </Button>
+                    {companyGlobalSearchName || "Company"}
+                  </button>
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
+                    onClick={async (e) => {
+                      if (!isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: true } });
+                      }
+                    }}
+                  >
+                    View For All Companies
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
-          <div className="mt-3.5">
-            <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2">
+          <div className="mt-3.5 relative">
+            <div className="flex flex-col box box--stacked bg-white p-5">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+                {user?.user_type === "Admin" && (
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => {
+                        setSelectedCaseStudies(null);
+                        setAddNewCaseStudyModalVisible(true);
+                      }}
+                      variant="primary"
+                      className="bg-theme-2 border-bg-theme-2"
+                    >
+                      <Lucide
+                        icon="PenLine"
+                        className="stroke-[1.3] w-4 h-4 mr-2"
+                      />
+                      Add New Case Studies
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
                 <div className="flex">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -470,6 +509,7 @@ function CaseStudies() {
                   />
 
                   <div className="hover:bg-slate-50">
+
                     <Button onClick={handleClearAllFilter}>
                       <Tippy
                         content="Clear Filters"
@@ -500,7 +540,7 @@ function CaseStudies() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
                   {user?.saved_search?.["Case Studies"] !== undefined && (
                     <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
@@ -508,7 +548,29 @@ function CaseStudies() {
                       </Button>
                     </div>
                   )}
+
+                  {/* Clear and Apply buttons outside filter */}
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => {
+                      onFilterClear();
+                    }}
+                    className="w-full sm:w-auto flex items-center gap-2"
+                    type="button"
+                  >
+                    <MdOutlineClear className="text-lg mr-1" /> Clear
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    onClick={handleSubmit(onSubmit)}
+                    className="w-full sm:w-auto flex items-center gap-2"
+                  >
+                    <FaSearch className="text-lg" /> Apply
+                  </Button>
+
                   <Popover className="inline-block">
+
                     <>
                       <Popover.Button
                         as={Button}
@@ -530,51 +592,42 @@ function CaseStudies() {
                 </div>
               </div>
 
-              {
-                selectedChipFilters?.length > 0 &&
-                <>
-                  <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
-                </>
-              }
+              {selectedChipFilters?.length > 0 && (
+                <StandardizedFilterPills
+                  filters={selectedChipFilters.map(chip => ({
+                    key: chip.key,
+                    value: chip.value,
+                    label: chip.label
+                  }))}
+                  onRemove={handleRemoveChip}
+                />
+              )}
 
-            {count > 0 && (
+              {count > 0 && (
                 <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
                   Count: {count.toLocaleString()}
                 </h2>
               )}
-              
+
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="filter-section mb-5">
-                    <div className="flex items-center justify-end mt-2 mb-4">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          onFilterClear();
-                        }}
-                        className="w-32 mx-2"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-32 mx-2"
-                        type="submit"
-                      >
-                        Apply
-                      </Button>
+                  <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+                    {/* Filter Content */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
                     </div>
                     <div
-                      className={`grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ${
-                        isAllCompanySelected
-                          ? "md:grid-cols-3"
-                          : " md:grid-cols-2"
-                      }`}
+                      className={`grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ${isAllCompanySelected
+                        ? "md:grid-cols-3"
+                        : " md:grid-cols-2"
+                        }`}
                     >
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                        <span className="font-semibold">Year</span>
-                          
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaCalendarAlt className="text-gray-400" /> Year
+                          </span>
+
                           {apiDropdownOptions.year.length > 0 && (
                             <FormCheck className="mr-2">
                               <FormCheck.Label>Select All</FormCheck.Label>
@@ -600,93 +653,52 @@ function CaseStudies() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                             <MultiSelectDropdown
-                                                    data={apiDropdownOptions.year}
-                                                    placeholder="Select Year"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
-                            // <TomSelect
-                            //   value={field.value || []}
-                            //   onChange={(value) => handleFieldChange(value, field)}
-                            //   options={{ placeholder: "Select Year" }}
-                            //   className="w-full"
-                            //   multiple
-                            
-                            // >
-                            //   {getDropdownLoader ? (
-                            //     <option value="--" disabled>
-                            //       Loading...
-                            //     </option>
-                            //   ) : (
-                            //     apiDropdownOptions.year.map((year) => (
-                            //       <option key={year} value={year}>
-                            //         {year}
-                            //       </option>
-                            //     ))
-                            //   )}
-                            // </TomSelect>
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.year?.map(String) || []}
+                              placeholder="Select Year"
+                              loading={apiDropdownOptions?.year?.length === 0}
+                              onChange={(selectedOptions) => {
+                                // Always convert to string
+                                const selectedValues = selectedOptions.map((option) => String(option.value));
+                                field.onChange(selectedValues);
+                              }}
+                              selectedOption={field.value || []}
+                            />
                           )}
                         />
                       </div>
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Index</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaLayerGroup className="text-gray-400" /> Index
+                          </span>
                         </div>
                         <Controller
                           name="index"
                           control={control}
-                          defaultValue={""}
                           render={({ field }) => (
-                            <TomSelect
-                              value={field.value || ""}
-                              onChange={(value) => {
-                                field.onChange(value);
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions?.index?.map((item: any) => item)}
+                              placeholder="Select Index"
+                              loading={false}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
                               }}
-                              options={{
-                                placeholder: "Select Index",
-                              }}
-                              className="w-full"
-                              multiple={false}
-                            >
-                              {getDropdownLoader ? (
-                                <option value="--" disabled>
-                                  Loading...
-                                </option>
-                              ) : (
-                                <>
-                                  {apiDropdownOptions?.index?.map(
-                                    (index: string) => {
-                                      return (
-                                        <option value={index}>
-                                          {index}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                                </>
-                              )}
-                            </TomSelect>
+                              selectedOption={field.value || []}
+                            />
                           )}
                         />
                       </div>
-
-                      
 
                       {isAllCompanySelected === true && (
                         <div className="w-full mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                            <span className="font-semibold">Select Companies</span>
+                              <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                                <FaBuilding className="text-gray-400" /> Select Companies
+                              </span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -710,7 +722,7 @@ function CaseStudies() {
                       {isAllCompanySelected && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Country</span>
+                            <span className="font-semibold">Country</span>
                             {apiDropdownOptions.market.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -725,9 +737,9 @@ function CaseStudies() {
                                   onChange={(e) =>
                                     e.target.checked
                                       ? setValue(
-                                          "market",
-                                          apiDropdownOptions.market
-                                        )
+                                        "market",
+                                        apiDropdownOptions.market
+                                      )
                                       : setValue("market", [])
                                   }
                                 />
@@ -739,20 +751,20 @@ function CaseStudies() {
                             control={control}
                             defaultValue={[]}
                             render={({ field }) => (
-                                 <MultiSelectDropdown
-                                                    data={apiDropdownOptions.market}
-                                                    placeholder="Select Country"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                              <MultiSelectDropdown
+                                data={apiDropdownOptions.market}
+                                placeholder="Select Country"
+                                loading={getDropdownLoader}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
+                                  handleFieldChange(selectedValues, field)
+
+
+                                }}
+                                selectedOption={field.value || []}
+
+                              />
                               // <TomSelect
                               //   value={field.value || []}
                               //   // onChange={(value) => field.onChange(value)}
@@ -781,7 +793,9 @@ function CaseStudies() {
                       {isAllCompanySelected === true && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Sector</span>
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaBuilding className="text-gray-400" /> Sector
+                            </span>
                             {apiDropdownOptions.sector.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -796,9 +810,9 @@ function CaseStudies() {
                                   onChange={(e) =>
                                     e.target.checked
                                       ? setValue(
-                                          "sector",
-                                          apiDropdownOptions.sector
-                                        )
+                                        "sector",
+                                        apiDropdownOptions.sector
+                                      )
                                       : setValue("sector", [])
                                   }
                                 />
@@ -810,20 +824,20 @@ function CaseStudies() {
                             control={control}
                             defaultValue={[]}
                             render={({ field }) => (
-                                 <MultiSelectDropdown
-                                                    data={apiDropdownOptions.sector}
-                                                    placeholder="Select Sector"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                              <MultiSelectDropdown
+                                data={apiDropdownOptions.sector}
+                                placeholder="Select Sector"
+                                loading={getDropdownLoader}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
+                                  handleFieldChange(selectedValues, field)
+
+
+                                }}
+                                selectedOption={field.value || []}
+
+                              />
                               // <TomSelect
                               //   value={field.value || []}
                               //   // onChange={(value) => field.onChange(value)}
@@ -851,7 +865,9 @@ function CaseStudies() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Themes</span>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaTags className="text-gray-400" /> Themes
+                          </span>
                           {apiDropdownOptions.themes.length > 0 && (
                             <FormCheck className="mr-2">
                               <FormCheck.Label>Select All</FormCheck.Label>
@@ -866,9 +882,9 @@ function CaseStudies() {
                                 onChange={(e) =>
                                   e.target.checked
                                     ? setValue(
-                                        "themes",
-                                        apiDropdownOptions.themes
-                                      )
+                                      "themes",
+                                      apiDropdownOptions.themes
+                                    )
                                     : setValue("themes", [])
                                 }
                               />
@@ -880,20 +896,20 @@ function CaseStudies() {
                           control={control}
                           defaultValue={[]}
                           render={({ field }) => (
-                               <MultiSelectDropdown
-                                                    data={apiDropdownOptions.themes}
-                                                    placeholder="Select Themes"
-                                                    loading={getDropdownLoader}
-                                                    onChange={(selectedOptions) => {
-                                                      const selectedValues = selectedOptions.map((option) => option.value);
-                                                      field.onChange(selectedValues);
-                                                       handleFieldChange(selectedValues, field)
-                                                     
-                            
-                                                    }}
-                                                    selectedOption={field.value || []}
-                            
-                                                  />
+                            <MultiSelectDropdown
+                              data={apiDropdownOptions.themes}
+                              placeholder="Select Themes"
+                              loading={getDropdownLoader}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+                                handleFieldChange(selectedValues, field)
+
+
+                              }}
+                              selectedOption={field.value || []}
+
+                            />
                             // <TomSelect
                             //   value={field.value || []}
                             //   // onChange={(value) => field.onChange(value)}
@@ -922,7 +938,7 @@ function CaseStudies() {
                         <div className="mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                          <span className="font-semibold">Alternate Companies</span>
+                              <span className="font-semibold">Alternate Companies</span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -944,7 +960,7 @@ function CaseStudies() {
                         <>
                           <div className="mx-2">
                             <div className="flex-1 w-full text-slate-500">
-                          <span className="font-semibold">Approval Status</span>
+                              <span className="font-semibold">Approval Status</span>
                               <div className="mt-2 flex flex-col sm:flex-row">
                                 <Controller
                                   name="approval_status"
@@ -1022,153 +1038,126 @@ function CaseStudies() {
                 </form>
               )}
 
-              
+
 
               <div className=" px-5">
-                <TableWrapper isLoading={loading}>
-                  <div className="overflow-auto max-h-[400px]">
-                    <Table>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Institution
-                          </Table.Td>
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                            Year
-                          </Table.Td>
-                          {isAllCompanySelected && (
-                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                              Company
-                            </Table.Td>
-                          )}
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                            Theme
-                          </Table.Td>
+                <StandardizedTable isLoading={loading} maxHeight="400px">
+                  <StandardizedTable.Header>
+                    <StandardizedTable.Cell isHeader>
+                      Year
+                    </StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader>
+                      Institution
+                    </StandardizedTable.Cell>
+                    {isAllCompanySelected && (
+                      <StandardizedTable.Cell isHeader>
+                        Company
+                      </StandardizedTable.Cell>
+                    )}
+                    <StandardizedTable.Cell isHeader>
+                      Theme
+                    </StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader>
+                      Industry
+                    </StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader>
+                      Details
+                    </StandardizedTable.Cell>
+                  </StandardizedTable.Header>
 
-                          <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                            Industry
-                          </Table.Td>
-                          <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                            Details
-                          </Table.Td>
-                        </Table.Tr>
-                      </Table.Thead>
-
-                      <Table.Tbody>
-                        {caseStudies?.length > 0 &&
-                          caseStudies?.map((item: any) => {
-                            return (
-                              <Table.Tr
-                                key={item?.id}
-                                className="[&_td]:last:border-b-0"
-                              >
-                                <Table.Td>
-                                  <div className="w-full flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                    {item?.institution_logo_url ? (
-                                      <>
-                                        {/* <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
-                                          <img
-                                            alt="Institution Logo"
-                                            className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                            src={item?.institution_logo_url}
-                                            content={
-                                              item?.institution_name || ""
-                                            }
-                                          />
-                                        </div> */}
-
-                                        <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
-                                          <img
-                                            alt="Institution Logo"
-                                            className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                            src={item?.institution_logo_url}
-                                            content={
-                                              item?.institution_name || ""
-                                            }
-                                          />
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                        <img
-                                          alt="ZMH Analytics"
-                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                          src={investorIcon}
-                                        />
-                                        <a
-                                          href=""
-                                          className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
-                                        ></a>
-                                      </div>
-                                    )}
-                                    <div className="ml-4 ">
-                                      <p className="font-medium whitespace-normal line-clamp-2 text-wrap w-30">
-                                        {item?.institution_name}
-                                      </p>
-                                    </div>
+                  <Table.Tbody>
+                    {caseStudies?.length > 0 &&
+                      caseStudies?.map((item: any, index: number) => {
+                        return (
+                          <StandardizedTable.Row
+                            key={item?.id}
+                            index={index}
+                          >
+                            <StandardizedTable.Cell>
+                              <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                {item?.year}
+                              </span>
+                            </StandardizedTable.Cell>
+                            <StandardizedTable.Cell>
+                              <div className="w-full flex flex-row justify-start items-center py-2 text-nowrap">
+                                <p className="font-medium whitespace-normal line-clamp-2 text-wrap w-30">
+                                  {item?.institution_name}
+                                </p>
+                              </div>
+                            </StandardizedTable.Cell>
+                            {isAllCompanySelected && (
+                              <StandardizedTable.Cell>
+                                <span className="font-medium text-primary/80">
+                                  {item?.company_name || item?.caspio_company_name}
+                                </span>
+                              </StandardizedTable.Cell>
+                            )}
+                            <StandardizedTable.Cell>
+                              <span className="inline-block px-2 py-1">
+                                {item?.esg_themes}
+                              </span>
+                            </StandardizedTable.Cell>
+                            <StandardizedTable.Cell>
+                              <span className="inline-block px-2 py-1">
+                                {item?.company_sector}
+                              </span>
+                            </StandardizedTable.Cell>
+                            <StandardizedTable.Cell>
+                              <div className="flex gap-3 justify-center">
+                                <Tippy
+                                  content="See Details"
+                                  options={{ theme: "light" }}
+                                >
+                                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                    <Lucide
+                                      onClick={() => {
+                                        navigate(`/case-studies/${item?.id}`);
+                                      }}
+                                      icon="Eye"
+                                    />
                                   </div>
-                                </Table.Td>
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.year}
-                                </Table.Td>
-                                {isAllCompanySelected && (
-                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                    {item?.company_name ||
-                                      item?.caspio_company_name}
-                                  </Table.Td>
-                                )}
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.esg_themes}
-                                </Table.Td>
+                                </Tippy>
 
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.company_sector}
-                                </Table.Td>
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
-                                  <div className="flex gap-3 justify-center">
-                                    <Tippy
-                                      content="See Details"
-                                      options={{ theme: "light" }}
-                                    >
+                                {user?.user_type === "Admin" && (
+                                  <Tippy
+                                    content="Edit"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
                                       <Lucide
-                                        onClick={() => {
-                                          navigate(`/case-studies/${item?.id}`);
-                                        }}
-                                        icon="Eye"
-                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        onClick={() =>
+                                          onEditCaseStudiesClickHandler(item)
+                                        }
+                                        icon="PenLine"
                                       />
-                                    </Tippy>
-
-                                    {user?.user_type === "Admin" && (
-                                      <Tippy
-                                        content="Edit"
-                                        options={{ theme: "light" }}
-                                      >
-                                        <Lucide
-                                          onClick={() =>
-                                            onEditCaseStudiesClickHandler(item)
-                                          }
-                                          icon="PenLine"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
-                                      </Tippy>
-                                    )}
-                                  </div>
-                                </Table.Td>
-                              </Table.Tr>
-                            );
-                          })}
-                      </Table.Tbody>
-                      {caseStudies?.length === 0 && (
-                        <div className="w-full">
-                          <h1 className="mt-3">No Records Found..</h1>
-                        </div>
-                      )}
-                    </Table>
-                  </div>
-                </TableWrapper>
+                                    </div>
+                                  </Tippy>
+                                )}
+                              </div>
+                            </StandardizedTable.Cell>
+                          </StandardizedTable.Row>
+                        );
+                      })}
+                  </Table.Tbody>
+                  {caseStudies?.length === 0 && (
+                    <Table.Tbody>
+                      <Table.Tr>
+                        <Table.Td colSpan={isAllCompanySelected ? 6 : 5} className="text-center py-12">
+                          <div className="flex flex-col items-center justify-center">
+                            <Lucide
+                              icon="FileSearch"
+                              className="w-12 h-12 text-gray-300 mb-2"
+                            />
+                            <div className="text-lg font-medium">No data found</div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              Try adjusting your filters or search criteria
+                            </div>
+                          </div>
+                        </Table.Td>
+                      </Table.Tr>
+                    </Table.Tbody>
+                  )}
+                </StandardizedTable>
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                 <CPagination

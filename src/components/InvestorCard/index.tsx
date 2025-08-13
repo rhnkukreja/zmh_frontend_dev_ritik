@@ -542,7 +542,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        <div className="whitespace-nowrap flex items-center justify-center">
+                                        <div className="whitespace-nowrap flex items-center">
                                           {dashboard?.percent_ownership}%
                                         </div>
                                       </Table.Td>
@@ -556,7 +556,7 @@ const index = () => {
                                         <div className="whitespace-nowrap ">
                                           {dashboard?.unpri_signatory ===
                                             true && (
-                                              <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="whitespace-nowrap flex items-center">
                                                 <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                   &#10004;
                                                 </div>
@@ -568,7 +568,7 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.company_engaged ===
                                           true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="whitespace-nowrap flex items-center">
                                               <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                 &#10004;
                                               </div>
@@ -576,7 +576,7 @@ const index = () => {
                                           )}
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 ">
-                                        <div className="whitespace-nowrap flex items-center justify-center">
+                                        <div className="whitespace-nowrap flex items-center">
                                           <div className="flex space-x-2">
                                             {dashboard?.engagement_topic
                                               ?.split("")
@@ -602,7 +602,7 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_directors ===
                                           true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="whitespace-nowrap flex items-center">
                                               <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                 &#10004;
                                               </div>
@@ -610,8 +610,8 @@ const index = () => {
                                           )}
                                         {dashboard?.voted_against_directors ===
                                           'ND' && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                            <div className="whitespace-nowrap flex items-center">
+                                              <div className="flex items-center w-full h-full text-primary mr-2">
                                                 <Tippy content="Not Disclose" options={{ theme: "light" }}>
                                                   <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                 </Tippy>
@@ -623,7 +623,7 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {dashboard?.voted_against_say_on_pay ===
                                           true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="whitespace-nowrap flex items-center">
                                               <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
                                                 &#10004;
                                               </div>
@@ -632,8 +632,8 @@ const index = () => {
 
                                         {dashboard?.voted_against_say_on_pay ===
                                           'ND' && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                            <div className="whitespace-nowrap flex items-center">
+                                              <div className="flex items-center w-full h-full text-primary mr-2">
                                                 <Tippy content="Not Disclose" options={{ theme: "light" }}>
                                                   <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                 </Tippy>

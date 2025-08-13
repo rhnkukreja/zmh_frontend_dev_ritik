@@ -51,9 +51,39 @@ body {
 }
 .sticky-table {
   position: sticky;
-
   top: 0;
   z-index: 10;
+}
+
+/* Standardized Table Header Styles */
+.bg-header {
+  background-color: #f8fafc;
+  background-image: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.border-header {
+  border-color: #e2e8f0;
+}
+
+/* Table row hover effects */
+.table-row-hover:hover {
+  background-color: #f8fafc;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Standardized table cell padding and typography */
+.table-cell-standard {
+  padding: 12px 20px;
+  vertical-align: middle;
+}
+
+.table-header-standard {
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 *::-webkit-scrollbar {
@@ -228,17 +258,31 @@ a.side-menu__link.side-menu__link--active svg {
 .css-13cymwt-control {
   background: #f7f7f7 !important;
 }
-
+.select__control--is-disabled{
+  background-color: #c8c8c8 !important;
+}
+.recharts-label-list g line {
+  display: none;
+}
+.tom-select.ts-wrapper.multi.has-items .ts-control{
+  padding-right: 2rem !important;
+}
 .position-set{
   top: -10px !important;
   left: 12px !important; 
 }
-
+.custom_keywords .css-1nmdiq5-menu{
+  display: none;
+}
 option[data-label="*"] {
   color: red !important;
   font-weight: bold;
 }
-
+.ts-wrapper.plugin-remove_button:not(.rtl) .item {
+background-color: #e2e8f0 !important;
+    padding-left: 7px;
+    border-radius: 4px;
+}
 /* .ts-wrapper .ts-control .ts-dropdown .clear-button {
   left: 350px !important;
   font-size: 19px !important;
@@ -250,7 +294,9 @@ option[data-label="*"] {
   font-size: 25px !important;
   position: absolute !important; /* Ensure it's positioned correctly */
 }
-
+.email-alert .css-13cymwt-control{
+  background-color: transparent !important;
+}
 .tom-select .items {
   width: 48rem !important;
 }

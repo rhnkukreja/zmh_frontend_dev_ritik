@@ -76,7 +76,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   return formattedMenu;
 };
 
-const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
+const linkTo = (menu: FormattedMenu, navigate: NavigateFunction, companyGlobalSearchName?: string) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {

@@ -28,23 +28,33 @@ const DetailEngagementQuestion = () => {
 
   return (
     <>
-      <Button
-        onClick={backToPreviousPage}
-        variant="primary"
-        className="bg-theme-2 border-bg-theme-2 mb-4"
-      >
-        <ChevronLeft
-          className="roup-[.mode--light]:text-white text-white"
-          size={18}
-          strokeWidth={1.5}
-        />
-        Back
-      </Button>
-
-      <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
-        <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
-          <h1 className="text-xl font-semibold">Engagement Question Details</h1>
+      <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
+      <div className="p-5 mt-1 box">
+        <div className="flex flex-col p-5 sm:flex-row gap-y-2">
+          <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+            <span>
+              <h1 className="text-lg font-bold flex items-center gap-2">
+                Engagement Question Details
+              </h1>
+            </span>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
+            <Button
+              onClick={backToPreviousPage}
+              variant="primary"
+              className="bg-theme-2 border-bg-theme-2"
+            >
+              <ChevronLeft
+                className="roup-[.mode--light]:text-white text-white"
+                size={18}
+                strokeWidth={1.5}
+              />
+              Back
+            </Button>
+          </div>
         </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
 
         {loading ? (
           <LoadingWrapper height={200} />
@@ -121,6 +131,7 @@ const DetailEngagementQuestion = () => {
             )}
           </div>
         )}
+        </div>
       </div>
     </>
   );

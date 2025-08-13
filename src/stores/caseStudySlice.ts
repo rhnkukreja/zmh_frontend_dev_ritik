@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { caseStudiesService } from "@/services/caseStudies";
 
-const name = "shareholder_proposal";
+const name = "case_studies";
 
 export interface CaseStudyFilter {
   keyword: string;
@@ -18,6 +18,7 @@ export interface CaseStudyFilter {
   approval_status: string;
   caspio_company_name: string;
   [key: string]: any;
+  index?: string | string[];
 }
 
 export interface CaseStudies {
