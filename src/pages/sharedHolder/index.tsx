@@ -1039,7 +1039,7 @@ function ShareHolderProposal() {
                     }}
                     className="px-5 py-2 rounded bg-primary text-white flex gap-2 items-center"
                   >
-                    Scroll
+                    Data
                     <ArrowDown size={16} />
                   </button>
                   <Button

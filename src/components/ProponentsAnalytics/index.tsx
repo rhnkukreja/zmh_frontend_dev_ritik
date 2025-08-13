@@ -111,7 +111,7 @@ const ProponentsAnalyticsComponent: React.FC<
                       Exec. Comp
                     </StandardizedTable.Cell>
                   </StandardizedTable.Header>
-                  <tbody className="text-gray-700 text-base divide-y divide-gray-100">
+                  <tbody className="text-gray-700 divide-y divide-gray-100">
                     {topProponents.map((proponent, idx) => {
                       const envCount =
                         proponent.category?.find(
@@ -305,9 +305,6 @@ const ProponentsAnalyticsComponent: React.FC<
           : "min-h-[65vh]"
           }`}
       >
-        <h1 className="text-xl font-semibold flex items-center gap-2 mb-4">
-          All Proponents Analytics
-        </h1>
         {renderSummaryTable()}
 
         {/* Show additional sub-category tables only when topProponents has 1 item */}

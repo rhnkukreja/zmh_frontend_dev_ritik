@@ -580,7 +580,7 @@ function PeerAnalysis() {
                     }}
                     className="px-5 py-2 rounded bg-primary text-white flex gap-2 items-center"
                   >
-                    Scroll
+                    Data
                     <ArrowDown size={16} />
                   </button>
                   <Popover className="inline-block">
@@ -1043,7 +1043,7 @@ function PeerAnalysis() {
                                   {peer?.year}
                                 </span>
                               </Table.Td>
-                              <Table.Td>
+                              <Table.Td className="border-dashed">
                                 <p className="font-medium text-wrap w-[150px]">
                                   {peer?.institution_name}
                                 </p>
