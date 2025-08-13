@@ -765,7 +765,7 @@ console.log(notificationData ,"data")
                   </h1>
                 ) : (
                   <div
-                    className="relative justify-center hidden md:flex md:ml-2"
+                    className="relative justify-center hidden md:flex md:ml-2 step-1"
                     onClick={() => setQuickSearch(true)}
                   >
                     <div

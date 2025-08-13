@@ -53,20 +53,7 @@ const index = () => {
     (state: RootState) => state.authentiction
   );
 
- const steps = [
-    {
-      target: ".step-1",
-      content: "Click here to download the data in Excel format.",
-    },
-    {
-      target: ".step-2",
-      content: "Click here to open the investor details in a new tab.",
-    },
-    {
-      target: ".step-3",
-      content: "Click here to switch year.",
-    },
-  ];
+ 
 
   const navigate = useNavigate();
 
@@ -215,41 +202,13 @@ const index = () => {
     const index = getSelectedTabIndex();
     setSelectedIndex(index);
   }, [selectedYear])
- const handleJoyrideCallback = (data) => {
-  const { type, step } = data;
 
-  if (type === 'step:before') {
-    const offset = 300; // custom scroll offset
-
-    const target = document.querySelector(step.target);
-    if (target) {
-      const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
-      window.scrollTo({ top, behavior: 'smooth' });
-    }
-  }
-};
 
 
 
   return (
     <>
-     <Joyride
-        steps={steps}
-        run={run}
-        continuous
-        showProgress
-        showSkipButton
-         disableScrolling
-         callback={handleJoyrideCallback}
-        styles={{
-          options: {
-            zIndex: 10000,
-             arrowColor: '#e3ffeb',
-            primaryColor: 'rgb(149 22 57)',
-            textColor: '#000'
-          },
-        }}
-      />
+    
       {location.pathname !== "/" && (
         <Button
           onClick={() => {
@@ -271,7 +230,7 @@ const index = () => {
           <div className="p-5 mt-3.5 box">
             <div className="w-full">
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
-                <h1 className="text-lg font-bold">
+                <h1 className="text-lg font-bold step-3">
                   Top {dashboardDataList?.length || 20} Investor{" "}
                   <span className="text-base font-bold">
                     ({dashboardDataList?.total_percent_ownership} of shares outstanding)
@@ -286,7 +245,7 @@ const index = () => {
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
-                      className="box p-[5px] cursor-pointer step-1"
+                      className="box p-[5px] cursor-pointer "
                       onClick={convertDivTableToCSV}
                       
                     >
@@ -296,7 +255,7 @@ const index = () => {
                   {locationPathName === "/" && (
                     <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
-                        className="box p-2 cursor-pointer step-2"
+                        className="box p-2 cursor-pointer "
                         onClick={() =>
                           window.open("investor-details", "_blank")
                         }
@@ -310,11 +269,11 @@ const index = () => {
 
               {
                 dashboardDataList?.total_year?.length > 1 &&
-                <div >
+                <div  className="w-fit" >
                   <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                     <Tab.List
                       variant="boxed-tabs"
-                      className="w-[100px] border-none bg-transparent"
+                      className=" border-none bg-transparent  "
                     >
                       {
                         dashboardDataList?.total_year?.length > 1 &&
@@ -677,7 +636,7 @@ const index = () => {
                     >
                       2
                     </sup>
-                    <p id="footnote" className="step-3">
+                    <p id="footnote" className="">
                       As disclosed by the investor in the last three years.
                     </p>
                   </span>
