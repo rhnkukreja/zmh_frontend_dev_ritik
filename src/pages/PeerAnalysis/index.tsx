@@ -563,7 +563,7 @@ function PeerAnalysis() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-                  <FormSwitch>
+                  {/* <FormSwitch>
                     <label className="text-md mr-3 font-semibold">Analytics</label>
                     <FormSwitch.Input
                       id="view-analysis-switch"
@@ -572,7 +572,7 @@ function PeerAnalysis() {
                       onChange={(e) => setIsViewAnalysis(e.target.checked)}
                     />
                     <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
-                  </FormSwitch>
+                  </FormSwitch> */}
                   <button
                     onClick={() => {
                       const element = document.querySelector('#data-listing');
@@ -580,7 +580,7 @@ function PeerAnalysis() {
                     }}
                     className="px-5 py-2 rounded bg-primary text-white flex gap-2 items-center"
                   >
-                    Data
+                    Source Data
                     <ArrowDown size={16} />
                   </button>
                   <Popover className="inline-block">
@@ -624,6 +624,29 @@ function PeerAnalysis() {
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+                    <div className="flex justify-between items-center gap-2 mb-6">
+                      <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                      <div className="flex gap-2 items-center">
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => {
+                            onFilterClear();
+                            close();
+                          }}
+                          className="w-36"
+                          type="button"
+                        >
+                          <MdOutlineClear className="text-lg mr-1" /> Clear
+                        </Button>
+                        <Button
+                          variant="primary"
+                          className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
+                          type="submit"
+                        >
+                          <FaSearch className="text-lg" /> Apply
+                        </Button>
+                      </div>
+                    </div>
                     <div className={clsx(["grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ", isAllCompanySelected ? 'md:grid-cols-3' : 'md:grid-cols-3'])}>
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
@@ -943,28 +966,6 @@ function PeerAnalysis() {
                           />
                         </div>
                       }
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex justify-end gap-3 mt-6">
-                      <Button
-                        variant="outline-secondary"
-                        onClick={() => {
-                          onFilterClear();
-                          close();
-                        }}
-                        className="w-36"
-                        type="button"
-                      >
-                        <MdOutlineClear className="text-lg mr-1" /> Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
-                        type="submit"
-                      >
-                        <FaSearch className="text-lg" /> Apply
-                      </Button>
                     </div>
                   </div>
                 </form>

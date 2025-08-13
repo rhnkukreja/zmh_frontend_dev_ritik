@@ -12,44 +12,30 @@ class DashboardService {
     let url = "";
     if (companyName !== "") {
       if (exactUrl) {
-        // Fix: Handle VDS European dropdown case with institution parameter and current filters
+        // Handle VDS European dropdown case with new company endpoint
         if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
           const params = new URLSearchParams();
-          
-          // Add institution_name
-          const institutionName = currentFilters?.institution_name || ["BlackRock, Inc."];
-          params.append('institution_name', JSON.stringify(institutionName));
           
           // Add company_name for search
           params.append('company_name', companyName);
           
-          // Add all current filters if they have values
-          if (currentFilters) {
-            Object.entries(currentFilters).forEach(([key, value]) => {
-              if (key !== 'institution_name' && key !== 'company_name') {
-                if (Array.isArray(value) && value.length > 0) {
-                  params.append(key, JSON.stringify(value));
-                } else if (value && typeof value === 'string' && value.trim() !== '') {
-                  params.append(key, value);
-                }
-              }
-            });
-          }
+          // Add index parameter with default value
+          params.append('index', JSON.stringify(["100"]));
           
-          url = `/get_vds_european_dropdown_values/?${params.toString()}`;
+          url = `/company/?${params.toString()}`;
         } else {
           url = `/${exactUrl}${companyName}`;
         }
       } else {
         url = `/company/?${
-          companyName ? `company_name=${companyName}&` : ""
-        }index=${encodeURIComponent('["100"]')}&all=true`;
+          companyName ? `company_name=${companyName}` : ""
+        }&all=true`;
       }
       const response = await axiosInstance.get(url);
       if(exactUrl){
         if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
-          // Fix: For VDS European, the data comes in a different format
-          results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
+          // For VDS European using new company endpoint, the data comes as company_name array
+          results = response.data?.company_name || response.data?.company || [];
           // Convert array of strings to objects with name property for consistency
           if (Array.isArray(results)) {
             results = results.map(company => ({

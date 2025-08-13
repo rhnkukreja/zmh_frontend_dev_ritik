@@ -25,12 +25,12 @@ const StandardizedFilterPills: React.FC<StandardizedFilterPillsProps> = ({
       {filters.map((filter, idx) => (
         <span 
           key={idx} 
-          className="flex items-center bg-blue-50 text-blue-600 text-sm px-3 py-1 rounded-full"
+          className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20"
         >
           {filter.label}
           <button
             type="button"
-            className="ml-2 text-blue-400 hover:text-red-500 transition-colors"
+            className="ml-2 text-primary hover:text-red-600 transition-colors"
             onClick={() => onRemove(filter.key, filter.value)}
           >
             <FaTimes className="text-xs" />

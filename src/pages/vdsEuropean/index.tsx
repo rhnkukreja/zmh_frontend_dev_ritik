@@ -54,16 +54,16 @@ import React, { useCallback } from "react";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { 
-    VdsEuropeans, 
-    loading, 
-    page, 
-    totalPages, 
+  const {
+    VdsEuropeans,
+    loading,
+    page,
+    totalPages,
     count,
     analytics,
     analyticsLoading,
     analyticsPage,
-    analyticsFilters 
+    analyticsFilters
   } = useAppSelector((state) => state.vdsEuropean);
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
@@ -116,15 +116,15 @@ const index = () => {
   const [companySearchLoading, setCompanySearchLoading] = useState<boolean>(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
-  
+
   // Helper function to check if proposal number has duplicates
   const hasDuplicateProposalNumber = (proposalNum: string, allProposals: any[]) => {
     if (!proposalNum || !allProposals) return false;
-    
-    const matchingProposals = allProposals.filter(proposal => 
+
+    const matchingProposals = allProposals.filter(proposal =>
       proposal?.proposal_num === proposalNum
     );
-    
+
     return matchingProposals.length > 1;
   };
 
@@ -152,13 +152,13 @@ const index = () => {
     if (!isSequential) return {};
 
     // Determine position in sequential group
-    const isFirst = matchingIndices.some((index, i) => 
-      index === currentIndex && 
+    const isFirst = matchingIndices.some((index, i) =>
+      index === currentIndex &&
       (i === 0 || matchingIndices[i - 1] !== index - 1)
     );
-    
-    const isLast = matchingIndices.some((index, i) => 
-      index === currentIndex && 
+
+    const isLast = matchingIndices.some((index, i) =>
+      index === currentIndex &&
       (i === matchingIndices.length - 1 || matchingIndices[i + 1] !== index + 1)
     );
 
@@ -173,7 +173,7 @@ const index = () => {
     if (isFirst) {
       borderStyle = { ...borderStyle, borderTop: '1px solid #9f1239' };
     }
-    
+
     if (isLast) {
       borderStyle = { ...borderStyle, borderBottom: '1px solid #9f1239' };
     }
@@ -203,7 +203,7 @@ const index = () => {
 
   const expandAllGroups = () => {
     if (!analytics?.by_company) return;
-    
+
     const allCompanyNames: string[] = [];
     analytics.by_company.forEach((yearEntry: any) => {
       if (Array.isArray(yearEntry.companies)) {
@@ -216,7 +216,7 @@ const index = () => {
     });
 
     const allExpanded = allCompanyNames.every(name => openGroups[name]);
-    
+
     if (allExpanded) {
       // Collapse all
       setOpenGroups({});
@@ -232,7 +232,7 @@ const index = () => {
 
   const areAllGroupsExpanded = () => {
     if (!analytics?.by_company) return false;
-    
+
     const allCompanyNames: string[] = [];
     analytics.by_company.forEach((yearEntry: any) => {
       if (Array.isArray(yearEntry.companies)) {
@@ -259,47 +259,47 @@ const index = () => {
   useEffect(() => {
     const restoreFilters = () => {
       setIsRestoringFromLocalStorage(true);
-      
+
       // Check for analytics filters first since we start in analytics view
       const savedAnalyticsFilters = localStorage.getItem("vdsEuropeanAnalyticsFilters");
       const savedRegularFilters = localStorage.getItem("vdsEuropeanFilters");
-      
+
       if (isViewAnalysis && savedAnalyticsFilters) {
         try {
           const parsed = JSON.parse(savedAnalyticsFilters);
-          
+
           // Restore analytics filters
           setAllAnalyticsFilter(parsed);
-          
+
           // Restore form values
           Object.entries(parsed).forEach(([key, value]) => {
             setValue(key, value);
           });
-          
+
           // Generate filter chips from restored analytics data
           setSelectedChipFilters(generateFilterChips(parsed));
           setFiltersLength(countValidFilters(parsed));
           setSelectedCountries(parsed.country || ["USA"]);
-          
+
           // Fetch vote and year options for restored institutions
           if (parsed.institution_name && parsed.institution_name.length > 0) {
             getInstitutionDependentOptions(parsed.institution_name);
           }
-          
+
           setIsRestoringFromLocalStorage(false);
           return;
         } catch (e) {
           console.log("Error parsing saved analytics filters:", e);
         }
       }
-      
+
       if (!isViewAnalysis && savedRegularFilters) {
         try {
           const parsed = JSON.parse(savedRegularFilters);
-          
+
           // Restore regular filters
           setallApplyFilter(parsed);
-          
+
           // Restore all saved values with proper field mapping
           const restoredValues = {
             institution_name: parsed.institution_name || [],
@@ -317,34 +317,34 @@ const index = () => {
             proposal_keyword: parsed.proposal_keyword || [],
             keyword: parsed.keyword || "",
           };
-          
+
           reset(restoredValues);
-          
+
           // Generate filter chips from restored data
           setSelectedChipFilters(generateFilterChips(parsed));
           setFiltersLength(countValidFilters(parsed));
           setSelectedCountries(parsed.country || ["USA"]);
-          
+
           setIsRestoringFromLocalStorage(false);
           return;
         } catch (e) {
           console.log("Error parsing saved filters:", e);
         }
       }
-      
+
       // Set defaults if no saved filters or parsing failed
       const getCurrentYear = () => {
         return new Date().getFullYear().toString();
       };
-      
+
       const getDefaultDateRange = () => {
         const now = new Date();
-        const usDate = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
         const startDate = "2025-01-01";
         const endDate = usDate.toISOString().split("T")[0];
         return `${startDate} - ${endDate}`;
       };
-      
+
       if (isViewAnalysis) {
         const defaultAnalyticsFilters = {
           institution_name: ["BlackRock, Inc."],
@@ -352,33 +352,33 @@ const index = () => {
           country: ["USA"],
           analyticsYear: [getCurrentYear()]
         };
-        
+
         setAllAnalyticsFilter(defaultAnalyticsFilters);
         Object.entries(defaultAnalyticsFilters).forEach(([key, value]) => {
           setValue(key, value);
         });
         setSelectedChipFilters(generateFilterChips(defaultAnalyticsFilters));
         setFiltersLength(countValidFilters(defaultAnalyticsFilters));
-        
+
         // Fetch vote and year options for default institutions
         getInstitutionDependentOptions(defaultAnalyticsFilters.institution_name);
       } else {
-        const defaultFilters = { 
+        const defaultFilters = {
           country: ["USA"],
           year: getCurrentYear()
         };
-        
+
         setallApplyFilter(defaultFilters);
         setValue("country", ["USA"]);
         setValue("year", getCurrentYear());
         setSelectedChipFilters(generateFilterChips(defaultFilters));
         setFiltersLength(countValidFilters(defaultFilters));
       }
-      
+
       setSelectedCountries(["USA"]);
       setIsRestoringFromLocalStorage(false);
     };
-    
+
     // Use setTimeout to ensure component is fully mounted
     setTimeout(restoreFilters, 50);
   }, [isViewAnalysis]);
@@ -389,7 +389,7 @@ const index = () => {
       if (isRestoringFromLocalStorage) {
         return;
       }
-      
+
       if (!isViewAnalysis && hasAnyValidFilter(allApplyFilter)) {
         setIsLoading(true);
 
@@ -454,10 +454,10 @@ const index = () => {
       }
     };
     fetchDropdownData();
-    
+
     // Fetch vote and year options with default institution (BlackRock)
     getInstitutionDependentOptions(["BlackRock, Inc."]);
-    
+
     // Fix: Make default API call for company filter with correct parameters
     // This will call: https://api.zmhadvisors.com/company/?company_name=a&index=["100"]
     const fetchDefaultCompanies = async () => {
@@ -483,10 +483,10 @@ const index = () => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
-    
+
     const startDate = "2024-01-01";
     const endDate = yesterday.toISOString().split("T")[0];
-    
+
     return `${startDate} - ${endDate}`;
   };
 
@@ -513,7 +513,7 @@ const index = () => {
   const watchedDateRange = watch("date_range");
   const watchedYear = watch("year");
   const watchedAnalyticsYear = watch("analyticsYear");
-  
+
   // Track previous values to determine which field changed
   const [prevDateRange, setPrevDateRange] = useState("");
   const [prevYear, setPrevYear] = useState("");
@@ -524,7 +524,7 @@ const index = () => {
     const currentDateRange = watchedDateRange || "";
     const currentYear = watchedYear || "";
     const currentAnalyticsYear = watchedAnalyticsYear || [];
-    
+
     // Check if date_range changed and has a value
     if (currentDateRange !== prevDateRange && currentDateRange.trim() !== "") {
       // Date range was set, clear both year fields if they have values
@@ -535,7 +535,7 @@ const index = () => {
         setValue("analyticsYear", []);
       }
     }
-    
+
     // Check if year changed and has a value
     if (currentYear !== prevYear && currentYear.trim() !== "") {
       // Year was set, clear date_range and analyticsYear if they have values
@@ -546,7 +546,7 @@ const index = () => {
         setValue("analyticsYear", []);
       }
     }
-    
+
     // Check if analyticsYear changed and has a value
     if (JSON.stringify(currentAnalyticsYear) !== JSON.stringify(prevAnalyticsYear) && currentAnalyticsYear.length > 0) {
       // Analytics year was set, clear date_range and regular year if they have values
@@ -557,7 +557,7 @@ const index = () => {
         setValue("year", "");
       }
     }
-    
+
     // Update previous values
     setPrevDateRange(currentDateRange);
     setPrevYear(currentYear);
@@ -603,7 +603,7 @@ const index = () => {
       setYearOptions([]);
       return;
     }
-    
+
     try {
       setGetDynamicDropdownLoader(true);
       const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues({
@@ -628,15 +628,15 @@ const index = () => {
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
-    
+
     if (!searchTerm || searchTerm.length < 2) {
       setCompanyOptions([]);
       setCompanySearchLoading(false);
       return;
     }
-    
+
     setCompanySearchLoading(true);
-    
+
     // Set new timeout for debouncing
     const newTimeout = setTimeout(async () => {
       try {
@@ -649,7 +649,7 @@ const index = () => {
         if (res.result) {
           const companies = res.result.company_name || res.result.company || [];
           console.log("Company search API response:", companies);
-          
+
           // Store the full company objects for proper handling
           setCompanyOptions(companies);
         }
@@ -660,17 +660,17 @@ const index = () => {
         setCompanySearchLoading(false);
       }
     }, 500); // 500ms debounce
-    
+
     setSearchTimeout(newTimeout);
   };
 
   // Function to get dependent options when company is selected
   const getCompanyDependentOptions = async (companyNames: any[], institutionNames: string[]) => {
     if (!companyNames || companyNames.length === 0) return;
-    
+
     try {
       setGetDynamicDropdownLoader(true);
-      
+
       // Fix: Include all current filters when company is selected
       const currentFilters = {
         institution_name: institutionNames || ["BlackRock, Inc."],
@@ -686,7 +686,7 @@ const index = () => {
         meeting_type: watch("meeting_type") || [],
         proposal_keyword: watch("proposal_keyword") || []
       };
-      
+
       const res = await vdsEuropeanService.getCompanySelectionDropdownValues(currentFilters);
       if (res.result) {
         // Update other dependent dropdowns if needed
@@ -743,22 +743,22 @@ const index = () => {
       toast.warning("Please Select Company Name");
       return;
     }
-    
+
     // Validate that at least one country is selected
     if (!npxFilter?.country?.length) {
       toast.warning("Please select at least one country");
       return;
     }
-    
+
     // Check if either year or date_range is provided (mutual exclusivity)
     const hasYear = npxFilter?.year && npxFilter?.year.trim() !== "";
     const hasDateRange = npxFilter?.date_range && npxFilter?.date_range.trim() !== "";
-    
+
     if (!hasYear && !hasDateRange) {
       toast.warning("Please Select either Year or Date Range");
       return;
     }
-    
+
     interface FilterObj {
       company_name: any;
       institution_name: any;
@@ -778,7 +778,7 @@ const index = () => {
       keyword: npxFilter?.keyword,
       country: npxFilter?.country,
     };
-    
+
     // Add only the active filter (year OR date_range, not both)
     if (hasDateRange) {
       filterObj.date_range = npxFilter?.date_range;
@@ -812,22 +812,22 @@ const index = () => {
       toast.warning("Please Select Institution Name");
       return;
     }
-    
+
     // Validate that at least one country is selected
     if (!data?.country?.length) {
       toast.warning("Please select at least one country");
       return;
     }
-    
+
     // Check mutual exclusivity for analytics as well
     const hasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
     const hasDateRange = data?.date_range && data?.date_range.trim() !== "";
-    
+
     // If neither year nor date_range is provided, default to current year
     if (!hasYear && !hasDateRange) {
       data.analyticsYear = [new Date().getFullYear().toString()];
     }
-    
+
     interface AnalyticsObj {
       institution_name: any[];
       index: any[];
@@ -841,7 +841,7 @@ const index = () => {
       date_range?: string;
       analyticsYear?: any;
     }
-    
+
     const analyticsObj: AnalyticsObj = {
       institution_name: data?.institution_name || [],
       index: data?.index || [],
@@ -855,11 +855,11 @@ const index = () => {
       proposal_keyword: data?.proposal_keyword || [],
       country: data?.country || [],
     };
-    
+
     // Prioritize analyticsYear over date_range for analytics
     const finalHasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
     const finalHasDateRange = data?.date_range && data?.date_range.trim() !== "";
-    
+
     if (finalHasYear) {
       analyticsObj.analyticsYear = data?.analyticsYear;
       // Don't include date_range when year is provided
@@ -870,7 +870,7 @@ const index = () => {
       // Default to current year if neither is provided
       analyticsObj.analyticsYear = [new Date().getFullYear().toString()];
     }
-    
+
     setAllAnalyticsFilter(analyticsObj);
     // Save analytics filters to localStorage
     localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(analyticsObj));
@@ -900,7 +900,7 @@ const index = () => {
       setValue("analyticsYear", [currentYear]);
       setSelectedCountries(["USA"]);
       localStorage.removeItem("vdsEuropeanAnalyticsFilters");
-      
+
       // Fetch vote and year options for default institutions
       getInstitutionDependentOptions(["BlackRock, Inc."]);
     } else {
@@ -994,10 +994,10 @@ const index = () => {
     // Handle country filter removal - allow removal but don't validate here
     if (removeKey === "country") {
       const currentCountries = isViewAnalysis ? allAnalyticsFilter.country || [] : allApplyFilter.country || [];
-      
+
       // Remove the specific country value
       const updatedCountries = currentCountries.filter((country: string) => country !== removeValue);
-      
+
       if (isViewAnalysis) {
         const updatedFilters = { ...allAnalyticsFilter, country: updatedCountries };
         setAllAnalyticsFilter(updatedFilters);
@@ -1017,10 +1017,10 @@ const index = () => {
     // Handle institution filter removal - allow removal but don't validate here
     if (removeKey === "institution_name") {
       const currentInstitutions = isViewAnalysis ? allAnalyticsFilter.institution_name || [] : allApplyFilter.institution_name || [];
-      
+
       // Remove the specific institution value
       const updatedInstitutions = currentInstitutions.filter((institution: string) => institution !== removeValue);
-      
+
       if (isViewAnalysis) {
         const updatedFilters = { ...allAnalyticsFilter, institution_name: updatedInstitutions };
         setAllAnalyticsFilter(updatedFilters);
@@ -1088,10 +1088,10 @@ const index = () => {
       if (isRestoringFromLocalStorage) {
         return;
       }
-      
+
       if (isViewAnalysis && allAnalyticsFilter?.institution_name && allAnalyticsFilter.institution_name.length > 0) {
         dispatch(setAnalyticsFilters(allAnalyticsFilter));
-        
+
         const analyticsBody = {
           investor_company: allAnalyticsFilter?.institution_name?.length
             ? allAnalyticsFilter.institution_name
@@ -1135,7 +1135,7 @@ const index = () => {
       }
     };
     fetchAnalytics();
-    
+
     // Generate filter chips only when analytics filter changes and not restoring
     if (isViewAnalysis && !isRestoringFromLocalStorage) {
       let filterForChips = allAnalyticsFilter;
@@ -1151,7 +1151,7 @@ const index = () => {
   // Handle URL params for analytics initialization
   useEffect(() => {
     if (!isViewAnalysis) return;
-    
+
     // Only handle URL params if no filters are set and not restoring from localStorage
     if (Object.keys(allAnalyticsFilter).length > 0 || isRestoringFromLocalStorage) return;
 
@@ -1167,18 +1167,18 @@ const index = () => {
         analyticsYear: analyticsYear ? [analyticsYear] : [currentYear],
         country: ["USA"],
       };
-      
+
       setAllAnalyticsFilter(urlBasedFilters);
       Object.entries(urlBasedFilters).forEach(([key, value]) => {
         setValue(key, value);
       });
       setSelectedCountries(["USA"]);
-      
+
       // Fetch vote and year options for URL-based institutions
       getInstitutionDependentOptions(urlBasedFilters.institution_name);
     }
   }, [isViewAnalysis, isRestoringFromLocalStorage]);
- 
+
   const getAllCaseStudyDropdowns = async () => {
     try {
       setGetDropdownLoader(true);
@@ -1226,25 +1226,6 @@ const index = () => {
 
             <div className="flex items-center gap-2">
               {/* Clear and Apply buttons outside filter */}
-              <Button
-                variant="outline-secondary"
-                onClick={() => {
-                  onFilterClear(false);
-                }}
-                className="w-full sm:w-auto flex items-center gap-2"
-                type="button"
-              >
-                <MdOutlineClear className="text-lg mr-1" /> Clear
-              </Button>
-              
-              <Button
-                variant="primary"
-                onClick={handleSubmit(onSubmit)}
-                className="w-full sm:w-auto flex items-center gap-2"
-              >
-                <FaSearch className="text-lg" /> Apply
-              </Button>
-
               <Popover className="inline-block">
                 {({ close }) => (
                   <>
@@ -1291,8 +1272,28 @@ const index = () => {
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
             {/* Filter Content */}
-            <div className="mb-6">
+            <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => {
+                    onFilterClear(false);
+                  }}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                  type="button"
+                >
+                  <MdOutlineClear className="text-lg mr-1" /> Clear
+                </Button>
+
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit(onSubmit)}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  <FaSearch className="text-lg" /> Apply
+                </Button>
+              </div>
             </div>
             {/* Filter Toggle and Advanced Filters Button */}
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -1407,7 +1408,7 @@ const index = () => {
                             maxDate: (() => {
                               // Get current US date (considering Pakistan is ahead by ~10-11 hours)
                               const now = new Date();
-                              const usDate = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+                              const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
                               return usDate.toISOString().split("T")[0];
                             })(),
                             minDate: "2023-01-01",
@@ -1415,7 +1416,7 @@ const index = () => {
                             endDate: (() => {
                               // Get current US date (considering Pakistan is ahead by ~10-11 hours)
                               const now = new Date();
-                              const usDate = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+                              const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
                               return usDate.toISOString().split("T")[0];
                             })(),
                           }}
@@ -1438,7 +1439,7 @@ const index = () => {
                       <CompanySelect
                         value={(field.value || []).map(companyName => {
                           // Find the full company object for this name
-                          const companyObj = companyOptions.find(c => 
+                          const companyObj = companyOptions.find(c =>
                             (typeof c === 'object' ? (c.name || c.company_name || c.label) : c) === companyName
                           );
                           return {
@@ -1449,12 +1450,12 @@ const index = () => {
                         onChange={(selectedCompanies) => {
                           // Extract company names for form storage and API calls
                           const companiesArray = Array.isArray(selectedCompanies) ? selectedCompanies : (selectedCompanies ? [selectedCompanies] : []);
-                          const companyNames = companiesArray.map(company => 
+                          const companyNames = companiesArray.map(company =>
                             typeof company === 'string' ? company : company.label || company.value
                           );
-                          
+
                           field.onChange(companyNames);
-                          
+
                           // Get dependent options when companies are selected - send names not IDs
                           const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
                           if (companyNames.length > 0) {
@@ -1499,7 +1500,7 @@ const index = () => {
                     render={({ field }) => {
                       // Use selectedCountries as the source of truth
                       const currentCountries = selectedCountries.length > 0 ? selectedCountries : (field.value || []);
-                      
+
                       return (
                         <MultiSelectDropdown
                           key={`country-${countryComponentKey}`} // Force re-render to reset component state
@@ -1511,7 +1512,7 @@ const index = () => {
                           loading={false}
                           onChange={(selectedOptions) => {
                             const selectedValues = selectedOptions.map((option) => option.value);
-                            
+
                             // Update both state and form field
                             setSelectedCountries(selectedValues);
                             field.onChange(selectedValues);
@@ -1658,7 +1659,7 @@ const index = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
               >
                 {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
-                 <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
+                <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
               </button>
             </div>
             <div className="divide-y divide-gray-100">
@@ -1691,8 +1692,8 @@ const index = () => {
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                               {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <tr 
-                                  key={vds.proposal_id || vdsIdx} 
+                                <tr
+                                  key={vds.proposal_id || vdsIdx}
                                   className="hover:bg-primary/10"
                                   style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
                                 >

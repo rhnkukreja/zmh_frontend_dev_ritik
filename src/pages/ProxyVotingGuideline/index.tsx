@@ -336,24 +336,6 @@ function ProxyGuideline() {
                   )}
 
                   {/* Clear and Apply buttons outside filter */}
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => {
-                      onFilterClear();
-                    }}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                    type="button"
-                  >
-                    <MdOutlineClear className="text-lg mr-1" /> Clear
-                  </Button>
-
-                  <Button
-                    variant="primary"
-                    onClick={handleSubmit(onSubmit)}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                  >
-                    <FaSearch className="text-lg" /> Apply
-                  </Button>
 
                   <Popover className="inline-block">
                     {({ close }) => (
@@ -380,6 +362,26 @@ function ProxyGuideline() {
                               {/* Filter Content */}
                               <div className="mb-6">
                                 <h4 className="text-base font-semibold text-slate-700">Filters</h4>
+                              </div>
+                              <div className="w-full">
+                                <Button
+                                  variant="outline-secondary"
+                                  onClick={() => {
+                                    onFilterClear();
+                                  }}
+                                  className="w-full flex items-center gap-2 mb-3"
+                                  type="button"
+                                >
+                                  <MdOutlineClear className="text-lg mr-1" /> Clear
+                                </Button>
+
+                                <Button
+                                  variant="primary"
+                                  onClick={handleSubmit(onSubmit)}
+                                  className="w-full flex items-center gap-2"
+                                >
+                                  <FaSearch className="text-lg" /> Apply
+                                </Button>
                               </div>
                               <div>
                                 <div className="w-full  my-2">

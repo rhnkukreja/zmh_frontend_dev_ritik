@@ -550,25 +550,6 @@ function CaseStudies() {
                   )}
 
                   {/* Clear and Apply buttons outside filter */}
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => {
-                      onFilterClear();
-                    }}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                    type="button"
-                  >
-                    <MdOutlineClear className="text-lg mr-1" /> Clear
-                  </Button>
-
-                  <Button
-                    variant="primary"
-                    onClick={handleSubmit(onSubmit)}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                  >
-                    <FaSearch className="text-lg" /> Apply
-                  </Button>
-
                   <Popover className="inline-block">
 
                     <>
@@ -613,8 +594,28 @@ function CaseStudies() {
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}
-                    <div className="mb-6">
+                    <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => {
+                            onFilterClear();
+                          }}
+                          className="w-full sm:w-auto flex items-center gap-2"
+                          type="button"
+                        >
+                          <MdOutlineClear className="text-lg mr-1" /> Clear
+                        </Button>
+
+                        <Button
+                          variant="primary"
+                          onClick={handleSubmit(onSubmit)}
+                          className="w-full sm:w-auto flex items-center gap-2"
+                        >
+                          <FaSearch className="text-lg" /> Apply
+                        </Button>
+                      </div>
                     </div>
                     <div
                       className={`grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ${isAllCompanySelected

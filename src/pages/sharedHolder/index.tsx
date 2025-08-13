@@ -1000,7 +1000,7 @@ function ShareHolderProposal() {
                       </div>
                     )} */}
                   {/* Clear and Apply buttons outside filter */}
-                  {tab == "proposal" && proposalCount > 0 && (
+                  {/* {tab == "proposal" && proposalCount > 0 && (
                     <div>
                       <FormSwitch>
                         <label className="text-md mr-3 font-semibold">
@@ -1031,7 +1031,7 @@ function ShareHolderProposal() {
                         <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                       </FormSwitch>
                     </div>
-                  )}
+                  )} */}
                   <button
                     onClick={() => {
                       const element = document.querySelector('#data-listing');
@@ -1039,28 +1039,9 @@ function ShareHolderProposal() {
                     }}
                     className="px-5 py-2 rounded bg-primary text-white flex gap-2 items-center"
                   >
-                    Data
+                    Source Data
                     <ArrowDown size={16} />
                   </button>
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => {
-                      onFilterClear();
-                    }}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                    type="button"
-                  >
-                    <MdOutlineClear className="text-lg mr-1" /> Clear
-                  </Button>
-
-                  <Button
-                    variant="primary"
-                    onClick={handleSubmit(onSubmit)}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                  >
-                    <FaSearch className="text-lg" /> Apply
-                  </Button>
-
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -1100,8 +1081,28 @@ function ShareHolderProposal() {
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}
-                    <div className="mb-6">
+                    <div className="mb-6 flex justify-between items-center">
                       <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => {
+                            onFilterClear();
+                          }}
+                          className="w-full sm:w-auto flex items-center gap-2"
+                          type="button"
+                        >
+                          <MdOutlineClear className="text-lg mr-1" /> Clear
+                        </Button>
+
+                        <Button
+                          variant="primary"
+                          onClick={handleSubmit(onSubmit)}
+                          className="w-full sm:w-auto flex items-center gap-2"
+                        >
+                          <FaSearch className="text-lg" /> Apply
+                        </Button>
+                      </div>
                     </div>
                     <div
                       className={clsx([
@@ -2029,7 +2030,7 @@ function ShareHolderProposal() {
                         }}
                       >
                         <div className="flex items-center justify-center ">
-                          Shareholder Proposals
+                          All Proposals
                           <span
                             className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
                           font-semibold text-white text-[11px] ml-2
@@ -2120,7 +2121,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
-                              Shareholder Analytics
+                              Analytics
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
@@ -2196,7 +2197,7 @@ function ShareHolderProposal() {
                         </div>
                       )}
                       <div className="flex justify-between items-center mb-4" id="data-listing">
-                        <h3 className="text-lg font-semibold mb-4">Data Listing</h3>
+                        <h3 className="text-lg font-semibold mb-4">Proposal Details</h3>
                         <Tippy content="Download Excel" options={{ theme: "light" }}>
                           <div
                             className="box p-[5px] cursor-pointer"
@@ -2314,19 +2315,6 @@ function ShareHolderProposal() {
                                       "cursor-pointer text-center",
                                       noAction?.nl_exist && "text-blue-600 underline"
                                     ])}
-                                    onClick={() => {
-                                      const id =
-                                        noAction?.nl_exist === true
-                                          ? noAction?.no_action_link
-                                            ?.split("/")
-                                            .filter(Boolean)
-                                            .pop()
-                                          : 0;
-                                      noAction?.nl_exist === true &&
-                                        navigate(
-                                          `/shareholder-proposal/${id}?url=shareholder_proposal/no_action`
-                                        );
-                                    }}
                                   >
                                     {noAction?.nl_exist === true && (
                                       <span className="text-xs font-bold">
@@ -2441,7 +2429,7 @@ function ShareHolderProposal() {
                                 }`}
                               onClick={() => setActiveTab("shareholders")}
                             >
-                              No Action Analytics
+                              Analytics
                             </button>
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
@@ -2518,7 +2506,7 @@ function ShareHolderProposal() {
                         </div>
                       )}
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold mb-4">Data Listing</h3>
+                        <h3 className="text-lg font-semibold mb-4">Proposal Details</h3>
                         <Tippy content="Download Excel" options={{ theme: "light" }}>
                           <div
                             className="box p-[5px] cursor-pointer"

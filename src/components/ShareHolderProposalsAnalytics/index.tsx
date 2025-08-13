@@ -287,7 +287,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {/* 2. Proposal Distribution Pie Chart */}
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
-                  Category
+                  By Category
                 </h3>
                 {isDataAvailable(topCategories) ? (
                   <ResponsiveContainer width="100%" height={250}>
@@ -359,7 +359,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {tab !== "proposal" && (
                 <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                   <h3 className="text-lg font-semibold mb-4">
-                    Outcome
+                    By Outcome
                   </h3>
                   <OutcomePieChart pieChartOutcome={pieChartOutcome} />
                 </div>

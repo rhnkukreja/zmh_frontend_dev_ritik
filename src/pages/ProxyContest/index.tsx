@@ -327,25 +327,6 @@ const index = () => {
 
                             <div className="flex items-center gap-2">
                                 {/* Clear and Apply buttons outside filter */}
-                                <Button
-                                    variant="outline-secondary"
-                                    onClick={onFilterClear}
-                                    className="w-full sm:w-auto flex items-center gap-2"
-                                    type="button"
-                                >
-                                    <MdOutlineClear className="text-lg" />
-                                    Clear
-                                </Button>
-
-                                <Button
-                                    variant="primary"
-                                    onClick={handleSubmit(onFilterSubmit)}
-                                    className="w-full sm:w-auto flex items-center gap-2"
-                                >
-                                    <FaSearch className="text-sm" />
-                                    Apply
-                                </Button>
-
                                 <Popover className="inline-block">
                                     {({ close }) => (
                                         <>
@@ -393,6 +374,29 @@ const index = () => {
                     {isFilterCollapse && (
                         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                             <form onSubmit={handleSubmit(onFilterSubmit)}>
+                                <div className="mb-6 flex justify-between items-center">
+                                    <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline-secondary"
+                                            onClick={onFilterClear}
+                                            className="w-full sm:w-auto flex items-center gap-2"
+                                            type="button"
+                                        >
+                                            <MdOutlineClear className="text-lg" />
+                                            Clear
+                                        </Button>
+
+                                        <Button
+                                            variant="primary"
+                                            onClick={handleSubmit(onFilterSubmit)}
+                                            className="w-full sm:w-auto flex items-center gap-2"
+                                        >
+                                            <FaSearch className="text-sm" />
+                                            Apply
+                                        </Button>
+                                    </div>
+                                </div>
                                 <div className="grid gap-6 md:grid-cols-2 grid-cols-1">
                                     {/* Company Filter */}
                                     <div>
