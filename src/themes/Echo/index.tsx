@@ -31,7 +31,6 @@ import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
-import notificationIcon from "@/assets/images/zmh-images/bell-icon.png";
 import notificationIcon2 from "@/assets/images/zmh-images/side-bell.png";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
@@ -825,7 +824,7 @@ console.log(notificationData ,"data")
                         }}
                       >
                         <img
-                          src={notificationIcon}
+                          src={notificationIcon2}
                           alt="ai icon"
                           className=" w-[30px] h-[30px]"
                         />
@@ -881,7 +880,7 @@ console.log(notificationData ,"data")
                             <div className="flex items-center justify-center h-[100%]">
                              
                                <img
-                                        src={notificationIcon}
+                                        src={notificationIcon2}
                                         alt="ai icon"
                                         className="w-4 h-4 mr-2 opacity-[0.7]"
                                       />
