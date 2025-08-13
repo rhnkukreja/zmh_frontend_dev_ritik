@@ -30,6 +30,9 @@ import {
   fetchVdsEuropeans,
   resetPage,
   setPage,
+  fetchVdsEuropeanAnalytics,
+  setAnalyticsPage,
+  setAnalyticsFilters,
 } from "@/stores/vdsEuropeanSlice";
 import { vdsEuropeanService } from "@/services/vdsEuropean";
 import { setTempSearch } from "@/stores/dashboardSlice";
@@ -51,9 +54,17 @@ import React, { useCallback } from "react";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { VdsEuropeans, loading, page, totalPages, count } = useAppSelector(
-    (state) => state.vdsEuropean
-  );
+  const { 
+    VdsEuropeans, 
+    loading, 
+    page, 
+    totalPages, 
+    count,
+    analytics,
+    analyticsLoading,
+    analyticsPage,
+    analyticsFilters 
+  } = useAppSelector((state) => state.vdsEuropean);
 
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
@@ -73,7 +84,6 @@ const index = () => {
     institution: [],
   });
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
-  const [vdsEuropeansAnalytics, setVdsEuropeansAnalytics] = useState<any>({});
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [dropdownValues, setDropdownValues] = useState<any>({
@@ -81,11 +91,9 @@ const index = () => {
     institution: [],
     index: [],
   });
-  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(true);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
-  const [analyticsPage, setAnalyticsPage] = useState<number>(1);
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
     useState<boolean>(false);
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
@@ -194,10 +202,10 @@ const index = () => {
   };
 
   const expandAllGroups = () => {
-    if (!vdsEuropeansAnalytics?.by_company) return;
+    if (!analytics?.by_company) return;
     
     const allCompanyNames: string[] = [];
-    vdsEuropeansAnalytics.by_company.forEach((yearEntry: any) => {
+    analytics.by_company.forEach((yearEntry: any) => {
       if (Array.isArray(yearEntry.companies)) {
         yearEntry.companies.forEach((company: any) => {
           if (company.company_name) {
@@ -223,10 +231,10 @@ const index = () => {
   };
 
   const areAllGroupsExpanded = () => {
-    if (!vdsEuropeansAnalytics?.by_company) return false;
+    if (!analytics?.by_company) return false;
     
     const allCompanyNames: string[] = [];
-    vdsEuropeansAnalytics.by_company.forEach((yearEntry: any) => {
+    analytics.by_company.forEach((yearEntry: any) => {
       if (Array.isArray(yearEntry.companies)) {
         yearEntry.companies.forEach((company: any) => {
           if (company.company_name) {
@@ -891,7 +899,6 @@ const index = () => {
       setValue("country", ["USA"]);
       setValue("analyticsYear", [currentYear]);
       setSelectedCountries(["USA"]);
-      setVdsEuropeansAnalytics({});
       localStorage.removeItem("vdsEuropeanAnalyticsFilters");
       
       // Fetch vote and year options for default institutions
@@ -950,10 +957,10 @@ const index = () => {
 
   const handleNextPage = () => {
     if (isViewAnalysis) {
-      const currentPage = vdsEuropeansAnalytics?.pagination?.current_page;
-      const totalPages = vdsEuropeansAnalytics?.pagination?.total_pages;
+      const currentPage = analytics?.pagination?.current_page;
+      const totalPages = analytics?.pagination?.total_pages;
       if (currentPage < totalPages) {
-        setAnalyticsPage(currentPage + 1);
+        dispatch(setAnalyticsPage(currentPage + 1));
       }
     } else {
       if (page < totalPages) {
@@ -964,9 +971,9 @@ const index = () => {
 
   const handlePreviousPage = () => {
     if (isViewAnalysis) {
-      const currentPage = vdsEuropeansAnalytics?.pagination?.current_page;
+      const currentPage = analytics?.pagination?.current_page;
       if (currentPage > 1) {
-        setAnalyticsPage(currentPage - 1);
+        dispatch(setAnalyticsPage(currentPage - 1));
       }
     } else {
       if (page > 1) {
@@ -977,7 +984,7 @@ const index = () => {
 
   const handlePageChange = (newPage: number) => {
     if (isViewAnalysis) {
-      setAnalyticsPage(newPage);
+      dispatch(setAnalyticsPage(newPage));
     } else {
       dispatch(setPage(newPage));
     }
@@ -1076,7 +1083,6 @@ const index = () => {
   };
 
   useEffect(() => {
-    let isMounted = true;
     const fetchAnalytics = async () => {
       // Don't fetch if we're still restoring from localStorage
       if (isRestoringFromLocalStorage) {
@@ -1084,55 +1090,48 @@ const index = () => {
       }
       
       if (isViewAnalysis && allAnalyticsFilter?.institution_name && allAnalyticsFilter.institution_name.length > 0) {
-        setIsAnalyticsLoading(true);
-        try {
-          const response = await vdsEuropeanService.getVDSEuropeanAnalytics(
-            `${baseURL}/api/proposal-voting-stats`,
-            {
-              investor_company: allAnalyticsFilter?.institution_name?.length
-                ? allAnalyticsFilter.institution_name
-                : allAnalyticsFilter.company_name || [],
-              company_name: allAnalyticsFilter?.company_name?.length > 0
-                ? allAnalyticsFilter.company_name
-                : [],
-              year:
-                allAnalyticsFilter?.analyticsYear?.length > 0
-                  ? allAnalyticsFilter?.analyticsYear
-                  : [],
-              proponent_type: allAnalyticsFilter?.proponent_type
-                ? allAnalyticsFilter?.proponent_type
-                : [],
-              proposal_type: allAnalyticsFilter?.proposal_type
-                ? allAnalyticsFilter?.proposal_type.map((item: any) =>
-                  item.toLowerCase()
-                )
-                : [],
-              index:
-                allAnalyticsFilter?.index?.length > 0
-                  ? allAnalyticsFilter.index
-                  : [],
-              proposal_keyword:
-                allAnalyticsFilter?.proposal_keyword?.length > 0
-                  ? allAnalyticsFilter.proposal_keyword
-                  : [],
-              meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
-                ? allAnalyticsFilter.meeting_type
-                : [],
-              vote_type: allAnalyticsFilter?.vote_type || [],
-              date_range: allAnalyticsFilter?.date_range || null,
-              country: allAnalyticsFilter?.country || ["USA"],
-              page: analyticsPage || 1,
-            }
-          );
-          if (isMounted) {
-            setVdsEuropeansAnalytics(response.response);
-            setIsAnalyticsLoading(false);
-          }
-        } catch (error) {
-          if (isMounted) {
-            setIsAnalyticsLoading(false);
-          }
-        }
+        dispatch(setAnalyticsFilters(allAnalyticsFilter));
+        
+        const analyticsBody = {
+          investor_company: allAnalyticsFilter?.institution_name?.length
+            ? allAnalyticsFilter.institution_name
+            : allAnalyticsFilter.company_name || [],
+          company_name: allAnalyticsFilter?.company_name?.length > 0
+            ? allAnalyticsFilter.company_name
+            : [],
+          year:
+            allAnalyticsFilter?.analyticsYear?.length > 0
+              ? allAnalyticsFilter?.analyticsYear
+              : [],
+          proponent_type: allAnalyticsFilter?.proponent_type
+            ? allAnalyticsFilter?.proponent_type
+            : [],
+          proposal_type: allAnalyticsFilter?.proposal_type
+            ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+              item.toLowerCase()
+            )
+            : [],
+          index:
+            allAnalyticsFilter?.index?.length > 0
+              ? allAnalyticsFilter.index
+              : [],
+          proposal_keyword:
+            allAnalyticsFilter?.proposal_keyword?.length > 0
+              ? allAnalyticsFilter.proposal_keyword
+              : [],
+          meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
+            ? allAnalyticsFilter.meeting_type
+            : [],
+          vote_type: allAnalyticsFilter?.vote_type || [],
+          date_range: allAnalyticsFilter?.date_range || null,
+          country: allAnalyticsFilter?.country || ["USA"],
+          page: analyticsPage || 1,
+        };
+
+        dispatch(fetchVdsEuropeanAnalytics({
+          url: `${baseURL}/api/proposal-voting-stats`,
+          body: analyticsBody
+        }));
       }
     };
     fetchAnalytics();
@@ -1147,8 +1146,6 @@ const index = () => {
       setFiltersLength(countValidFilters(filterForChips));
       setSelectedChipFilters(generateFilterChips(filterForChips));
     }
-    
-    return () => { isMounted = false; };
   }, [allAnalyticsFilter, analyticsPage, isViewAnalysis, isRestoringFromLocalStorage]);
 
   // Handle URL params for analytics initialization
@@ -1204,8 +1201,8 @@ const index = () => {
 
 
   // Debug: Log analytics state before render
-  console.log('vdsEuropeansAnalytics:', vdsEuropeansAnalytics);
-  console.log('isAnalyticsLoading:', isAnalyticsLoading);
+  console.log('analytics:', analytics);
+  console.log('analyticsLoading:', analyticsLoading);
 
   return (
     <>
@@ -1228,6 +1225,26 @@ const index = () => {
             )}
 
             <div className="flex items-center gap-2">
+              {/* Clear and Apply buttons outside filter */}
+              <Button
+                variant="outline-secondary"
+                onClick={() => {
+                  onFilterClear(false);
+                }}
+                className="w-full sm:w-auto flex items-center gap-2"
+                type="button"
+              >
+                <MdOutlineClear className="text-lg mr-1" /> Clear
+              </Button>
+              
+              <Button
+                variant="primary"
+                onClick={handleSubmit(onSubmit)}
+                className="w-full sm:w-auto flex items-center gap-2"
+              >
+                <FaSearch className="text-lg" /> Apply
+              </Button>
+
               <Popover className="inline-block">
                 {({ close }) => (
                   <>
@@ -1273,6 +1290,10 @@ const index = () => {
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+            {/* Filter Content */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+            </div>
             {/* Filter Toggle and Advanced Filters Button */}
             <form onSubmit={handleSubmit(onSubmit)}>
               {/* First row: Institution, Year, Index, Date Range, Company */}
@@ -1613,32 +1634,22 @@ const index = () => {
                   />
                 </div>
               </div>
-              {/* Buttons */}
-              <div className="flex justify-end gap-3 mt-6">
-                <Button
-                  variant="primary"
-                  className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
-                  type="submit"
-                >
-                  <FaSearch className="text-lg" /> Apply
-                </Button>
-              </div>
             </form>
           </div>
         )}
 
         {/* ANALYTICS TABLE (by_institution) and COLLAPSIBLE COMPANY LIST (by_company) with loader */}
-        {isViewAnalysis && isAnalyticsLoading && (
+        {isViewAnalysis && analyticsLoading && (
           <div className="flex justify-center items-center min-h-[300px]">
             <div className="rounded-2xl shadow-lg bg-white p-8 border border-gray-100 flex flex-col items-center">
               <LoadingIcon icon="three-dots" className="w-12 h-12 text-primary" />
             </div>
           </div>
         )}
-        {isViewAnalysis && !isAnalyticsLoading && vdsEuropeansAnalytics && typeof vdsEuropeansAnalytics === 'object' && vdsEuropeansAnalytics.by_institution && Object.keys(vdsEuropeansAnalytics.by_institution).length > 0 && (
-          <AnalyticsTableMemo vdsEuropeansAnalytics={vdsEuropeansAnalytics} openGroups={openGroups} toggleGroup={toggleGroup} />
+        {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && analytics.by_institution && Object.keys(analytics.by_institution).length > 0 && (
+          <AnalyticsTableMemo vdsEuropeansAnalytics={analytics} openGroups={openGroups} toggleGroup={toggleGroup} />
         )}
-        {isViewAnalysis && !isAnalyticsLoading && vdsEuropeansAnalytics && typeof vdsEuropeansAnalytics === 'object' && vdsEuropeansAnalytics.by_company && Array.isArray(vdsEuropeansAnalytics.by_company) && vdsEuropeansAnalytics.by_company.length > 0 && (
+        {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && analytics.by_company && Array.isArray(analytics.by_company) && analytics.by_company.length > 0 && (
           <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
             {/* Expand All Button */}
             <div className="flex justify-end mb-4 px-4 pt-4">
@@ -1651,7 +1662,7 @@ const index = () => {
               </button>
             </div>
             <div className="divide-y divide-gray-100">
-              {vdsEuropeansAnalytics.by_company.map((yearEntry, yearIdx) => (
+              {analytics.by_company.map((yearEntry, yearIdx) => (
                 Array.isArray(yearEntry.companies)
                   ? yearEntry.companies.map((ele, index) => (
                     <div key={ele.company_id || `${yearIdx}-${index}`} className="py-2">
@@ -1723,11 +1734,11 @@ const index = () => {
                   : null
               ))}
             </div>
-            {vdsEuropeansAnalytics?.by_company?.length > 0 && (
+            {analytics?.by_company?.length > 0 && (
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                 <CPagination
-                  page={vdsEuropeansAnalytics?.pagination?.current_page || 1}
-                  totalPages={vdsEuropeansAnalytics?.pagination?.total_pages || 1}
+                  page={analytics?.pagination?.current_page || 1}
+                  totalPages={analytics?.pagination?.total_pages || 1}
                   handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
                   handlePreviousPage={handlePreviousPage}
@@ -1736,7 +1747,7 @@ const index = () => {
             )}
           </div>
         )}
-        {isViewAnalysis && !isAnalyticsLoading && vdsEuropeansAnalytics && typeof vdsEuropeansAnalytics === 'object' && (!vdsEuropeansAnalytics.by_institution || Object.keys(vdsEuropeansAnalytics.by_institution).length === 0) && (
+        {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && (!analytics.by_institution || Object.keys(analytics.by_institution).length === 0) && (
           <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
         )}
         {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}

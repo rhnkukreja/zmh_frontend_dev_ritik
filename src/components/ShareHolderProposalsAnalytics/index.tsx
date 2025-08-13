@@ -187,15 +187,6 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
 
     return (
       <div className="relative bg-white w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
-        {tab == "proposal"
-          ? <h1 className="text-xl font-semibold flex items-center gap-2 mb-4">
-            All Shareholder Proposals
-            <Pill text="Beta" />
-          </h1>
-          : <h1 className="text-xl font-semibold flex items-center gap-2  mb-4">
-            All No Action Letters
-            <Pill text="Beta" />
-          </h1>}
         {proposalCounts.total_proposals === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Lucide
@@ -222,11 +213,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {/* 1. Yearly Proposal Trends - Bar Chart */}
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
-                  {tab == "proposal"
-                    ? "Yearly Proposal"
-                    : "No Action Letter"}
-                  {(isDataAvailable(yearlySummary) && 
-                  yearlySummary.length > 1) && " Trend"}
+                    Yearly Trend
                 </h3>
                 {isDataAvailable(yearlySummary) ? (
                   yearlySummary.length === 1 ? (
@@ -300,9 +287,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {/* 2. Proposal Distribution Pie Chart */}
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
-                  {tab == "proposal"
-                    ? "Proposal Distribution by Category"
-                    : "Distribution by Category"}
+                  Category
                 </h3>
                 {isDataAvailable(topCategories) ? (
                   <ResponsiveContainer width="100%" height={250}>
@@ -374,7 +359,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {tab !== "proposal" && (
                 <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                   <h3 className="text-lg font-semibold mb-4">
-                    Outcome Distribution
+                    Outcome
                   </h3>
                   <OutcomePieChart pieChartOutcome={pieChartOutcome} />
                 </div>
@@ -382,7 +367,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
             </div>
 
             {/* Row: Tables for Top Subcategories */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {isDataAvailable(Object.entries(topSubcategories)) ? (
                 Object.entries(topSubcategories).map(
                   ([category, subcategories]) => (
@@ -390,27 +375,27 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                       key={category}
                       className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100"
                     >
-                      <h4 className="text-md font-semibold mb-2">
+                      <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">
                         {category === "Environment" ? "Environmental" : category}
                       </h4>
                       {isDataAvailable(subcategories) ? (
                         <div className="overflow-x-auto">
-                          <table className="w-full border-collapse border border-gray-300">
+                          <table className="w-full border-collapse">
                             <thead>
-                              <tr className="bg-primary text-white text-sm">
-                                <th className="px-2 py-2 text-left font-medium">
+                              <tr className="bg-primary text-white">
+                                <th className="py-1 px-2 text-left font-medium text-xs">
                                   Subcategory
                                 </th>
-                                <th className="px-4 py-2 text-left font-medium">Count</th>
+                                <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
                               </tr>
                             </thead>
                             <tbody>
                               {subcategories.map((sub, index) => (
-                                <tr key={index} className="border">
-                                  <td className="border p-2">
+                                <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
+                                  <td className="py-1 px-2 text-xs">
                                     {sub.sub_category}
                                   </td>
-                                  <td className="border p-2 text-center">
+                                  <td className="py-1 px-2 text-center text-xs">
                                     {formatNumberWithCommas(sub.count)}
                                   </td>
                                 </tr>
@@ -419,7 +404,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                           </table>
                         </div>
                       ) : (
-                        <p className="text-gray-500">No data available</p>
+                        <p className="text-gray-500 px-4 pb-4">No data available</p>
                       )}
                     </div>
                   )

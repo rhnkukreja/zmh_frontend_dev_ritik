@@ -322,7 +322,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             key={index}
             className="bg-gray-100 px-4 py-1 rounded-full flex items-center shadow-sm "
           >
-            <span className="term-text mr-2 text-nowrap ">{term}</span>
+            <span className="term-text mr-2 text-nowrap">{term}</span>
             <button
               className="remove-btn text-red-500 font-bold"
               onClick={() => handleSearch(term, false)}

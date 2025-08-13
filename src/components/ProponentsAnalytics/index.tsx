@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, PieChart } from "lucide-react";
 import React, { Dispatch, SetStateAction, useState } from "react";
 import LoadingIcon from "../Base/LoadingIcon";
 import Lucide from "../Base/Lucide";
+import StandardizedTable from "../StandardizedTable";
 
 import { Pie, ResponsiveContainer } from "recharts";
 import OutcomePieChart from "../OutcomePieChart";
@@ -61,9 +62,25 @@ const ProponentsAnalyticsComponent: React.FC<
     };
 
     const renderSummaryTable = () => (
-      <div className="overflow-x-auto mt-2">
+      <div className="w-full mt-2">
         <h3 className="text-lg font-semibold mb-2">Top Proponents</h3>
         <h4 className="text-base mb-4">Includes proposals filed on behalf of other proponents</h4>
+        {filters?.proponent_name?.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+            <span>Proponent:</span>
+              {filters.proponent_name[0]}
+              <button
+                onClick={() => {
+                  handleInstitutionClickAll();
+                }}
+                className="ml-2 hover:opacity-80"
+              >
+                <Lucide icon="X" className="w-4 h-4 stroke-[2]" />
+              </button>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
             {" "}
@@ -75,28 +92,26 @@ const ProponentsAnalyticsComponent: React.FC<
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-2 rounded-lg">
+            <div className="grid grid-cols-12 gap-6 mt-2">
               <div
                 className={`${tab == "no-action" && filters?.proponent_name?.length == 0
-                  ? "col-span-7"
-                  : "col-span-10"
-                  }  rounded-lg flex flex-col items-center w-full`}
+                  ? "col-span-9"
+                  : "col-span-12"
+                  }`}
               >
-                <table className="min-w-full rounded-lg">
-                  <thead className="bg-primary text-white text-sm">
-                    <tr>
-                      <th className="px-4 py-2 text-left font-medium">#</th> {/* New column */}
-                      <th className="px-4 py-2 text-left font-medium">Proponents</th>
-                      <th className="px-4 py-2 text-left font-medium"># of Proposals</th>
-                      <th className="px-4 py-2 text-left font-medium">Environmental</th>
-                      <th className="px-4 py-2 text-left font-medium w-36">Social</th>
-                      <th className="px-4 py-2 text-left font-medium w-36">Governance</th>
-                      <th className="px-4 py-2 text-left font-medium w-36">
-                        Executive Compensation
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                <StandardizedTable maxHeight="500px">
+                  <StandardizedTable.Header>
+                    <StandardizedTable.Cell isHeader width="8%">#</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width="27%">Proponents</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width="15%" className="text-center"># of Proposals</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width="12.5%" className="text-center">Environmental</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width="12.5%" className="text-center">Social</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width="12.5%" className="text-center">Governance</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width="12.5%" className="text-center">
+                      Exec. Comp
+                    </StandardizedTable.Cell>
+                  </StandardizedTable.Header>
+                  <tbody className="text-gray-700 text-base divide-y divide-gray-100">
                     {topProponents.map((proponent, idx) => {
                       const envCount =
                         proponent.category?.find(
@@ -133,12 +148,15 @@ const ProponentsAnalyticsComponent: React.FC<
                         )?.avg_support || 0;
 
                       return (
-                        <tr key={idx} className="text-center">
-                          <td className="px-4 py-2">{idx + 1}</td>{" "}
-                          {/* Numbered index */}
-                          <td className="px-4 py-2 text-left">
+                        <StandardizedTable.Row key={idx} index={idx}>
+                          <StandardizedTable.Cell>
+                            <span className="inline-block px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                              {idx + 1}
+                            </span>
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell>
                             {filters?.proponent_name?.length > 0 ? (
-                              proponent.institution__name
+                              <span className="font-medium text-primary/80">{proponent.institution__name}</span>
                             ) : (
                               <button
                                 onClick={() =>
@@ -146,38 +164,45 @@ const ProponentsAnalyticsComponent: React.FC<
                                     proponent.institution__name
                                   )
                                 }
-                                className="text-blue-600 hover:underline focus:outline-none text-left"
+                                className="text-blue-600 hover:underline focus:outline-none text-left font-medium hover:text-blue-800 transition-colors"
                               >
                                 {proponent.institution__name}
                               </button>
                             )}
-                          </td>
-                          <td className="px-4 py-2">
-                            {proponent.total_count}
-                          </td>
-                          <td className="px-4 py-2">
-                            {envCount}
-                          </td>
-                          <td className="px-4 py-2">
-                            {socCount}
-                          </td>
-                          <td className="px-4 py-2">
-                            {govCount}
-                          </td>
-                          <td className="px-4 py-2">
-                            {execComp}
-                          </td>
-                        </tr>
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell className="text-center">
+                            <span className="inline-block px-3 py-1 font-medium">
+                              {proponent.total_count}
+                            </span>
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell className="text-center">
+                            <span className="inline-block px-3 py-1 font-medium">
+                              {envCount}
+                            </span>
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell className="text-center">
+                            <span className="inline-block px-3 py-1 font-medium">
+                              {socCount}
+                            </span>
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell className="text-center">
+                            <span className="inline-block px-3 py-1 font-medium">
+                              {govCount}
+                            </span>
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell className="text-center">
+                            <span className="inline-block px-3 py-1 font-medium">
+                              {execComp}
+                            </span>
+                          </StandardizedTable.Cell>
+                        </StandardizedTable.Row>
                       );
                     })}
                   </tbody>
-                </table>
+                </StandardizedTable>
               </div>
               {tab == "no-action" && filters?.proponent_name?.length == 0 && (
-                <div
-                  className="col-span-3 bg-gray-100 p-4 rounded-lg flex flex-col items-center w-full  "
-                  style={{ height: "fit-content" }}
-                >
+                <div className="col-span-3 bg-gray-100 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-4">
                     Outcome Distribution
                   </h3>
@@ -202,46 +227,53 @@ const ProponentsAnalyticsComponent: React.FC<
           <>
             {tab == "no-action" && filters?.proponent_name?.length > 0 && (
               <>
-                <h3 className="text-lg font-semibold pt-10 pb-4 ">
+                <h3 className="text-lg font-semibold pt-10 pb-4">
                   All Outcome Distribution
                 </h3>
-                <div className={`grid grid-cols-1 md:grid-cols-10 gap-6 mb-12`}>
-                  <div className=" col-span-7  rounded-lg flex flex-col items-center w-full">
-                    <table className="min-w-full border border-gray-300">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          {/* New column */}
-                          <th className="px-4 py-2 border text-left"></th>
-                          <th className="px-4 py-2 border ">Total</th>
-                          <th className="px-4 py-2 border">Excluded</th>
-                          <th className="px-4 py-2 border">Included</th>
-                          <th className="px-4 py-2 border w-36">Withdrawn</th>
-                        </tr>
-                      </thead>
+                <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mb-12">
+                  <div className="col-span-7 rounded-lg w-full">
+                    <StandardizedTable maxHeight="400px">
+                      <StandardizedTable.Header>
+                        <StandardizedTable.Cell isHeader width="25%" className="text-center">Category</StandardizedTable.Cell>
+                        <StandardizedTable.Cell isHeader width="18.75%" className="text-center">Total</StandardizedTable.Cell>
+                        <StandardizedTable.Cell isHeader width="18.75%" className="text-center">Excluded</StandardizedTable.Cell>
+                        <StandardizedTable.Cell isHeader width="18.75%" className="text-center">Included</StandardizedTable.Cell>
+                        <StandardizedTable.Cell isHeader width="18.75%" className="text-center">Withdrawn</StandardizedTable.Cell>
+                      </StandardizedTable.Header>
                       <tbody>
                         {topProponents[0]?.category.map((cat, idx) => {
                           if (cat.category !== null) {
                             return (
-                              <tr key={idx} className="text-center">
-                                <td className="border px-4 py-2 text-left">
-                                  {cat.category}
-                                </td>
-                                <td className="border px-4 py-2">{cat.count}</td>
-                                <td className="border px-4 py-2">
-                                  {cat.exclude_count}
-                                </td>
-                                <td className="border px-4 py-2">
-                                  {cat.include_count}
-                                </td>
-                                <td className="border px-4 py-2">
-                                  {cat.withdraw_count}
-                                </td>
-                              </tr>
+                              <StandardizedTable.Row key={idx} index={idx}>
+                                <StandardizedTable.Cell>
+                                  <span className="font-medium text-primary/80">{cat.category}</span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell className="text-center">
+                                  <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                                    {cat.count}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell className="text-center">
+                                  <span className="inline-block px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+                                    {cat.exclude_count}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell className="text-center">
+                                  <span className="inline-block px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                                    {cat.include_count}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell className="text-center">
+                                  <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">
+                                    {cat.withdraw_count}
+                                  </span>
+                                </StandardizedTable.Cell>
+                              </StandardizedTable.Row>
                             );
                           }
                         })}
                       </tbody>
-                    </table>
+                    </StandardizedTable>
                   </div>
                   <div
                     className="col-span-3 bg-gray-100 p-4 rounded-lg flex flex-col items-center w-full  "
@@ -262,50 +294,7 @@ const ProponentsAnalyticsComponent: React.FC<
       </div>
     );
 
-    const renderSubcategoryTable = (title: string, data: any[]) => {
-      const [currentPage, setCurrentPage] = useState(0);
-      const itemsPerPage = 5;
-
-      const totalPages = Math.ceil(data.length / itemsPerPage);
-      const startIndex = currentPage * itemsPerPage;
-      const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
-
-      const goToPreviousPage = () => {
-        if (currentPage > 0) setCurrentPage(currentPage - 1);
-      };
-
-      const goToNextPage = () => {
-        if (currentPage < totalPages - 1) setCurrentPage(currentPage + 1);
-      };
-
-      return (
-        <div className="bg-gray-100 p-4 rounded-lg shadow-md min-w-[275px] flex flex-col justify-between h-full mt-5">
-          <h3 className="text-md font-semibold mb-2">{title}</h3>
-          <div className="overflow-x-auto min-h-[300px]">
-            {data.length > 0 ? (
-              <table className="w-full border-collapse border border-gray-300 text-sm">
-                <thead className="bg-gray-200">
-                  <tr>
-                    <th className="px-2 py-2 text-left font-medium">Subcategory</th>
-                    <th className="px-4 py-2 text-left font-medium">Count</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.map((entry, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{entry.sub_category}</td>
-                      <td className="border p-2 text-center">{entry.count}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-gray-500">No data available</p>
-            )}
-          </div>
-        </div>
-      );
-    };
+    // Moved to inline implementation
 
     return (
       <div
@@ -318,7 +307,6 @@ const ProponentsAnalyticsComponent: React.FC<
       >
         <h1 className="text-xl font-semibold flex items-center gap-2 mb-4">
           All Proponents Analytics
-          <Pill text="Beta" />
         </h1>
         {renderSummaryTable()}
 
@@ -326,29 +314,102 @@ const ProponentsAnalyticsComponent: React.FC<
         {topProponents.length === 1 &&
           topProponents[0]?.subcategory_detail &&
           Object.keys(topProponents[0].subcategory_detail).length > 0 && (
-            <div className="flex flex-row flex-wrap md:flex-nowrap gap-6 overflow-x-auto">
-              {topProponents[0].subcategory_detail.Environment &&
-                renderSubcategoryTable(
-                  "Environmental",
-                  topProponents[0].subcategory_detail.Environment.slice(0, 5)
-                )}
-              {topProponents[0].subcategory_detail.Social &&
-                renderSubcategoryTable(
-                  "Social",
-                  topProponents[0].subcategory_detail.Social.slice(0, 5)
-                )}
-              {topProponents[0].subcategory_detail.Governance &&
-                renderSubcategoryTable(
-                  "Governance",
-                  topProponents[0].subcategory_detail.Governance.slice(0, 5)
-                )}
-              {topProponents[0].subcategory_detail["Executive Compensation"] &&
-                renderSubcategoryTable(
-                  "Executive Compensation",
-                  topProponents[0].subcategory_detail[
-                    "Executive Compensation"
-                  ].slice(0, 5)
-                )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {topProponents[0].subcategory_detail.Environment && (
+                <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Environmental</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
+                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topProponents[0].subcategory_detail.Environment.slice(0, 5).map((sub: any, index: number) => (
+                          <tr key={index} className="border-b border-slate-200">
+                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
+                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {topProponents[0].subcategory_detail.Social && (
+                <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Social</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
+                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topProponents[0].subcategory_detail.Social.slice(0, 5).map((sub: any, index: number) => (
+                          <tr key={index} className="border-b border-slate-200">
+                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
+                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {topProponents[0].subcategory_detail.Governance && (
+                <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Governance</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
+                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topProponents[0].subcategory_detail.Governance.slice(0, 5).map((sub: any, index: number) => (
+                          <tr key={index} className="border-b border-slate-200">
+                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
+                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {topProponents[0].subcategory_detail["Executive Compensation"] && (
+                <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Executive Compensation</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
+                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topProponents[0].subcategory_detail["Executive Compensation"].slice(0, 5).map((sub: any, index: number) => (
+                          <tr key={index} className="border-b border-slate-200">
+                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
+                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         <footer className="!pt-10">

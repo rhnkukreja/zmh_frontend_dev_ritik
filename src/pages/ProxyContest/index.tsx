@@ -21,12 +21,12 @@ import { Popover } from "@/components/Base/Headless";
 
 const index = () => {
     const navigate = useNavigate();
-    
+
     // PDF viewer states
     const [pdfVisible, setPdfVisible] = useState<boolean>(false);
     const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
     const [currentPdfName, setCurrentPdfName] = useState<string>("");
-    
+
     // Case proxy modal states
     const [caseProxyModalVisible, setCaseProxyModalVisible] = useState<boolean>(false);
     const [caseProxyModalData, setCaseProxyModalData] = useState<any>(null);
@@ -87,7 +87,7 @@ const index = () => {
     // Fetch initial data
     useEffect(() => {
         fetchProxyContestCompanies(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const gotoDetailPage = (pdf: string, pdf_name: string) => {
@@ -233,9 +233,9 @@ const index = () => {
         if (type === 'case_studies') {
             // For case studies, we need to fetch case studies by company name
             setCaseProxyModalVisible(true);
-            setCaseProxyModalData({ 
+            setCaseProxyModalData({
                 company_name: company.company_name,
-                company_id: company.company_id 
+                company_id: company.company_id
             });
             return;
         }
@@ -256,7 +256,7 @@ const index = () => {
         try {
             let apiUrl = '';
             const companyName = encodeURIComponent(company.company_name);
-            
+
             // Use the correct API endpoints based on type
             switch (type) {
                 case 'documents':
@@ -282,7 +282,7 @@ const index = () => {
             }
 
             const data = await response.json();
-            
+
             // Process data based on type
             let processedData = data;
             if (type === 'documents') {
@@ -295,7 +295,7 @@ const index = () => {
                     recommendations: data?.Activism_ISS_GL || []
                 };
             }
-            
+
             setModalData(processedData);
         } catch (error) {
             console.error('Error fetching modal data:', error);
@@ -326,6 +326,26 @@ const index = () => {
                             )}
 
                             <div className="flex items-center gap-2">
+                                {/* Clear and Apply buttons outside filter */}
+                                <Button
+                                    variant="outline-secondary"
+                                    onClick={onFilterClear}
+                                    className="w-full sm:w-auto flex items-center gap-2"
+                                    type="button"
+                                >
+                                    <MdOutlineClear className="text-lg" />
+                                    Clear
+                                </Button>
+
+                                <Button
+                                    variant="primary"
+                                    onClick={handleSubmit(onFilterSubmit)}
+                                    className="w-full sm:w-auto flex items-center gap-2"
+                                >
+                                    <FaSearch className="text-sm" />
+                                    Apply
+                                </Button>
+
                                 <Popover className="inline-block">
                                     {({ close }) => (
                                         <>
@@ -429,31 +449,12 @@ const index = () => {
                                     </div>
                                 </div>
 
-                                {/* Buttons */}
-                                <div className="flex justify-end gap-3 mt-6">
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        onClick={onFilterClear}
-                                        className="w-32 flex items-center gap-2"
-                                    >
-                                        <MdOutlineClear className="text-lg" />
-                                        Clear
-                                    </Button>
-                                    <Button
-                                        variant="primary"
-                                        className="w-32 flex items-center gap-2"
-                                        type="submit"
-                                    >
-                                        <FaSearch className="text-sm" />
-                                        Apply
-                                    </Button>
-                                </div>
+                                {/* Filter Content */}
                             </form>
                         </div>
                     )}
                 </div>
-                
+
                 <div>
                     {proxyContestLoading ? (
                         <div className="h-52 flex items-center justify-center">
@@ -477,7 +478,7 @@ const index = () => {
                                                 proxyContestCompanies.map((company, index) => (
                                                     <Table.Tr
                                                         key={`${company.company_id}-${index}`}
-                                                        className="[&_td]:last:border-b-0 transition-all hover:bg-primary/5"
+                                                        className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
                                                     >
                                                         <Table.Td className="py-2 border-dashed">
                                                             <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
@@ -768,11 +769,11 @@ const index = () => {
                                                                         {(() => {
                                                                             // Group data by company_tent to show all unique companies
                                                                             const companies = [...new Set(modalData.recommendations.map((item: any) => item.company_tent))];
-                                                                            
+
                                                                             return companies.map((companyName: string, index: number) => {
                                                                                 const issData = modalData.recommendations.find((item: any) => item.type === 'ISS' && item.company_tent === companyName);
                                                                                 const glData = modalData.recommendations.find((item: any) => item.type === 'GL' && item.company_tent === companyName);
-                                                                                
+
                                                                                 return (
                                                                                     <Table.Tr key={index} className="hover:bg-gray-50 border-b border-gray-100">
                                                                                         <Table.Td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-100">
@@ -944,7 +945,7 @@ const index = () => {
                                                                 </div>
                                                             )}
 
-                
+
                                                         </div>
                                                     ) : (
                                                         <div className="text-center py-12">

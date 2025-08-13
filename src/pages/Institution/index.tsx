@@ -255,6 +255,25 @@ function Main() {
                   </div>
                 )}
 
+                {/* Clear and Apply buttons outside filter */}
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => {
+                    onFilterClear();
+                  }}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  Clear
+                </Button>
+                
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit(onSubmit)}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  Apply
+                </Button>
+
                 <Popover className="inline-block">
                   {({ close }) => (
                     <>
@@ -275,30 +294,12 @@ function Main() {
                       <Popover.Panel placement="bottom-end">
                         <form onSubmit={handleSubmit(onSubmit)}>
                           <div className="p-2">
-                            <div className="flex items-center mt-4">
-                              <Button
-                                variant="secondary"
-                                onClick={() => {
-                                  onFilterClear();
-                                  close();
-                                }}
-                                className="w-32 ml-auto"
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                type="submit"
-                                variant="primary"
-                                className="w-32 ml-2"
-                                onClick={() => {
-                                  close();
-                                }}
-                              >
-                                Apply
-                              </Button>
+                            {/* Filter Content */}
+                            <div className="mb-4">
+                              <h4 className="text-base font-semibold text-slate-700">Filters</h4>
                             </div>
 
-                            <div className="mt-3">
+                            <div>
                               <div className="w-full  my-2">
                                 <div className="text-left text-slate-500 flex justify-between mb-1">
                                 <span className="font-semibold">Region</span>

@@ -39,6 +39,8 @@ import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 import clsx from "clsx";
 import FilterChips from "@/components/FilterChips";
+import StandardizedFilterPills from "@/components/StandardizedFilterPills";
+import StandardizedTable from "@/components/StandardizedTable";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
@@ -240,13 +242,13 @@ function CaseStudies() {
 
   const onSubmit = async (caseStudyFilters: CaseStudyFilter) => {
     const filtersToApply = { ...caseStudyFilters };
-    
+
     // Remove index if empty or blank
-    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "" || 
-        (Array.isArray(filtersToApply.index) && filtersToApply.index.length === 0)) {
+    if (!filtersToApply.index || filtersToApply.index === " " || filtersToApply.index === "" ||
+      (Array.isArray(filtersToApply.index) && filtersToApply.index.length === 0)) {
       delete filtersToApply.index;
     }
-    
+
     dispatch(
       setAllFilters({
         ...filtersToApply,
@@ -410,54 +412,59 @@ function CaseStudies() {
     // dispatch(setAllFilters(updatedFilters));
     return field.onChange(event);
   }
-const handleDownload = async () => {
-     downloadFileFromAPI({
-    url: createDynamicURL(
-      `${baseURL}/case_studies/`,
-      filters,
-      undefined,
-      page
-    ),
-    fileName: "case_studies.xlsx",
-    setLoading: setLoadingDownload,
-    serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
-  });
+  const handleDownload = async () => {
+    downloadFileFromAPI({
+      url: createDynamicURL(
+        `${baseURL}/case_studies/`,
+        filters,
+        undefined,
+        page
+      ),
+      fileName: "case_studies.xlsx",
+      setLoading: setLoadingDownload,
+      serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
+    });
   };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           <div className="overflow-auto xl:overflow-visible mt-4">
-            <div className="w-full pt-5">
-              <div>
-                <div className="w-full flex gap-3 px-4 py-6 bg-white dark:bg-darkmode-800">
+            <div className="w-full">
+              <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow">
+                {isAllCompanySelected === true ? (
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    All Case Studies
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-xl">Case Studies</div>
+                )}
+                <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
                   <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-                      isAllCompanySelected === false
-                        ? "bg-primary text-white shadow"
-                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
                     onClick={async (e) => {
                       if (isAllCompanySelected) {
                         handleViewAllChange({ target: { checked: false } });
                       }
                     }}
                   >
-                    {companyGlobalSearchName || "Company"} Case Studies
+                    {companyGlobalSearchName || "Company"}
                   </button>
                   <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-                      isAllCompanySelected === true
-                        ? "bg-primary text-white shadow"
-                        : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
                     onClick={async (e) => {
                       if (!isAllCompanySelected) {
                         handleViewAllChange({ target: { checked: true } });
                       }
                     }}
                   >
-                   View For All Companies
+                    View For All Companies
                   </button>
                 </div>
               </div>
@@ -466,13 +473,6 @@ const handleDownload = async () => {
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked bg-white p-5">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
-                {isAllCompanySelected === true ? (
-                  <h1 className="text-lg font-bold flex items-center gap-2">
-                    All Case Studies
-                  </h1>
-                ) : (
-                  <div className="font-semibold text-xl">Case Studies</div>
-                )}
                 {user?.user_type === "Admin" && (
                   <div className="flex justify-end">
                     <Button
@@ -492,7 +492,7 @@ const handleDownload = async () => {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2">
+              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
                 <div className="flex">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -509,7 +509,7 @@ const handleDownload = async () => {
                   />
 
                   <div className="hover:bg-slate-50">
-                    
+
                     <Button onClick={handleClearAllFilter}>
                       <Tippy
                         content="Clear Filters"
@@ -540,7 +540,7 @@ const handleDownload = async () => {
                     </Button>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
                   {user?.saved_search?.["Case Studies"] !== undefined && (
                     <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
@@ -548,20 +548,29 @@ const handleDownload = async () => {
                       </Button>
                     </div>
                   )}
-                  <Tippy content="Download Excel" options={{ theme: "light" }}>
-                      <div
-                        className="box p-[5px] cursor-pointer"
-                        onClick={() => !loadingDownload && handleDownload()}
-                      >
-                        {loadingDownload ? <Lucide
-                          icon="Loader"
-                          className="w-6 h-7  stroke-[1.3]  animate-spin
-"
-                        /> : <img alt="download-icon" src={downloadIcon} />}
-                      </div>
-                    </Tippy>
+
+                  {/* Clear and Apply buttons outside filter */}
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => {
+                      onFilterClear();
+                    }}
+                    className="w-full sm:w-auto flex items-center gap-2"
+                    type="button"
+                  >
+                    <MdOutlineClear className="text-lg mr-1" /> Clear
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    onClick={handleSubmit(onSubmit)}
+                    className="w-full sm:w-auto flex items-center gap-2"
+                  >
+                    <FaSearch className="text-lg" /> Apply
+                  </Button>
+
                   <Popover className="inline-block">
-                    
+
                     <>
                       <Popover.Button
                         as={Button}
@@ -583,16 +592,16 @@ const handleDownload = async () => {
                 </div>
               </div>
 
-              {
-                selectedChipFilters?.length > 0 &&
-                <>
-                  <FilterChips 
-                    filters={selectedChipFilters} 
-                    onRemove={handleRemoveChip} 
-                    currentPage="caseStudies"
-                  />
-                </>
-              }
+              {selectedChipFilters?.length > 0 && (
+                <StandardizedFilterPills
+                  filters={selectedChipFilters.map(chip => ({
+                    key: chip.key,
+                    value: chip.value,
+                    label: chip.label
+                  }))}
+                  onRemove={handleRemoveChip}
+                />
+              )}
 
               {count > 0 && (
                 <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
@@ -603,6 +612,10 @@ const handleDownload = async () => {
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+                    {/* Filter Content */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                    </div>
                     <div
                       className={`grid grid-cols-1 xs:grid-cols-1 gap-4 mb-3 ${isAllCompanySelected
                         ? "md:grid-cols-3"
@@ -678,8 +691,6 @@ const handleDownload = async () => {
                           )}
                         />
                       </div>
-
-
 
                       {isAllCompanySelected === true && (
                         <div className="w-full mx-2">
@@ -1023,27 +1034,6 @@ const handleDownload = async () => {
 
 
                     </div>
-                    
-                    {/* Buttons */}
-                    <div className="flex justify-end gap-3 mt-6">
-                      <Button
-                        variant="outline-secondary"
-                        onClick={() => {
-                          onFilterClear();
-                        }}
-                        className="w-36"
-                        type="button"
-                      >
-                        <MdOutlineClear className="text-lg mr-1" /> Clear
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
-                        type="submit"
-                      >
-                        <FaSearch className="text-lg" /> Apply
-                      </Button>
-                    </div>
                   </div>
                 </form>
               )}
@@ -1051,163 +1041,123 @@ const handleDownload = async () => {
 
 
               <div className=" px-5">
-                <TableWrapper isLoading={loading}>
-                  <div className="overflow-auto max-h-[400px] rounded-lg">
-                    <Table className="rounded-lg">
-                      <Table.Thead>
-                        <Table.Tr className="bg-primary text-white text-sm">
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
-                            Institution
-                          </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
-                            Year
-                          </Table.Td>
-                          {isAllCompanySelected && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
-                              Company
-                            </Table.Td>
-                          )}
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
-                            Theme
-                          </Table.Td>
+                <StandardizedTable isLoading={loading} maxHeight="400px">
+                  <StandardizedTable.Header>
+                    <StandardizedTable.Cell isHeader>
+                      Year
+                    </StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader>
+                      Institution
+                    </StandardizedTable.Cell>
+                    {isAllCompanySelected && (
+                      <StandardizedTable.Cell isHeader>
+                        Company
+                      </StandardizedTable.Cell>
+                    )}
+                    <StandardizedTable.Cell isHeader>
+                      Theme
+                    </StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader>
+                      Industry
+                    </StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader>
+                      Details
+                    </StandardizedTable.Cell>
+                  </StandardizedTable.Header>
 
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
-                            Industry
-                          </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
-                            Details
-                          </Table.Td>
-                        </Table.Tr>
-                      </Table.Thead>
-
-                      <Table.Tbody>
-                        {caseStudies?.length > 0 &&
-                          caseStudies?.map((item: any) => {
-                            return (
-                              <Table.Tr
-                                key={item?.id}
-                                className="[&_td]:last:border-b-0"
-                              >
-                                <Table.Td>
-                                  <div className="w-full flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                    {item?.institution_logo_url ? (
-                                      <>
-                                        {/* <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
-                                          <img
-                                            alt="Institution Logo"
-                                            className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                            src={item?.institution_logo_url}
-                                            content={
-                                              item?.institution_name || ""
-                                            }
-                                          />
-                                        </div> */}
-
-                                        <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
-                                          <img
-                                            alt="Institution Logo"
-                                            className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                            src={item?.institution_logo_url}
-                                            content={
-                                              item?.institution_name || ""
-                                            }
-                                          />
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                        <img
-                                          alt="ZMH Analytics"
-                                          className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                          src={investorIcon}
-                                        />
-                                        <a
-                                          href=""
-                                          className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
-                                        ></a>
-                                      </div>
-                                    )}
-                                    <div className="ml-4 ">
-                                      <p className="font-medium whitespace-normal line-clamp-2 text-wrap w-30">
-                                        {item?.institution_name}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </Table.Td>
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.year}
-                                </Table.Td>
-                                {isAllCompanySelected && (
-                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                    {item?.company_name ||
-                                      item?.caspio_company_name}
-                                  </Table.Td>
-                                )}
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.esg_themes}
-                                </Table.Td>
-
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                  {item?.company_sector}
-                                </Table.Td>
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
-                                  <div className="flex gap-3 justify-center">
-                                    <Tippy
-                                      content="See Details"
-                                      options={{ theme: "light" }}
-                                    >
-                                      <Lucide
-                                        onClick={() => {
-                                          navigate(`/case-studies/${item?.id}`);
-                                        }}
-                                        icon="Eye"
-                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                      />
-                                    </Tippy>
-
-                                    {user?.user_type === "Admin" && (
-                                      <Tippy
-                                        content="Edit"
-                                        options={{ theme: "light" }}
-                                      >
-                                        <Lucide
-                                          onClick={() =>
-                                            onEditCaseStudiesClickHandler(item)
-                                          }
-                                          icon="PenLine"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
-                                      </Tippy>
-                                    )}
-                                  </div>
-                                </Table.Td>
-                              </Table.Tr>
-                            );
-                          })}
-                      </Table.Tbody>
-                      {caseStudies?.length === 0 && (
-                        <Table.Tbody>
-                          <Table.Tr>
-                            <Table.Td colSpan={isAllCompanySelected ? 6 : 5} className="text-center py-12">
-                              <div className="flex flex-col items-center justify-center">
-                                <Lucide
-                                  icon="FileSearch"
-                                  className="w-12 h-12 text-gray-300 mb-2"
-                                />
-                                <div className="text-lg font-medium">No data found</div>
-                                <div className="text-sm text-gray-500 mt-1">
-                                  Try adjusting your filters or search criteria
-                                </div>
+                  <Table.Tbody>
+                    {caseStudies?.length > 0 &&
+                      caseStudies?.map((item: any, index: number) => {
+                        return (
+                          <StandardizedTable.Row
+                            key={item?.id}
+                            index={index}
+                          >
+                            <StandardizedTable.Cell>
+                              <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                {item?.year}
+                              </span>
+                            </StandardizedTable.Cell>
+                            <StandardizedTable.Cell>
+                              <div className="w-full flex flex-row justify-start items-center py-2 text-nowrap">
+                                <p className="font-medium whitespace-normal line-clamp-2 text-wrap w-30">
+                                  {item?.institution_name}
+                                </p>
                               </div>
-                            </Table.Td>
-                          </Table.Tr>
-                        </Table.Tbody>
-                      )}
-                    </Table>
-                  </div>
-                </TableWrapper>
+                            </StandardizedTable.Cell>
+                            {isAllCompanySelected && (
+                              <StandardizedTable.Cell>
+                                <span className="font-medium text-primary/80">
+                                  {item?.company_name || item?.caspio_company_name}
+                                </span>
+                              </StandardizedTable.Cell>
+                            )}
+                            <StandardizedTable.Cell>
+                              <span className="inline-block px-2 py-1">
+                                {item?.esg_themes}
+                              </span>
+                            </StandardizedTable.Cell>
+                            <StandardizedTable.Cell>
+                              <span className="inline-block px-2 py-1">
+                                {item?.company_sector}
+                              </span>
+                            </StandardizedTable.Cell>
+                            <StandardizedTable.Cell>
+                              <div className="flex gap-3 justify-center">
+                                <Tippy
+                                  content="See Details"
+                                  options={{ theme: "light" }}
+                                >
+                                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                    <Lucide
+                                      onClick={() => {
+                                        navigate(`/case-studies/${item?.id}`);
+                                      }}
+                                      icon="Eye"
+                                    />
+                                  </div>
+                                </Tippy>
+
+                                {user?.user_type === "Admin" && (
+                                  <Tippy
+                                    content="Edit"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                      <Lucide
+                                        onClick={() =>
+                                          onEditCaseStudiesClickHandler(item)
+                                        }
+                                        icon="PenLine"
+                                      />
+                                    </div>
+                                  </Tippy>
+                                )}
+                              </div>
+                            </StandardizedTable.Cell>
+                          </StandardizedTable.Row>
+                        );
+                      })}
+                  </Table.Tbody>
+                  {caseStudies?.length === 0 && (
+                    <Table.Tbody>
+                      <Table.Tr>
+                        <Table.Td colSpan={isAllCompanySelected ? 6 : 5} className="text-center py-12">
+                          <div className="flex flex-col items-center justify-center">
+                            <Lucide
+                              icon="FileSearch"
+                              className="w-12 h-12 text-gray-300 mb-2"
+                            />
+                            <div className="text-lg font-medium">No data found</div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              Try adjusting your filters or search criteria
+                            </div>
+                          </div>
+                        </Table.Td>
+                      </Table.Tr>
+                    </Table.Tbody>
+                  )}
+                </StandardizedTable>
               </div>
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                 <CPagination
