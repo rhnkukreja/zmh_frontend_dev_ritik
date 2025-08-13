@@ -65,22 +65,6 @@ const ProponentsAnalyticsComponent: React.FC<
       <div className="w-full mt-2">
         <h3 className="text-lg font-semibold mb-2">Top Proponents</h3>
         <h4 className="text-base mb-4">Includes proposals filed on behalf of other proponents</h4>
-        {filters?.proponent_name?.length > 0 && (
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-            <span>Proponent:</span>
-              {filters.proponent_name[0]}
-              <button
-                onClick={() => {
-                  handleInstitutionClickAll();
-                }}
-                className="ml-2 hover:opacity-80"
-              >
-                <Lucide icon="X" className="w-4 h-4 stroke-[2]" />
-              </button>
-            </div>
-          </div>
-        )}
         {loading ? (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
             {" "}

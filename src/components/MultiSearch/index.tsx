@@ -320,14 +320,14 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         {searchTerms.map((term, index) => (
           <div
             key={index}
-            className="bg-gray-100 px-4 py-1 rounded-full flex items-center shadow-sm "
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium"
           >
             <span className="term-text mr-2 text-nowrap">{term}</span>
             <button
-              className="remove-btn text-red-500 font-bold"
+              className="remove-btn font-bold"
               onClick={() => handleSearch(term, false)}
             >
-              <Lucide icon="X" className="w-4 h-4" />
+              <Lucide icon="X" className="w-4 h-4 stroke-[2]" />
             </button>
           </div>
         ))}

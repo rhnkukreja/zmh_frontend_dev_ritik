@@ -62,6 +62,8 @@ export const no_header_company = [
   "investor-profile",
   "engagement-question",
   "voting-guidelines",
+  "case-studies",
+  "engagement-detail"
 ];
 export const proponent_type = ["shareholder", "management"];
 export const meeting_type = ["Proxy Contest", "Annual", "Special"];

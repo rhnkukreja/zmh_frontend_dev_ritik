@@ -53,6 +53,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyY
       market: "Country",
       sector: "Sector",
       region: "Region",
+      sub_category: "Sub Category",
     };
     
     return mapping[key] || convertToTitleCase(key);

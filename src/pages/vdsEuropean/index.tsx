@@ -1275,6 +1275,7 @@ const index = () => {
             ))}
           </div>
         )}
+        
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">

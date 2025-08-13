@@ -1067,13 +1067,14 @@ function ShareHolderProposal() {
               </div>
 
               {selectedChipFilters?.length > 0 && (
-                <StandardizedFilterPills
+                <FilterChips
                   filters={selectedChipFilters.map(chip => ({
                     key: chip.key,
-                    value: chip.value,
-                    label: chip.label
+                    value: chip.value
                   }))}
                   onRemove={handleRemoveChip}
+                  showProxyYear={true}
+                  currentPage="shareHolder"
                 />
               )}
 
@@ -2521,7 +2522,7 @@ function ShareHolderProposal() {
                           </div>
                         </div>
                       )}
-                      <div className="flex justify-between items-center mb-4">
+                      <div className="flex justify-between items-center mb-4" id="data-listing">
                         <h3 className="text-lg font-semibold mb-4">Proposal Details</h3>
                         <Tippy content="Download Excel" options={{ theme: "light" }}>
                           <div
@@ -2572,10 +2573,12 @@ function ShareHolderProposal() {
                                 shareHolderProposal?.map((noAction: any) => (
                                   <Table.Tr
                                     key={noAction?.id}
-                                    className="[&_td]:last:border-b-0"
+                                    className={`[&_td]:last:border-b-0 ${noAction?.id % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
                                   >
                                     <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                      {tab === "no-action" ? noAction.proxy_season : noAction?.year}
+                                      <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                        {tab === "no-action" ? noAction.proxy_season : noAction?.year}
+                                      </span>
                                     </Table.Td>
                                     {isAllCompanySelected && (
                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
@@ -2594,21 +2597,22 @@ function ShareHolderProposal() {
                                     <Table.Td className="whitespace-nowrap capitalize max-w-[150px] overflow-hidden text-ellipsis">
                                       {noAction?.staff_response}
                                     </Table.Td>
-                                    <Table.Td className=" py-2 relative  w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                      <div className="flex gap-3 justify-center">
+                                    <Table.Td className=" py-2 relative  w-[150px] shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                                      <div className="">
                                         <Tippy
                                           content=" See Details"
                                           options={{ theme: "light" }}
                                         >
-                                          <Lucide
-                                            onClick={() =>
-                                              navigate(
-                                                `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
-                                              )
-                                            }
-                                            icon="Eye"
-                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                          />
+                                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                            <Lucide
+                                              onClick={() =>
+                                                navigate(
+                                                  `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
+                                                )
+                                              }
+                                              icon="Eye"
+                                            />
+                                          </div>
                                         </Tippy>
                                         {user?.user_type === "Admin" && (
                                           <Tippy
@@ -2699,10 +2703,12 @@ function ShareHolderProposal() {
                                 shareHolderProposal?.map((noAction: any) => (
                                   <Table.Tr
                                     key={noAction?.id}
-                                    className="[&_td]:last:border-b-0"
+                                      className={`[&_td]:last:border-b-0 ${noAction?.id % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
                                   >
                                     <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                      <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                       {noAction?.year}
+                                      </span>
                                     </Table.Td>
                                     {isAllCompanySelected && (
                                       <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
