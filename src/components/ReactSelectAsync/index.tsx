@@ -147,8 +147,11 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       }
     };
 
-    fetchDefaultOptions();
-}, [currentFilters]);
+    // Only fetch default options on initial load, not when currentFilters change
+    if (defaultOptions.length === 0) {
+      fetchDefaultOptions();
+    }
+}, []);
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
   };

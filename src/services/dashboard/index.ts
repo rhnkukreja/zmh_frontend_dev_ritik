@@ -12,17 +12,28 @@ class DashboardService {
     let url = "";
     if (companyName !== "") {
       if (exactUrl) {
-        // Handle VDS European dropdown case with new company endpoint
+        // Handle VDS European dropdown case
         if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
-          const params = new URLSearchParams();
-          
-          // Add company_name for search
-          params.append('company_name', companyName);
-          
-          // Add index parameter with default value
-          params.append('index', JSON.stringify(["100"]));
-          
-          url = `/company/?${params.toString()}`;
+          if (companyName === "a") {
+            // Default load: use company endpoint with company_name=a&index=["100"]
+            const params = new URLSearchParams();
+            params.append('company_name', 'a');
+            params.append('index', JSON.stringify(["100"]));
+            url = `/company/?${params.toString()}`;
+          } else {
+            // Search: use get_vds_european_dropdown_values with institution and search term
+            const params = new URLSearchParams();
+            params.append('company_name', companyName);
+            
+            // Add institution_name from currentFilters
+            if (currentFilters?.institution_name) {
+              params.append('institution_name', JSON.stringify(currentFilters.institution_name));
+            } else {
+              params.append('institution_name', JSON.stringify(["BlackRock, Inc."]));
+            }
+            
+            url = `/get_vds_european_dropdown_values/?${params.toString()}`;
+          }
         } else {
           url = `/${exactUrl}${companyName}`;
         }
@@ -34,14 +45,26 @@ class DashboardService {
       const response = await axiosInstance.get(url);
       if(exactUrl){
         if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
-          // For VDS European using new company endpoint, the data comes as company_name array
-          results = response.data?.company_name || response.data?.company || [];
-          // Convert array of strings to objects with name property for consistency
-          if (Array.isArray(results)) {
-            results = results.map(company => ({
-              name: company,
-              id: company // Use name as ID for consistency
-            }));
+          if (companyName === "a") {
+            // For default load using company endpoint, data comes as results array
+            results = response.data?.results || [];
+            // Convert company objects to the expected format
+            if (Array.isArray(results)) {
+              results = results.map(company => ({
+                name: company.name || company.company_v1 || company,
+                id: company.id || company.name || company
+              }));
+            }
+          } else {
+            // For search using get_vds_european_dropdown_values, data comes as company_name array
+            results = response.data?.company_name || response.data?.company || [];
+            // Convert array of strings to objects with name property for consistency
+            if (Array.isArray(results)) {
+              results = results.map(company => ({
+                name: company,
+                id: company // Use name as ID for consistency
+              }));
+            }
           }
         } else {
           results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;

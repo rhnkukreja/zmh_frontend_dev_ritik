@@ -30,10 +30,9 @@ class VDSEuropeanService {
   public async getCompanySearchDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
-    // Use the new endpoint for company search
-    // This will call: https://api.zmhadvisors.com/company/?company_name=searchTerm&index=["100"]
+    // For search, use get_vds_european_dropdown_values with institution and search term
     const response = await axiosInstance.get(
-      createDynamicURL(`/company/`, paramFilter)
+      createDynamicURL(`/get_vds_european_dropdown_values/`, paramFilter)
     );
     const result = response.data;
     return {
@@ -44,8 +43,7 @@ class VDSEuropeanService {
   public async getDefaultCompanyDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
-    // Use the new endpoint for default company filter
-    // This will call: https://api.zmhadvisors.com/company/?company_name=a&index=["100"]
+    // For default load, use company endpoint with company_name=a&index=["100"]
     const response = await axiosInstance.get(
       createDynamicURL(`/company/`, paramFilter)
     );
@@ -58,10 +56,9 @@ class VDSEuropeanService {
   public async getCompanySelectionDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
-    // Use the new endpoint for company selection
-    // This will call: https://api.zmhadvisors.com/company/ with current filters
+    // For selection, use get_vds_european_dropdown_values with selected values
     const response = await axiosInstance.get(
-      createDynamicURL(`/company/`, paramFilter)
+      createDynamicURL(`/get_vds_european_dropdown_values/`, paramFilter)
     );
     const result = response.data;
     return {

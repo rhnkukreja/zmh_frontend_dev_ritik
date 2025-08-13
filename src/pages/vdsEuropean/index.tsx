@@ -458,23 +458,7 @@ const index = () => {
     // Fetch vote and year options with default institution (BlackRock)
     getInstitutionDependentOptions(["BlackRock, Inc."]);
 
-    // Fix: Make default API call for company filter with correct parameters
-    // This will call: https://api.zmhadvisors.com/company/?company_name=a&index=["100"]
-    const fetchDefaultCompanies = async () => {
-      try {
-        const res = await vdsEuropeanService.getDefaultCompanyDropdownValues({
-          company_name: "a",
-          index: ["100"]
-        });
-        if (res.result) {
-          const companies = res.result.company_name || res.result.company || [];
-          setCompanyOptions(companies);
-        }
-      } catch (error) {
-        console.error("Error fetching default companies:", error);
-        setCompanyOptions([]);
-      }
-    };
+    // Load default companies on initial page load
     fetchDefaultCompanies();
   }, []);
 
@@ -623,14 +607,15 @@ const index = () => {
   };
 
   // Function to search companies based on search term with debouncing
-  const searchCompanies = (searchTerm: string, institutionNames: string[]) => {
+  const searchCompanies = useCallback((searchTerm: string, institutionNames: string[]) => {
     // Clear previous timeout
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
 
     if (!searchTerm || searchTerm.length < 2) {
-      setCompanyOptions([]);
+      // When search is cleared, revert to default API call
+      fetchDefaultCompanies();
       setCompanySearchLoading(false);
       return;
     }
@@ -640,8 +625,7 @@ const index = () => {
     // Set new timeout for debouncing
     const newTimeout = setTimeout(async () => {
       try {
-        // Fix: Use the correct API call format for search
-        // This will call: https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=["BlackRock, Inc."]&company_name=app
+        // Search: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=[SELECTED_INSTITUTION_NAME]&company_name={SEARCH_TEXT}
         const res = await vdsEuropeanService.getCompanySearchDropdownValues({
           institution_name: institutionNames || ["BlackRock, Inc."],
           company_name: searchTerm // Send as string for search
@@ -662,40 +646,63 @@ const index = () => {
     }, 500); // 500ms debounce
 
     setSearchTimeout(newTimeout);
-  };
+  }, [searchTimeout]);
 
   // Function to get dependent options when company is selected
   const getCompanyDependentOptions = async (companyNames: any[], institutionNames: string[]) => {
-    if (!companyNames || companyNames.length === 0) return;
+    if (!companyNames || companyNames.length === 0) {
+      // When company filter is cleared, revert to default API call and reload data
+      fetchDefaultCompanies();
+      return;
+    }
 
     try {
       setGetDynamicDropdownLoader(true);
 
-      // Fix: Include all current filters when company is selected
+      // Selection: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=["BlackRock, Inc."]&company_name=["Apple Inc."]
       const currentFilters = {
         institution_name: institutionNames || ["BlackRock, Inc."],
         company_name: companyNames, // Send as array for selection
-        index: watch("index") || [],
-        vote: watch("vote") || [],
-        country: watch("country") || ["USA"],
-        analyticsYear: watch("analyticsYear") || [],
-        year: watch("year") || "",
-        date_range: watch("date_range") || "",
-        proposal_type: watch("proposal_type") || [],
-        proponent_type: watch("proponent_type") || [],
-        meeting_type: watch("meeting_type") || [],
-        proposal_keyword: watch("proposal_keyword") || []
       };
 
       const res = await vdsEuropeanService.getCompanySelectionDropdownValues(currentFilters);
       if (res.result) {
-        // Update other dependent dropdowns if needed
-        setApiDependentDropdownOptions(prev => ({ ...prev, ...res.result }));
+        // Update other dependent dropdowns with the API response
+        setVoteOptions(res.result.vote || []);
+        setYearOptions(res.result.year || []);
+        
+        // Update the general dropdown options state
+        setApiDependentDropdownOptions(prev => ({ 
+          ...prev, 
+          vote: res.result.vote || [],
+          year: res.result.year || [],
+          category: res.result.category || [],
+          meeting_type: res.result.meeting_type || [],
+          country: res.result.country || []
+        }));
       }
     } catch (error) {
       console.error("Error fetching company dependent options:", error);
     } finally {
       setGetDynamicDropdownLoader(false);
+    }
+  };
+
+  // Function to fetch default companies on initial load
+  const fetchDefaultCompanies = async () => {
+    try {
+      // Default load: call https://api.zmhadvisors.com/company/?company_name=a&index=["100"]
+      const res = await vdsEuropeanService.getDefaultCompanyDropdownValues({
+        company_name: "a",
+        index: ["100"]
+      });
+      if (res.result) {
+        const companies = res.result.company_name || res.result.company || [];
+        setCompanyOptions(companies);
+      }
+    } catch (error) {
+      console.error("Error fetching default companies:", error);
+      setCompanyOptions([]);
     }
   };
 
@@ -1456,28 +1463,23 @@ const index = () => {
 
                           field.onChange(companyNames);
 
-                          // Get dependent options when companies are selected - send names not IDs
+                          // Only call API when there's an actual change in selection
                           const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
-                          if (companyNames.length > 0) {
+                          const previousCompanies = field.value || [];
+                          
+                          // Check if the selection actually changed
+                          const hasChanged = JSON.stringify(companyNames.sort()) !== JSON.stringify(previousCompanies.sort());
+                          
+                          if (hasChanged) {
                             getCompanyDependentOptions(companyNames, currentInstitutions);
                           }
                         }}
-                        // Fix: Use exactUrl to override the default API call and pass current filters
-                        exactUrl="get_vds_european_dropdown_values_with_filters/"
-                        arrayKeyName="company"
-                        // Pass current form values as additional context
+                        // Use exactUrl to handle VDS European specific API calls
+                        exactUrl="get_vds_european_dropdown_values/"
+                        arrayKeyName="company_name"
+                        // Pass current institution filter as context
                         currentFilters={{
-                          institution_name: watch("institution_name") || ["BlackRock, Inc."],
-                          index: watch("index") || [],
-                          vote: watch("vote") || [],
-                          country: watch("country") || ["USA"],
-                          analyticsYear: watch("analyticsYear") || [],
-                          year: watch("year") || "",
-                          date_range: watch("date_range") || "",
-                          proposal_type: watch("proposal_type") || [],
-                          proponent_type: watch("proponent_type") || [],
-                          meeting_type: watch("meeting_type") || [],
-                          proposal_keyword: watch("proposal_keyword") || []
+                          institution_name: watch("institution_name") || ["BlackRock, Inc."]
                         }}
                         placeholder="Search Companies"
                         isMulti={true}
