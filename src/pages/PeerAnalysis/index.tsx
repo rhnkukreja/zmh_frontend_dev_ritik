@@ -432,9 +432,8 @@ function PeerAnalysis() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="overflow-auto xl:overflow-visible mt-4">
-            <div className="w-full">
-              <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow">
+          <div className="mt-4">
+            <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
                 {isAllCompanySelected === true ? (
                   <h1 className="text-lg font-bold flex items-center gap-2">
                     All Engagement Details
@@ -470,7 +469,6 @@ function PeerAnalysis() {
                     View For All Companies
                   </button>
                 </div>
-              </div>
             </div>
           </div>
 
@@ -1006,30 +1004,30 @@ function PeerAnalysis() {
                     <Table>
                       <Table.Thead>
                         <Table.Tr className="bg-primary text-white">
-                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Year
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Institution
                           </Table.Td>
                           {isAllCompanySelected && (
-                            <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Country
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Sector
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Environmental
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Social
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium text-sm border-0">
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Governance
                           </Table.Td>
                         </Table.Tr>
@@ -1038,7 +1036,7 @@ function PeerAnalysis() {
                       <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                         {peerAnalysisData?.length > 0 &&
                           peerAnalysisData?.map((peer: TypesPeerAnalysis, index) => (
-                            <Table.Tr key={peer?.id} className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}>
+                            <Table.Tr key={peer?.id} className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} transition-all hover:bg-primary/5 cursor-pointer`}>
                               <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
                                 <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                   {peer?.year}

@@ -24,56 +24,80 @@ const DetailDialog: React.FC<ShareholderActionDetailProps> = ({
           setShareholderDetailModalVisible(false);
         }}
       >
-        <Dialog.Panel className="p-10 text-center h-full">
-          <Dialog.Title>
-            <h2 className="mr-auto text-xl font-semibold">Vote Details</h2>
-            <div
+        <Dialog.Panel className="p-0 text-left max-w-4xl w-full">
+          <Dialog.Title className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-800">Vote Details</h2>
+              <p className="text-sm text-slate-600 mt-1">
+                {selectedShareholderDetail?.company_name || 'Company'} - {selectedShareholderDetail?.proposal_title || 'Proposal'}
+              </p>
+            </div>
+            <button
               onClick={() => {
                 setShareholderDetailModalVisible(false);
               }}
-              className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-200 transition-colors"
             >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-            </div>
+              <Lucide icon="X" className="w-5 h-5 text-slate-500" />
+            </button>
           </Dialog.Title>
-          {/* <Dialog.Description > */}
-          <div className="relative w-full h-full">
-            <TableWrapper isLoading={false}>
-              <Table className="table_2 w-full">
-                <Table.Thead className="sticky top-0 z-10">
-                  <Table.Tr className="row_2">
-                    <Table.Td className="cell_2 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] w-[150px] text-left">
-                      Institution Name
-                    </Table.Td>
-                    <Table.Td className="cell_2 py-2 font-semibold h-[50px] bg-[#0000000D] first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] w-[150px] text-left">
-                      Vote
-                    </Table.Td>
-                  </Table.Tr>
-                </Table.Thead>
+          
+          <div className="p-6">
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+              <div className="bg-primary text-white px-4 py-3">
+                <h3 className="font-semibold text-sm">Institution Voting Details</h3>
+              </div>
+              
+              <div className="max-h-96 overflow-y-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium text-slate-700 text-sm border-b border-slate-200">
+                        Institution Name
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium text-slate-700 text-sm border-b border-slate-200">
+                        Vote Decision
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedShareholderDetail?.vote_details?.map(
+                      (item: any, index: number) => {
+                        const institutionName = Object.keys(item)[0];
+                        const decision = item[institutionName];
+                        
+                        // Determine vote color
+                        const getVoteColor = (vote: string) => {
+                          switch (vote?.toLowerCase()) {
+                            case 'for':
+                              return 'text-green-700 bg-green-50 border-green-200';
+                            case 'against':
+                              return 'text-red-700 bg-red-50 border-red-200';
+                            case 'abstain':
+                              return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+                            default:
+                              return 'text-slate-700 bg-slate-50 border-slate-200';
+                          }
+                        };
 
-                <Table.Tbody>
-                  {selectedShareholderDetail?.vote_details?.map(
-                    (item: any, index: number) => {
-                      const institutionName = Object.keys(item)[0];
-                      const decision = item[institutionName];
-                      return (
-                        <Table.Tr
-                          key={index}
-                          className="row_2 [&_td]:last:border-b-0"
-                        >
-                          <Table.Td className="cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
-                            {institutionName.split(". ")[1]}
-                          </Table.Td>
-                          <Table.Td className="cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
-                            {decision}
-                          </Table.Td>
-                        </Table.Tr>
-                      );
-                    }
-                  )}
-                </Table.Tbody>
-              </Table>
-            </TableWrapper>
+                        return (
+                          <tr key={index} className="hover:bg-slate-25 transition-colors">
+                            <td className="px-4 py-3 text-sm text-slate-800">
+                              {institutionName.includes(". ") ? institutionName.split(". ")[1] : institutionName}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getVoteColor(decision)}`}>
+                                {decision}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      }
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
           {/* </Dialog.Description> */}
         </Dialog.Panel>

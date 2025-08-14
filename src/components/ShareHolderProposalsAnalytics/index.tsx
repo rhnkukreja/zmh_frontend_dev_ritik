@@ -163,7 +163,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
             y={labelY}
             textAnchor="middle"
             fill="black"
-            fontSize={11}
+            fontSize={12}
             fontWeight={500}
           >
             {count > 0 && (
@@ -230,14 +230,16 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                         }
                         margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
                       >
-                        <XAxis dataKey={chartKey} dy={12} height={40} />
+                        <XAxis dataKey={chartKey} dy={12} height={40} tick={{fontSize: 12}} />
                         <YAxis
                           yAxisId="left"
                           label={{
                             value: "Count",
                             angle: -90,
                             position: "insideLeft",
+                            style: {fontSize: '12px'}
                           }}
+                          tick={{fontSize: 12}}
                           domain={[
                             0,
                             (dataMax) =>
@@ -248,7 +250,8 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                           <YAxis
                             yAxisId="right"
                             orientation="right"
-                            label={{ angle: 90, position: "insideRight" }}
+                            label={{ angle: 90, position: "insideRight", style: {fontSize: '12px'} }}
+                            tick={{fontSize: 12}}
                             domain={[0, 60]}
                             tickFormatter={(value) => `${value.toFixed(1)}%`}
                           />
@@ -275,7 +278,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                             name="Avg. Support (%)"
                           />
                         )}
-                        {tab == "proposal" && <Legend />}
+                        {tab == "proposal" && <Legend wrapperStyle={{fontSize: '12px'}} />}
                       </ComposedChart>
                     </ResponsiveContainer>
                   )
@@ -336,7 +339,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                               fill={pieCategoryData[index].color}
                               textAnchor={x > cx ? "start" : "end"}
                               dominantBaseline="central"
-                              fontSize={13}
+                              fontSize={12}
                             >
                               {`${displayName}: ${formatWithCommas(value)}`}
                             </text>
@@ -375,7 +378,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                       key={category}
                       className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100"
                     >
-                      <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">
+                      <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0" style={{fontSize: '14px'}}>
                         {category === "Environment" ? "Environmental" : category}
                       </h4>
                       {isDataAvailable(subcategories) ? (
@@ -383,19 +386,19 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                           <table className="w-full border-collapse">
                             <thead>
                               <tr className="bg-primary text-white">
-                                <th className="py-1 px-2 text-left font-medium text-xs">
+                                <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                                   Subcategory
                                 </th>
-                                <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                                <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
                               </tr>
                             </thead>
                             <tbody>
                               {subcategories.map((sub, index) => (
                                 <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                  <td className="py-1 px-2 text-xs">
+                                  <td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {sub.sub_category}
                                   </td>
-                                  <td className="py-1 px-2 text-center text-xs">
+                                  <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>
                                     {formatNumberWithCommas(sub.count)}
                                   </td>
                                 </tr>

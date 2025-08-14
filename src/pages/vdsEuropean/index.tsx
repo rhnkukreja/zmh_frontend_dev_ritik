@@ -751,10 +751,12 @@ const index = () => {
       return;
     }
 
-    // Validate that at least one country is selected
-    if (!npxFilter?.country?.length) {
-      toast.warning("Please select at least one country");
-      return;
+    // Validate that at least one country is selected (only if no company is selected)
+    if (!npxFilter?.company_name?.length) {
+      if (!npxFilter?.country?.length) {
+        toast.warning("Please select at least one country");
+        return;
+      }
     }
 
     // Check if either year or date_range is provided (mutual exclusivity)
@@ -820,10 +822,12 @@ const index = () => {
       return;
     }
 
-    // Validate that at least one country is selected
-    if (!data?.country?.length) {
-      toast.warning("Please select at least one country");
-      return;
+    // Validate that at least one country is selected (only if no company is selected)
+    if (!data?.company_name?.length) {
+      if (!data?.country?.length) {
+        toast.warning("Please select at least one country");
+        return;
+      }
     }
 
     // Check mutual exclusivity for analytics as well
@@ -1021,8 +1025,15 @@ const index = () => {
       return;
     }
 
-    // Handle institution filter removal - allow removal but don't validate here
+    // Handle institution filter removal - prevent removal if company is selected
     if (removeKey === "institution_name") {
+      const currentCompanies = isViewAnalysis ? allAnalyticsFilter.company_name || [] : allApplyFilter.company_name || [];
+      
+      // If company is selected, don't allow institution removal
+      if (currentCompanies.length > 0) {
+        return; // Block removal when company is selected
+      }
+
       const currentInstitutions = isViewAnalysis ? allAnalyticsFilter.institution_name || [] : allApplyFilter.institution_name || [];
 
       // Remove the specific institution value
@@ -1463,6 +1474,45 @@ const index = () => {
                           );
 
                           field.onChange(companyNames);
+
+                          // When company is selected, clear all filters except institution and year
+                          if (companyNames.length > 0) {
+                            // Clear country filter
+                            setValue("country", []);
+                            setSelectedCountries([]);
+                            setCountryComponentKey(prev => prev + 1);
+                            
+                            // Clear other filters
+                            setValue("vote", []);
+                            setValue("category", []);
+                            setValue("date_range", "");
+                            setValue("analyticsYear", []);
+                            setValue("index", []);
+                            setValue("meeting_type", []);
+                            setValue("proposal_type", []);
+                            setValue("proponent_type", []);
+                            setValue("proposal_keyword", []);
+                            setValue("keyword", "");
+                            
+                            // Update filter states - keep institution mandatory
+                            if (isViewAnalysis) {
+                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
+                              const currentYear = watch("analyticsYear") || [];
+                              setAllAnalyticsFilter({
+                                institution_name: currentInstitutions,
+                                company_name: companyNames,
+                                analyticsYear: currentYear.length > 0 ? currentYear : [new Date().getFullYear().toString()]
+                              });
+                            } else {
+                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
+                              const currentYear = watch("year") || new Date().getFullYear().toString();
+                              setallApplyFilter({
+                                institution_name: currentInstitutions,
+                                company_name: companyNames,
+                                year: currentYear
+                              });
+                            }
+                          }
 
                           // Only call API when there's an actual change in selection
                           const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
@@ -1918,7 +1968,6 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                   return (
                     <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
                       <div className="flex flex-col">
-                        <div>{String(year)}</div>
                         {dateRange && (
                           <div className="text-xs font-normal mt-1">
                             ({dateRange.start_meeting} - {dateRange.end_meeting})

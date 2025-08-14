@@ -298,20 +298,20 @@ const ProponentsAnalyticsComponent: React.FC<
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {topProponents[0].subcategory_detail.Environment && (
                 <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Environmental</h4>
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0" style={{fontSize: '14px'}}>Environmental</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className="bg-primary text-white">
-                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
-                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Subcategory</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topProponents[0].subcategory_detail.Environment.slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
-                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -322,20 +322,20 @@ const ProponentsAnalyticsComponent: React.FC<
 
               {topProponents[0].subcategory_detail.Social && (
                 <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Social</h4>
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0" style={{fontSize: '14px'}}>Social</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className="bg-primary text-white">
-                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
-                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Subcategory</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topProponents[0].subcategory_detail.Social.slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
-                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -346,20 +346,20 @@ const ProponentsAnalyticsComponent: React.FC<
 
               {topProponents[0].subcategory_detail.Governance && (
                 <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Governance</h4>
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0" style={{fontSize: '14px'}}>Governance</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className="bg-primary text-white">
-                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
-                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Subcategory</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topProponents[0].subcategory_detail.Governance.slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
-                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -370,20 +370,20 @@ const ProponentsAnalyticsComponent: React.FC<
 
               {topProponents[0].subcategory_detail["Executive Compensation"] && (
                 <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0">Executive Compensation</h4>
+                  <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0" style={{fontSize: '14px'}}>Executive Compensation</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className="bg-primary text-white">
-                          <th className="py-1 px-2 text-left font-medium text-xs">Subcategory</th>
-                          <th className="py-1 px-2 text-left font-medium text-xs">Count</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Subcategory</th>
+                          <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topProponents[0].subcategory_detail["Executive Compensation"].slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-1 px-2 text-xs">{sub.sub_category}</td>
-                            <td className="py-1 px-2 text-center text-xs">{sub.count}</td>
+                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>

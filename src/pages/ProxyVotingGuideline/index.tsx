@@ -233,7 +233,7 @@ function ProxyGuideline() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex justify-between items-center bg-white px-4 py-4 pl-6 bg-white shadow">
+          <div className="flex justify-between items-center bg-white px-4 py-4 pl-6 bg-white shadow sticky top-16 z-40">
             <div className="font-semibold text-xl">Voting Guidelines</div>
             <a
               className="p-2 bg-primary

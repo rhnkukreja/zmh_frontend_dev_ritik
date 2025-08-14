@@ -781,7 +781,7 @@ const index = () => {
                                                                                 return (
                                                                                     <Table.Tr key={index} className="hover:bg-gray-50 border-b border-gray-100">
                                                                                         <Table.Td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-100">
-                                                                                            {companyName || 'N/A'}
+                                                                                            {companyName || ""}
                                                                                         </Table.Td>
                                                                                         {/* ISS columns */}
                                                                                         <Table.Td className="px-4 py-4 text-center">
@@ -903,7 +903,7 @@ const index = () => {
                                                                                         <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
                                                                                             {modalData.nominees_headers?.map((header: any, headerIndex: number) => (
                                                                                                 <Table.Td key={headerIndex} className={`py-2 border-dashed text-sm ${headerIndex === 0 ? 'min-w-[200px]' : ''}`}>
-                                                                                                    {nominee[header.field] || 'N/A'}
+                                                                                                    {nominee[header.field] || ''}
                                                                                                 </Table.Td>
                                                                                             ))}
                                                                                         </Table.Tr>

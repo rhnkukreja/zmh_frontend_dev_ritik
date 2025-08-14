@@ -874,9 +874,8 @@ function ShareHolderProposal() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="overflow-auto xl:overflow-visible mt-4">
-            <div className="w-full">
-              <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow">
+          <div className="mt-4">
+            <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
                 {isAllCompanySelected === true ? (
                   <h1 className="text-xl font-semibold flex items-center gap-2">
                     All Shareholder Proposals
@@ -938,7 +937,6 @@ function ShareHolderProposal() {
                     View for All Companies
                   </button>
                 </div>
-              </div>
             </div>
           </div>
 
@@ -2575,7 +2573,7 @@ function ShareHolderProposal() {
                                 shareHolderProposal?.map((noAction: any, index: number) => (
                                   <Table.Tr
                                     key={noAction?.id}
-                                    className={`[&_td]:last:border-b-0 ${noAction?.id % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
+                                    className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} transition-all hover:bg-primary/5 cursor-pointer`}
                                   >
                                     <Table.Td className="py-2 border-dashed">
                                       <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
@@ -2702,10 +2700,10 @@ function ShareHolderProposal() {
 
                             <Table.Tbody>
                               {shareHolderProposal?.length > 0 &&
-                                shareHolderProposal?.map((noAction: any) => (
+                                shareHolderProposal?.map((noAction: any, index: number) => (
                                   <Table.Tr
                                     key={noAction?.id}
-                                    className={`[&_td]:last:border-b-0 ${noAction?.id % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
+                                    className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} transition-all hover:bg-primary/5 cursor-pointer`}
                                   >
                                     <Table.Td className="py-2 px-2 border-dashed dark:bg-darkmode-600 w-[100px]">
                                       <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
