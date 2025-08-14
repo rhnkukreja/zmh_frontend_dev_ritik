@@ -534,7 +534,7 @@ function CaseStudies() {
                         <SaveAll
                           size={17}
                           strokeWidth={1}
-                          className="text-slate-500 cursor-pointer	"
+                          className="text-slate-500 cursor-pointer"
                         />
                       </Tippy>
                     </Button>
@@ -1088,7 +1088,7 @@ function CaseStudies() {
                             </StandardizedTable.Cell>
                             {isAllCompanySelected && (
                               <StandardizedTable.Cell>
-                                <span className="font-medium text-primary/80">
+                                <span>
                                   {item?.company_name || item?.caspio_company_name}
                                 </span>
                               </StandardizedTable.Cell>

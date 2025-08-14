@@ -356,7 +356,7 @@ function ProxyGuideline() {
 
                         </Popover.Button>
 
-                        <Popover.Panel placement="bottom-end">
+                        <Popover.Panel className="w-[300px]">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                               {/* Filter Content */}
@@ -378,7 +378,7 @@ function ProxyGuideline() {
                                 <Button
                                   variant="primary"
                                   onClick={handleSubmit(onSubmit)}
-                                  className="w-full flex items-center gap-2"
+                                  className="w-full flex items-center gap-2 mb-4"
                                 >
                                   <FaSearch className="text-lg" /> Apply
                                 </Button>

@@ -264,27 +264,6 @@ function Main() {
                     </div>
                   )}
 
-                  {/* Clear and Apply buttons outside filter */}
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => {
-                      onFilterClear();
-                    }}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                  >
-                    <MdOutlineClear className="text-lg" />
-                    Clear
-                  </Button>
-                  
-                  <Button
-                    variant="primary"
-                    onClick={handleSubmit(onSubmit)}
-                    className="w-full sm:w-auto flex items-center gap-2"
-                  >
-                    <FaSearch className="text-sm" />
-                    Apply
-                  </Button>
-
                   <Popover className="inline-block">
                     {({ close }) => (
                       <>
@@ -302,7 +281,7 @@ function Main() {
                             {filtersLength}
                           </div>
                         </Popover.Button>
-                        <Popover.Panel placement="bottom-end">
+                        <Popover.Panel className="w-[300px]">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="p-2">
                               {/* Filter Content */}
@@ -310,7 +289,29 @@ function Main() {
                                 <h4 className="text-base font-semibold text-slate-700 mb-4">Filters</h4>
                               </div>
                               <div>
-                                <div className="w-full  my-2">
+                                <div className="w-full my-2">
+                                  {/* Clear and Apply buttons outside filter */}
+                                  <div className="w-full">
+                                    <Button
+                                      variant="outline-secondary"
+                                      onClick={() => {
+                                        onFilterClear();
+                                      }}
+                                      className="w-full flex items-center gap-2 mb-2"
+                                    >
+                                      <MdOutlineClear className="text-lg" />
+                                      Clear
+                                    </Button>
+
+                                    <Button
+                                      variant="primary"
+                                      onClick={handleSubmit(onSubmit)}
+                                      className="w-full flex items-center gap-2 mb-4"
+                                    >
+                                      <FaSearch className="text-sm" />
+                                      Apply
+                                    </Button>
+                                  </div>
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
                                     <span className="font-semibold">Region</span>
                                     {investerProfileFilterOption?.region

@@ -77,6 +77,8 @@ const initialState: ThemeState = {
   value:
     localStorage.getItem("theme") === null ? themes[0].name : getTheme().name,
   noCompanyHeaderRoutes: [
+    "case-studies",
+    "engagement-detail",
     "investor-profile",
     "engagement-question",
     "voting-guidelines",
@@ -108,15 +110,15 @@ export const themeSlice = createSlice({
     ) => {
       const { route, type } = action.payload;
 
-      if (type === true) {
-        if (!state.noCompanyHeaderRoutes.includes(route)) {
-          state.noCompanyHeaderRoutes.push(route);
-        }
-      } else if (type === false) {
-        state.noCompanyHeaderRoutes = state.noCompanyHeaderRoutes.filter(
-          (existingRoute) => existingRoute !== route
-        );
-      }
+      // if (type === true) {
+      //   if (!state.noCompanyHeaderRoutes.includes(route)) {
+      //     state.noCompanyHeaderRoutes.push(route);
+      //   }
+      // } else if (type === false) {
+      //   state.noCompanyHeaderRoutes = state.noCompanyHeaderRoutes.filter(
+      //     (existingRoute) => existingRoute !== route
+      //   );
+      // }
     },
 
     resetRouter: (state) => {
