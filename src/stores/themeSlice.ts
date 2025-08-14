@@ -77,6 +77,7 @@ const initialState: ThemeState = {
   value:
     localStorage.getItem("theme") === null ? themes[0].name : getTheme().name,
   noCompanyHeaderRoutes: [
+    "shareholder-proposal",
     "case-studies",
     "engagement-detail",
     "investor-profile",
