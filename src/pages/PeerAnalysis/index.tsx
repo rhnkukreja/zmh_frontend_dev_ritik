@@ -1049,24 +1049,24 @@ function PeerAnalysis() {
                               </Table.Td>
 
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px] text-wrap">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
                                   {peer?.company_name}
                                 </Table.Td>
                               )}
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
                                 {peer?.company_country}
                               </Table.Td>
 
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
                                 {peer?.company_sector}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
                                 {peer?.env_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
                                 {peer?.soc_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[200px] text-wrap">
+                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
                                 {peer?.gov_list}
                               </Table.Td>
                             </Table.Tr>

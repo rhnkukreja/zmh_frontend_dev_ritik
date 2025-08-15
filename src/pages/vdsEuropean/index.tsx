@@ -788,7 +788,8 @@ const index = () => {
       vote_type: npxFilter?.vote,
       category: npxFilter?.category,
       keyword: npxFilter?.keyword,
-      country: npxFilter?.country,
+      // Only include country if no company is selected
+      country: npxFilter?.company_name?.length > 0 ? undefined : npxFilter?.country,
     };
 
     // Add only the active filter (year OR date_range, not both)
@@ -867,7 +868,8 @@ const index = () => {
       proponent_type: data?.proponent_type || [],
       meeting_type: data?.meeting_type || [],
       proposal_keyword: data?.proposal_keyword || [],
-      country: data?.country || [],
+      // Only include country if no company is selected
+      country: (Array.isArray(data?.company_name) && data.company_name.length > 0) ? undefined : (data?.country || []),
     };
 
     // Prioritize analyticsYear over date_range for analytics
@@ -1152,7 +1154,8 @@ const index = () => {
             : [],
           vote_type: allAnalyticsFilter?.vote_type || [],
           date_range: allAnalyticsFilter?.date_range || null,
-          country: allAnalyticsFilter?.country || ["USA"],
+          // Only include country if no company is selected
+          country: allAnalyticsFilter?.company_name?.length > 0 ? undefined : (allAnalyticsFilter?.country || ["USA"]),
           page: analyticsPage || 1,
         };
 
@@ -1485,11 +1488,11 @@ const index = () => {
 
                           field.onChange(companyNames);
 
-                          // When company is selected, clear all filters except institution and year
+                          // When company is selected, remove all country conditions and only pass institution and year
                           if (companyNames.length > 0) {
-                            // Apply USA by default when company is selected
-                            setValue("country", ["USA"]);
-                            setSelectedCountries(["USA"]);
+                            // Clear country filter completely when company is selected
+                            setValue("country", []);
+                            setSelectedCountries([]);
                             setCountryComponentKey(prev => prev + 1);
                             
                             // Clear other filters
@@ -1504,14 +1507,13 @@ const index = () => {
                             setValue("proposal_keyword", []);
                             setValue("keyword", "");
                             
-                            // Update filter states - keep institution mandatory and add USA country
+                            // Update filter states - only keep institution and year, remove country
                             if (isViewAnalysis) {
                               const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
                               const currentYear = watch("analyticsYear") || [];
                               setAllAnalyticsFilter({
                                 institution_name: currentInstitutions,
                                 company_name: companyNames,
-                                country: ["USA"],
                                 analyticsYear: currentYear.length > 0 ? currentYear : [new Date().getFullYear().toString()]
                               });
                             } else {
@@ -1520,6 +1522,29 @@ const index = () => {
                               setallApplyFilter({
                                 institution_name: currentInstitutions,
                                 company_name: companyNames,
+                                year: currentYear
+                              });
+                            }
+                          } else {
+                            // When company is deselected, automatically apply USA country filter
+                            setValue("country", ["USA"]);
+                            setSelectedCountries(["USA"]);
+                            setCountryComponentKey(prev => prev + 1);
+                            
+                            // Update filter states with USA country when no company is selected
+                            if (isViewAnalysis) {
+                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
+                              const currentYear = watch("analyticsYear") || [];
+                              setAllAnalyticsFilter({
+                                institution_name: currentInstitutions,
+                                country: ["USA"],
+                                analyticsYear: currentYear.length > 0 ? currentYear : [new Date().getFullYear().toString()]
+                              });
+                            } else {
+                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
+                              const currentYear = watch("year") || new Date().getFullYear().toString();
+                              setallApplyFilter({
+                                institution_name: currentInstitutions,
                                 country: ["USA"],
                                 year: currentYear
                               });

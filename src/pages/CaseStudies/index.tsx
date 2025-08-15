@@ -1094,12 +1094,12 @@ function CaseStudies() {
                               </StandardizedTable.Cell>
                             )}
                             <StandardizedTable.Cell>
-                              <span className="inline-block px-2 py-1">
+                              <span className="inline-block px-2 py-1 font-medium">
                                 {item?.esg_themes}
                               </span>
                             </StandardizedTable.Cell>
                             <StandardizedTable.Cell>
-                              <span className="inline-block px-2 py-1">
+                              <span className="inline-block px-2 py-1 font-medium">
                                 {item?.company_sector}
                               </span>
                             </StandardizedTable.Cell>

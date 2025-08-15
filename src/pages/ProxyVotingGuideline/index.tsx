@@ -432,12 +432,8 @@ function ProxyGuideline() {
                                         onChange={(selectedOptions) => {
                                           const selectedValues = selectedOptions.map((option) => option.value);
                                           field.onChange(selectedValues);
-
-
-
                                         }}
                                         selectedOption={field.value || []}
-
                                       />
                                       // <TomSelect
                                       //   value={field.value || []}
@@ -622,18 +618,18 @@ function ProxyGuideline() {
                                 key={guideline?.id}
                                 className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer"
                               >
-                                <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
-                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary font-medium" style={{fontSize: '14px'}}>
+                                <Table.Td className="py-2 px-3">
+                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                     {guideline?.year}
                                   </span>
                                 </Table.Td>
-                                <Table.Td className="py-2 px-3 text-nowrap" style={{fontSize: '14px'}}>
+                                <Table.Td className="py-2 px-3 text-nowrap">
                                   <p className="font-medium whitespace-nowrap">
                                     {guideline?.institution_name}
                                   </p>
                                 </Table.Td>
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
+                                  <Table.Td className="py-2 px-3">
                                     {guideline?.category && (
                                       <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                         {guideline?.category}

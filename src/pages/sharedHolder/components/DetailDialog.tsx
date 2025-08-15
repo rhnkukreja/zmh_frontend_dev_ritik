@@ -27,9 +27,9 @@ const DetailDialog: React.FC<ShareholderActionDetailProps> = ({
         <Dialog.Panel className="p-0 text-left max-w-4xl w-full">
           <Dialog.Title className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50">
             <div>
-              <h2 className="text-xl font-semibold text-slate-800">Vote Details</h2>
-              <p className="text-sm text-slate-600 mt-1">
-                {selectedShareholderDetail?.company_name || 'Company'} - {selectedShareholderDetail?.proposal_title || 'Proposal'}
+              <h2 className="text-xl font-semibold text-slate-800">Vote Details - {selectedShareholderDetail?.company_name || 'Company'}</h2>
+              <p className="text-sm text-slate-600 mt-2">
+                {selectedShareholderDetail?.proposal_num} - {selectedShareholderDetail?.proposal_name}
               </p>
             </div>
             <button
@@ -44,18 +44,14 @@ const DetailDialog: React.FC<ShareholderActionDetailProps> = ({
           
           <div className="p-6">
             <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-              <div className="bg-primary text-white px-4 py-3">
-                <h3 className="font-semibold text-sm">Institution Voting Details</h3>
-              </div>
-              
               <div className="max-h-96 overflow-y-auto">
                 <table className="w-full">
-                  <thead className="bg-slate-50 sticky top-0">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-medium text-slate-700 text-sm border-b border-slate-200">
+                  <thead className="sticky top-0">
+                    <tr className="bg-primary text-white px-4 py-3">
+                      <th className="px-4 py-3 text-left font-medium text-sm border-b border-slate-200">
                         Institution Name
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-slate-700 text-sm border-b border-slate-200">
+                      <th className="px-4 py-3 text-left font-medium text-sm border-b border-slate-200">
                         Vote Decision
                       </th>
                     </tr>

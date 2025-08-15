@@ -310,8 +310,8 @@ const ProponentsAnalyticsComponent: React.FC<
                       <tbody>
                         {topProponents[0].subcategory_detail.Environment.slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
-                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
+                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -334,8 +334,8 @@ const ProponentsAnalyticsComponent: React.FC<
                       <tbody>
                         {topProponents[0].subcategory_detail.Social.slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
-                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
+                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -358,8 +358,8 @@ const ProponentsAnalyticsComponent: React.FC<
                       <tbody>
                         {topProponents[0].subcategory_detail.Governance.slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
-                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
+                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -382,8 +382,8 @@ const ProponentsAnalyticsComponent: React.FC<
                       <tbody>
                         {topProponents[0].subcategory_detail["Executive Compensation"].slice(0, 5).map((sub: any, index: number) => (
                           <tr key={index} className="border-b border-slate-200">
-                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{sub.sub_category}</td>
-                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{sub.count}</td>
+                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{sub.sub_category}</td>
+                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{sub.count}</td>
                           </tr>
                         ))}
                       </tbody>

@@ -136,9 +136,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <tbody>
                                     {topEngagementTopics.gov.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{topic.topic}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{(topic.percentage_gov_engagements * 100).toFixed(1)}%</td>
+                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_gov_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -158,9 +158,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <tbody>
                                     {topEngagementTopics.env.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{topic.topic}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{(topic.percentage_env_engagements * 100).toFixed(1)}%</td>
+                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_env_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -179,9 +179,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <tbody>
                                     {topEngagementTopics.soc.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                            <td className="py-2 px-3" style={{fontSize: '14px'}}>{topic.topic}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{(topic.percentage_soc_engagements * 100).toFixed(1)}%</td>
+                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_soc_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>

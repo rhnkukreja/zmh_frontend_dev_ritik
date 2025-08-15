@@ -398,10 +398,10 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                             <tbody>
                               {subcategories.map((sub, index) => (
                                 <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                  <td className="py-2 px-3" style={{fontSize: '14px'}}>
+                                  <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>
                                     {sub.sub_category}
                                   </td>
-                                  <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>
+                                  <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>
                                     {formatNumberWithCommas(sub.count)}
                                   </td>
                                 </tr>
