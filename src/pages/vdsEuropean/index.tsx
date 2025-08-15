@@ -1355,7 +1355,7 @@ const index = () => {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
               <div className="flex items-center gap-2">
-                <Button
+                {/* <Button
                   variant="outline-secondary"
                   onClick={() => {
                     onFilterClear(false);
@@ -1364,7 +1364,7 @@ const index = () => {
                   type="button"
                 >
                   <MdOutlineClear className="text-lg mr-1" /> Clear
-                </Button>
+                </Button> */}
 
                 <Button
                   variant="primary"
