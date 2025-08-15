@@ -233,9 +233,35 @@ function ProxyGuideline() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
+          <div className="flex justify-between items-center bg-white px-4 py-4 pl-6 bg-white shadow sticky top-16 z-40">
             <div className="font-semibold text-xl">Voting Guidelines</div>
+            <a
+              className="p-2 bg-primary
+                   border-white border-2 text-white rounded-md"
 
+              onClick={() => {
+                gotoDetailPage(
+                  'https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2025.pdf',
+                  'Key Overboarding Policies'
+                );
+
+                setPdfVisible(true);
+              }}
+            // onClick={(event: React.MouseEvent) => {
+            //   event.preventDefault();
+            //   window.open('')
+            // }}
+            >
+              <div className="flex items-center justify-center cursor-pointer" >
+                <Lucide
+                  icon="File"
+                  className="stroke-[2] w-4 h-4 text-white "
+                />
+                <span className="ml-2 font-semibold hidden xl:flex">
+                  Key Overboarding Policies
+                </span>
+              </div>
+            </a>
             {user?.user_type === "Admin" && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -254,8 +280,8 @@ function ProxyGuideline() {
 
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col px-5 pt-5  sm:flex-row gap-y-2">
-                <div className="flex  ">
+              <div className="flex flex-col px-5 pt-5  sm:flex-row gap-y-2 items-center">
+                <div className="flex">
                   <MultiSearchBar
                     onSearch={handleSearch}
                     onSearchSelect={() => {
@@ -300,39 +326,7 @@ function ProxyGuideline() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-
-                  <div className="flex items-start">
-                    <a
-                      className="p-2 bg-primary
-                   border-white border-2 text-white rounded-md "
-
-                      onClick={() => {
-                        gotoDetailPage(
-                          'https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Overboarding_Document/Overboarding Policy for Top Investors (Updated)_Overboarding_Document.pdf',
-                          'Key Overboarding Policies'
-                        );
-
-                        setPdfVisible(true);
-                      }}
-                    // onClick={(event: React.MouseEvent) => {
-                    //   event.preventDefault();
-                    //   window.open('')
-                    // }}
-                    >
-
-                      <div className="flex items-center justify-center cursor-pointer" >
-                        <Lucide
-                          icon="File"
-                          className="stroke-[2] w-4 h-4 text-white "
-                        />
-                        <span className="ml-2 font-semibold hidden xl:flex">
-                          Key Overboarding Policies
-                        </span>
-                      </div>
-                    </a>
-                  </div>
-
+                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
                   {user?.saved_search?.["Voting Guidelines"] !== undefined && (
                     <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
@@ -340,6 +334,8 @@ function ProxyGuideline() {
                       </Button>
                     </div>
                   )}
+
+                  {/* Clear and Apply buttons outside filter */}
 
                   <Popover className="inline-block">
                     {({ close }) => (
@@ -360,10 +356,34 @@ function ProxyGuideline() {
 
                         </Popover.Button>
 
-                        <Popover.Panel placement="bottom-end">
+                        <Popover.Panel className="w-[300px]">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
-                              <div className="mt-3">
+                              {/* Filter Content */}
+                              <div className="mb-6">
+                                <h4 className="text-base font-semibold text-slate-700">Filters</h4>
+                              </div>
+                              <div className="w-full">
+                                <Button
+                                  variant="outline-secondary"
+                                  onClick={() => {
+                                    onFilterClear();
+                                  }}
+                                  className="w-full flex items-center gap-2 mb-3"
+                                  type="button"
+                                >
+                                  <MdOutlineClear className="text-lg mr-1" /> Clear
+                                </Button>
+
+                                <Button
+                                  variant="primary"
+                                  onClick={handleSubmit(onSubmit)}
+                                  className="w-full flex items-center gap-2 mb-4"
+                                >
+                                  <FaSearch className="text-lg" /> Apply
+                                </Button>
+                              </div>
+                              <div>
                                 <div className="w-full  my-2">
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
                                     <span className="flex items-center gap-2 text-slate-600 font-semibold">
@@ -412,12 +432,8 @@ function ProxyGuideline() {
                                         onChange={(selectedOptions) => {
                                           const selectedValues = selectedOptions.map((option) => option.value);
                                           field.onChange(selectedValues);
-
-
-
                                         }}
                                         selectedOption={field.value || []}
-
                                       />
                                       // <TomSelect
                                       //   value={field.value || []}
@@ -527,31 +543,7 @@ function ProxyGuideline() {
                                   />
                                 </div>
                               </div>
-                              
-                              {/* Buttons */}
-                              <div className="flex justify-end gap-3 mt-6">
-                                <Button
-                                  variant="outline-secondary"
-                                  onClick={() => {
-                                    close();
-                                    onFilterClear();
-                                  }}
-                                  className="w-36"
-                                  type="button"
-                                >
-                                  <MdOutlineClear className="text-lg mr-1" /> Clear
-                                </Button>
-                                <Button
-                                  type="submit"
-                                  variant="primary"
-                                  className="w-36 flex items-center gap-2 text-base font-semibold shadow-md hover:bg-primary/90 transition-all"
-                                  onClick={() => {
-                                    close();
-                                  }}
-                                >
-                                  <FaSearch className="text-lg" /> Apply
-                                </Button>
-                              </div>
+
                             </div>
                           </form>
                         </Popover.Panel>
@@ -582,30 +574,30 @@ function ProxyGuideline() {
                   <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
-                        <Table.Tr className="bg-primary text-white text-sm">
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
-                            Institution
-                          </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                        <Table.Tr className="bg-primary text-white">
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Year
                           </Table.Td>
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
+                            Institution
+                          </Table.Td>
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Category
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Sub Category
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Section
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Policy Guideline
                             </Table.Td>
                           )}
@@ -613,55 +605,31 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Details
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
-                      <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                      <Table.Tbody>
                         {proxyVotingGuidelines?.length > 0 &&
                           uniqueGuidelines(proxyVotingGuidelines)?.map(
-                            (guideline: ProxyVotingGuideline) => (
+                            (guideline: ProxyVotingGuideline, index: number) => (
                               <Table.Tr
                                 key={guideline?.id}
-                                className="[&_td]:last:border-b-0"
+                                className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer"
                               >
-                                <Table.Td className=" flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                  {guideline?.institution_logo_url &&
-                                    guideline.institution_logo_url !== "null" ? (
-                                    <>
-                                      <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
-                                        <img
-                                          alt="ZMH Analytics"
-                                          className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                          src={guideline?.institution_logo_url}
-                                        />
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                      <img
-                                        src={investorIcon}
-                                        alt="Investor Icon"
-                                        className="w-[65%] h-[65%] object-contain"
-                                      />
-                                    </div>
-                                  )}
-
-                                  <div className="ml-4">
-                                    <p className="font-medium whitespace-nowrap">
-                                      {guideline?.institution_name}
-                                    </p>
-                                  </div>
+                                <Table.Td className="py-2 px-3">
+                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                    {guideline?.year}
+                                  </span>
                                 </Table.Td>
-                                <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
-                                  {guideline?.year}
+                                <Table.Td className="py-2 px-3 text-nowrap">
+                                  <p className="font-medium whitespace-nowrap">
+                                    {guideline?.institution_name}
+                                  </p>
                                 </Table.Td>
-
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3">
                                     {guideline?.category && (
                                       <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                         {guideline?.category}
@@ -671,7 +639,7 @@ function ProxyGuideline() {
                                 )}
 
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.sub_category && (
                                       <>{guideline?.sub_category}</>
                                     )}
@@ -679,41 +647,42 @@ function ProxyGuideline() {
                                 )}
 
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.section && (
-                                      <> {guideline?.section}</>
+                                      <>{guideline?.section}</>
                                     )}
                                   </Table.Td>
                                 )}
 
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.policy_guidelines && (
-                                      <> {guideline?.policy_guidelines}</>
+                                      <>{guideline?.policy_guidelines}</>
                                     )}
                                   </Table.Td>
                                 )}
 
-                                <Table.Td className=" py-2 relative w-[150px] box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                                  <div className="flex gap-3 justify-center items-center">
+                                <Table.Td className="py-2 px-3 relative w-[150px]" style={{fontSize: '14px'}}>
+                                  <div className="flex gap-3 items-center">
                                     <Tippy
                                       content="See Details"
                                       options={{
                                         theme: "light",
                                       }}
                                     >
-                                      <Lucide
-                                        onClick={() => {
-                                          gotoDetailPage(
-                                            guideline?.voting_guidelines_pdf_url!,
-                                            guideline?.voting_guidelines_pdf_name!
-                                          );
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <Lucide
+                                          onClick={() => {
+                                            gotoDetailPage(
+                                              guideline?.voting_guidelines_pdf_url!,
+                                              guideline?.voting_guidelines_pdf_name!
+                                            );
 
-                                          setPdfVisible(true);
-                                        }}
-                                        icon="Eye"
-                                        className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                      />
+                                            setPdfVisible(true);
+                                          }}
+                                          icon="Eye"
+                                        />
+                                      </div>
                                     </Tippy>
 
                                     {user?.user_type === "Admin" && (
@@ -723,15 +692,17 @@ function ProxyGuideline() {
                                           theme: "light",
                                         }}
                                       >
-                                        <Lucide
-                                          onClick={() => {
-                                            setUploadFileVisible(true);
-                                            setProxyId(guideline?.id);
-                                          }}
-                                          icon="Upload"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                          <Lucide
+                                            onClick={() => {
+                                              setUploadFileVisible(true);
+                                              setProxyId(guideline?.id);
+                                            }}
+                                            icon="Upload"
+                                          />
+                                        </div>
                                       </Tippy>
+
                                     )}
 
                                     {user?.user_type === "Admin" && (
@@ -741,13 +712,14 @@ function ProxyGuideline() {
                                           theme: "light",
                                         }}
                                       >
-                                        <Lucide
-                                          onClick={() => {
-                                            onEditClickHandler(guideline);
-                                          }}
-                                          icon="PenLine"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                          <Lucide
+                                            onClick={() => {
+                                              onEditClickHandler(guideline);
+                                            }}
+                                            icon="PenLine"
+                                          />
+                                        </div>
                                       </Tippy>
                                     )}
 
@@ -757,20 +729,21 @@ function ProxyGuideline() {
                                         theme: "light",
                                       }}
                                     >
-                                      <a
-                                        href={
-                                          guideline?.voting_guidelines_pdf_url ||
-                                          ""
-                                        }
-                                        download
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        <Lucide
-                                          icon="Download"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
-                                      </a>
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <a
+                                          href={
+                                            guideline?.voting_guidelines_pdf_url ||
+                                            ""
+                                          }
+                                          download
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          <Lucide
+                                            icon="Download"
+                                          />
+                                        </a>
+                                      </div>
                                     </Tippy>
 
                                     {guideline?.is_search ? (
@@ -780,20 +753,21 @@ function ProxyGuideline() {
                                           theme: "light",
                                         }}
                                       >
-                                        <Lucide
-                                          onClick={() => {
-                                            const data = {
-                                              name: guideline?.institution_name,
-                                              year: guideline?.year,
-                                            };
-                                            navigate(
-                                              `/voting-guidelines/pdf-sumamry/${guideline?.id}`,
-                                              { state: data }
-                                            );
-                                          }}
-                                          icon="Search"
-                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                          <Lucide
+                                            onClick={() => {
+                                              const data = {
+                                                name: guideline?.institution_name,
+                                                year: guideline?.year,
+                                              };
+                                              navigate(
+                                                `/voting-guidelines/pdf-sumamry/${guideline?.id}`,
+                                                { state: data }
+                                              );
+                                            }}
+                                            icon="Search"
+                                          />
+                                        </div>
                                       </Tippy>
                                     ) : (
                                       <span className="w-4 h-4 mr-1.5 stroke-[1.3]"></span>
@@ -856,8 +830,8 @@ function ProxyGuideline() {
             // file_name={currentPdfName}
             />
           )}
-        </div>
-      </div>
+        </div >
+      </div >
     </>
   );
 }

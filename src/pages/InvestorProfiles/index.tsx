@@ -34,6 +34,8 @@ import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import FilterChips from "@/components/FilterChips";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { FaSearch } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
 
 interface InvestorProfileFilter {
   region: string[];
@@ -207,7 +209,7 @@ function Main() {
 
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
-              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2">
+              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
                 <div className="flex">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -253,7 +255,7 @@ function Main() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
                   {user?.saved_search?.["Investor Profile"] !== undefined && (
                     <div className="hover:bg-slate-50 ">
                       <Button onClick={getSavedSearches}>
@@ -279,33 +281,37 @@ function Main() {
                             {filtersLength}
                           </div>
                         </Popover.Button>
-                        <Popover.Panel placement="bottom-end">
+                        <Popover.Panel className="w-[300px]">
                           <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="p-2">
-                              <div className="flex items-center mt-4">
-                                <Button
-                                  variant="secondary"
-                                  onClick={() => {
-                                    onFilterClear();
-                                    close();
-                                  }}
-                                  className="w-32 ml-auto"
-                                >
-                                  Clear
-                                </Button>
-                                <Button
-                                  type="submit"
-                                  variant="primary"
-                                  className="w-32 ml-2"
-                                  onClick={() => {
-                                    close();
-                                  }}
-                                >
-                                  Apply
-                                </Button>
+                              {/* Filter Content */}
+                              <div className="mb-4">
+                                <h4 className="text-base font-semibold text-slate-700 mb-4">Filters</h4>
                               </div>
-                              <div className="mt-3">
-                                <div className="w-full  my-2">
+                              <div>
+                                <div className="w-full my-2">
+                                  {/* Clear and Apply buttons outside filter */}
+                                  <div className="w-full">
+                                    <Button
+                                      variant="outline-secondary"
+                                      onClick={() => {
+                                        onFilterClear();
+                                      }}
+                                      className="w-full flex items-center gap-2 mb-2"
+                                    >
+                                      <MdOutlineClear className="text-lg" />
+                                      Clear
+                                    </Button>
+
+                                    <Button
+                                      variant="primary"
+                                      onClick={handleSubmit(onSubmit)}
+                                      className="w-full flex items-center gap-2 mb-4"
+                                    >
+                                      <FaSearch className="text-sm" />
+                                      Apply
+                                    </Button>
+                                  </div>
                                   <div className="text-left text-slate-500 flex justify-between mb-1">
                                     <span className="font-semibold">Region</span>
                                     {investerProfileFilterOption?.region

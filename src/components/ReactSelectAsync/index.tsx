@@ -26,7 +26,9 @@ interface CompanySelectProps {
   isClearable?: boolean;
   exactUrl?: string;
   arrayKeyName?: string;
- 
+  isHideCurrentCompany?: boolean;
+  currentCompany?: string;
+  currentFilters?: any;
 }
 
 const fetchOptions = async (
@@ -35,9 +37,11 @@ const fetchOptions = async (
   companyGlobalSearchName?: string,
   exactUrl?: string,
   arrayKeyName?: string,
- 
+  isHideCurrentCompany?: boolean,
+  currentCompany?: string,
+  currentFilters?: any
 ): Promise<OptionType[]> => {
-  
+
   try {
     const response = isInstitution
       ? await dashboardService.fetchInstitutionByName(
@@ -47,7 +51,8 @@ const fetchOptions = async (
       : await dashboardService.fetchCompanyByName(
           inputValue,
           exactUrl,
-          arrayKeyName
+          arrayKeyName,
+          currentFilters
         );
 
     if (isInstitution) {
@@ -56,6 +61,14 @@ const fetchOptions = async (
         label: institution,
       }));
     } else {
+      if (isHideCurrentCompany && currentCompany) {
+        return response.results
+          .filter((company: any) => company.name !== currentCompany)
+          .map((company: any) => ({
+            value: company?.id ?? company,
+            label: company?.name ?? company,
+          }));
+      }
       return response.results.map((company: any) => ({
         value: company?.id ?? company,
         label: company?.name ?? company,
@@ -79,10 +92,12 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   isClearable,
   exactUrl,
   arrayKeyName,
-
+  isHideCurrentCompany = false,
+  currentCompany = "",
+  currentFilters,
 }) => {
   const [inputValue, setInputValue] = useState("");
-   const [ defaultOptions, setDefaultOptions] = useState([])
+  const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
 
   const loadOptions = useCallback(
     _.debounce(
@@ -92,36 +107,50 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           isInstitution,
           companyGlobalSearchName,
           exactUrl,
-          arrayKeyName
+          arrayKeyName,
+          isHideCurrentCompany,
+          currentCompany,
+          currentFilters
         ).then((options) => {
           callback(options);
-         
         });
       },
       300
     ),
-    [companyGlobalSearchName]
+    [
+      companyGlobalSearchName,
+      isInstitution,
+      exactUrl,
+      arrayKeyName,
+      isHideCurrentCompany,
+      currentCompany,
+      currentFilters,
+    ]
   );
-useEffect(() => {
-  const fetchDefaultOptions = async () => {
-    try {
-      const options = await fetchOptions(
-        "amaz",
-        isInstitution,
-        companyGlobalSearchName,
-        exactUrl,
-        arrayKeyName,
-       
 
-      );
-      setDefaultOptions(options);
+  useEffect(() => {
+    const fetchDefaultOptions = async () => {
+      try {
+        const options = await fetchOptions(
+          "a",
+          isInstitution,
+          companyGlobalSearchName,
+          exactUrl,
+          arrayKeyName,
+          isHideCurrentCompany,
+          currentCompany,
+          currentFilters
+        );
+        setDefaultOptions(options);
+      } catch (error) {
+        console.error("Error fetching default options:", error);
+      }
+    };
 
-    } catch (error) {
-      console.error("Error fetching default options:", error);
+    // Only fetch default options on initial load, not when currentFilters change
+    if (defaultOptions.length === 0) {
+      fetchDefaultOptions();
     }
-  };
-
-  fetchDefaultOptions();
 }, []);
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);

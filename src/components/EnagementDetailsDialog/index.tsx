@@ -37,7 +37,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
 
 
     return (
-        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[120vh] flex flex-col mb-20">
+        <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl flex flex-col mb-10">
             <h2 className="text-xl font-semibold mb-4">Analytics</h2>
             {!isInvestorDataAvailable ? (
                 <p className="text-center text-gray-500 text-lg">No Analytics available</p>
@@ -45,29 +45,30 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                 <>
                     <div className="flex gap-6 rounded-lg">
                         <div className="w-3/5 overflow-auto max-h-80 rounded-lg">
-                            <table className="w-full rounded-lg shadow-md">
+                            <table className="w-full border-collapse">
                                 <thead>
-                                    <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-medium">Institution</th>
-                                        <th className="px-4 py-2 text-left font-medium">Unique Companies</th>
-                                        <th className="px-4 py-2 text-left font-medium">Environmental</th>
-                                        <th className="px-4 py-2 text-left font-medium">Social</th>
-                                        <th className="px-4 py-2 text-left font-medium">Governance</th>
+                                    <tr className="bg-primary text-white">
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Institution</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Unique Companies</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Environmental</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Social</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Governance</th>
                                     </tr>
                                 </thead>
-                                <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                                <tbody>
                                     {investorData.map((investor, index) => (
-                                        <tr key={index} className="text-center">
+                                        <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
                                             <td
-                                                className="p-2 text-left text-blue-600 cursor-pointer hover:underline"
+                                                className="py-2 px-3 text-left text-blue-600 cursor-pointer hover:underline"
+                                                style={{fontSize: '14px'}}
                                                 onClick={() => handleSearch([investor.institution__institution])}
                                             >
                                                 {investor.institution__institution}
                                             </td>
-                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.unique_companies)}</td>
-                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.environmental)}</td>
-                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.social)}</td>
-                                            <td className="px-4 py-2">{formatNumberWithCommas(investor.governance)}</td>
+                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.unique_companies)}</td>
+                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.environmental)}</td>
+                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.social)}</td>
+                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.governance)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -84,14 +85,35 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                             nameKey="name"
                                             cx="50%"
                                             cy="50%"
-                                            outerRadius="80%"
-                                            label={({ name, total }) => `${name}: ${formatNumberWithCommas(total)}`}
+                                            outerRadius={80}
+                                            startAngle={90}
+                                            endAngle={-270}
+                                            label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
+                                                const RADIAN = Math.PI / 180;
+                                                const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
+                                                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                                
+                                                return (
+                                                    <text
+                                                        x={x}
+                                                        y={y}
+                                                        fill={COLORS[index % COLORS.length]}
+                                                        textAnchor={x > cx ? "start" : "end"}
+                                                        dominantBaseline="central"
+                                                        fontSize={12}
+                                                    >
+                                                        {`${name}: ${formatNumberWithCommas(value)}`}
+                                                    </text>
+                                                );
+                                            }}
+                                            labelLine={false}
                                         >
                                             {filteredPieChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip wrapperStyle={{ marginTop: 2 }} />
+                                        <Tooltip wrapperStyle={{ fontSize: '12px' }} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             ) : (
@@ -102,21 +124,21 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-md font-semibold mb-2">Governance</h3>
-                            <table className="w-full border-collapse border border-gray-300 rounded-lg">
+                            <h3 className="text-md font-semibold mb-2" style={{fontSize: '14px'}}>Governance</h3>
+                            <table className="w-full border-collapse">
                                 <thead>
-                                    <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
-                                        <th className="px-4 py-2 text-left font-medium">Count</th>
-                                        <th className="px-4 py-2 text-left font-medium">%</th>
+                                    <tr className="bg-primary text-white">
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Topic</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {topEngagementTopics.gov.slice(0, 5).map((topic, index) => (
-                                        <tr key={index} className="text-center">
-                                            <td className="border p-2 text-left">{topic.topic}</td>
-                                            <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="border p-2">{(topic.percentage_gov_engagements * 100).toFixed(1)}%</td>
+                                        <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
+                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_gov_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -124,42 +146,42 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                         </div>
 
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-md font-semibold mb-2">Environmental</h3>
-                            <table className="w-full border-collapse border border-gray-300 rounded-lg">
+                            <h3 className="text-md font-semibold mb-2" style={{fontSize: '14px'}}>Environmental</h3>
+                            <table className="w-full border-collapse">
                                 <thead>
-                                    <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
-                                        <th className="px-4 py-2 text-left font-medium">Count</th>
-                                        <th className="px-4 py-2 text-left font-medium">%</th>
+                                    <tr className="bg-primary text-white">
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Topic</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {topEngagementTopics.env.slice(0, 5).map((topic, index) => (
-                                        <tr key={index} className="text-center">
-                                            <td className="border p-2 text-left">{topic.topic}</td>
-                                            <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="border p-2">{(topic.percentage_env_engagements * 100).toFixed(1)}%</td>
+                                        <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
+                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_env_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-md font-semibold mb-2">Social</h3>
-                            <table className="w-full border-collapse border border-gray-300 rounded-lg">
+                            <h3 className="text-md font-semibold mb-2" style={{fontSize: '14px'}}>Social</h3>
+                            <table className="w-full border-collapse">
                                 <thead>
-                                    <tr className="bg-primary text-white text-sm">
-                                        <th className="px-4 py-2 text-left font-medium">Topic</th>
-                                        <th className="px-4 py-2 text-left font-medium">Count</th>
-                                        <th className="px-4 py-2 text-left font-medium">%</th>
+                                    <tr className="bg-primary text-white">
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Topic</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {topEngagementTopics.soc.slice(0, 5).map((topic, index) => (
-                                        <tr key={index} className="text-center">
-                                            <td className="border p-2 text-left">{topic.topic}</td>
-                                            <td className="border p-2">{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="border p-2">{(topic.percentage_soc_engagements * 100).toFixed(1)}%</td>
+                                        <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
+                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_soc_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>

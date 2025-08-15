@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { getPageNumbers } from "@/utils/helper";
 import { caseStudiesService } from "@/services/caseStudies";
 
-const name = "shareholder_proposal";
+const name = "case_studies";
 
 export interface CaseStudyFilter {
   keyword: string;

@@ -147,15 +147,18 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
 
     // Custom label for count and percentage together above the bar
     const CountAndPercentLabel = (props: any) => {
-      const { x, width, value, index } = props;
+      const { x, y, width, height, value, index } = props;
       const chartData = tab == "proposal"
         ? yearlySummary?.filter((item) => item[chartKey] >= 2022)
         : yearlySummary?.filter((item) => item[chartKey] >= 2022).reverse();
       const data = chartData && chartData[index];
       const count = value;
       const percent = data && data.avg_support !== undefined ? data.avg_support : undefined;
-      const labelY = 20;
-      const lineY = labelY + 6; // 6px below the label
+      
+      // Position label above the bar with some padding
+      const labelY = y - 10; // 10px above the bar
+      const lineY = labelY + 15; // Line below the text
+      
       return (
         <g>
           <text
@@ -163,11 +166,15 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
             y={labelY}
             textAnchor="middle"
             fill="black"
-            fontSize={11}
+            fontSize={12}
             fontWeight={500}
           >
-            {count}
-            {percent !== undefined ? ` - ${percent.toFixed(1)}%` : ''}
+            {count > 0 && (
+              <>
+                {count}
+                {percent !== undefined && percent > 0 ? ` - ${percent.toFixed(1)}%` : ''}
+              </>
+            )}
           </text>
           <line
             x1={x + width / 2 - 16}
@@ -182,16 +189,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
     };
 
     return (
-      <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
-        {tab == "proposal"
-          ? <h1 className="text-xl font-semibold flex items-center gap-2 mb-4">
-            All Shareholder Proposals
-            <Pill text="Beta" />
-          </h1>
-          : <h1 className="text-xl font-semibold flex items-center gap-2  mb-4">
-            All No Action Letters
-            <Pill text="Beta" />
-          </h1>}
+      <div className="relative bg-white w-full max-w-7xl min-h-[fit-content] flex flex-col mb-20">
         {proposalCounts.total_proposals === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Lucide
@@ -218,15 +216,13 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {/* 1. Yearly Proposal Trends - Bar Chart */}
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
-                  {tab == "proposal"
-                    ? "Yearly Proposal Trend"
-                    : "No Action Letter Trend"}
+                    Yearly Trend
                 </h3>
                 {isDataAvailable(yearlySummary) ? (
                   yearlySummary.length === 1 ? (
-                    <p className="text-lg font-semibold text-gray-700">
-                      {formatNumberWithCommas(yearlySummary[0].count)} {yearlySummary[0].count === 1 ? 'Proposal' : 'Proposals'}
-                    </p>
+                  <Pill text={`${formatNumberWithCommas(yearlySummary[0].count)} ${yearlySummary[0].count === 1 ? 'Proposal' : 'Proposals'}`} />
+                     
+                    
                   ) : (
                     <ResponsiveContainer width="100%" height={250}>
                       <ComposedChart
@@ -235,16 +231,18 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                             ? [...yearlySummary?.filter((item) => item[chartKey] >= 2022)]
                             : [...yearlySummary?.filter((item) => item[chartKey] >= 2022)].reverse()
                         }
-                        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                        margin={{ top: 50, right: 20, left: 0, bottom: 0 }}
                       >
-                        <XAxis dataKey={chartKey} dy={12} height={40} />
+                        <XAxis dataKey={chartKey} dy={12} height={40} tick={{fontSize: 12}} />
                         <YAxis
                           yAxisId="left"
                           label={{
                             value: "Count",
                             angle: -90,
                             position: "insideLeft",
+                            style: {fontSize: '12px'}
                           }}
+                          tick={{fontSize: 12}}
                           domain={[
                             0,
                             (dataMax) =>
@@ -255,7 +253,8 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                           <YAxis
                             yAxisId="right"
                             orientation="right"
-                            label={{ angle: 90, position: "insideRight" }}
+                            label={{ angle: 90, position: "insideRight", style: {fontSize: '12px'} }}
+                            tick={{fontSize: 12}}
                             domain={[0, 60]}
                             tickFormatter={(value) => `${value.toFixed(1)}%`}
                           />
@@ -282,7 +281,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                             name="Avg. Support (%)"
                           />
                         )}
-                        {tab == "proposal" && <Legend />}
+                        {tab == "proposal" && <Legend wrapperStyle={{fontSize: '12px'}} />}
                       </ComposedChart>
                     </ResponsiveContainer>
                   )
@@ -294,9 +293,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {/* 2. Proposal Distribution Pie Chart */}
               <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                 <h3 className="text-lg font-semibold mb-4">
-                  {tab == "proposal"
-                    ? "Proposal Distribution by Category"
-                    : "Distribution by Category"}
+                  By Category
                 </h3>
                 {isDataAvailable(topCategories) ? (
                   <ResponsiveContainer width="100%" height={250}>
@@ -345,7 +342,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                               fill={pieCategoryData[index].color}
                               textAnchor={x > cx ? "start" : "end"}
                               dominantBaseline="central"
-                              fontSize={13}
+                              fontSize={12}
                             >
                               {`${displayName}: ${formatWithCommas(value)}`}
                             </text>
@@ -368,7 +365,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
               {tab !== "proposal" && (
                 <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 flex flex-col items-center w-full">
                   <h3 className="text-lg font-semibold mb-4">
-                    Outcome Distribution
+                    By Outcome
                   </h3>
                   <OutcomePieChart pieChartOutcome={pieChartOutcome} />
                 </div>
@@ -376,7 +373,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
             </div>
 
             {/* Row: Tables for Top Subcategories */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {isDataAvailable(Object.entries(topSubcategories)) ? (
                 Object.entries(topSubcategories).map(
                   ([category, subcategories]) => (
@@ -384,27 +381,27 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                       key={category}
                       className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100"
                     >
-                      <h4 className="text-md font-semibold mb-2">
+                      <h4 className="text-md font-semibold mb-3 px-4 pt-4 md:px-0 md:pt-0" style={{fontSize: '14px'}}>
                         {category === "Environment" ? "Environmental" : category}
                       </h4>
                       {isDataAvailable(subcategories) ? (
                         <div className="overflow-x-auto">
-                          <table className="w-full border-collapse border border-gray-300">
+                          <table className="w-full border-collapse">
                             <thead>
-                              <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-medium">
+                              <tr className="bg-primary text-white">
+                                <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                                   Subcategory
                                 </th>
-                                <th className="px-4 py-2 text-left font-medium">Count</th>
+                                <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
                               </tr>
                             </thead>
                             <tbody>
                               {subcategories.map((sub, index) => (
-                                <tr key={index} className="border">
-                                  <td className="border p-2">
+                                <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
+                                  <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>
                                     {sub.sub_category}
                                   </td>
-                                  <td className="border p-2 text-center">
+                                  <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>
                                     {formatNumberWithCommas(sub.count)}
                                   </td>
                                 </tr>
@@ -413,7 +410,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                           </table>
                         </div>
                       ) : (
-                        <p className="text-gray-500">No data available</p>
+                        <p className="text-gray-500 px-4 pb-4">No data available</p>
                       )}
                     </div>
                   )

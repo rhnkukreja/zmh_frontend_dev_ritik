@@ -1,5 +1,5 @@
-// export const baseURL = `https://api.zmhadvisors.com`;
-export const baseURL = `https://api-dev.zmhadvisors.com`;
+export const baseURL = `https://api.zmhadvisors.com`;
+// export const baseURL = `https://api-dev.zmhadvisors.com`;
 // export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
 // export const baseURL = `http://127.0.0.1:8000`;
 
@@ -62,22 +62,26 @@ export const no_header_company = [
   "investor-profile",
   "engagement-question",
   "voting-guidelines",
+  "case-studies",
+  "engagement-detail"
 ];
 export const proponent_type = ["shareholder", "management"];
 export const meeting_type = ["Proxy Contest", "Annual", "Special"];
 export const proposal_type = ["elect directors", "say on pay", "auditor"];
-export const proposal_keywords =  { 
+export const proposal_keywords = {
   "elect directors": ["elect director", "elect"],
-   "say on pay": ["executive compensation", "named executive compensation", "compensation"],
-    "auditor": ["ratify auditor", "auditor"] 
-  };
+  "say on pay": ["executive compensation", "named executive compensation", "compensation"],
+  "auditor": ["ratify auditor", "auditor"]
+};
 
 export const subSidebarRoutes = ["/notes"];
 
 export const pageTitles: Record<string, string | null> = {
-  "/proxy-contest": "Proxy Contest",
   "/notes": "Notes",
   "/investor-profile": null,
   "/engagement-question": null,
   "/voting-guidelines": null,
+  "/case-studies": null,
+  "/engagement-detail": null,
+  "/shareholder-proposal":null
 };

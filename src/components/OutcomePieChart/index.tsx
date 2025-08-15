@@ -95,7 +95,7 @@ const OutcomePieChart: React.FC<Props> = ({ pieChartOutcome}) => {
               fill={outcomeData[index].color}
               textAnchor={x > cx ? "start" : "end"}
               dominantBaseline="central"
-              fontSize={11}
+              fontSize={12}
             >
               {`${name}: ${formatWithCommas(value)}`}
             </text>

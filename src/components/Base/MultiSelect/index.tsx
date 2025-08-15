@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Select, { components, MultiValue } from "react-select";
 import { FormCheck } from "../Form";
+import { toast } from "react-toastify";
 
 interface Option {
   value: string;
@@ -14,6 +15,8 @@ interface MultiSelectDropdownProps {
   onChange: (selectedOptions: Option[]) => void;
   loading?: boolean;
   selectedOption?: string[] | Option[] | any; // Can be array of strings or Option objects
+  preventRemoveLastItem?: boolean; // New prop to prevent removing last item
+  fieldName?: string; // Field name for custom error messages
 }
 
 const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
@@ -22,10 +25,18 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   onChange,
   loading = false,
   selectedOption = [], // Default to an empty array
+  preventRemoveLastItem = false,
+  fieldName = "item",
 }) => {
   const [options, setOptions] = useState<Option[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
   const [showLoading, setShowLoading] = useState<boolean>(loading);
+  const [hasInitialLoad, setHasInitialLoad] = useState<boolean>(false);
+
+  // Update showLoading when loading prop changes
+  useEffect(() => {
+    setShowLoading(loading);
+  }, [loading]);
 
   // Synchronize selected options with the `selectedOption` prop
   useEffect(() => {
@@ -57,10 +68,22 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       return item;
     });
     setOptions(formattedOptions || []);
-  }, [data]);
+    
+    // Mark that we've received data (even if empty) after the first load
+    if (!hasInitialLoad && !loading) {
+      setHasInitialLoad(true);
+    }
+  }, [data, loading, hasInitialLoad]);
 
   const handleChange = (selected: MultiValue<Option>) => {
     const newSelectedOptions = selected as Option[];
+    
+    // Check if trying to remove the last item when preventRemoveLastItem is true
+    if (preventRemoveLastItem && selectedOptions.length === 1 && newSelectedOptions.length === 0) {
+      toast.error(`At least one ${fieldName} must be selected`);
+      return; // Don't update the state, keep the current selection
+    }
+    
     setSelectedOptions(newSelectedOptions);
     onChange(newSelectedOptions);
   };
@@ -90,21 +113,31 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   return (
     <Select
       isMulti
-      options={loading ? [] : options}
+      options={options}
       value={selectedOptions}
       onChange={handleChange}
-      placeholder={showLoading ? "Loading options..." : placeholder}
+      placeholder={showLoading || !hasInitialLoad ? "Loading options..." : placeholder}
       hideSelectedOptions={false}
       components={{
         Option: CustomOption,
         NoOptionsMessage: () => (
-          <div className="p-2">{showLoading ? "Loading..." : "No options found"}</div>
+          <div className="p-2 text-center">
+            {showLoading || !hasInitialLoad ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                Loading options...
+              </div>
+            ) : (
+              <div className="text-gray-500">No options available</div>
+            )}
+          </div>
         ),
       }}
       isDisabled={loading}
       className="basic-multi-select"
       classNamePrefix="select"
       closeMenuOnSelect={false}
+      isLoading={showLoading}
     />
   );
 };

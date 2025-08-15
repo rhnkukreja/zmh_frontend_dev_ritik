@@ -1,4 +1,4 @@
-import { characterColors, PAGE_SIZE } from "@/constant";
+import { characterColors, PAGE_SIZE, proposal_keywords } from "@/constant";
 import { FormattedMenu } from "@/themes/Echo/side-menu";
 import { FilterObject } from "@/types/common";
 import dayjs from "dayjs";
@@ -38,6 +38,10 @@ const onlyNumber = (string: string) => {
   } else {
     return "";
   }
+};
+
+const getCurrentYear = () => {
+  return new Date().getFullYear();
 };
 
 const formatCurrency = (number: number) => {
@@ -329,6 +333,32 @@ const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   return filteredMenuItems;
 };
 
+export const downloadFileFromAPI = async ({
+  url,
+  fileName,
+  setLoading,
+  serviceMethod
+}) => {
+  setLoading(true);
+  try {
+    const file = await serviceMethod(url + "&download=true");
+
+    const blobUrl = URL.createObjectURL(file.result);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+
+    URL.revokeObjectURL(blobUrl);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error downloading file:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 // const downloadCSV = (csvContent: any, name: string) => {
 //   const blob = new Blob([csvContent], { type: "text/csv" });
 //   const url = window.URL.createObjectURL(blob);
@@ -377,28 +407,84 @@ function generateFilterChips(filters: Record<string, any>) {
     proposal_type: "Proposal Category",
     proponent_type: "Proponent",
     meeting_type: "Meeting Type",
-    custom_keywords: "Keywords",
+    proposal_keyword: "Keywords",
     country: "Country",
     analyticsYear: "Year",
     date_range: "Date Range",
+    themes: "Themes",
+    market: "Country",
+    sector: "Sector",
+    region: "Region",
   };
 
-  return Object.entries(filters)
-    .filter(([key, value]) => value && value.length !== 0 && value !== "")
-    .flatMap(([key, value]) => {
+  // Define the order of filters as they appear in the UI
+  const filterOrder = [
+    'institution_name',    // First row
+    'analyticsYear', 'year',
+    'index_name', 'index',
+    'date_range',
+    'country',             // Second row
+    'meeting_type',
+    'proposal_type',
+    'proponent_type',
+    'vote', 'vote_type',
+    // Additional filters that might not be in the main form
+    'company_name', 'company_names',
+    'category',
+    'keyword', 'proposal_keyword'
+  ];
+
+  // Create chips for each filter in the defined order
+  const sortedChips: any[] = [];
+  
+  filterOrder.forEach(filterKey => {
+    if (filters[filterKey] && filters[filterKey].length !== 0 && filters[filterKey] !== "") {
+      const value = filters[filterKey];
       if (Array.isArray(value)) {
-        return value.map((v) => ({
-          key,
-          label: `${mapping[key] || key}: ${typeof v === 'object' && v.label ? v.label : v}`,
-          value: v,
-        }));
+        value.forEach((v) => {
+          sortedChips.push({
+            key: filterKey,
+            label: `${mapping[filterKey] || filterKey}: ${typeof v === 'object' && v.label ? v.label : v}`,
+            value: v,
+          });
+        });
+      } else {
+        sortedChips.push({
+          key: filterKey,
+          label: `${mapping[filterKey] || filterKey}: ${typeof value === 'object' && value.label ? value.label : value}`,
+          value,
+        });
       }
-      return {
-        key,
-        label: `${mapping[key] || key}: ${typeof value === 'object' && value.label ? value.label : value}`,
-        value,
-      };
+    }
+  });
+
+  // Add any remaining filters that weren't in the predefined order
+  Object.entries(filters)
+    .filter(([key, value]) => 
+      !filterOrder.includes(key) && 
+      value && 
+      value.length !== 0 && 
+      value !== ""
+    )
+    .forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((v) => {
+          sortedChips.push({
+            key,
+            label: `${mapping[key] || key}: ${typeof v === 'object' && v.label ? v.label : v}`,
+            value: v,
+          });
+        });
+      } else {
+        sortedChips.push({
+          key,
+          label: `${mapping[key] || key}: ${typeof value === 'object' && value.label ? value.label : value}`,
+          value,
+        });
+      }
     });
+
+  return sortedChips;
 }
 
 function convertToTitleCase(str: string): string {
@@ -423,6 +509,9 @@ function convertToTitleCase(str: string): string {
     return "Country"
   }
   else if (str == "index") {
+    return "Index"
+  }
+   else if (str == "index_name") {
     return "Index"
   }
   else if (str == "custom_keywords") {
@@ -608,5 +697,6 @@ export {
   generateFilterChips,
   cleanObject,
   groupByValue,
+  getCurrentYear,
 
 };

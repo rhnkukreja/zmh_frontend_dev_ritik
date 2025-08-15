@@ -54,6 +54,11 @@ function Main() {
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<boolean[]>(() => {
+ 
+  return Object.keys(investorProfileEditableSectionsInvestors).map((_, idx) => idx === 0);
+});
+
   const navigate = useNavigate();
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -98,6 +103,15 @@ function Main() {
       toast.error("Something went wrong!");
     }
   };
+ const areAllGroupsExpanded = () => {
+  return expandedSections.slice(1).every(Boolean); 
+};
+const toggleAllGroups = () => {
+  const shouldExpand = !areAllGroupsExpanded();
+  setExpandedSections(prev =>
+    prev.map((_, idx) => (idx === 0 ? true : shouldExpand))
+  );
+};
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -322,7 +336,9 @@ function Main() {
               </div>
             )}
           </div>
+       
           <div className="mt-2 flex flex-col lg:flex-row  gap-x-2">
+            
             <div
               className=
               {clsx(
@@ -332,6 +348,7 @@ function Main() {
                 params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
               )}
             >
+                  
               {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors)?.map(
                   (key, index) => {
@@ -361,11 +378,19 @@ function Main() {
                             ?.replace(/\n/g, "<br />") || ""
                         }
                         field={key as keyof InvestersProfile}
+                        expanded={expandedSections[index]}
+                        onToggle={() =>
+                         setExpandedSections(prev =>
+                         prev.map((v, i) => (i === index ? !v : v))
+                         )}
+                         toggleAllGroups={toggleAllGroups}
+                         areAllGroupsExpanded={areAllGroupsExpanded}
+      
                       />
                     );
                   }
                 )}
-
+              
               {params?.type === "equity" &&
                 Object.keys(investorProfileEditableSectionsEquity).map(
                   (key, index) => {
@@ -402,6 +427,7 @@ function Main() {
                           // ?.concat("</li>") || ""
                         }
                         field={key as keyof InvestersProfile}
+                        
                       />
                     );
                   }
@@ -412,7 +438,7 @@ function Main() {
               <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
                 {singleInvesterProfile?.contact_email && (
                   <div className="flex flex-col box mb-4 p-4 border border-gray-200 rounded-md">
-                    <h4 className="text-[18px] font-semibold text-left">
+                    <h4 className="text-[18px] font-semibold text-left text-black">
                       {/\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
                         ? "Team Contact Details"
                         : "Link to Contact Form"}
@@ -443,7 +469,7 @@ function Main() {
                   //     : "h-[70px] mt-4"
                   >
                     <div className="flex items-center justify-between  w-full h-full ">
-                      <h4 className="text-[18px]  font-semibold text-left ml-2 leading-none ">
+                      <h4 className="text-[18px]  font-semibold text-left ml-2 leading-none text-black ">
                         Key Contacts
                       </h4>
                       {user?.user_type === "Admin" && (

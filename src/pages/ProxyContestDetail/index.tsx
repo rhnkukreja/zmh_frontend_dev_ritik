@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 import { toast } from "react-toastify";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
@@ -20,8 +22,16 @@ const ProxyContestDetail = () => {
     const navigate = useNavigate();
     const { companyId } = useParams();
     
+    // Get global search state
+    const { companyGlobalSearchName } = useAppSelector((state: RootState) => state.authentiction);
+    
     // Get company data from navigation state
-    const { company, companyName, year, meetingDate } = location.state || {};
+    const { company, companyName, year, meetingDate, fromProxyContest } = location.state || {};
+    
+    // Check if we came from global search by checking URL params
+    const urlParams = new URLSearchParams(location.search);
+    const globalCompanyParam = urlParams.get('globalCompany');
+    const isFromGlobalSearch = globalCompanyParam && companyGlobalSearchName;
     
     // State for all data
     const [loading, setLoading] = useState(false);
@@ -87,7 +97,7 @@ const ProxyContestDetail = () => {
                 }),
 
             // Fetch Case Studies
-            customAxios.get(`/case_studies/?company_name=${companyName}`)
+            customAxios.get(`/case_studies/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&themes=${encodeURIComponent('Proxy Contest/M&A')}`)
                 .then(response => {
                     setCaseStudiesData(response.data?.results || []);
                 })
@@ -117,10 +127,7 @@ const ProxyContestDetail = () => {
                 <div className="text-center py-12">
                     <Lucide icon="AlertCircle" className="w-12 h-12 text-red-400 mx-auto mb-3" />
                     <h3 className="text-lg font-medium text-gray-900 mb-1">No Company Data</h3>
-                    <p className="text-gray-500 mb-4">Company information is not available.</p>
-                    <Button onClick={() => navigate('/proxy-contest')} variant="primary">
-                        Back to Proxy Contest
-                    </Button>
+                    <p className="text-gray-500">Company information is not available.</p>
                 </div>
             </div>
         );
@@ -132,14 +139,22 @@ const ProxyContestDetail = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
-                        <Button
-                            onClick={() => navigate('/proxy-contest')}
-                            variant="primary"
-                            className="flex items-center gap-2"
-                        >
-                            <ChevronLeft size={18} />
-                            Back
-                        </Button>
+                        {/* Only show back button if NOT from global search */}
+                        {!isFromGlobalSearch && (
+                            <Button
+                                onClick={() => {
+                                    navigate('/proxy-contest', { 
+                                        replace: true,
+                                        state: { preventAutoNavigation: true }
+                                    });
+                                }}
+                                variant="primary"
+                                className="flex items-center gap-2"
+                            >
+                                <ChevronLeft size={18} />
+                                Back
+                            </Button>
+                        )}
                         <div>
                             <div className="font-bold text-2xl pt-4">
                                 {company.company_name}
@@ -559,7 +574,7 @@ const ProxyContestDetail = () => {
                                                             {item?.year || 'N/A'}
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
-                                                            {item?.esg_themes || 'N/A'}
+                                                            {item?.esg_themes && item?.esg_themes !== 'N/A' ? item?.esg_themes : (item?.esg_themes === 'N/A' ? '' : 'Proxy Contest/M&A')}
                                                         </Table.Td>
                                                         <Table.Td className="py-2 border-dashed">
                                                             {item?.industry || 'N/A'}
