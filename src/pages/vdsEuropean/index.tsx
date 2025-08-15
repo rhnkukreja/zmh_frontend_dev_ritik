@@ -1065,6 +1065,54 @@ const index = () => {
       return;
     }
 
+    // Handle company filter removal - restore USA country when company is removed
+    if (removeKey === "company_name") {
+      if (isViewAnalysis) {
+        const updatedFilters = { ...allAnalyticsFilter };
+        
+        // Remove the specific company
+        if (Array.isArray(updatedFilters[removeKey])) {
+          updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+            (item) => item !== removeValue
+          );
+        }
+        
+        // If no companies left, restore USA country
+        if (!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) {
+          updatedFilters.country = ["USA"];
+          setValue("country", ["USA"]);
+          setSelectedCountries(["USA"]);
+          setCountryComponentKey(prev => prev + 1);
+        }
+        
+        setValue(removeKey, updatedFilters[removeKey]);
+        setAllAnalyticsFilter(updatedFilters);
+        localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+      } else {
+        const updatedFilters = { ...allApplyFilter };
+        
+        // Remove the specific company
+        if (Array.isArray(updatedFilters[removeKey])) {
+          updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+            (item) => item !== removeValue
+          );
+        }
+        
+        // If no companies left, restore USA country
+        if (!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) {
+          updatedFilters.country = ["USA"];
+          setValue("country", ["USA"]);
+          setSelectedCountries(["USA"]);
+          setCountryComponentKey(prev => prev + 1);
+        }
+        
+        setValue(removeKey, updatedFilters[removeKey]);
+        setallApplyFilter(updatedFilters);
+        localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+      }
+      return;
+    }
+
     if (isViewAnalysis) {
       const updatedFilters = { ...allAnalyticsFilter };
 
