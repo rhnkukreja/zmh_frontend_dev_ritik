@@ -1088,7 +1088,7 @@ function CaseStudies() {
                             </StandardizedTable.Cell>
                             {isAllCompanySelected && (
                               <StandardizedTable.Cell>
-                                <span>
+                                <span className="inline-block px-2 py-1 font-medium">
                                   {item?.company_name || item?.caspio_company_name}
                                 </span>
                               </StandardizedTable.Cell>
