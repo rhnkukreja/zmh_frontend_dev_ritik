@@ -585,7 +585,7 @@ function CaseStudies() {
               )}
 
               {count > 0 && (
-                <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
+                <h2 className="flex items-end font-semibold justify-end my-2 md:ml-auto mx-5 mb-1" style={{fontSize: '14px'}}>
                   Count: {count.toLocaleString()}
                 </h2>
               )}
@@ -595,7 +595,7 @@ function CaseStudies() {
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                      <h3 className="font-semibold text-slate-700" style={{fontSize: '14px'}}>Filters</h3>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline-secondary"
@@ -625,7 +625,7 @@ function CaseStudies() {
                     >
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
                             <FaCalendarAlt className="text-gray-400" /> Year
                           </span>
 
@@ -671,7 +671,7 @@ function CaseStudies() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
                             <FaLayerGroup className="text-gray-400" /> Index
                           </span>
                         </div>
@@ -697,7 +697,7 @@ function CaseStudies() {
                         <div className="w-full mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                              <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
                                 <FaBuilding className="text-gray-400" /> Select Companies
                               </span>
                             </div>
@@ -723,7 +723,7 @@ function CaseStudies() {
                       {isAllCompanySelected && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold">Country</span>
+                            <span className="font-semibold" style={{fontSize: '14px'}}>Country</span>
                             {apiDropdownOptions.market.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -794,7 +794,7 @@ function CaseStudies() {
                       {isAllCompanySelected === true && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
                               <FaBuilding className="text-gray-400" /> Sector
                             </span>
                             {apiDropdownOptions.sector.length > 0 && (
@@ -866,7 +866,7 @@ function CaseStudies() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
                             <FaTags className="text-gray-400" /> Themes
                           </span>
                           {apiDropdownOptions.themes.length > 0 && (
@@ -939,7 +939,7 @@ function CaseStudies() {
                         <div className="mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                              <span className="font-semibold">Alternate Companies</span>
+                              <span className="font-semibold" style={{fontSize: '14px'}}>Alternate Companies</span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -961,7 +961,7 @@ function CaseStudies() {
                         <>
                           <div className="mx-2">
                             <div className="flex-1 w-full text-slate-500">
-                              <span className="font-semibold">Approval Status</span>
+                              <span className="font-semibold" style={{fontSize: '14px'}}>Approval Status</span>
                               <div className="mt-2 flex flex-col sm:flex-row">
                                 <Controller
                                   name="approval_status"

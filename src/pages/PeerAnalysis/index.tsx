@@ -576,7 +576,7 @@ function PeerAnalysis() {
                       const element = document.querySelector('#data-listing');
                       element?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="px-5 py-2 rounded bg-primary text-white flex gap-2 items-center"
+                    className="px-5 py-2 rounded flex gap-2 items-center border border-primary text-primary"
                   >
                     Source Data
                     <ArrowDown size={16} />

@@ -1036,7 +1036,7 @@ function ShareHolderProposal() {
                         const element = document.querySelector('#data-listing');
                         element?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="px-5 py-2 rounded bg-primary text-white flex gap-2 items-center"
+                      className="px-5 py-2 rounded flex gap-2 items-center border border-primary text-primary"
                     >
                       Source Data
                       <ArrowDown size={16} />
@@ -2013,7 +2013,7 @@ function ShareHolderProposal() {
                 </form>
               )}
 
-              <div className="overflow-auto xl:overflow-visible px-5">
+              <div className="overflow-auto xl:overflow-visible">
                 <Tab.Group
                   selectedIndex={getSelectedTabIndex()}
                   defaultIndex={defaultTabIndex}
@@ -2277,7 +2277,7 @@ function ShareHolderProposal() {
                                   </StandardizedTable.Cell>
                                   <StandardizedTable.Cell className="text-center">
                                     <span className={clsx([
-                                      `py-2 border-dashed dark:bg-darkmode-600 text-wrap font-bold ${noAction?.color_name} text-center`,
+                                      `py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium ${noAction?.color_name} text-center`,
                                     ])}>
                                       {noAction?.outcome_percentage}
                                     </span>
@@ -2321,7 +2321,7 @@ function ShareHolderProposal() {
                                   >
                                     {noAction?.nl_exist === true && (
                                       <span
-                                        className="text-xs font-bold"
+                                      className="font-medium"
                                         onClick={() => {
                                           const id =
                                             noAction?.nl_exist === true
@@ -2438,7 +2438,7 @@ function ShareHolderProposal() {
                       )}
                       {isViewAnalysis && (
                         <div className="w-full pt-5">
-                          <div className="flex gap-4 mb-6 px-4 ">
+                          <div className="flex gap-4 mb-6">
                             <button
                               className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
                                 ? "bg-primary text-white shadow"
@@ -2537,119 +2537,118 @@ function ShareHolderProposal() {
                           </div>
                         </Tippy>
                       </div>
-                      <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px] rounded-lg">
-                          <Table>
-                            <Table.Thead>
-                              <Table.Tr className="sticky top-0 z-20 bg-primary text-white shadow-md">
-                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
-                                  Proxy Year
-                                </Table.Td>
-                                {isAllCompanySelected && (
-                                  <Table.Td className="py-3 px-4 font-medium text-sm border-0">
-                                    Company
-                                  </Table.Td>
-                                )}
-                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
-                                  Proponent
-                                </Table.Td>
-                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
-                                  Category
-                                </Table.Td>
-                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
-                                  Sub Category
-                                </Table.Td>
-                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
-                                  Outcome
-                                </Table.Td>
-                                <Table.Td className="py-3 px-4 font-medium text-sm border-0">
-                                  Details
-                                </Table.Td>
-                              </Table.Tr>
-                            </Table.Thead>
+                      <StandardizedTable isLoading={loading} maxHeight="400px">
+                        <StandardizedTable.Header>
+                          <StandardizedTable.Cell isHeader width="10%">
+                            Proxy Year
+                          </StandardizedTable.Cell>
+                          {isAllCompanySelected && (
+                            <StandardizedTable.Cell isHeader width="15%">
+                              Company
+                            </StandardizedTable.Cell>
+                          )}
+                          <StandardizedTable.Cell isHeader width="20%">
+                            Proponent
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="15%">
+                            Category
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="15%">
+                            Sub Category
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="15%">
+                            Outcome
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="10%" className="text-center">
+                            Details
+                          </StandardizedTable.Cell>
+                        </StandardizedTable.Header>
 
-                            <Table.Tbody>
-                              {shareHolderProposal?.length > 0 &&
-                                shareHolderProposal?.map((noAction: any, index: number) => (
-                                  <Table.Tr
-                                    key={noAction?.id}
-                                    className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} transition-all hover:bg-primary/5 cursor-pointer`}
-                                  >
-                                    <Table.Td className="py-2 border-dashed">
-                                      <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                        {tab === "no-action" ? noAction.proxy_season : noAction?.year}
-                                      </span>
-                                    </Table.Td>
-                                    {isAllCompanySelected && (
-                                      <Table.Td className="py-2 border-dashed">
-                                        {noAction?.company_name}
-                                      </Table.Td>
+                        <Table.Tbody>
+                          {shareHolderProposal?.length > 0 &&
+                            shareHolderProposal?.map((noAction: any, index: number) => (
+                              <StandardizedTable.Row
+                                key={noAction?.id}
+                                index={index}
+                              >
+                                <StandardizedTable.Cell>
+                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                    {tab === "no-action" ? noAction.proxy_season : noAction?.year}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                {isAllCompanySelected && (
+                                  <StandardizedTable.Cell>
+                                    <span className="font-medium">{noAction?.company_name}</span>
+                                  </StandardizedTable.Cell>
+                                )}
+                                <StandardizedTable.Cell>
+                                  <span className="font-medium">{noAction?.proponent || "-"}</span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell>
+                                  <span className="font-medium">
+                                    {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.category}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell>
+                                  <span className="font-medium">
+                                    {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.sub_category}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell>
+                                  <span className="font-medium">{noAction?.staff_response}</span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell className="text-center">
+                                  <div className="flex gap-3 justify-center">
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                      <Lucide
+                                        onClick={() =>
+                                          navigate(
+                                            `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
+                                          )
+                                        }
+                                        icon="Eye"
+                                      />
+                                    </div>
+                                    {user?.user_type === "Admin" && (
+                                      <Tippy
+                                        content="Edit"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            onEditNoActionClickHandler(
+                                              noAction
+                                            );
+                                          }}
+                                          icon="PenLine"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </Tippy>
                                     )}
-                                    <Table.Td className="py-2  border-dashed">
-                                      {noAction?.proponent || "-"}
-                                    </Table.Td>
-                                    <Table.Td className="py-2  border-dashed">
-                                      {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.category}
-                                    </Table.Td>
-                                    <Table.Td className="py-2  border-dashed">
-                                      {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.sub_category}
-                                    </Table.Td>
-                                    <Table.Td className="py-2  border-dashed">
-                                      {noAction?.staff_response}
-                                    </Table.Td>
-                                    <Table.Td className="py-2 border-dashed">
-                                      <div>
-                                        <Tippy
-                                          content=" See Details"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                            <Lucide
-                                              onClick={() =>
-                                                navigate(
-                                                  `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`
-                                                )
-                                              }
-                                              icon="Eye"
-                                            />
-                                          </div>
-                                        </Tippy>
-                                        {user?.user_type === "Admin" && (
-                                          <Tippy
-                                            content="Edit"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
-                                              onClick={() => {
-                                                onEditNoActionClickHandler(
-                                                  noAction
-                                                );
-                                              }}
-                                              icon="PenLine"
-                                              className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                            />
-                                          </Tippy>
-                                        )}
-                                      </div>
-                                    </Table.Td>
-                                  </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                            {shareHolderProposal?.length === 0 && (
-                              <div className="flex flex-col items-center justify-center">
-                                <Lucide
-                                  icon="FileSearch"
-                                  className="w-12 h-12 text-gray-300 mb-2"
-                                />
-                                <div className="text-lg font-medium">No data found</div>
-                                <div className="text-sm text-gray-500 mt-1">
-                                  Try adjusting your filters or search criteria
+                                  </div>
+                                </StandardizedTable.Cell>
+                              </StandardizedTable.Row>
+                            ))}
+                        </Table.Tbody>
+                        {shareHolderProposal?.length === 0 && (
+                          <Table.Tbody>
+                            <Table.Tr>
+                              <Table.Td colSpan={isAllCompanySelected ? 7 : 6} className="text-center py-12">
+                                <div className="flex flex-col items-center justify-center">
+                                  <Lucide
+                                    icon="FileSearch"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No data found</div>
+                                  <div className="text-sm text-gray-500 mt-1">
+                                    Try adjusting your filters or search criteria
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </Table>
-                        </div>
-                      </TableWrapper>
+                              </Table.Td>
+                            </Table.Tr>
+                          </Table.Tbody>
+                        )}
+                      </StandardizedTable>
                     </Tab.Panel>
                   </Tab.Panels>
 
@@ -2673,111 +2672,106 @@ function ShareHolderProposal() {
                           </Button>
                         </div>
                       )}
-                      <TableWrapper isLoading={loading}>
-                        <div className="overflow-auto max-h-[400px] rounded-lg">
-                          <Table>
-                            <Table.Thead>
-                              <Table.Tr className="bg-primary text-white">
-                                <Table.Td className="py-2 px-2 font-medium text-sm border-0 w-[100px]">
-                                  Year
-                                </Table.Td>
-                                {isAllCompanySelected && (
-                                  <Table.Td className="py-2 px-2 font-medium text-sm border-0 w-[180px]">
-                                    Company
-                                  </Table.Td>
-                                )}
-                                <Table.Td className="py-2 px-2 font-medium text-sm border-0 w-[180px]">
-                                  Proponent
-                                </Table.Td>
-                                <Table.Td className="py-2 px-2 font-medium text-sm border-0 w-[130px]">
-                                  Outcome
-                                </Table.Td>
-                                <Table.Td className="py-2 px-2 font-medium text-sm text-center border-0 w-[100px]">
-                                  Details
-                                </Table.Td>
-                              </Table.Tr>
-                            </Table.Thead>
+                      <StandardizedTable isLoading={loading} maxHeight="400px">
+                        <StandardizedTable.Header>
+                          <StandardizedTable.Cell isHeader width="15%">
+                            Year
+                          </StandardizedTable.Cell>
+                          {isAllCompanySelected && (
+                            <StandardizedTable.Cell isHeader width="25%">
+                              Company
+                            </StandardizedTable.Cell>
+                          )}
+                          <StandardizedTable.Cell isHeader width="25%">
+                            Proponent
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="20%">
+                            Outcome
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="15%" className="text-center">
+                            Details
+                          </StandardizedTable.Cell>
+                        </StandardizedTable.Header>
 
-                            <Table.Tbody>
-                              {shareHolderProposal?.length > 0 &&
-                                shareHolderProposal?.map((noAction: any, index: number) => (
-                                  <Table.Tr
-                                    key={noAction?.id}
-                                    className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} transition-all hover:bg-primary/5 cursor-pointer`}
-                                  >
-                                    <Table.Td className="py-2 px-2 border-dashed dark:bg-darkmode-600 w-[100px]">
-                                      <span className="inline-block px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                        {noAction?.year}
-                                      </span>
-                                    </Table.Td>
-                                    {isAllCompanySelected && (
-                                      <Table.Td className="py-2 px-2 border-dashed dark:bg-darkmode-600 w-[180px]">
-                                        <div className="break-words">{noAction?.company_name}</div>
-                                      </Table.Td>
+                        <Table.Tbody>
+                          {shareHolderProposal?.length > 0 &&
+                            shareHolderProposal?.map((noAction: any, index: number) => (
+                              <StandardizedTable.Row
+                                key={noAction?.id}
+                                index={index}
+                              >
+                                <StandardizedTable.Cell>
+                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                    {noAction?.year}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                {isAllCompanySelected && (
+                                  <StandardizedTable.Cell>
+                                    <span className="font-medium">{noAction?.company_name}</span>
+                                  </StandardizedTable.Cell>
+                                )}
+                                <StandardizedTable.Cell>
+                                  <span className="font-medium capitalize" title={noAction?.proponent}>
+                                    {noAction?.proponent}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell>
+                                  <span className="font-medium capitalize" title={noAction?.status}>
+                                    {noAction?.status}
+                                  </span>
+                                </StandardizedTable.Cell>
+                                <StandardizedTable.Cell className="text-center">
+                                  <div className="flex gap-3 justify-center">
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                      <Lucide
+                                        onClick={() =>
+                                          navigate(
+                                            `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/withdrawn`
+                                          )
+                                        }
+                                        icon="Eye"
+                                      />
+                                    </div>
+                                    {user?.user_type === "Admin" && (
+                                      <Tippy
+                                        content="Edit"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() =>
+                                            onEditWithdrawnClickHandler(
+                                              noAction
+                                            )
+                                          }
+                                          icon="PenLine"
+                                          className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                        />
+                                      </Tippy>
                                     )}
-                                    <Table.Td className="py-2 px-2 border-dashed w-[180px]">
-                                      <div className="break-words capitalize" title={noAction?.proponent}>
-                                        {noAction?.proponent}
-                                      </div>
-                                    </Table.Td>
-                                    <Table.Td className="py-2 px-2 border-dashed w-[130px]">
-                                      <div className="break-words capitalize" title={noAction?.status}>
-                                        {noAction?.status}
-                                      </div>
-                                    </Table.Td>
-                                    <Table.Td className="py-2 px-2 text-center border-dashed">
-                                      <div className="flex gap-3 justify-center">
-                                        <Tippy
-                                          content="See Details"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                            <Lucide
-                                              onClick={() =>
-                                                navigate(
-                                                  `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/withdrawn`
-                                                )
-                                              }
-                                              icon="Eye"
-                                            />
-                                          </div>
-                                        </Tippy>
-                                        {user?.user_type === "Admin" && (
-                                          <Tippy
-                                            content="Edit"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
-                                              onClick={() =>
-                                                onEditWithdrawnClickHandler(
-                                                  noAction
-                                                )
-                                              }
-                                              icon="PenLine"
-                                              className="w-4 h-4 stroke-[1.3] cursor-pointer hover:text-primary transition-colors"
-                                            />
-                                          </Tippy>
-                                        )}
-                                      </div>
-                                    </Table.Td>
-                                  </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                            {shareHolderProposal?.length === 0 && (
-                              <div className="flex flex-col items-center justify-center">
-                                <Lucide
-                                  icon="FileSearch"
-                                  className="w-12 h-12 text-gray-300 mb-2"
-                                />
-                                <div className="text-lg font-medium">No data found</div>
-                                <div className="text-sm text-gray-500 mt-1">
-                                  Try adjusting your filters or search criteria
+                                  </div>
+                                </StandardizedTable.Cell>
+                              </StandardizedTable.Row>
+                            ))}
+                        </Table.Tbody>
+                        {shareHolderProposal?.length === 0 && (
+                          <Table.Tbody>
+                            <Table.Tr>
+                              <Table.Td colSpan={isAllCompanySelected ? 5 : 4} className="text-center py-12">
+                                <div className="flex flex-col items-center justify-center">
+                                  <Lucide
+                                    icon="FileSearch"
+                                    className="w-12 h-12 text-gray-300 mb-2"
+                                  />
+                                  <div className="text-lg font-medium">No data found</div>
+                                  <div className="text-sm text-gray-500 mt-1">
+                                    Try adjusting your filters or search criteria
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </Table>
-                        </div>
-                      </TableWrapper>
+                              </Table.Td>
+                            </Table.Tr>
+                          </Table.Tbody>
+                        )}
+                      </StandardizedTable>
                     </Tab.Panel>
                   </Tab.Panels>
                 </Tab.Group>

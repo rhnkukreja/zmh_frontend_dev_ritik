@@ -578,30 +578,30 @@ function ProxyGuideline() {
                   <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
-                        <Table.Tr className="bg-primary text-white text-sm">
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                        <Table.Tr className="bg-primary text-white">
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Year
                           </Table.Td>
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Institution
                           </Table.Td>
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Category
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Sub Category
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Section
                             </Table.Td>
                           )}
                           {user?.user_type === "Admin" && (
-                            <Table.Td className="px-4 py-2 text-left font-semibold">
+                            <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                               Policy Guideline
                             </Table.Td>
                           )}
@@ -609,31 +609,31 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                          <Table.Td className="px-4 py-2 text-left font-semibold">
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Details
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
-                      <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                      <Table.Tbody>
                         {proxyVotingGuidelines?.length > 0 &&
                           uniqueGuidelines(proxyVotingGuidelines)?.map(
                             (guideline: ProxyVotingGuideline, index: number) => (
                               <Table.Tr
                                 key={guideline?.id}
-                                className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
+                                className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer"
                               >
-                                <Table.Td className="px-4 py-3 border-dashed dark:bg-darkmode-600">
-                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
+                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary font-medium" style={{fontSize: '14px'}}>
                                     {guideline?.year}
                                   </span>
                                 </Table.Td>
-                                <Table.Td className="px-4 py-3 text-nowrap border-dashed dark:bg-darkmode-600">
+                                <Table.Td className="py-2 px-3 text-nowrap" style={{fontSize: '14px'}}>
                                   <p className="font-medium whitespace-nowrap">
                                     {guideline?.institution_name}
                                   </p>
                                 </Table.Td>
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="px-4 py-3 border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.category && (
                                       <div className="whitespace-nowrap capitalize max-w-[250px] overflow-hidden text-ellipsis">
                                         {guideline?.category}
@@ -643,7 +643,7 @@ function ProxyGuideline() {
                                 )}
 
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="px-4 py-3 border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.sub_category && (
                                       <>{guideline?.sub_category}</>
                                     )}
@@ -651,7 +651,7 @@ function ProxyGuideline() {
                                 )}
 
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="px-4 py-3 border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.section && (
                                       <>{guideline?.section}</>
                                     )}
@@ -659,14 +659,14 @@ function ProxyGuideline() {
                                 )}
 
                                 {user?.user_type === "Admin" && (
-                                  <Table.Td className="px-4 py-3 border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.policy_guidelines && (
                                       <>{guideline?.policy_guidelines}</>
                                     )}
                                   </Table.Td>
                                 )}
 
-                                <Table.Td className="py-2 relative w-[150px] border-dashed">
+                                <Table.Td className="py-2 px-3 relative w-[150px]" style={{fontSize: '14px'}}>
                                   <div className="flex gap-3 items-center">
                                     <Tippy
                                       content="See Details"

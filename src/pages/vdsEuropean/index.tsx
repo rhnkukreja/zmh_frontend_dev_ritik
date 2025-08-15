@@ -79,7 +79,7 @@ const index = () => {
     {}
   );
   const [getFundNameDropdownLoader, setGetFundNameDropdownLoader] =
-    useState<boolean>(false);
+    useState<boolean>(true); // Initialize as true to show loading state immediately
   const [apiInstitutionDropdown, setApiInstitutionDropdown] = useState<any>({
     institution: [],
   });
@@ -442,6 +442,7 @@ const index = () => {
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
+        setGetFundNameDropdownLoader(true);
         const data = await getVdsEuropeanDropdownValues();
         setInstitutionOptions(data.institution || []);
         setCountryOptions(data.country || []);
@@ -451,6 +452,8 @@ const index = () => {
         setCountryOptions([]);
         setVoteOptions([]);
         setYearOptions([]);
+      } finally {
+        setGetFundNameDropdownLoader(false);
       }
     };
     fetchDropdownData();
@@ -1002,8 +1005,15 @@ const index = () => {
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
-    // Handle country filter removal - allow removal but don't validate here
+    // Handle country filter removal - prevent removal if company is selected
     if (removeKey === "country") {
+      const currentCompanies = isViewAnalysis ? allAnalyticsFilter.company_name || [] : allApplyFilter.company_name || [];
+      
+      // If company is selected, don't allow country removal
+      if (currentCompanies.length > 0) {
+        return; // Block removal when company is selected
+      }
+
       const currentCountries = isViewAnalysis ? allAnalyticsFilter.country || [] : allApplyFilter.country || [];
 
       // Remove the specific country value
@@ -1477,9 +1487,9 @@ const index = () => {
 
                           // When company is selected, clear all filters except institution and year
                           if (companyNames.length > 0) {
-                            // Clear country filter
-                            setValue("country", []);
-                            setSelectedCountries([]);
+                            // Apply USA by default when company is selected
+                            setValue("country", ["USA"]);
+                            setSelectedCountries(["USA"]);
                             setCountryComponentKey(prev => prev + 1);
                             
                             // Clear other filters
@@ -1494,13 +1504,14 @@ const index = () => {
                             setValue("proposal_keyword", []);
                             setValue("keyword", "");
                             
-                            // Update filter states - keep institution mandatory
+                            // Update filter states - keep institution mandatory and add USA country
                             if (isViewAnalysis) {
                               const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
                               const currentYear = watch("analyticsYear") || [];
                               setAllAnalyticsFilter({
                                 institution_name: currentInstitutions,
                                 company_name: companyNames,
+                                country: ["USA"],
                                 analyticsYear: currentYear.length > 0 ? currentYear : [new Date().getFullYear().toString()]
                               });
                             } else {
@@ -1509,6 +1520,7 @@ const index = () => {
                               setallApplyFilter({
                                 institution_name: currentInstitutions,
                                 company_name: companyNames,
+                                country: ["USA"],
                                 year: currentYear
                               });
                             }
@@ -1732,7 +1744,7 @@ const index = () => {
                         <span className="ml-2 text-primary font-bold">{openGroups[ele.company_name] ? '▲' : '▼'}</span>
                       </div>
                       {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                        <div className="mt-2 mb-4 bg-gray-50 rounded-lg overflow-x-auto">
+                        <div className="mt-2 mb-4 bg-gray-50 overflow-x-auto">
                           <table className="min-w-full table-fixed">
                             <thead>
                               <tr className="bg-primary text-white text-sm">

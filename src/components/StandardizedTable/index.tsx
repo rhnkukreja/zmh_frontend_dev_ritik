@@ -79,7 +79,7 @@ const StandardizedTableRow: React.FC<StandardizedTableRowProps> = ({
   return (
     <Table.Tr
       className={clsx(
-        "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
+        "border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer",
         zebraClass,
         className
       )}
@@ -97,10 +97,12 @@ const StandardizedTableCell: React.FC<StandardizedTableCellProps> = ({
   isHeader = false
 }) => {
   const baseClasses = isHeader
-    ? "py-2 font-medium text-white h-[40px]"
-    : "py-2 text-gray-700";
+    ? "py-2 px-3 font-medium text-white h-[40px]"
+    : "py-2 px-3 text-gray-700";
+  
+  const fontStyle = { fontSize: '14px' };
 
-  const style = width ? { width } : {};
+  const style = width ? { width, ...fontStyle } : fontStyle;
 
   return (
     <Table.Td

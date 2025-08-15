@@ -147,15 +147,18 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
 
     // Custom label for count and percentage together above the bar
     const CountAndPercentLabel = (props: any) => {
-      const { x, width, value, index } = props;
+      const { x, y, width, height, value, index } = props;
       const chartData = tab == "proposal"
         ? yearlySummary?.filter((item) => item[chartKey] >= 2022)
         : yearlySummary?.filter((item) => item[chartKey] >= 2022).reverse();
       const data = chartData && chartData[index];
       const count = value;
       const percent = data && data.avg_support !== undefined ? data.avg_support : undefined;
-      const labelY = 20;
-      const lineY = labelY + 6; // 6px below the label
+      
+      // Position label above the bar with some padding
+      const labelY = y - 10; // 10px above the bar
+      const lineY = labelY + 15; // Line below the text
+      
       return (
         <g>
           <text
@@ -228,7 +231,7 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                             ? [...yearlySummary?.filter((item) => item[chartKey] >= 2022)]
                             : [...yearlySummary?.filter((item) => item[chartKey] >= 2022)].reverse()
                         }
-                        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                        margin={{ top: 50, right: 20, left: 0, bottom: 0 }}
                       >
                         <XAxis dataKey={chartKey} dy={12} height={40} tick={{fontSize: 12}} />
                         <YAxis

@@ -41,7 +41,7 @@ const DetailCaseStudies = () => {
       </Button>
       <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
-          <h1 className="text-xl font-semibold">Case Studies</h1>
+          <h1 className="font-semibold" style={{fontSize: '18px'}}>Case Studies</h1>
         </div>
 
         {loading ? (
@@ -51,7 +51,7 @@ const DetailCaseStudies = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {singleCaseStudy?.institution_name && (
                 <div>
-                  <h3 className="font-semibold min-w-[150px] mb-2">
+                  <h3 className="font-semibold min-w-[150px] mb-2" style={{fontSize: '14px'}}>
                     Institution
                   </h3>
                   <p>{singleCaseStudy?.institution_name}</p>

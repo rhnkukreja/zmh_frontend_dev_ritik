@@ -79,7 +79,7 @@ const ProponentsAnalyticsComponent: React.FC<
             <div className="grid grid-cols-12 gap-6 mt-2">
               <div
                 className={`${tab == "no-action" && filters?.proponent_name?.length == 0
-                  ? "col-span-9"
+                  ? "col-span-8"
                   : "col-span-12"
                   }`}
               >
@@ -186,9 +186,9 @@ const ProponentsAnalyticsComponent: React.FC<
                 </StandardizedTable>
               </div>
               {tab == "no-action" && filters?.proponent_name?.length == 0 && (
-                <div className="col-span-3 bg-gray-100 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4">
-                    Outcome Distribution
+                <div className="col-span-4 bg-gray-100 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 text-center">
+                    By Outcome
                   </h3>
                   <ResponsiveContainer width="100%" height={250}>
                     <OutcomePieChart pieChartOutcome={pieChartOutcome} />
