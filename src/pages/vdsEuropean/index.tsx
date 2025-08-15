@@ -1292,7 +1292,6 @@ const index = () => {
             <span>
               <h1 className="text-lg font-bold flex items-center gap-2">
                 Voting Data
-                <Pill text="Beta" />
               </h1>
             </span>
           </div>

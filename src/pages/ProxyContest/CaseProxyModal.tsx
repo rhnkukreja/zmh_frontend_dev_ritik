@@ -33,7 +33,7 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
   useEffect(() => {
     if (caseProxyModalData?.company_name && caseProxyModalVisible) {
       // Fetch case studies filtered by company name
-      const url = `/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}&themes=${encodeURIComponent('Proxy Contest/M&A')}`;
+      const url = `/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}&themes=${encodeURIComponent(JSON.stringify(['Proxy Contest/M&A']))}`;
       dispatch(fetchCaseStudies(url));
     }
   }, [dispatch, caseProxyModalData?.company_name, caseProxyModalVisible]);

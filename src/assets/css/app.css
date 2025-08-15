@@ -37,18 +37,26 @@
 .ck-tooltip::after {
   border-top-color: #333 !important; 
 } */
+
+.ck-balloon-panel.ck-balloon-panel_position_border-side_right.ck-powered-by-balloon {
+  display: none !important;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--secondary) var(--primary);
   font-family: montserrat;
 }
+
 table {
   border-collapse: collapse;
   width: 100%;
 }
+
 body {
   background-color: #0000000d;
 }
+
 .sticky-table {
   position: sticky;
   top: 0;
@@ -139,27 +147,34 @@ body {
   border-radius: 5px !important;
   border-color: #d5dde7 !important;
   box-shadow: #d5dde7 !important;
-  
+
 }
-.css-v7duua:hover{
- color: hsl(0, 0%, 60%)!important;
- background-color: transparent !important;
-}
-.css-1p3m7a8-multiValue{
-  background-color: #e2e8f0 !important;
-}
-.css-tj5bde-Svg{
-  fill:#303030 !important
-}
-.css-1u9des2-indicatorSeparator{
+
+.css-v7duua:hover {
+  color: hsl(0, 0%, 60%) !important;
   background-color: transparent !important;
 }
+
+.css-1p3m7a8-multiValue {
+  background-color: #e2e8f0 !important;
+}
+
+.css-tj5bde-Svg {
+  fill: #303030 !important
+}
+
+.css-1u9des2-indicatorSeparator {
+  background-color: transparent !important;
+}
+
 .css-1nmdiq5-menu {
   z-index: 1000 !important;
 }
-.ts-dropdown-content{
+
+.ts-dropdown-content {
   text-align: left !important;
 }
+
 @media only screen and (min-width: 1400px) and (max-width: 1580px) {
   .thumbnail-section {
     /* width: 100%; */
@@ -184,6 +199,7 @@ body {
     color: blue;
   }
 }
+
 .filter-section {
   background: #6767670d;
   border: 2px solid #0000000d;
@@ -205,12 +221,14 @@ body {
 .echo .side-menu__divider {
   color: white !important;
 }
+
 @media (min-width: 1280px) {
   .echo .side-menu--collapsed .side-menu__divider {
     color: transparent !important;
   }
 }
-.echo .side-menu ul.scrollable > li > .side-menu__link--active {
+
+.echo .side-menu ul.scrollable>li>.side-menu__link--active {
   background: white !important;
   /* border-color: #e2e8f0; */
   border: 2px solid #e2e8f0;
@@ -220,6 +238,7 @@ body {
 a.side-menu__link.side-menu__link--active svg {
   stroke: #ab123d;
 }
+
 .bold-sup {
   font-weight: bold;
   font-size: 14px;
@@ -252,51 +271,64 @@ a.side-menu__link.side-menu__link--active svg {
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
-.html-link .ck-content a{
-  color: blue ;
+
+.html-link .ck-content a {
+  color: blue;
 }
+
 .css-13cymwt-control {
   background: #f7f7f7 !important;
 }
-.select__control--is-disabled{
+
+.select__control--is-disabled {
   background-color: #c8c8c8 !important;
 }
+
 .recharts-label-list g line {
   display: none;
 }
-.tom-select.ts-wrapper.multi.has-items .ts-control{
+
+.tom-select.ts-wrapper.multi.has-items .ts-control {
   padding-right: 2rem !important;
 }
-.position-set{
+
+.position-set {
   top: -10px !important;
-  left: 12px !important; 
+  left: 12px !important;
 }
-.custom_keywords .css-1nmdiq5-menu{
+
+.custom_keywords .css-1nmdiq5-menu {
   display: none;
 }
+
 option[data-label="*"] {
   color: red !important;
   font-weight: bold;
 }
+
 .ts-wrapper.plugin-remove_button:not(.rtl) .item {
-background-color: #e2e8f0 !important;
-    padding-left: 7px;
-    border-radius: 4px;
+  background-color: #e2e8f0 !important;
+  padding-left: 7px;
+  border-radius: 4px;
 }
+
 /* .ts-wrapper .ts-control .ts-dropdown .clear-button {
   left: 350px !important;
   font-size: 19px !important;
   position: absolute !important; 
 } */
 
-.plugin-clear_button .clear-button{
+.plugin-clear_button .clear-button {
   left: 800px !important;
   font-size: 25px !important;
-  position: absolute !important; /* Ensure it's positioned correctly */
+  position: absolute !important;
+  /* Ensure it's positioned correctly */
 }
-.email-alert .css-13cymwt-control{
+
+.email-alert .css-13cymwt-control {
   background-color: transparent !important;
 }
+
 .tom-select .items {
   width: 48rem !important;
 }
@@ -316,9 +348,10 @@ background-color: #e2e8f0 !important;
   cursor: pointer !important;
 }
 
-.header-card{
+.header-card {
   z-index: 1000 !important;
 }
+
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
