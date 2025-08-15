@@ -1991,7 +1991,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
             <tr className="bg-primary text-white text-base">
               <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>Summary</th>
               {institutions.map((institution) => (
-                <th key={institution.institution_id} colSpan={years.length} className="px-6 py-3 text-center font-semibold">
+                <th key={institution.institution_id} colSpan={years.length} className="px-6 py-3 pb-2 text-center font-semibold">
                   {institution.institution_name}
                 </th>
               ))}
@@ -2003,7 +2003,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                   const dateRange = yearData?.date_range;
                   const dateRangeText = dateRange ? ` (${dateRange.start_meeting} - ${dateRange.end_meeting})` : '';
                   return (
-                    <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center font-semibold">
+                    <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 pt-0 text-center font-semibold">
                       <div className="flex flex-col">
                         {dateRange && (
                           <div className="text-xs font-normal mt-1">
