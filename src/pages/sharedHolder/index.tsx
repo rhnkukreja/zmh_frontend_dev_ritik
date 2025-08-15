@@ -2114,9 +2114,9 @@ function ShareHolderProposal() {
                       )}
                       {isViewAnalysis && (
                         <div className="w-full pt-5">
-                          <div className="flex gap-4 mb-6 ">
+                          <div className="flex gap-4 mb-6">
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
+                              className={`px-5 py-2 rounded font-medium transition-all ${activeTab === "shareholders"
                                 ? "bg-primary text-white shadow"
                                 : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
@@ -2125,7 +2125,7 @@ function ShareHolderProposal() {
                               Analytics
                             </button>
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
+                              className={`px-5 py-2 rounded font-medium transition-all ${activeTab === "proponents"
                                 ? "bg-primary text-white shadow"
                                 : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
@@ -2440,7 +2440,7 @@ function ShareHolderProposal() {
                         <div className="w-full pt-5">
                           <div className="flex gap-4 mb-6">
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "shareholders"
+                              className={`px-5 py-2 rounded font-medium transition-all ${activeTab === "shareholders"
                                 ? "bg-primary text-white shadow"
                                 : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
@@ -2449,7 +2449,7 @@ function ShareHolderProposal() {
                               Analytics
                             </button>
                             <button
-                              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === "proponents"
+                              className={`px-5 py-2 rounded font-medium transition-all ${activeTab === "proponents"
                                 ? "bg-primary text-white shadow"
                                 : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                 }`}
