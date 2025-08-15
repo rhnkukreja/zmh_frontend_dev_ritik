@@ -288,29 +288,69 @@ function Main() {
 
   const [modulesData, setModulesData] = useState<any>({});
   const [notificationData, setNotificationData] = useState<any>({});
-  const dummyData = {
+  const [activeTabIndex, setActiveTabIndex] = useState(0); // default first tab
+  const activeTab = notificationData?.notifications?.[activeTabIndex];
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const categories = activeTab?.tab_notifications
+    ? Object.keys(activeTab.tab_notifications)
+    : [];
+  const dummyData = 
+  {
     notification_status: false,
     notifications: [
       {
-        text: "10 Case Studies added for AXA Group.",
-              date: "July 31, 2025",
-        viewed: true,
-        module: "Case Studies",
+        tab_name: "Amazon.com, Inc.",
+        tab_notifications: {
+          
+        },
       },
       {
-        text: "1 Shareholder Proposal added for The Humane Society of the United States.",
-        date: "July 30, 2025",
-        viewed: false,
-        module: "Shareholder Proposal",
-      },
-      {
-        text: "1 Shareholder Proposal added for John Chevedden.",
-        date: "July 23, 2025",
-        viewed: true,
-        module: "Shareholder Proposal",
+        tab_name: "All",
+        tab_notifications: {
+          "Investor Profile": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 12, 2025",
+              viewed: false,
+              module: "Investor Profile",
+            },
+          ],
+          "Engagement Detail": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 13, 2025",
+              viewed: false,
+              module: "Engagement Detail",
+            },
+          ],
+          "Voting Data": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 14, 2025",
+              viewed: false,
+              module: "Voting Data",
+            },
+          ],
+          "Proxy Contest": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 14, 2025",
+              viewed: false,
+              module: "Proxy Contest",
+            },
+          ],
+          "Case Studies": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 14, 2025",
+              viewed: false,
+              module: "Case Studies",
+            },
+          ],
+        },
       },
     ],
-        }
+  };
   useEffect(() => {
     getModulesCount();
     getNotificationList();
@@ -330,28 +370,46 @@ function Main() {
     }
   };
 
-  const getNotificationList = async () => {
+  const getNotificationList = async (tab?: number) => {
     try {
-   
-      const param = notificationData?.notification_status === false
-          ? "?mark_viewed=true"
+      const param =
+        notificationData?.notification_status === false
+          ? tab === 0
+            ? "?mark_viewed_company=true"
+            : "?mark_viewed_all=true"
           : "";
       const res = await dashboardService.getNotifications(param);
       if (res?.result) {
         setNotificationData(res?.result);
       }
+     
     } catch (error) {
       return error;
     } finally {
     }
   };
-console.log(notificationData ,"data")
-  const getTotalNotificationsCount = (): number => {
-    const totalCount = notificationData?.notifications?.filter(
-      (item) => item.viewed === false
-    );
-    return totalCount?.length || 0;
-  };
+
+ const getTotalNotificationsCount = (): number => {
+  if (!notificationData?.notifications) return 0;
+
+
+  const allTab = notificationData.notifications.find(
+    (tab) => tab.tab_name === "All"
+  );
+
+  if (!allTab?.tab_notifications) return 0;
+
+  
+  let totalCount = 0;
+  Object.values(allTab.tab_notifications).forEach((notiList) => {
+    if (Array.isArray(notiList)) {
+      totalCount += notiList.filter((noti) => noti.viewed === false).length;
+    }
+  });
+
+  return totalCount;
+};
+
 
   return (
     <div
@@ -605,7 +663,11 @@ console.log(notificationData ,"data")
                               ])}
                               onClick={(event: React.MouseEvent) => {
                                 event.preventDefault();
-                                linkTo(subMenu, navigate, companyGlobalSearchName);
+                                linkTo(
+                                  subMenu,
+                                  navigate,
+                                  companyGlobalSearchName
+                                );
                                 setFormattedMenu([...formattedMenu]);
                               }}
                             >
@@ -663,7 +725,11 @@ console.log(notificationData ,"data")
                                         ])}
                                         onClick={(event: React.MouseEvent) => {
                                           event.preventDefault();
-                                          linkTo(lastSubMenu, navigate, companyGlobalSearchName);
+                                          linkTo(
+                                            lastSubMenu,
+                                            navigate,
+                                            companyGlobalSearchName
+                                          );
                                           setFormattedMenu([...formattedMenu]);
                                         }}
                                       >
@@ -819,7 +885,7 @@ console.log(notificationData ,"data")
                         onClick={() => {
                           setOpen(true);
                           if (!notificationData?.notification_status) {
-                            getNotificationList();
+                            getNotificationList(activeTabIndex);
                           }
                         }}
                       >
@@ -842,48 +908,116 @@ console.log(notificationData ,"data")
                       setOpen={setOpen}
                       children={
                         <>
-                          {notificationData?.notifications?.length > 0 ? (
-                            notificationData?.notifications?.map((noti, i) => (
-                              <div className="py-4  border-b">
-                                <p className="text-xs text-gray-400 pb-2">
-                                  {getCustomRelativeDate(noti.date)}
-                                </p>
-                                <div className=" flex items-center  gap-4  text-left">
-                                  <div className="flex flex-col items-end relative">
-                                    {!noti.viewed && (
-                                      <Lucide
-                                        icon="Dot"
-                                        className="stroke-[11] w-[18px] absolute top-[-7px] left-[-7px] text-[#DC661F] absolute"
-                                      />
-                                    )}
+                          <div className="flex w-full gap-3 dark:bg-darkmode-800">
+                            {notificationData?.notifications?.map(
+                              (tab, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => {
+                                    setActiveTabIndex(index);
+                                    getNotificationList(index);
+                                    setSelectedCategory("All");
+                                  }}
+                                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                                    activeTabIndex === index
+                                      ? "bg-primary text-white shadow"
+                                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                  }`}
+                                >
+                                  {tab.tab_name}
+                                </button>
+                              )
+                            )}
+                          </div>
 
-                                    <div className="bg-[rgb(245,231,235)] rounded-md p-3">
-                                      <img
-                                        src={notificationIcon2}
-                                        alt="ai icon"
-                                        className=" w-[20px] h-[20px] opacity-[0.7]"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="w-[78%] flex-1">
-                                    <p
-                                      className={`text-sm cursor-pointer text-gray-700`}
+                          {/* Category Filter */}
+                          <div className="flex gap-2 my-3 flex-wrap">
+                            {categories?.length > 0 && (
+                              <button
+                                onClick={() => setSelectedCategory("All")}
+                                className={`px-4 py-1 rounded ${
+                                  selectedCategory === "All"
+                                    ? "border-b-primary rounded-none border-b-2 text-primary"
+                                    : "bg-gray-200 text-gray-700"
+                                }`}
+                              >
+                                All
+                              </button>
+                            )}
+                            {categories.map((category) => (
+                              <button
+                                key={category}
+                                onClick={() => setSelectedCategory(category)}
+                                className={`px-4 py-1 rounded ${
+                                  selectedCategory === category
+                                    ? "border-b-primary rounded-none border-b-2 text-primary"
+                                    : "bg-gray-200 text-gray-700"
+                                }`}
+                              >
+                                {category}
+                              </button>
+                            ))}
+                          </div>
+                          {activeTab?.tab_notifications &&
+                          Object.keys(activeTab.tab_notifications).length >
+                            0 ? (
+                            Object.entries(activeTab.tab_notifications)
+                              .filter(([category]) =>
+                                selectedCategory === "All"
+                                  ? true
+                                  : category === selectedCategory
+                              )
+                              .map(([category, notiList]) => (
+                                <div key={category}>
+                                  {/* Category title */}
+                                  <h2 className="text-sm font-bold text-gray-600 dark:text-gray-300 mt-4 mb-2">
+                                    {category}
+                                  </h2>
+
+                                  {(Array.isArray(notiList)
+                                    ? notiList
+                                    : []
+                                  ).map((noti, i) => (
+                                    <div
+                                      key={`${activeTabIndex}-${category}-${i}`}
+                                      className="py-4 border-b"
                                     >
-                                      {noti?.text}
-                                    </p>
-                                  
-                                  </div>
+                                      <p className="text-xs text-gray-400 pb-2">
+                                        {getCustomRelativeDate(noti.date)}
+                                      </p>
+                                      <div className="flex items-center gap-4 text-left">
+                                        <div className="flex flex-col items-end relative">
+                                          {!noti.viewed && (
+                                            <Lucide
+                                              icon="Dot"
+                                              className="stroke-[11] w-[18px] absolute top-[-7px] left-[-7px] text-[#DC661F]"
+                                            />
+                                          )}
+                                          <div className="bg-[rgb(245,231,235)] rounded-md p-3">
+                                            <img
+                                              src={notificationIcon2}
+                                              alt="ai icon"
+                                              className="w-[20px] h-[20px] opacity-[0.7]"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="w-[78%] flex-1">
+                                          <p className="text-sm cursor-pointer text-gray-700">
+                                            {noti.text}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              </div>
-                            ))
+                              ))
                           ) : (
                             <div className="flex items-center justify-center h-[100%]">
-                             
-                               <img
-                                        src={notificationIcon2}
-                                        alt="ai icon"
-                                        className="w-4 h-4 mr-2 opacity-[0.7]"
-                                      />
+                              <img
+                                src={notificationIcon2}
+                                alt="ai icon"
+                                className="w-4 h-4 mr-2 opacity-[0.7]"
+                              />
                               <h1>No Notifications Found.</h1>
                             </div>
                           )}
