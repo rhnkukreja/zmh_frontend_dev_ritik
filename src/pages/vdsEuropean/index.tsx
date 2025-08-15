@@ -2006,7 +2006,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
                     <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 pt-0 text-center font-semibold">
                       <div className="flex flex-col">
                         {dateRange && (
-                          <div className="text-xs font-normal mt-1">
+                          <div className="text-xs font-semibold mt-1">
                             ({dateRange.start_meeting} - {dateRange.end_meeting})
                           </div>
                         )}
