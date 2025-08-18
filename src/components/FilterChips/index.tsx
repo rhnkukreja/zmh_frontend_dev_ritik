@@ -44,6 +44,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyY
       index_name: "Index",
       proposal_type: "Proposal Category",
       proponent_type: "Proponent",
+      proponent_name: "Proponent",
       meeting_type: "Meeting Type",
       proposal_keyword: "Keywords",
       country: "Country",

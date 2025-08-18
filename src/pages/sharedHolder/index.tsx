@@ -957,6 +957,7 @@ function ShareHolderProposal() {
                     onSearchChange={resetPage}
                     isSingle={true}
                     searchPoponents={true}
+                    fieldLabel="Proponent"
                   />
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>

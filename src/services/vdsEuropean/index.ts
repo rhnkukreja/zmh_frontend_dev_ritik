@@ -75,6 +75,18 @@ class VDSEuropeanService {
     };
   }
 
+  public async getVDSEuropeanFile(url: string): Promise<{
+    result: Blob;
+  }> {
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
 }
 
 export const vdsEuropeanService = new VDSEuropeanService();

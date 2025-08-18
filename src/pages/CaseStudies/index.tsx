@@ -347,12 +347,60 @@ function CaseStudies() {
   };
 
   const multSearchUrl = useMemo(() => {
-    if (isAllCompanySelected) {
-      return `/get_case_studies_dropdown_values/`;
-    } else {
-      return `/get_case_studies_dropdown_values/?global_search=${companyGlobalSearchName || filters?.global_search?.[0]
-        }`;
+    const baseUrl = `/get_case_studies_dropdown_values/`;
+    const params = new URLSearchParams();
+
+    // Add global_search parameter if not all companies selected
+    if (!isAllCompanySelected) {
+      const globalSearch = companyGlobalSearchName || filters?.global_search?.[0];
+      if (globalSearch) {
+        params.append('global_search', globalSearch);
+      }
     }
+
+    // Add current filters to the search URL
+    if (filters.year && filters.year.length > 0) {
+      params.append('year', JSON.stringify(filters.year));
+    }
+
+    if (filters.market && filters.market.length > 0) {
+      params.append('market', JSON.stringify(filters.market));
+    }
+
+    if (filters.sector && filters.sector.length > 0) {
+      params.append('sector', JSON.stringify(filters.sector));
+    }
+
+    if (filters.themes && filters.themes.length > 0) {
+      params.append('themes', JSON.stringify(filters.themes));
+    }
+
+    if (filters.proposal_type && filters.proposal_type.length > 0) {
+      params.append('proposal_type', JSON.stringify(filters.proposal_type));
+    }
+
+    if (filters.vote && filters.vote.length > 0) {
+      params.append('vote', JSON.stringify(filters.vote));
+    }
+
+    if (filters.approval_status) {
+      params.append('approval_status', filters.approval_status);
+    }
+
+    if (filters.caspio_company_name) {
+      params.append('caspio_company_name', filters.caspio_company_name);
+    }
+
+    if (filters.keyword) {
+      params.append('keyword', filters.keyword);
+    }
+
+    if (filters.index && filters.index.length > 0) {
+      params.append('index', JSON.stringify(filters.index));
+    }
+
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
   }, [isAllCompanySelected, companyGlobalSearchName, filters]);
 
   const handleViewAllChange = async (event: any) => {
@@ -425,51 +473,52 @@ function CaseStudies() {
       serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
     });
   };
+
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="overflow-auto xl:overflow-visible mt-4">
-            <div className="w-full">
-              <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow">
-                {isAllCompanySelected === true ? (
-                  <h1 className="text-lg font-bold flex items-center gap-2">
-                    All Case Studies
-                  </h1>
-                ) : (
-                  <div className="font-semibold text-xl">Case Studies</div>
-                )}
-                <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: false } });
-                      }
-                    }}
-                  >
-                    {companyGlobalSearchName || "Company"}
-                  </button>
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (!isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: true } });
-                      }
-                    }}
-                  >
-                    View For All Companies
-                  </button>
-                </div>
+          {/* Sticky Header OUTSIDE scrollable content */}
+          <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
+            <div className="bg-white px-4 mb-4 flex flex-col md:flex-row items-center justify-between shadow">
+              {isAllCompanySelected === true ? (
+                <h1 className="text-lg font-bold flex items-center gap-2">
+                  All Case Studies
+                </h1>
+              ) : (
+                <div className="font-semibold text-xl">Case Studies</div>
+              )}
+              <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
+                <button
+                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                    ? "bg-primary text-white shadow"
+                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                  onClick={async (e) => {
+                    if (isAllCompanySelected) {
+                      handleViewAllChange({ target: { checked: false } });
+                    }
+                  }}
+                >
+                  {companyGlobalSearchName || "Company"}
+                </button>
+                <button
+                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                    ? "bg-primary text-white shadow"
+                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                  onClick={async (e) => {
+                    if (!isAllCompanySelected) {
+                      handleViewAllChange({ target: { checked: true } });
+                    }
+                  }}
+                >
+                  View For All Companies
+                </button>
               </div>
             </div>
           </div>
+          {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked bg-white p-5">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
@@ -585,7 +634,7 @@ function CaseStudies() {
               )}
 
               {count > 0 && (
-                <h2 className="flex items-end font-semibold justify-end my-2 md:ml-auto mx-5 mb-1" style={{fontSize: '14px'}}>
+                <h2 className="flex items-end font-semibold justify-end my-2 md:ml-auto mx-5 mb-1" style={{ fontSize: '14px' }}>
                   Count: {count.toLocaleString()}
                 </h2>
               )}
@@ -595,7 +644,7 @@ function CaseStudies() {
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}
                     <div className="flex justify-between items-center">
-                      <h3 className="font-semibold text-slate-700" style={{fontSize: '14px'}}>Filters</h3>
+                      <h3 className="font-semibold text-slate-700" style={{ fontSize: '14px' }}>Filters</h3>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline-secondary"
@@ -625,7 +674,7 @@ function CaseStudies() {
                     >
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{ fontSize: '14px' }}>
                             <FaCalendarAlt className="text-gray-400" /> Year
                           </span>
 
@@ -642,7 +691,7 @@ function CaseStudies() {
                                 type="checkbox"
                                 onChange={(e) =>
                                   e.target.checked
-                                    ? setValue("year", apiDropdownOptions.year)
+                                    ? setValue("year", apiDropdownOptions.year.map(String))
                                     : setValue("year", [])
                                 }
                               />
@@ -662,6 +711,7 @@ function CaseStudies() {
                                 // Always convert to string
                                 const selectedValues = selectedOptions.map((option) => String(option.value));
                                 field.onChange(selectedValues);
+                                handleFieldChange(selectedValues, field);
                               }}
                               selectedOption={field.value || []}
                             />
@@ -671,7 +721,7 @@ function CaseStudies() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{ fontSize: '14px' }}>
                             <FaLayerGroup className="text-gray-400" /> Index
                           </span>
                         </div>
@@ -697,7 +747,7 @@ function CaseStudies() {
                         <div className="w-full mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                              <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
+                              <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{ fontSize: '14px' }}>
                                 <FaBuilding className="text-gray-400" /> Select Companies
                               </span>
                             </div>
@@ -723,7 +773,7 @@ function CaseStudies() {
                       {isAllCompanySelected && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="font-semibold" style={{fontSize: '14px'}}>Country</span>
+                            <span className="font-semibold" style={{ fontSize: '14px' }}>Country</span>
                             {apiDropdownOptions.market.length > 0 && (
                               <FormCheck className="mr-2">
                                 <FormCheck.Label>Select All</FormCheck.Label>
@@ -794,7 +844,7 @@ function CaseStudies() {
                       {isAllCompanySelected === true && (
                         <div className="mx-2">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{ fontSize: '14px' }}>
                               <FaBuilding className="text-gray-400" /> Sector
                             </span>
                             {apiDropdownOptions.sector.length > 0 && (
@@ -866,7 +916,7 @@ function CaseStudies() {
 
                       <div className="mx-2">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{fontSize: '14px'}}>
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{ fontSize: '14px' }}>
                             <FaTags className="text-gray-400" /> Themes
                           </span>
                           {apiDropdownOptions.themes.length > 0 && (
@@ -939,7 +989,7 @@ function CaseStudies() {
                         <div className="mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
-                              <span className="font-semibold" style={{fontSize: '14px'}}>Alternate Companies</span>
+                              <span className="font-semibold" style={{ fontSize: '14px' }}>Alternate Companies</span>
                             </div>
                             <div className=" mt-1">
                               <Controller
@@ -961,7 +1011,7 @@ function CaseStudies() {
                         <>
                           <div className="mx-2">
                             <div className="flex-1 w-full text-slate-500">
-                              <span className="font-semibold" style={{fontSize: '14px'}}>Approval Status</span>
+                              <span className="font-semibold" style={{ fontSize: '14px' }}>Approval Status</span>
                               <div className="mt-2 flex flex-col sm:flex-row">
                                 <Controller
                                   name="approval_status"

@@ -22,6 +22,7 @@ interface MultiSearchBarProps {
   isSingle?: boolean;
   isAll?: boolean;
   searchPoponents?: boolean;
+  fieldLabel?: string; // New prop for field label
 }
 
 // type FetchedOptionType = {
@@ -45,6 +46,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   urlQueryKey,
   isAll,
   searchPoponents = false, // New prop to control the search popover
+  fieldLabel, // New prop for field label
 }) => {
   const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
@@ -322,7 +324,9 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
             key={index}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium"
           >
-            <span className="term-text mr-2 text-nowrap">{term}</span>
+            <span className="term-text mr-2 text-nowrap">
+              {fieldLabel ? `${fieldLabel}: ${term}` : term}
+            </span>
             <button
               className="remove-btn font-bold"
               onClick={() => handleSearch(term, false)}

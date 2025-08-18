@@ -432,46 +432,45 @@ function PeerAnalysis() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="mt-4">
-            <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
-                {isAllCompanySelected === true ? (
-                  <h1 className="text-lg font-bold flex items-center gap-2">
-                    All Engagement Details
-                  </h1>
-                ) : (
-                  <div className="font-semibold text-lg">Engagement Details</div>
-                )}
-                <div className="flex gap-3 px-4 py-4">
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: false } });
-                      }
-                    }}
-                  >
-                    {companyGlobalSearchName || "Company"}
-                  </button>
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (!isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: true } });
-                      }
-                    }}
-                  >
-                    View For All Companies
-                  </button>
-                </div>
+          {/* Sticky Header OUTSIDE scrollable content */}
+          <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
+            {isAllCompanySelected === true ? (
+              <h1 className="text-lg font-bold flex items-center gap-2">
+                All Engagement Details
+              </h1>
+            ) : (
+              <div className="font-semibold text-lg">Engagement Details</div>
+            )}
+            <div className="flex gap-3 px-4 py-4">
+              <button
+                className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                  ? "bg-primary text-white shadow"
+                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                  }`}
+                onClick={async (e) => {
+                  if (isAllCompanySelected) {
+                    handleViewAllChange({ target: { checked: false } });
+                  }
+                }}
+              >
+                {companyGlobalSearchName || "Company"}
+              </button>
+              <button
+                className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                  ? "bg-primary text-white shadow"
+                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                  }`}
+                onClick={async (e) => {
+                  if (!isAllCompanySelected) {
+                    handleViewAllChange({ target: { checked: true } });
+                  }
+                }}
+              >
+                View For All Companies
+              </button>
             </div>
           </div>
-
+          {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked bg-white p-5">
               <div className="grid grid-cols-6 xs:grid-cols-1 gap-4 md:grid-cols-3 p-4">

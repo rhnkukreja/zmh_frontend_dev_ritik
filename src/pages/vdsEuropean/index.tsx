@@ -6,6 +6,7 @@ import {
   countValidFilters,
   createDynamicURL,
   generateFilterChips,
+  downloadFileFromAPI,
 } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -45,6 +46,7 @@ import { peerAnalysisService } from "@/services/peerAnalysis";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { MdOutlineClear } from "react-icons/md";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -74,6 +76,7 @@ const index = () => {
   const searchTicker = searchParams.get("ticker");
   const [allApplyFilter, setallApplyFilter] = useState<any>({});
   const [allAnalyticsFilter, setAllAnalyticsFilter] = useState<any>({});
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [expandedRows, setExpandedRows] = useState<{ [key: number]: boolean }>(
     {}
@@ -743,6 +746,186 @@ const index = () => {
     setIsFilterCollapse(!isFilterCollapse);
   };
 
+  const handleDownload = async () => {
+    try {
+      setLoadingDownload(true);
+      console.log('Download started...');
+      console.log('isViewAnalysis:', isViewAnalysis);
+      console.log('analytics:', analytics);
+      console.log('VdsEuropeans:', VdsEuropeans);
+      
+      // Import XLSX library dynamically
+      const XLSX = await import('xlsx');
+      console.log('XLSX library loaded:', !!XLSX);
+      
+      if (isViewAnalysis && analytics?.by_institution) {
+        // Export analytics summary data
+        const institutions = analytics.by_institution || [];
+        
+        if (institutions.length === 0) {
+          console.warn("No analytics data available for download");
+          setLoadingDownload(false);
+          return;
+        }
+
+        // Get all unique years across all institutions
+        const allYears = new Set();
+        institutions.forEach(inst => {
+          Object.keys(inst.years).forEach(year => allYears.add(year));
+        });
+        const years = Array.from(allYears).sort();
+
+        // Prepare summary data for Excel export
+        const summaryData = [];
+        
+        // Header row with institution names
+        const headerRow1 = ['Summary'];
+        institutions.forEach(institution => {
+          years.forEach(() => {
+            headerRow1.push(institution.institution_name);
+          });
+        });
+        summaryData.push(headerRow1);
+
+        // Sub-header row with years and date ranges
+        const headerRow2 = [''];
+        institutions.forEach(institution => {
+          years.forEach((year: any) => {
+            const yearData = institution.years[year];
+            const dateRange = yearData?.date_range;
+            const dateRangeText = dateRange ? `${year} (${dateRange.start_meeting} - ${dateRange.end_meeting})` : year;
+            headerRow2.push(dateRangeText);
+          });
+        });
+        summaryData.push(headerRow2);
+
+        // Data rows
+        const metrics = [
+          { label: 'No. of unique companies', key: 'unique_companies' },
+          { label: 'No of proposals', key: 'total_proposals' },
+          { label: 'No. of FOR votes', key: 'for_votes', showPercentage: true, percentageKey: 'for_percentage' },
+          { label: 'No. of AGAINST/WITHHOLD votes', key: 'against_votes', showPercentage: true, percentageKey: 'against_percentage' },
+          { label: 'Alignment with management', key: 'aligned_with_mgmt' },
+          { label: 'Alignment percentage', key: 'alignment_percentage', isPercentage: true }
+        ];
+
+        metrics.forEach(metric => {
+          const row = [metric.label];
+          institutions.forEach(institution => {
+            years.forEach((year: any) => {
+              const yearData = institution.years[year];
+              if (yearData) {
+                let value = yearData[metric.key];
+                if (metric.showPercentage && metric.percentageKey) {
+                  const percentage = yearData[metric.percentageKey];
+                  value = `${value?.toLocaleString() || 0} (${percentage || 0}%)`;
+                } else if (metric.isPercentage) {
+                  value = `${value || 0}%`;
+                } else if (typeof value === 'number') {
+                  value = value.toLocaleString();
+                }
+                row.push(value || '-');
+              } else {
+                row.push('-');
+              }
+            });
+          });
+          summaryData.push(row);
+        });
+
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet(summaryData);
+
+        // Set column widths for better readability
+        const columnWidths = [{ wch: 30 }]; // First column (metrics)
+        institutions.forEach(() => {
+          years.forEach(() => {
+            columnWidths.push({ wch: 25 }); // Data columns
+          });
+        });
+        worksheet['!cols'] = columnWidths;
+
+        // Merge cells for institution headers
+        const merges = [];
+        let colIndex = 1; // Start from column B (index 1)
+        institutions.forEach(institution => {
+          if (years.length > 1) {
+            merges.push({
+              s: { r: 0, c: colIndex },
+              e: { r: 0, c: colIndex + years.length - 1 }
+            });
+          }
+          colIndex += years.length;
+        });
+        worksheet['!merges'] = merges;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'VDS European Summary');
+
+        // Generate filename with current date
+        const currentDate = new Date().toISOString().split('T')[0];
+        const filename = `VDS_European_Analytics_Summary_${currentDate}.xlsx`;
+
+        // Write and download the file
+        XLSX.writeFile(workbook, filename);
+        
+        console.log(`Downloaded: ${filename}`);
+      } else if (!isViewAnalysis && VdsEuropeans?.length > 0) {
+        // Export regular table data
+        const excelData = VdsEuropeans.map((vds: any) => ({
+          'Institution': vds.excel_institution_name || '',
+          'Meeting Type': vds.meeting_type || '',
+          'Proposal No.': vds.proposal_num || '',
+          'Proposal': vds.proposal || '',
+          'Management Recommendation': vds.mgt_rec || '',
+          'Vote Cast': vds.vote || '',
+          'Notes': vds.notes && vds.notes.toLowerCase() !== "nan" ? vds.notes : '',
+          'Company': vds.company_name || '',
+          'Meeting Date': vds.meeting_date || '',
+          'Country': vds.country || ''
+        }));
+
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+        // Set column widths for better readability
+        const columnWidths = [
+          { wch: 25 }, // Institution
+          { wch: 15 }, // Meeting Type
+          { wch: 12 }, // Proposal No.
+          { wch: 50 }, // Proposal
+          { wch: 20 }, // Management Recommendation
+          { wch: 15 }, // Vote Cast
+          { wch: 30 }, // Notes
+          { wch: 25 }, // Company
+          { wch: 15 }, // Meeting Date
+          { wch: 15 }  // Country
+        ];
+        worksheet['!cols'] = columnWidths;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'VDS European Data');
+
+        // Generate filename with current date
+        const currentDate = new Date().toISOString().split('T')[0];
+        const filename = `VDS_European_Data_${currentDate}.xlsx`;
+
+        // Write and download the file
+        XLSX.writeFile(workbook, filename);
+        
+        console.log(`Downloaded: ${filename}`);
+      } else {
+        console.warn("No data available for download");
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    } finally {
+      setLoadingDownload(false);
+    }
+  };
+
   const onSubmit = async (npxFilter: any) => {
     if (isViewAnalysis) {
       onAnalyticsSubmit(npxFilter);
@@ -821,6 +1004,7 @@ const index = () => {
   };
 
   const onAnalyticsSubmit = async (data: any) => {
+    // Perform all validations first
     if (isViewAnalysis && !data?.institution_name?.length) {
       toast.warning("Please Select Institution Name");
       return;
@@ -834,6 +1018,7 @@ const index = () => {
       }
     }
 
+    // All validations passed, proceed with filter updates
     // Check mutual exclusivity for analytics as well
     const hasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
     const hasDateRange = data?.date_range && data?.date_range.trim() !== "";
@@ -887,6 +1072,7 @@ const index = () => {
       analyticsObj.analyticsYear = [new Date().getFullYear().toString()];
     }
 
+    // Update filters only after all validations pass
     setAllAnalyticsFilter(analyticsObj);
     // Save analytics filters to localStorage
     localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(analyticsObj));
@@ -1304,27 +1490,45 @@ const index = () => {
 
             <div className="flex items-center gap-2">
               {/* Clear and Apply buttons outside filter */}
-              <Popover className="inline-block">
-                {({ close }) => (
-                  <>
-                    <Popover.Button
-                      as={Button}
-                      variant="outline-secondary"
-                      className="w-full sm:w-auto"
-                      onClick={handleCollapseFilter}
-                    >
+              <div className="flex gap-2">
+                <Tippy content="Download Excel" options={{ theme: "light" }}>
+                  <div
+                    className="box p-[5px] cursor-pointer"
+                    onClick={() => !loadingDownload && handleDownload()}
+                  >
+                    {loadingDownload ? (
                       <Lucide
-                        icon="ArrowDownWideNarrow"
-                        className="stroke-[1.3] w-4 h-4 mr-2"
+                        icon="Loader"
+                        className="w-6 h-7 stroke-[1.3] animate-spin"
                       />
-                      Filter
-                      <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                        {filtersLength}
-                      </div>
-                    </Popover.Button>
-                  </>
-                )}
-              </Popover>
+                    ) : (
+                      <img alt="download-icon" src={downloadIcon} />
+                    )}
+                  </div>
+                </Tippy>
+                
+                <Popover className="inline-block">
+                  {({ close }) => (
+                    <>
+                      <Popover.Button
+                        as={Button}
+                        variant="outline-secondary"
+                        className="w-full sm:w-auto"
+                        onClick={handleCollapseFilter}
+                      >
+                        <Lucide
+                          icon="ArrowDownWideNarrow"
+                          className="stroke-[1.3] w-4 h-4 mr-2"
+                        />
+                        Filter
+                        <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                          {filtersLength}
+                        </div>
+                      </Popover.Button>
+                    </>
+                  )}
+                </Popover>
+              </div>
             </div>
           </div>
         </div>
@@ -1555,47 +1759,14 @@ const index = () => {
                             setValue("keyword", "");
                             
                             // Update filter states - only keep institution and year, remove country
-                            if (isViewAnalysis) {
-                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
-                              const currentYear = watch("analyticsYear") || [];
-                              setAllAnalyticsFilter({
-                                institution_name: currentInstitutions,
-                                company_name: companyNames,
-                                analyticsYear: currentYear.length > 0 ? currentYear : [new Date().getFullYear().toString()]
-                              });
-                            } else {
-                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
-                              const currentYear = watch("year") || new Date().getFullYear().toString();
-                              setallApplyFilter({
-                                institution_name: currentInstitutions,
-                                company_name: companyNames,
-                                year: currentYear
-                              });
-                            }
+                            // Note: Filter updates removed - filters should only be applied via Apply button
                           } else {
                             // When company is deselected, automatically apply USA country filter
                             setValue("country", ["USA"]);
                             setSelectedCountries(["USA"]);
                             setCountryComponentKey(prev => prev + 1);
                             
-                            // Update filter states with USA country when no company is selected
-                            if (isViewAnalysis) {
-                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
-                              const currentYear = watch("analyticsYear") || [];
-                              setAllAnalyticsFilter({
-                                institution_name: currentInstitutions,
-                                country: ["USA"],
-                                analyticsYear: currentYear.length > 0 ? currentYear : [new Date().getFullYear().toString()]
-                              });
-                            } else {
-                              const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
-                              const currentYear = watch("year") || new Date().getFullYear().toString();
-                              setallApplyFilter({
-                                institution_name: currentInstitutions,
-                                country: ["USA"],
-                                year: currentYear
-                              });
-                            }
+                            // Note: Filter updates removed - filters should only be applied via Apply button
                           }
 
                           // Only call API when there's an actual change in selection
