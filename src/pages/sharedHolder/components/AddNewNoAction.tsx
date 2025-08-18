@@ -176,7 +176,7 @@ const formatDate = (dateString: string | undefined): string | undefined => {
   const onSubmit = async (data: AddNoActionType) => {
     const transformedData = {
       ...data,
-      institution:  Array.isArray(data.institution)
+      institutes:  Array.isArray(data.institution)
         ? data.institution.map((id) => Number(id)) 
         : null,
       company:
