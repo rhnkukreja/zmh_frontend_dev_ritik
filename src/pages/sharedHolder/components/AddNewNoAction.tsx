@@ -29,6 +29,7 @@ import MultiSearchBar from "@/components/MultiSearch";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { useLocation } from "react-router-dom";
+import { axiosInstance } from "@/services";
 interface AddNoActionProps {
   addNewNoActionModalVisible: boolean;
   setAddNewNoActionModalVisible: (visible: boolean) => void;
@@ -49,6 +50,29 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   const { loading, page, filters} = useAppSelector(
     (state) => state.sharedHolderNoAction
   );
+   const [dropdownLoader, setDropdownLoader] =
+      useState(false);
+       const [institutionsOptions, setInstitutionsOptions] =
+    useState([]);
+     const getALlInstitutions = async () => {
+    try {
+      setDropdownLoader(true);
+      const res =
+        await axiosInstance.get(`/institute/?type=Proponent&all=true`);
+      if (res) {
+        setInstitutionsOptions(res.data.results || res.data)
+
+      }
+    } catch (error) {
+      return error;
+    }
+    finally {
+      setDropdownLoader(false);
+    }
+  }
+  useEffect(() => {
+    getALlInstitutions()
+  }, []);
   const {
     handleSubmit,
     control,
@@ -152,7 +176,9 @@ const formatDate = (dateString: string | undefined): string | undefined => {
   const onSubmit = async (data: AddNoActionType) => {
     const transformedData = {
       ...data,
-      institution: data.institution ? Number(data.institution) : null,
+      institutes:  Array.isArray(data.institution)
+        ? data.institution.map((id) => Number(id)) 
+        : null,
       company:
         data?.company?.value ?? selectedShareholderNoAction?.company ?? 0,
         initial_date_for_submission: data?.initial_date_for_submission ? formatDate(data?.initial_date_for_submission) : null,
@@ -286,7 +312,7 @@ const formatDate = (dateString: string | undefined): string | undefined => {
                 
                 <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Proponent Name
+                    Proponent Name 
                   </FormCheck.Label>
 
                   <div className="mt-2">
@@ -296,7 +322,37 @@ const formatDate = (dateString: string | undefined): string | undefined => {
                       // rules={{ required: "Proponent Name is required" }}
                       render={({ field, fieldState: { error } }) => (
                         <>
-                          <TomSelectServer
+                         <TomSelect
+                            value={field.value || ""}
+                            onChange={(value) => {
+                              field.onChange(value)
+                            }}
+                            options={{
+                              placeholder: "Select proponent",
+                            }}
+                            className="w-full"
+                            multiple={true}
+                          >
+                            {dropdownLoader ? (
+                              <option value="--" disabled>
+                                Loading...
+                              </option>
+                            ) : (
+                              <>
+                                {(institutionsOptions ?? []).map(
+                                  (ins: any) => {
+                                    return (
+                                      <option value={ins.id}>
+                                        {ins.institution
+                                        }
+                                      </option>
+                                    );
+                                  }
+                                )}
+                              </>
+                            )}
+                          </TomSelect>
+                          {/* <TomSelectServer
                             url="/institute/?type=Proponent&all=true"
                             valueKey="id"
                             labelKey="institution"
@@ -305,7 +361,7 @@ const formatDate = (dateString: string | undefined): string | undefined => {
                             options={{ placeholder: "Select proponent" }}
                             className="w-full"
                             fetchAll={false}
-                          />
+                          /> */}
                           {error && (
                             <Error className="text-red-600 mt-2">
                               {error.message}

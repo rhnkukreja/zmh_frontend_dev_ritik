@@ -72,7 +72,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 useEffect(() => {
   const applyAttributes = () => {
     const elements = document.querySelectorAll(`.html-link a`);
-    
+   
     elements.forEach((link) => {
       const anchor = link as HTMLAnchorElement;
       if (anchor.href) {
@@ -84,7 +84,7 @@ useEffect(() => {
   const timeout = setTimeout(applyAttributes, 0);
 
   return () => clearTimeout(timeout);
-}, [renderHtml]);
+}, [renderHtml,expanded]);
 
   return (
     <div className="box border-none ">
