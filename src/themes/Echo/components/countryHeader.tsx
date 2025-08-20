@@ -11,7 +11,7 @@ const CountryInfoHeader = () => {
   const [isChartOpen, setIsChartOpen] = useState(false);
 
   return (
-    <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between  step-2">
+    <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
       <div className="flex items-center gap-4 mb-2 md:mb-0">
         {finhub?.logo && (
           <div className="w-6 h-6 image-fit object-contain">

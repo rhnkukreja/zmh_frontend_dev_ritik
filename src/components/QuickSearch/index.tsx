@@ -121,16 +121,15 @@ function Main(props: MainProps) {
                 leaveTo="opacity-0 scale-95"
               >
                 <HeadlessDialog.Panel className="sm:w-[600px] lg:w-[700px] w-[95%] relative mx-auto transition-transform">
-                  <div className="relative ">
+                  <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center justify-center w-12">
                       <Lucide
                         icon="Search"
                         className="w-5 h-5 -mr-1.5 text-slate-500 stroke-[1]"
                       />
                     </div>
-
                     <FormInput
-                      className="pl-12 pr-14 py-3.5 text-base rounded-lg focus:ring-0 border-0 shadow-lg "
+                      className="pl-12 pr-14 py-3.5 text-base rounded-lg focus:ring-0 border-0 shadow-lg"
                       type="text"
                       placeholder="Search by company name, ticker, or symbol"
                       value={search}

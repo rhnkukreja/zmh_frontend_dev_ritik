@@ -7,7 +7,7 @@ import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { MegaphoneOff } from 'lucide-react';
-import Joyride from "react-joyride";
+import { CircleSlash2 } from 'lucide-react';
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -44,7 +44,7 @@ const index = () => {
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
-  const [run, setRun] = useState(true);
+
   const [searchParams] = useSearchParams();
   const { dashboardDataList, investorCardLoading, page, tempSearch, percent } =
     useAppSelector((state) => state.dashboard);
@@ -53,7 +53,6 @@ const index = () => {
     (state: RootState) => state.authentiction
   );
 
- 
 
   const navigate = useNavigate();
 
@@ -203,12 +202,8 @@ const index = () => {
     setSelectedIndex(index);
   }, [selectedYear])
 
-
-
-
   return (
     <>
-    
       {location.pathname !== "/" && (
         <Button
           onClick={() => {
@@ -230,7 +225,7 @@ const index = () => {
           <div className="p-5 mt-3.5 box">
             <div className="w-full">
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
-                <h1 className="text-lg font-bold step-3">
+                <h1 className="text-lg font-bold">
                   Top {dashboardDataList?.length || 20} Investor{" "}
                   <span className="text-base font-bold">
                     ({dashboardDataList?.total_percent_ownership} of shares outstanding)
@@ -245,9 +240,8 @@ const index = () => {
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
-                      className="box p-[5px] cursor-pointer "
+                      className="box p-[5px] cursor-pointer"
                       onClick={convertDivTableToCSV}
-                      
                     >
                       <img alt="download-icon" src={downloadIcon} />
                     </div>
@@ -255,7 +249,7 @@ const index = () => {
                   {locationPathName === "/" && (
                     <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
-                        className="box p-2 cursor-pointer "
+                        className="box p-2 cursor-pointer"
                         onClick={() =>
                           window.open("investor-details", "_blank")
                         }
@@ -269,11 +263,11 @@ const index = () => {
 
               {
                 dashboardDataList?.total_year?.length > 1 &&
-                <div  className="w-fit" >
+                <div >
                   <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                     <Tab.List
                       variant="boxed-tabs"
-                      className=" border-none bg-transparent  "
+                      className="w-[100px] border-none bg-transparent"
                     >
                       {
                         dashboardDataList?.total_year?.length > 1 &&
@@ -281,7 +275,7 @@ const index = () => {
                           <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
                                    last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
                             <Tab.Button
-                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer "
+                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
                               as="button"
                               onClick={() => handleAGMYearTab(tab, getSelectedTabIndex())}>
                               {tab}
@@ -636,7 +630,7 @@ const index = () => {
                     >
                       2
                     </sup>
-                    <p id="footnote" className="">
+                    <p id="footnote">
                       As disclosed by the investor in the last three years.
                     </p>
                   </span>
