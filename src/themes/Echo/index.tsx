@@ -830,7 +830,7 @@ function Main() {
                   </h1>
                 ) : (
                   <div
-                    className="relative justify-center hidden md:flex md:ml-2 step-1"
+                    className="relative justify-center hidden md:flex md:ml-2"
                     onClick={() => setQuickSearch(true)}
                   >
                     <div

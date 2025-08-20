@@ -198,7 +198,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
               <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                   <span>
-                    <h1 className="text-lg font-bold step-4">
+                    <h1 className="text-lg font-bold">
                       Shareholder Meeting Summary {agmSummaryDetails?.Year}
                     </h1>
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
