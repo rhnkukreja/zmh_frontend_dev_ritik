@@ -85,3 +85,24 @@ export const pageTitles: Record<string, string | null> = {
   "/engagement-detail": null,
   "/shareholder-proposal":null
 };
+
+};
+export const guideSteps = [
+   {
+      target: ".step-1",
+      content: "You can search any company by name, ticker, or symbol here. Just start typing and select from the suggestions",
+    },
+     {
+      target: ".step-2",
+      content: "Here’s the company overview — including ticker, market, and industry details. This updates when you select a new company.",
+    },
+    {
+      target: ".step-3",
+      content: "This section lists the top 20 shareholders, their ownership percentage, and key engagement details",
+    },
+      {
+      target: ".step-4",
+      content: "See the voting outcomes for board nominees and proposals from recent shareholder meetings.",
+    },
+  ];
+
