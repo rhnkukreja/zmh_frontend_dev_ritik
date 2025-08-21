@@ -1956,7 +1956,7 @@ const index = () => {
           </div>
         )}
         {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && analytics.by_institution && Object.keys(analytics.by_institution).length > 0 && (
-          <AnalyticsTableMemo vdsEuropeansAnalytics={analytics} openGroups={openGroups} toggleGroup={toggleGroup} />
+          <AnalyticsTableMemo vdsEuropeansAnalytics={analytics} openGroups={openGroups} toggleGroup={toggleGroup} filteredDateRange={allAnalyticsFilter?.date_range} />
         )}
         {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && analytics.by_company && Array.isArray(analytics.by_company) && analytics.by_company.length > 0 && (
           <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
@@ -2190,7 +2190,7 @@ const index = () => {
   );
 };
 
-const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
+const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filteredDateRange }) => {
   // Get all institutions and years
   const institutions = vdsEuropeansAnalytics.by_institution || [];
 
@@ -2218,14 +2218,22 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup }) => {
               {institutions.map((institution) => (
                 years.map((year) => {
                   const yearData = institution.years[year as string];
-                  const dateRange = yearData?.date_range;
-                  const dateRangeText = dateRange ? ` (${dateRange.start_meeting} - ${dateRange.end_meeting})` : '';
+                  const apiDateRange = yearData?.date_range;
+                  
+                  // Use filtered date range if available, otherwise use API date range
+                  const displayDateRange = filteredDateRange && filteredDateRange.trim() !== "" 
+                    ? filteredDateRange 
+                    : apiDateRange;
+                  
                   return (
                     <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 pt-0 text-center font-semibold">
                       <div className="flex flex-col">
-                        {dateRange && (
+                        {displayDateRange && (
                           <div className="text-xs font-semibold mt-1">
-                            ({dateRange.start_meeting} - {dateRange.end_meeting})
+                            {filteredDateRange && filteredDateRange.trim() !== "" 
+                              ? `(${filteredDateRange})`
+                              : `(${apiDateRange.start_meeting} - ${apiDateRange.end_meeting})`
+                            }
                           </div>
                         )}
                       </div>

@@ -134,7 +134,7 @@ const index = () => {
     setMeetingDate('');
     getMeetingDateAPI();
   }, [companyGlobalSearchName])
-  
+
 
   const getDependentDropdown = async () => {
     const paramFilter = {
@@ -269,7 +269,7 @@ const index = () => {
       toast.warning("Please select Institution");
       return;
     }
-    
+
     const filterObj = {
       global_search: companyGlobalSearchName,
       institution_name:
@@ -283,7 +283,7 @@ const index = () => {
         "Select" === npxFilter?.vote_category ? "" : npxFilter?.vote_category,
       keyword: npxFilter?.keyword,
     };
-    
+
     // Create filter object for chips (exclude global_search)
     const filterObjForChips = {
       institution_name: filterObj.institution_name,
@@ -293,7 +293,7 @@ const index = () => {
       vote_category: filterObj.vote_category,
       keyword: filterObj.keyword,
     };
-    
+
     setallApplyFilter(filterObj);
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
@@ -742,7 +742,7 @@ const index = () => {
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
             <div className="text-center text-gray-400 text-lg font-semibold">
               <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-              No NPX records available. Try adjusting your filters!
+              Select an institution to get started.
             </div>
           </div>
         )}

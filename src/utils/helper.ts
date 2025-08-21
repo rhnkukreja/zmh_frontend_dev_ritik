@@ -397,11 +397,14 @@ function generateFilterChips(filters: Record<string, any>) {
     company_name: "Company",
     company_names: "Company",
     institution_name: "Institution",
+    fund_name: "Fund",
     year: "Year",
     vote: "Vote",
     vote_type: "Vote",
+    vote_category: "Category",
     category: "Category",
     keyword: "Keyword",
+    proposal: "Proposal",
     index: "Index",
     index_name: "Index",
     proposal_type: "Proposal Category",
@@ -420,18 +423,23 @@ function generateFilterChips(filters: Record<string, any>) {
   // Define the order of filters as they appear in the UI
   const filterOrder = [
     'institution_name',    // First row
+    'fund_name',
+    'vote_category',
+    'proposal',            // Second row
+    'vote',
+    'keyword',
     'analyticsYear', 'year',
     'index_name', 'index',
     'date_range',
-    'country',             // Second row
+    'country',             
     'meeting_type',
     'proposal_type',
     'proponent_type',
-    'vote', 'vote_type',
+    'vote_type',
     // Additional filters that might not be in the main form
     'company_name', 'company_names',
     'category',
-    'keyword', 'proposal_keyword'
+    'proposal_keyword'
   ];
 
   // Create chips for each filter in the defined order
