@@ -38,9 +38,19 @@ class DashboardService {
           url = `/${exactUrl}${companyName}`;
         }
       } else {
-        url = `/company/?${
-          companyName ? `company_name=${companyName}` : ""
-        }&all=true`;
+        // Refactored: Use proper URL construction with URLSearchParams for consistency
+        const params = new URLSearchParams();
+        if (companyName) {
+          params.append('company_name', companyName);
+        }
+        
+        // For default load (when companyName is "a"), add index parameter
+        if (companyName === "a") {
+          params.append('index', JSON.stringify(["100"]));
+        }
+        
+        params.append('all', 'true');
+        url = `/company/?${params.toString()}`;
       }
       const response = await axiosInstance.get(url);
       if(exactUrl){
@@ -70,7 +80,7 @@ class DashboardService {
           results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
         }
       }else {
-        results = response.data;
+        results = response.data?.results || response.data;
       }
     }
 

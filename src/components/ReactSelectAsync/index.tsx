@@ -98,6 +98,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
+  const [isLoadingDefault, setIsLoadingDefault] = useState(true);
 
   const loadOptions = useCallback(
     _.debounce(
@@ -131,6 +132,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   useEffect(() => {
     const fetchDefaultOptions = async () => {
       try {
+        setIsLoadingDefault(true);
         const options = await fetchOptions(
           "a",
           isInstitution,
@@ -144,11 +146,14 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
         setDefaultOptions(options);
       } catch (error) {
         console.error("Error fetching default options:", error);
+        setDefaultOptions([]); // Set empty array on error
+      } finally {
+        setIsLoadingDefault(false);
       }
     };
 
     // Only fetch default options on initial load, not when currentFilters change
-    if (defaultOptions.length === 0) {
+    if (defaultOptions.length === 0 && isLoadingDefault) {
       fetchDefaultOptions();
     }
 }, []);
@@ -191,9 +196,11 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       styles={customStyles}
       isMulti={isMulti}
       loadOptions={loadOptions}
-      defaultOptions={defaultOptions?.length ?  defaultOptions?.slice(0,5) : false}
+      defaultOptions={isLoadingDefault ? true : (defaultOptions?.length ? defaultOptions?.slice(0,5) : false)}
       placeholder={
-        placeholder
+        isLoadingDefault 
+          ? "Loading..." 
+          : placeholder
           ? placeholder
           : isInstitution
           ? "Search Institution"
@@ -206,6 +213,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       onChange={onChangeSelect}
       menuPortalTarget={document.body}
       isClearable={isClearable}
+      isLoading={isLoadingDefault}
     />
   );
 };
