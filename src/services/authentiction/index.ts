@@ -1,12 +1,21 @@
 // services/UserService.ts
 import { Login, Register } from "@/types/users";
 import { axiosInstance } from "../index";
-import { LoginRequestDTO, SendOtpDTO, SignUpRequestDTO, VerifyOtpDTO } from "./auth.type";
+import { LoginRequestDTO, SendOtpDTO, SignUpRequestDTO, VerifyOtpDTO ,VerifySignUpOtpDTO} from "./auth.type";
 
 class UserService {
   public async signUp(user: SignUpRequestDTO): Promise<any> {
     try {
-      const response = await axiosInstance.post("/user/register/", user);
+      const response = await axiosInstance.post("/signup/request-otp/", user);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  }
+ public async verifySignUpOtp(data: VerifySignUpOtpDTO): Promise<any> {
+
+    try {
+      const response = await axiosInstance.post("/signup/verify-otp/", data);
       return response.data;
     } catch (error) {
       return error;

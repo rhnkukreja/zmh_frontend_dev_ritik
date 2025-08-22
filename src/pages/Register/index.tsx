@@ -9,7 +9,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 
 import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { signUp } from "@/stores/authenticationSlice";
+import { signUp, VerifySignUpOtp } from "@/stores/authenticationSlice";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
@@ -27,10 +27,15 @@ interface FormInputs {
     label: string;
   };
   email: string;
+  phone: string;
   password: string;
   passwordConfirmation: string;
+  
 }
-
+interface VerifyOtpInputs {
+  otp: string;
+  email?: string;
+}
 function Main() {
   const {
     register,
@@ -38,14 +43,15 @@ function Main() {
     watch,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormInputs>();
+  } = useForm<any>();
   const companySelectRef = useRef<any>(null);
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [formView, setFormView] = useState<"signup" | "verifyOtp" >("signup");
+   const [userEmail, setUserEmail] = useState("");
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     const { passwordConfirmation, ...restData } = data;
 
@@ -54,21 +60,40 @@ function Main() {
         signUp({
           ...restData,
           user_type: "Admin",
-          phone: "",
-          username: restData?.email,
+          username: restData?.first_name,
           company: restData?.company?.value || null,
+          confirm_password: data.passwordConfirmation,
+          
         })
       ).unwrap();
 
       if (response?.email) {
-        toast.success("Registered Successfully!");
-        navigate("/login");
+        toast.success(response?.message || "Registered successfully");
+        setFormView("verifyOtp");
+        setUserEmail(response?.email)
       }
     } catch (error) {
       return error;
     }
   };
+const handleVerifyOTP = async (data: VerifyOtpInputs) => {
+    try {
+      const response = await dispatch(
+        VerifySignUpOtp({
+          email:userEmail,
+          otp: data.otp,
+        })
+      ).unwrap();
 
+      if (response.message === "Signup completed successfully!") {
+        toast.success(response.message);
+        navigate("/login");
+      }
+
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
   return (
     <>
       <Helmet>
@@ -90,14 +115,19 @@ function Main() {
               </div>
             </div>
             <div className="mt-10">
-              <div className="text-2xl font-medium">Sign Up</div>
-              <div className="mt-2.5 text-slate-600">
+              <div className="text-2xl font-medium">{formView === "signup" ? "Sign Up": "Enter Verification Code"}</div>
+              {formView === "verifyOtp" ?  <div className="mt-2.5  text-slate-600">
+               Verification code sent to your email
+                
+              </div>: <div className="mt-2.5 text-slate-600">
                 Already have an account?
                 <Link className="ml-2 font-medium text-primary" to="/login">
                   Sign In
                 </Link>
-              </div>
-              <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
+              </div>}
+              
+            {formView === "signup" ? 
+             <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
                 <div>
                   <FormLabel>First Name*</FormLabel>
                   <FormInput
@@ -110,7 +140,7 @@ function Main() {
                   />
                   {errors.first_name && (
                     <span className="text-red-500">
-                      {errors.first_name.message}
+                      {typeof errors.first_name.message === "string" ? errors.first_name.message : ""}
                     </span>
                   )}
                 </div>
@@ -126,7 +156,7 @@ function Main() {
                   />
                   {errors.last_name && (
                     <span className="text-red-500">
-                      {errors.last_name.message}
+                      {typeof errors.last_name.message === "string" ? errors.last_name.message : ""}
                     </span>
                   )}
                 </div>
@@ -139,7 +169,9 @@ function Main() {
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (
-                    <span className="text-red-500">{errors.email.message}</span>
+                    <span className="text-red-500">
+                      {typeof errors.email.message === "string" ? errors.email.message : ""}
+                    </span>
                   )}
                 </div>
 
@@ -149,14 +181,29 @@ function Main() {
                     name="company"
                     control={control}
                     render={({ field }) => (
-                      <CompanySelect
+                      <CompanySelect 
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value);
                         }}
+                        isMulti={false}
                       />
                     )}
                   />
+                </div>
+                <div className="mt-5">
+                  <FormLabel>Phone Number*</FormLabel>
+                  <FormInput
+                    type="number"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="Enter Phone Number"
+                    {...register("phone", { required: "Phone Number is required" })}
+                  />
+                  {errors.phone && (
+                    <span className="text-red-500">
+                      {typeof errors.phone.message === "string" ? errors.phone.message : ""}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-5 relative">
                   <FormLabel>Password*</FormLabel>
@@ -186,7 +233,7 @@ function Main() {
                   </span>
                   {errors.password && (
                     <span className="text-red-500">
-                      {errors.password.message}
+                      {typeof errors.password.message === "string" ? errors.password.message : ""}
                     </span>
                   )}
                 </div>
@@ -225,7 +272,7 @@ function Main() {
                   </span>
                   {errors.passwordConfirmation && (
                     <span className="text-red-500">
-                      {errors.passwordConfirmation.message}
+                      {typeof errors.passwordConfirmation.message === "string" ? errors.passwordConfirmation.message : ""}
                     </span>
                   )}
                 </div>
@@ -283,6 +330,45 @@ function Main() {
                   </Button>
                 </div>
               </form>
+                :
+                  <form onSubmit={handleSubmit(handleVerifyOTP)} className="mt-6">
+                    <FormLabel>Enter Code</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Code"
+                      {...register("otp", { required: "OTP is required" })}
+                    />
+                    {errors.otp && (
+                      <p className="text-red-500">{typeof errors.otp.message === "string" ? errors.otp.message : ""}</p>
+                    )}
+                   <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
+                      <button type="button" onClick={() => setFormView("signup")} className="flex items-center" >  <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back To Sign Up</button>
+                    </div>
+                  
+
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Confirm Code
+                      </Button>
+                    </div>
+                  </form>}
             </div>
           </div>
         </div>
