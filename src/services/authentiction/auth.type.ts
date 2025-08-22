@@ -15,7 +15,15 @@ export class SignUpRequestDTO {
     public password: string,
     public username: string,
     public user_type: string,
-    public company: number | null
+    public company: number | null,
+    public confirm_password: string
+  ) { }
+}
+export class VerifySignUpOtpDTO {
+  constructor(
+    public email: string,
+    public otp: string
+
   ) { }
 }
 export class SendOtpDTO {

@@ -23,6 +23,9 @@ export type Register = {
   user_type: string;
   date_created: string;
   date_updated: string;
+  confirm_password?: string;
+  message?: string;
+  
 };
 export type  OTP = {
   email: string;
@@ -30,6 +33,11 @@ export type  OTP = {
  
 };
 export type  verifiedOTP = {
+  email: string;
+  message: string;
+ 
+};
+export type  verifiedSignUpOTP = {
   email: string;
   message: string;
  
