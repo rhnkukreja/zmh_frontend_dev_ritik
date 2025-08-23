@@ -64,9 +64,9 @@ export const fetchVdsEuropeans = createAsyncThunk<
 
 export const fetchVdsEuropeanAnalytics = createAsyncThunk<
   any,
-  { url: string; body: any }
->(`${name}/fetchVdsEuropeanAnalytics`, async ({ url, body }) => {
-  return await vdsEuropeanService.getVDSEuropeanAnalytics(url, body);
+  string
+>(`${name}/fetchVdsEuropeanAnalytics`, async (url: string) => {
+  return await vdsEuropeanService.getVDSEuropeanAnalytics(url);
 });
 
 

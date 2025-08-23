@@ -186,27 +186,29 @@ function Main() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-            <div className="font-semibold text-xl">Investor Profile</div>
-
-            {user?.user_type === "Admin" && (
-              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-                <Button
-                  onClick={() => {
-                    setAddNewInvesterModalVisible(true);
-                  }}
-                  variant="primary"
-                  className="bg-theme-2 border-bg-theme-2"
-                >
-                  <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
-                  Add New Investor
-                </Button>
+          <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white shadow" style={{ top: '4rem', minHeight: '64px' }}>
+            <div className="bg-white px-4 mb-4 flex flex-col md:flex-row items-center justify-between">
+              <div className="flex items-center h-[64px]">
+                <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
-            )}
-
-
+              <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
+                {user?.user_type === "Admin" && (
+                  <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
+                    <Button
+                      onClick={() => {
+                        setAddNewInvesterModalVisible(true);
+                      }}
+                      variant="primary"
+                      className="bg-theme-2 border-bg-theme-2"
+                    >
+                      <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
+                      Add New Investor
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-
           <div className="mt-3.5">
             <div className="flex flex-col box box--stacked">
               <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
@@ -593,7 +595,7 @@ function Main() {
             />
           )}
         </div>
-      </div>
+      </div >
     </>
   );
 }

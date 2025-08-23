@@ -746,6 +746,71 @@ const index = () => {
     setIsFilterCollapse(!isFilterCollapse);
   };
 
+  const handleAnalyticsDownload = async () => {
+    try {
+      setLoadingDownload(true);
+      
+      // Construct the same analytics parameters as the regular analytics call
+      const analyticsParams: Record<string, string | string[]> = {
+        investor_company: allAnalyticsFilter?.institution_name?.length
+          ? allAnalyticsFilter.institution_name
+          : allAnalyticsFilter.company_name || [],
+        company_name: allAnalyticsFilter?.company_name?.length > 0
+          ? allAnalyticsFilter.company_name
+          : [],
+        year:
+          allAnalyticsFilter?.analyticsYear?.length > 0
+            ? allAnalyticsFilter?.analyticsYear
+            : [],
+        proponent_type: allAnalyticsFilter?.proponent_type
+          ? allAnalyticsFilter?.proponent_type
+          : [],
+        proposal_type: allAnalyticsFilter?.proposal_type
+          ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+            item.toLowerCase()
+          )
+          : [],
+        index:
+          allAnalyticsFilter?.index?.length > 0
+            ? allAnalyticsFilter.index
+            : [],
+        proposal_keyword:
+          allAnalyticsFilter?.proposal_keyword?.length > 0
+            ? allAnalyticsFilter.proposal_keyword
+            : [],
+        meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
+          ? allAnalyticsFilter.meeting_type
+          : [],
+        vote_type: allAnalyticsFilter?.vote_type || [],
+        page: (analyticsPage || 1).toString(),
+        download: "true", // Add download parameter as string
+      };
+
+      // Only include country if no company is selected
+      if (allAnalyticsFilter?.company_name?.length === 0 || !allAnalyticsFilter?.company_name) {
+        analyticsParams.country = allAnalyticsFilter?.country || ["USA"];
+      }
+
+      // Only include date_range if it has a value
+      if (allAnalyticsFilter?.date_range) {
+        analyticsParams.date_range = allAnalyticsFilter.date_range;
+      }
+
+      const downloadUrl = createDynamicURL(
+        `${baseURL}/api/proposal-voting-stats/`,
+        analyticsParams
+      );
+
+      // Trigger download by opening the URL in a new tab
+      window.open(downloadUrl, '_blank');
+      
+    } catch (error) {
+      console.error("Error downloading analytics file:", error);
+    } finally {
+      setLoadingDownload(false);
+    }
+  };
+
   const handleDownload = async () => {
     try {
       setLoadingDownload(true);
@@ -861,11 +926,11 @@ const index = () => {
         worksheet['!merges'] = merges;
 
         // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'VDS European Summary');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Voting Data Analytics');
 
         // Generate filename with current date
         const currentDate = new Date().toISOString().split('T')[0];
-        const filename = `VDS_European_Analytics_Summary_${currentDate}.xlsx`;
+        const filename = `VDS_ANALYTICS_${currentDate}.xlsx`;
 
         // Write and download the file
         XLSX.writeFile(workbook, filename);
@@ -906,7 +971,7 @@ const index = () => {
         worksheet['!cols'] = columnWidths;
 
         // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'VDS European Data');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Voting Data Analytics');
 
         // Generate filename with current date
         const currentDate = new Date().toISOString().split('T')[0];
@@ -1356,7 +1421,7 @@ const index = () => {
       if (isViewAnalysis && allAnalyticsFilter?.institution_name && allAnalyticsFilter.institution_name.length > 0) {
         dispatch(setAnalyticsFilters(allAnalyticsFilter));
 
-        const analyticsBody = {
+        const analyticsParams = {
           investor_company: allAnalyticsFilter?.institution_name?.length
             ? allAnalyticsFilter.institution_name
             : allAnalyticsFilter.company_name || [],
@@ -1393,10 +1458,12 @@ const index = () => {
           page: analyticsPage || 1,
         };
 
-        dispatch(fetchVdsEuropeanAnalytics({
-          url: `${baseURL}/api/proposal-voting-stats`,
-          body: analyticsBody
-        }));
+        const analyticsUrl = createDynamicURL(
+          `${baseURL}/api/proposal-voting-stats/`,
+          analyticsParams
+        );
+
+        dispatch(fetchVdsEuropeanAnalytics(analyticsUrl));
       }
     };
     fetchAnalytics();
@@ -1960,8 +2027,23 @@ const index = () => {
         )}
         {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && analytics.by_company && Array.isArray(analytics.by_company) && analytics.by_company.length > 0 && (
           <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mt-8">
-            {/* Expand All Button */}
-            <div className="flex justify-end mb-4 px-4 pt-4">
+            {/* Expand All and Download Buttons */}
+            <div className="flex justify-end gap-3 mb-4 px-4 pt-4">
+              <Tippy content="Download Excel" options={{ theme: "light" }}>
+                <div
+                  className="box p-[5px] cursor-pointer"
+                  onClick={() => !loadingDownload && handleAnalyticsDownload()}
+                >
+                  {loadingDownload ? (
+                    <Lucide
+                      icon="Loader"
+                      className="w-6 h-7 stroke-[1.3] animate-spin"
+                    />
+                  ) : (
+                    <img alt="download-icon" src={downloadIcon} />
+                  )}
+                </div>
+              </Tippy>
               <button
                 onClick={expandAllGroups}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"

@@ -14,23 +14,16 @@ import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import CompanySelect from "@/components/ReactSelectAsync";
 
 interface FormInputs {
   first_name: string;
   last_name: string;
-  company?: {
-    value: number;
-    label: string;
-  };
   email: string;
-  phone: string;
   password: string;
   passwordConfirmation: string;
-  
 }
 interface VerifyOtpInputs {
   otp: string;
@@ -39,12 +32,10 @@ interface VerifyOtpInputs {
 function Main() {
   const {
     register,
-    control,
     watch,
     handleSubmit,
     formState: { errors },
   } = useForm<any>();
-  const companySelectRef = useRef<any>(null);
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
@@ -60,10 +51,10 @@ function Main() {
         signUp({
           ...restData,
           user_type: "Admin",
-          username: restData?.first_name,
-          company: restData?.company?.value || null,
+          username: restData?.email,
+          phone: "", // Required by API but not collected in form
+          company: null, // Required by API but not collected in form
           confirm_password: data.passwordConfirmation,
-          
         })
       ).unwrap();
 
@@ -116,10 +107,7 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
             </div>
             <div className="mt-10">
               <div className="text-2xl font-medium">{formView === "signup" ? "Sign Up": "Enter Verification Code"}</div>
-              {formView === "verifyOtp" ?  <div className="mt-2.5  text-slate-600">
-               Verification code sent to your email
-                
-              </div>: <div className="mt-2.5 text-slate-600">
+              {formView === "signup" && <div className="mt-2.5 text-slate-600">
                 Already have an account?
                 <Link className="ml-2 font-medium text-primary" to="/login">
                   Sign In
@@ -133,7 +121,6 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter First Name"
                     {...register("first_name", {
                       required: "First name is required",
                     })}
@@ -149,7 +136,6 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Last Name"
                     {...register("last_name", {
                       required: "Last name is required",
                     })}
@@ -165,7 +151,6 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
                   <FormInput
                     type="email"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Email"
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (
@@ -174,43 +159,11 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
                     </span>
                   )}
                 </div>
-
-                <div className="w-full mt-5" ref={companySelectRef}>
-                  <FormLabel>Select Company</FormLabel>
-                  <Controller
-                    name="company"
-                    control={control}
-                    render={({ field }) => (
-                      <CompanySelect 
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        isMulti={false}
-                      />
-                    )}
-                  />
-                </div>
-                <div className="mt-5">
-                  <FormLabel>Phone Number*</FormLabel>
-                  <FormInput
-                    type="number"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Phone Number"
-                    {...register("phone", { required: "Phone Number is required" })}
-                  />
-                  {errors.phone && (
-                    <span className="text-red-500">
-                      {typeof errors.phone.message === "string" ? errors.phone.message : ""}
-                    </span>
-                  )}
-                </div>
                 <div className="mt-5 relative">
                   <FormLabel>Password*</FormLabel>
                   <FormInput
                     type={showPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Password"
                     {...register("password", {
                       required: "Password is required",
                     })}
@@ -239,11 +192,10 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
                 </div>
 
                 <div className="mt-5 relative">
-                  <FormLabel>Password Confirmation*</FormLabel>
+                  <FormLabel>Confirm Password*</FormLabel>
                   <FormInput
                     type={showConfirmPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Confirm Password"
                     {...register("passwordConfirmation", {
                       required: "Password confirmation is required",
                       validate: (value) =>

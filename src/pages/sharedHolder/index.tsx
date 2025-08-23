@@ -874,69 +874,69 @@ function ShareHolderProposal() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="mt-4">
-            <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
-                {isAllCompanySelected === true ? (
-                  <h1 className="text-xl font-semibold flex items-center gap-2">
-                    All Shareholder Proposals
+          <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
+            <div className="bg-white px-4 mb-4 flex flex-col md:flex-row items-center justify-between shadow">
+              {isAllCompanySelected === true ? (
+                <h1 className="text-xl font-semibold flex items-center gap-2">
+                  All Shareholder Proposals
+                </h1>
+              ) : (
+                tab === "proposal" ? (
+                  <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
+                    Shareholder Proposals
                   </h1>
-                ) : (
-                  tab === "proposal" ? (
-                    <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                      Shareholder Proposals
-                    </h1>
-                  ) : tab === "no-action" ? (
-                    <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                      No Action Letters
-                    </h1>
-                  ) : tab === "withdrawn" ? (
-                    <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                      Withdrawn Proposals
-                    </h1>
-                  ) : null
-                )}
-                <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      try {
-                        dispatch(selectUnSelectAllCompany(false));
-                        dispatch(
-                          modifyRoute({
-                            route: "shareholder-proposal",
-                            type: true,
-                          })
-                        );
-                      } catch (error) { }
-                    }}
-                  >
+                ) : tab === "no-action" ? (
+                  <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
+                    No Action Letters
+                  </h1>
+                ) : tab === "withdrawn" ? (
+                  <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
+                    Withdrawn Proposals
+                  </h1>
+                ) : null
+              )}
+              <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
+                <button
+                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                    ? "bg-primary text-white shadow"
+                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                  onClick={async (e) => {
+                    try {
+                      dispatch(selectUnSelectAllCompany(false));
+                      dispatch(
+                        modifyRoute({
+                          route: "shareholder-proposal",
+                          type: true,
+                        })
+                      );
+                    } catch (error) { }
+                  }}
+                >
 
-                    {finhub?.name || companyGlobalSearchName} {" "}
-                    {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
-                  </button>
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      try {
-                        dispatch(selectUnSelectAllCompany(true));
-                        dispatch(
-                          modifyRoute({
-                            route: "shareholder-proposal",
-                            type: true,
-                          })
-                        );
-                      } catch (error) { }
-                    }}
-                  >
-                    View for All Companies
-                  </button>
-                </div>
+                  {finhub?.name || companyGlobalSearchName} {" "}
+                  {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
+                </button>
+                <button
+                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                    ? "bg-primary text-white shadow"
+                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                    }`}
+                  onClick={async (e) => {
+                    try {
+                      dispatch(selectUnSelectAllCompany(true));
+                      dispatch(
+                        modifyRoute({
+                          route: "shareholder-proposal",
+                          type: true,
+                        })
+                      );
+                    } catch (error) { }
+                  }}
+                >
+                  View for All Companies
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2322,7 +2322,7 @@ function ShareHolderProposal() {
                                   >
                                     {noAction?.nl_exist === true && (
                                       <span
-                                      className="font-medium"
+                                        className="font-medium"
                                         onClick={() => {
                                           const id =
                                             noAction?.nl_exist === true
