@@ -45,6 +45,14 @@ export class VerifyOtpDTO {
 
 export class ResendSignUpOtpDTO {
   constructor(
-    public email: string
+    public email: string,
+    public first_name: string,
+    public last_name: string,
+    public password: string,
+    public username: string,
+    public user_type: string,
+    public confirm_password: string,
+    public phone?: string,
+    public company?: number | null
   ) { }
 }

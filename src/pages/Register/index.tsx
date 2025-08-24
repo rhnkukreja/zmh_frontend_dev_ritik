@@ -43,23 +43,24 @@ function Main() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formView, setFormView] = useState<"signup" | "verifyOtp" >("signup");
    const [userEmail, setUserEmail] = useState("");
+   const [signupData, setSignupData] = useState<any>(null);
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     const { passwordConfirmation, ...restData } = data;
 
+    const signupPayload = {
+      ...restData,
+      user_type: "Employee",
+      username: restData?.email,
+      confirm_password: data.passwordConfirmation,
+    };
+
     try {
-      const response = await dispatch(
-        signUp({
-          ...restData,
-          user_type: "Employee",
-          username: restData?.email,
-          confirm_password: data.passwordConfirmation,
-        })
-      ).unwrap();
+      const response = await dispatch(signUp(signupPayload)).unwrap();
 
       if (response?.email) {
-        toast.success(response?.message || "Registered successfully");
         setFormView("verifyOtp");
-        setUserEmail(response?.email)
+        setUserEmail(response?.email);
+        setSignupData(signupPayload); // Store the signup data for resend
       }
     } catch (error) {
       return error;
@@ -86,15 +87,20 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
 
   const handleResendOTP = async () => {
     try {
+      // Use the same payload as the initial signup but don't show notification
       const response = await dispatch(
         resendSignUpOtp({
           email: userEmail,
+          first_name: signupData.first_name,
+          last_name: signupData.last_name,
+          password: signupData.password,
+          username: signupData.username,
+          user_type: signupData.user_type,
+          confirm_password: signupData.confirm_password,
         })
       ).unwrap();
 
-      if (response?.message) {
-        toast.success(response.message || "OTP resent successfully");
-      }
+      // No notification shown for resend OTP
     } catch (error) {
       console.error("Error resending OTP:", error);
       toast.error("Failed to resend OTP");

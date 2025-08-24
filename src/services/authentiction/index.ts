@@ -24,7 +24,7 @@ class UserService {
 
   public async resendSignUpOtp(data: ResendSignUpOtpDTO): Promise<any> {
     try {
-      const response = await axiosInstance.post("/signup/resend-otp/", data);
+      const response = await axiosInstance.post("/signup/request-otp/", data);
       return response.data;
     } catch (error) {
       return error;
