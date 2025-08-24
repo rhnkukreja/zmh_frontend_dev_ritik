@@ -42,3 +42,9 @@ export class VerifyOtpDTO {
 
   ) { }
 }
+
+export class ResendSignUpOtpDTO {
+  constructor(
+    public email: string
+  ) { }
+}

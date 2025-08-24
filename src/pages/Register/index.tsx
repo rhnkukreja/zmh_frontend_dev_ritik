@@ -9,7 +9,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 
 import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { signUp, VerifySignUpOtp } from "@/stores/authenticationSlice";
+import { signUp, VerifySignUpOtp, resendSignUpOtp } from "@/stores/authenticationSlice";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
@@ -83,6 +83,23 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
 
     } catch (error) {
       console.error("Error sending OTP:", error);
+    }
+  }
+
+  const handleResendOTP = async () => {
+    try {
+      const response = await dispatch(
+        resendSignUpOtp({
+          email: userEmail,
+        })
+      ).unwrap();
+
+      if (response?.message) {
+        toast.success(response.message || "OTP resent successfully");
+      }
+    } catch (error) {
+      console.error("Error resending OTP:", error);
+      toast.error("Failed to resend OTP");
     }
   }
   return (
@@ -294,11 +311,31 @@ const handleVerifyOTP = async (data: VerifyOtpInputs) => {
                     {errors.otp && (
                       <p className="text-red-500">{typeof errors.otp.message === "string" ? errors.otp.message : ""}</p>
                     )}
-                   <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
+                   <div className="flex justify-between mt-4 text-xs text-slate-500 sm:text-sm">
                       <button type="button" onClick={() => setFormView("signup")} className="flex items-center" >  <Lucide
                         icon="ArrowLeft"
                         className="w-4 h-4"
                       /> Back To Sign Up</button>
+                      
+                      <button 
+                        type="button" 
+                        onClick={handleResendOTP} 
+                        disabled={loading}
+                        className="flex items-center text-primary hover:text-primary/80 disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <Lucide
+                            icon="Loader"
+                            className="w-4 h-4 mr-1 animate-spin"
+                          />
+                        ) : (
+                          <Lucide
+                            icon="RefreshCw"
+                            className="w-4 h-4 mr-1"
+                          />
+                        )}
+                        Resend Code
+                      </button>
                     </div>
                   
 

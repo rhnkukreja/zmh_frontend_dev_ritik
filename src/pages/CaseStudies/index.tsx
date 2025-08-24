@@ -171,9 +171,14 @@ function CaseStudies() {
       return;
     }
 
+    // Create filters without global_search for "View For All Companies"
+    const apiFilters = isAllCompanySelected 
+      ? { ...filters, global_search: undefined }
+      : filters;
+
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
-      filters,
+      apiFilters,
       undefined,
       page
     );
@@ -461,10 +466,15 @@ function CaseStudies() {
     return field.onChange(event);
   }
   const handleDownload = async () => {
+    // Create filters without global_search for "View For All Companies"
+    const apiFilters = isAllCompanySelected 
+      ? { ...filters, global_search: undefined }
+      : filters;
+
     downloadFileFromAPI({
       url: createDynamicURL(
         `${baseURL}/case_studies/`,
-        filters,
+        apiFilters,
         undefined,
         page
       ),
