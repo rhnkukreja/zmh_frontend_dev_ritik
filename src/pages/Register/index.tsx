@@ -50,10 +50,8 @@ function Main() {
       const response = await dispatch(
         signUp({
           ...restData,
-          user_type: "Admin",
+          user_type: "Employee",
           username: restData?.email,
-          phone: "", // Required by API but not collected in form
-          company: null, // Required by API but not collected in form
           confirm_password: data.passwordConfirmation,
         })
       ).unwrap();
