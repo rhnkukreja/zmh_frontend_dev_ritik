@@ -747,248 +747,80 @@ const index = () => {
   };
 
   const handleAnalyticsDownload = async () => {
-    try {
-      setLoadingDownload(true);
-      
-      // Construct the same analytics parameters as the regular analytics call
-      const analyticsParams: Record<string, string | string[]> = {
-        investor_company: allAnalyticsFilter?.institution_name?.length
-          ? allAnalyticsFilter.institution_name
-          : allAnalyticsFilter.company_name || [],
-        company_name: allAnalyticsFilter?.company_name?.length > 0
-          ? allAnalyticsFilter.company_name
+    // Construct the same analytics parameters as the regular analytics call
+    const analyticsParams: Record<string, string | string[]> = {
+      investor_company: allAnalyticsFilter?.institution_name?.length
+        ? allAnalyticsFilter.institution_name
+        : allAnalyticsFilter.company_name || [],
+      company_name: allAnalyticsFilter?.company_name?.length > 0
+        ? allAnalyticsFilter.company_name
+        : [],
+      year:
+        allAnalyticsFilter?.analyticsYear?.length > 0
+          ? allAnalyticsFilter?.analyticsYear
           : [],
-        year:
-          allAnalyticsFilter?.analyticsYear?.length > 0
-            ? allAnalyticsFilter?.analyticsYear
-            : [],
-        proponent_type: allAnalyticsFilter?.proponent_type
-          ? allAnalyticsFilter?.proponent_type
+      proponent_type: allAnalyticsFilter?.proponent_type
+        ? allAnalyticsFilter?.proponent_type
+        : [],
+      proposal_type: allAnalyticsFilter?.proposal_type
+        ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+          item.toLowerCase()
+        )
+        : [],
+      index:
+        allAnalyticsFilter?.index?.length > 0
+          ? allAnalyticsFilter.index
           : [],
-        proposal_type: allAnalyticsFilter?.proposal_type
-          ? allAnalyticsFilter?.proposal_type.map((item: any) =>
-            item.toLowerCase()
-          )
+      proposal_keyword:
+        allAnalyticsFilter?.proposal_keyword?.length > 0
+          ? allAnalyticsFilter.proposal_keyword
           : [],
-        index:
-          allAnalyticsFilter?.index?.length > 0
-            ? allAnalyticsFilter.index
-            : [],
-        proposal_keyword:
-          allAnalyticsFilter?.proposal_keyword?.length > 0
-            ? allAnalyticsFilter.proposal_keyword
-            : [],
-        meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
-          ? allAnalyticsFilter.meeting_type
-          : [],
-        vote_type: allAnalyticsFilter?.vote_type || [],
-        page: (analyticsPage || 1).toString(),
-        download: "true", // Add download parameter as string
-      };
+      meeting_type: allAnalyticsFilter?.meeting_type?.length > 0
+        ? allAnalyticsFilter.meeting_type
+        : [],
+      vote_type: allAnalyticsFilter?.vote_type || [],
+      page: (analyticsPage || 1).toString(),
+    };
 
-      // Only include country if no company is selected
-      if (allAnalyticsFilter?.company_name?.length === 0 || !allAnalyticsFilter?.company_name) {
-        analyticsParams.country = allAnalyticsFilter?.country || ["USA"];
-      }
-
-      // Only include date_range if it has a value
-      if (allAnalyticsFilter?.date_range) {
-        analyticsParams.date_range = allAnalyticsFilter.date_range;
-      }
-
-      const downloadUrl = createDynamicURL(
-        `${baseURL}/api/proposal-voting-stats/`,
-        analyticsParams
-      );
-
-      // Trigger download by opening the URL in a new tab
-      window.open(downloadUrl, '_blank');
-      
-    } catch (error) {
-      console.error("Error downloading analytics file:", error);
-    } finally {
-      setLoadingDownload(false);
+    // Only include country if no company is selected
+    if (allAnalyticsFilter?.company_name?.length === 0 || !allAnalyticsFilter?.company_name) {
+      analyticsParams.country = allAnalyticsFilter?.country || ["USA"];
     }
+
+    // Only include date_range if it has a value
+    if (allAnalyticsFilter?.date_range) {
+      analyticsParams.date_range = allAnalyticsFilter.date_range;
+    }
+
+    const downloadUrl = createDynamicURL(
+      `${baseURL}/api/proposal-voting-stats/`,
+      analyticsParams
+    );
+
+    const currentDate = new Date().toISOString().split('T')[0];
+    downloadFileFromAPI({
+      url: downloadUrl,
+      fileName: `Voting Data - ${currentDate}.xlsx`,
+      setLoading: setLoadingDownload,
+      serviceMethod: vdsEuropeanService.getVDSEuropeanFile
+    });
   };
 
   const handleDownload = async () => {
-    try {
-      setLoadingDownload(true);
-      console.log('Download started...');
-      console.log('isViewAnalysis:', isViewAnalysis);
-      console.log('analytics:', analytics);
-      console.log('VdsEuropeans:', VdsEuropeans);
-      
-      // Import XLSX library dynamically
-      const XLSX = await import('xlsx');
-      console.log('XLSX library loaded:', !!XLSX);
-      
-      if (isViewAnalysis && analytics?.by_institution) {
-        // Export analytics summary data
-        const institutions = analytics.by_institution || [];
-        
-        if (institutions.length === 0) {
-          console.warn("No analytics data available for download");
-          setLoadingDownload(false);
-          return;
-        }
-
-        // Get all unique years across all institutions
-        const allYears = new Set();
-        institutions.forEach(inst => {
-          Object.keys(inst.years).forEach(year => allYears.add(year));
-        });
-        const years = Array.from(allYears).sort();
-
-        // Prepare summary data for Excel export
-        const summaryData = [];
-        
-        // Header row with institution names
-        const headerRow1 = ['Summary'];
-        institutions.forEach(institution => {
-          years.forEach(() => {
-            headerRow1.push(institution.institution_name);
-          });
-        });
-        summaryData.push(headerRow1);
-
-        // Sub-header row with years and date ranges
-        const headerRow2 = [''];
-        institutions.forEach(institution => {
-          years.forEach((year: any) => {
-            const yearData = institution.years[year];
-            const dateRange = yearData?.date_range;
-            const dateRangeText = dateRange ? `${year} (${dateRange.start_meeting} - ${dateRange.end_meeting})` : year;
-            headerRow2.push(dateRangeText);
-          });
-        });
-        summaryData.push(headerRow2);
-
-        // Data rows
-        const metrics = [
-          { label: 'No. of unique companies', key: 'unique_companies' },
-          { label: 'No of proposals', key: 'total_proposals' },
-          { label: 'No. of FOR votes', key: 'for_votes', showPercentage: true, percentageKey: 'for_percentage' },
-          { label: 'No. of AGAINST/WITHHOLD votes', key: 'against_votes', showPercentage: true, percentageKey: 'against_percentage' },
-          { label: 'Alignment with management', key: 'aligned_with_mgmt' },
-          { label: 'Alignment percentage', key: 'alignment_percentage', isPercentage: true }
-        ];
-
-        metrics.forEach(metric => {
-          const row = [metric.label];
-          institutions.forEach(institution => {
-            years.forEach((year: any) => {
-              const yearData = institution.years[year];
-              if (yearData) {
-                let value = yearData[metric.key];
-                if (metric.showPercentage && metric.percentageKey) {
-                  const percentage = yearData[metric.percentageKey];
-                  value = `${value?.toLocaleString() || 0} (${percentage || 0}%)`;
-                } else if (metric.isPercentage) {
-                  value = `${value || 0}%`;
-                } else if (typeof value === 'number') {
-                  value = value.toLocaleString();
-                }
-                row.push(value || '-');
-              } else {
-                row.push('-');
-              }
-            });
-          });
-          summaryData.push(row);
-        });
-
-        // Create workbook and worksheet
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(summaryData);
-
-        // Set column widths for better readability
-        const columnWidths = [{ wch: 30 }]; // First column (metrics)
-        institutions.forEach(() => {
-          years.forEach(() => {
-            columnWidths.push({ wch: 25 }); // Data columns
-          });
-        });
-        worksheet['!cols'] = columnWidths;
-
-        // Merge cells for institution headers
-        const merges = [];
-        let colIndex = 1; // Start from column B (index 1)
-        institutions.forEach(institution => {
-          if (years.length > 1) {
-            merges.push({
-              s: { r: 0, c: colIndex },
-              e: { r: 0, c: colIndex + years.length - 1 }
-            });
-          }
-          colIndex += years.length;
-        });
-        worksheet['!merges'] = merges;
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Voting Data Analytics');
-
-        // Generate filename with current date
-        const currentDate = new Date().toISOString().split('T')[0];
-        const filename = `VDS_ANALYTICS_${currentDate}.xlsx`;
-
-        // Write and download the file
-        XLSX.writeFile(workbook, filename);
-        
-        console.log(`Downloaded: ${filename}`);
-      } else if (!isViewAnalysis && VdsEuropeans?.length > 0) {
-        // Export regular table data
-        const excelData = VdsEuropeans.map((vds: any) => ({
-          'Institution': vds.excel_institution_name || '',
-          'Meeting Type': vds.meeting_type || '',
-          'Proposal No.': vds.proposal_num || '',
-          'Proposal': vds.proposal || '',
-          'Management Recommendation': vds.mgt_rec || '',
-          'Vote Cast': vds.vote || '',
-          'Notes': vds.notes && vds.notes.toLowerCase() !== "nan" ? vds.notes : '',
-          'Company': vds.company_name || '',
-          'Meeting Date': vds.meeting_date || '',
-          'Country': vds.country || ''
-        }));
-
-        // Create workbook and worksheet
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-        // Set column widths for better readability
-        const columnWidths = [
-          { wch: 25 }, // Institution
-          { wch: 15 }, // Meeting Type
-          { wch: 12 }, // Proposal No.
-          { wch: 50 }, // Proposal
-          { wch: 20 }, // Management Recommendation
-          { wch: 15 }, // Vote Cast
-          { wch: 30 }, // Notes
-          { wch: 25 }, // Company
-          { wch: 15 }, // Meeting Date
-          { wch: 15 }  // Country
-        ];
-        worksheet['!cols'] = columnWidths;
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Voting Data Analytics');
-
-        // Generate filename with current date
-        const currentDate = new Date().toISOString().split('T')[0];
-        const filename = `VDS_European_Data_${currentDate}.xlsx`;
-
-        // Write and download the file
-        XLSX.writeFile(workbook, filename);
-        
-        console.log(`Downloaded: ${filename}`);
-      } else {
-        console.warn("No data available for download");
-      }
-    } catch (error) {
-      console.error("Error downloading file:", error);
-    } finally {
-      setLoadingDownload(false);
+    if (isViewAnalysis) {
+      // For analytics view, use the analytics download function
+      handleAnalyticsDownload();
+      return;
     }
+
+    // For regular table view, download the table data
+    const currentDate = new Date().toISOString().split('T')[0];
+    downloadFileFromAPI({
+      url: createDynamicURL(`${baseURL}/vds_european/`, allApplyFilter, undefined, page),
+      fileName: `Voting Data - ${currentDate}.xlsx`,
+      setLoading: setLoadingDownload,
+      serviceMethod: vdsEuropeanService.getVDSEuropeanFile
+    });
   };
 
   const onSubmit = async (npxFilter: any) => {
