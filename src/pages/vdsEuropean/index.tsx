@@ -1482,7 +1482,7 @@ const index = () => {
 
         // Generate filename with current date
         const currentDate = new Date().toISOString().split('T')[0];
-        const filename = `Voting Data_${currentDate}.xlsx`;
+        const filename = `Voting Data Summary - ${currentDate}.xlsx`;
 
         // Write and download the file
         XLSX.writeFile(workbook, filename);
