@@ -1363,6 +1363,185 @@ const index = () => {
     }
   }, [isViewAnalysis]);
 
+  const handleDownloadXlsx = async () => {
+    try {
+      setLoadingDownload(true);
+      console.log('Download started...');
+      console.log('isViewAnalysis:', isViewAnalysis);
+      console.log('analytics:', analytics);
+      console.log('VdsEuropeans:', VdsEuropeans);
+      
+      // Import XLSX library dynamically
+      const XLSX = await import('xlsx');
+      console.log('XLSX library loaded:', !!XLSX);
+      
+      if (isViewAnalysis && analytics?.by_institution) {
+        // Export analytics summary data
+        const institutions = analytics.by_institution || [];
+        
+        if (institutions.length === 0) {
+          console.warn("No analytics data available for download");
+          setLoadingDownload(false);
+          return;
+        }
+
+        // Get all unique years across all institutions
+        const allYears = new Set();
+        institutions.forEach(inst => {
+          Object.keys(inst.years).forEach(year => allYears.add(year));
+        });
+        const years = Array.from(allYears).sort();
+
+        // Prepare summary data for Excel export
+        const summaryData = [];
+        
+        // Header row with institution names
+        const headerRow1 = ['Summary'];
+        institutions.forEach(institution => {
+          years.forEach(() => {
+            headerRow1.push(institution.institution_name);
+          });
+        });
+        summaryData.push(headerRow1);
+
+        // Sub-header row with years and date ranges
+        const headerRow2 = [''];
+        institutions.forEach(institution => {
+          years.forEach((year: any) => {
+            const yearData = institution.years[year];
+            const dateRange = yearData?.date_range;
+            const dateRangeText = dateRange ? `${year} (${dateRange.start_meeting} - ${dateRange.end_meeting})` : year;
+            headerRow2.push(dateRangeText);
+          });
+        });
+        summaryData.push(headerRow2);
+
+        // Data rows
+        const metrics = [
+          { label: 'No. of unique companies', key: 'unique_companies' },
+          { label: 'No of proposals', key: 'total_proposals' },
+          { label: 'No. of FOR votes', key: 'for_votes', showPercentage: true, percentageKey: 'for_percentage' },
+          { label: 'No. of AGAINST/WITHHOLD votes', key: 'against_votes', showPercentage: true, percentageKey: 'against_percentage' },
+          { label: 'Alignment with management', key: 'aligned_with_mgmt' },
+          { label: 'Alignment percentage', key: 'alignment_percentage', isPercentage: true }
+        ];
+
+        metrics.forEach(metric => {
+          const row = [metric.label];
+          institutions.forEach(institution => {
+            years.forEach((year: any) => {
+              const yearData = institution.years[year];
+              if (yearData) {
+                let value = yearData[metric.key];
+                if (metric.showPercentage && metric.percentageKey) {
+                  const percentage = yearData[metric.percentageKey];
+                  value = `${value?.toLocaleString() || 0} (${percentage || 0}%)`;
+                } else if (metric.isPercentage) {
+                  value = `${value || 0}%`;
+                } else if (typeof value === 'number') {
+                  value = value.toLocaleString();
+                }
+                row.push(value || '-');
+              } else {
+                row.push('-');
+              }
+            });
+          });
+          summaryData.push(row);
+        });
+
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet(summaryData);
+
+        // Set column widths for better readability
+        const columnWidths = [{ wch: 30 }]; // First column (metrics)
+        institutions.forEach(() => {
+          years.forEach(() => {
+            columnWidths.push({ wch: 25 }); // Data columns
+          });
+        });
+        worksheet['!cols'] = columnWidths;
+
+        // Merge cells for institution headers
+        const merges = [];
+        let colIndex = 1; // Start from column B (index 1)
+        institutions.forEach(institution => {
+          if (years.length > 1) {
+            merges.push({
+              s: { r: 0, c: colIndex },
+              e: { r: 0, c: colIndex + years.length - 1 }
+            });
+          }
+          colIndex += years.length;
+        });
+        worksheet['!merges'] = merges;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Voting Data Summary');
+
+        // Generate filename with current date
+        const currentDate = new Date().toISOString().split('T')[0];
+        const filename = `Voting Data_${currentDate}.xlsx`;
+
+        // Write and download the file
+        XLSX.writeFile(workbook, filename);
+        
+        console.log(`Downloaded: ${filename}`);
+      } else if (!isViewAnalysis && VdsEuropeans?.length > 0) {
+        // Export regular table data
+        const excelData = VdsEuropeans.map((vds: any) => ({
+          'Institution': vds.excel_institution_name || '',
+          'Meeting Type': vds.meeting_type || '',
+          'Proposal No.': vds.proposal_num || '',
+          'Proposal': vds.proposal || '',
+          'Management Recommendation': vds.mgt_rec || '',
+          'Vote Cast': vds.vote || '',
+          'Notes': vds.notes && vds.notes.toLowerCase() !== "nan" ? vds.notes : '',
+          'Company': vds.company_name || '',
+          'Meeting Date': vds.meeting_date || '',
+          'Country': vds.country || ''
+        }));
+
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+        // Set column widths for better readability
+        const columnWidths = [
+          { wch: 25 }, // Institution
+          { wch: 15 }, // Meeting Type
+          { wch: 12 }, // Proposal No.
+          { wch: 50 }, // Proposal
+          { wch: 20 }, // Management Recommendation
+          { wch: 15 }, // Vote Cast
+          { wch: 30 }, // Notes
+          { wch: 25 }, // Company
+          { wch: 15 }, // Meeting Date
+          { wch: 15 }  // Country
+        ];
+        worksheet['!cols'] = columnWidths;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Voting Data');
+
+        // Generate filename with current date
+        const currentDate = new Date().toISOString().split('T')[0];
+        const filename = `Voting Data Summary_${currentDate}.xlsx`;
+
+        // Write and download the file
+        XLSX.writeFile(workbook, filename);
+        
+        console.log(`Downloaded: ${filename}`);
+      } else {
+        console.warn("No data available for download");
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    } finally {
+      setLoadingDownload(false);
+    }
+  };
 
   // Debug: Log analytics state before render
   console.log('analytics:', analytics);
@@ -1393,7 +1572,7 @@ const index = () => {
                 <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <div
                     className="box p-[5px] cursor-pointer"
-                    onClick={() => !loadingDownload && handleDownload()}
+                    onClick={() => !loadingDownload && handleDownloadXlsx()}
                   >
                     {loadingDownload ? (
                       <Lucide

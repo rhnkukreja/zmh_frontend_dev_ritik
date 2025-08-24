@@ -50,6 +50,7 @@ class DashboardService {
         }
         
         params.append('all', 'true');
+        params.append('country', 'USA');
         url = `/company/?${params.toString()}`;
       }
       const response = await axiosInstance.get(url);
