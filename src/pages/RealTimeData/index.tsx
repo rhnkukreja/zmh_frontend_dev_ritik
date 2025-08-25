@@ -48,7 +48,7 @@ const index = () => {
 
   const [searchParams] = useSearchParams();
   const searchTicker = searchParams.get("ticker");
-  const [allApplyFilter, setallApplyFilter] = useState<any>("");
+  const [allApplyFilter, setallApplyFilter] = useState<any>({ year: "2025" });
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [openSummaryModal, setOpenSummaryModal] = useState<boolean>(false);
@@ -82,17 +82,22 @@ const index = () => {
   useEffect(() => {
     const fetchData = async () => {
       // if (allApplyFilter) {
-
+        console.log("=== fetchData Debug ===");
+        console.log("allApplyFilter:", allApplyFilter);
+        
         const { year, ...restFilter } = allApplyFilter;
+        console.log("restFilter:", restFilter);
+        
+        const generatedURL = createDynamicURL(
+          `${baseURL}/vds/`,
+          allApplyFilter,
+          undefined,
+          page
+        );
+        console.log("Generated URL:", generatedURL);
+        
         await dispatch(
-          fetchRealTimes(
-            createDynamicURL(
-              `${baseURL}/vds/`,
-              allApplyFilter,
-              undefined,
-              page
-            )+"&year=2025"
-          )
+          fetchRealTimes(generatedURL)
         );
 
         setFiltersLength(countValidFilters(restFilter));
@@ -203,9 +208,16 @@ const index = () => {
   };
 
   const onSubmit = async (realTimeFilter: any) => {
+    console.log("=== onSubmit Debug ===");
+    console.log("realTimeFilter:", realTimeFilter);
+    
     const cleanFilter = cleanObject(realTimeFilter);
+    console.log("cleanFilter:", cleanFilter);
+    console.log("cleanFilter.company_name:", cleanFilter?.company_name);
+    console.log("cleanFilter.company_name?.value:", cleanFilter?.company_name?.value);
+    console.log("cleanFilter.company_name?.label:", cleanFilter?.company_name?.label);
 
-    setallApplyFilter({
+    const filterObject = {
       year: "2025",
       index: cleanFilter?.index,
       date_range: cleanFilter?.date_range ?? null,
@@ -213,11 +225,16 @@ const index = () => {
         ? [...cleanFilter?.institution_name]
         : null,
       vote: cleanFilter?.vote ? [...cleanFilter?.vote] : null,
-      company_name: cleanFilter?.company_name?.value
+      company_names: cleanFilter?.company_name?.value
         ? [cleanFilter?.company_name?.value]
         : null,
       keyword: cleanFilter?.keyword,
-    });
+    };
+    
+    console.log("Generated filterObject:", filterObject);
+    console.log("company_names value:", filterObject.company_names);
+    
+    setallApplyFilter(filterObject);
     dispatch(resetPage());
   };
 
@@ -275,7 +292,9 @@ const index = () => {
       }
     }
 
-    setValue(removeKey, updatedFilters[removeKey]);
+    // Handle company_names key mapping to company_name form field
+    const formKey = removeKey === "company_names" ? "company_name" : removeKey;
+    setValue(formKey, updatedFilters[removeKey]);
     setallApplyFilter({ year: "2025", ...updatedFilters });
   };
 
@@ -972,7 +991,7 @@ const index = () => {
                                                   className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                   style={{ width: "5%" }}
                                                 >
-                                                  No.
+                                                  Proposal No.
                                                 </Table.Td>
                                                 <Table.Td
                                                   className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"

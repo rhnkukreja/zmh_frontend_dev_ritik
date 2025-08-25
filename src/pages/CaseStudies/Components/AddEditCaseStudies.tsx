@@ -15,6 +15,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { baseURL } from "@/constant";
 import Error from "@/components/Error";
+import { useLocation } from "react-router-dom";
 
 import TomSelect from "@/components/Base/TomSelect";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
@@ -30,6 +31,7 @@ interface AddNewCaseStudiesProps {
   addNewCaseStudyModalVisible: boolean;
   setAddNewCaseStudyModalVisible: (visible: boolean) => void;
   selectedCaseStudies: any | null;
+  isProxyContext?: boolean;
 }
 
 const holdingTypesDropdown = ["Equity", "Debt/fixed income", "Private company"];
@@ -38,8 +40,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   addNewCaseStudyModalVisible,
   setAddNewCaseStudyModalVisible,
   selectedCaseStudies,
+  isProxyContext = false,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
+  const location = useLocation();
+  const isProxyContestContext = location.pathname.includes('/proxy-contest') || isProxyContext;
   const { loading, page } = useAppSelector(
     (state) => state.sharedHolderNoAction
   );
@@ -63,7 +68,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       industry: selectedCaseStudies?.industry,
       esg_themes: selectedCaseStudies?.esg_themes
         ? selectedCaseStudies?.esg_themes?.split(",")
-        : [],
+        : isProxyContestContext ? ["Proxy Contest/M&A"] : [],
       engagement_details: selectedCaseStudies?.engagement_details,
       proposal_type: selectedCaseStudies?.proposal_type || "",
       resolution_engagement_topic:
@@ -129,6 +134,14 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   }, [esgTheme]);
 
   const onSubmit = async (data: any) => {
+    console.log('🔍 ESG Themes Debug:', {
+      isProxyContestContext,
+      pathname: location.pathname,
+      esg_themes_raw: data.esg_themes,
+      esg_themes_is_array: Array.isArray(data.esg_themes),
+      esg_themes_length: data.esg_themes?.length,
+    });
+
     const transformedData: any = {
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
@@ -137,7 +150,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       esg_themes:
         Array.isArray(data.esg_themes) && data.esg_themes.length > 0
           ? data.esg_themes.join(",")
-          : null,
+          : isProxyContestContext ? "Proxy Contest/M&A" : null,
       esg_category:
         Array.isArray(data.esg_category) && data.esg_category.length > 0
           ? data.esg_category.join(",")

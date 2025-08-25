@@ -18,6 +18,10 @@ interface EditableSectionProps {
   renderHtml: string;
 
   type: string;
+  expanded?: boolean; 
+  onToggle?: () => void;
+  toggleAllGroups?: () => void;
+  areAllGroupsExpanded?: () => boolean;
 }
 
 const EditableSection: React.FC<EditableSectionProps> = ({
@@ -29,6 +33,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   renderHtml,
 
   type,
+  expanded,
+  onToggle,
+  toggleAllGroups,
+  areAllGroupsExpanded,
 }) => {
 
   const dispatch = useAppDispatch();
@@ -64,7 +72,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 useEffect(() => {
   const applyAttributes = () => {
     const elements = document.querySelectorAll(`.html-link a`);
-    
+   
     elements.forEach((link) => {
       const anchor = link as HTMLAnchorElement;
       if (anchor.href) {
@@ -76,7 +84,7 @@ useEffect(() => {
   const timeout = setTimeout(applyAttributes, 0);
 
   return () => clearTimeout(timeout);
-}, [renderHtml]);
+}, [renderHtml,expanded]);
 
   return (
     <div className="box border-none ">
@@ -84,11 +92,16 @@ useEffect(() => {
         <LoadingWrapper height={300} />
       ) : (
         <>
-          <div className="flex flex-row justify-between items-center px-4 py-3.5 border-b-2 border-gray-100 ">
-            <h4 className="text-[18px]  font-semibold text-left py-1 leading-none ">
+         <div
+         className={`flex flex-row justify-between items-center px-4 py-3.5 border-b-2 border-gray-100 ${
+        title !== "Summary" && "bg-gray-50 hover:bg-primary/5 cursor-pointer"
+        }`}
+          onClick={title !== "Summary" && onToggle}
+       >
+            <h4 className="text-[18px]  font-semibold text-left py-1 leading-none text-black ">
               {title} 
             </h4>
-
+          <div>
             {user?.user_type === "Admin" && (
               <>
                 {isEditing === true ? (
@@ -105,8 +118,10 @@ useEffect(() => {
                     variant="secondary"
                     elevated
                     size="sm"
-                    className="px-3 exclude-from-pdf"
-                    onClick={() => setIsEditing(true)}
+                    className="px-3 exclude-from-pdf mr-3"
+                    onClick={() =>{ setIsEditing(true)
+                     
+                    }}
                   >
                     <Lucide
                       icon="PenSquare"
@@ -116,13 +131,29 @@ useEffect(() => {
                   </Button>
                 )}
               </>
-            )}
+            )} 
+        {title == "Summary" ?
+         <button onClick={toggleAllGroups}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
+                            >
+                           
+                           {areAllGroupsExpanded() ? "Collapse All" : "Expand All"} 
+                           <Lucide icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} className="w-4 h-4" />
+                          </button>
+        :<button
+             className="transition-colors  duration-200 font-medium text-lg">
+             <span className="ml-2 text-primary font-bold">{expanded ? '▲' : '▼'}</span>
+       </button>}
           </div>
-          {isEditing ? (
+          </div>
+          {expanded  && <>
+           {isEditing ? (
             <div className="flex  flex-col px-4 py-3  ">
               <div ref={editorRef}>
-               
-                <ClassicEditor  value={value} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing} />
+                <p className="hidden">Edit</p>
+             <div>
+                <ClassicEditor  value={value} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled ={user?.user_type !== "Admin" || !isEditing} />
+              </div>
               </div>
               <div className="flex justify-end mt-4">
                 <Button
@@ -145,15 +176,18 @@ useEffect(() => {
             </div>
           ) : (
             <>
+            <p className="hidden">view</p>
               {renderHtml ? (
                 <div className="flex flex-col px-4 py-3">
                 <div className="html-link">
                   <ClassicEditor value={renderHtml} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing}  />
                 </div>
                 </div>
-              ) : null}
+              ):null}
             </>
           )}
+          </>}
+         
         </>
       )}
     </div>

@@ -89,6 +89,7 @@ import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
 import ProxyContest from "@/pages/ProxyContest";
+import ProxyContestDetail from "@/pages/ProxyContestDetail";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
 import VdsEuropean from "@/pages/vdsEuropean";
 import RealTimeData from "@/pages/RealTimeData";
@@ -471,6 +472,11 @@ function Router() {
           path: "proxy-contest",
           element: <ProxyContest />,
           data: { titleName: "Proxy - Contest - ZMH Analytics" },
+        },
+        {
+          path: "proxy-contest-detail/:companyId",
+          element: <ProxyContestDetail />,
+          data: { titleName: "Proxy Contest Details - ZMH Analytics" },
         },
         {
           path: "voting-data",

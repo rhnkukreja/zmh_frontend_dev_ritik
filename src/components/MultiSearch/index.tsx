@@ -22,6 +22,8 @@ interface MultiSearchBarProps {
   isSingle?: boolean;
   isAll?: boolean;
   searchPoponents?: boolean;
+  fieldLabel?: string; // New prop for field label
+  showPills?: boolean; // New prop to control pill display
 }
 
 // type FetchedOptionType = {
@@ -45,6 +47,8 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   urlQueryKey,
   isAll,
   searchPoponents = false, // New prop to control the search popover
+  fieldLabel, // New prop for field label
+  showPills = true, // New prop to control pill display, default true for backward compatibility
 }) => {
   const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
@@ -316,22 +320,26 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
           )}
         </div>
       </div>
-      <div className="flex  flex-wrap gap-2 py-2 pb-4 overflow-y-auto max-w-full w-full no-scrollbar">
-        {searchTerms.map((term, index) => (
-          <div
-            key={index}
-            className="bg-gray-100 px-4 py-1 rounded-full flex items-center shadow-sm "
-          >
-            <span className="term-text mr-2 text-nowrap ">{term}</span>
-            <button
-              className="remove-btn text-red-500 font-bold"
-              onClick={() => handleSearch(term, false)}
+      {showPills && (
+        <div className="flex  flex-wrap gap-2 py-2 pb-4 overflow-y-auto max-w-full w-full no-scrollbar">
+          {searchTerms.map((term, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium"
             >
-              <Lucide icon="X" className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+              <span className="term-text mr-2 text-nowrap">
+                {fieldLabel ? `${fieldLabel}: ${term}` : term}
+              </span>
+              <button
+                className="remove-btn font-bold"
+                onClick={() => handleSearch(term, false)}
+              >
+                <Lucide icon="X" className="w-4 h-4 stroke-[2]" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

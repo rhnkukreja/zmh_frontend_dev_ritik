@@ -12,6 +12,7 @@ interface EngagementQuestionsFilters {
   institution_name: string[];
   category: string[];
   year: string[];
+  global_search?: string[];
 }
 
 interface EngagementQuestionsState {
@@ -28,6 +29,7 @@ interface EngagementQuestionsState {
     year: string[];
   };
   filters: EngagementQuestionsFilters;
+  isAllCompanySelected: boolean;
 }
 
 const initialState: EngagementQuestionsState = {
@@ -40,14 +42,16 @@ const initialState: EngagementQuestionsState = {
   error: null,
   engagementQuestionFilterOptions: {
     category: ["Environmental", "Governance", "Social", "Compensation"],
-    year: ["2024", "2023", "2022"],
+    year: [new Date().getFullYear().toString(), (new Date().getFullYear() - 1).toString(), (new Date().getFullYear() - 2).toString()],
   },
   filters: {
     institution_name: [],
     category: [],
     year: [],
+    global_search: [],
   },
-  count: 0
+  count: 0,
+  isAllCompanySelected: false,
 };
 
 export const fetchEngagementQuestions = createAsyncThunk<
@@ -117,6 +121,10 @@ const engagementQuestionsSlice = createSlice({
     resetEngagementQuestions(state) {
       state.filters = initialState.filters;
       state.page = 1;
+    },
+
+    selectUnSelectAllCompany(state, action: PayloadAction<boolean>) {
+      state.isAllCompanySelected = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -202,4 +210,5 @@ export const {
   resetFilter,
   setAllFilters,
   resetEngagementQuestions,
+  selectUnSelectAllCompany,
 } = engagementQuestionsSlice.actions;

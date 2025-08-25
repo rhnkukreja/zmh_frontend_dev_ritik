@@ -5,9 +5,11 @@ import {
   SendOtpDTO,
   SignUpRequestDTO,
   VerifyOtpDTO,
+  VerifySignUpOtpDTO,
+  ResendSignUpOtpDTO,
 } from "../services/authentiction/auth.type";
 import { userService } from "../services/authentiction";
-import { Login, OTP, Register, verifiedOTP } from "@/types/users";
+import { Login, OTP, Register, verifiedOTP, verifiedSignUpOTP } from "@/types/users";
 import { persistor } from "./store";
 
 const name = "authentication";
@@ -49,6 +51,19 @@ export const signUp = createAsyncThunk<Register, SignUpRequestDTO>(
   `${name}/signUp`,
   async (userRequest: SignUpRequestDTO) => {
     return (await userService.signUp(userRequest)) as Register;
+  }
+);
+export const VerifySignUpOtp = createAsyncThunk<verifiedSignUpOTP ,VerifySignUpOtpDTO >(
+  `${name}/verifySignUpOtp`,
+  async (userRequest: VerifySignUpOtpDTO) => {
+    return (await userService.verifySignUpOtp(userRequest)) as verifiedSignUpOTP;
+  }
+);
+
+export const resendSignUpOtp = createAsyncThunk<any, ResendSignUpOtpDTO>(
+  `${name}/resendSignUpOtp`,
+  async (userRequest: ResendSignUpOtpDTO) => {
+    return (await userService.resendSignUpOtp(userRequest)) as any;
   }
 );
 export const sendOtp = createAsyncThunk<OTP, SendOtpDTO>(
@@ -162,6 +177,30 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || "Failed to verify OTP";
       })
+      .addCase(VerifySignUpOtp.pending, (state) => {
+       state.loading = true;
+       state.error = null;
+      })
+      .addCase(VerifySignUpOtp.fulfilled, (state, action: PayloadAction<verifiedSignUpOTP>) => {
+       state.loading = false;
+ 
+       })
+      .addCase(VerifySignUpOtp.rejected, (state, action) => {
+       state.loading = false;
+       state.error = action.error.message || "Failed to verify signup OTP";
+      })
+      .addCase(resendSignUpOtp.pending, (state) => {
+       state.loading = true;
+       state.error = null;
+      })
+      .addCase(resendSignUpOtp.fulfilled, (state, action) => {
+       state.loading = false;
+      })
+      .addCase(resendSignUpOtp.rejected, (state, action) => {
+       state.loading = false;
+       state.error = action.error.message || "Failed to resend OTP";
+      })
+
   },
 });
 

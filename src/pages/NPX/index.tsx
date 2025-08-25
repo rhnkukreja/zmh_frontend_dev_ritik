@@ -2,7 +2,10 @@ import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import {
   convertToTitleCase,
+  countValidFilters,
   createDynamicURL,
+  generateFilterChips,
+  downloadFileFromAPI,
 } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -29,6 +32,20 @@ import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import CompanySelect from "@/components/ReactSelectAsync";
+import { Tooltip } from "react-tooltip";
+import Tippy from "@/components/Base/Tippy";
+import clsx from "clsx";
+import LoadingIcon from "@/components/Base/LoadingIcon";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
+import Pill from "@/components/Pill";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import { MdOutlineClear } from "react-icons/md";
+import Skeleton from "react-loading-skeleton";
+import 'react-loading-skeleton/dist/skeleton.css';
+import Litepicker from "@/components/Base/Litepicker";
+import React, { useCallback } from "react";
 
 const index = () => {
 
@@ -49,7 +66,9 @@ const index = () => {
   const searchTicker = searchParams.get("ticker");
 
   const [filter, setFilter] = useState("");
-  const [allApplyFilter, setallApplyFilter] = useState<any>("");
+  const [allApplyFilter, setallApplyFilter] = useState<any>({});
+  const [loadingDownload, setLoadingDownload] = useState(false);
+  const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [dropdownValues, setDropdownValues] = useState<any>({
     institution_name: [],
     fund_name: [],
@@ -115,7 +134,7 @@ const index = () => {
     setMeetingDate('');
     getMeetingDateAPI();
   }, [companyGlobalSearchName])
-  
+
 
   const getDependentDropdown = async () => {
     const paramFilter = {
@@ -219,12 +238,39 @@ const index = () => {
     },
   });
 
+  const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    const updatedFilters = { ...allApplyFilter };
+
+    if (Array.isArray(updatedFilters[removeKey])) {
+      updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+        (item) => item !== removeValue
+      );
+    } else if (updatedFilters[removeKey] === removeValue) {
+      updatedFilters[removeKey] = "";
+    }
+
+    // Create filter object for chips (exclude global_search)
+    const filterObjForChips = {
+      institution_name: updatedFilters.institution_name,
+      fund_name: updatedFilters.fund_name,
+      proposal: updatedFilters.proposal,
+      vote: updatedFilters.vote,
+      vote_category: updatedFilters.vote_category,
+      keyword: updatedFilters.keyword,
+    };
+
+    setallApplyFilter(updatedFilters);
+    setSelectedChipFilters(generateFilterChips(filterObjForChips));
+    setFiltersLength(countValidFilters(filterObjForChips));
+  };
+
   const onSubmit = async (npxFilter: any) => {
     if (npxFilter?.institution_name === "Select") {
       toast.warning("Please select Institution");
       return;
     }
-    setallApplyFilter({
+
+    const filterObj = {
       global_search: companyGlobalSearchName,
       institution_name:
         "Select" === npxFilter?.institution_name?.label
@@ -236,15 +282,31 @@ const index = () => {
       vote_category:
         "Select" === npxFilter?.vote_category ? "" : npxFilter?.vote_category,
       keyword: npxFilter?.keyword,
-    });
-    // setIsFilterCollapse(!isFilterCollapse);
+    };
+
+    // Create filter object for chips (exclude global_search)
+    const filterObjForChips = {
+      institution_name: filterObj.institution_name,
+      fund_name: filterObj.fund_name,
+      proposal: filterObj.proposal,
+      vote: filterObj.vote,
+      vote_category: filterObj.vote_category,
+      keyword: filterObj.keyword,
+    };
+
+    setallApplyFilter(filterObj);
+    setSelectedChipFilters(generateFilterChips(filterObjForChips));
+    setFiltersLength(countValidFilters(filterObjForChips));
     dispatch(resetPage());
+    setIsFilterCollapse(false);
   };
 
   const onFilterClear = () => {
+    setSelectedChipFilters([]);
+    setFiltersLength(0);
     setShowFundName(false);
     resetFormValues();
-    setallApplyFilter("");
+    setallApplyFilter({});
     dispatch(resetPage());
     dispatch(
       fetchNpxProxyDashboard(
@@ -301,68 +363,107 @@ const index = () => {
       </Button>
       {/* )} */}
 
-      <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-      
-      </div>
+      <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
       <div className="p-5 mt-1 box">
         <div className="flex flex-col p-5  sm:flex-row gap-y-2">
           <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
             <span>
-              <h1 className="text-lg font-bold">N-PX Voting 2024</h1>
+              <h1 className="text-lg font-bold flex items-center gap-2">
+                N-PX Voting 2024
+              </h1>
               {
                 meetingDate &&
                 <p className=" italic"> Meeting Date: {meetingDate} </p>
               }
             </span>
           </div>
-          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
-            <Popover className="inline-block">
-              {({ close }) => (
-                <>
-                  <Popover.Button
-                    as={Button}
-                    variant="outline-secondary"
-                    className="w-full sm:w-auto"
-                    onClick={handleCollapseFilter}
-                  >
-                    <Lucide
-                      icon="ArrowDownWideNarrow"
-                      className="stroke-[1.3] w-4 h-4 mr-2"
-                    />
-                    Filter
-                    <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                      {filtersLength}
-                    </div>
-                  </Popover.Button>
-                </>
-              )}
-            </Popover>
+          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
+            {npxProxyDetails?.length > 0 && (
+              <h2 className="flex items-end font-semibold justify-end text-[13px] md:ml-auto mx-5">
+                Count: {totalNPXCount.toLocaleString()}
+              </h2>
+            )}
+
+            <div className="flex items-center gap-2">
+              <Popover className="inline-block">
+                {({ close }) => (
+                  <>
+                    <Popover.Button
+                      as={Button}
+                      variant="outline-secondary"
+                      className="w-full sm:w-auto"
+                      onClick={handleCollapseFilter}
+                    >
+                      <Lucide
+                        icon="ArrowDownWideNarrow"
+                        className="stroke-[1.3] w-4 h-4 mr-2"
+                      />
+                      Filter
+                      <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                        {filtersLength}
+                      </div>
+                    </Popover.Button>
+                  </>
+                )}
+              </Popover>
+            </div>
           </div>
         </div>
 
+        {/* Filter Pills immediately after filter card, before data */}
+        {selectedChipFilters?.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {selectedChipFilters.map((chip, idx) => (
+              <span key={idx} className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20">
+                {chip.label}
+                <button
+                  type="button"
+                  className="ml-2 text-primary hover:text-red-600 transition-colors"
+                  onClick={() => handleRemoveChip(chip.key, chip.value)}
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="filter-section mb-5">
-              <div className="flex items-center justify-end mt-2 mb-3">
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+            {/* Filter Content */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+              <div className="flex items-center gap-2">
                 <Button
-                  variant="secondary"
+                  variant="outline-secondary"
                   onClick={() => {
                     onFilterClear();
                   }}
+                  className="w-full sm:w-auto flex items-center gap-2"
                   type="button"
-                  className="w-32 mx-2"
                 >
-                  Clear
+                  <MdOutlineClear className="text-lg mr-1" /> Clear
                 </Button>
-                <Button variant="primary" className="w-32 mx-2" type="submit">
-                  Apply
+
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit(onSubmit)}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  <FaSearch className="text-lg" /> Apply
                 </Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                <div className="w-full">
-                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Institution*
-                  </div>
+            </div>
+            {/* Filter Toggle and Advanced Filters Button */}
+            <form onSubmit={handleSubmit(onSubmit)}>
+              {/* First row: Institution, Fund, Category */}
+              <div className="grid gap-6 md:grid-cols-3 grid-cols-1">
+                {/* Institution */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaUniversity className="text-gray-400" /> Institution*
+                  </label>
                   <Controller
                     name="institution_name"
                     control={control}
@@ -385,11 +486,12 @@ const index = () => {
                   />
                 </div>
 
+                {/* Fund */}
                 {showFundName && (
-                  <div className="w-full">
-                    <div className="text-left text-slate-500 flex justify-between mb-1">
-                      Fund
-                    </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                      <FaBuilding className="text-gray-400" /> Fund
+                    </label>
                     <Controller
                       name="fund_name"
                       control={control}
@@ -423,10 +525,11 @@ const index = () => {
                   </div>
                 )}
 
-                <div className="w-full">
-                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Category
-                  </div>
+                {/* Category */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaTags className="text-gray-400" /> Category
+                  </label>
                   <Controller
                     name="vote_category"
                     control={control}
@@ -456,11 +559,15 @@ const index = () => {
                     )}
                   />
                 </div>
+              </div>
 
-                <div className="w-full">
-                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Proposal
-                  </div>
+              {/* Second row: Proposal, Vote, Keyword */}
+              <div className="grid gap-6 md:grid-cols-3 grid-cols-1 mt-6">
+                {/* Proposal */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaListUl className="text-gray-400" /> Proposal
+                  </label>
                   <Controller
                     name="proposal"
                     control={control}
@@ -491,10 +598,11 @@ const index = () => {
                   />
                 </div>
 
-                <div className="w-full">
-                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                    Vote
-                  </div>
+                {/* Vote */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaHandshake className="text-gray-400" /> Vote
+                  </label>
                   <Controller
                     name="vote"
                     control={control}
@@ -525,8 +633,11 @@ const index = () => {
                   />
                 </div>
 
-                <div className="w-full">
-                  <div className="text-left text-slate-500">Keyword</div>
+                {/* Keyword */}
+                <div>
+                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                    <FaSearch className="text-gray-400" /> Keyword
+                  </label>
                   <Controller
                     name="keyword"
                     control={control}
@@ -549,136 +660,118 @@ const index = () => {
                   />
                 </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         )}
 
+        {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
         {npxProxyDetails?.length > 0 ? (
-          <div className="w-full">
-            <>
-              <div className="">
-                <div>
-                  <TableWrapper isLoading={allApplyFilter && npxProxyLoading}>
-                    <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                      <Table>
-                        <Table.Thead>
-                          <Table.Tr>
-                            <Table.Td
-                              className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                              style={{ width: "30%" }} // Proposal gets more width
-                            >
-                              Proposal
+          <TableWrapper isLoading={allApplyFilter && npxProxyLoading}>
+            <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+              <Table>
+                <Table.Thead>
+                  <Table.Tr className="bg-primary text-white text-sm">
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "30%" }}>Proposal</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Category</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Vote</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Shares Voted</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Fund Name</Table.Td>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {npxProxyLoading ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <Table.Tr key={i} className="animate-pulse">
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <Table.Td key={j}><Skeleton height={24} /></Table.Td>
+                        ))}
+                      </Table.Tr>
+                    ))
+                  ) : npxProxyDetails?.length > 0 ? (
+                    (() => {
+                      let toggle = false;
+                      return npxProxyDetails.map((noAction: any, index: number) => {
+                        toggle = !toggle;
+                        return (
+                          <Table.Tr
+                            key={noAction?.id}
+                            className={clsx(
+                              "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
+                              toggle ? "bg-white" : "bg-gray-50"
+                            )}
+                          >
+                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                              {noAction?.vote_description}
                             </Table.Td>
-                            <Table.Td
-                              className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                              style={{ width: "17.5%" }} // Remaining columns have equal widths
-                            >
-                              Category
+                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                              {convertToTitleCase(noAction?.vote_category)}
                             </Table.Td>
-                            <Table.Td
-                              className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                              style={{ width: "17.5%" }}
-                            >
-                              Vote
+                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                              {convertToTitleCase(noAction?.vote)}
                             </Table.Td>
-                            <Table.Td
-                              className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                              style={{ width: "17.5%" }}
-                            >
-                              Shared Voted
+                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                              {noAction?.shares_voted
+                                ?.split(" ")
+                                .map((num: string) =>
+                                  new Intl.NumberFormat("en-US").format(
+                                    Math.floor(Number(num))
+                                  )
+                                )
+                                .join(" ")}
                             </Table.Td>
-                            <Table.Td
-                              className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
-                              style={{ width: "17.5%" }}
-                            >
-                              Fund Name
+                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                              {noAction?.fund_name}
                             </Table.Td>
                           </Table.Tr>
-                        </Table.Thead>
-
-                        <Table.Tbody>
-                          {npxProxyDetails?.length > 0 &&
-                            npxProxyDetails?.map((noAction: any) => (
-                              <Table.Tr
-                                key={noAction?.id}
-                                className="[&_td]:last:border-b-0"
-                              >
-                                <Table.Td
-                                  className="py-2 border-dashed dark:bg-darkmode-600"
-                                  style={{ width: "30%" }}
-                                >
-                                  {noAction?.vote_description}
-                                </Table.Td>
-                                <Table.Td
-                                  className="py-2 border-dashed dark:bg-darkmode-600"
-                                  style={{ width: "17.5%" }}
-                                >
-                                  {convertToTitleCase(noAction?.vote_category)}
-                                </Table.Td>
-                                <Table.Td
-                                  className="py-2 border-dashed dark:bg-darkmode-600"
-                                  style={{ width: "17.5%" }}
-                                >
-                                  {convertToTitleCase(noAction?.vote)}
-                                </Table.Td>
-                                <Table.Td
-                                  className="whitespace-nowrap overflow-hidden text-ellipsis"
-                                  style={{ width: "17.5%" }}
-                                >
-                                  {noAction?.shares_voted
-                                    ?.split(" ")
-                                    .map((num: string) =>
-                                      new Intl.NumberFormat("en-US").format(
-                                        Math.floor(Number(num))
-                                      )
-                                    )
-                                    .join(" ")}
-                                </Table.Td>
-                                <Table.Td
-                                  className="whitespace-nowrap text-wrap"
-                                  style={{ width: "17.5%" }}
-                                >
-                                  {noAction?.fund_name}
-                                </Table.Td>
-                              </Table.Tr>
-                            ))}
-                        </Table.Tbody>
-
-                        {npxProxyDetails?.length === 0 && (
-                          <div className="w-full">
-                            <h1 className="mt-3">No NPX records available</h1>
-                          </div>
-                        )}
-                      </Table>
-                    </div>
-                  </TableWrapper>
-                </div>
-                <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                  <CPagination
-                    page={page}
-                    totalPages={totalPages}
-                    handleNextPage={handleNextPage}
-                    handlePageChange={handlePageChange}
-                    handlePreviousPage={handlePreviousPage}
-                  />
-                </div>
-              </div>
-            </>
-          </div>
+                        );
+                      });
+                    })()
+                  ) : (
+                    <Table.Tr>
+                      <Table.Td colSpan={5} className="text-center py-10 text-gray-400 text-lg font-semibold">
+                        <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+                        No NPX records available. Try adjusting your filters!
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
+                </Table.Tbody>
+              </Table>
+            </div>
+          </TableWrapper>
         ) : (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-            <h1 className="font-semibold"></h1>
+            <div className="text-center text-gray-400 text-lg font-semibold">
+              <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+              Select an institution to get started.
+            </div>
           </div>
         )}
 
-        {npxProxyDetails?.npx_report?.length === 0 &&
-          !npxProxyLoading &&
-          allApplyFilter && (
-            <div className="h-52 p-5 mt-3.5 flex items-center justify-center">
-              <h1 className="font-semibold"> Proxy Records Not Found..</h1>
-            </div>
-          )}
+        {npxProxyDetails?.length > 0 && (
+          <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+            <CPagination
+              page={page}
+              totalPages={totalPages}
+              handleNextPage={handleNextPage}
+              handlePageChange={handlePageChange}
+              handlePreviousPage={handlePreviousPage}
+            />
+          </div>
+        )}
       </div>
+
+      <Tooltip
+        id="my-tooltip-data-html"
+        style={{
+          zIndex: 10,
+          backgroundColor: "white",
+          color: "#000000",
+          width: "maxContent",
+          maxWidth: 700,
+          boxShadow: "2px 4px 6px rgba(0, 0, 0, 0.2)",
+          cursor: "pointer",
+        }}
+      />
     </>
   );
 };

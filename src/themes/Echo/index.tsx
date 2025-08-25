@@ -22,16 +22,16 @@ import ActivitiesPanel from "@/components/ActivitiesPanel";
 import localStorageHelper, {
   createDynamicURL,
   filterMenu,
+  getCustomRelativeDate,
 } from "@/utils/helper";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
-import { FilterX, Mail, BellRing} from "lucide-react";
+import { BellRing, FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
-import notificationIcon from "@/assets/images/zmh-images/notification_icon.png";
-
+import notificationIcon2 from "@/assets/images/zmh-images/side-bell.png";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
@@ -53,13 +53,15 @@ import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { dashboardService } from "@/services/dashboard";
 import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
+import Drawer from "@/components/Base/Headless/Drawer";
 
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
   const { selectedGroup } = useAppSelector((state) => state.notes);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
-const selectedName = selectedGroup?.institutionName || selectedGroup?.companyName || ""
+  const selectedName =
+    selectedGroup?.institutionName || selectedGroup?.companyName || "";
   const { companySearchAndUpdate } = useCompanySearch();
 
   const { noCompanyHeaderRoutes } = useAppSelector((state) => state.theme);
@@ -85,6 +87,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   const [activitiesPanel, setActivitiesPanel] = useState(false);
   const [compactMenuOnHover, setCompactMenuOnHover] = useState(false);
   const [activeMobileMenu, setActiveMobileMenu] = useState(false);
+  const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [formattedMenu, setFormattedMenu] = useState<
@@ -104,8 +107,8 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   const [isFrameLoading, setIsFrameLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
-  const [whatsNewFormVisible, setWhatsNewFormVisible] = useState<boolean>(false);
-
+  const [whatsNewFormVisible, setWhatsNewFormVisible] =
+    useState<boolean>(false);
 
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -187,7 +190,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     if (!location.pathname.includes("/engagement-question")) {
       dispatch(resetEngagementQuestions());
     }
-    
+
     if (!location.pathname.includes("/engagement-detail")) {
       dispatch(resetPeerAnalysis());
     }
@@ -284,11 +287,73 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
   const [modulesData, setModulesData] = useState<any>({});
-  const [notificationData, setNotificationData] = useState<any>([]);
-
+  const [notificationData, setNotificationData] = useState<any>({});
+  const [activeTabIndex, setActiveTabIndex] = useState(0); // default first tab
+  const activeTab = notificationData?.notifications?.[activeTabIndex];
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const categories = activeTab?.tab_notifications
+    ? Object.keys(activeTab.tab_notifications)
+    : [];
+  const dummyData = 
+  {
+    notification_status: false,
+    notifications: [
+      {
+        tab_name: "Amazon.com, Inc.",
+        tab_notifications: {
+          
+        },
+      },
+      {
+        tab_name: "All",
+        tab_notifications: {
+          "Investor Profile": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 12, 2025",
+              viewed: false,
+              module: "Investor Profile",
+            },
+          ],
+          "Engagement Detail": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 13, 2025",
+              viewed: false,
+              module: "Engagement Detail",
+            },
+          ],
+          "Voting Data": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 14, 2025",
+              viewed: false,
+              module: "Voting Data",
+            },
+          ],
+          "Proxy Contest": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 14, 2025",
+              viewed: false,
+              module: "Proxy Contest",
+            },
+          ],
+          "Case Studies": [
+            {
+              text: "Updated for Aberdeen Standard Investments",
+              date: "August 14, 2025",
+              viewed: false,
+              module: "Case Studies",
+            },
+          ],
+        },
+      },
+    ],
+  };
   useEffect(() => {
     getModulesCount();
-    getNotificationList(finhub?.name,null);
+    getNotificationList();
   }, [companyGlobalSearchName]);
 
   const getModulesCount = async () => {
@@ -305,25 +370,46 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
     }
   };
 
-  const getNotificationList = async (companyName:string ,status?: boolean) => {
+  const getNotificationList = async (tab?: number) => {
     try {
-      
-      const res = await dashboardService.getNotifications(companyName,status);
+      const param =
+        notificationData?.notification_status === false
+          ? tab === 0
+            ? "?mark_viewed_company=true"
+            : "?mark_viewed_all=true"
+          : "";
+      const res = await dashboardService.getNotifications(param);
       if (res?.result) {
         setNotificationData(res?.result);
       }
+     
     } catch (error) {
       return error;
     } finally {
     }
   };
 
-  const getTotalNotificationsCount = (): number => {
-    const totalCount = notificationData?.notifications?.reduce((acc, group) => {
-      return acc + (group.count || 0);
-    }, 0);  
-    return totalCount || 0;
-  }
+ const getTotalNotificationsCount = (): number => {
+  if (!notificationData?.notifications) return 0;
+
+
+  const allTab = notificationData.notifications.find(
+    (tab) => tab.tab_name === "All"
+  );
+
+  if (!allTab?.tab_notifications) return 0;
+
+  
+  let totalCount = 0;
+  Object.values(allTab.tab_notifications).forEach((notiList) => {
+    if (Array.isArray(notiList)) {
+      totalCount += notiList.filter((noti) => noti.viewed === false).length;
+    }
+  });
+
+  return totalCount;
+};
+
 
   return (
     <div
@@ -443,14 +529,14 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
-                        } else if (menu.title === "What's New") {
+                        } else if (menu.title === "Email Alert") {
                           setWhatsNewFormVisible(true);
                         } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
-                          linkTo(menu, navigate);
+                          linkTo(menu, navigate, companyGlobalSearchName);
                         } else {
-                          linkTo(menu, navigate);
+                          linkTo(menu, navigate, companyGlobalSearchName);
                         }
                         setFormattedMenu([...formattedMenu]);
                       }}
@@ -577,7 +663,11 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                               ])}
                               onClick={(event: React.MouseEvent) => {
                                 event.preventDefault();
-                                linkTo(subMenu, navigate);
+                                linkTo(
+                                  subMenu,
+                                  navigate,
+                                  companyGlobalSearchName
+                                );
                                 setFormattedMenu([...formattedMenu]);
                               }}
                             >
@@ -635,7 +725,11 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                                         ])}
                                         onClick={(event: React.MouseEvent) => {
                                           event.preventDefault();
-                                          linkTo(lastSubMenu, navigate);
+                                          linkTo(
+                                            lastSubMenu,
+                                            navigate,
+                                            companyGlobalSearchName
+                                          );
                                           setFormattedMenu([...formattedMenu]);
                                         }}
                                       >
@@ -741,7 +835,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                   >
                     <div
                       className={clsx([
-                        "bg-[#D9D9D926] border-transparent border w-[400px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
+                        "bg-[#D9D9D926] border-transparent border w-[470px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
                         companyGlobalSearchName !== ""
                           ? "text-[#545454]"
                           : "text-[#545454]",
@@ -749,7 +843,7 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
                     >
                       <Lucide icon="Search" className="w-[18px] h-[18px]" />
                       <div className="ml-2.5 mr-auto">
-                        {"Search by company name, ticker, or symbol"}
+                        {"Search by company name, ticker, or symbol (only USA)"}
                       </div>
                     </div>
                   </div>
@@ -786,98 +880,150 @@ const selectedName = selectedGroup?.institutionName || selectedGroup?.companyNam
 
                   <Menu>
                     <Menu.Button>
-                      <div className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
-                      onClick={() => {
-                         !notificationData?.notification_status && getNotificationList(finhub?.name,true)
+                      <div
+                        className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
+                        onClick={() => {
+                          setOpen(true);
+                          if (!notificationData?.notification_status) {
+                            getNotificationList(activeTabIndex);
+                          }
                         }}
-                        >
-                        {/* <img src={notificationIcon} alt="ai icon" /> */}
-                        <BellRing
-                          strokeWidth={1.5}
-                          className={`w-8 h-8 mr-2`}
+                      >
+                        <img
+                          src={notificationIcon2}
+                          alt="ai icon"
+                          className=" w-[30px] h-[30px]"
                         />
-                        {!notificationData?.notification_status && getTotalNotificationsCount() > 0 &&
-                          <span className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-3 text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[30px]">{getTotalNotificationsCount() || 0}</span>
-                        }
+
+                        {!notificationData?.notification_status &&
+                          getTotalNotificationsCount() > 0 && (
+                            <span className="bg-[#DC661F] absolute rounded-2xl w-[20px] h-[20px] text-[9px] font-semibold text-white bottom-3 flex items-center justify-center left-[20px]">
+                              {getTotalNotificationsCount()}
+                            </span>
+                          )}
                       </div>
                     </Menu.Button>
+                    <Drawer
+                      open={open}
+                      setOpen={setOpen}
+                      children={
+                        <>
+                          <div className="flex w-full gap-3 dark:bg-darkmode-800">
+                            {notificationData?.notifications?.map(
+                              (tab, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => {
+                                    setActiveTabIndex(index);
+                                    getNotificationList(index);
+                                    setSelectedCategory("All");
+                                  }}
+                                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                                    activeTabIndex === index
+                                      ? "bg-primary text-white shadow"
+                                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                  }`}
+                                >
+                                  {tab.tab_name}
+                                </button>
+                              )
+                            )}
+                          </div>
 
-                    <Menu.Items className="w-[500px] p-4 space-y-1">
-                      {notificationData?.notifications?.length > 0 ? (
-                        notificationData?.notifications?.map((group, i) => (
-                              <Disclosure key={i}>
-                                {({ open }) => (
-                                  <>
-                                    <Disclosure.Button className="w-full mt-1 flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-50 transition-all">
-                                      <div className="flex items-center">
-                                        <BellRing
-                                          strokeWidth={1}
-                                          className={`w-6 h-6 text-red-500 mr-2 ${group?.results?.length > 0 ? "animate-[ring_1s_ease-in-out_infinite]" : ""}`}
+                          {/* Category Filter */}
+                          <div className="flex gap-2 my-3 flex-wrap">
+                            {categories?.length > 0 && (
+                              <button
+                                onClick={() => setSelectedCategory("All")}
+                                className={`px-4 py-1 rounded ${
+                                  selectedCategory === "All"
+                                    ? "border-b-primary rounded-none border-b-2 text-primary"
+                                    : "bg-gray-200 text-gray-700"
+                                }`}
+                              >
+                                All
+                              </button>
+                            )}
+                            {categories.map((category) => (
+                              <button
+                                key={category}
+                                onClick={() => setSelectedCategory(category)}
+                                className={`px-4 py-1 rounded ${
+                                  selectedCategory === category
+                                    ? "border-b-primary rounded-none border-b-2 text-primary"
+                                    : "bg-gray-200 text-gray-700"
+                                }`}
+                              >
+                                {category}
+                              </button>
+                            ))}
+                          </div>
+                          {activeTab?.tab_notifications &&
+                          Object.keys(activeTab.tab_notifications).length >
+                            0 ? (
+                            Object.entries(activeTab.tab_notifications)
+                              .filter(([category]) =>
+                                selectedCategory === "All"
+                                  ? true
+                                  : category === selectedCategory
+                              )
+                              .map(([category, notiList]) => (
+                                <div key={category}>
+                                  {/* Category title */}
+                                  <h2 className="text-sm font-bold text-gray-600 dark:text-gray-300 mt-4 mb-2">
+                                    {category}
+                                  </h2>
 
-                                        />
-                                        <div className="text-left">
-                                          <h2 className="text-sm font-semibold text-gray-800">
-                                            {group.module}
-                                          </h2>
-                                          {/* <p className="text-xs text-gray-500">
-                                            {group.count} new
-                                          </p> */}
+                                  {(Array.isArray(notiList)
+                                    ? notiList
+                                    : []
+                                  ).map((noti, i) => (
+                                    <div
+                                      key={`${activeTabIndex}-${category}-${i}`}
+                                      className="py-4 border-b"
+                                    >
+                                      <p className="text-xs text-gray-400 pb-2">
+                                        {getCustomRelativeDate(noti.date)}
+                                      </p>
+                                      <div className="flex items-center gap-4 text-left">
+                                        <div className="flex flex-col items-end relative">
+                                          {!noti.viewed && (
+                                            <Lucide
+                                              icon="Dot"
+                                              className="stroke-[11] w-[18px] absolute top-[-7px] left-[-7px] text-[#DC661F]"
+                                            />
+                                          )}
+                                          <div className="bg-[rgb(245,231,235)] rounded-md p-3">
+                                            <img
+                                              src={notificationIcon2}
+                                              alt="ai icon"
+                                              className="w-[20px] h-[20px] opacity-[0.7]"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="w-[78%] flex-1">
+                                          <p className="text-sm cursor-pointer text-gray-700">
+                                            {noti.text}
+                                          </p>
                                         </div>
                                       </div>
-                                  {
-                                    group?.results?.length > 0 &&
-                                    <span className="text-xs text-gray-400">
-                                      {open ? "▲" : "▼"}
-                                    </span>
-                                  }
-                                      
-                                    </Disclosure.Button>
-                                    {
-                                      group?.results?.length > 0 &&
-                                      <Disclosure.Panel className="px-4 py-3 bg-gray-50 border border-t-0 border-gray-200 rounded-b-lg">
-                                      <div className="overflow-y-auto max-h-[400px] space-y-2">
-                                        {group?.results?.map((item) => (
-                                          <div
-                                            key={item.record_id}
-                                            className="bg-white p-3 rounded-md border shadow hover:shadow-md transition cursor-pointer"
-                                            onClick={() =>
-                                             item?.navigate_url && window.open(
-                                                item?.navigate_url,
-                                                "_blank"
-                                              )
-                                            }
-                                          >
-                                            <div className="flex items-start">
-                                              <div>
-                                              <BellRing
-                                                strokeWidth={1}
-                                                className="w-4 h-4 mr-2 mt-1 text-blue-500 animate-[ring_1s_ease-in-out_infinite]"
-                                              />
-                                              </div>
-                                              <p className="text-sm text-gray-700">
-                                                {item?.message}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </Disclosure.Panel>
-                                    }
-                                    
-                                  </>
-                                )}
-                              </Disclosure>
-                        ))
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <BellRing
-                            strokeWidth={1}
-                            className="w-4 h-4 mr-2 mt-1"
-                          />
-                          <h1>No Notifications Found.</h1>
-                        </div>
-                      )}
-                    </Menu.Items>
+                                    </div>
+                                  ))}
+                                </div>
+                              ))
+                          ) : (
+                            <div className="flex items-center justify-center h-[100%]">
+                              <img
+                                src={notificationIcon2}
+                                alt="ai icon"
+                                className="w-4 h-4 mr-2 opacity-[0.7]"
+                              />
+                              <h1>No Notifications Found.</h1>
+                            </div>
+                          )}
+                        </>
+                      }
+                    />
                   </Menu>
 
                   {/* <a

@@ -1,1494 +1,980 @@
 import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
-import { convertToTitleCase, createDynamicURL, downloadCSV } from "@/utils/helper";
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import clsx from "clsx";
-import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import {
-    fetchAGMProxyAllContestDashboard,
-    fetchAGMProxyContestDashboard,
-    fetchCaseStudiesAllProxyContext,
-    fetchCaseStudiesTopProxyContext,
-    fetchProxyContestReleaseDashboard,
-    fetchProxyTopFiveContestDashboard,
-    setPage,
-    setProxyContestInvestorFilter,
-    setProxyTopFilter,
-    setTabs,
-} from "@/stores/dashboardSlice";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { baseURL } from "@/constant";
-import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
-import { ChevronLeft } from "lucide-react";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import { Tooltip } from 'react-tooltip';
-import { Tab } from "@/components/Base/Headless";
-import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
-import TomSelect from "@/components/Base/TomSelect";
 import { toast } from "react-toastify";
-import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import CPagination from "@/components/Pagination";
-import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import CaseProxyModal from "./CaseProxyModal";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import PdfViewer from "@/components/PdfView";
+import { getProxyContestDropdownValues } from "@/services/proxyContestDropdown";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { FaBuilding, FaCalendarAlt, FaTimes, FaSearch } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
+import { Popover } from "@/components/Base/Headless";
 
 const index = () => {
-    const location = useLocation();
     const navigate = useNavigate();
-    const dispatch: AppDispatch = useAppDispatch();
-    const { proxyContestReleaseLoading, proxyContestReleaseDetails, proxyContestTopFiveDetails, agmSummaryProxyContest, loading,
-        proxyContestTopFiveLoading, tab, proxyContestTopFilter, caseStudiesTopProxy, agmSummaryAllProxyContest,
-        page, totalCaseStudiesTopProxyPages, } = useAppSelector(
-            (state) => state.dashboard
-        );
-    const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
-        (state: RootState) => state.authentiction
-    );
+
+    // PDF viewer states
     const [pdfVisible, setPdfVisible] = useState<boolean>(false);
     const [currentPdfDoc, setCurrentPdfDoc] = useState<string>("");
     const [currentPdfName, setCurrentPdfName] = useState<string>("");
-    const [modifyActicismData, setmodifyActicismData] = useState<any[]>([]);
 
-
-    const [companyHeaderName, setCompanyHeaderName] = useState<string | null>(null);
-    const [companyAllHeaderName, setCompanyAllHeaderName] = useState<string | null>(null);
-    const [caseProxyModalVisible, setCaseProxyModalVisible] =
-        useState<boolean>(false);
+    // Case proxy modal states
+    const [caseProxyModalVisible, setCaseProxyModalVisible] = useState<boolean>(false);
     const [caseProxyModalData, setCaseProxyModalData] = useState<any>(null);
-    const companyDetails = agmSummaryProxyContest?.company ? agmSummaryProxyContest?.company[0] : "";
-    const companyName = Object.keys(companyDetails)[0];
-    const meetingDetails = companyDetails[companyName];
-    const meetingDate = meetingDetails?.split(" - ").pop();
 
-    const companyAllDetails = agmSummaryAllProxyContest?.company ? agmSummaryAllProxyContest?.company[0] : "";
-    const companyAllName = Object.keys(companyAllDetails)[0];
-    const meetingAllDetails = companyAllDetails[companyAllName];
-    const meetingAllDate = meetingAllDetails?.split(" - ").pop();
+    // Table states
+    const [proxyContestCompanies, setProxyContestCompanies] = useState<any[]>([]);
+    const [proxyContestLoading, setProxyContestLoading] = useState<boolean>(false);
+    const [proxyContestPage, setProxyContestPage] = useState<number>(1);
+    const [proxyContestTotal, setProxyContestTotal] = useState<number>(0);
+    const pageSize = 30;
 
-    const { handleSubmit, control, reset, setValue, watch } =
-        useForm<any>({
-            defaultValues: {
-                company_name: 'Select',
-                institution_name: [],
-            },
-        });
+    // Modal states for icon clicks
+    const [detailsModalVisible, setDetailsModalVisible] = useState<boolean>(false);
+    const [modalType, setModalType] = useState<string>('');
+    const [modalTitle, setModalTitle] = useState<string>('');
+    const [selectedCompany, setSelectedCompany] = useState<any>(null);
+    const [modalData, setModalData] = useState<any>(null);
+    const [modalLoading, setModalLoading] = useState<boolean>(false);
+
+    // Filter states
+    const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
+    const [filtersLength, setFiltersLength] = useState<number>(0);
+    const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+    const [allApplyFilter, setAllApplyFilter] = useState<any>({});
+    const [companyOptions, setCompanyOptions] = useState<string[]>([]);
+    const [yearOptions, setYearOptions] = useState<string[]>([]);
+    const [dropdownLoading, setDropdownLoading] = useState<boolean>(false);
+
+    const { handleSubmit, control, reset } = useForm<any>({
+        defaultValues: {
+            company: [],
+            year: [],
+        },
+    });
+
+    // Fetch dropdown values
+    useEffect(() => {
+        const fetchDropdownData = async () => {
+            try {
+                setDropdownLoading(true);
+                const data = await getProxyContestDropdownValues();
+                const companies: any[] = data.proxy_companies ?
+                    [...new Set(data.proxy_companies.map((company: any) => company.company_name).filter(Boolean))] :
+                    [];
+                setCompanyOptions(companies);
+                setYearOptions((data.years || []) as string[]);
+            } catch (error) {
+                console.error("Error fetching dropdown data:", error);
+                setCompanyOptions([]);
+                setYearOptions([]);
+            } finally {
+                setDropdownLoading(false);
+            }
+        };
+        fetchDropdownData();
+    }, []);
+
+    // Fetch initial data
+    useEffect(() => {
+        fetchProxyContestCompanies(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const gotoDetailPage = (pdf: string, pdf_name: string) => {
         setCurrentPdfDoc(pdf);
         setCurrentPdfName(pdf_name);
     };
 
-    const getModulesCount = async () => {
+    const fetchProxyContestCompanies = useCallback(async (page: number = 1, filters: any = {}) => {
+        setProxyContestLoading(true);
         try {
-            const res = await dashboardService.getModulesCount({ global_search: companyGlobalSearchName });
-            if (res?.result) {
-                if (res?.result?.proxy_contest) {
-                    setValue("company_name", companyGlobalSearchName);
-                    const applyFilter = { company_name: [companyGlobalSearchName], top: 'true', institution_clear: false };
-                    Object.entries(applyFilter).forEach(([key, value]) => {
-                        dispatch(setProxyTopFilter({ key: key as any, value }));
-                    });
+            const params = new URLSearchParams();
+            params.append('page', page.toString());
+            params.append('page_size', pageSize.toString());
+
+            if (filters.company && filters.company.length > 0) {
+                params.append('company_name', JSON.stringify(filters.company));
+            }
+            if (filters.year && filters.year.length > 0) {
+                params.append('year', JSON.stringify(filters.year));
+            }
+
+            const response = await fetch(`${baseURL}/api/proxy-contest-companies/?${params.toString()}`, {
+                headers: {
+                    'Authorization': `JWT ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
                 }
-
-            }
-        } catch (error) {
-            return error;
-        } finally {
-        }
-    };
-
-
-    useEffect(() => {
-        getModulesCount();
-        return () => {
-            setValue("company_name", []);
-            const applyFilter = { company_name: [], top: 'true', institution_clear: false };
-            Object.entries(applyFilter).forEach(([key, value]) => {
-                dispatch(setProxyTopFilter({ key: key as any, value }));
             });
-        }
-    }, [])
 
-    useEffect(() => {
-
-        // if (tab === 'Top-20') {
-        if (proxyContestTopFilter?.company_name?.length > 0) {
-            let { institution_clear, ...restFilter } = proxyContestTopFilter;
-            dispatch(
-                fetchProxyTopFiveContestDashboard(
-                    createDynamicURL(`${baseURL}/vds_proxy_voting/`, { ...restFilter }))
-            );
-        } else {
-            dispatch(
-                fetchProxyTopFiveContestDashboard(
-                    createDynamicURL(`${baseURL}/vds_proxy_voting/`))
-            );
-        }
-
-        if (proxyContestTopFilter?.company_name?.length > 0) {
-
-            if (((proxyContestTopFilter?.institution_name?.length === 0 || !proxyContestTopFilter?.institution_name) && (proxyContestTopFilter?.institution_clear === false))) {
-                dispatch(
-                    fetchAGMProxyContestDashboard(
-                        createDynamicURL(
-                            `${baseURL}/voting_report_8k/`, { company_name: proxyContestTopFilter?.company_name })
-                    )
-                );
-                dispatch(
-                    fetchCaseStudiesTopProxyContext(
-                        createDynamicURL(
-                            `${baseURL}/case_studies/`, { company_name: proxyContestTopFilter?.company_name, themes: ['Proxy Contest/M&A'] }, undefined,
-                            page)
-                    )
-                );
-                dispatch(
-                    fetchProxyContestReleaseDashboard(
-                        createDynamicURL(
-                            `${baseURL}/activism_tables/`, { company_name: proxyContestTopFilter?.company_name[0] })
-                    )
-                );
-            }
-        }
-
-        else {
-            dispatch(
-                fetchAGMProxyContestDashboard(
-                    createDynamicURL(
-                        `${baseURL}/voting_report_8k/`, { ticker: '' })
-                )
-            );
-            dispatch(
-                fetchCaseStudiesTopProxyContext(
-                    createDynamicURL(
-                        `${baseURL}/case_studies/`, { company_name: [""] })
-                )
-            );
-            dispatch(
-                fetchProxyContestReleaseDashboard(
-                    createDynamicURL(
-                        `${baseURL}/activism_tables/`, { company_name: "" })
-                )
-            );
-            setmodifyActicismData([]);
-
-        }
-        setCompanyHeaderName(proxyContestTopFilter?.company_name[0]);
-        // }
-    }, [proxyContestTopFilter, tab])
-
-
-    useEffect(() => {
-        const transformedData = transformData(proxyContestReleaseDetails?.Activism_ISS_GL);
-        setmodifyActicismData(transformedData);
-
-    }, [proxyContestTopFilter, proxyContestReleaseDetails])
-
-
-    const transformData = (data: any) => {
-        const groupedData: any = {};
-
-        data?.forEach((entry: any) => {
-            const { company_id, type, management, activist, split, company_tent, id } = entry;
-
-            if (!groupedData[company_tent]) {
-                groupedData[company_tent] = {
-                    company: company_tent,
-                    iss: { management: "", activist: "", split: "" },
-                    gl: { management: "", activist: "", split: "" }
-                };
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const typeKey = type.toLowerCase();
-            groupedData[company_tent][typeKey] = {
-                management: management ? true : false,
-                activist: activist ? true : false,
-                split: split ? true : false,
-            };
-        });
-
-        return Object.values(groupedData);
-    };
-
-    const isObject = (item: any) => {
-        if (typeof item === "object") {
-            return true;
-        } else {
-            false;
-        }
-    };
-
-
-    const getSplitContents = (items: any) => {
-        const resultString = Object.entries(items)
-            .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
-            .join(", ");
-        return resultString;
-    };
-
-
-    const [apiDropdownOptions, setApiDropdownOptions] = useState<{ institution: [], company: [] }>({
-        institution: [],
-        company: []
-    });
-
-    const getAllInstitutionDropdown = async (params?: any) => {
-        try {
-            const res = await dashboardService.getInstitution(params);
-            if (res.result?.institution) {
-                setApiDropdownOptions(res.result);
-            }
+            const data = await response.json();
+            setProxyContestCompanies(data.results || []);
+            setProxyContestTotal(data.count || 0);
         } catch (error) {
-            return error;
+            toast.error("Failed to fetch proxy contest companies");
+            console.error("Error fetching proxy contest companies:", error);
         } finally {
-            // setGetDropdownLoader(false);
+            setProxyContestLoading(false);
+        }
+    }, [pageSize]);
+
+    const handleProxyContestNextPage = () => {
+        if (proxyContestPage < Math.ceil(proxyContestTotal / pageSize)) {
+            const nextPage = proxyContestPage + 1;
+            setProxyContestPage(nextPage);
+            fetchProxyContestCompanies(nextPage, allApplyFilter);
         }
     };
 
-    useEffect(() => {
-        getAllInstitutionDropdown();
-    }, [companyGlobalSearchTicker])
-
-    const handleNextPage = () => {
-        if (page < totalCaseStudiesTopProxyPages) {
-            dispatch(setPage(page + 1));
+    const handleProxyContestPreviousPage = () => {
+        if (proxyContestPage > 1) {
+            const prevPage = proxyContestPage - 1;
+            setProxyContestPage(prevPage);
+            fetchProxyContestCompanies(prevPage, allApplyFilter);
         }
     };
 
-    const handlePreviousPage = () => {
-        if (page > 1) {
-            dispatch(setPage(page - 1));
-        }
+    const handleProxyContestPageChange = (newPage: number) => {
+        setProxyContestPage(newPage);
+        fetchProxyContestCompanies(newPage, allApplyFilter);
     };
 
-    const handlePageChange = (newPage: number) => {
-        dispatch(setPage(newPage));
-    };
-
-
-
-    const onSubmit = async (proxyFilter: any) => {
-
-        if (proxyFilter?.institution_name?.length === 0) {
-            toast.warning("Please select Institution");
-            return;
-        }
-        const applyFilter = { company_name: proxyContestTopFilter?.company_name, institution_name: proxyFilter?.institution_name, top: null, institution_clear: false };
-        Object.entries(applyFilter).forEach(([key, value]) => {
-            dispatch(setProxyTopFilter({ key: key as any, value }));
+    // Helper functions for filters
+    const countValidFilters = (filters: any) => {
+        let count = 0;
+        Object.values(filters).forEach((value: any) => {
+            if (Array.isArray(value) && value.length > 0) count++;
         });
+        return count;
+    };
+
+    const generateFilterChips = (filters: any) => {
+        const chips: any[] = [];
+        Object.entries(filters).forEach(([key, values]: [string, any]) => {
+            if (Array.isArray(values) && values.length > 0) {
+                values.forEach((value: any) => {
+                    chips.push({
+                        key,
+                        value,
+                        label: `${key === 'company' ? 'Company' : 'Year'}: ${value}`
+                    });
+                });
+            }
+        });
+        return chips;
+    };
+
+    // Filter functions
+    const handleCollapseFilter = () => {
+        setIsFilterCollapse(!isFilterCollapse);
+    };
+
+    const onFilterSubmit = (data: any) => {
+        const filterObj = {
+            company: data?.company || [],
+            year: data?.year || [],
+        };
+
+        setAllApplyFilter(filterObj);
+        setFiltersLength(countValidFilters(filterObj));
+        setSelectedChipFilters(generateFilterChips(filterObj));
+        setProxyContestPage(1);
+        fetchProxyContestCompanies(1, filterObj);
+        setIsFilterCollapse(false);
     };
 
     const onFilterClear = () => {
-        resetFormValues();
-        const applyFilter = { institution_name: [], top: 'true', institution_clear: true };
-        Object.entries(applyFilter).forEach(([key, value]) => {
-            dispatch(setProxyTopFilter({ key: key as any, value }));
+        setSelectedChipFilters([]);
+        setFiltersLength(0);
+        setAllApplyFilter({});
+        reset({
+            company: [],
+            year: [],
         });
+        setProxyContestPage(1);
+        fetchProxyContestCompanies(1, {});
     };
 
-    const resetFormValues: any = () => {
-        setValue("institution_name", []);
-        // setValue("company_name", 'Select');
+    const handleRemoveChip = (removeKey: any, removeValue: any) => {
+        const currentFilters = { ...allApplyFilter };
+
+        if (currentFilters[removeKey]) {
+            if (Array.isArray(currentFilters[removeKey])) {
+                currentFilters[removeKey] = currentFilters[removeKey].filter((item: any) => item !== removeValue);
+                if (currentFilters[removeKey].length === 0) {
+                    delete currentFilters[removeKey];
+                }
+            }
+        }
+
+        const updatedFilters = { ...currentFilters };
+        setAllApplyFilter(updatedFilters);
+        setFiltersLength(countValidFilters(updatedFilters));
+        setSelectedChipFilters(generateFilterChips(updatedFilters));
+        setProxyContestPage(1);
+        fetchProxyContestCompanies(1, updatedFilters);
     };
 
-    const onSubmitTopFive = async (proxyFilter: any) => {
-
-        if (proxyFilter?.company_name === "Select") {
-            toast.warning("Please select Company");
+    // Handle icon clicks for modal data
+    const handleIconClick = async (company: any, type: string) => {
+        if (type === 'case_studies') {
+            // For case studies, we need to fetch case studies by company name
+            setCaseProxyModalVisible(true);
+            setCaseProxyModalData({
+                company_name: company.company_name,
+                company_id: company.company_id
+            });
             return;
         }
-        resetFormValues();
-        const instituteFilter = { institution_name: [], institution_clear: false };
-        Object.entries(instituteFilter).forEach(([key, value]) => {
-            dispatch(setProxyTopFilter({ key: key as any, value }));
-        });
-        const applyFilter = { company_name: [proxyFilter?.company_name], top: 'true', institution_clear: false };
-        Object.entries(applyFilter).forEach(([key, value]) => {
-            dispatch(setProxyTopFilter({ key: key as any, value }));
-        });
-        // setProxyTopFilter({company_name: [proxyFilter?.company_name], top: 'true'})
-    };
 
-    const onTopFiveFilterClear = () => {
-        resetTopFiveFormValues();
-        // setCompanyFilter({company_name: [], top: false})
-        const applyFilter = { company_name: [], top: 'false', institution_clear: false };
-        Object.entries(applyFilter).forEach(([key, value]) => {
-            dispatch(setProxyTopFilter({ key: key as any, value }));
-        });
-        setCompanyHeaderName('');
-    };
+        setSelectedCompany(company);
+        setModalType(type);
+        setModalLoading(true);
+        setDetailsModalVisible(true);
 
-    const resetTopFiveFormValues: any = () => {
-        setValue("company_name", 'Select');
-    };
+        const titles = {
+            'documents': 'Documents',
+            'proxy_advisory_firm_recommendation': 'Proxy Advisory Firm Recommendation',
+            'meeting_details': 'Meeting Details',
+            'case_studies': 'Case Studies'
+        };
+        setModalTitle(titles[type as keyof typeof titles] || 'Details');
 
-    const getSelectedTabIndex = () => {
-        const tabIndex =
-            tab === "Top-20"
-                ? 0
-                : tab === "All-Investor"
-                    ? 1
-                    : -1;
-        return tabIndex;
-    };
+        try {
+            let apiUrl = '';
+            const companyName = encodeURIComponent(company.company_name);
 
-    const convertDivTableToCSV = () => {
-        const table = document.querySelector(".table_2");
-        const rows = table?.querySelectorAll(".row_2");
-        const tableProposal = document.querySelector(".table_3");
-        const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-        let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
+            // Use the correct API endpoints based on type
+            switch (type) {
+                case 'documents':
+                case 'proxy_advisory_firm_recommendation':
+                    apiUrl = `${baseURL}/activism_tables/?company_name=${companyName}`;
+                    break;
+                case 'meeting_details':
+                    apiUrl = `${baseURL}/voting_report_8k/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&year=${encodeURIComponent(company.year)}`;
+                    break;
+                default:
+                    throw new Error(`Unknown modal type: ${type}`);
+            }
 
-        // Iterate over each row in the first table
-        rows?.forEach((row) => {
-            const cells = row.querySelectorAll(".cell_2");
-            let rowData: any = [];
-
-            // Iterate over each cell and get the text content
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
-
-                // Check if the cell contains a comma, wrap it in double quotes
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `JWT ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
                 }
-
-                rowData.push(cellText);
             });
 
-            // Join cells with commas to form a CSV row
-            csvContent += rowData.join(",") + "\n";
-        });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-        // Iterate over each row in the second table
-        rowsProposal?.forEach((row) => {
-            const cells = row.querySelectorAll(".cell_3");
-            let rowData: any = [];
+            const data = await response.json();
 
-            // Iterate over each cell and get the text content
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim();
+            // Process data based on type
+            let processedData = data;
+            if (type === 'documents') {
+                processedData = {
+                    presentations: data?.Activism_Presentation || [],
+                    press_releases: data?.Activism_Press_Release || []
+                };
+            } else if (type === 'proxy_advisory_firm_recommendation') {
+                processedData = {
+                    recommendations: data?.Activism_ISS_GL || []
+                };
+            }
 
-                // Check if the cell contains a comma, wrap it in double quotes
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            csvContent += rowData.join(",") + "\n";
-        });
-
-        downloadCSV(csvContent, `Meeting-Details-${proxyContestTopFilter?.company_name}`);
+            setModalData(processedData);
+        } catch (error) {
+            console.error('Error fetching modal data:', error);
+            toast.error('Failed to fetch details');
+            setModalData(null);
+        } finally {
+            setModalLoading(false);
+        }
     };
-
-    const convertVotingDivTableToCSV = (tabName: string) => {
-        const table = document.querySelector(".table_voting");
-        const rows = table?.querySelectorAll(".row_voting");
-        const tooltip = document.querySelectorAll(".my-tooltip-data-html");
-
-        let csvContent = "\uFEFF";
-        rows?.forEach((row) => {
-            const cells = row.querySelectorAll(".cell_voting");
-            let rowData: any = [];
-
-            cells.forEach((cell) => {
-                let cellText = cell.textContent?.trim();
-                if (cellText?.includes(",")) {
-                    cellText = `"${cellText}"`;
-                }
-
-                const tooltip = cell.querySelector('[data-tooltip-html]');
-                const tooltipText = tooltip?.getAttribute("data-tooltip-html")?.trim();
-
-                if (tooltipText) {
-                    cellText += ` (voting rationale: ${tooltipText})`;
-                }
-
-                if (cellText) {
-                    cellText = `"${cellText.replace(/"/g, '""')}"`;
-                }
-
-                rowData.push(cellText);
-            });
-
-            csvContent += rowData.join(",") + "\n";
-        });
-
-        downloadCSV(csvContent, `${tabName}-${proxyContestTopFilter?.company_name}`);
-    };
-
 
     return (
         <>
-            {/* <Button
-                onClick={() => {
-                    navigate("/");
-                }}
-                variant="primary"
-                className="bg-theme-2 border-bg-theme-2 mb-1"
-            >
-                <ChevronLeft
-                    className="group-[.mode--light]:text-white text-white"
-                    size={18}
-                    strokeWidth={1.5}
-                />
-                Back
-            </Button> */}
+            <div className="box p-5 mt-3.5">
+                <div>
+                    <div className="flex flex-col p-5 sm:flex-row gap-y-2">
+                        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                            <span>
+                                <h1 className="text-lg font-bold flex items-center gap-2">
+                                    Proxy Contest
+                                </h1>
+                            </span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
+                            {proxyContestTotal > 0 && (
+                                <h2 className="flex items-end font-semibold justify-end text-[13px] md:ml-auto mx-5">
+                                    Count: {proxyContestTotal.toLocaleString()}
+                                </h2>
+                            )}
 
-            <div className="p-5 mt-1 box">
-
-                <div className="w-full">
-                    <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+                            <div className="flex items-center gap-2">
+                                {/* Clear and Apply buttons outside filter */}
+                                <Popover className="inline-block">
+                                    {({ close }) => (
+                                        <>
+                                            <Popover.Button
+                                                as={Button}
+                                                variant="outline-secondary"
+                                                className="w-full sm:w-auto"
+                                                onClick={handleCollapseFilter}
+                                            >
+                                                <Lucide
+                                                    icon="ArrowDownWideNarrow"
+                                                    className="stroke-[1.3] w-4 h-4 mr-2"
+                                                />
+                                                Filter
+                                                <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                                                    {filtersLength}
+                                                </div>
+                                            </Popover.Button>
+                                        </>
+                                    )}
+                                </Popover>
+                            </div>
+                        </div>
                     </div>
-                    <>
-                        <Tab.Group selectedIndex={getSelectedTabIndex()}>
-                            <Tab.List variant="link-tabs">
-                            </Tab.List>
 
-                            <Tab.Panels className="mt-5">
-                                <Tab.Panel className="leading-relaxed">
-                                    <div className="">
-                                        <div className="p-2">
+                    {/* Filter Pills */}
+                    {selectedChipFilters?.length > 0 && (
+                        <div className="mb-4 flex flex-wrap gap-2">
+                            {selectedChipFilters.map((chip, idx) => (
+                                <span key={idx} className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20">
+                                    {chip.label}
+                                    <button
+                                        type="button"
+                                        className="ml-2 text-primary hover:text-red-600 transition-colors"
+                                        onClick={() => handleRemoveChip(chip.key, chip.value)}
+                                    >
+                                        <FaTimes className="text-xs" />
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
-                                            <form onSubmit={handleSubmit(onSubmitTopFive)}>
+                    {/* Filter Card */}
+                    {isFilterCollapse && (
+                        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+                            <form onSubmit={handleSubmit(onFilterSubmit)}>
+                                <div className="mb-6 flex justify-between items-center">
+                                    <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline-secondary"
+                                            onClick={onFilterClear}
+                                            className="w-full sm:w-auto flex items-center gap-2"
+                                            type="button"
+                                        >
+                                            <MdOutlineClear className="text-lg" />
+                                            Clear
+                                        </Button>
 
-                                                <div className="flex items-end gap-4">
-                                                    <div className="w-4/12">
-                                                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                            Select Company*
-                                                        </div>
-                                                        <Controller
-                                                            name="company_name"
-                                                            control={control}
-                                                            defaultValue={[]}
-                                                            render={({ field }) => (
-                                                                <TomSelect
+                                        <Button
+                                            variant="primary"
+                                            onClick={handleSubmit(onFilterSubmit)}
+                                            className="w-full sm:w-auto flex items-center gap-2"
+                                        >
+                                            <FaSearch className="text-sm" />
+                                            Apply
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="grid gap-6 md:grid-cols-2 grid-cols-1">
+                                    {/* Company Filter */}
+                                    <div>
+                                        <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                                            <FaBuilding className="text-gray-400" /> Company
+                                        </label>
+                                        <Controller
+                                            name="company"
+                                            control={control}
+                                            defaultValue={[]}
+                                            render={({ field }) => (
+                                                <MultiSelectDropdown
+                                                    data={companyOptions.map(option => ({
+                                                        value: option,
+                                                        label: option
+                                                    }))}
+                                                    placeholder="Select Company"
+                                                    loading={dropdownLoading}
+                                                    onChange={(selectedOptions) => {
+                                                        const selectedValues = selectedOptions.map((option) => option.value);
+                                                        field.onChange(selectedValues);
+                                                    }}
+                                                    selectedOption={field.value || []}
+                                                />
+                                            )}
+                                        />
+                                    </div>
 
-                                                                    value={field.value || []}
-                                                                    onChange={(event) => {
-                                                                        field.onChange(event);
-                                                                        getAllInstitutionDropdown({ "company_name": [event?.target?.value] });
-                                                                        // setCompanyHeaderName(event?.target?.value);
-                                                                    }}
-                                                                    options={{ placeholder: "Company" }}
-                                                                    className="w-full"
+                                    {/* Year Filter */}
+                                    <div>
+                                        <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                                            <FaCalendarAlt className="text-gray-400" /> Year
+                                        </label>
+                                        <Controller
+                                            name="year"
+                                            control={control}
+                                            defaultValue={[]}
+                                            render={({ field }) => (
+                                                <MultiSelectDropdown
+                                                    data={yearOptions.map(option => ({
+                                                        value: option,
+                                                        label: option
+                                                    }))}
+                                                    placeholder="Select Year"
+                                                    loading={dropdownLoading}
+                                                    onChange={(selectedOptions) => {
+                                                        const selectedValues = selectedOptions.map((option) => option.value);
+                                                        field.onChange(selectedValues);
+                                                    }}
+                                                    selectedOption={field.value || []}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
 
-                                                                >
-                                                                    {
-                                                                        apiDropdownOptions.company?.map((company: any) => (
-                                                                            <option key={company} value={company}>
-                                                                                {company}
-                                                                            </option>
-                                                                        ))
-                                                                    }
-                                                                </TomSelect>
+                                {/* Filter Content */}
+                            </form>
+                        </div>
+                    )}
+                </div>
+
+                <div>
+                    {proxyContestLoading ? (
+                        <div className="h-52 flex items-center justify-center">
+                            <LoadingIcon icon="three-dots" className="w-8 h-8" />
+                        </div>
+                    ) : (
+                        <>
+                            <TableWrapper isLoading={proxyContestLoading}>
+                                <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
+                                    <Table>
+                                        <Table.Thead>
+                                            <Table.Tr className="bg-primary text-white text-sm">
+                                                <Table.Td className="px-4 py-2 font-semibold">Year</Table.Td>
+                                                <Table.Td className="px-4 py-2 font-semibold">Company Name</Table.Td>
+                                                <Table.Td className="px-4 py-2 font-semibold">Meeting Date</Table.Td>
+                                                <Table.Td className="px-4 py-2 font-semibold">Actions</Table.Td>
+                                            </Table.Tr>
+                                        </Table.Thead>
+                                        <Table.Tbody>
+                                            {proxyContestCompanies?.length > 0 ? (
+                                                proxyContestCompanies.map((company, index) => (
+                                                    <Table.Tr
+                                                        key={`${company.company_id}-${index}`}
+                                                        className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}
+                                                    >
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                {company.year}
+                                                            </span>
+                                                        </Table.Td>
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            <div
+                                                                className="font-semibold cursor-pointer hover:underline transition-colors"
+                                                                onClick={() => {
+                                                                    navigate(`/proxy-contest-detail/${company.company_id}`, {
+                                                                        state: {
+                                                                            company: company,
+                                                                            companyName: company.company_name,
+                                                                            year: company.year,
+                                                                            meetingDate: company.meeting_date,
+                                                                            fromProxyContest: true
+                                                                        }
+                                                                    });
+                                                                }}
+                                                            >
+                                                                {company.company_name}
+                                                            </div>
+                                                        </Table.Td>
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            {company.meeting_date && (
+                                                                <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                                                                    {company.meeting_date}
+                                                                </span>
                                                             )}
-                                                        />
-                                                    </div>
-
-                                                    <div className="flex items-center mt-7">
-                                                        <Button
-                                                            type="button"
-                                                            variant="secondary"
-                                                            onClick={() => {
-                                                                onTopFiveFilterClear();
-                                                            }}
-                                                            className="w-32 ml-auto"
-                                                        >
-                                                            Clear
-                                                        </Button>
-                                                        <Button
-                                                            type="submit"
-                                                            variant="primary"
-                                                            className="w-32 ml-2"
-                                                        >
-                                                            Apply
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </form>
-
-                                        </div>
-                                        <div className="font-bold text-2xl pt-4">
-                                            {companyHeaderName}{" "}
-                                            {proxyContestReleaseDetails?.Activism_Presentation?.[0]?.year ? (
-                                                <>({proxyContestReleaseDetails.Activism_Presentation[0].year})</>
-                                            ) : proxyContestReleaseDetails?.Activism_ISS_GL?.[0]?.year ? (
-                                                <>({proxyContestReleaseDetails.Activism_ISS_GL[0].year})</>
-                                            ) : null}
-                                        </div>
-
-
-                                    </div>
-
-                                    {/* AGM Summary Table */}
-
-                                    <section >
-                                        {!loading && modifyActicismData?.length > 0 &&
-
-                                            <section className="box p-5 mt-3.5">
-                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                                                        <span>
-                                                            <h1 className="text-lg font-bold">
-                                                                Proxy Advisory Firm Recommendation
-                                                            </h1>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <TableWrapper>
-                                                    <div>
-                                                        <Table className="table">
-                                                            <Table.Thead>
-                                                                <Table.Tr className="row">
-                                                                    <Table.Td
-                                                                        rowSpan={2}
-                                                                        className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500 border-r-2 bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem]  text-[#000000B2]"
-                                                                    >
-                                                                        {/* Company */}
-                                                                    </Table.Td>
-                                                                    <Table.Td
-                                                                        colSpan={3}
-                                                                        className="px-5 min-w-[150px] max-w-[170px] dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header border-gray-500 border-r-2 text-[#000000B2] text-center"
-                                                                    >
-                                                                        ISS
-                                                                    </Table.Td>
-                                                                    <Table.Td
-                                                                        colSpan={3}
-                                                                        className="px-5  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header text-[#000000B2] text-center"
-                                                                    >
-                                                                        GL
-                                                                    </Table.Td>
-                                                                </Table.Tr>
-                                                                <Table.Tr className="row">
-                                                                    {/* px-5 border-b dark:border-darkmode-300 cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] text-left sticky top-0 min-w-[150px] max-w-[170px] */}
-                                                                    <Table.Td className="px-5 min-w-[100px] max-w-[120px]  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
-                                                                        Management
-                                                                    </Table.Td>
-                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px]  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
-                                                                        Activist
-                                                                    </Table.Td>
-                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px] dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500 border-r-2 bg-header  text-[#000000B2] text-center">
-                                                                        Split
-                                                                    </Table.Td>
-                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px] dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
-                                                                        Management
-                                                                    </Table.Td>
-                                                                    <Table.Td className="px-5 min-w-[100px] max-w-[120px]  dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
-                                                                        Activist
-                                                                    </Table.Td>
-                                                                    <Table.Td className="px-5  min-w-[100px] max-w-[120px] dark:border-darkmode-300 py-2 font-semibold h-[50px] border-gray-500  bg-header  text-[#000000B2] text-center">
-                                                                        Split
-                                                                    </Table.Td>
-                                                                </Table.Tr>
-                                                            </Table.Thead>
-                                                            <Table.Tbody>
-                                                                {modifyActicismData?.map((row: any, index: any) => (
-                                                                    <Table.Tr
-                                                                        key={index}
-                                                                    // className={`row [&_td]:last:border-b-0 ${row.highlighted ? "highlighted-row" : ""
-                                                                    //     }`}
-                                                                    >
-                                                                        <Table.Td className="px-5 border-b-0 font-bold dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                                                            {row.company}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-l-2 border-gray-500 border-b-0 dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.iss.management === true && (
-                                                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                                                        &#10004;
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.iss.activist === true && (
-                                                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                                                        &#10004;
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-r-2 border-b-0 border-gray-500 dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.iss.split === true && (
-                                                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                                                        &#10004;
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.gl.management === true && (
-                                                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                                                        &#10004;
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.gl.activist === true && (
-                                                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                                                        &#10004;
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-b-0 dark:border-darkmode-300 py-2 text-center">
-                                                                            {row.gl.split === true && (
-                                                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                                                    <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                                                        &#10004;
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </Table.Td>
-                                                                    </Table.Tr>
-                                                                ))}
-                                                            </Table.Tbody>
-                                                        </Table>
-                                                    </div>
-                                                </TableWrapper>
-
-                                            </section>
-                                        }
-
-                                    </section>
-
-                                    {/* Case Studies Table */}
-
-                                    <section >
-                                        {!loading && caseStudiesTopProxy?.length > 0 &&
-
-                                            <section className="box p-5 mt-3.5">
-                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                                                        <span>
-                                                            <h1 className="text-lg font-bold">
-                                                                Case Studies
-                                                            </h1>
-                                                        </span>
-                                                    </div>
-
-                                                </div>
-                                                <span>
-                                                    <div className="">
-                                                        <TableWrapper isLoading={loading}>
-                                                            <div className="overflow-auto max-h-[400px]">
-                                                                <Table>
-                                                                    <Table.Thead>
-                                                                        <Table.Tr>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                                                Institution
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Year
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Company
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Theme
-                                                                            </Table.Td>
-
-                                                                            <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[200px]">
-                                                                                Industry
-                                                                            </Table.Td>
-                                                                            <Table.Td className="py-2 flex items-center justify-center font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                                                                                Details
-                                                                            </Table.Td>
-                                                                        </Table.Tr>
-                                                                    </Table.Thead>
-
-                                                                    <Table.Tbody>
-                                                                        {caseStudiesTopProxy?.length > 0 &&
-                                                                            caseStudiesTopProxy?.map((item: any) => (
-                                                                                <Table.Tr
-                                                                                    key={item?.id}
-                                                                                    className="[&_td]:last:border-b-0"
-                                                                                >
-                                                                                    <Table.Td className="flex flex-row justify-start items-center py-2 text-nowrap border-dashed dark:bg-darkmode-600">
-                                                                                        {item?.institution_logo_url ? (
-                                                                                            <>
-                                                                                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
-                                                                                                    <img
-                                                                                                        alt="Institution Logo"
-                                                                                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                                                                                        src={item?.institution_logo_url}
-                                                                                                        content={item?.institution_name || ""}
-                                                                                                    />
-                                                                                                </div>
-                                                                                            </>
-                                                                                        ) : (
-                                                                                            <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                                                                                <img
-                                                                                                    alt="ZMH Analytics"
-                                                                                                    className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                                                                                    src={investorIcon}
-                                                                                                />
-                                                                                                <a
-                                                                                                    href=""
-                                                                                                    className="absolute bottom-0 right-0 flex items-center justify-center rounded-full w-7 h-7"
-                                                                                                ></a>
-                                                                                            </div>
-                                                                                        )}
-                                                                                        <div className="ml-4 max-w-[150px]">
-                                                                                            <p className="font-medium whitespace-normal line-clamp-2">
-                                                                                                {item?.institution_name}
-                                                                                            </p>
-                                                                                        </div>
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.year}
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.company_name}
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.esg_themes}
-                                                                                    </Table.Td>
-
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px]">
-                                                                                        {item?.industry}
-                                                                                    </Table.Td>
-                                                                                    <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 ">
-                                                                                        <div className="flex gap-3 justify-center">
-                                                                                            <Tippy
-                                                                                                content="See Details"
-                                                                                                options={{ theme: "light" }}
-                                                                                            >
-                                                                                                <Lucide
-                                                                                                    onClick={() => {
-                                                                                                        setCaseProxyModalVisible(true);
-                                                                                                        setCaseProxyModalData(item);
-                                                                                                    }}
-                                                                                                    icon="Eye"
-                                                                                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                                                                                />
-                                                                                            </Tippy>
-                                                                                        </div>
-                                                                                    </Table.Td>
-                                                                                </Table.Tr>
-                                                                            ))}
-                                                                    </Table.Tbody>
-                                                                    {caseStudiesTopProxy?.length === 0 && (
-                                                                        <div className="w-full">
-                                                                            <h1 className="mt-3">No case study available</h1>
-                                                                        </div>
-                                                                    )}
-                                                                </Table>
-                                                            </div>
-                                                        </TableWrapper>
-                                                    </div>
-                                                    <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
-                                                        <CPagination
-                                                            page={page}
-                                                            totalPages={totalCaseStudiesTopProxyPages}
-                                                            handleNextPage={handleNextPage}
-                                                            handlePageChange={handlePageChange}
-                                                            handlePreviousPage={handlePreviousPage}
-                                                        />
-                                                    </div>
-                                                </span>
-
-                                            </section>
-                                        }
-
-                                        {/* {!loading && caseStudiesTopProxy?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
-                                            <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold">Case Studies Records Not Found.</h1>
-                                            </div>
-                                        } */}
-
-                                    </section>
-
-                                    {/* Case Studies Table */}
-
-                                    <div className="flex items-start gap-4 justify-center xs:flex-col md:flex-row">
-                                        <section className="flex-1" >
-                                            {!loading && proxyContestReleaseDetails?.Activism_Presentation?.length > 0 &&
-
-                                                <section className="box p-5 mt-3.5">
-                                                    <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                                                        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                                                            <span>
-                                                                <h1 className="text-lg font-bold">
-                                                                    Company and Investor Presentations
-                                                                </h1>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <TableWrapper>
-                                                        <div>
-                                                            <Table className="table">
-                                                                <Table.Thead>
-                                                                    <Table.Tr className="row">
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] min-w-[120px] max-w-[140px] ">
-                                                                            {/* Document Name */}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center min-w-[20px] max-w-[40px]">
-                                                                            View
-                                                                        </Table.Td>
-                                                                    </Table.Tr>
-                                                                </Table.Thead>
-                                                                <Table.Tbody>
-                                                                    {proxyContestReleaseDetails?.Activism_Presentation?.length > 0 &&
-                                                                        proxyContestReleaseDetails?.Activism_Presentation?.map((document: any) => (
-                                                                            <Table.Tr
-                                                                                key={document.name}
-                                                                                className="row [&_td]:last:border-b-0"
-                                                                            >
-                                                                                <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                                                                    <div className="flex justify-between items-center ">
-                                                                                        <div>
-                                                                                            <h1
-                                                                                                onClick={() => {
-                                                                                                    gotoDetailPage(
-                                                                                                        document?.document_url!,
-                                                                                                        document?.document_name!
-                                                                                                    );
-
-                                                                                                    setPdfVisible(true);
-                                                                                                }}
-                                                                                                className="font-semibold cursor-pointer hover:underline"
-                                                                                            >
-                                                                                                {document?.document_name}
-                                                                                            </h1>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </Table.Td>
-                                                                                <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                                                                    <div className="flex justify-center items-center h-full">
-                                                                                        <Tippy
-                                                                                            content="See Details"
-                                                                                            options={{
-                                                                                                theme: "light",
-                                                                                            }}
-                                                                                        >
-                                                                                            <Lucide
-                                                                                                onClick={() => {
-                                                                                                    gotoDetailPage(
-                                                                                                        document?.document_url!,
-                                                                                                        document?.document_name!
-                                                                                                    );
-
-                                                                                                    setPdfVisible(true);
-                                                                                                }}
-                                                                                                icon="Eye"
-                                                                                                className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                                                                            />
-                                                                                        </Tippy>
-                                                                                    </div>
-                                                                                </Table.Td>
-                                                                            </Table.Tr>
-                                                                        ))}
-                                                                </Table.Tbody>
-                                                            </Table>
-                                                        </div>
-                                                    </TableWrapper>
-                                                </section>
-                                            }
-
-                                        </section>
-
-                                        <section className="flex-1"  >
-                                            {!loading && proxyContestReleaseDetails?.Activism_Press_Release?.length > 0 &&
-
-                                                <section className="box p-5 mt-3.5">
-                                                    <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                                                        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                                                            <span>
-                                                                <h1 className="text-lg font-bold">
-                                                                    Press Releases Mentioning ISS and GL Recommendations
-                                                                </h1>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <TableWrapper>
-                                                        <div>
-                                                            <Table className="table">
-                                                                <Table.Thead>
-                                                                    <Table.Tr className="row">
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] min-w-[120px] max-w-[140px] ">
-                                                                            {/* Document Name */}
-                                                                        </Table.Td>
-                                                                        <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-center min-w-[20px] max-w-[40px]">
-                                                                            View
-                                                                        </Table.Td>
-                                                                    </Table.Tr>
-                                                                </Table.Thead>
-                                                                <Table.Tbody>
-                                                                    {proxyContestReleaseDetails?.Activism_Press_Release?.length > 0 &&
-                                                                        proxyContestReleaseDetails?.Activism_Press_Release?.map((document: any) => (
-                                                                            <Table.Tr
-                                                                                key={document.name}
-                                                                                className="row [&_td]:last:border-b-0"
-                                                                            >
-                                                                                <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                                                                    <div className="flex justify-between items-center ">
-                                                                                        <div>
-                                                                                            <h1
-                                                                                                onClick={() => {
-                                                                                                    gotoDetailPage(
-                                                                                                        document?.document_url!,
-                                                                                                        document?.document_name!
-                                                                                                    );
-
-                                                                                                    setPdfVisible(true);
-                                                                                                }}
-                                                                                                className="font-semibold cursor-pointer hover:underline"
-                                                                                            >
-                                                                                                {document?.document_name}
-                                                                                            </h1>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </Table.Td>
-                                                                                <Table.Td className="px-5 border-b dark:border-darkmode-300 agm_cell_2 py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                                                                    <div className="flex justify-center items-center h-full">
-                                                                                        <Tippy
-                                                                                            content="See Details"
-                                                                                            options={{
-                                                                                                theme: "light",
-                                                                                            }}
-                                                                                        >
-                                                                                            <Lucide
-                                                                                                onClick={() => {
-                                                                                                    gotoDetailPage(
-                                                                                                        document?.document_url!,
-                                                                                                        document?.document_name!
-                                                                                                    );
-
-                                                                                                    setPdfVisible(true);
-                                                                                                }}
-                                                                                                icon="Eye"
-                                                                                                className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                                                                            />
-                                                                                        </Tippy>
-                                                                                    </div>
-                                                                                </Table.Td>
-                                                                            </Table.Tr>
-                                                                        ))}
-                                                                </Table.Tbody>
-                                                            </Table>
-                                                        </div>
-                                                    </TableWrapper>
-                                                </section>
-                                            }
-
-                                        </section>
-                                    </div>
-
-                                    {/* AGM Summary Table */}
-
-                                    {/* AGM Summary Table */}
-
-                                    <section >
-                                        {!loading && agmSummaryProxyContest?.nominees_headers?.length > 0 &&
-
-                                            <section className="box p-5 mt-3.5">
-                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                                                        <span>
-                                                            <h1 className="text-lg font-bold">
-                                                                Meeting Details
-                                                            </h1>
-                                                            <p className=" italic"> Meeting Date: {meetingDate}</p>
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                                                        <Tippy content="Download Excel" options={{ theme: "light" }}>
-                                                            <div
-                                                                className="box p-[5px] cursor-pointer"
-                                                                onClick={convertDivTableToCSV}
-                                                            >
-                                                                <img alt="download-icon" src={downloadIcon} />
-                                                            </div>
-                                                        </Tippy>
-                                                    </div>
-                                                </div>
-                                                <div className="">
-                                                    <TableWrapper>
-                                                        <div className="max-h-[30vh] overflow-y-scroll">
-                                                            <Table className="table_2 w-full">
-                                                                <Table.Thead className="sticky top-0 z-10">
-                                                                    <Table.Tr className="row_2">
-                                                                        {agmSummaryProxyContest?.nominees_headers?.length > 0 &&
-                                                                            agmSummaryProxyContest?.nominees_headers?.map(
-                                                                                (nomineeHeader: any, headerIndex: number) => (
-                                                                                    <Table.Td
-                                                                                        key={headerIndex}
-                                                                                        className={clsx([
-                                                                                            "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
-                                                                                            headerIndex === 0 && "text-left",
-                                                                                        ])}
-                                                                                    >
-                                                                                        {nomineeHeader.header}
-                                                                                    </Table.Td>
-                                                                                )
-                                                                            )}
-                                                                    </Table.Tr>
-                                                                </Table.Thead>
-
-                                                                <Table.Tbody>
-                                                                    {agmSummaryProxyContest?.nominees?.length > 0 &&
-                                                                        agmSummaryProxyContest?.nominees?.map(
-                                                                            (nominee: any, nomineeIndex: number) => (
-                                                                                <Table.Tr
-                                                                                    key={nomineeIndex}
-                                                                                    className="row_2 [&_td]:last:border-b-0"
-                                                                                >
-                                                                                    {agmSummaryProxyContest?.nominees_headers?.length >
-                                                                                        0 &&
-                                                                                        agmSummaryProxyContest?.nominees_headers?.map(
-                                                                                            (
-                                                                                                nomineeHeader: any,
-                                                                                                headerIndex: number
-                                                                                            ) => (
-                                                                                                <Table.Td
-                                                                                                    key={headerIndex}
-                                                                                                    className={clsx([
-                                                                                                        "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-right",
-                                                                                                        headerIndex === 0 && "text-left ",
-                                                                                                    ])}
-                                                                                                >
-                                                                                                    <h1
-                                                                                                        className={clsx([
-                                                                                                            headerIndex === 0 &&
-                                                                                                            "font-semibold ",
-                                                                                                            headerIndex ===
-                                                                                                            agmSummaryProxyContest
-                                                                                                                ?.nominees_headers?.length -
-                                                                                                            1 &&
-                                                                                                            parseFloat(
-                                                                                                                nominee[nomineeHeader?.field]
-                                                                                                            ) < 85 &&
-                                                                                                            "text-red-700 font-semibold",
-                                                                                                        ])}
-                                                                                                    >
-                                                                                                        {nominee[nomineeHeader?.field]}
-                                                                                                    </h1>
-                                                                                                </Table.Td>
-                                                                                            )
-                                                                                        )}
-                                                                                </Table.Tr>
-                                                                            )
-                                                                        )}
-                                                                </Table.Tbody>
-                                                            </Table>
-                                                        </div>
-                                                    </TableWrapper>
-
-                                                    <br />
-                                                    <TableWrapper >
-                                                        <div className="max-h-[30vh] overflow-y-scroll">
-                                                            <Table className="table_3 w-full">
-                                                                <Table.Thead className="sticky top-0 z-10">
-                                                                    <Table.Tr className="row_3">
-                                                                        {agmSummaryProxyContest?.proposals_headers?.map(
-                                                                            (proposalHeader: any, headerIndex: number) => (
-                                                                                <Table.Td
-                                                                                    key={headerIndex}
-                                                                                    className={clsx([
-                                                                                        "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right",
-                                                                                        headerIndex === 0 && "text-left",
-                                                                                    ])}
-                                                                                >
-                                                                                    {proposalHeader?.header}
-                                                                                </Table.Td>
-                                                                            )
-                                                                        )}
-                                                                    </Table.Tr>
-                                                                </Table.Thead>
-
-                                                                <Table.Tbody>
-                                                                    {agmSummaryProxyContest?.proposals?.length > 0 &&
-                                                                        agmSummaryProxyContest?.proposals?.map(
-                                                                            (proposal: any, proposalIndex: number) => (
-                                                                                <Table.Tr
-                                                                                    key={proposalIndex}
-                                                                                    className="row_3 [&_td]:last:border-b-0"
-                                                                                >
-                                                                                    {agmSummaryProxyContest?.proposals_headers?.length >
-                                                                                        0 &&
-                                                                                        agmSummaryProxyContest?.proposals_headers?.map(
-                                                                                            (
-                                                                                                proposalHeader: any,
-                                                                                                headerIndex: number
-                                                                                            ) => (
-                                                                                                <Table.Td
-                                                                                                    key={headerIndex}
-                                                                                                    className={clsx([
-                                                                                                        "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-right",
-                                                                                                        headerIndex === 0 && "text-left",
-                                                                                                    ])}
-                                                                                                >
-                                                                                                    <h1
-                                                                                                        className={clsx([
-                                                                                                            headerIndex === 0 &&
-                                                                                                            "font-semibold ",
-                                                                                                            headerIndex ===
-                                                                                                            agmSummaryProxyContest
-                                                                                                                ?.proposals_headers?.length -
-                                                                                                            1 &&
-                                                                                                            parseFloat(
-                                                                                                                proposal[proposalHeader?.field]
-                                                                                                            ) < 85 &&
-                                                                                                            "text-red-700 font-semibold",
-                                                                                                        ])}
-                                                                                                    >
-                                                                                                        {proposal[proposalHeader?.field]}
-                                                                                                    </h1>
-                                                                                                </Table.Td>
-                                                                                            )
-                                                                                        )}
-                                                                                </Table.Tr>
-                                                                            )
-                                                                        )}
-                                                                </Table.Tbody>
-                                                            </Table>
-                                                        </div>
-                                                    </TableWrapper>
-                                                </div>
-                                            </section>
-                                        }
-
-                                        {/* {!loading && agmSummaryProxyContest?.nominees_headers?.length === 0 && (proxyContestTopFilter.company_name?.length > 0) &&
-                                            <div className=" h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                <h1 className="font-semibold">Meeting Details Not Found</h1>
-                                            </div>
-                                        } */}
-
-                                    </section>
-                                    {/* AGM Summary Table */}
-
-                                    <br />
-
-                                    {/* Proxy Contest Table */}
-
-                                    {/* <section >
-                                        {!loading && proxyContestTopFilter?.company_name?.length > 0 && proxyContestReleaseDetails?.Activism_Presentation?.[0]?.year != "2023" && proxyContestReleaseDetails?.Activism_ISS_GL?.[0]?.year != "2023" &&
-                                            <section className="box p-5 mt-3.5">
-                                                <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                                                    <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                                                        <span>
-                                                            <h1 className="text-lg font-bold">
-                                                                Director Voting Details
-                                                                {proxyContestTopFilter?.institution_name?.length > 0 ? "" : ' (Top 5)'}
-                                                            </h1>
-
-                                                        </span>
-                                                    </div>
-
-                                                </div>
-
-                                                <div className="py-2">
-
-                                                    <form onSubmit={handleSubmit(onSubmit)}>
-
-                                                        <div className="flex items-end gap-4">
-                                                            <div className=" w-5/12">
-                                                                <div className="text-left text-slate-500 flex justify-between mb-1">
-                                                                    Select Institution
-
-                                                                </div>
-                                                                <Controller
-                                                                    name="institution_name"
-                                                                    control={control}
-                                                                    render={({ field }) => (
-                                                                        <TomSelect
-                                                                            value={field.value || []}
-                                                                            onChange={(value) => {
-                                                                                field.onChange(value);
-                                                                            }}
-                                                                            // selectedLimit={3}
-                                                                            options={{ placeholder: "Institution", maxItems: 3, closeAfterSelect: true }}
-                                                                            className="w-full"
-                                                                            multiple
+                                                        </Table.Td>
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            <div className="flex gap-2">
+                                                                {/* Documents Icon */}
+                                                                {company.is_documents ? (
+                                                                    <Tippy content="Documents" options={{ theme: "light" }}>
+                                                                        <div
+                                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                            onClick={() => handleIconClick({ ...company, year: company.year }, 'documents')}
                                                                         >
-                                                                            <>
-                                                                                {apiDropdownOptions?.institution?.length > 0 &&
-                                                                                    apiDropdownOptions?.institution?.map(
-                                                                                        (institution: string) => {
-                                                                                            return (
-                                                                                                <option value={institution}>
-                                                                                                    {institution}
-                                                                                                </option>
-                                                                                            );
-                                                                                        }
-                                                                                    )}
-                                                                            </>
-                                                                        </TomSelect>
-                                                                    )}
-                                                                />
-                                                            </div>
-                                                            <div className="flex items-center mt-7">
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="secondary"
-                                                                    onClick={() => {
-                                                                        onFilterClear();
-                                                                    }}
-                                                                    className="w-32 ml-auto"
-                                                                >
-                                                                    Clear
-                                                                </Button>
-                                                                <Button
-                                                                    type="submit"
-                                                                    variant="primary"
-                                                                    className="w-32 ml-2"
-                                                                >
-                                                                    Apply
-                                                                </Button>
-                                                            </div>
-
-                                                        </div>
-                                                    </form>
-
-                                                    <div className="flex items-center justify-end">
-                                                        <Tippy content="Download Excel" options={{ theme: "light" }}>
-                                                            <div
-                                                                className="box p-[5px] cursor-pointer"
-                                                                onClick={() => convertVotingDivTableToCSV('Voting-Details')}
-                                                            >
-                                                                <img alt="download-icon" src={downloadIcon} />
-                                                            </div>
-                                                        </Tippy>
-                                                    </div>
-
-                                                </div>
-
-                                                {(proxyContestTopFiveDetails === "" && proxyContestTopFiveLoading) && (
-                                                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-white">
-                                                            <LoadingIcon
-                                                                color="#800000"
-                                                                icon="three-dots"
-                                                                className="w-16 h-16"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )}
-
-
-                                                <div>
-                                                    <TableWrapper isLoading={false}>
-                                                        <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-                                                            <Table className="table_voting w-full">
-                                                                <Table.Thead className="sticky top-50 z-10">
-                                                                    <Table.Tr className="row_voting">
-                                                                        {proxyContestTopFiveDetails?.vds_report_headers?.length > 0 &&
-                                                                            proxyContestTopFiveDetails?.vds_report_headers?.map(
-                                                                                (vdsHeader: any, headerIndex: number) => (
-                                                                                    <Table.Td
-                                                                                        key={headerIndex}
-                                                                                        className={clsx([
-                                                                                            "cell_voting py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
-                                                                                            "sticky top-0", // Ensure the header remains sticky at the top
-                                                                                            headerIndex === 0 &&
-                                                                                            "sticky left-0 bg-header z-[5000] ", // Fix first column
-                                                                                            headerIndex === 1 &&
-                                                                                            "sticky left-[50px] min-w-[200px] max-w-[250px] bg-header z-[5000] ", // Fix second column (adjust 'left' value according to width)
-                                                                                            headerIndex !== 0 && headerIndex !== 1 &&
-                                                                                            "min-w-[150px] max-w-[170px] ",
-                                                                                        ])}
-                                                                                    >
-                                                                                        {vdsHeader?.header}
-                                                                                    </Table.Td>
-                                                                                )
-                                                                            )}
-                                                                    </Table.Tr>
-                                                                </Table.Thead>
-
-                                                                <Table.Tbody>
-                                                                    {proxyContestTopFiveDetails?.vds_report?.length > 0 &&
-                                                                        proxyContestTopFiveDetails?.vds_report?.map(
-                                                                            (vdsProxy: any, vdsProxyIndex: number) => (
-                                                                                <Table.Tr
-                                                                                    key={vdsProxyIndex}
-                                                                                    className="row_voting [&_td]:last:border-b-0"
-                                                                                >
-                                                                                    {proxyContestTopFiveDetails?.vds_report_headers?.length >
-                                                                                        0 &&
-                                                                                        proxyContestTopFiveDetails?.vds_report_headers?.map(
-                                                                                            (vdsHeader: any, headerIndex: number) => (
-                                                                                                <Table.Td
-                                                                                                    key={headerIndex}
-                                                                                                    className={clsx([
-                                                                                                        "cell_voting py-2 border-dashed dark:bg-darkmode-600text-left",
-                                                                                                        headerIndex === 0 &&
-                                                                                                        "sticky left-0 bg-white z-[9]", // Fix first column
-                                                                                                        headerIndex === 1 &&
-                                                                                                        "sticky left-[50px] min-w-[200px] max-w-[250px]  bg-white z-[9]", // Fix second column
-                                                                                                        headerIndex !== 0 && headerIndex !== 1 &&
-                                                                                                        "min-w-[150px] max-w-[170px] "
-                                                                                                    ])}
-                                                                                                >
-                                                                                                    {isObject(
-                                                                                                        vdsProxy[vdsHeader?.field]
-                                                                                                    ) &&
-                                                                                                        vdsProxy[vdsHeader?.field]?.notes !==
-                                                                                                        null ? (
-                                                                                                        <h1
-                                                                                                            className={clsx([
-                                                                                                                (vdsProxy[
-                                                                                                                    vdsHeader?.field
-                                                                                                                ]?.vote?.includes("Against") ||
-                                                                                                                    vdsProxy[
-                                                                                                                        vdsHeader?.field
-                                                                                                                    ]?.vote?.includes(
-                                                                                                                        "Withhold"
-                                                                                                                    )) &&
-                                                                                                                "text-red-700 font-semibold",
-                                                                                                                "flex items-center",
-                                                                                                            ])}
-                                                                                                        >
-                                                                                                            {
-                                                                                                                vdsProxy[vdsHeader?.field]
-                                                                                                                    ?.vote === "Split Vote" ? (
-                                                                                                                    <Tippy
-                                                                                                                        content={
-                                                                                                                            isObject(
-                                                                                                                                vdsProxy[vdsHeader?.field]
-                                                                                                                            ) &&
-                                                                                                                            getSplitContents(
-                                                                                                                                vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                                                                                            )
-                                                                                                                        }
-                                                                                                                        options={{ theme: "light" }}
-                                                                                                                    >
-                                                                                                                        {
-                                                                                                                            vdsProxy[vdsHeader?.field]
-                                                                                                                                ?.vote
-                                                                                                                        }
-                                                                                                                    </Tippy>
-                                                                                                                ) : (
-                                                                                                                    <span className="for">{vdsProxy[vdsHeader?.field]?.vote}</span>
-                                                                                                                )}
-                                                                                                            <div data-tooltip-id="my-tooltip-data-html"
-
-                                                                                                                data-tooltip-html={vdsProxy[vdsHeader?.field]?.notes}>
-                                                                                                                <Lucide
-                                                                                                                    icon="Info"
-                                                                                                                    className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                                                                                />
-                                                                                                            </div>
-                                                                                                        </h1>
-                                                                                                    ) :
-                                                                                                        isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null ? (
-                                                                                                            <h1
-                                                                                                                className={clsx([
-                                                                                                                    (vdsProxy[
-                                                                                                                        vdsHeader?.field
-                                                                                                                    ]?.vote?.includes("Against") ||
-                                                                                                                        vdsProxy[
-                                                                                                                            vdsHeader?.field
-                                                                                                                        ]?.vote?.includes("Withhold")) &&
-                                                                                                                    "text-red-700 font-semibold",
-                                                                                                                ])}
-                                                                                                            >
-                                                                                                                {vdsProxy[vdsHeader?.field]?.vote !== "Split Vote" ? vdsProxy[vdsHeader?.field]?.vote : ''}
-                                                                                                            </h1>
-                                                                                                        ) : (
-                                                                                                            <h1 className="check">
-                                                                                                                {vdsProxy[vdsHeader?.field]}
-                                                                                                            </h1>
-                                                                                                        )}
-
-
-                                                                                                    {
-                                                                                                        isObject(vdsProxy[vdsHeader?.field]) && vdsProxy[vdsHeader?.field]?.notes === null && vdsProxy[vdsHeader?.field]
-                                                                                                            ?.vote === "Split Vote" && (
-                                                                                                            <Tippy
-                                                                                                                content={
-                                                                                                                    isObject(
-                                                                                                                        vdsProxy[vdsHeader?.field]
-                                                                                                                    ) &&
-                                                                                                                    getSplitContents(
-                                                                                                                        vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                                                                                    )
-                                                                                                                }
-                                                                                                                options={{ theme: "light" }}
-                                                                                                            >
-                                                                                                                {
-                                                                                                                    vdsProxy[vdsHeader?.field]
-                                                                                                                        ?.vote
-                                                                                                                }
-                                                                                                            </Tippy>
-                                                                                                        )}
-                                                                                                </Table.Td>
-                                                                                            )
-                                                                                        )}
-                                                                                </Table.Tr>
-                                                                            )
-                                                                        )}
-                                                                </Table.Tbody>
-                                                                {proxyContestTopFiveDetails?.vds_report_headers?.length === 0 && (
-                                                                    <div className="w-full">
-                                                                        <h1 className="mt-3">No voting details available</h1>
+                                                                            <Lucide icon="FileText" className="w-4 h-4" />
+                                                                        </div>
+                                                                    </Tippy>
+                                                                ) : (
+                                                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
+                                                                        <Lucide icon="FileText" className="w-4 h-4" />
                                                                     </div>
                                                                 )}
-                                                            </Table>
-                                                        </div>
 
-                                                    </TableWrapper>
+                                                                {/* Proxy Advisory Firm Recommendation Icon */}
+                                                                {company.is_proxy_advisory_firm_recommendation ? (
+                                                                    <Tippy content="Proxy Advisory Firm Recommendation" options={{ theme: "light" }}>
+                                                                        <div
+                                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                            onClick={() => handleIconClick({ ...company, year: company.year }, 'proxy_advisory_firm_recommendation')}
+                                                                        >
+                                                                            <Lucide icon="Shield" className="w-4 h-4" />
+                                                                        </div>
+                                                                    </Tippy>
+                                                                ) : (
+                                                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
+                                                                        <Lucide icon="Shield" className="w-4 h-4" />
+                                                                    </div>
+                                                                )}
 
-                                                </div>
+                                                                {/* Meeting Details Icon */}
+                                                                {company.is_meeting_details ? (
+                                                                    <Tippy content="Meeting Details" options={{ theme: "light" }}>
+                                                                        <div
+                                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                            onClick={() => handleIconClick({ ...company, year: company.year }, 'meeting_details')}
+                                                                        >
+                                                                            <Lucide icon="Calendar" className="w-4 h-4" />
+                                                                        </div>
+                                                                    </Tippy>
+                                                                ) : (
+                                                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
+                                                                        <Lucide icon="Calendar" className="w-4 h-4" />
+                                                                    </div>
+                                                                )}
 
-                                            </section>
-                                        }
-                                    </section> */}
+                                                                {/* Case Studies Icon */}
+                                                                {company.is_case_studies ? (
+                                                                    <Tippy content="Case Studies" options={{ theme: "light" }}>
+                                                                        <div
+                                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                            onClick={() => handleIconClick({ ...company, year: company.year }, 'case_studies')}
+                                                                        >
+                                                                            <Lucide icon="BookOpen" className="w-4 h-4" />
+                                                                        </div>
+                                                                    </Tippy>
+                                                                ) : (
+                                                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
+                                                                        <Lucide icon="BookOpen" className="w-4 h-4" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </Table.Td>
+                                                    </Table.Tr>
+                                                ))
+                                            ) : (
+                                                <Table.Tr>
+                                                    <Table.Td colSpan={4} className="text-center py-10 text-gray-400 text-lg font-semibold">
+                                                        <Lucide icon="Search" className="mx-auto mb-2 text-4xl text-primary/60" />
+                                                        No Proxy Contest Companies available.
+                                                    </Table.Td>
+                                                </Table.Tr>
+                                            )}
+                                        </Table.Tbody>
+                                    </Table>
+                                </div>
+                            </TableWrapper>
 
-
-
-                                    {/* Proxy Contest Table */}
-
-
-                                    {/* No Filters Record */}
-
-                                    {(proxyContestTopFilter.company_name?.length === 0 && !proxyContestTopFiveLoading) && (
-                                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                            <h1 className="font-semibold"></h1>
-                                        </div>
-                                    )}
-
-                                    {/* No Filters Record */}
-
-
-
-                                </Tab.Panel>
-                            </Tab.Panels>
-                        </Tab.Group>
-                    </>
+                            {proxyContestTotal > pageSize && (
+                                <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+                                    <CPagination
+                                        page={proxyContestPage}
+                                        totalPages={Math.ceil(proxyContestTotal / pageSize)}
+                                        handleNextPage={handleProxyContestNextPage}
+                                        handlePageChange={handleProxyContestPageChange}
+                                        handlePreviousPage={handleProxyContestPreviousPage}
+                                    />
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
-            {/* )} */}
 
-            {caseProxyModalVisible && (
-                <CaseProxyModal
-                    caseProxyModalVisible={caseProxyModalVisible}
-                    setCaseProxyModalVisible={setCaseProxyModalVisible}
-                    caseProxyModalData={caseProxyModalData}
-                />
-            )}
+            {/* Case Proxy Modal */}
+            <CaseProxyModal
+                caseProxyModalVisible={caseProxyModalVisible}
+                setCaseProxyModalVisible={setCaseProxyModalVisible}
+                caseProxyModalData={caseProxyModalData}
+            />
 
+            {/* PDF Viewer */}
             {pdfVisible && (
                 <PdfViewer
-                    setPdfVisible={setPdfVisible}
                     pdfVisible={pdfVisible}
+                    setPdfVisible={setPdfVisible}
                     file={currentPdfDoc}
                     file_name={currentPdfName}
                 />
             )}
+
+            {/* Details Modal */}
+            {detailsModalVisible && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary to-primary/80 text-white">
+                            <div>
+                                <h2 className="text-lg font-semibold">{modalTitle}</h2>
+                                <p className="text-sm text-white/80 mt-1">
+                                    {selectedCompany?.company_name} - {selectedCompany?.year}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setDetailsModalVisible(false)}
+                                className="text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/20"
+                            >
+                                <Lucide icon="X" className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
+                            {modalLoading ? (
+                                <div className="flex items-center justify-center h-40">
+                                    <LoadingIcon icon="three-dots" className="w-8 h-8" />
+                                </div>
+                            ) : (
+                                <div>
+                                    {modalData ? (
+                                        <div>
+                                            {modalType === 'documents' && (
+                                                <div className="space-y-6">
+                                                    {modalData.presentations?.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Company and Investor Presentations
+                                                            </h3>
+                                                            <div className="space-y-2">
+                                                                {modalData.presentations.map((item: any, index: number) => (
+                                                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                                        <span className="font-medium">{item.document_name || 'Unnamed Document'}</span>
+                                                                        {item.document_url && (
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                    setPdfVisible(true);
+                                                                                    setDetailsModalVisible(false);
+                                                                                }}
+                                                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                                            >
+                                                                                View PDF
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {modalData.press_releases?.length > 0 && (
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                Press Releases
+                                                            </h3>
+                                                            <div className="space-y-2">
+                                                                {modalData.press_releases.map((item: any, index: number) => (
+                                                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                                        <span className="font-medium">{item.document_name || 'Unnamed Document'}</span>
+                                                                        {item.document_url && (
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    gotoDetailPage(item.document_url, item.document_name || 'Document');
+                                                                                    setPdfVisible(true);
+                                                                                    setDetailsModalVisible(false);
+                                                                                }}
+                                                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                                            >
+                                                                                View PDF
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {(!modalData.presentations?.length && !modalData.press_releases?.length) && (
+                                                        <div className="text-center py-12">
+                                                            <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Documents Available</h3>
+                                                            <p className="text-gray-500">No documents found for {selectedCompany?.company_name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {modalType === 'proxy_advisory_firm_recommendation' && (
+                                                <div>
+                                                    {modalData.recommendations?.length > 0 ? (
+                                                        <TableWrapper>
+                                                            <div className="overflow-x-auto">
+                                                                <Table>
+                                                                    <Table.Thead>
+                                                                        <Table.Tr>
+                                                                            <Table.Td
+                                                                                rowSpan={2}
+                                                                                className="px-6 py-3 font-semibold h-[60px] border-r border-gray-200 bg-gray-50 text-gray-700 text-left"
+                                                                            >
+                                                                                Company
+                                                                            </Table.Td>
+                                                                            <Table.Td
+                                                                                colSpan={3}
+                                                                                className="px-6 py-3 font-semibold h-[30px] border-r border-gray-200 bg-gray-50 text-gray-700 text-center"
+                                                                            >
+                                                                                ISS
+                                                                            </Table.Td>
+                                                                            <Table.Td
+                                                                                colSpan={3}
+                                                                                className="px-6 py-3 font-semibold h-[30px] bg-gray-50 text-gray-700 text-center"
+                                                                            >
+                                                                                GL
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                        <Table.Tr>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Management
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Activist
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-r border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Split
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Management
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Activist
+                                                                            </Table.Td>
+                                                                            <Table.Td className="px-4 py-2 font-medium h-[30px] border-gray-200 bg-gray-50 text-gray-600 text-center text-sm">
+                                                                                Split
+                                                                            </Table.Td>
+                                                                        </Table.Tr>
+                                                                    </Table.Thead>
+                                                                    <Table.Tbody>
+                                                                        {(() => {
+                                                                            // Group data by company_tent to show all unique companies
+                                                                            const companies = [...new Set(modalData.recommendations.map((item: any) => item.company_tent))];
+
+                                                                            return companies.map((companyName: string, index: number) => {
+                                                                                const issData = modalData.recommendations.find((item: any) => item.type === 'ISS' && item.company_tent === companyName);
+                                                                                const glData = modalData.recommendations.find((item: any) => item.type === 'GL' && item.company_tent === companyName);
+
+                                                                                return (
+                                                                                    <Table.Tr key={index} className="hover:bg-gray-50 border-b border-gray-100">
+                                                                                        <Table.Td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-100">
+                                                                                            {companyName || ""}
+                                                                                        </Table.Td>
+                                                                                        {/* ISS columns */}
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {issData?.management && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {issData?.activist && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center border-r border-gray-100">
+                                                                                            {issData?.split && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        {/* GL columns */}
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {glData?.management && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {glData?.activist && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                        <Table.Td className="px-4 py-4 text-center">
+                                                                                            {glData?.split && (
+                                                                                                <div className="flex items-center justify-center">
+                                                                                                    <div className="bg-green-500 font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+                                                                                                        &#10004;
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </Table.Td>
+                                                                                    </Table.Tr>
+                                                                                );
+                                                                            });
+                                                                        })()}
+                                                                    </Table.Tbody>
+                                                                </Table>
+                                                            </div>
+                                                        </TableWrapper>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <Lucide icon="Shield" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Recommendations Available</h3>
+                                                            <p className="text-gray-500">No proxy advisory firm recommendations found for {selectedCompany?.company_name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {modalType === 'meeting_details' && (
+                                                <div>
+                                                    {modalData && (modalData.company || modalData.nominees || modalData.proposals) ? (
+                                                        <div className="space-y-6">
+                                                            {modalData.company && modalData.company.length > 0 && (
+                                                                <div>
+                                                                    <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                        Company Information
+                                                                    </h3>
+                                                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                                                        {modalData.company.map((companyInfo: any, index: number) => {
+                                                                            const companyName = Object.keys(companyInfo)[0];
+                                                                            const meetingInfo = companyInfo[companyName];
+                                                                            return (
+                                                                                <div key={index} className="text-sm">
+                                                                                    <p><strong>Company:</strong> {companyName}</p>
+                                                                                    <p><strong>Meeting:</strong> {meetingInfo}</p>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {modalData.nominees && modalData.nominees.length > 0 && (
+                                                                <div>
+                                                                    <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                        Nominees
+                                                                    </h3>
+                                                                    <TableWrapper>
+                                                                        <div className="overflow-x-auto">
+                                                                            <Table>
+                                                                                <Table.Thead>
+                                                                                    <Table.Tr>
+                                                                                        {modalData.nominees_headers?.map((header: any, index: number) => (
+                                                                                            <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                {header.header}
+                                                                                            </Table.Td>
+                                                                                        ))}
+                                                                                    </Table.Tr>
+                                                                                </Table.Thead>
+                                                                                <Table.Tbody>
+                                                                                    {modalData.nominees.map((nominee: any, index: number) => (
+                                                                                        <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                            {modalData.nominees_headers?.map((header: any, headerIndex: number) => (
+                                                                                                <Table.Td key={headerIndex} className={`py-2 border-dashed text-sm ${headerIndex === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                    {nominee[header.field] || ''}
+                                                                                                </Table.Td>
+                                                                                            ))}
+                                                                                        </Table.Tr>
+                                                                                    ))}
+                                                                                </Table.Tbody>
+                                                                            </Table>
+                                                                        </div>
+                                                                    </TableWrapper>
+                                                                </div>
+                                                            )}
+
+                                                            {modalData.proposals && modalData.proposals.length > 0 && (
+                                                                <div>
+                                                                    <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                                                        Proposals
+                                                                    </h3>
+                                                                    <TableWrapper>
+                                                                        <div className="overflow-x-auto">
+                                                                            <Table>
+                                                                                <Table.Thead>
+                                                                                    <Table.Tr>
+                                                                                        {modalData.proposals_headers?.map((header: any, index: number) => (
+                                                                                            <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                {header.header}
+                                                                                            </Table.Td>
+                                                                                        ))}
+                                                                                    </Table.Tr>
+                                                                                </Table.Thead>
+                                                                                <Table.Tbody>
+                                                                                    {modalData.proposals.map((proposal: any, index: number) => (
+                                                                                        <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                            {modalData.proposals_headers?.map((header: any, headerIndex: number) => (
+                                                                                                <Table.Td key={headerIndex} className={`py-2 border-dashed text-sm ${headerIndex === 0 ? 'min-w-[200px]' : ''}`}>
+                                                                                                    {proposal[header.field] || 'N/A'}
+                                                                                                </Table.Td>
+                                                                                            ))}
+                                                                                        </Table.Tr>
+                                                                                    ))}
+                                                                                </Table.Tbody>
+                                                                            </Table>
+                                                                        </div>
+                                                                    </TableWrapper>
+                                                                </div>
+                                                            )}
+
+
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <Lucide icon="Calendar" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Meeting Details Available</h3>
+                                                            <p className="text-gray-500">No meeting details found for {selectedCompany?.company_name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Data Available</h3>
+                                            <p className="text-gray-500">No {modalTitle.toLowerCase()} found for {selectedCompany?.company_name}.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Tooltip id="my-tooltip-data-html" style={{ zIndex: 10, backgroundColor: "#ffffff", color: "#000000", width: 400, boxShadow: '2px 4px 6px rgba(0, 0, 0, 0.2)' }} />
         </>
     );

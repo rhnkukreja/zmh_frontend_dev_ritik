@@ -175,7 +175,7 @@ const GetHelp = ({ helpFormVisible, setHelpFormVisible }: GetHelpProps) => {
                             </label>
                             {[
                               "Investor Profile",
-                              "Voting Guidelines",
+                              "Proxy Voting Guidelines",
                               "Voting Data",
                             ].map((InfoType, index) => (
                               <FormCheck key={index} className="mt-2">

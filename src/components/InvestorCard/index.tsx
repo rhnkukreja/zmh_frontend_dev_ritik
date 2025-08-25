@@ -495,7 +495,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        <div className="whitespace-nowrap flex items-center justify-center">
+                                        <div className="whitespace-nowrap flex items-center">
                                           {dashboard?.percent_ownership}%
                                         </div>
                                       </Table.Td>
@@ -564,7 +564,7 @@ const index = () => {
                                         {dashboard?.voted_against_directors ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                              <div className="flex items-center w-full h-full text-primary mr-2 justify-center">
                                                 <Tippy content="Not Disclose" options={{ theme: "light" }}>
                                                   <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                 </Tippy>
@@ -586,7 +586,7 @@ const index = () => {
                                         {dashboard?.voted_against_say_on_pay ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="flex items-center justify-center w-full h-full text-primary mr-2">
+                                              <div className="flex items-center w-full h-full text-primary mr-2">
                                                 <Tippy content="Not Disclose" options={{ theme: "light" }}>
                                                   <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                 </Tippy>

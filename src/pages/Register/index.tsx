@@ -9,66 +9,103 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 
 import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { signUp } from "@/stores/authenticationSlice";
+import { signUp, VerifySignUpOtp, resendSignUpOtp } from "@/stores/authenticationSlice";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import logo from "../../assets/images/logo/zmh-logo.jpg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import CompanySelect from "@/components/ReactSelectAsync";
 
 interface FormInputs {
   first_name: string;
   last_name: string;
-  company?: {
-    value: number;
-    label: string;
-  };
   email: string;
   password: string;
   passwordConfirmation: string;
 }
-
+interface VerifyOtpInputs {
+  otp: string;
+  email?: string;
+}
 function Main() {
   const {
     register,
-    control,
     watch,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormInputs>();
-  const companySelectRef = useRef<any>(null);
+  } = useForm<any>();
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [formView, setFormView] = useState<"signup" | "verifyOtp" >("signup");
+   const [userEmail, setUserEmail] = useState("");
+   const [signupData, setSignupData] = useState<any>(null);
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     const { passwordConfirmation, ...restData } = data;
 
+    const signupPayload = {
+      ...restData,
+      user_type: "Employee",
+      username: restData?.email,
+      confirm_password: data.passwordConfirmation,
+    };
+
     try {
-      const response = await dispatch(
-        signUp({
-          ...restData,
-          user_type: "Admin",
-          phone: "",
-          username: restData?.email,
-          company: restData?.company?.value || null,
-        })
-      ).unwrap();
+      const response = await dispatch(signUp(signupPayload)).unwrap();
 
       if (response?.email) {
-        toast.success("Registered Successfully!");
-        navigate("/login");
+        setFormView("verifyOtp");
+        setUserEmail(response?.email);
+        setSignupData(signupPayload); // Store the signup data for resend
       }
     } catch (error) {
       return error;
     }
   };
+const handleVerifyOTP = async (data: VerifyOtpInputs) => {
+    try {
+      const response = await dispatch(
+        VerifySignUpOtp({
+          email:userEmail,
+          otp: data.otp,
+        })
+      ).unwrap();
 
+      if (response.message === "Signup completed successfully!") {
+        toast.success(response.message);
+        navigate("/login");
+      }
+
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
+
+  const handleResendOTP = async () => {
+    try {
+      // Use the same payload as the initial signup but don't show notification
+      const response = await dispatch(
+        resendSignUpOtp({
+          email: userEmail,
+          first_name: signupData.first_name,
+          last_name: signupData.last_name,
+          password: signupData.password,
+          username: signupData.username,
+          user_type: signupData.user_type,
+          confirm_password: signupData.confirm_password,
+        })
+      ).unwrap();
+
+      // No notification shown for resend OTP
+    } catch (error) {
+      console.error("Error resending OTP:", error);
+      toast.error("Failed to resend OTP");
+    }
+  }
   return (
     <>
       <Helmet>
@@ -90,27 +127,28 @@ function Main() {
               </div>
             </div>
             <div className="mt-10">
-              <div className="text-2xl font-medium">Sign Up</div>
-              <div className="mt-2.5 text-slate-600">
+              <div className="text-2xl font-medium">{formView === "signup" ? "Sign Up": "Enter Verification Code"}</div>
+              {formView === "signup" && <div className="mt-2.5 text-slate-600">
                 Already have an account?
                 <Link className="ml-2 font-medium text-primary" to="/login">
                   Sign In
                 </Link>
-              </div>
-              <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
+              </div>}
+              
+            {formView === "signup" ? 
+             <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
                 <div>
                   <FormLabel>First Name*</FormLabel>
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter First Name"
                     {...register("first_name", {
                       required: "First name is required",
                     })}
                   />
                   {errors.first_name && (
                     <span className="text-red-500">
-                      {errors.first_name.message}
+                      {typeof errors.first_name.message === "string" ? errors.first_name.message : ""}
                     </span>
                   )}
                 </div>
@@ -119,14 +157,13 @@ function Main() {
                   <FormInput
                     type="text"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Last Name"
                     {...register("last_name", {
                       required: "Last name is required",
                     })}
                   />
                   {errors.last_name && (
                     <span className="text-red-500">
-                      {errors.last_name.message}
+                      {typeof errors.last_name.message === "string" ? errors.last_name.message : ""}
                     </span>
                   )}
                 </div>
@@ -135,35 +172,19 @@ function Main() {
                   <FormInput
                     type="email"
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Email"
                     {...register("email", { required: "Email is required" })}
                   />
                   {errors.email && (
-                    <span className="text-red-500">{errors.email.message}</span>
+                    <span className="text-red-500">
+                      {typeof errors.email.message === "string" ? errors.email.message : ""}
+                    </span>
                   )}
-                </div>
-
-                <div className="w-full mt-5" ref={companySelectRef}>
-                  <FormLabel>Select Company</FormLabel>
-                  <Controller
-                    name="company"
-                    control={control}
-                    render={({ field }) => (
-                      <CompanySelect
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
-                  />
                 </div>
                 <div className="mt-5 relative">
                   <FormLabel>Password*</FormLabel>
                   <FormInput
                     type={showPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Password"
                     {...register("password", {
                       required: "Password is required",
                     })}
@@ -186,17 +207,16 @@ function Main() {
                   </span>
                   {errors.password && (
                     <span className="text-red-500">
-                      {errors.password.message}
+                      {typeof errors.password.message === "string" ? errors.password.message : ""}
                     </span>
                   )}
                 </div>
 
                 <div className="mt-5 relative">
-                  <FormLabel>Password Confirmation*</FormLabel>
+                  <FormLabel>Confirm Password*</FormLabel>
                   <FormInput
                     type={showConfirmPassword ? "text" : "password"}
                     className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Enter Confirm Password"
                     {...register("passwordConfirmation", {
                       required: "Password confirmation is required",
                       validate: (value) =>
@@ -225,7 +245,7 @@ function Main() {
                   </span>
                   {errors.passwordConfirmation && (
                     <span className="text-red-500">
-                      {errors.passwordConfirmation.message}
+                      {typeof errors.passwordConfirmation.message === "string" ? errors.passwordConfirmation.message : ""}
                     </span>
                   )}
                 </div>
@@ -283,6 +303,65 @@ function Main() {
                   </Button>
                 </div>
               </form>
+                :
+                  <form onSubmit={handleSubmit(handleVerifyOTP)} className="mt-6">
+                    <FormLabel>Enter Code</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Code"
+                      {...register("otp", { required: "OTP is required" })}
+                    />
+                    {errors.otp && (
+                      <p className="text-red-500">{typeof errors.otp.message === "string" ? errors.otp.message : ""}</p>
+                    )}
+                   <div className="flex justify-between mt-4 text-xs text-slate-500 sm:text-sm">
+                      <button type="button" onClick={() => setFormView("signup")} className="flex items-center" >  <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back To Sign Up</button>
+                      
+                      <button 
+                        type="button" 
+                        onClick={handleResendOTP} 
+                        disabled={loading}
+                        className="flex items-center text-primary hover:text-primary/80 disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <Lucide
+                            icon="Loader"
+                            className="w-4 h-4 mr-1 animate-spin"
+                          />
+                        ) : (
+                          <Lucide
+                            icon="RefreshCw"
+                            className="w-4 h-4 mr-1"
+                          />
+                        )}
+                        Resend Code
+                      </button>
+                    </div>
+                  
+
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Confirm Code
+                      </Button>
+                    </div>
+                  </form>}
             </div>
           </div>
         </div>

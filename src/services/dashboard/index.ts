@@ -5,24 +5,83 @@ import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 
 class DashboardService {
-  public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?:string): Promise<{
+  public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?:string, currentFilters?: any): Promise<{
     results: CompanyData[];
   }> {
     let results = [];
     let url = "";
     if (companyName !== "") {
       if (exactUrl) {
-        url = `/${exactUrl}${companyName}`;
+        // Handle VDS European dropdown case
+        if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
+          if (companyName === "a") {
+            // Default load: use company endpoint with company_name=a&index=["100"]
+            const params = new URLSearchParams();
+            params.append('company_name', 'a');
+            params.append('index', JSON.stringify(["100"]));
+            url = `/company/?${params.toString()}`;
+          } else {
+            // Search: use get_vds_european_dropdown_values with institution and search term
+            const params = new URLSearchParams();
+            params.append('company_name', companyName);
+            
+            // Add institution_name from currentFilters
+            if (currentFilters?.institution_name) {
+              params.append('institution_name', JSON.stringify(currentFilters.institution_name));
+            } else {
+              params.append('institution_name', JSON.stringify(["BlackRock, Inc."]));
+            }
+            
+            url = `/get_vds_european_dropdown_values/?${params.toString()}`;
+          }
+        } else {
+          url = `/${exactUrl}${companyName}`;
+        }
       } else {
-        url = `/company/?${
-          companyName ? `company_name=${companyName}&` : ""
-        }all=true`;
+        // Refactored: Use proper URL construction with URLSearchParams for consistency
+        const params = new URLSearchParams();
+        if (companyName) {
+          params.append('company_name', companyName);
+        }
+        
+        // For default load (when companyName is "a"), add index parameter
+        if (companyName === "a") {
+          params.append('index', JSON.stringify(["100"]));
+        }
+        
+        params.append('all', 'true');
+        params.append('country', 'USA');
+        url = `/company/?${params.toString()}`;
       }
       const response = await axiosInstance.get(url);
       if(exactUrl){
-        results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
+        if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
+          if (companyName === "a") {
+            // For default load using company endpoint, data comes as results array
+            results = response.data?.results || [];
+            // Convert company objects to the expected format
+            if (Array.isArray(results)) {
+              results = results.map(company => ({
+                name: company.name || company.company_v1 || company,
+                id: company.id || company.name || company
+              }));
+            }
+          } else {
+            // For search using get_vds_european_dropdown_values, data comes as company_name array
+            results = response.data?.company_name || response.data?.company || [];
+            // Convert array of strings to objects with name property for consistency
+            if (Array.isArray(results)) {
+              results = results.map(company => ({
+                name: company,
+                id: company // Use name as ID for consistency
+              }));
+            }
+          }
+        } else {
+          results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
+        }
       }else {
-        results = response.data;
+        results = response.data?.results || response.data;
       }
     }
 
@@ -218,7 +277,7 @@ class DashboardService {
   public async getCompanyName(companyName?: any): Promise<{
     result: any;
   }> {
-    const url = `/company/?${companyName ? `company_name=${companyName}&` : ""}all=true`
+    const url = `/company/?${companyName ? `company_name=${companyName}&` : ""}index=${encodeURIComponent('["100"]')}&all=true`
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );
@@ -228,10 +287,10 @@ class DashboardService {
     };
   }
 
-  public async getNotifications(companyName: string, status?: boolean): Promise<{
+  public async getNotifications(param): Promise<{
     result: any;
   }> {
-    const url = status ? `/whats_new/notifications/?global_search=${companyName}&status=${status}` : `whats_new/notifications/?global_search=${companyName}`
+    const url = "/notifications/"+param
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );

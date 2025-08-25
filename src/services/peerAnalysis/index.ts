@@ -20,12 +20,16 @@ class PeerAnalysisService {
     };
   }
 
-  public async getPeerAnalysisDropdownValues(): Promise<{
+  public async getPeerAnalysisDropdownValues(
+    queryParams?: Record<string, any>
+  ): Promise<{
     result: FlterDropdown;
   }> {
-    const response = await axiosInstance.get(
-      `/get_peer_analysis_dropdown_values/`
-    );
+    const url = queryParams
+      ? `/get_peer_analysis_dropdown_values/?${new URLSearchParams(queryParams).toString()}`
+      : `/get_peer_analysis_dropdown_values/`;
+    
+    const response = await axiosInstance.get(url);
     const result = response.data;
     return {
       result: result,
