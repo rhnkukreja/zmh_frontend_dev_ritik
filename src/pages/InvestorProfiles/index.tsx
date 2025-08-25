@@ -85,7 +85,14 @@ function Main() {
     dispatch(fetchInvestersProfiles(dynamicURL));
     const { institution_name, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
-    setSelectedChipFilters(generateFilterChips(restFilters));
+    
+    // Include institution_name in filter chips with proper formatting
+    const filtersWithInstitution = {
+      ...restFilters,
+      ...(institution_name && institution_name.length > 0 && { institution_name })
+    };
+    
+    setSelectedChipFilters(generateFilterChips(filtersWithInstitution));
   }, [page, filters, tab]);
 
   const onFilterClear = () => {
@@ -224,6 +231,7 @@ function Main() {
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
+                    showPills={false}
                   />
 
                   <div className="hover:bg-slate-50">

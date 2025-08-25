@@ -193,8 +193,13 @@ function CaseStudies() {
       )
     );
 
-    // const selectedChips = generateFilterChips(restFilters);
-    setSelectedChipFilters(generateFilterChips(restFilters));
+    // Include institution_name in filter chips with proper formatting
+    const filtersWithInstitution = {
+      ...restFilters,
+      ...(institution_name && institution_name.length > 0 && { institution_name })
+    };
+    
+    setSelectedChipFilters(generateFilterChips(filtersWithInstitution));
 
   }, [page, filters, InstituteName]);
 
@@ -565,6 +570,7 @@ function CaseStudies() {
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
                     isSingle={true}
+                    showPills={false}
                   />
 
                   <div className="hover:bg-slate-50">
