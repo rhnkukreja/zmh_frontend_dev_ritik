@@ -103,7 +103,7 @@ function ProxyGuideline() {
 
     const { institution_name, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
-    setSelectedChipFilters(generateFilterChips(restFilters));
+    setSelectedChipFilters(generateFilterChips(filters));
 
   }, [page, filters]);
 
@@ -208,15 +208,22 @@ function ProxyGuideline() {
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
     const updatedFilters = { ...filters };
 
-    if (Array.isArray(updatedFilters[removeKey])) {
-      updatedFilters[removeKey] = updatedFilters[removeKey].filter(
-        (item) => item !== removeValue
-      );
-    } else if (updatedFilters[removeKey] === removeValue) {
-      updatedFilters[removeKey] = "";
+    // Handle institution_name removal specially
+    if (removeKey === "institution_name") {
+      const updatedSearchTerms = searchTerms.filter(term => term !== removeValue);
+      setSearchTerms(updatedSearchTerms);
+      updatedFilters[removeKey] = updatedSearchTerms;
+    } else {
+      if (Array.isArray(updatedFilters[removeKey])) {
+        updatedFilters[removeKey] = updatedFilters[removeKey].filter(
+          (item) => item !== removeValue
+        );
+      } else if (updatedFilters[removeKey] === removeValue) {
+        updatedFilters[removeKey] = "";
+      }
+      setValue(removeKey, updatedFilters[removeKey]);
     }
 
-    setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   }
   const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
@@ -293,6 +300,7 @@ function ProxyGuideline() {
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
+                    showPills={false}
                   />
 
                   <div className="hover:bg-slate-50">
