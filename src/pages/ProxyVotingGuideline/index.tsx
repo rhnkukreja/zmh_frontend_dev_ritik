@@ -227,6 +227,12 @@ function ProxyGuideline() {
     dispatch(setAllFilters(updatedFilters));
   }
   const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
+    // If user is searching for specific institutions, show all results for those institutions
+    if (searchTerms.length > 0) {
+      return guidelines;
+    }
+    
+    // Otherwise, show only unique institutions (for general browsing)
     const seenInstitutions = new Set<string>();
     return guidelines.filter((guideline) => {
       if (seenInstitutions.has(guideline.institution_name)) {
