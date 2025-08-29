@@ -2219,7 +2219,7 @@ const index = () => {
                               <div className="flex items-center gap-2">
                                 {vds?.vote === "Split Vote" ? (
                                   <Tippy content={vds?.split_vote_counts} options={{ theme: "light" }}>
-                                    <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">{vds?.vote}</span>
+                                    <span className="inline-block px-2 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-bold">{vds?.vote}</span>
                                   </Tippy>
                                 ) : (
                                   <span className={clsx(

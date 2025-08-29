@@ -113,7 +113,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip wrapperStyle={{ fontSize: '12px' }} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             ) : (

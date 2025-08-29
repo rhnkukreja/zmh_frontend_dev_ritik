@@ -32,7 +32,7 @@ interface ShareHolderProposalAnalyticsComponentProps {
   loading: boolean;
 }
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A569BD"];
+const COLORS = ["#0088FE", "#00C49F", "#FF8042", "#FF6B35", "#A569BD"];
 
 const formatNumberWithCommas = (num: number): string => num.toLocaleString();
 

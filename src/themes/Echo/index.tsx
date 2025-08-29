@@ -843,7 +843,7 @@ function Main() {
                     >
                       <Lucide icon="Search" className="w-[18px] h-[18px]" />
                       <div className="ml-2.5 mr-auto">
-                        {"Search by company name, ticker, or symbol (only USA)"}
+                        {"Search by company name, ticker, or symbol (US company only)"}
                       </div>
                     </div>
                   </div>

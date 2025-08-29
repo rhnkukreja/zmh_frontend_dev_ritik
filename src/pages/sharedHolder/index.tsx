@@ -12,6 +12,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   countValidFilters,
+  countIndividualFilters,
   createDynamicURL,
   downloadFileByServer,
   downloadFileFromAPI,
@@ -242,6 +243,8 @@ function ShareHolderProposal() {
     setValue("sub_category", []);
     setValue("status", []);
     setValue("year", []);
+    setValue("proxy_season", []);
+    setValue("proponent_name", []);
     setValue("global_search", []);
     setValue("ready_for_review", null);
     setValue("check_status", null);
@@ -364,7 +367,7 @@ function ShareHolderProposal() {
     }
 
     setFiltersLength(
-      countValidFilters(
+      countIndividualFilters(
         isAllCompanySelected === false
           ? restFilters
           : { ...restFilters, global_search: filters.global_search }
@@ -795,7 +798,7 @@ function ShareHolderProposal() {
 
     const { is_correct, company_status, approved, ...restFilters } = filters;
     setFiltersLength(
-      countValidFilters(
+      countIndividualFilters(
         isAllCompanySelected === false
           ? restFilters
           : { ...restFilters, global_search: filters.global_search }
@@ -1132,7 +1135,7 @@ function ShareHolderProposal() {
                                     setValue(
                                       tab === "withdrawn" ? "year" : "proxy_season",
                                       e.target.checked
-                                        ? apiDropdownOptions.year
+                                        ? apiDropdownOptions.year.map((item: any) => item.value || item)
                                         : []
                                     );
                                   }}
@@ -1182,7 +1185,7 @@ function ShareHolderProposal() {
                                     setValue(
                                       "category",
                                       e.target.checked
-                                        ? apiDropdownOptions.category
+                                        ? apiDropdownOptions.category.map((item: any) => item.value || item)
                                         : []
                                     );
                                     getSubCategoryDropdown(
@@ -1262,7 +1265,7 @@ function ShareHolderProposal() {
                                     setValue(
                                       "sub_category",
                                       e.target.checked
-                                        ? apiSubCategoryDropdown.sub_category
+                                        ? apiSubCategoryDropdown.sub_category.map((item: any) => item.value || item)
                                         : []
                                     );
                                   }}
@@ -1332,7 +1335,7 @@ function ShareHolderProposal() {
                                     setValue(
                                       "status",
                                       e.target.checked
-                                        ? apiDropdownOptions.status
+                                        ? apiDropdownOptions.status.map((item: any) => item.value || item)
                                         : []
                                     );
                                   }}

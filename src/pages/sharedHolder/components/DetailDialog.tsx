@@ -70,7 +70,7 @@ const DetailDialog: React.FC<ShareholderActionDetailProps> = ({
                             case 'against':
                               return 'text-red-700 bg-red-50 border-red-200';
                             case 'abstain':
-                              return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+                              return 'text-orange-800 bg-orange-100 border-orange-300';
                             default:
                               return 'text-slate-700 bg-slate-50 border-slate-200';
                           }

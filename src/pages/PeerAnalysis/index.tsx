@@ -15,7 +15,7 @@ import {
 
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { countValidFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
+import { countValidFilters, countIndividualFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
 import { ArrowDown, FilterX, SaveAll } from "lucide-react";
@@ -207,7 +207,7 @@ function PeerAnalysis() {
 
     const { institution_name, ...chipFilters } = restFilters;
     setFiltersLength(
-      countValidFilters(
+      countIndividualFilters(
         isAllCompanySelected === false
           ? chipFilters
           : { ...chipFilters }
@@ -240,6 +240,9 @@ function PeerAnalysis() {
     dispatch(resetFilter());
     dispatch(resetPage());
     setValue("institution_name", filters?.institution_name);
+    // Clear the filter chips immediately
+    setSelectedChipFilters([]);
+    setFiltersLength(0);
     setTimeout(() => {
       dispatch(
         setAllFilters({
@@ -266,6 +269,12 @@ function PeerAnalysis() {
 
     dispatch(resetPage());
     setValue("institution_name", []);
+    // Update filter chips and count immediately
+    const updatedFilters = { ...filters, institution_name: [] };
+    const { global_search, institution_name, ...chipFilters } = updatedFilters;
+    setSelectedChipFilters(generateFilterChips(chipFilters));
+    setFiltersLength(countIndividualFilters(chipFilters));
+    
     setTimeout(() => {
       dispatch(
         setAllFilters({
@@ -369,30 +378,62 @@ function PeerAnalysis() {
 
   const handleViewAllChange = async (event: any) => {
     if (event?.target?.checked) {
-      setViewAll(true)
+      // Switching to "View for All Companies" mode
+      setViewAll(true);
+      
+      // Clear all form values first
+      resetFormValues();
+      setSelectedInstitution([""]);
+      setSearchTerms([]);
+      
+      // Set default filters for "View All" mode
       setValue("year", [new Date().getFullYear().toString()]);
       setValue("country", ["USA"]);
+      
+      // Clear filter chips and count
+      setSelectedChipFilters([]);
+      setFiltersLength(0);
+      
+      // Reset Redux state with only the default filters
       dispatch(
         setAllFilters({
           year: [new Date().getFullYear()],
           country: ["USA"],
-        })
-      );
-
-    }
-    else {
-      setViewAll(false)
-      setValue("year", []);
-      setValue("country", []);
-      dispatch(
-        setAllFilters({
-          country: [],
-          year: [],
+          category: [],
+          sector: [],
+          index: undefined,
+          institution_name: [],
           global_search: [],
         })
       );
-
     }
+    else {
+      // Switching to "Default/Company" mode
+      setViewAll(false);
+      
+      // Clear all form values first
+      resetFormValues();
+      setSelectedInstitution([""]);
+      setSearchTerms([]);
+      
+      // Clear filter chips and count
+      setSelectedChipFilters([]);
+      setFiltersLength(0);
+      
+      // Reset Redux state completely for company mode
+      dispatch(
+        setAllFilters({
+          year: [],
+          country: [],
+          category: [],
+          sector: [],
+          index: undefined,
+          institution_name: [],
+          global_search: [companyGlobalSearchName],
+        })
+      );
+    }
+    
     try {
       dispatch(selectUnSelectAllCompany(!isAllCompanySelected));
     } catch (error) { }
@@ -417,6 +458,11 @@ function PeerAnalysis() {
     } else {
       setValue(removeKey, updatedFilters[removeKey]);
     }
+
+    // Update filter chips and count immediately after removing a chip
+    const { global_search, institution_name, ...chipFilters } = updatedFilters;
+    setSelectedChipFilters(generateFilterChips(chipFilters));
+    setFiltersLength(countIndividualFilters(chipFilters));
 
     dispatch(setAllFilters(updatedFilters));
   }
@@ -626,9 +672,10 @@ function PeerAnalysis() {
                       <div className="flex gap-2 items-center">
                         <Button
                           variant="outline-secondary"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             onFilterClear();
-                            close();
+                            setIsFilterCollapse(false);
                           }}
                           className="w-36"
                           type="button"
@@ -661,18 +708,21 @@ function PeerAnalysis() {
                                   id={`year`}
                                   checked={
                                     apiDropdownOptions?.year
-                                      ?.length ===
+                                      ?.filter(year => year !== null && year !== undefined && year !== "")?.length ===
                                     watch("year")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
                                     if (e.target.checked === true) {
+                                      const filteredYears = apiDropdownOptions?.year?.filter(year => year !== null && year !== undefined && year !== "").map(String) || [];
                                       setValue(
                                         "year",
-                                        apiDropdownOptions?.year
+                                        filteredYears
                                       );
+                                      dispatch(setFilter({ key: "year", value: filteredYears }));
                                     } else {
                                       setValue("year", []);
+                                      dispatch(setFilter({ key: "year", value: [] }));
                                     }
                                   }}
                                 />
@@ -686,12 +736,13 @@ function PeerAnalysis() {
                           defaultValue={[]}
                           render={({ field }) => (
                             <MultiSelectDropdown
-                              data={apiDropdownOptions?.year?.map(String) || []}
+                              data={apiDropdownOptions?.year?.filter(year => year !== null && year !== undefined && year !== "").map(String) || []}
                               placeholder="Select Year"
                               loading={getDropdownLoader}
                               onChange={(selectedOptions) => {
                                 const selectedValues = selectedOptions.map((option) => option.value);
                                 field.onChange(selectedValues);
+                                dispatch(setFilter({ key: "year", value: selectedValues }));
                               }}
                               selectedOption={field.value || []}
 
@@ -748,18 +799,21 @@ function PeerAnalysis() {
                                     id={`category`}
                                     checked={
                                       apiDropdownOptions?.category
-                                        ?.length ===
+                                        ?.filter(category => category !== null && category !== undefined && category !== "")?.length ===
                                       watch("category")?.length
                                     }
                                     type="checkbox"
                                     onChange={(e) => {
                                       if (e.target.checked === true) {
+                                        const filteredCategories = apiDropdownOptions?.category?.filter(category => category !== null && category !== undefined && category !== "") || [];
                                         setValue(
                                           "category",
-                                          apiDropdownOptions?.category
+                                          filteredCategories
                                         );
+                                        dispatch(setFilter({ key: "category", value: filteredCategories }));
                                       } else {
                                         setValue("category", []);
+                                        dispatch(setFilter({ key: "category", value: [] }));
                                       }
                                     }}
                                   />
@@ -773,12 +827,13 @@ function PeerAnalysis() {
                           defaultValue={[]}
                           render={({ field }) => (
                             <MultiSelectDropdown
-                              data={apiDropdownOptions?.category}
+                              data={apiDropdownOptions?.category?.filter(category => category !== null && category !== undefined && category !== "") || []}
                               placeholder="Select Category"
                               loading={getDropdownLoader}
                               onChange={(selectedOptions) => {
                                 const selectedValues = selectedOptions.map((option) => option.value);
                                 field.onChange(selectedValues);
+                                dispatch(setFilter({ key: "category", value: selectedValues }));
 
 
 
@@ -833,12 +888,13 @@ function PeerAnalysis() {
                           defaultValue={[]}
                           render={({ field }) => (
                             <MultiSelectDropdown
-                              data={apiDropdownOptions?.country}
+                              data={apiDropdownOptions?.country?.filter(country => country !== null && country !== undefined && country !== "") || []}
                               placeholder="Select Country"
                               loading={getDropdownLoader}
                               onChange={(selectedOptions) => {
                                 const selectedValues = selectedOptions.map((option) => option.value);
                                 field.onChange(selectedValues);
+                                dispatch(setFilter({ key: "country", value: selectedValues }));
 
 
 
@@ -892,12 +948,13 @@ function PeerAnalysis() {
                           control={control}
                           render={({ field }) => (
                             <MultiSelectDropdown
-                              data={apiDropdownOptions?.index?.map((item: any) => item)}
+                              data={apiDropdownOptions?.index?.filter(index => index !== null && index !== undefined && index !== "") || []}
                               placeholder="Select Index"
                               loading={false}
                               onChange={(selectedOptions) => {
                                 const selectedValues = selectedOptions.map((option) => option.value);
                                 field.onChange(selectedValues);
+                                dispatch(setFilter({ key: "index", value: selectedValues }));
                               }}
                               selectedOption={field.value || []}
                             />
@@ -918,12 +975,13 @@ function PeerAnalysis() {
                             defaultValue={[]}
                             render={({ field }) => (
                               <MultiSelectDropdown
-                                data={apiDropdownOptions?.sector}
+                                data={apiDropdownOptions?.sector?.filter(sector => sector !== null && sector !== undefined && sector !== "") || []}
                                 placeholder="Select Sector"
                                 loading={getDropdownLoader}
                                 onChange={(selectedOptions) => {
                                   const selectedValues = selectedOptions.map((option) => option.value);
                                   field.onChange(selectedValues);
+                                  dispatch(setFilter({ key: "sector", value: selectedValues }));
 
                                 }}
                                 selectedOption={field.value || []}

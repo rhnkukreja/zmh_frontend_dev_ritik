@@ -564,7 +564,7 @@ const index = () => {
                                         {dashboard?.voted_against_directors ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="flex items-center w-full h-full text-primary mr-2 justify-center">
+                                              <div className="flex items-center w-full h-full text-primary justify-center">
                                                 <Tippy content="Not Disclose" options={{ theme: "light" }}>
                                                   <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                 </Tippy>
@@ -586,7 +586,7 @@ const index = () => {
                                         {dashboard?.voted_against_say_on_pay ===
                                           'ND' && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="flex items-center w-full h-full text-primary mr-2">
+                                              <div className="flex items-center w-full h-full text-primary justify-center">
                                                 <Tippy content="Not Disclose" options={{ theme: "light" }}>
                                                   <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                 </Tippy>

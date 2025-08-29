@@ -391,6 +391,20 @@ function countValidFilters(filters: FilterObject): number {
   }).length;
 }
 
+// New function to count individual filter values (not just fields)
+function countIndividualFilters(filters: FilterObject): number {
+  let count = 0;
+  Object.keys(filters).forEach((key) => {
+    const value = filters[key];
+    if (Array.isArray(value)) {
+      count += value.length;
+    } else if (value !== undefined && value !== "" && value !== " " && value !== null) {
+      count += 1;
+    }
+  });
+  return count;
+}
+
 
 function generateFilterChips(filters: Record<string, any>) {
   const mapping: Record<string, string> = {
@@ -694,6 +708,7 @@ export {
   filterMenu,
   downloadCSV,
   countValidFilters,
+  countIndividualFilters,
   updateQueryParams,
   convertToTitleCase,
   createQueryParams,

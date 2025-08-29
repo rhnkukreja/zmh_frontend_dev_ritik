@@ -248,7 +248,7 @@ const ProponentsAnalyticsComponent: React.FC<
                                   </span>
                                 </StandardizedTable.Cell>
                                 <StandardizedTable.Cell className="text-center">
-                                  <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">
+                                  <span className="inline-block px-2 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-bold">
                                     {cat.withdraw_count}
                                   </span>
                                 </StandardizedTable.Cell>
