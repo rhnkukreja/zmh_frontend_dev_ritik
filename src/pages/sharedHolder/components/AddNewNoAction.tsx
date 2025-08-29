@@ -80,7 +80,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     watch,
   } = useForm<AddNoActionType>({
     defaultValues: {
-      proponent: selectedShareholderNoAction?.institution,
+      proponent: selectedShareholderNoAction?.institutes,
       company: selectedShareholderNoAction?.company_name,
       category: selectedShareholderNoAction?.category,
       proposal_text: selectedShareholderNoAction?.proposal_text,
@@ -176,8 +176,8 @@ const formatDate = (dateString: string | undefined): string | undefined => {
   const onSubmit = async (data: AddNoActionType) => {
     const transformedData = {
       ...data,
-      institutes:  Array.isArray(data.institution)
-        ? data.institution.map((id) => Number(id)) 
+      institutes:  Array.isArray(data.institutes)
+        ? data.institutes.map((id) => Number(id)) 
         : null,
       company:
         data?.company?.value ?? selectedShareholderNoAction?.company ?? 0,
@@ -317,7 +317,7 @@ const formatDate = (dateString: string | undefined): string | undefined => {
 
                   <div className="mt-2">
                     <Controller
-                      name="institution"
+                      name="institutes"
                       control={control}
                       // rules={{ required: "Proponent Name is required" }}
                       render={({ field, fieldState: { error } }) => (
