@@ -835,7 +835,7 @@ function Main() {
                   >
                     <div
                       className={clsx([
-                        "bg-[#D9D9D926] border-transparent border w-[470px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
+                        "bg-[#D9D9D926] border-transparent border w-[530px] flex items-center py-2 px-3.5 rounded-[0.5rem] cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100",
                         companyGlobalSearchName !== ""
                           ? "text-[#545454]"
                           : "text-[#545454]",
