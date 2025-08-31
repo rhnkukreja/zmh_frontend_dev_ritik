@@ -116,8 +116,14 @@ const CountryInfoHeader = () => {
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-7xl mx-auto bg-white rounded-lg p-8 shadow-xl overflow-hidden">
-            <Dialog.Title className="text-xl font-semibold mb-6 text-center">
+            <Dialog.Title className="text-xl font-semibold mb-6 text-center relative">
               {finhub?.name || companyGlobalSearchName} - Share Price Data
+              <div
+                onClick={() => setIsTableOpen(false)}
+                className="absolute top-0 right-0 mt-0 mr-0 cursor-pointer"
+              >
+                <Lucide icon="X" className="w-8 h-8 text-slate-400 hover:text-slate-600" />
+              </div>
             </Dialog.Title>
             <div className="overflow-auto max-h-[calc(90vh-200px)]">
               {sharePrice && Object.keys(sharePrice).length > 0 ? (
@@ -208,14 +214,6 @@ const CountryInfoHeader = () => {
               ) : (
                 <LoadingWrapper height={200} />
               )}
-            </div>
-            <div className="flex justify-center mt-6 pt-4 border-t">
-              <button
-                onClick={() => setIsTableOpen(false)}
-                className="px-8 py-3 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-              >
-                Close
-              </button>
             </div>
           </Dialog.Panel>
         </div>
