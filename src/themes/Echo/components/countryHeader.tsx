@@ -88,32 +88,23 @@ const CountryInfoHeader = () => {
         </div>
       </div>
 
-
-      <Dialog
-        open={isChartOpen}
-        onClose={() => setIsChartOpen(false)}
-        className="relative z-50"
-        size="xl"
-      >
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="mx-auto bg-white rounded-lg p-6 shadow-xl">
-            <Dialog.Title className="text-xl font-semibold mb-4 text-center">
-              {finhub?.name || companyGlobalSearchName} - Trading Chart
-            </Dialog.Title>
-            <div className="flex justify-center">
-              <TradingViewWidget symbol="NASDAQ:AAPL" />
+      <Dialog size="xl" open={isChartOpen} onClose={() => setIsChartOpen(false)}>
+        <Dialog.Panel>
+          <Dialog.Title>
+            <h2 className="text-xl font-semibold">{finhub?.name || companyGlobalSearchName} Chart</h2>
+            <div
+              onClick={() => setIsChartOpen(false)}
+              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
             </div>
-            <div className="flex justify-center mt-4">
-              <button
-                onClick={() => setIsChartOpen(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-              >
-                Close
-              </button>
+          </Dialog.Title>
+          <Dialog.Description>
+            <div className="w-full h-[500px]">
+              <TradingViewWidget symbol={finhub?.ticker} />
             </div>
-          </Dialog.Panel>
-        </div>
+          </Dialog.Description>
+        </Dialog.Panel>
       </Dialog>
 
       <Dialog
