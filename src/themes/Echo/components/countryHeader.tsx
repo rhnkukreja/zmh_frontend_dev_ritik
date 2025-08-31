@@ -215,6 +215,9 @@ const CountryInfoHeader = () => {
                 <LoadingWrapper height={200} />
               )}
             </div>
+            <div className="mt-4">
+              <p className="text-xs text-gray-500 italic">*Data as of today</p>
+            </div>
           </Dialog.Panel>
         </div>
       </Dialog>

@@ -294,14 +294,14 @@ function Main() {
   const categories = activeTab?.tab_notifications
     ? Object.keys(activeTab.tab_notifications)
     : [];
-  const dummyData = 
+  const dummyData =
   {
     notification_status: false,
     notifications: [
       {
         tab_name: "Amazon.com, Inc.",
         tab_notifications: {
-          
+
         },
       },
       {
@@ -382,33 +382,33 @@ function Main() {
       if (res?.result) {
         setNotificationData(res?.result);
       }
-     
+
     } catch (error) {
       return error;
     } finally {
     }
   };
 
- const getTotalNotificationsCount = (): number => {
-  if (!notificationData?.notifications) return 0;
+  const getTotalNotificationsCount = (): number => {
+    if (!notificationData?.notifications) return 0;
 
 
-  const allTab = notificationData.notifications.find(
-    (tab) => tab.tab_name === "All"
-  );
+    const allTab = notificationData.notifications.find(
+      (tab) => tab.tab_name === "All"
+    );
 
-  if (!allTab?.tab_notifications) return 0;
+    if (!allTab?.tab_notifications) return 0;
 
-  
-  let totalCount = 0;
-  Object.values(allTab.tab_notifications).forEach((notiList) => {
-    if (Array.isArray(notiList)) {
-      totalCount += notiList.filter((noti) => noti.viewed === false).length;
-    }
-  });
 
-  return totalCount;
-};
+    let totalCount = 0;
+    Object.values(allTab.tab_notifications).forEach((notiList) => {
+      if (Array.isArray(notiList)) {
+        totalCount += notiList.filter((noti) => noti.viewed === false).length;
+      }
+    });
+
+    return totalCount;
+  };
 
 
   return (
@@ -508,7 +508,7 @@ function Main() {
                     {user.user_type === "Admin" ? (
                       <>{menu}</>
                     ) : user.user_type !== "Admin" && menu === "Admin" ? (
-                      <>{}</>
+                      <>{ }</>
                     ) : (
                       <>{menu}</>
                     )}
@@ -859,6 +859,13 @@ function Main() {
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
                   <a
+                    className="p-2 bg-primary text-white rounded-sm"
+                    href="https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/Dashboard+User+Guide+(08272025).pdf"
+                    target="_blank"
+                  >
+                    User Guide
+                  </a>
+                  <a
                     href=""
                     // bg-gradient-to-b to-[#000000CC] from-[#9F1239]
                     className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
@@ -918,11 +925,10 @@ function Main() {
                                     getNotificationList(index);
                                     setSelectedCategory("All");
                                   }}
-                                  className={`w-1/2 px-5 py-2 rounded-t-lg font-semibold transition-all ${
-                                    activeTabIndex === index
+                                  className={`w-1/2 px-5 py-2 rounded-t-lg font-semibold transition-all ${activeTabIndex === index
                                       ? "bg-primary text-white shadow"
                                       : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                                  }`}
+                                    }`}
                                 >
                                   {tab.tab_name}
                                 </button>
@@ -935,11 +941,10 @@ function Main() {
                             {categories?.length > 0 && (
                               <button
                                 onClick={() => setSelectedCategory("All")}
-                                className={`px-4 py-1 rounded ${
-                                  selectedCategory === "All"
+                                className={`px-4 py-1 rounded ${selectedCategory === "All"
                                     ? "border-b-primary rounded-none border-b-2 text-primary"
                                     : "bg-gray-200 text-gray-700"
-                                }`}
+                                  }`}
                               >
                                 All
                               </button>
@@ -948,18 +953,17 @@ function Main() {
                               <button
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-1 rounded ${
-                                  selectedCategory === category
+                                className={`px-4 py-1 rounded ${selectedCategory === category
                                     ? "border-b-primary rounded-none border-b-2 text-primary"
                                     : "bg-gray-200 text-gray-700"
-                                }`}
+                                  }`}
                               >
                                 {category}
                               </button>
                             ))}
                           </div>
                           {activeTab?.tab_notifications &&
-                          Object.keys(activeTab.tab_notifications).length >
+                            Object.keys(activeTab.tab_notifications).length >
                             0 ? (
                             Object.entries(activeTab.tab_notifications)
                               .filter(([category]) =>
@@ -1219,9 +1223,8 @@ function Main() {
             )}
 
             <iframe
-              className={`w-full h-full ${
-                isFrameLoading || isError ? "hidden" : ""
-              }`}
+              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
+                }`}
               src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
               title="Embedded Dashboard"
               onLoad={handleLoad}
