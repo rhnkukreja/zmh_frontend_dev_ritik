@@ -145,6 +145,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
   return (
     <div
       className={`w-80 bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 h-full shadow-sm rounded-md mt-2 box-border flex-shrink-0`}
+      style={{ overflowY: "scroll" }}
     >
       {activeTab === "other" && (
         <div className="w-full flex justify-center mb-3">
@@ -234,9 +235,8 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
           isVisible={isModalVisible}
           onClose={() => setModalVisible(false)}
           onConfirm={handleDelete}
-          description={`Are you sure you want to delete <strong>"${
-            folderToBeDeleted?.folder || ""
-          }"</strong> ?`}
+          description={`Are you sure you want to delete <strong>"${folderToBeDeleted?.folder || ""
+            }"</strong> ?`}
           loading={loading}
         />
       )}
@@ -516,8 +516,8 @@ const InstitutionOrCompanyList = ({
                   ? "Institutions"
                   : "Institution"
                 : groupedData?.length > 1
-                ? "Companies"
-                : "Company"
+                  ? "Companies"
+                  : "Company"
               : ""}
           </span>
         </div>
