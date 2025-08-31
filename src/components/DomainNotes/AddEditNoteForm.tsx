@@ -54,6 +54,13 @@ const NoteForm: React.FC<NoteFormProps> = ({
   const [showInsDropdown, setInsShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const today = new Date().toISOString().split("T")[0];
+  
+  // Format date to YYYY-MM-DD format
+  const formatDate = (dateString: string) => {
+    if (!dateString) return today;
+    const date = new Date(dateString);
+    return date.toISOString().split("T")[0];
+  };
   const isLoading = useSelector(
     (state: { domainNotes: { loadingCompanyDropdown: boolean } }) =>
       state.domainNotes.loadingCompanyDropdown
@@ -89,6 +96,20 @@ const NoteForm: React.FC<NoteFormProps> = ({
     return () => clearTimeout(debounce);
   }, [institutionsSearchTerm, dispatch]);
 
+  // Initialize selectedData when editing a note
+  useEffect(() => {
+    if (mode === "edit" && initialData && noteModule) {
+      console.log("Initializing edit form with:", initialData);
+      setSelectedData({
+        company: initialData.company || 0,
+        institution: initialData.institution || 0,
+        investor_name: initialData.investor_name || "",
+      });
+      setSearchTerm(initialData.company_name || "");
+      setInstitutionsSearchTerm(initialData.investor_name || "");
+    }
+  }, [mode, initialData, noteModule]);
+
   const { control, handleSubmit, reset } = useForm<DomainNote>({
     defaultValues:
       mode === "add"
@@ -104,7 +125,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
         : {
             attendees: initialData?.attendees || "",
             notes: initialData?.notes || "",
-            date: initialData?.date || today,
+            date: formatDate(initialData?.date) || today,
             category: initialData?.category || "",
             company: data?.company_id || 0,
             institution: data?.institution_id || null,
@@ -284,7 +305,6 @@ const NoteForm: React.FC<NoteFormProps> = ({
       {fieldsToRender.includes("attendees") && (
         <NameField
           control={control}
-          rules={{ required: "Attendees is required" }}
         />
       )}
 

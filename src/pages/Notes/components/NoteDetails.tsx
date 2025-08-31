@@ -10,7 +10,7 @@ import { Note } from "@/types/notes";
 import NoteForm from "./AddEditNoteForm";
 import clsx from "clsx";
 import { toast } from "react-toastify";
-import { addNote, setSelectedGroup } from "@/stores/notesSlice";
+import { addNote, setSelectedGroup, setSelectedNote } from "@/stores/notesSlice";
 import { NotesFieldProps } from "./NotesList";
 import { RootState } from "@/stores/store";
 import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
@@ -81,6 +81,16 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
     }
     return selectedGroup?.data || [];
   }, [activeTab, selectedInstitution, selectedCompany, institutionHierarchy, companyHierarchy, selectedGroup]);
+
+  // Auto-select first note when currentNotes changes
+  useEffect(() => {
+    if (currentNotes && currentNotes.length > 0 && (activeTab === "institution" || activeTab === "company")) {
+      setNoteDetails(currentNotes[0]);
+      // Also update global state for consistent UI
+      dispatch(setSelectedNote(currentNotes[0]));
+    }
+  }, [currentNotes, activeTab, dispatch]);
+
   const fetchData = async () => {
     if (activeTab === "institution") {
       // Refresh institution hierarchy for institution tab

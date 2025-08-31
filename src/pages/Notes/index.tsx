@@ -42,7 +42,7 @@ const Notes: React.FC = () => {
   const handleTabSwitch = (activeTab: "institution" | "other" | "company") => {
     setActiveTab(activeTab);
     
-    // Only clear selections when switching to "other" tab
+    // Clear selections when switching tabs to allow auto-selection
     if (activeTab === "other") {
       setCompanyName("");
       setInstitutionName("");
@@ -51,10 +51,11 @@ const Notes: React.FC = () => {
       dispatch(setSelectedGroup(null));
       dispatch(setSelectedNote(null));
     } else {
-      // For institution/company tabs, clear folder-related state but preserve hierarchy selections
+      // For institution/company tabs, clear all selections to trigger auto-selection
+      setSelectedInstitution("");
+      setSelectedCompany("");
       dispatch(setSelectedFolder(null));
-      // Don't clear selectedNote when switching between institution and company tabs
-      // Only clear if we're switching from other tab
+      dispatch(setSelectedNote(null));
     }
 
     // Fetch hierarchy data when switching tabs
@@ -65,7 +66,13 @@ const Notes: React.FC = () => {
     }
   };
   const fetchData = async () => {
-    if (selectedGroup.institution_id && selectedGroup.company_id) {
+    if (activeTab === "institution") {
+      // Refresh institution hierarchy for institution tab
+      await dispatch(fetchInstitutionHierarchyNotes());
+    } else if (activeTab === "company") {
+      // Refresh company hierarchy for company tab
+      await dispatch(fetchCompanyHierarchyNotes());
+    } else if (selectedGroup.institution_id && selectedGroup.company_id) {
       const dynamicURL = createDynamicURL(
         `${baseURL}/user/domain_notes/`,
         {

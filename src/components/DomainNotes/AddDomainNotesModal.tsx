@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction, useState, useEffect } from "react";
 import { Dialog } from "@/components/Base/Headless";
 import NoteForm from "./AddEditNoteForm";
 import { useAppDispatch } from "@/stores/hooks";
@@ -33,10 +33,27 @@ const AddDomainNoteModal = ({
 }: AddNoteModalProps) => {
   const dispatch = useAppDispatch();
   const [selectedData, setSelectedData] = useState({
-    company: 0,
-    institution: 0,
-    investor_name: "",
+    company: selectedNote?.company || 0,
+    institution: selectedNote?.institution || 0,
+    investor_name: selectedNote?.investor_name || "",
   });
+
+  // Update selectedData when selectedNote changes (for edit mode)
+  useEffect(() => {
+    if (selectedNote && mode === "edit") {
+      console.log("Setting selectedData for edit mode:", {
+        selectedNote,
+        company: selectedNote.company_name,
+        institution: selectedNote.institution,
+        investor_name: selectedNote.investor_name
+      });
+      setSelectedData({
+        company: selectedNote.company || 0,
+        institution: selectedNote.institution || 0,
+        investor_name: selectedNote.investor_name || "",
+      });
+    }
+  }, [selectedNote, mode]);
   const handleNoteSubmit = async (data: DomainNote) => {
     function removeTrailingSpaces(htmlContent: string): string {
       const trailingTagsRegex = /^(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+|(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+$/gi;
@@ -48,7 +65,15 @@ const AddDomainNoteModal = ({
         notes: removeTrailingSpaces(data.notes), 
       };
       if (selectedNote?.id && mode == "edit") {
-        await dispatch(addDomainNote({ id: selectedNote.id, data:trimmedData  }));
+        // For edit mode, only send the fields that are actually being edited
+        const editData = {
+          attendees: trimmedData.attendees,
+          notes: trimmedData.notes,
+          date: trimmedData.date,
+          category: trimmedData.category,
+        };
+        console.log("Edit payload:", editData);
+        await dispatch(addDomainNote({ id: selectedNote.id, data: editData }));
       } else {
         if (noteModule) {
           const noteData = {

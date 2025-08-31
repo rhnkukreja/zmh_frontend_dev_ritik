@@ -83,6 +83,25 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
     dispatch(fetchCompanyHierarchyNotes());
   };
 
+  // Auto-select first company and institution when data loads or when selections are cleared
+  useEffect(() => {
+    if (companyHierarchy && companyHierarchy.length > 0) {
+      const firstCompany = companyHierarchy[0];
+      const companyName = firstCompany.main_heading;
+      const institutions = firstCompany.sub_headings || [];
+      
+      // Always select first company and institution if nothing is selected
+      if (!selectedCompany) {
+        setSelectedCompany(companyName);
+        setExpandedCompanies([companyName]);
+      }
+      
+      if (!selectedInstitution && institutions.length > 0) {
+        setSelectedInstitution(institutions[0]);
+      }
+    }
+  }, [companyHierarchy, selectedCompany, selectedInstitution]);
+
   if (loadingCompanyHierarchy) {
     return (
       <div className="flex justify-center items-center h-64">

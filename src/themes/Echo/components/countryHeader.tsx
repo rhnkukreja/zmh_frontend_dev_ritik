@@ -89,21 +89,17 @@ const CountryInfoHeader = () => {
       </div>
 
 
-            <Dialog
+      <Dialog
         open={isChartOpen}
         onClose={() => setIsChartOpen(false)}
         className="relative z-50"
+        size="xl"
       >
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-6xl mx-auto bg-white rounded-lg p-6 shadow-xl">
+          <Dialog.Panel className="mx-auto bg-white rounded-lg p-6 shadow-xl">
             <Dialog.Title className="text-xl font-semibold mb-4 text-center">
               {finhub?.name || companyGlobalSearchName} - Trading Chart
-              {sharePrice && (
-                <div className="text-sm text-gray-600 mt-1">
-                  Share Price: ${sharePrice?.price || 'N/A'}
-                </div>
-              )}
             </Dialog.Title>
             <div className="flex justify-center">
               <TradingViewWidget symbol="NASDAQ:AAPL" />
@@ -130,7 +126,7 @@ const CountryInfoHeader = () => {
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full mx-auto bg-white rounded-lg p-6 shadow-xl overflow-hidden">
             <Dialog.Title className="text-lg font-semibold mb-4 text-center">
-              {finhub?.name || companyGlobalSearchName} - Share Price
+              {finhub?.name || companyGlobalSearchName}
             </Dialog.Title>
             <div className="overflow-auto max-h-[calc(90vh-150px)]">
               {sharePrice && Object.keys(sharePrice).length > 0 ? (
@@ -139,21 +135,25 @@ const CountryInfoHeader = () => {
                     <thead>
                       <tr className="bg-gray-50">
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold text-xs">Ticker</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={2}>1yr</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={2}>3yr</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={2}>5yr</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={2}>10yr</th>
+                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>1yr</th>
+                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>3yr</th>
+                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>5yr</th>
+                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>10yr</th>
                       </tr>
                       <tr className="bg-gray-100">
                         <th className="border border-gray-300 px-2 py-1"></th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
+                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
+                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
+                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
                         <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
+                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -172,6 +172,9 @@ const CountryInfoHeader = () => {
                             <td className="border border-gray-300 px-1 py-2 text-center text-xs">
                               {data['1yr']?.end_price ? `$${data['1yr'].end_price}` : 'N/A'}
                             </td>
+                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                              {data['1yr']?.pct_return ? `${(data['1yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
+                            </td>
 
                             {/* 3-yr data */}
                             <td className="border border-gray-300 px-1 py-2 text-center text-xs">
@@ -179,6 +182,9 @@ const CountryInfoHeader = () => {
                             </td>
                             <td className="border border-gray-300 px-1 py-2 text-center text-xs">
                               {data['3yr']?.end_price ? `$${data['3yr'].end_price}` : 'N/A'}
+                            </td>
+                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                              {data['3yr']?.pct_return ? `${(data['3yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
                             </td>
 
                             {/* 5-yr data */}
@@ -188,6 +194,9 @@ const CountryInfoHeader = () => {
                             <td className="border border-gray-300 px-1 py-2 text-center text-xs">
                               {data['5yr']?.end_price ? `$${data['5yr'].end_price}` : 'N/A'}
                             </td>
+                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                              {data['5yr']?.pct_return ? `${(data['5yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
+                            </td>
 
                             {/* 10-yr data */}
                             <td className="border border-gray-300 px-1 py-2 text-center text-xs">
@@ -195,6 +204,9 @@ const CountryInfoHeader = () => {
                             </td>
                             <td className="border border-gray-300 px-1 py-2 text-center text-xs">
                               {data['10yr']?.end_price ? `$${data['10yr'].end_price}` : 'N/A'}
+                            </td>
+                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                              {data['10yr']?.pct_return ? `${(data['10yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
                             </td>
                           </tr>
                         );

@@ -171,6 +171,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
 
       {activeTab === "institution" && (
         <InstitutionHierarchy
+          key={`institution-${activeTab}`}
           selectedInstitution={selectedInstitution}
           setSelectedInstitution={setSelectedInstitution}
           selectedCompany={selectedCompany}
@@ -180,6 +181,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
 
       {activeTab === "company" && (
         <CompanyHierarchy
+          key={`company-${activeTab}`}
           selectedCompany={selectedCompany}
           setSelectedCompany={setSelectedCompany}
           selectedInstitution={selectedInstitution}
@@ -200,13 +202,13 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
       )}
 
       {folders?.length === 0 && !loading && (
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center p-8">
           <span className="text-gray-500">No Folder Found</span>
         </div>
       )}
 
       {folders?.length === 0 && loading && (
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center p-8">
           <div className="flex flex-row items-center justify-end col-span-6 sm:col-span-3 xl:col-span-2">
             <LoadingIcon
               icon="three-dots"

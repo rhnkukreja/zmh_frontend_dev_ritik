@@ -83,6 +83,25 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
     dispatch(fetchInstitutionHierarchyNotes());
   };
 
+  // Auto-select first institution and company when data loads or when selections are cleared
+  useEffect(() => {
+    if (institutionHierarchy && institutionHierarchy.length > 0) {
+      const firstInstitution = institutionHierarchy[0];
+      const institutionName = firstInstitution.main_heading;
+      const companies = firstInstitution.sub_headings || [];
+      
+      // Always select first institution and company if nothing is selected
+      if (!selectedInstitution) {
+        setSelectedInstitution(institutionName);
+        setExpandedInstitutions([institutionName]);
+      }
+      
+      if (!selectedCompany && companies.length > 0) {
+        setSelectedCompany(companies[0]);
+      }
+    }
+  }, [institutionHierarchy, selectedInstitution, selectedCompany]);
+
   if (loadingInstitutionHierarchy) {
     return (
       <div className="flex justify-center items-center h-64">
