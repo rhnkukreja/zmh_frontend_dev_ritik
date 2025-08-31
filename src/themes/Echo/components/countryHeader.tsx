@@ -111,40 +111,40 @@ const CountryInfoHeader = () => {
         open={isTableOpen}
         onClose={() => setIsTableOpen(false)}
         className="relative z-50"
-        size="xl"
+        size="5xl"
       >
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full mx-auto bg-white rounded-lg p-6 shadow-xl overflow-hidden">
-            <Dialog.Title className="text-lg font-semibold mb-4 text-center">
-              {finhub?.name || companyGlobalSearchName}
+          <Dialog.Panel className="w-full max-w-7xl mx-auto bg-white rounded-lg p-8 shadow-xl overflow-hidden">
+            <Dialog.Title className="text-xl font-semibold mb-6 text-center">
+              {finhub?.name || companyGlobalSearchName} - Share Price Data
             </Dialog.Title>
-            <div className="overflow-auto max-h-[calc(90vh-150px)]">
+            <div className="overflow-auto max-h-[calc(90vh-200px)]">
               {sharePrice && Object.keys(sharePrice).length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-gray-300 text-xs">
+                <div className="w-full">
+                  <table className="w-full border-collapse border border-gray-300 text-sm">
                     <thead>
                       <tr className="bg-gray-50">
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold text-xs">Ticker</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>1yr</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>3yr</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>5yr</th>
-                        <th className="border border-gray-300 px-1 py-2 text-center font-semibold text-xs" colSpan={3}>10yr</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Ticker</th>
+                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={3}>1yr</th>
+                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={3}>3yr</th>
+                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={3}>5yr</th>
+                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={3}>10yr</th>
                       </tr>
                       <tr className="bg-gray-100">
-                        <th className="border border-gray-300 px-2 py-1"></th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Start Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">End Price</th>
-                        <th className="border border-gray-300 px-1 py-1 text-center text-[10px] font-medium">Return %</th>
+                        <th className="border border-gray-300 px-4 py-2"></th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Start Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">End Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Start Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">End Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Start Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">End Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Start Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">End Price</th>
+                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -154,49 +154,49 @@ const CountryInfoHeader = () => {
                         
                         return (
                           <tr key={ticker} className="hover:bg-gray-50">
-                            <td className="border border-gray-300 px-2 py-2 font-semibold text-xs">{ticker}</td>
+                            <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
                             
                             {/* 1-yr data */}
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['1yr']?.start_price ? `$${data['1yr'].start_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['1yr']?.end_price ? `$${data['1yr'].end_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['1yr']?.pct_return ? `${(data['1yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
                             </td>
 
                             {/* 3-yr data */}
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['3yr']?.start_price ? `$${data['3yr'].start_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['3yr']?.end_price ? `$${data['3yr'].end_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['3yr']?.pct_return ? `${(data['3yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
                             </td>
 
                             {/* 5-yr data */}
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['5yr']?.start_price ? `$${data['5yr'].start_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['5yr']?.end_price ? `$${data['5yr'].end_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['5yr']?.pct_return ? `${(data['5yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
                             </td>
 
                             {/* 10-yr data */}
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['10yr']?.start_price ? `$${data['10yr'].start_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['10yr']?.end_price ? `$${data['10yr'].end_price}` : 'N/A'}
                             </td>
-                            <td className="border border-gray-300 px-1 py-2 text-center text-xs">
+                            <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['10yr']?.pct_return ? `${(data['10yr'].pct_return * 100).toFixed(2)}%` : 'N/A'}
                             </td>
                           </tr>
@@ -209,10 +209,10 @@ const CountryInfoHeader = () => {
                 <LoadingWrapper height={200} />
               )}
             </div>
-            <div className="flex justify-center mt-4 pt-4 border-t">
+            <div className="flex justify-center mt-6 pt-4 border-t">
               <button
                 onClick={() => setIsTableOpen(false)}
-                className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                className="px-8 py-3 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
               >
                 Close
               </button>
