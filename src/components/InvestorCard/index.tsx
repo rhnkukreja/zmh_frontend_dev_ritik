@@ -165,7 +165,7 @@ const index = () => {
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Investor-${companyGlobalSearchName}`);
+    downloadCSV(csvContent, `Investor-${companyGlobalSearchTicker}`);
   };
 
   const redirectCaseStudy = (institution_name: string) => {

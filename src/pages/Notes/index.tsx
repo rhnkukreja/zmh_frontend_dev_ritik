@@ -22,7 +22,7 @@ import Lucide from "@/components/Base/Lucide";
 import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
-import { fetchDomainNotes } from "@/stores/domainNotesSlice";
+import { fetchDomainNotes, fetchInstitutionHierarchyNotes, fetchCompanyHierarchyNotes } from "@/stores/domainNotesSlice";
 
 const Notes: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
@@ -31,6 +31,8 @@ const Notes: React.FC = () => {
   const { selectedFolder } = useAppSelector((state) => state.notes);
   const [companyName, setCompanyName] = useState<string>("");
   const [institutionName, setInstitutionName] = useState<string>("");
+  const [selectedInstitution, setSelectedInstitution] = useState<string>("");
+  const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
   const dispatch = useDispatch<AppDispatch>();
@@ -39,11 +41,28 @@ const Notes: React.FC = () => {
   );
   const handleTabSwitch = (activeTab: "institution" | "other" | "company") => {
     setActiveTab(activeTab);
-    dispatch(setSelectedFolder(null));
-    setCompanyName("");
-    setInstitutionName("");
-    dispatch(setSelectedGroup(null));
-    dispatch(setSelectedNote(null));
+    
+    // Only clear selections when switching to "other" tab
+    if (activeTab === "other") {
+      setCompanyName("");
+      setInstitutionName("");
+      setSelectedInstitution("");
+      setSelectedCompany("");
+      dispatch(setSelectedGroup(null));
+      dispatch(setSelectedNote(null));
+    } else {
+      // For institution/company tabs, clear folder-related state but preserve hierarchy selections
+      dispatch(setSelectedFolder(null));
+      // Don't clear selectedNote when switching between institution and company tabs
+      // Only clear if we're switching from other tab
+    }
+
+    // Fetch hierarchy data when switching tabs
+    if (activeTab === "institution") {
+      dispatch(fetchInstitutionHierarchyNotes());
+    } else if (activeTab === "company") {
+      dispatch(fetchCompanyHierarchyNotes());
+    }
   };
   const fetchData = async () => {
     if (selectedGroup.institution_id && selectedGroup.company_id) {
@@ -68,9 +87,15 @@ const Notes: React.FC = () => {
   };
   useEffect(() => {
     dispatch(setSelectedGroup(null));
-  }, []);
+    // Fetch hierarchy data on mount based on active tab
+    if (activeTab === "institution") {
+      dispatch(fetchInstitutionHierarchyNotes());
+    } else if (activeTab === "company") {
+      dispatch(fetchCompanyHierarchyNotes());
+    }
+  }, [dispatch, activeTab]);
   return (
-    <div className=" container m-auto h-full flex  flex-col my-[-35px]  pb-[30px]">
+    <div className="container m-auto h-[calc(100vh-70px)] flex flex-col my-[-35px] pb-[30px]">
       <div className="w-full flex justify-between px-4 py-6 bg-white dark:bg-darkmode-800">
         <div className="flex gap-4">
           <button
@@ -122,43 +147,51 @@ const Notes: React.FC = () => {
           setInstitutionName={setInstitutionName}
           companyName={companyName}
           institutionName={institutionName}
+          selectedInstitution={selectedInstitution}
+          setSelectedInstitution={setSelectedInstitution}
+          selectedCompany={selectedCompany}
+          setSelectedCompany={setSelectedCompany}
         />
 
         <div className="flex flex-col ml-5 overflow-hidden w-full">
           <Header />
-          <div className="flex flex-col lg:flex-row lg:flex-1 h-screen pb-2 bg-white dark:bg-darkmode-800 rounded-b-lg p-4">
+          <div className="flex flex-col lg:flex-row lg:flex-1 h-full pb-2 bg-white dark:bg-darkmode-800 rounded-b-lg p-4">
             {activeTab === "institution" && (
               <>
-                {institutionName ? (
-                  <div className=" w-full h-full">
+                {selectedInstitution && selectedCompany ? (
+                  <div className="w-full h-full">
                     <NoteDetails
                       activeTab={activeTab}
                       companyName={companyName}
                       institutionName={institutionName}
+                      selectedInstitution={selectedInstitution}
+                      selectedCompany={selectedCompany}
                     />
                   </div>
                 ) : (
                   <EmptyState
                     icon="NotebookPen"
-                    message="No Institution selected"
+                    message={!selectedInstitution ? "Select an institution" : "Select a company"}
                   />
                 )}
               </>
             )}
             {activeTab === "company" && (
               <>
-                {companyName ? (
+                {selectedCompany && selectedInstitution ? (
                   <div className="w-full h-full">
                     <NoteDetails
                       activeTab={activeTab}
                       companyName={companyName}
                       institutionName={institutionName}
+                      selectedInstitution={selectedInstitution}
+                      selectedCompany={selectedCompany}
                     />
                   </div>
                 ) : (
                   <EmptyState
                     icon="NotebookPen"
-                    message="No Company selected"
+                    message={!selectedCompany ? "Select a company" : "Select an institution"}
                   />
                 )}
               </>

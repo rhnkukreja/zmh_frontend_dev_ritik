@@ -21,6 +21,8 @@ import {
   fetchDomainNotes,
   fetchDomainNotesDropDownValuesByCompany,
   fetchDomainNotesDropDownValuesByInstitution,
+  fetchInstitutionHierarchyNotes,
+  fetchCompanyHierarchyNotes,
 } from "@/stores/domainNotesSlice";
 interface NoteData {
   company_id?: string;
@@ -29,11 +31,18 @@ interface NoteData {
   company_name?: string;
 }
 
-const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
+const NoteDetails: React.FC<NotesFieldProps> = ({ 
+  activeTab, 
+  selectedInstitution, 
+  selectedCompany 
+}) => {
   const dispatch = useAppDispatch();
 
   const { selectedNote, selectedGroup } = useAppSelector(
     (state) => state.notes
+  );
+  const { institutionHierarchy, companyHierarchy } = useAppSelector(
+    (state) => state.domainNotes
   );
 
   const [data, setData] = useState(null);
@@ -42,23 +51,62 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
     useState<boolean>(false);
   const { results } = useAppSelector((state) => state.domainNotes);
   const [isEditing, setIsEditing] = useState(false);
+
+    // Get notes for selected institution and company
+  const currentNotes = useMemo(() => {
+    console.log("currentNotes calculation:", {
+      activeTab,
+      selectedInstitution,
+      selectedCompany,
+      institutionHierarchy: institutionHierarchy?.length,
+      companyHierarchy: companyHierarchy?.length
+    });
+    
+    if (activeTab === "institution" && selectedInstitution && selectedCompany) {
+      const institution = institutionHierarchy.find(
+        (item) => item.main_heading === selectedInstitution
+      );
+      console.log("Found institution:", institution);
+      const notes = institution?.sub_heading?.[selectedCompany] || [];
+      console.log("Notes for institution tab:", notes);
+      return notes;
+    } else if (activeTab === "company" && selectedCompany && selectedInstitution) {
+      const company = companyHierarchy.find(
+        (item) => item.main_heading === selectedCompany
+      );
+      console.log("Found company:", company);
+      const notes = company?.sub_heading?.[selectedInstitution] || [];
+      console.log("Notes for company tab:", notes);
+      return notes;
+    }
+    return selectedGroup?.data || [];
+  }, [activeTab, selectedInstitution, selectedCompany, institutionHierarchy, companyHierarchy, selectedGroup]);
   const fetchData = async () => {
-    const dynamicURL = createDynamicURL(
-      `${baseURL}/user/domain_notes/`,
-      {
-        institution_id: JSON.stringify(data?.institution_id),
-        company_id: JSON.stringify(data?.company_id),
-      },
-      undefined,
-      1
-    );
-    const response = await dispatch(fetchDomainNotes(dynamicURL));
-    dispatch(
-      setSelectedGroup({
-        ...selectedGroup,
-        data: (response?.payload as { results: any }).results,
-      })
-    );
+    if (activeTab === "institution") {
+      // Refresh institution hierarchy for institution tab
+      dispatch(fetchInstitutionHierarchyNotes());
+    } else if (activeTab === "company") {
+      // Refresh company hierarchy for company tab
+      dispatch(fetchCompanyHierarchyNotes());
+    } else if (data?.institution_id && data?.company_id) {
+      // Existing logic for other tabs
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/user/domain_notes/`,
+        {
+          institution_id: JSON.stringify(data?.institution_id),
+          company_id: JSON.stringify(data?.company_id),
+        },
+        undefined,
+        1
+      );
+      const response = await dispatch(fetchDomainNotes(dynamicURL));
+      dispatch(
+        setSelectedGroup({
+          ...selectedGroup,
+          data: (response?.payload as { results: any }).results,
+        })
+      );
+    }
   };
 
   const handleDeleteNote = async (item: any) => {
@@ -71,32 +119,36 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
     } catch (error) {
       toast.error("An error occurred while deleting the note");
     } finally {
-      const dynamicURL = createDynamicURL(
-        `${baseURL}/user/domain_notes/`,
-        {
-          institution_id: JSON.stringify(item.institution),
-          company_id: JSON.stringify(item.company),
-        },
-        undefined,
-        1
-      );
-      const isCompany=activeTab == "company" ? true : false;
-      const key = activeTab === "company" ? "institution_name" : "company_name";
-       const groupedData = groupByValue(results , key, isCompany,selectedGroup );
-      const response = await dispatch(fetchDomainNotes(dynamicURL));
-      if ((response?.payload as { results: any[] })?.results.length > 0) {
-         dispatch(
-        setSelectedGroup({
-          ...selectedGroup,
-          data: (response?.payload as { results: any }).results,
-        })
-      );}
-      else{
-        dispatch(
-          setSelectedGroup(null)
+      // Refresh data based on active tab
+      if (activeTab === "institution") {
+        // Refresh the institution hierarchy
+        dispatch(fetchInstitutionHierarchyNotes());
+      } else if (activeTab === "company") {
+        // Refresh the company hierarchy
+        dispatch(fetchCompanyHierarchyNotes());
+      } else {
+        // Existing logic for other tabs
+        const dynamicURL = createDynamicURL(
+          `${baseURL}/user/domain_notes/`,
+          {
+            institution_id: JSON.stringify(item.institution),
+            company_id: JSON.stringify(item.company),
+          },
+          undefined,
+          1
         );
+        const response = await dispatch(fetchDomainNotes(dynamicURL));
+        if ((response?.payload as { results: any[] })?.results.length > 0) {
+          dispatch(
+            setSelectedGroup({
+              ...selectedGroup,
+              data: (response?.payload as { results: any }).results,
+            })
+          );
+        } else {
+          dispatch(setSelectedGroup(null));
+        }
       }
-      console.log(results,"results");
     }
   };
   const handleNoteSubmit = async (data: Note) => {
@@ -114,22 +166,27 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
   };
 
   const selectedNoteName = useMemo(() => {
-    if (activeTab === "other") {
+    if (activeTab === "institution") {
+      return selectedCompany ? `${selectedInstitution} - ${selectedCompany}` : selectedInstitution;
+    } else if (activeTab === "company") {
+      return selectedInstitution ? `${selectedCompany} - ${selectedInstitution}` : selectedCompany;
+    } else if (activeTab === "other") {
       return selectedNote ? selectedNote?.name : undefined;
     } else {
       return selectedGroup ? selectedGroup?.name : undefined;
     }
-  }, [selectedNote, selectedGroup]);
+  }, [activeTab, selectedNote, selectedGroup, selectedInstitution, selectedCompany]);
 
   return (
     <>
-      {selectedNote ? (
+      {/* Show individual note for "other" tab when selectedNote exists */}
+      {activeTab === "other" && selectedNote ? (
         <>
-          <div className="w-full  h-screen  overflow-y-auto no-scrollbar !z-10">
-            <div className="flex justify-between items-center  px-4 py-2 ">
+          <div className="w-full h-full overflow-y-auto no-scrollbar !z-10">
+            <div className="flex justify-between items-center px-4 py-2">
               <div>
                 <div className="flex items-center">
-                  <h2 className="text-lg font-semibold truncate max-w-[250px]">
+                  <h2 className="text-lg font-semibold">
                     <Tippy
                       content={selectedNoteName}
                       options={{ theme: "light" }}
@@ -154,30 +211,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                   )}
                 </p>
               </div>
-              {/* <div className="flex space-x-2">
-         <Button
-           variant="soft-secondary"
-           size="sm"
-           className=" py-2 bg-transparent border-gray-500"
-         >
-           <Lucide
-             icon="UserRoundPlus"
-             className="w-4 h-4 mr-1 text-gray-500"
-           />
-           Share
-         </Button>
-         <Button
-           size="sm"
-           variant="soft-secondary"
-           className=" py-2 bg-transparent border-gray-500"
-         >
-           <Lucide
-             icon="MessageSquareText"
-             className="w-4 h-4 mr-1 text-gray-500"
-           />
-           Comment
-         </Button>
-       </div> */}
             </div>
             <div className="border-b border-muted mb-2 !z-10"></div>
 
@@ -196,8 +229,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                   </div>
                 </div>
               )}
-              {/* <h2 className="text-lg font-semibold text-gray-800">Notes Name</h2>
-       <div className="border-t text-gray-700 mb-5 mt-2"></div> */}
 
               <div
                 className={clsx(
@@ -237,19 +268,18 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
           )}
         </>
       ) : null}
-      {selectedGroup ? (
+
+      {/* Show notes list for hierarchy tabs (institution/company) or selectedGroup */}
+      {(selectedGroup || ((activeTab === "institution" || activeTab === "company") && currentNotes.length > 0) || 
+        ((activeTab === "institution" && selectedInstitution && selectedCompany) || 
+         (activeTab === "company" && selectedCompany && selectedInstitution))) ? (
         <>
-          <div className="w-full  h-screen  overflow-y-auto no-scrollbar !z-10">
-            <div className="flex justify-between items-center  px-4 py-2 ">
+          <div className="w-full h-full overflow-y-auto no-scrollbar !z-10">
+            <div className="flex justify-between items-center px-4 py-2">
               <div>
                 <div className="flex items-center">
-                  <h2 className="text-lg font-semibold truncate max-w-[250px]">
-                    <Tippy
-                      content={selectedNoteName}
-                      options={{ theme: "light" }}
-                    >
-                      {selectedNoteName}
-                    </Tippy>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    {selectedNoteName}
                   </h2>
 
                   {activeTab === "other" && (
@@ -262,97 +292,70 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                     />
                   )}
                 </div>
-                {/*       
-                      <p className="text-xs">
-                        Last Updated on{" "}
-                        {dayjs(selectedNote?.date_updated).format(
-                          "MMM DD, YYYY [at] h:mm A"
-                        )}
-                      </p> */}
               </div>
-              {/* <div className="flex space-x-2">
-               <Button
-                 variant="soft-secondary"
-                 size="sm"
-                 className=" py-2 bg-transparent border-gray-500"
-               >
-                 <Lucide
-                   icon="UserRoundPlus"
-                   className="w-4 h-4 mr-1 text-gray-500"
-                 />
-                 Share
-               </Button>
-               <Button
-                 size="sm"
-                 variant="soft-secondary"
-                 className=" py-2 bg-transparent border-gray-500"
-               >
-                 <Lucide
-                   icon="MessageSquareText"
-                   className="w-4 h-4 mr-1 text-gray-500"
-                 />
-                 Comment
-               </Button>
-             </div> */}
             </div>
             <div className="border-b border-muted mb-2 !z-10"></div>
-            {selectedGroup?.data.map((item, index) => (
-              <div className="mx-4" key={index}>
-                {/* <h2 className="text-lg font-semibold text-gray-800">Notes Name</h2>
-             <div className="border-t text-gray-700 mb-5 mt-2"></div> */}
-
-                <div
-                  className={clsx(
-                    "rounded-md mb-4",
-                    !isEditing && "border border-gray p-4"
-                  )}
-                >
+            
+            {/* Display current notes for hierarchy tabs or selectedGroup data for other tab */}
+            {((activeTab === "institution" || activeTab === "company") ? currentNotes : (selectedGroup?.data || [])).length > 0 ? (
+              ((activeTab === "institution" || activeTab === "company") ? currentNotes : (selectedGroup?.data || [])).map((item, index) => (
+                <div className="mx-4 mb-6" key={index}>
+                  <div
+                    className={clsx(
+                      "rounded-md mb-4",
+                      !isEditing && "border border-gray p-4"
+                    )}
+                  >
                   {isEditing ? null : (
                     <div>
                       <div className="flex">
-                        <div className="w-[80%]">
-                          <div
-                            className="prose max-w-none"
-                            dangerouslySetInnerHTML={{
-                              __html: DOMPurify.sanitize(item.notes),
-                            }}
-                          />
-                        </div>
-                        <div className="w-[20%]">
-                          <div className=" flex justify-end  text-gray-500 text-xs mb-2">
-                            <div className="flex gap-1 ">
-                              <Button
-                                variant="secondary"
-                                onClick={() => {
-                                  setIsEditing(true);
-                                  setData({
-                                    company_id: item?.company,
-                                    institution_id: item?.institution,
-                                    institution_name: item?.institution_name,
-                                    company_name: item?.company_name,
-                                  });
-                                  setNoteDetails(item);
+                        <div className="w-full">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 pr-4">
+                              <div
+                                className="prose max-w-none"
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(item.notes),
                                 }}
-                              >
-                                <Tippy
-                                  content="Edit Note"
-                                  options={{ theme: "light" }}
-                                >
-                                  <Lucide icon="Pen" className="w-4 h-4" />
-                                </Tippy>
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                onClick={() => handleDeleteNote(item)}
-                              >
-                                <Tippy
-                                  content="Delete Note"
-                                  options={{ theme: "light" }}
-                                >
-                                  <Lucide icon="Trash" className="w-4 h-4" />
-                                </Tippy>
-                              </Button>
+                              />
                             </div>
+                            {item.update_delete_check === true && (
+                              <div className="flex gap-1 flex-shrink-0">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    setIsEditing(true);
+                                    setData({
+                                      company_id: item?.company,
+                                      institution_id: item?.institution,
+                                      institution_name: item?.institution_name,
+                                      company_name: item?.company_name,
+                                    });
+                                    setNoteDetails(item);
+                                  }}
+                                >
+                                  <Tippy
+                                    content="Edit Note"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <Lucide icon="Pen" className="w-4 h-4" />
+                                  </Tippy>
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleDeleteNote(item)}
+                                >
+                                  <Tippy
+                                    content="Delete Note"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <Lucide icon="Trash" className="w-4 h-4" />
+                                  </Tippy>
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -376,14 +379,24 @@ const NoteDetails: React.FC<NotesFieldProps> = ({ activeTab }) => {
                         </div>
                       ))}
                       <div className="flex justify-end mt-3">
-                      <span className="text-xs text-gray-500 dark:text-gray-400  whitespace-nowrap">{item.formatted_date}</span> 
+                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          {item.formatted_date || item.date}
+                        </span> 
                       </div>
                     </div>
                   )}
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 mx-4">
+                <Lucide icon="FileText" className="w-16 h-16 text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">No notes found</p>
+                <p className="text-gray-400 text-sm">There are no notes for this selection yet.</p>
               </div>
-            ))}
+            )}
           </div>
+          
           <AddDomainNoteModal
             mode="edit"
             addNoteModalVisible={isEditing}

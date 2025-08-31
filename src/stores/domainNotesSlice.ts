@@ -20,6 +20,8 @@ interface DomainNotesState {
   totalQuestions: number;
   totalPages: number;
   loading: boolean;
+  loadingCompanyDropdown: boolean;
+  loadingInstitutionDropdown: boolean;
   page: number;
   count: number;
   error: string | null;
@@ -30,12 +32,18 @@ interface DomainNotesState {
   filters: DomainNotesFilters;
   companyDropDown: any,
   institutionDropDown: any,
+  institutionHierarchy: any[];
+  loadingInstitutionHierarchy: boolean;
+  companyHierarchy: any[];
+  loadingCompanyHierarchy: boolean;
 }
 
 const initialState: DomainNotesState = {
   results: [],
   totalQuestions: 0,
   loading: false,
+  loadingCompanyDropdown: false,
+  loadingInstitutionDropdown: false,
   totalPages: 1,
   page: 1,
   error: null,
@@ -51,6 +59,10 @@ const initialState: DomainNotesState = {
   count: 0,
   companyDropDown: {},
   institutionDropDown: {},
+  institutionHierarchy: [],
+  loadingInstitutionHierarchy: false,
+  companyHierarchy: [],
+  loadingCompanyHierarchy: false,
 };
 
 export const fetchDomainNotes = createAsyncThunk<
@@ -73,6 +85,22 @@ export const fetchDomainNotesDropDownValuesByInstitution = createAsyncThunk<
   string
 >(`${name}/fetchDomainNotesDropDownValuesByInstitution`, async (institutionName: string) => {
   return await domainNotesService.domainNoteDropDownValuesByInstitution(institutionName);
+});
+
+export const fetchInstitutionHierarchyNotes = createAsyncThunk<
+  any[],
+  void
+>(`${name}/fetchInstitutionHierarchyNotes`, async () => {
+  const response = await domainNotesService.getInstitutionHierarchyNotes();
+  return response.results;
+});
+
+export const fetchCompanyHierarchyNotes = createAsyncThunk<
+  any[],
+  void
+>(`${name}/fetchCompanyHierarchyNotes`, async () => {
+  const response = await domainNotesService.getCompanyHierarchyNotes();
+  return response.results;
 });
 
 export const addDomainNote = createAsyncThunk<
@@ -180,11 +208,49 @@ const domainNotesSlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch engagement questions";
       })
+      .addCase(fetchDomainNotesDropDownValuesByCompany.pending, (state) => {
+        state.loadingCompanyDropdown = true;
+      })
       .addCase(fetchDomainNotesDropDownValuesByCompany.fulfilled, (state, action) => {
+        state.loadingCompanyDropdown = false;
         state.companyDropDown = action.payload.results;
       })
+      .addCase(fetchDomainNotesDropDownValuesByCompany.rejected, (state) => {
+        state.loadingCompanyDropdown = false;
+      })
+      .addCase(fetchDomainNotesDropDownValuesByInstitution.pending, (state) => {
+        state.loadingInstitutionDropdown = true;
+      })
       .addCase(fetchDomainNotesDropDownValuesByInstitution.fulfilled, (state, action) => {
+        state.loadingInstitutionDropdown = false;
         state.institutionDropDown = action.payload.results;
+      })
+      .addCase(fetchDomainNotesDropDownValuesByInstitution.rejected, (state) => {
+        state.loadingInstitutionDropdown = false;
+      })
+      .addCase(fetchInstitutionHierarchyNotes.pending, (state) => {
+        state.loadingInstitutionHierarchy = true;
+        state.error = null;
+      })
+      .addCase(fetchInstitutionHierarchyNotes.fulfilled, (state, action) => {
+        state.loadingInstitutionHierarchy = false;
+        state.institutionHierarchy = action.payload;
+      })
+      .addCase(fetchInstitutionHierarchyNotes.rejected, (state, action) => {
+        state.loadingInstitutionHierarchy = false;
+        state.error = action.error.message || "Failed to fetch institution hierarchy";
+      })
+      .addCase(fetchCompanyHierarchyNotes.pending, (state) => {
+        state.loadingCompanyHierarchy = true;
+        state.error = null;
+      })
+      .addCase(fetchCompanyHierarchyNotes.fulfilled, (state, action) => {
+        state.loadingCompanyHierarchy = false;
+        state.companyHierarchy = action.payload;
+      })
+      .addCase(fetchCompanyHierarchyNotes.rejected, (state, action) => {
+        state.loadingCompanyHierarchy = false;
+        state.error = action.error.message || "Failed to fetch company hierarchy";
       });
   },
 });

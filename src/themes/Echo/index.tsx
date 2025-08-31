@@ -908,7 +908,7 @@ function Main() {
                       setOpen={setOpen}
                       children={
                         <>
-                          <div className="flex w-full gap-3 dark:bg-darkmode-800">
+                          <div className="flex w-full gap-1 dark:bg-darkmode-800">
                             {notificationData?.notifications?.map(
                               (tab, index) => (
                                 <button
@@ -918,7 +918,7 @@ function Main() {
                                     getNotificationList(index);
                                     setSelectedCategory("All");
                                   }}
-                                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                                  className={`w-1/2 px-5 py-2 rounded-t-lg font-semibold transition-all ${
                                     activeTabIndex === index
                                       ? "bg-primary text-white shadow"
                                       : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"

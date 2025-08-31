@@ -59,6 +59,26 @@ class DomainNotesService {
     };
   }
 
+  public async getInstitutionHierarchyNotes(): Promise<{
+    results: any[];
+  }> {
+    const response = await axiosInstance.get(`/user/get_domain_notes/?filter=institution`);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
+  public async getCompanyHierarchyNotes(): Promise<{
+    results: any[];
+  }> {
+    const response = await axiosInstance.get(`/user/get_domain_notes/?filter=company`);
+    const results = response.data;
+    return {
+      results,
+    };
+  }
+
 
   public async domainNoteDropDownValuesByCompany(
     companyName: string,

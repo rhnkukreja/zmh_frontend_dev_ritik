@@ -16,13 +16,28 @@ export interface DomainNote {
   investor_name: string;
   notes: string;
   starred: boolean;
-  comments: string;
+  comments: DomainNoteComment[];
   update_delete_check: boolean;
   updated_by: string | null;
 }
 
-
 export interface DomainNoteComment {
+  id?: number;
+  name?: string;
   comments: any;
   domain_notes: number;
+}
+
+export interface InstitutionHierarchyItem {
+  main_heading: string;
+  sub_heading: {
+    [companyName: string]: DomainNote[];
+  };
+}
+
+export interface CompanyHierarchyItem {
+  main_heading: string;
+  sub_heading: {
+    [institutionName: string]: DomainNote[];
+  };
 }

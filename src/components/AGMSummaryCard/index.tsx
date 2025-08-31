@@ -84,7 +84,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchName}-${agmSummaryDetails?.Year}`);
+    downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchTicker}-${agmSummaryDetails?.Year}`);
   };
 
   useEffect(() => {

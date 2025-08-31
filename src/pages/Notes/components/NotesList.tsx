@@ -40,6 +40,10 @@ export interface NotesFieldProps {
   institutionName?: string;
   setCompanyName?: React.Dispatch<React.SetStateAction<string>>;
   setInstitutionName?: React.Dispatch<React.SetStateAction<string>>;
+  selectedInstitution?: string;
+  setSelectedInstitution?: React.Dispatch<React.SetStateAction<string>>;
+  selectedCompany?: string;
+  setSelectedCompany?: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const NotesList: React.FC<NotesFieldProps> = ({

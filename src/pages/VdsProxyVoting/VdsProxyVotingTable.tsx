@@ -223,7 +223,7 @@ const VdsProxyVotingTable = () => {
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `${tabName}-${companyGlobalSearchName}`);
+    downloadCSV(csvContent, `${tabName}-${companyGlobalSearchTicker}`);
   };
 
   const getSplitContents = (items: any) => {

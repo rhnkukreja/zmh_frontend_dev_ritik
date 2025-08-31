@@ -33,6 +33,8 @@ import { baseURL } from "@/constant";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/stores/store";
+import InstitutionHierarchy from "./InstitutionHierarchy";
+import CompanyHierarchy from "./CompanyHierarchy";
 
 const SubSidebar: React.FC<NotesFieldProps> = ({
   activeTab,
@@ -40,6 +42,10 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
   setInstitutionName,
   companyName,
   institutionName,
+  selectedInstitution,
+  setSelectedInstitution,
+  selectedCompany,
+  setSelectedCompany,
 }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -138,9 +144,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
 
   return (
     <div
-      className={`${
-        activeTab === "other" ? "w-[22rem]" : "w-[17rem]"
-      } bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 h-full shadow-sm rounded-md mt-2 box-border`}
+      className={`w-80 bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 h-full shadow-sm rounded-md mt-2 box-border flex-shrink-0`}
     >
       {activeTab === "other" && (
         <div className="w-full flex justify-center mb-3">
@@ -165,7 +169,25 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
         />
       )}
 
-      {activeTab !== "other" && (
+      {activeTab === "institution" && (
+        <InstitutionHierarchy
+          selectedInstitution={selectedInstitution}
+          setSelectedInstitution={setSelectedInstitution}
+          selectedCompany={selectedCompany}
+          setSelectedCompany={setSelectedCompany}
+        />
+      )}
+
+      {activeTab === "company" && (
+        <CompanyHierarchy
+          selectedCompany={selectedCompany}
+          setSelectedCompany={setSelectedCompany}
+          selectedInstitution={selectedInstitution}
+          setSelectedInstitution={setSelectedInstitution}
+        />
+      )}
+
+      {activeTab !== "other" && activeTab !== "institution" && activeTab !== "company" && (
         <InstitutionOrCompanyList
           isCompany={activeTab == "company" ? true : false}
           setCompanyName={setCompanyName}

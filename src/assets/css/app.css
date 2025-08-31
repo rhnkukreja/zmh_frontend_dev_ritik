@@ -48,6 +48,32 @@
   font-family: montserrat;
 }
 
+/* Toastify Global Styling */
+.Toastify__toast {
+  font-weight: 600 !important; /* semibold */
+  font-family: montserrat !important;
+}
+
+.Toastify__toast-body {
+  font-weight: 600 !important; /* semibold */
+}
+
+.Toastify__toast--success {
+  font-weight: 600 !important;
+}
+
+.Toastify__toast--error {
+  font-weight: 600 !important;
+}
+
+.Toastify__toast--warning {
+  font-weight: 600 !important;
+}
+
+.Toastify__toast--info {
+  font-weight: 600 !important;
+}
+
 table {
   border-collapse: collapse;
   width: 100%;
