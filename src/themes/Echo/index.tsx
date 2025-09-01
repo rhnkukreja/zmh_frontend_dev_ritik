@@ -10,6 +10,7 @@ import {
 } from "@/stores/compactMenuSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
+import { BookOpen } from "lucide-react";
 import Lucide from "@/components/Base/Lucide";
 import { Dialog } from "@/components/Base/Headless";
 import clsx from "clsx";
@@ -859,28 +860,24 @@ function Main() {
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
                   <a
-                    className="p-2 bg-primary text-white rounded-sm"
+                    className="px-2 py-1.5 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center"
                     href="https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/Dashboard+User+Guide+(08272025).pdf"
                     target="_blank"
                   >
-                    User Guide
+                    <BookOpen className="w-4 h-4" />
+                    <span className="ml-2 text-sm font-medium hidden xl:flex">User Guide</span>
                   </a>
+
                   <a
                     href=""
-                    // bg-gradient-to-b to-[#000000CC] from-[#9F1239]
-                    className="p-2 bg-gradient-to-b to-[#000000CC] from-[#9F1239]
-                   border-white border-2 text-white rounded-md "
+                    className="px-2 py-1.5 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center"
                     onClick={(event: React.MouseEvent) => {
                       event.preventDefault();
                       setBasicModalPreview(true);
                     }}
                   >
-                    <div className="flex items-center justify-center">
-                      <img src={aiIcon} alt="ai icon" />
-                      <span className="ml-3 font-semibold hidden xl:flex">
-                        AI Assistant
-                      </span>
-                    </div>
+                    <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
+                    <span className="ml-2 text-sm font-medium hidden xl:flex">AI Assistant</span>
                   </a>
                   <div className="h-8"></div>
                   <div className="h-8"></div>
@@ -926,8 +923,8 @@ function Main() {
                                     setSelectedCategory("All");
                                   }}
                                   className={`w-1/2 px-5 py-2 rounded-t-lg font-semibold transition-all ${activeTabIndex === index
-                                      ? "bg-primary text-white shadow"
-                                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                    ? "bg-primary text-white shadow"
+                                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
                                     }`}
                                 >
                                   {tab.tab_name}
@@ -942,8 +939,8 @@ function Main() {
                               <button
                                 onClick={() => setSelectedCategory("All")}
                                 className={`px-4 py-1 rounded ${selectedCategory === "All"
-                                    ? "border-b-primary rounded-none border-b-2 text-primary"
-                                    : "bg-gray-200 text-gray-700"
+                                  ? "border-b-primary rounded-none border-b-2 text-primary"
+                                  : "bg-gray-200 text-gray-700"
                                   }`}
                               >
                                 All
@@ -954,8 +951,8 @@ function Main() {
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
                                 className={`px-4 py-1 rounded ${selectedCategory === category
-                                    ? "border-b-primary rounded-none border-b-2 text-primary"
-                                    : "bg-gray-200 text-gray-700"
+                                  ? "border-b-primary rounded-none border-b-2 text-primary"
+                                  : "bg-gray-200 text-gray-700"
                                   }`}
                               >
                                 {category}

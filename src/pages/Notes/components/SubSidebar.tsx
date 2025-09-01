@@ -202,11 +202,11 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
         />
       )}
 
-      {folders?.length === 0 && !loading && (
+      {/* {folders?.length === 0 && !loading && (
         <div className="flex justify-center items-center p-8">
           <span className="text-gray-500">No Folder Found</span>
         </div>
-      )}
+      )} */}
 
       {folders?.length === 0 && loading && (
         <div className="flex justify-center items-center p-8">
