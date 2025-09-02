@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect} from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 import { RootState, AppDispatch } from "../../stores/store";
@@ -43,6 +43,7 @@ const Main: React.FC = () => {
   const dispatch: AppDispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showVerificationMsg, setShowVerificationMsg] = useState(false);
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
   const [formView, setFormView] = useState<"login" | "sendOtp" | "resetPassword">(
     "login"
@@ -55,6 +56,12 @@ const Main: React.FC = () => {
     handleSubmit,
     formState: { errors },
   } = useForm<any>();
+
+  useEffect(() => {
+  if (formView === "resetPassword") {
+    setShowVerificationMsg(true); // show message when entering this view
+  }
+}, [formView]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
@@ -359,47 +366,74 @@ const Main: React.FC = () => {
                     </div>
                   </form>)}
                 {formView === "resetPassword" && (
-                  <form onSubmit={handleSubmit(handleVerifyOTP)}>
-                    <FormLabel>Enter Code</FormLabel>
-                    <FormInput
-                      type="text"
-                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                      placeholder="Enter Code"
-                      {...register("otp", { required: "OTP is required" })}
-                    />
-                    {errors.otp && (
-                      <p className="text-red-500">{typeof errors.otp.message === "string" ? errors.otp.message : ""}</p>
-                    )}
+  <form
+    onSubmit={handleSubmit((data) => {
+      handleVerifyOTP(data);
+      setShowVerificationMsg(false); // hide on confirm
+    })}
+  >
+    {/* Professional green verification message */}
+    {showVerificationMsg && (
+      <p className="text-green-600 font-medium text-sm mb-3">
+        A verification code has been sent to your email.
+      </p>
+    )}
 
-                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
-                      <button type="button" onClick={() => setFormView("sendOtp")} className="flex items-center" > <Lucide
-                        icon="ArrowLeft"
-                        className="w-4 h-4"
-                      /> Back</button> <button type="button" onClick={() => {
-                        setFormView("sendOtp");
+    <FormInput
+      type="text"
+      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+      placeholder="Enter Code"
+      {...register("otp", { required: "OTP is required" })}
+    />
+    {errors.otp && (
+      <p className="text-red-500">
+        {typeof errors.otp.message === "string" ? errors.otp.message : ""}
+      </p>
+    )}
 
-                      }}>Resend Code</button>
-                    </div>
+    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
+      <button
+        type="button"
+        onClick={() => setFormView("sendOtp")}
+        className="flex items-center"
+      >
+        <Lucide icon="ArrowLeft" className="w-4 h-4" /> Back
+      </button>
 
-                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
-                      <Button
-                        variant="primary"
-                        rounded
-                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
-                        type="submit"
-                        disabled={loading}
-                      >
-                        {loading && (
-                          <Lucide
-                            icon="Loader"
-                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
-                              }`}
-                          />
-                        )}
-                        Confirm Code
-                      </Button>
-                    </div>
-                  </form>)}
+      <button
+        type="button"
+        onClick={() => {
+          setFormView("resetPassword"); // stay on same form
+          setShowVerificationMsg(false); // hide immediately
+          setTimeout(() => setShowVerificationMsg(true), 1500); // re-show after 1.5s
+        }}
+      >
+        Resend Code
+      </button>
+    </div>
+
+    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+      <Button
+        variant="primary"
+        rounded
+        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+        type="submit"
+        disabled={loading}
+      >
+        {loading && (
+          <Lucide
+            icon="Loader"
+            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
+              loading ? "animate-spin" : ""
+            }`}
+          />
+        )}
+        Confirm Code
+      </Button>
+    </div>
+  </form>
+)}
+
               </div>
             </div>
           </div>
