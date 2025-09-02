@@ -189,28 +189,27 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
                 </div>
 
                 {/* Companies List */}
-                {isExpanded && (
-                  <div>
-                    {companies.map((companyName, companyIndex) => {
-                      return (
-                        <div
-                          key={companyIndex}
-                          className={clsx(
-                            "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors border-b border-transparent",
-                            selectedCompany === companyName && selectedInstitution === institutionName 
-                              ? "border-b-2 border-primary text-primary bg-gray-50" 
-                              : "text-gray-700 hover:text-gray-900"
-                          )}
-                          onClick={() => handleCompanyClick(companyName)}
-                        >
-                          <span className="flex-1 font-normal">
-                            {companyName}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+{isExpanded && (
+  <div className="ml-6 border-l border-gray-200">
+    {companies.map((companyName, companyIndex) => {
+      return (
+        <div
+          key={companyIndex}
+          className={clsx(
+            "flex items-center px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors",
+            selectedCompany === companyName && selectedInstitution === institutionName 
+              ? "text-primary font-medium bg-gray-50"
+              : "text-gray-700 hover:text-gray-900"
+          )}
+          onClick={() => handleCompanyClick(companyName)}
+        >
+          <Lucide icon="CornerDownRight" className="w-4 h-4 mr-2 text-gray-400" />
+          <span className="flex-1">{companyName}</span>
+        </div>
+      );
+    })}
+  </div>
+)}
               </div>
             );
           })}

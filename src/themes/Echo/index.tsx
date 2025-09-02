@@ -847,8 +847,23 @@ function Main() {
                         {"Search by company name, ticker, or symbol (US company only)"}
                       </div>
                     </div>
+                    {/* BEGIN: New AI Assistant Position */}
+                    <a
+                      href=""
+                      className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setBasicModalPreview(true);
+                      }}
+                    >
+                      <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
+                      <span className="ml-2 text-sm font-medium hidden xl:flex">AI Assistant</span>
+                    </a>
+                    {/* END: New AI Assistant Position */}
                   </div>
                 )}
+
+
               </>
 
               <QuickSearch
@@ -859,25 +874,15 @@ function Main() {
               {/* BEGIN: Notification & User Menu */}
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
+
+                  {/* User Guide Button */}
                   <a
-                    className="px-2 py-1.5 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center"
-                    href="https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/Dashboard+User+Guide+(08272025).pdf"
+                    className="px-3 py-1.5 bg-red-100 rounded-full flex items-center justify-center transition-colors hover:bg-red-200"
+                    href="https://scribehow.com/viewer/Dashboard_Tutorial__hFxWL0yqTJulsBdrjJLE7Q"
                     target="_blank"
                   >
-                    <BookOpen className="w-4 h-4" />
-                    <span className="ml-2 text-sm font-medium hidden xl:flex">User Guide</span>
-                  </a>
-
-                  <a
-                    href=""
-                    className="px-2 py-1.5 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center"
-                    onClick={(event: React.MouseEvent) => {
-                      event.preventDefault();
-                      setBasicModalPreview(true);
-                    }}
-                  >
-                    <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
-                    <span className="ml-2 text-sm font-medium hidden xl:flex">AI Assistant</span>
+                    <BookOpen className="w-4 h-4 text-[#800000]" />
+                    <span className="ml-2 text-sm font-medium hidden xl:flex text-[#800000]">User Guide</span>
                   </a>
                   <div className="h-8"></div>
                   <div className="h-8"></div>

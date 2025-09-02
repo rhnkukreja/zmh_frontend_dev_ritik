@@ -58,7 +58,7 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
         try {
           const response = await domainNotesService.getCompanyHierarchyNotes();
           // Filter results based on search term
-          const filteredResults = response.results.filter((item: any) => 
+          const filteredResults = response.results.filter((item: any) =>
             item.main_heading.toLowerCase().includes(searchTerm.toLowerCase())
           );
           setSearchResults(filteredResults);
@@ -89,13 +89,13 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
       const firstCompany = companyHierarchy[0];
       const companyName = firstCompany.main_heading;
       const institutions = firstCompany.sub_headings || [];
-      
+
       // Always select first company and institution if nothing is selected
       if (!selectedCompany) {
         setSelectedCompany(companyName);
         setExpandedCompanies([companyName]);
       }
-      
+
       if (!selectedInstitution && institutions.length > 0) {
         setSelectedInstitution(institutions[0]);
       }
@@ -134,9 +134,9 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
             placeholder="Search companies..."
             className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           />
-          <Lucide 
-            icon="Search" 
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" 
+          <Lucide
+            icon="Search"
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"
           />
           {searchTerm && (
             <button
@@ -161,59 +161,58 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
       ) : (
         <>
           {(searchTerm ? searchResults : companyHierarchy).map((item: CompanyHierarchyItem, index: number) => {
-        const companyName = item.main_heading;
-        const isExpanded = expandedCompanies.includes(companyName);
-        const institutions = Object.keys(item.sub_heading || {});
+            const companyName = item.main_heading;
+            const isExpanded = expandedCompanies.includes(companyName);
+            const institutions = Object.keys(item.sub_heading || {});
 
-        return (
-          <div key={index} className="border-b border-gray-200">
-            {/* Company Header */}
-            <div
-              className={clsx(
-                "flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors",
-                selectedCompany === companyName && "bg-red-50 border-l-4 border-primary"
-              )}
-              onClick={() => handleCompanyClick(companyName)}
-            >
-              <div className="flex items-center flex-1">
-                <span className="font-medium text-gray-800">
-                  {companyName}
-                </span>
-              </div>
-              <div className="flex items-center justify-center w-8 h-8">
-                <Lucide
-                  icon={isExpanded ? "ChevronDown" : "ChevronRight"}
-                  className="w-5 h-5 text-gray-500"
-                />
-              </div>
-            </div>
+            return (
+              <div key={index} className="border-b border-gray-200">
+                {/* Company Header */}
+                <div
+                  className={clsx(
+                    "flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors",
+                    selectedCompany === companyName && "bg-red-50 border-l-4 border-primary"
+                  )}
+                  onClick={() => handleCompanyClick(companyName)}
+                >
+                  <div className="flex items-center flex-1">
+                    <span className="font-medium text-gray-800">
+                      {companyName}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center w-8 h-8">
+                    <Lucide
+                      icon={isExpanded ? "ChevronDown" : "ChevronRight"}
+                      className="w-5 h-5 text-gray-500"
+                    />
+                  </div>
+                </div>
 
-            {/* Institutions List */}
-            {isExpanded && (
-              <div>
-                {institutions.map((institutionName, institutionIndex) => {
-                  return (
-                    <div
-                      key={institutionIndex}
-                      className={clsx(
-                        "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors border-b border-transparent",
-                        selectedInstitution === institutionName && selectedCompany === companyName 
-                          ? "border-b-2 border-primary text-primary bg-gray-50" 
-                          : "text-gray-700 hover:text-gray-900"
-                      )}
-                      onClick={() => handleInstitutionClick(institutionName)}
-                    >
-                      <span className="flex-1 font-normal">
-                        {institutionName}
-                      </span>
-                    </div>
-                  );
-                })}
+                {/* Institutions List */}
+                {isExpanded && (
+                  <div className="ml-6 border-l border-gray-200">
+                    {institutions.map((institutionName, institutionIndex) => {
+                      return (
+                        <div
+                          key={institutionIndex}
+                          className={clsx(
+                            "flex items-center px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors",
+                            selectedInstitution === institutionName && selectedCompany === companyName
+                              ? "text-primary font-medium bg-gray-50"
+                              : "text-gray-700 hover:text-gray-900"
+                          )}
+                          onClick={() => handleInstitutionClick(institutionName)}
+                        >
+                          <Lucide icon="CornerDownRight" className="w-4 h-4 mr-2 text-gray-400" />
+                          <span className="flex-1">{institutionName}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        );
-      })}
+            );
+          })}
         </>
       )}
     </div>

@@ -21,25 +21,25 @@ const ProxyContestDetail = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { companyId } = useParams();
-    
+
     // Get global search state
     const { companyGlobalSearchName } = useAppSelector((state: RootState) => state.authentiction);
-    
+
     // Get company data from navigation state
     const { company, companyName, year, meetingDate, fromProxyContest } = location.state || {};
-    
+
     // Check if we came from global search by checking URL params
     const urlParams = new URLSearchParams(location.search);
     const globalCompanyParam = urlParams.get('globalCompany');
     const isFromGlobalSearch = globalCompanyParam && companyGlobalSearchName;
-    
+
     // State for all data
     const [loading, setLoading] = useState(false);
     const [documentsData, setDocumentsData] = useState<any>(null);
     const [meetingDetailsData, setMeetingDetailsData] = useState<any>(null);
     const [caseStudiesData, setCaseStudiesData] = useState<any[]>([]);
     const [proxyAdvisoryData, setProxyAdvisoryData] = useState<any[]>([]);
-    
+
     // Modal states
     const [caseProxyModalVisible, setCaseProxyModalVisible] = useState<boolean>(false);
     const [caseProxyModalData, setCaseProxyModalData] = useState<any>(null);
@@ -69,9 +69,9 @@ const ProxyContestDetail = () => {
         }
 
         setLoading(true);
-        
+
         const companyName = encodeURIComponent(company.company_name);
-        
+
         // Create a promise array for all API calls
         const apiCalls = [
             // Fetch Documents (Activism Tables)
@@ -97,7 +97,7 @@ const ProxyContestDetail = () => {
                 }),
 
             // Fetch Case Studies
-            customAxios.get(`/case_studies/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&themes=${encodeURIComponent('Proxy Contest/M&A')}`)
+            customAxios.get(`/case_studies/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&themes=${encodeURIComponent(JSON.stringify(['Proxy Contest/M&A']))}`)
                 .then(response => {
                     setCaseStudiesData(response.data?.results || []);
                 })
@@ -143,7 +143,7 @@ const ProxyContestDetail = () => {
                         {!isFromGlobalSearch && (
                             <Button
                                 onClick={() => {
-                                    navigate('/proxy-contest', { 
+                                    navigate('/proxy-contest', {
                                         replace: true,
                                         state: { preventAutoNavigation: true }
                                     });
@@ -172,7 +172,7 @@ const ProxyContestDetail = () => {
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        
+
                         {/* Proxy Advisory Firm Recommendations */}
                         {proxyAdvisoryData.length > 0 && (
                             <div className="box p-5">
@@ -228,11 +228,11 @@ const ProxyContestDetail = () => {
                                                 {(() => {
                                                     // Group data by company_tent to show all unique companies
                                                     const companies = [...new Set(proxyAdvisoryData.map((item: any) => item.company_tent))];
-                                                    
+
                                                     return companies.map((companyName: string, index: number) => {
                                                         const issData = proxyAdvisoryData.find((item: any) => item.type === 'ISS' && item.company_tent === companyName);
                                                         const glData = proxyAdvisoryData.find((item: any) => item.type === 'GL' && item.company_tent === companyName);
-                                                        
+
                                                         return (
                                                             <Table.Tr key={index} className="hover:bg-gray-50 border-b border-gray-100">
                                                                 <Table.Td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-100">
@@ -304,7 +304,83 @@ const ProxyContestDetail = () => {
                                 </TableWrapper>
                             </div>
                         )}
-
+                        {/* Case Studies */}
+                        {caseStudiesData.length > 0 && (
+                            <div className="box p-5">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-lg font-bold">Case Studies</h2>
+                                </div>
+                                <TableWrapper>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <Table.Thead>
+                                                <Table.Tr>
+                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                        Institution
+                                                    </Table.Td>
+                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                        Year
+                                                    </Table.Td>
+                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                        Theme
+                                                    </Table.Td>
+                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
+                                                        Industry
+                                                    </Table.Td>
+                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
+                                                        View
+                                                    </Table.Td>
+                                                </Table.Tr>
+                                            </Table.Thead>
+                                            <Table.Tbody>
+                                                {caseStudiesData.map((item: any, index: number) => (
+                                                    <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            <div className="flex items-center">
+                                                                {item?.institution_logo_url ? (
+                                                                    <img
+                                                                        alt="Institution Logo"
+                                                                        className="w-6 h-6 rounded-full object-contain mr-3"
+                                                                        src={item?.institution_logo_url}
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-6 h-6 rounded-full bg-gray-200 mr-3"></div>
+                                                                )}
+                                                                <span>{item?.institution_name || 'N/A'}</span>
+                                                            </div>
+                                                        </Table.Td>
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            {item?.year || 'N/A'}
+                                                        </Table.Td>
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            {item?.esg_themes && item?.esg_themes !== 'N/A' ? item?.esg_themes : (item?.esg_themes === 'N/A' ? '' : 'Proxy Contest/M&A')}
+                                                        </Table.Td>
+                                                        <Table.Td className="py-2 border-dashed">
+                                                            {item?.industry || 'N/A'}
+                                                        </Table.Td>
+                                                        <Table.Td className="py-2 border-dashed text-center">
+                                                            <Tippy content="View Details" options={{ theme: "light" }}>
+                                                                <Lucide
+                                                                    onClick={() => {
+                                                                        setCaseProxyModalVisible(true);
+                                                                        setCaseProxyModalData({
+                                                                            company_name: company.company_name,
+                                                                            company_id: company.company_id
+                                                                        });
+                                                                    }}
+                                                                    icon="Eye"
+                                                                    className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
+                                                                />
+                                                            </Tippy>
+                                                        </Table.Td>
+                                                    </Table.Tr>
+                                                ))}
+                                            </Table.Tbody>
+                                        </Table>
+                                    </div>
+                                </TableWrapper>
+                            </div>
+                        )}
                         {/* Documents Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Company and Investor Presentations */}
@@ -525,96 +601,23 @@ const ProxyContestDetail = () => {
                             </div>
                         )}
 
-                        {/* Case Studies */}
-                        {caseStudiesData.length > 0 && (
-                            <div className="box p-5">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-lg font-bold">Case Studies</h2>
-                                </div>
-                                <TableWrapper>
-                                    <div className="overflow-x-auto">
-                                        <Table>
-                                            <Table.Thead>
-                                                <Table.Tr>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                        Institution
-                                                    </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                        Year
-                                                    </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                        Theme
-                                                    </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2]">
-                                                        Industry
-                                                    </Table.Td>
-                                                    <Table.Td className="py-2 font-semibold h-[40px] bg-header border-header text-[#000000B2] text-center w-20">
-                                                        View
-                                                    </Table.Td>
-                                                </Table.Tr>
-                                            </Table.Thead>
-                                            <Table.Tbody>
-                                                {caseStudiesData.map((item: any, index: number) => (
-                                                    <Table.Tr key={index} className="[&_td]:last:border-b-0 hover:bg-gray-50">
-                                                        <Table.Td className="py-2 border-dashed">
-                                                            <div className="flex items-center">
-                                                                {item?.institution_logo_url ? (
-                                                                    <img
-                                                                        alt="Institution Logo"
-                                                                        className="w-6 h-6 rounded-full object-contain mr-3"
-                                                                        src={item?.institution_logo_url}
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-6 h-6 rounded-full bg-gray-200 mr-3"></div>
-                                                                )}
-                                                                <span>{item?.institution_name || 'N/A'}</span>
-                                                            </div>
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed">
-                                                            {item?.year || 'N/A'}
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed">
-                                                            {item?.esg_themes && item?.esg_themes !== 'N/A' ? item?.esg_themes : (item?.esg_themes === 'N/A' ? '' : 'Proxy Contest/M&A')}
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed">
-                                                            {item?.industry || 'N/A'}
-                                                        </Table.Td>
-                                                        <Table.Td className="py-2 border-dashed text-center">
-                                                            <Tippy content="View Details" options={{ theme: "light" }}>
-                                                                <Lucide
-                                                                    onClick={() => {
-                                                                        setCaseProxyModalVisible(true);
-                                                                        setCaseProxyModalData(item);
-                                                                    }}
-                                                                    icon="Eye"
-                                                                    className="w-4 h-4 stroke-[1.3] cursor-pointer text-gray-600 hover:text-gray-800"
-                                                                />
-                                                            </Tippy>
-                                                        </Table.Td>
-                                                    </Table.Tr>
-                                                ))}
-                                            </Table.Tbody>
-                                        </Table>
-                                    </div>
-                                </TableWrapper>
-                            </div>
-                        )}
+
 
                         {/* No Data Message */}
-                        {!loading && 
-                         proxyAdvisoryData.length === 0 && 
-                         (!documentsData?.Activism_Presentation?.length) && 
-                         (!documentsData?.Activism_Press_Release?.length) && 
-                         (!meetingDetailsData || (!meetingDetailsData.company && !meetingDetailsData.nominees && !meetingDetailsData.proposals)) && 
-                         caseStudiesData.length === 0 && (
-                            <div className="box p-5">
-                                <div className="text-center py-12">
-                                    <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                    <h3 className="text-lg font-medium text-gray-900 mb-1">No Data Available</h3>
-                                    <p className="text-gray-500">No information found for {company.company_name}.</p>
+                        {!loading &&
+                            proxyAdvisoryData.length === 0 &&
+                            (!documentsData?.Activism_Presentation?.length) &&
+                            (!documentsData?.Activism_Press_Release?.length) &&
+                            (!meetingDetailsData || (!meetingDetailsData.company && !meetingDetailsData.nominees && !meetingDetailsData.proposals)) &&
+                            caseStudiesData.length === 0 && (
+                                <div className="box p-5">
+                                    <div className="text-center py-12">
+                                        <Lucide icon="FileX" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                        <h3 className="text-lg font-medium text-gray-900 mb-1">No Data Available</h3>
+                                        <p className="text-gray-500">No information found for {company.company_name}.</p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
                     </div>
                 )}
             </div>

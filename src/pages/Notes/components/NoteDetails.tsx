@@ -192,7 +192,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
       {/* Show individual note for "other" tab when selectedNote exists */}
       {activeTab === "other" && selectedNote ? (
         <>
-          <div className="w-full h-full overflow-y-auto no-scrollbar !z-10">
+          <div className="w-full h-full overflow-y-auto !z-10">
             <div className="flex justify-between items-center px-4 py-2">
               <div>
                 <div className="flex items-center">
