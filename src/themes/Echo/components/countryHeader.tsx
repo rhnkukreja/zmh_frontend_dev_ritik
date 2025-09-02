@@ -103,7 +103,7 @@ const CountryInfoHeader = () => {
       <Dialog size="xl" open={isChartOpen} onClose={() => setIsChartOpen(false)}>
         <Dialog.Panel>
           <Dialog.Title>
-            <h2 className="text-xl font-semibold">{finhub?.name || companyGlobalSearchName} Chart</h2>
+            <h2 className="text-xl font-semibold">{finhub?.name || companyGlobalSearchName} -  Price Chart</h2>
             <div
               onClick={() => setIsChartOpen(false)}
               className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
@@ -129,7 +129,7 @@ const CountryInfoHeader = () => {
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-7xl mx-auto bg-white rounded-lg p-8 shadow-xl overflow-hidden">
             <Dialog.Title className="text-xl font-semibold mb-6 text-center relative">
-              {finhub?.name || companyGlobalSearchName} - Share Price Data
+              {finhub?.name || companyGlobalSearchName} - Share Price Performance (%)
               <div
                 onClick={() => setIsTableOpen(false)}
                 className="absolute top-0 right-0 mt-0 mr-0 cursor-pointer"
@@ -140,21 +140,14 @@ const CountryInfoHeader = () => {
             <div className="overflow-auto max-h-[calc(90vh-200px)]">
               {sharePrice && Object.keys(sharePrice).length > 0 ? (
                 <div className="w-full">
-                  <table className="w-full border-collapse border border-gray-300 text-sm">
+                  <table className="w-full border border-gray-300 text-sm">
                     <thead>
-                      <tr className="bg-gray-50">
-                        <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Name</th>
-                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={1}>1year</th>
-                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={1}>3year</th>
-                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={1}>5year</th>
-                        <th className="border border-gray-300 px-3 py-3 text-center font-semibold" colSpan={1}>10year</th>
-                      </tr>
-                      <tr className="bg-gray-100">
-                        <th className="border border-gray-300 px-4 py-2"></th>
-                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
-                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
-                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
-                        <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Return %</th>
+                      <tr className="bg-gray-50 border-b border-gray-300">
+                        <th className="px-4 py-3 text-left font-semibold">Name</th>
+                        <th className="px-3 py-3 text-center font-semibold">1-year</th>
+                        <th className="px-3 py-3 text-center font-semibold">3-year</th>
+                        <th className="px-3 py-3 text-center font-semibold">5-year</th>
+                        <th className="px-3 py-3 text-center font-semibold">10-year</th>
                       </tr>
                     </thead>
                     <tbody>
