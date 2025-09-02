@@ -152,6 +152,7 @@ const CountryInfoHeader = () => {
                     </thead>
                     <tbody>
                       {Object.entries(sharePrice).map(([ticker, data]: [string, any]) => {
+                        if (ticker === "data_as_of") return null; // 🚨 skip this key
                         if (data?.error) return null;
 
                         return (
@@ -181,9 +182,12 @@ const CountryInfoHeader = () => {
             </div>
             <div className="mt-4">
               <p className="text-xs text-gray-500 italic">
-                <strong>Source: Marketstack. Data as of {currentDateET}</strong>
+                <strong>
+                  Source: Marketstack. Data as of {sharePrice?.data_as_of || "N/A"}
+                </strong>
               </p>
             </div>
+
           </Dialog.Panel>
         </div>
       </Dialog>
