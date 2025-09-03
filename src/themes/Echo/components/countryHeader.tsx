@@ -6,13 +6,16 @@ import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import TradingViewWidget from "@/components/TradingViewWidget";
 import { axiosInstance } from "@/services";
-import LoadingWrapper from "@/components/LoadingWrapper";
+import LoadingIcon from "@/components/Base/LoadingIcon";
+
+
 
 const CountryInfoHeader = () => {
   const { finhub, companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector((state: RootState) => state.authentiction);
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [sharePrice, setSharePrice] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const currentDateET = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
@@ -24,12 +27,15 @@ const CountryInfoHeader = () => {
   useEffect(() => {
     const fetchSharePrice = async () => {
       try {
+        setLoading(true); // ✅ start loader
+        setSharePrice(null); // optional: clear old data
         const symbol = finhub?.ticker || companyGlobalSearchTicker;
         const response = await axiosInstance.get(`/share_price/?symbols=${symbol}`);
-        console.log("Share price data:", response.data);
         setSharePrice(response.data);
       } catch (error) {
         console.error("Error fetching share price:", error);
+      } finally {
+        setLoading(false); // ✅ stop loader
       }
     };
 
@@ -129,7 +135,7 @@ const CountryInfoHeader = () => {
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-7xl mx-auto bg-white rounded-lg p-8 shadow-xl overflow-hidden">
             <Dialog.Title className="text-xl font-semibold mb-6 text-center relative">
-              {finhub?.name || companyGlobalSearchName} - Share Price Performance (%)
+              {finhub?.name || companyGlobalSearchName} - Share Price Performance
               <div
                 onClick={() => setIsTableOpen(false)}
                 className="absolute top-0 right-0 mt-0 mr-0 cursor-pointer"
@@ -137,8 +143,18 @@ const CountryInfoHeader = () => {
                 <Lucide icon="X" className="w-8 h-8 text-slate-400 hover:text-slate-600" />
               </div>
             </Dialog.Title>
-            <div className="overflow-auto max-h-[calc(90vh-200px)]">
-              {sharePrice && Object.keys(sharePrice).length > 0 ? (
+            <div className="overflow-auto max-h-[calc(90vh-200px)] relative">
+              {loading ? (
+                // Show only one loader
+                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                  <LoadingIcon
+                    color="#800000"
+                    icon="three-dots"
+                    className="w-16 h-16"
+                  />
+                </div>
+              ) : sharePrice && Object.keys(sharePrice).length > 0 ? (
+                // Data available
                 <div className="w-full">
                   <table className="w-full border border-gray-300 text-sm">
                     <thead>
@@ -152,7 +168,7 @@ const CountryInfoHeader = () => {
                     </thead>
                     <tbody>
                       {Object.entries(sharePrice).map(([ticker, data]: [string, any]) => {
-                        if (ticker === "data_as_of") return null; // 🚨 skip this key
+                        if (ticker === "data_as_of") return null;
                         if (data?.error) return null;
 
                         return (
@@ -175,17 +191,20 @@ const CountryInfoHeader = () => {
                       })}
                     </tbody>
                   </table>
+
+                  <div className="mt-4">
+                    <p className="text-xs text-gray-500 italic">
+                      <strong>
+                        Source: Marketstack. Data as of {sharePrice?.data_as_of || "N/A"}
+                      </strong>
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <LoadingWrapper height={200} />
+                // No data
+                <p className="text-center text-gray-500 py-10">No data available</p>
               )}
-            </div>
-            <div className="mt-4">
-              <p className="text-xs text-gray-500 italic">
-                <strong>
-                  Source: Marketstack. Data as of {sharePrice?.data_as_of || "N/A"}
-                </strong>
-              </p>
+
             </div>
 
           </Dialog.Panel>
