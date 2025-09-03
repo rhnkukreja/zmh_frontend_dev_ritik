@@ -175,18 +175,27 @@ const CountryInfoHeader = () => {
                           <tr key={ticker} className="hover:bg-gray-50">
                             <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
-                              {data['1yr']?.pct_return ? `${data['1yr'].pct_return}%` : 'N/A'}
+                              {data['1yr']?.pct_return !== undefined
+                                ? `${Number(data['1yr'].pct_return).toFixed(1)}%`
+                                : 'N/A'}
                             </td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
-                              {data['3yr']?.pct_return ? `${data['3yr'].pct_return}%` : 'N/A'}
+                              {data['3yr']?.pct_return !== undefined
+                                ? `${Number(data['3yr'].pct_return).toFixed(1)}%`
+                                : 'N/A'}
                             </td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
-                              {data['5yr']?.pct_return ? `${data['5yr'].pct_return}%` : 'N/A'}
+                              {data['5yr']?.pct_return !== undefined
+                                ? `${Number(data['5yr'].pct_return).toFixed(1)}%`
+                                : 'N/A'}
                             </td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
-                              {data['10yr']?.pct_return ? `${data['10yr'].pct_return}%` : 'N/A'}
+                              {data['10yr']?.pct_return !== undefined
+                                ? `${Number(data['10yr'].pct_return).toFixed(1)}%`
+                                : 'N/A'}
                             </td>
                           </tr>
+
                         );
                       })}
                     </tbody>

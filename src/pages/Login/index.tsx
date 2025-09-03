@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 import { RootState, AppDispatch } from "../../stores/store";
@@ -58,10 +58,10 @@ const Main: React.FC = () => {
   } = useForm<any>();
 
   useEffect(() => {
-  if (formView === "resetPassword") {
-    setShowVerificationMsg(true); // show message when entering this view
-  }
-}, [formView]);
+    if (formView === "resetPassword") {
+      setShowVerificationMsg(true); // show message when entering this view
+    }
+  }, [formView]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
@@ -156,9 +156,10 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
-            <p className="mb-6 text-base font-medium text-center text-red-600 bold">
+            {/* For Urgent Use */}
+            {/* <p className="mb-6 text-base font-medium text-center text-red-600 bold">
     We are upgrading our Dashboard. Login will be available soon.
-  </p>
+  </p> */}
             <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
               <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
                 <div className="w-full h-full overflow-hidden    image-fit">
@@ -178,8 +179,8 @@ const Main: React.FC = () => {
                 </Link>
               </div>}
               {formView === "resetPassword" && <div className="mt-2.5 text-slate-600">
-               Verification code sent to your email
-                
+                {/* Verification code sent to your email */}
+
               </div>}
 
               <div className="mt-6">
@@ -253,8 +254,8 @@ const Main: React.FC = () => {
                         rounded
                         className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
                         type="submit"
-                        // disabled={loading}
-                        disabled
+                        disabled={loading}
+                        // disabled
                       >
                         {loading && (
                           <Lucide
@@ -370,73 +371,72 @@ const Main: React.FC = () => {
                     </div>
                   </form>)}
                 {formView === "resetPassword" && (
-  <form
-    onSubmit={handleSubmit((data) => {
-      handleVerifyOTP(data);
-      setShowVerificationMsg(false); // hide on confirm
-    })}
-  >
-    {/* Professional green verification message */}
-    {showVerificationMsg && (
-      <p className="text-green-600 font-medium text-sm mb-3">
-        A verification code has been sent to your email.
-      </p>
-    )}
+                  <form
+                    onSubmit={handleSubmit((data) => {
+                      handleVerifyOTP(data);
+                      setShowVerificationMsg(false); // hide on confirm
+                    })}
+                  >
+                    {/* Professional green verification message */}
+                    {showVerificationMsg && (
+                      <p className="text-green-600 font-medium text-sm mb-3">
+                        A verification code has been sent to your email.
+                      </p>
+                    )}
 
-    <FormInput
-      type="text"
-      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-      placeholder="Enter Code"
-      {...register("otp", { required: "OTP is required" })}
-    />
-    {errors.otp && (
-      <p className="text-red-500">
-        {typeof errors.otp.message === "string" ? errors.otp.message : ""}
-      </p>
-    )}
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Code"
+                      {...register("otp", { required: "OTP is required" })}
+                    />
+                    {errors.otp && (
+                      <p className="text-red-500">
+                        {typeof errors.otp.message === "string" ? errors.otp.message : ""}
+                      </p>
+                    )}
 
-    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
-      <button
-        type="button"
-        onClick={() => setFormView("sendOtp")}
-        className="flex items-center"
-      >
-        <Lucide icon="ArrowLeft" className="w-4 h-4" /> Back
-      </button>
+                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setFormView("sendOtp")}
+                        className="flex items-center"
+                      >
+                        <Lucide icon="ArrowLeft" className="w-4 h-4" /> Back
+                      </button>
 
-      <button
-        type="button"
-        onClick={() => {
-          setFormView("resetPassword"); // stay on same form
-          setShowVerificationMsg(false); // hide immediately
-          setTimeout(() => setShowVerificationMsg(true), 1500); // re-show after 1.5s
-        }}
-      >
-        Resend Code
-      </button>
-    </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormView("resetPassword"); // stay on same form
+                          setShowVerificationMsg(false); // hide immediately
+                          setTimeout(() => setShowVerificationMsg(true), 1500); // re-show after 1.5s
+                        }}
+                      >
+                        Resend Code
+                      </button>
+                    </div>
 
-    <div className="mt-5 text-center xl:mt-8 xl:text-left">
-      <Button
-        variant="primary"
-        rounded
-        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
-        type="submit"
-        disabled={loading}
-      >
-        {loading && (
-          <Lucide
-            icon="Loader"
-            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-              loading ? "animate-spin" : ""
-            }`}
-          />
-        )}
-        Confirm Code
-      </Button>
-    </div>
-  </form>
-)}
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Confirm Code
+                      </Button>
+                    </div>
+                  </form>
+                )}
 
               </div>
             </div>

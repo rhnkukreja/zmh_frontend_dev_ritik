@@ -737,7 +737,7 @@ function ProxyGuideline() {
                                       </Tippy>
                                     )}
 
-                                    <Tippy
+                                    {/* <Tippy
                                       content="Download"
                                       options={{
                                         theme: "light",
@@ -758,7 +758,7 @@ function ProxyGuideline() {
                                           />
                                         </a>
                                       </div>
-                                    </Tippy>
+                                    </Tippy> */}
 
                                     {guideline?.is_search ? (
                                       <Tippy
