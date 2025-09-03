@@ -156,6 +156,9 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
+            <p className="mb-6 text-base font-medium text-center text-red-600 bold">
+    We are upgrading our Dashboard. Login will be available soon.
+  </p>
             <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
               <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
                 <div className="w-full h-full overflow-hidden    image-fit">
@@ -250,7 +253,8 @@ const Main: React.FC = () => {
                         rounded
                         className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
                         type="submit"
-                        disabled={loading}
+                        // disabled={loading}
+                        disabled
                       >
                         {loading && (
                           <Lucide
