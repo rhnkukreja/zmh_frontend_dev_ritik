@@ -35,8 +35,14 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
       // Fetch case studies filtered by company name
       const url = `/case_studies/?company_name=${encodeURIComponent(JSON.stringify([caseProxyModalData.company_name]))}&themes=${encodeURIComponent(JSON.stringify(['Proxy Contest/M&A']))}`;
       dispatch(fetchCaseStudies(url));
+
+      // If showDetailedView is true, set the detailed case study
+      if (caseProxyModalData.showDetailedView) {
+        setDetailedCaseStudy(caseProxyModalData);
+        setShowDetailedView(true);
+      }
     }
-  }, [dispatch, caseProxyModalData?.company_name, caseProxyModalVisible]);
+  }, [dispatch, caseProxyModalData?.company_name, caseProxyModalVisible, caseProxyModalData?.showDetailedView]);
 
   const handleModalClose = () => {
     setShowDetailedView(false);

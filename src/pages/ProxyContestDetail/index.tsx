@@ -364,8 +364,10 @@ const ProxyContestDetail = () => {
                                                                     onClick={() => {
                                                                         setCaseProxyModalVisible(true);
                                                                         setCaseProxyModalData({
+                                                                            ...item,
                                                                             company_name: company.company_name,
-                                                                            company_id: company.company_id
+                                                                            company_id: company.company_id,
+                                                                            showDetailedView: true
                                                                         });
                                                                     }}
                                                                     icon="Eye"
