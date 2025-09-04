@@ -36,6 +36,7 @@ import notificationIcon2 from "@/assets/images/zmh-images/side-bell.png";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
+import VotingDataBanner from "./components/VotingDataBanner";
 import GetHelp from "@/components/Help";
 import { resetInvestorProfiles } from "@/stores/investersProfileSlice";
 import { resetCompany } from "@/stores/companySlice";
@@ -1007,10 +1008,10 @@ function Main() {
                                             />
                                           </div>
                                         </div>
-                                        <div className="w-[78%] flex-1">
-                                          <p className="text-sm cursor-pointer text-gray-700">
-                                            {noti.text}
-                                          </p>
+                                        <div className="w-[78%] flex-1 prose prose-sm">
+                                          <p
+                                            dangerouslySetInnerHTML={{ __html: noti.text }}
+                                          />
                                         </div>
                                       </div>
                                     </div>
@@ -1160,30 +1161,34 @@ function Main() {
       </> */}
 
       <div
-        className={clsx([
-          "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
-          { "xl:ml-[280px]": !compactMenu },
-          { "xl:ml-[91px]": compactMenu },
-          { "mode--light": !topBarActive },
-        ])}
-      >
-        <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
-          <div className="px-5 mt-10 w-full">
-            <div className={clsx({ container: !shouldShowSidebar })}>
-              <div
-                className={clsx(
-                  "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",
-                  { "opacity-0 pointer-events-none -mt-5": shouldHideHeader }
-                )}
-                style={{ top: "4rem" }}
-              >
-                {!shouldHideHeader && <CountryInfoHeader />}
-              </div>
-              <Outlet />
-            </div>
-          </div>
+  className={clsx([
+    "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
+    { "xl:ml-[280px]": !compactMenu },
+    { "xl:ml-[91px]": compactMenu },
+    { "mode--light": !topBarActive },
+  ])}
+>
+  <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
+    <div className="px-5 mt-10 w-full">
+      <div className={clsx({ container: !shouldShowSidebar })}>
+        <div
+          className={clsx(
+            "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",
+            { "opacity-0 pointer-events-none -mt-5": shouldHideHeader }
+          )}
+          style={{ top: "4rem" }}
+        >
+          {/* Place the banner here */}
+          <VotingDataBanner />
+
+          {/* Place the CountryInfoHeader here */}
+          {!shouldHideHeader && <CountryInfoHeader />}
         </div>
+        <Outlet />
       </div>
+    </div>
+  </div>
+</div>
 
       {globalCreateNoteModalVisible && (
         <GlobalCreateNoteModal
