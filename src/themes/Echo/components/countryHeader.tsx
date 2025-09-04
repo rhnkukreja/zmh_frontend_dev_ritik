@@ -1,6 +1,6 @@
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ReactCountryFlag from "react-country-flag";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
@@ -8,44 +8,50 @@ import TradingViewWidget from "@/components/TradingViewWidget";
 import { axiosInstance } from "@/services";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 
-
-
 const CountryInfoHeader = () => {
-  const { finhub, companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector((state: RootState) => state.authentiction);
+  const { finhub, companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
+  const [sharePriceCache, setSharePriceCache] = useState<Record<string, any>>({});
   const [sharePrice, setSharePrice] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const currentDateET = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date());
+  const symbol = finhub?.ticker || companyGlobalSearchTicker;
 
-  useEffect(() => {
-    const fetchSharePrice = async () => {
-      try {
-        setLoading(true); // ✅ start loader
-        setSharePrice(null); // optional: clear old data
-        const symbol = finhub?.ticker || companyGlobalSearchTicker;
-        const response = await axiosInstance.get(`/share_price/?symbols=${symbol}`);
-        setSharePrice(response.data);
-      } catch (error) {
-        console.error("Error fetching share price:", error);
-      } finally {
-        setLoading(false); // ✅ stop loader
-      }
-    };
+  const fetchSharePrice = async () => {
+    if (!symbol) return;
 
-    if (finhub?.ticker || companyGlobalSearchTicker) {
-      fetchSharePrice();
+    // ✅ Use cached response if available
+    if (sharePriceCache[symbol]) {
+      setSharePrice(sharePriceCache[symbol]);
+      return;
     }
-  }, [finhub?.ticker, companyGlobalSearchTicker]);
+
+    try {
+      setLoading(true);
+      setSharePrice(null);
+
+      const response = await axiosInstance.get(`/share_price/?symbols=${symbol}`);
+      setSharePrice(response.data);
+
+      // ✅ Save in cache
+      setSharePriceCache((prev) => ({
+        ...prev,
+        [symbol]: response.data,
+      }));
+    } catch (error) {
+      console.error("Error fetching share price:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
+      {/* Company Header */}
       <div className="flex items-center gap-4 mb-2 md:mb-0">
         {finhub?.logo && (
           <div className="w-6 h-6 image-fit object-contain">
@@ -56,13 +62,13 @@ const CountryInfoHeader = () => {
             />
           </div>
         )}
-        <div className="flex items-center">
-          <span className="font-semibold text-lg">
-            {finhub?.name || companyGlobalSearchName} {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
-          </span>
-        </div>
+        <span className="font-semibold text-lg">
+          {finhub?.name || companyGlobalSearchName}{" "}
+          {symbol ? `(${symbol})` : ""}
+        </span>
       </div>
 
+      {/* Country + Exchange */}
       <div className="flex items-center justify-center mb-2 md:mb-0">
         {finhub?.country && (
           <ReactCountryFlag
@@ -76,15 +82,17 @@ const CountryInfoHeader = () => {
         )}
       </div>
 
-      {finhub?.finnhub_industry ? (
+      {/* Industry */}
+      {finhub?.finnhub_industry && (
         <div className="flex items-center">
           <div className="flex flex-row items-start gap-2">
             <p className="text-gray-600 font-medium text-sm">Industry:</p>
             <p className="text-gray-500 text-sm">{finhub?.finnhub_industry}</p>
           </div>
         </div>
-      ) : ""}
+      )}
 
+      {/* Buttons */}
       <div className="flex items-center gap-2 border border-gray-200 rounded-full p-1">
         <button
           className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -96,7 +104,10 @@ const CountryInfoHeader = () => {
 
         <button
           className="relative flex items-center gap-1 pl-3 pr-6 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
-          onClick={() => setIsTableOpen(true)}
+          onClick={() => {
+            setIsTableOpen(true);
+            fetchSharePrice(); // ✅ fetch only when opening
+          }}
         >
           <Lucide icon="Table" className="w-5 h-5 text-pink-400" />
           <span className="text-sm font-medium text-gray-700">Price Perf.</span>
@@ -106,10 +117,13 @@ const CountryInfoHeader = () => {
         </button>
       </div>
 
+      {/* Chart Modal */}
       <Dialog size="xl" open={isChartOpen} onClose={() => setIsChartOpen(false)}>
         <Dialog.Panel>
           <Dialog.Title>
-            <h2 className="text-xl font-semibold">{finhub?.name || companyGlobalSearchName} -  Price Chart</h2>
+            <h2 className="text-xl font-semibold">
+              {finhub?.name || companyGlobalSearchName} - Price Chart
+            </h2>
             <div
               onClick={() => setIsChartOpen(false)}
               className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
@@ -119,12 +133,13 @@ const CountryInfoHeader = () => {
           </Dialog.Title>
           <Dialog.Description>
             <div className="w-full h-[500px]">
-              <TradingViewWidget symbol={finhub?.ticker} />
+              <TradingViewWidget symbol={symbol} />
             </div>
           </Dialog.Description>
         </Dialog.Panel>
       </Dialog>
 
+      {/* Price Performance Modal */}
       <Dialog
         open={isTableOpen}
         onClose={() => setIsTableOpen(false)}
@@ -143,9 +158,9 @@ const CountryInfoHeader = () => {
                 <Lucide icon="X" className="w-8 h-8 text-slate-400 hover:text-slate-600" />
               </div>
             </Dialog.Title>
+
             <div className="overflow-auto max-h-[calc(90vh-200px)] relative">
               {loading ? (
-                // Show only one loader
                 <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                   <LoadingIcon
                     color="#800000"
@@ -154,7 +169,6 @@ const CountryInfoHeader = () => {
                   />
                 </div>
               ) : sharePrice && Object.keys(sharePrice).length > 0 ? (
-                // Data available
                 <div className="w-full">
                   <table className="w-full border border-gray-300 text-sm">
                     <thead>
@@ -170,7 +184,6 @@ const CountryInfoHeader = () => {
                       {Object.entries(sharePrice).map(([ticker, data]: [string, any]) => {
                         if (ticker === "data_as_of") return null;
                         if (data?.error) return null;
-
                         return (
                           <tr key={ticker} className="hover:bg-gray-50">
                             <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
@@ -195,7 +208,6 @@ const CountryInfoHeader = () => {
                                 : 'N/A'}
                             </td>
                           </tr>
-
                         );
                       })}
                     </tbody>
@@ -210,12 +222,9 @@ const CountryInfoHeader = () => {
                   </div>
                 </div>
               ) : (
-                // No data
                 <p className="text-center text-gray-500 py-10">No data available</p>
               )}
-
             </div>
-
           </Dialog.Panel>
         </div>
       </Dialog>

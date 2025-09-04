@@ -876,6 +876,9 @@ function Main() {
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
 
+                  
+                  {/* Your existing layout container */}
+                  <VotingDataBanner /> {/* Add the banner component here */}
                   {/* User Guide Button */}
                   <a
                     className="px-3 py-1.5 bg-red-100 rounded-full flex items-center justify-center transition-colors hover:bg-red-200"
@@ -1161,34 +1164,34 @@ function Main() {
       </> */}
 
       <div
-  className={clsx([
-    "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
-    { "xl:ml-[280px]": !compactMenu },
-    { "xl:ml-[91px]": compactMenu },
-    { "mode--light": !topBarActive },
-  ])}
->
-  <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
-    <div className="px-5 mt-10 w-full">
-      <div className={clsx({ container: !shouldShowSidebar })}>
-        <div
-          className={clsx(
-            "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",
-            { "opacity-0 pointer-events-none -mt-5": shouldHideHeader }
-          )}
-          style={{ top: "4rem" }}
-        >
-          {/* Place the banner here */}
-          <VotingDataBanner />
+        className={clsx([
+          "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
+          { "xl:ml-[280px]": !compactMenu },
+          { "xl:ml-[91px]": compactMenu },
+          { "mode--light": !topBarActive },
+        ])}
+      >
+        <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
+          <div className="px-5 mt-10 w-full">
+            <div className={clsx({ container: !shouldShowSidebar })}>
+              <div
+                className={clsx(
+                  "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",
+                  { "opacity-0 pointer-events-none -mt-5": shouldHideHeader }
+                )}
+                style={{ top: "4rem" }}
+              >
+                {/* Place the banner here */}
+                {/* <VotingDataBanner /> */}
 
-          {/* Place the CountryInfoHeader here */}
-          {!shouldHideHeader && <CountryInfoHeader />}
+                {/* Place the CountryInfoHeader here */}
+                {!shouldHideHeader && <CountryInfoHeader />}
+              </div>
+              <Outlet />
+            </div>
+          </div>
         </div>
-        <Outlet />
       </div>
-    </div>
-  </div>
-</div>
 
       {globalCreateNoteModalVisible && (
         <GlobalCreateNoteModal
