@@ -190,22 +190,22 @@ const CountryInfoHeader = () => {
                             <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['1yr']?.pct_return !== undefined
                                 ? `${Number(data['1yr'].pct_return).toFixed(1)}%`
-                                : ''}
+                                : 'N/A'}
                             </td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['3yr']?.pct_return !== undefined
                                 ? `${Number(data['3yr'].pct_return).toFixed(1)}%`
-                                : ''}
+                                : 'N/A'}
                             </td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['5yr']?.pct_return !== undefined
                                 ? `${Number(data['5yr'].pct_return).toFixed(1)}%`
-                                : ''}
+                                : 'N/A'}
                             </td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['10yr']?.pct_return !== undefined
                                 ? `${Number(data['10yr'].pct_return).toFixed(1)}%`
-                                : ''}
+                                : 'N/A'}
                             </td>
                           </tr>
                         );
@@ -216,7 +216,7 @@ const CountryInfoHeader = () => {
                   <div className="mt-4">
                     <p className="text-xs text-gray-500 italic">
                       <strong>
-                        Source: Marketstack. Data as of {sharePrice?.data_as_of || ""}
+                        Source: Marketstack. Data as of {sharePrice?.data_as_of || "N/A"}
                       </strong>
                     </p>
                   </div>
