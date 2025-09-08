@@ -63,7 +63,7 @@ const VotingDataBanner = () => {
                     <div className="flex justify-between items-start">
                         <div className="flex-1">
                             <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                ZMH is adding <strong>BlackRock, Vanguard, T. Rowe, SSgA</strong> Q2 2025 voting data to the Dashboard. In the interim, links to each investor’s voting platform is available in the <strong>notification section (🔔)</strong>.
+                            <strong>BlackRock, Vanguard, T. Rowe, SSgA</strong> Q2 2025 voting data has been added to the Dashboard.
                             </p>
                         </div>
                         <button
