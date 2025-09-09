@@ -177,7 +177,6 @@ const CountryInfoHeader = () => {
                         <th className="px-3 py-3 text-center font-semibold">1-year</th>
                         <th className="px-3 py-3 text-center font-semibold">3-year</th>
                         <th className="px-3 py-3 text-center font-semibold">5-year</th>
-                        <th className="px-3 py-3 text-center font-semibold">10-year</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -200,11 +199,6 @@ const CountryInfoHeader = () => {
                             <td className="border border-gray-300 px-2 py-3 text-center">
                               {data['5yr']?.pct_return !== undefined
                                 ? `${Number(data['5yr'].pct_return).toFixed(1)}%`
-                                : 'N/A'}
-                            </td>
-                            <td className="border border-gray-300 px-2 py-3 text-center">
-                              {data['10yr']?.pct_return !== undefined
-                                ? `${Number(data['10yr'].pct_return).toFixed(1)}%`
                                 : 'N/A'}
                             </td>
                           </tr>

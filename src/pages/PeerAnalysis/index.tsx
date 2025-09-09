@@ -28,6 +28,7 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
 import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormSwitch } from "@/components/Base/Form";
@@ -1027,7 +1028,15 @@ function PeerAnalysis() {
               )}
 
               {isViewAnalysis && (
-                peerAnalysisData?.length === 0 ? (
+                loading ? (
+                  <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                    <LoadingIcon
+                      color="#800000"
+                      icon="three-dots"
+                      className="w-16 h-16"
+                    />
+                  </div>
+                ) : peerAnalysisData?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Lucide
                       icon="BarChart3"

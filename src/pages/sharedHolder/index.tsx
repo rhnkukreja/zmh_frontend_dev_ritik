@@ -2158,45 +2158,25 @@ function ShareHolderProposal() {
                                 <div className="text-lg font-medium">No Analytics found</div>
                               </div>
                             ) : activeTab === "shareholders" ? (
-                              shareHolderProposal?.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12">
-                                  <Lucide
-                                    icon="BarChart3"
-                                    className="w-12 h-12 text-gray-300 mb-2"
-                                  />
-                                  <div className="text-lg font-medium">No Analytics found</div>
-                                </div>
-                              ) : (
-                                <ShareHolderProposalAnalyticsComponent
-                                  proposalCounts={proposalsAnalytics?.total_proposals}
-                                  topSubcategories={proposalsAnalytics?.topSubcategories}
-                                  topCategories={proposalsAnalytics?.topCategories}
-                                  yearlySummary={proposalsAnalytics?.yearlySummary}
-                                  tab={tab}
-                                  isAllCompanySelected={isAllCompanySelected}
-                                  loading={loadingAnalytics}
-                                />
-                              )
+                              <ShareHolderProposalAnalyticsComponent
+                                proposalCounts={proposalsAnalytics?.total_proposals}
+                                topSubcategories={proposalsAnalytics?.topSubcategories}
+                                topCategories={proposalsAnalytics?.topCategories}
+                                yearlySummary={proposalsAnalytics?.yearlySummary}
+                                tab={tab}
+                                isAllCompanySelected={isAllCompanySelected}
+                                loading={loadingAnalytics}
+                              />
                             ) : (
-                              shareHolderProposal?.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12">
-                                  <Lucide
-                                    icon="BarChart3"
-                                    className="w-12 h-12 text-gray-300 mb-2"
-                                  />
-                                  <div className="text-lg font-medium">No Analytics found</div>
-                                </div>
-                              ) : (
-                                <ProponentsAnalyticsComponent
-                                  topProponents={proposalsAnalytics?.topProponents}
-                                  handleSearch={handleSearch}
-                                  setSearchTerms={setSearchTerms}
-                                  tab={tab}
-                                  loading={loadingAnalytics}
-                                  pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
-                                  filters={filters}
-                                />
-                              )
+                              <ProponentsAnalyticsComponent
+                                topProponents={proposalsAnalytics?.topProponents}
+                                handleSearch={handleSearch}
+                                setSearchTerms={setSearchTerms}
+                                tab={tab}
+                                loading={loadingAnalytics}
+                                pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
+                                filters={filters}
+                              />
                             )}
                           </div>
                         </div>
@@ -2482,46 +2462,26 @@ function ShareHolderProposal() {
                                 <div className="text-lg font-medium">No Analytics found</div>
                               </div>
                             ) : activeTab === "shareholders" ? (
-                              shareHolderProposal?.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12">
-                                  <Lucide
-                                    icon="BarChart3"
-                                    className="w-12 h-12 text-gray-300 mb-2"
-                                  />
-                                  <div className="text-lg font-medium">No Analytics found</div>
-                                </div>
-                              ) : (
-                                <ShareHolderProposalAnalyticsComponent
-                                  proposalCounts={proposalCounts}
-                                  topSubcategories={topSubcategories}
-                                  topCategories={topCategories}
-                                  yearlySummary={yearlySummary}
-                                  tab={tab}
-                                  pieChartOutcome={pieChartOutcome}
-                                  isAllCompanySelected={isAllCompanySelected}
-                                  loading={loading}
-                                />
-                              )
+                              <ShareHolderProposalAnalyticsComponent
+                                proposalCounts={proposalCounts}
+                                topSubcategories={topSubcategories}
+                                topCategories={topCategories}
+                                yearlySummary={yearlySummary}
+                                tab={tab}
+                                pieChartOutcome={pieChartOutcome}
+                                isAllCompanySelected={isAllCompanySelected}
+                                loading={loading}
+                              />
                             ) : (
-                              shareHolderProposal?.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12">
-                                  <Lucide
-                                    icon="BarChart3"
-                                    className="w-12 h-12 text-gray-300 mb-2"
-                                  />
-                                  <div className="text-lg font-medium">No Analytics found</div>
-                                </div>
-                              ) : (
-                                <ProponentsAnalyticsComponent
-                                  topProponents={topProponents}
-                                  handleSearch={handleSearch}
-                                  setSearchTerms={setSearchTerms}
-                                  tab={tab}
-                                  loading={loading}
-                                  pieChartOutcome={pieChartOutcome}
-                                  filters={filters}
-                                />
-                              )
+                              <ProponentsAnalyticsComponent
+                                topProponents={topProponents}
+                                handleSearch={handleSearch}
+                                setSearchTerms={setSearchTerms}
+                                tab={tab}
+                                loading={loading}
+                                pieChartOutcome={pieChartOutcome}
+                                filters={filters}
+                              />
                             )}
                           </div>
                         </div>
