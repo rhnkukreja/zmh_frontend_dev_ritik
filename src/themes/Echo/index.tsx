@@ -820,11 +820,13 @@ function Main() {
                 {[
                   "/notes",
                   "/proxy-contest",
+                  "/proxy-contest-detail",
                   "/voting-data",
                   "/investor-profile",
                   "/engagement-question",
                   "/voting-guidelines",
-                ]?.includes(location.pathname) ? (
+                ]?.includes(location.pathname) || 
+                location.pathname.startsWith("/proxy-contest-detail/") ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
                     {location.pathname.includes("/notes") &&
