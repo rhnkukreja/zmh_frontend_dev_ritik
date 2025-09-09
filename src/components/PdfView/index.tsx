@@ -25,8 +25,8 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
   const pdfFile = file || currentPdfDoc;
   const pdfFileName = file_name || currentPdfName;
   const fileName = useMemo(() => {
-    return file_name;
-  }, [file_name]);
+    return file_name || currentPdfName || "Document";
+  }, [file_name, currentPdfName]);
 
   type Size = "sm" | "md" | "lg" | "xl" | "2xl";
   const [dialogSize, setDialogSize] = useState<Size>("xl");
@@ -55,7 +55,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
           </div>
         </Dialog.Title>
         <Dialog.Description className="px-6 py-4 space-y-6">
-          {!file ? (
+          {!pdfFile ? (
             <div
               id="error-message"
               className=" absolute inset-0 flex items-center justify-center bg-white border border-gray-300 shadow-lg"
@@ -69,9 +69,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
             </div>
           ) : (
             <iframe
-              src={`${file || ""}`}
+              src={`${pdfFile || ""}`}
               width="100%"
-              title={fileName}
+              title={pdfFileName}
               style={{
                 height: "100vh",
               }}

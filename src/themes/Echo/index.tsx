@@ -820,6 +820,7 @@ function Main() {
                 {[
                   "/notes",
                   "/proxy-contest",
+                  "/voting-data",
                   "/investor-profile",
                   "/engagement-question",
                   "/voting-guidelines",
@@ -848,23 +849,22 @@ function Main() {
                         {"Search by company name, ticker, or symbol (US company only)"}
                       </div>
                     </div>
-                    {/* BEGIN: New AI Assistant Position */}
-                    <a
-                      href=""
-                      className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        setBasicModalPreview(true);
-                      }}
-                    >
-                      <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
-                      <span className="ml-2 text-sm font-medium hidden xl:flex">AI Assistant</span>
-                    </a>
-                    {/* END: New AI Assistant Position */}
                   </div>
                 )}
 
-
+                {/* BEGIN: AI Assistant - Always Visible */}
+                <a
+                  href=""
+                  className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setBasicModalPreview(true);
+                  }}
+                >
+                  <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
+                  <span className="ml-2 text-sm font-medium hidden xl:flex">AI Assistant</span>
+                </a>
+                {/* END: AI Assistant - Always Visible */}
               </>
 
               <QuickSearch
