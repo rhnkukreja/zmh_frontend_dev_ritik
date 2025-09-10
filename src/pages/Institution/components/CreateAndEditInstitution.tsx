@@ -52,6 +52,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
     handleSubmit,
     // getValues,
     // setValue,
+    watch,
     formState: { errors },
   } = useForm<InstitutionFormData>({
     defaultValues: {
@@ -64,6 +65,8 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       // email: selectedInstitution?.email!,
     },
   });
+
+  const watchedInvestorType = watch("investor_type");
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -318,7 +321,9 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 <Controller
                   name="whale_wisdom_filer_id"
                   control={control}
-                  rules={{ required: "Whale Wisdom Filer Id is required" }} // {{ edit_1 }}
+                  rules={{ 
+                    required: watchedInvestorType === "Investor" ? "Whale Wisdom Filer Id is required" : false 
+                  }}
                   render={({ field }) => (
                     <FormInput
                       placeholder="Enter Whale Wisdom Filer Id"
