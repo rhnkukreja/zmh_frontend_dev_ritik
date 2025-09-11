@@ -116,12 +116,21 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
         : null,
     };
 
-    const formData = new FormData();
-    for (const [key, value] of Object.entries(transformedData)) {
-      formData.append(key, value as any);
+    // Remove whale_wisdom_filer_id if it's empty or if investor_type is Proponent
+    if (!transformedData.whale_wisdom_filer_id || transformedData.investor_type === "Proponent") {
+      delete transformedData.whale_wisdom_filer_id;
     }
 
-    formData.append("logo_url", logoFile as any);
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(transformedData)) {
+      if (value !== null && value !== undefined && value !== "") {
+        formData.append(key, value as any);
+      }
+    }
+
+    if (logoFile) {
+      formData.append("logo_url", logoFile as any);
+    }
 
     try {
       let response;
