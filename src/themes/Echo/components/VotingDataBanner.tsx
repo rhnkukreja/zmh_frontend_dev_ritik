@@ -61,11 +61,15 @@ const VotingDataBanner = () => {
                     )}
                 >
                     <div className="flex justify-between items-start">
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-2">
                             <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                            <strong>BlackRock, Vanguard, T. Rowe, SSgA</strong> Q2 2025 voting data has been added to the Dashboard.
+                                <strong>ZMH</strong> is currently adding bulk voting data. During this process, you may experience temporary issues with the voting data module and downloads.
+                            </p>
+                            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                <strong>BlackRock, Vanguard, T. Rowe, and SSgA</strong> Q2 2025 voting data has been added to the Dashboard.
                             </p>
                         </div>
+
                         <button
                             onClick={closeBanner}
                             className="ml-4 p-1 mt-[-10px] text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 focus:outline-none"
