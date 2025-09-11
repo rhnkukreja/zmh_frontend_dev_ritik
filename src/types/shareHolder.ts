@@ -95,7 +95,7 @@ export type AddNoActionType = {
   withdrawn: boolean;
   company_name?:string;
   vote_outcome_formula: string;
-  institutes: string;
+  institutes: string[] | string;
   reconsideration: string;
   staff_response_date: string;
   approved: boolean;
