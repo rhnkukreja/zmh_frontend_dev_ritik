@@ -495,7 +495,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        <div className="whitespace-nowrap flex items-center">
+                                        <div className="whitespace-nowrap flex items-center justify-center">
                                           {dashboard?.percent_ownership}%
                                         </div>
                                       </Table.Td>
