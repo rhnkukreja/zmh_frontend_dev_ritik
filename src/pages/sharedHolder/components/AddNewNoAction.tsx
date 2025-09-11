@@ -80,7 +80,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
     watch,
   } = useForm<AddNoActionType>({
     defaultValues: {
-      institutes: selectedShareholderNoAction?.institutes || [],
+      institutes: (selectedShareholderNoAction?.institutes as string[]) || [],
       company: selectedShareholderNoAction?.company_name,
       category: selectedShareholderNoAction?.category,
       proposal_text: selectedShareholderNoAction?.proposal_text,
