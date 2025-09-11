@@ -68,6 +68,7 @@ import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagemen
 import DetailInstitutions from "../pages/Institution/components/InstitutionDetail";
 import DetailCompany from "../pages/Company/component/CompanyDetail";
 import ZMHDashboard from "../pages/ZMHDashboard";
+import BoardMembers from "../pages/BoardMembers";
 
 import Institution from "../pages/Institution";
 
@@ -351,6 +352,11 @@ function Router() {
           path: "investor-profile",
           element: <InvestersProfiles />,
           data: { titleName: "Investor Profile - ZMH Analytics" },
+        },
+        {
+          path: "board-members",
+          element: <BoardMembers />,
+          data: { titleName: "Board Members - ZMH Analytics" },
         },
         {
           path: "company",

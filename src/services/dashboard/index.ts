@@ -299,6 +299,24 @@ class DashboardService {
       result: result,
     };
   }
+
+  public async getGraphQLData(searchKeyword: string): Promise<{
+    result: any;
+  }> {
+    const requestBody = {
+      query: `query MyQuery { organizationKeywordSearch(filter: {searchKeyword: "${searchKeyword}"}) { ... on OrganizationPagedResult { __typename items { organizationName organizationType website latestDailyMarketCapital latestAnnualMarketRevenue headOfficeAddress { address city country } rolesBoard { items { person { name } startDate { displayDate } endDate { displayDate } type title } } rolesEmployment { items { person { name } type title } } } } ... on GenericError { __typename errorCode errorMessage } ... on ValidationError { __typename errorCode errorMessage } } }`,
+      variables: {}
+    };
+    
+    const response = await axiosInstance.post(
+      "https://api.zmhadvisors.com/api/get_graphql_data/",
+      requestBody
+    );
+    
+    return {
+      result: response.data,
+    };
+  }
 }
 
 

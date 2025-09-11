@@ -89,6 +89,8 @@ interface CompanySliceState {
   getProxyVotingRationaleLoading: boolean;
   boardDirectorMembers: BoardDirectorMembers[];
   votingRationale: any[];
+  graphQLBoardDataLoading: boolean;
+  graphQLBoardData: any;
 }
 
 const initialState: CompanySliceState = {
@@ -139,6 +141,8 @@ const initialState: CompanySliceState = {
   getProxyVotingRationaleLoading: false,
   boardDirectorMembers: [],
   votingRationale: [],
+  graphQLBoardDataLoading: false,
+  graphQLBoardData: null,
 
   // {
   //   nominees: [],
@@ -266,6 +270,14 @@ export const getProxyVotingRationale = createAsyncThunk<
   string
 >(`${name}/getProxyVotingRationale`, async (url: string) => {
   const response = await dashboardService.getProxyVotingRationale(url);
+  return { result: response.result };
+});
+
+export const getGraphQLBoardData = createAsyncThunk<
+  { result: any },
+  string
+>(`${name}/getGraphQLBoardData`, async (searchKeyword: string) => {
+  const response = await dashboardService.getGraphQLData(searchKeyword);
   return { result: response.result };
 });
 
@@ -663,6 +675,23 @@ const companySlice = createSlice({
         state.getProxyVotingRationaleLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
+      })
+
+      // GraphQL board data
+
+      .addCase(getGraphQLBoardData.pending, (state) => {
+        state.graphQLBoardDataLoading = true;
+        state.error = null;
+      })
+      .addCase(getGraphQLBoardData.fulfilled, (state, action) => {
+        state.graphQLBoardDataLoading = false;
+        state.graphQLBoardData = action.payload.result;
+        state.error = null;
+      })
+      .addCase(getGraphQLBoardData.rejected, (state, action) => {
+        state.graphQLBoardDataLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch GraphQL board data";
       });
   },
 });
