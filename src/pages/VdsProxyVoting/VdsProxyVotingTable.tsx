@@ -311,28 +311,25 @@ const VdsProxyVotingTable = () => {
                     }}
                   >
                     <div className="flex items-center justify-center ">
-                      {yearTicker === "2025" ? 'All Investor Data' : 'Top 20'}
+                      Top 20
                     </div>
                   </Tab.Button>
                 </Tab>
 
-                {
-                  yearTicker !== "2025" &&
-                  <Tab>
-                    <Tab.Button
-                      className="w-full py-2"
-                      as="button"
-                      onClick={() => {
-                        dispatch(setTabs("All-Investor"));
-                        onTabChange();
-                      }}
-                    >
-                      <div className="flex items-center justify-center ">
-                        All Investors
-                      </div>
-                    </Tab.Button>
-                  </Tab>
-                }
+                <Tab>
+                  <Tab.Button
+                    className="w-full py-2"
+                    as="button"
+                    onClick={() => {
+                      dispatch(setTabs("All-Investor"));
+                      onTabChange();
+                    }}
+                  >
+                    <div className="flex items-center justify-center ">
+                      All Investors
+                    </div>
+                  </Tab.Button>
+                </Tab>
               </Tab.List>
 
               <Tab.Panels className="mt-5">
@@ -577,9 +574,7 @@ const VdsProxyVotingTable = () => {
 
                   <VotingRationale meetingDate={meetingDate}/>
                 </Tab.Panel>
-              </Tab.Panels>
-
-              <Tab.Panels className="mt-5">
+                
                 <Tab.Panel className="leading-relaxed">
                   <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="flex items-end gap-4">
