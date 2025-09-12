@@ -82,6 +82,7 @@ const Main: React.FC = () => {
             id: response?.company_id,
             ticker: response?.company_ticker!,
             name: response?.company_name,
+            board_name: response?.company_name, // Use company_name as fallback for board_name
           })
         );
         // toast.success("Logged In Successfully!");
