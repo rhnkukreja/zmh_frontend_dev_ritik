@@ -27,6 +27,7 @@ import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 
 import { Tooltip } from "react-tooltip";
 import { Tab } from "@/components/Base/Headless";
+import { FaCheckCircle } from "react-icons/fa";
 
 import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
@@ -580,7 +581,7 @@ const VdsProxyVotingTable = () => {
                     <div className="flex items-end gap-4">
                       <div className=" w-4/12">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Select Institution to continue*
+                          <span className="font-semibold">Institution</span>
                         </div>
                         
 
@@ -849,17 +850,20 @@ const VdsProxyVotingTable = () => {
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
                     filter?.length === 0 && (
                       <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <h1 className="font-semibold"></h1>
+                        <div className="text-center text-gray-400 text-lg font-semibold">
+                          <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+                          Select an institution to get started.
+                        </div>
                       </div>
                     )}
 
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
                     filter?.length > 0 && (
                       <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <h1 className="font-semibold">
-                          {" "}
-                          All Proxy Records Not Found..
-                        </h1>
+                        <div className="text-center text-gray-400 text-lg font-semibold">
+                          <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+                          No VDS records available. Try adjusting your filters!
+                        </div>
                       </div>
                     )}
 

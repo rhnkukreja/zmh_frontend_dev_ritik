@@ -11,6 +11,7 @@ import { createDynamicURL, downloadXlsxFile } from "@/utils/helper";
 import { useEffect, useState } from "react";
 import { Tooltip } from "react-tooltip";
 import { useSearchParams } from "react-router-dom";
+import { FaCheckCircle } from "react-icons/fa";
 
 interface VotingRationaleProps {
   filter?: any;
@@ -242,24 +243,28 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
         votingRationale?.length === 0 &&
         !getProxyVotingRationaleLoading && (
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-            <h1 className="font-semibold">
-              Voting Rationale Records Not Found..
-            </h1>
+            <div className="text-center text-gray-400 text-lg font-semibold">
+              <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+              No Voting Rationale records available. Try adjusting your filters!
+            </div>
           </div>
         )}
 
       {votingRationale?.length === 0 && filter && filter?.length === 0 && (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <h1 className="font-semibold"></h1>
+          <div className="text-center text-gray-400 text-lg font-semibold">
+            <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+            Select an institution to get started.
+          </div>
         </div>
       )}
 
       {votingRationale?.length === 0 && filter?.length > 0 && (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <h1 className="font-semibold">
-            {" "}
-            Voting Rationale Records Not Found..
-          </h1>
+          <div className="text-center text-gray-400 text-lg font-semibold">
+            <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+            No Voting Rationale records available. Try adjusting your filters!
+          </div>
         </div>
       )}
     </div>
