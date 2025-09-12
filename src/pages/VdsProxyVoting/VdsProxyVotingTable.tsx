@@ -581,7 +581,7 @@ const VdsProxyVotingTable = () => {
                     <div className="flex items-end gap-4">
                       <div className=" w-4/12">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="font-semibold">Institution</span>
+                          {/* <span className="font-semibold">Institution</span> */}
                         </div>
                         
 
@@ -852,7 +852,7 @@ const VdsProxyVotingTable = () => {
                       <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                         <div className="text-center text-gray-400 text-lg font-semibold">
                           <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-                          Select an institution to get started.
+                          Select an Institution
                         </div>
                       </div>
                     )}

@@ -254,7 +254,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <div className="text-center text-gray-400 text-lg font-semibold">
             <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-            Select an institution to get started.
+            Select an Institution
           </div>
         </div>
       )}
