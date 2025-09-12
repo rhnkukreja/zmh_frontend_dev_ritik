@@ -243,8 +243,8 @@ const VdsProxyVotingTable = () => {
         company_name: [companyGlobalSearchName],
         year: yearTicker!,
       });
-      if (res.result?.institution) {
-        setApiDropdownOptions(res.result?.institution);
+      if (res.result?.institutes) {
+        setApiDropdownOptions(res.result?.institutes);
       }
       setMeetingDate(res.result?.meeting_date);
     } catch (error) {
@@ -580,7 +580,7 @@ const VdsProxyVotingTable = () => {
                     <div className="flex items-end gap-4">
                       <div className=" w-4/12">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
-                          Select Institution*
+                          Select Institution to continue*
                         </div>
                         
 

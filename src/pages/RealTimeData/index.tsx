@@ -555,7 +555,7 @@ const index = () => {
                     render={({ field }) => (
                       <MultiSelectDropdown
                         data={dropdownInstitutionValues?.institutes}
-                        placeholder="Select Institutions"
+                        placeholder="Select Institution to proceed"
                         loading={getDropdownLoader}
                         onChange={(selectedOptions) => {
                           const selectedValues = selectedOptions.map((option) => option.value);

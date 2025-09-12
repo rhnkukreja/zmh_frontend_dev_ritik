@@ -165,7 +165,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
       const res = await dashboardService.getInstitution({
         company_name: [companyGlobalSearchName],
       });
-      if (res.result?.institution?.length > 0) {
+      if (res.result?.institutes?.length > 0) {
         setIsInstitutionList(true);
       }
       else {
