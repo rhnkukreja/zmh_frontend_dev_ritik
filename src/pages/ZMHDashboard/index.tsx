@@ -25,10 +25,11 @@ import Table from "@/components/Base/Table";
 import { dashboardService } from "@/services/dashboard";
 import useCompanySearch from "@/hooks/useCompanySearch";
 import { CompanyData } from "@/types/company";
+import Pill from "@/components/Pill";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
-  
+
   // Active tab state
   const [activeTab, setActiveTab] = useState('ownership');
 
@@ -76,7 +77,7 @@ function Main() {
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -90,10 +91,15 @@ function Main() {
   }, [isCompanySelected]);
 
   useEffect(() => {
-    if (companyGlobalSearchName) {
-      dispatch(getGraphQLBoardData(companyGlobalSearchName));
+    // Use board_name if available, otherwise fallback to company name
+    const searchValue = companyGlobalSearchBoardName || companyGlobalSearchName;
+    if (searchValue) {
+      // Clean the search value by removing "Class A", "Class B", etc.
+      const cleanSearchValue = searchValue.replace(/\s+(Class\s+[A-Z]|Common\s+Stock).*$/i, '').trim();
+      console.log('Making API call with clean search value:', cleanSearchValue);
+      dispatch(getGraphQLBoardData(cleanSearchValue));
     }
-  }, [companyGlobalSearchName, dispatch]);
+  }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
 
   // Scroll-based tab update
   useEffect(() => {
@@ -104,18 +110,32 @@ function Main() {
         { id: 'board-composition', tab: 'board-composition' }
       ];
 
-      const scrollPosition = window.scrollY + 200; // Offset for sticky header
+      const scrollPosition = window.scrollY + 250; // Increased offset for sticky header
 
+      // Check from bottom to top to get the most visible section
       for (let i = sections.length - 1; i >= 0; i--) {
         const section = document.getElementById(sections[i].id);
-        if (section && section.offsetTop <= scrollPosition) {
-          setActiveTab(sections[i].tab);
-          break;
+        if (section) {
+          const sectionTop = section.offsetTop;
+          const sectionBottom = sectionTop + section.offsetHeight;
+
+          // If scroll position is within this section
+          if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+            setActiveTab(sections[i].tab);
+            break;
+          }
+          // If we're past all sections, activate the last one
+          else if (i === sections.length - 1 && scrollPosition >= sectionTop) {
+            setActiveTab(sections[i].tab);
+            break;
+          }
         }
       }
     };
 
     window.addEventListener('scroll', handleScroll);
+    // Initial check on mount
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -171,11 +191,10 @@ function Main() {
                       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                     }
                   }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${
-                    activeTab === 'ownership'
-                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
+                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   Ownership
                 </button>
@@ -188,11 +207,10 @@ function Main() {
                       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                     }
                   }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${
-                    activeTab === 'shareholder-meeting-results'
-                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
+                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   Shareholder Meeting Results
                 </button>
@@ -205,11 +223,10 @@ function Main() {
                       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                     }
                   }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${
-                    activeTab === 'board-composition'
-                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'board-composition'
+                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   Board Composition (Beta)
                 </button>
@@ -235,7 +252,7 @@ function Main() {
                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
                   <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                     <span>
-                      <h1 className="text-lg font-bold">Board Composition (Beta)</h1>
+                      <h1 className="text-lg font-bold">Board Composition <Pill text="Beta"></Pill></h1>
                     </span>
                   </div>
                 </div>
@@ -266,10 +283,13 @@ function Main() {
                           {(() => {
                             const boardItems = graphQLBoardData?.data?.data?.organizationKeywordSearch?.items?.[0]?.rolesBoard?.items;
 
+                            console.log('GraphQL Response:', graphQLBoardData);
+                            console.log('Board Items:', boardItems);
+
                             if (boardItems && boardItems.length > 0) {
                               // Filter out members with end dates or without start dates, and sort by tenure (highest to lowest)
                               const activeMembers = boardItems
-                                .filter((member: any) => 
+                                .filter((member: any) =>
                                   !member.endDate?.displayDate && // Hide members with end dates
                                   member.startDate?.displayDate   // Hide members without start dates
                                 )
@@ -281,8 +301,8 @@ function Main() {
                                     if (member.startDate.displayDate.length === 4) {
                                       startDate = new Date(`${member.startDate.displayDate}-01-01`);
                                     }
-                                    const diffInMonths = (new Date().getFullYear() - startDate.getFullYear()) * 12 + 
-                                                        (new Date().getMonth() - startDate.getMonth());
+                                    const diffInMonths = (new Date().getFullYear() - startDate.getFullYear()) * 12 +
+                                      (new Date().getMonth() - startDate.getMonth());
                                     return Math.floor(diffInMonths / 12);
                                   })()
                                 }))
@@ -305,10 +325,14 @@ function Main() {
                                 </Table.Tr>
                               ));
                             } else {
+                              console.log('No board items found. Loading:', graphQLBoardDataLoading, 'Company:', companyGlobalSearchName);
                               return !graphQLBoardDataLoading ? (
                                 <Table.Tr>
                                   <Table.Td colSpan={4} className="py-4 text-center text-gray-500">
-                                    No board members data available
+                                    {companyGlobalSearchName
+                                      ? `No board members data available for ${companyGlobalSearchName}`
+                                      : "Please select a company to view board members"
+                                    }
                                   </Table.Td>
                                 </Table.Tr>
                               ) : null;
@@ -318,7 +342,7 @@ function Main() {
                       </Table>
                     </div>
                   </TableWrapper>
-                  
+
                   {/* Source at bottom of table */}
                   <div className="mt-3">
                     <p className="text-sm italic text-gray-500">Source: Altrata</p>
