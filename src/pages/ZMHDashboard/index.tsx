@@ -104,18 +104,32 @@ function Main() {
         { id: 'board-composition', tab: 'board-composition' }
       ];
 
-      const scrollPosition = window.scrollY + 200; // Offset for sticky header
+      const scrollPosition = window.scrollY + 250; // Increased offset for sticky header
 
+      // Check from bottom to top to get the most visible section
       for (let i = sections.length - 1; i >= 0; i--) {
         const section = document.getElementById(sections[i].id);
-        if (section && section.offsetTop <= scrollPosition) {
-          setActiveTab(sections[i].tab);
-          break;
+        if (section) {
+          const sectionTop = section.offsetTop;
+          const sectionBottom = sectionTop + section.offsetHeight;
+          
+          // If scroll position is within this section
+          if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+            setActiveTab(sections[i].tab);
+            break;
+          }
+          // If we're past all sections, activate the last one
+          else if (i === sections.length - 1 && scrollPosition >= sectionTop) {
+            setActiveTab(sections[i].tab);
+            break;
+          }
         }
       }
     };
 
     window.addEventListener('scroll', handleScroll);
+    // Initial check on mount
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
