@@ -187,7 +187,7 @@ function Main() {
                     setActiveTab('ownership');
                     const element = document.getElementById('ownership');
                     if (element) {
-                      const offsetTop = element.offsetTop - 150; // Account for sticky header
+                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
                       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                     }
                   }}
@@ -203,7 +203,7 @@ function Main() {
                     setActiveTab('shareholder-meeting-results');
                     const element = document.getElementById('shareholder-meeting-results');
                     if (element) {
-                      const offsetTop = element.offsetTop - 150; // Account for sticky header
+                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
                       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                     }
                   }}
@@ -219,7 +219,7 @@ function Main() {
                     setActiveTab('board-composition');
                     const element = document.getElementById('board-composition');
                     if (element) {
-                      const offsetTop = element.offsetTop - 150; // Account for sticky header
+                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
                       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                     }
                   }}
