@@ -3,6 +3,7 @@ export type CompanyData = {
   company_id?: string;
   symbol?: string;
   name?: string;
+  board_name?: string;
   company_v1?: string;
   stock_exchange?: string;
   rbics_economy?: string;

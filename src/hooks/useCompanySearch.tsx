@@ -47,6 +47,7 @@ const useCompanySearch = () => {
         id: companyData?.id,
         ticker: companyData?.symbol,
         name: companyData?.name,
+        board_name: companyData?.board_name || companyData?.name, // Fallback to name if board_name not available
       })
     );
     dispatch(setIsCompanySelected(true));

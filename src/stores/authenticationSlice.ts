@@ -30,6 +30,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   companyGlobalSearchName: string;
+  companyGlobalSearchBoardName: string;
   companyGlobalSearchId: number | undefined;
   companyGlobalSearchTicker: string | undefined;
   finhub: Finhub | null;
@@ -40,6 +41,7 @@ const initialState: AuthState = {
   user: null,
   loading: false,
   companyGlobalSearchName: "",
+  companyGlobalSearchBoardName: "",
   companyGlobalSearchId: undefined,
   companyGlobalSearchTicker: undefined,
   error: null,
@@ -93,11 +95,13 @@ const authSlice = createSlice({
       state,
       action: PayloadAction<{
         name: string;
+        board_name: string;
         id: number;
         ticker: string;
       }>
     ) {
       state.companyGlobalSearchName = action.payload.name;
+      state.companyGlobalSearchBoardName = action.payload.board_name;
       state.companyGlobalSearchId = action.payload.id;
       state.companyGlobalSearchTicker = action.payload.ticker;
     },

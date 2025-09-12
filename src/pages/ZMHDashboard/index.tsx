@@ -76,7 +76,7 @@ function Main() {
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -90,10 +90,15 @@ function Main() {
   }, [isCompanySelected]);
 
   useEffect(() => {
-    if (companyGlobalSearchName) {
-      dispatch(getGraphQLBoardData(companyGlobalSearchName));
+    // Use board_name if available, otherwise fallback to company name
+    const searchValue = companyGlobalSearchBoardName || companyGlobalSearchName;
+    if (searchValue) {
+      // Clean the search value by removing "Class A", "Class B", etc.
+      const cleanSearchValue = searchValue.replace(/\s+(Class\s+[A-Z]|Common\s+Stock).*$/i, '').trim();
+      console.log('Making API call with clean search value:', cleanSearchValue);
+      dispatch(getGraphQLBoardData(cleanSearchValue));
     }
-  }, [companyGlobalSearchName, dispatch]);
+  }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
 
   // Scroll-based tab update
   useEffect(() => {
@@ -279,6 +284,9 @@ function Main() {
                         <Table.Tbody>
                           {(() => {
                             const boardItems = graphQLBoardData?.data?.data?.organizationKeywordSearch?.items?.[0]?.rolesBoard?.items;
+                            
+                            console.log('GraphQL Response:', graphQLBoardData);
+                            console.log('Board Items:', boardItems);
 
                             if (boardItems && boardItems.length > 0) {
                               // Filter out members with end dates or without start dates, and sort by tenure (highest to lowest)
@@ -319,10 +327,14 @@ function Main() {
                                 </Table.Tr>
                               ));
                             } else {
+                              console.log('No board items found. Loading:', graphQLBoardDataLoading, 'Company:', companyGlobalSearchName);
                               return !graphQLBoardDataLoading ? (
                                 <Table.Tr>
                                   <Table.Td colSpan={4} className="py-4 text-center text-gray-500">
-                                    No board members data available
+                                    {companyGlobalSearchName 
+                                      ? `No board members data available for ${companyGlobalSearchName}`
+                                      : "Please select a company to view board members"
+                                    }
                                   </Table.Td>
                                 </Table.Tr>
                               ) : null;
