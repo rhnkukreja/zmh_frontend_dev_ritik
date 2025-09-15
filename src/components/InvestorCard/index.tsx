@@ -65,7 +65,7 @@ const index = () => {
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
 
-  
+
 
   const fetchData = async () => {
     if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
@@ -77,7 +77,7 @@ const index = () => {
         )
       );
       dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (companyGlobalSearchTicker !== tempSearch ) {
+    } else if (companyGlobalSearchTicker !== tempSearch) {
       setSelectedYear("");
       dispatch(
         fetchCompanyDashboard(
@@ -555,7 +555,12 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {!dashboard.investor_profile_id ? (
                                           <div className="whitespace-nowrap flex items-center justify-center">
-                                            <span className="text-lg">*</span>
+                                            <span className="text-lg cursor-pointer" onClick={() => {
+                                              window.scrollBy({
+                                                top: 350,
+                                                behavior: "smooth",
+                                              });
+                                            }}>*</span>
                                           </div>
                                         ) : (
                                           <>
@@ -583,7 +588,12 @@ const index = () => {
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         {!dashboard.investor_profile_id ? (
                                           <div className="whitespace-nowrap flex items-center justify-center">
-                                            <span className="text-lg">*</span>
+                                            <span className="text-lg cursor-pointer" onClick={() => {
+                                              window.scrollBy({
+                                                top: 350,
+                                                behavior: "smooth",
+                                              });
+                                            }}>*</span>
                                           </div>
                                         ) : (
                                           <>
