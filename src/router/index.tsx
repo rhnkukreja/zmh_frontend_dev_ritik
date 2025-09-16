@@ -94,6 +94,7 @@ import ProxyContestDetail from "@/pages/ProxyContestDetail";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
 import VdsEuropean from "@/pages/vdsEuropean";
 import RealTimeData from "@/pages/RealTimeData";
+import CustomReports from "../pages/CustomReports";
 
 function Router() {
   const TitleManager = () => {
@@ -484,6 +485,11 @@ function Router() {
           element: <ProxyContestDetail />,
           data: { titleName: "Proxy Contest Details - ZMH Analytics" },
         },
+          {
+            path: "custom-reports",
+            element: <CustomReports />,
+            data: { titleName: "Custom Reports - ZMH Analytics" },
+          },
         {
           path: "voting-data",
           element: <VdsEuropean />,

@@ -154,6 +154,13 @@ const initialState: any = {
       pathname: "#",
       title: "Email Alert",
     },
+
+      // {
+      //   icon: "BarChart2",
+      //   pathname: "/custom-reports",
+      //   title: "Custom Reports",
+      //   ignore: true,
+      // },
     {
       icon: "FileText",
       pathname: "/notes",

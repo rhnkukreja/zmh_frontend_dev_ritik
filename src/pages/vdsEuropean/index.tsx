@@ -1120,20 +1120,11 @@ const index = () => {
       return;
     }
 
-    // Handle institution filter removal - prevent removal if company is selected
+    // Handle institution filter removal - allow removal even if company is selected
     if (removeKey === "institution_name") {
-      const currentCompanies = isViewAnalysis ? allAnalyticsFilter.company_name || [] : allApplyFilter.company_name || [];
-      
-      // If company is selected, don't allow institution removal
-      if (currentCompanies.length > 0) {
-        return; // Block removal when company is selected
-      }
-
       const currentInstitutions = isViewAnalysis ? allAnalyticsFilter.institution_name || [] : allApplyFilter.institution_name || [];
-
       // Remove the specific institution value
       const updatedInstitutions = currentInstitutions.filter((institution: string) => institution !== removeValue);
-
       if (isViewAnalysis) {
         const updatedFilters = { ...allAnalyticsFilter, institution_name: updatedInstitutions };
         setAllAnalyticsFilter(updatedFilters);
