@@ -105,7 +105,6 @@ const CustomReports = () => {
           placeholder="Select up to 5 tickers"
           onChange={opts => setSelectedTickers(opts.map(o => o.value).slice(0, 5))}
           selectedOption={selectedTickers}
-          maxSelect={5}
         />
       </div>
       <TableWrapper>
