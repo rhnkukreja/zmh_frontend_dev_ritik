@@ -1178,7 +1178,7 @@ function PeerAnalysis() {
                       *
                     </sup>
                     <p id="footnote" className="">
-                      Investor does not disclose engagement details. (Dimensional does not disclose engagement topics)
+                      Investor does not disclose engagement details. (SSGA and Dimensional does not disclose engagement topics)
                     </p>
 
                   </span>
