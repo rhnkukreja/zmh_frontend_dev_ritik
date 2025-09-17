@@ -58,6 +58,9 @@ const VdsProxyVotingTable = () => {
   const yearTicker = searchParams.get("year")!;
 
   const [filter, setFilter] = useState<any>([]);
+  const [top20Loaded, setTop20Loaded] = useState<boolean>(false);
+  const [allInvestorsLoaded, setAllInvestorsLoaded] = useState<boolean>(false);
+  const [lastFilterState, setLastFilterState] = useState<string>("");
 
   const { handleSubmit, control, reset } = useForm<any>({
     defaultValues: {
@@ -66,7 +69,7 @@ const VdsProxyVotingTable = () => {
   });
 
   useEffect(() => {
-    if (tab === "Top-20" && isCompanySelected) {
+    if (tab === "Top-20" && isCompanySelected && !top20Loaded) {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
@@ -74,9 +77,10 @@ const VdsProxyVotingTable = () => {
           )
         )
       );
+      setTop20Loaded(true);
     }
 
-    if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0) {
+    if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0 && !top20Loaded) {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
@@ -84,18 +88,20 @@ const VdsProxyVotingTable = () => {
           )
         )
       );
-    } else {
-      dispatch(
-        fetchVdsProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
-          )
-        )
-      );
+      setTop20Loaded(true);
     }
   }, [companyGlobalSearchTicker, searchTicker, tab]);
 
+  // Reset the flags when company changes
   useEffect(() => {
+    setTop20Loaded(false);
+    setAllInvestorsLoaded(false);
+    setLastFilterState("");
+  }, [companyGlobalSearchTicker]);
+
+  useEffect(() => {
+    const currentFilterState = filter?.length > 0 ? JSON.stringify(filter) : "empty";
+    
     if (tab === "All-Investor" && isCompanySelected) {
       if (filter?.length > 0) {
         dispatch(
@@ -116,15 +122,32 @@ const VdsProxyVotingTable = () => {
             })
           )
         );
-      } else {
+        setLastFilterState(currentFilterState);
+      } else if (!allInvestorsLoaded) {
+        // Default to "Top 10" when no institution is selected and not already loaded
         dispatch(
           fetchVdsProxyAllInvestor(
-            createDynamicURL(`${baseURL}/vds_proxy_voting/`)
+            createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
+              ticker: companyGlobalSearchTicker,
+              year: yearTicker!,
+              institution_name: "Top 10",
+            })
           )
         );
+        dispatch(
+          getProxyVotingRationale(
+            createDynamicURL(`/vds_proxy_voting_rationale/`, {
+              ticker: companyGlobalSearchTicker,
+              year: yearTicker!,
+              institution_name: "Top 10",
+            })
+          )
+        );
+        setAllInvestorsLoaded(true);
+        setLastFilterState(currentFilterState);
       }
       dispatch(setIsCompanySelected(false));
-    } else if (filter?.length > 0) {
+    } else if (filter?.length > 0 && lastFilterState !== currentFilterState) {
       dispatch(
         fetchVdsProxyAllInvestor(
           createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
@@ -144,12 +167,29 @@ const VdsProxyVotingTable = () => {
           })
         )
       );
-    } else {
+      setLastFilterState(currentFilterState);
+    } else if (filter?.length === 0 && !allInvestorsLoaded && lastFilterState !== currentFilterState) {
+      // Default to "Top 10" when no institution is selected and not already loaded
       dispatch(
         fetchVdsProxyAllInvestor(
-          createDynamicURL(`${baseURL}/vds_proxy_voting/`)
+          createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
+            ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
+            institution_name: "Top 10",
+          })
         )
       );
+      dispatch(
+        getProxyVotingRationale(
+          createDynamicURL(`/vds_proxy_voting_rationale/`, {
+            ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
+            institution_name: "Top 10",
+          })
+        )
+      );
+      setAllInvestorsLoaded(true);
+      setLastFilterState(currentFilterState);
     }
   }, [filter, tab, companyGlobalSearchTicker]);
 
@@ -267,6 +307,8 @@ const VdsProxyVotingTable = () => {
 
   const onFilterClear = () => {
     setFilter([]);
+    setAllInvestorsLoaded(false); // Reset so Top 10 data loads when clearing filters
+    setLastFilterState(""); // Reset filter state tracking
 
     dispatch(clearVotingRationale());
     reset();
@@ -637,7 +679,14 @@ const VdsProxyVotingTable = () => {
                   </form>
                   <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
                     <span>
-                      <h1 className="text-lg font-bold mt-4">Proxy Voting</h1>
+                      <h1 className="text-lg font-bold mt-4">
+                        Proxy Voting 
+                        {filter?.length === 0 && (
+                          <span className="text-sm font-normal text-gray-600 ml-2">
+                            (Showing Top 10)
+                          </span>
+                        )}
+                      </h1>
                       {
                          meetingDate &&
                         <p className=" italic"> Meeting Date: {meetingDate} </p>
@@ -661,8 +710,18 @@ const VdsProxyVotingTable = () => {
                     )}
                   </div>
 
+                  {vdsProxyAllInvestorLoading && (
+                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                      <LoadingIcon
+                        color="#800000"
+                        icon="three-dots"
+                        className="w-16 h-16"
+                      />
+                    </div>
+                  )}
+
                   <TableWrapper
-                    isLoading={vdsProxyAllInvestorLoading && filter?.length > 0}
+                    isLoading={vdsProxyAllInvestorLoading}
                   >
                     <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                       <Table className="table_3 w-full">
@@ -848,17 +907,17 @@ const VdsProxyVotingTable = () => {
                     </div>
                   </TableWrapper>
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length === 0 && (
+                    filter?.length === 0 && !vdsProxyAllInvestorLoading && (
                       <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                         <div className="text-center text-gray-400 text-lg font-semibold">
                           <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-                          Select an Institution
+                          No Top 10 Proxy Records Available
                         </div>
                       </div>
                     )}
 
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length > 0 && (
+                    filter?.length > 0 && !vdsProxyAllInvestorLoading && (
                       <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                         <div className="text-center text-gray-400 text-lg font-semibold">
                           <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />

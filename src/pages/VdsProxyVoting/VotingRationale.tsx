@@ -28,6 +28,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
   const [searchParams] = useSearchParams();
   const [groupVotingRationale, setGroupVotingRationale] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+  const [top20RationaleLoaded, setTop20RationaleLoaded] = useState<boolean>(false);
   const yearTicker = searchParams.get("year");
 
   useEffect(() => {
@@ -67,7 +68,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
   };
 
   useEffect(() => {
-    if (companyGlobalSearchTicker && tab === "Top-20") {
+    if (companyGlobalSearchTicker && tab === "Top-20" && !top20RationaleLoaded) {
       dispatch(
         getProxyVotingRationale(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
@@ -76,8 +77,14 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
           })
         )
       );
+      setTop20RationaleLoaded(true);
     }
   }, [companyGlobalSearchTicker, tab]);
+
+  // Reset the flag when company changes
+  useEffect(() => {
+    setTop20RationaleLoaded(false);
+  }, [companyGlobalSearchTicker]);
 
 
   return (
@@ -85,7 +92,14 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
       <div className="flex justify-between mb-4 mt-1">
         <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
           <span>
-            <h1 className="text-lg font-bold">Voting Rationale</h1>
+            <h1 className="text-lg font-bold">
+              Voting Rationale
+              {filter?.length === 0 && (
+                <span className="text-sm font-normal text-gray-600 ml-2">
+                  (Showing Top 10)
+                </span>
+              )}
+            </h1>
             {
               meetingDate &&
               <p className=" italic"> Meeting Date: {meetingDate} </p>
@@ -250,16 +264,16 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
           </div>
         )}
 
-      {votingRationale?.length === 0 && filter && filter?.length === 0 && (
+      {votingRationale?.length === 0 && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <div className="text-center text-gray-400 text-lg font-semibold">
             <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-            Select an Institution
+            No Top 10 Voting Rationale records available.
           </div>
         </div>
       )}
 
-      {votingRationale?.length === 0 && filter?.length > 0 && (
+      {votingRationale?.length === 0 && filter?.length > 0 && !getProxyVotingRationaleLoading && (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <div className="text-center text-gray-400 text-lg font-semibold">
             <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
