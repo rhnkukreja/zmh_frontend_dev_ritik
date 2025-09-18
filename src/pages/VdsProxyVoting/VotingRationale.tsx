@@ -28,8 +28,6 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
   const [searchParams] = useSearchParams();
   const [groupVotingRationale, setGroupVotingRationale] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
-  const [top20RationaleLoaded, setTop20RationaleLoaded] = useState<boolean>(false);
-  const [allInvestorsRationaleLoaded, setAllInvestorsRationaleLoaded] = useState<boolean>(false);
   const yearTicker = searchParams.get("year");
 
   useEffect(() => {
@@ -68,27 +66,11 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
     }));
   };
 
-  useEffect(() => {
-    // Only handle API calls for Top-20 tab when no filter is provided
-    // All-Investor tab API calls are handled by the parent component
-    if (companyGlobalSearchTicker && tab === "Top-20" && !filter && !top20RationaleLoaded) {
-      dispatch(
-        getProxyVotingRationale(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-          })
-        )
-      );
-      setTop20RationaleLoaded(true);
-    }
-  }, [companyGlobalSearchTicker, tab, filter]);
+  // NOTE: All API calls for voting rationale are now handled by the parent component
+  // This component only displays the data from Redux store
+  // No useEffect for API calls needed here
 
-  // Reset the flag when company changes
-  useEffect(() => {
-    setTop20RationaleLoaded(false);
-    setAllInvestorsRationaleLoaded(false);
-  }, [companyGlobalSearchTicker]);
+  // State management is now handled entirely by the parent component
 
 
   return (
@@ -96,10 +78,10 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
       <div className="flex justify-between mb-4 mt-1">
         <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
           <div>
-            <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
+            <h1 className="text-xl font-semibold mt-4 text-slate-800 dark:text-slate-200">
               Voting Rationale
             </h1>
-            {filter?.length === 0 && (
+            {filter?.length === 0 && tab === "Top-20" && (
               <p className="text-sm text-slate-500 mt-1 italic">
                 Showing Top 10 institutions
               </p>

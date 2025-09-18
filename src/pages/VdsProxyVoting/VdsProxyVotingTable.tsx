@@ -77,6 +77,15 @@ const VdsProxyVotingTable = () => {
           )
         )
       );
+      // Also fetch voting rationale for Top-20 tab
+      dispatch(
+        getProxyVotingRationale(
+          createDynamicURL(`/vds_proxy_voting_rationale/`, {
+            ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
+          })
+        )
+      );
       setTop20Loaded(true);
     }
 
@@ -86,6 +95,15 @@ const VdsProxyVotingTable = () => {
           createDynamicURL(
             `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
           )
+        )
+      );
+      // Also fetch voting rationale for initial load
+      dispatch(
+        getProxyVotingRationale(
+          createDynamicURL(`/vds_proxy_voting_rationale/`, {
+            ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
+          })
         )
       );
       setTop20Loaded(true);
@@ -307,9 +325,8 @@ const VdsProxyVotingTable = () => {
 
   const onFilterClear = () => {
     setFilter([]);
-    setAllInvestorsLoaded(false); // Reset so Top 10 data loads when clearing filters
-    setLastFilterState(""); // Reset filter state tracking
-
+    setAllInvestorsLoaded(false);
+    setLastFilterState("");
     dispatch(clearVotingRationale());
     reset();
   };
@@ -318,6 +335,7 @@ const VdsProxyVotingTable = () => {
     const tabIndex = tab === "Top-20" ? 0 : tab === "All-Investor" ? 1 : -1;
     return tabIndex;
   };
+
   return (
     <>
       <Button
@@ -678,11 +696,6 @@ const VdsProxyVotingTable = () => {
                       <h1 className="text-xl font-semibold mt-4 text-slate-800 dark:text-slate-200">
                         Proxy Voting
                       </h1>
-                      {filter?.length === 0 && (
-                        <p className="text-sm text-slate-500 mt-1 italic">
-                          Showing Top 10 institutions
-                        </p>
-                      )}
                       {
                          meetingDate &&
                         <p className="text-sm italic text-slate-600 dark:text-slate-400 mt-1"> Meeting Date: {meetingDate} </p>
