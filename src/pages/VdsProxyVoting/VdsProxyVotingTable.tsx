@@ -318,10 +318,6 @@ const VdsProxyVotingTable = () => {
     const tabIndex = tab === "Top-20" ? 0 : tab === "All-Investor" ? 1 : -1;
     return tabIndex;
   };
-
-  const onTabChange = () => {
-    dispatch(clearVotingRationale());
-  };
   return (
     <>
       <Button
@@ -350,7 +346,6 @@ const VdsProxyVotingTable = () => {
                     as="button"
                     onClick={() => {
                       dispatch(setTabs("Top-20"));
-                      onTabChange();
                     }}
                   >
                     <div className="flex items-center justify-center ">
@@ -365,7 +360,6 @@ const VdsProxyVotingTable = () => {
                     as="button"
                     onClick={() => {
                       dispatch(setTabs("All-Investor"));
-                      onTabChange();
                     }}
                   >
                     <div className="flex items-center justify-center ">
@@ -619,12 +613,13 @@ const VdsProxyVotingTable = () => {
                 </Tab.Panel>
                 
                 <Tab.Panel className="leading-relaxed">
-                  <form onSubmit={handleSubmit(onSubmit)}>
-                    <div className="flex items-end gap-4">
-                      <div className=" w-4/12">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          {/* <span className="font-semibold">Institution</span> */}
-                        </div>
+                  <div className="bg-slate-50 dark:bg-darkmode-700 p-4 rounded-lg mb-6">
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                      <div className="flex items-end gap-4">
+                        <div className="w-4/12">
+                          <div className="text-left text-slate-600 dark:text-slate-400 flex justify-between mb-2">
+                            <span className="font-medium text-sm">Select Institution</span>
+                          </div>
                         
 
                         <Controller
@@ -677,21 +672,22 @@ const VdsProxyVotingTable = () => {
                       </div>
                     </div>
                   </form>
-                  <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
-                    <span>
-                      <h1 className="text-lg font-bold mt-4">
-                        Proxy Voting 
-                        {filter?.length === 0 && (
-                          <span className="text-sm font-normal text-gray-600 ml-2">
-                            (Showing Top 10)
-                          </span>
-                        )}
+                  </div>
+                  <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+                    <div>
+                      <h1 className="text-xl font-semibold mt-4 text-slate-800 dark:text-slate-200">
+                        Proxy Voting
                       </h1>
+                      {filter?.length === 0 && (
+                        <p className="text-sm text-slate-500 mt-1 italic">
+                          Showing Top 10 institutions
+                        </p>
+                      )}
                       {
                          meetingDate &&
-                        <p className=" italic"> Meeting Date: {meetingDate} </p>
+                        <p className="text-sm italic text-slate-600 dark:text-slate-400 mt-1"> Meeting Date: {meetingDate} </p>
                       }
-                    </span>
+                    </div>
 
                     {vdsProxyAllInvestorDetails?.vds_report?.length > 0 && (
                       <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
@@ -709,16 +705,6 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
                   </div>
-
-                  {vdsProxyAllInvestorLoading && (
-                    <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                      <LoadingIcon
-                        color="#800000"
-                        icon="three-dots"
-                        className="w-16 h-16"
-                      />
-                    </div>
-                  )}
 
                   <TableWrapper
                     isLoading={vdsProxyAllInvestorLoading}
@@ -908,20 +894,22 @@ const VdsProxyVotingTable = () => {
                   </TableWrapper>
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
                     filter?.length === 0 && !vdsProxyAllInvestorLoading && (
-                      <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <div className="text-center text-gray-400 text-lg font-semibold">
-                          <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-                          No Top 10 Proxy Records Available
+                      <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                        <div className="text-center text-slate-500 dark:text-slate-400">
+                          <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
+                          <h3 className="text-lg font-medium mb-2">No Top 10 Proxy Records Available</h3>
+                          <p className="text-sm">Data may not be available for this company or time period.</p>
                         </div>
                       </div>
                     )}
 
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
                     filter?.length > 0 && !vdsProxyAllInvestorLoading && (
-                      <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <div className="text-center text-gray-400 text-lg font-semibold">
-                          <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-                          No VDS records available. Try adjusting your filters!
+                      <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                        <div className="text-center text-slate-500 dark:text-slate-400">
+                          <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
+                          <h3 className="text-lg font-medium mb-2">No VDS Records Available</h3>
+                          <p className="text-sm">Try adjusting your filters or selecting different institutions.</p>
                         </div>
                       </div>
                     )}

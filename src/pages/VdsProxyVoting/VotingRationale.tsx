@@ -29,6 +29,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
   const [groupVotingRationale, setGroupVotingRationale] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const [top20RationaleLoaded, setTop20RationaleLoaded] = useState<boolean>(false);
+  const [allInvestorsRationaleLoaded, setAllInvestorsRationaleLoaded] = useState<boolean>(false);
   const yearTicker = searchParams.get("year");
 
   useEffect(() => {
@@ -68,7 +69,9 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
   };
 
   useEffect(() => {
-    if (companyGlobalSearchTicker && tab === "Top-20" && !top20RationaleLoaded) {
+    // Only handle API calls for Top-20 tab when no filter is provided
+    // All-Investor tab API calls are handled by the parent component
+    if (companyGlobalSearchTicker && tab === "Top-20" && !filter && !top20RationaleLoaded) {
       dispatch(
         getProxyVotingRationale(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
@@ -79,32 +82,33 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
       );
       setTop20RationaleLoaded(true);
     }
-  }, [companyGlobalSearchTicker, tab]);
+  }, [companyGlobalSearchTicker, tab, filter]);
 
   // Reset the flag when company changes
   useEffect(() => {
     setTop20RationaleLoaded(false);
+    setAllInvestorsRationaleLoaded(false);
   }, [companyGlobalSearchTicker]);
 
 
   return (
-    <div className="mt-6">
+    <div className="mt-8">
       <div className="flex justify-between mb-4 mt-1">
         <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-          <span>
-            <h1 className="text-lg font-bold">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
               Voting Rationale
-              {filter?.length === 0 && (
-                <span className="text-sm font-normal text-gray-600 ml-2">
-                  (Showing Top 10)
-                </span>
-              )}
             </h1>
+            {filter?.length === 0 && (
+              <p className="text-sm text-slate-500 mt-1 italic">
+                Showing Top 10 institutions
+              </p>
+            )}
             {
               meetingDate &&
-              <p className=" italic"> Meeting Date: {meetingDate} </p>
+              <p className="text-sm italic text-slate-600 dark:text-slate-400 mt-1"> Meeting Date: {meetingDate} </p>
             }
-          </span>
+          </div>
         </div>
         {votingRationale?.length > 0 && (
           <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
@@ -223,11 +227,6 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
                     )}
                   </>
                 </Table.Tbody>
-                {groupVotingRationale?.length === 0 && (
-                  <div className="w-full">
-                    <h1 className="mt-3">No Records Found..</h1>
-                  </div>
-                )}
               </Table>
             </div>
           </TableWrapper>
@@ -244,7 +243,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
       />
 
       {votingRationale?.length === 0 && getProxyVotingRationaleLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+        <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <LoadingIcon
             color="#800000"
             icon="three-dots"
@@ -256,28 +255,31 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
       {tab === "Top-20" &&
         votingRationale?.length === 0 &&
         !getProxyVotingRationaleLoading && (
-          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-            <div className="text-center text-gray-400 text-lg font-semibold">
-              <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-              No Voting Rationale records available. Try adjusting your filters!
+          <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+            <div className="text-center text-slate-500 dark:text-slate-400">
+              <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
+              <h3 className="text-lg font-medium mb-2">No Voting Rationale Available</h3>
+              <p className="text-sm">Voting rationale data may not be available for this company or time period.</p>
             </div>
           </div>
         )}
 
       {votingRationale?.length === 0 && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <div className="text-center text-gray-400 text-lg font-semibold">
-            <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-            No Top 10 Voting Rationale records available.
+        <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+          <div className="text-center text-slate-500 dark:text-slate-400">
+            <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
+            <h3 className="text-lg font-medium mb-2">No Top 10 Voting Rationale Available</h3>
+            <p className="text-sm">Voting rationale data may not be available for the top 10 institutions.</p>
           </div>
         </div>
       )}
 
       {votingRationale?.length === 0 && filter?.length > 0 && !getProxyVotingRationaleLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <div className="text-center text-gray-400 text-lg font-semibold">
-            <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-            No Voting Rationale records available. Try adjusting your filters!
+        <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+          <div className="text-center text-slate-500 dark:text-slate-400">
+            <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
+            <h3 className="text-lg font-medium mb-2">No Voting Rationale Available</h3>
+            <p className="text-sm">Try adjusting your filters or selecting different institutions.</p>
           </div>
         </div>
       )}
