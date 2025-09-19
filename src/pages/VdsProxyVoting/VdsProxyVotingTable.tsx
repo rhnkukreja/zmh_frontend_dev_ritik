@@ -638,7 +638,7 @@ const VdsProxyVotingTable = () => {
                       <div className="flex items-end gap-4">
                         <div className="w-4/12">
                           <div className="text-left text-slate-600 dark:text-slate-400 flex justify-between mb-2">
-                            <span className="font-medium text-sm">Check the dropdown below for more options.</span>
+                            <span className="font-medium text-sm">Use the dropdown below to view more Institutions.</span>
                           </div>
                         
 
