@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import TableWrapper from "../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
-import FormInput from "@/components/Base/Form/FormInput";
 import LoadingIcon from "@/components/Base/LoadingIcon";
-import { FaDownload, FaPlus, FaTimes } from "react-icons/fa";
+import { FaDownload, FaTimes } from "react-icons/fa";
 import { reportsService, CompanyOwnership, OwnershipData } from "@/services/reports";
 import { useAppSelector } from "@/stores/hooks";
+import CompanySelect from "@/components/ReactSelectAsync";
 
 const CustomReports = () => {
   // Get global company ticker from authentication store
@@ -21,7 +21,6 @@ const CustomReports = () => {
   };
 
   const [selectedTickers, setSelectedTickers] = useState<string[]>(getInitialTickers());
-  const [tickerInput, setTickerInput] = useState<string>("");
   const [ownershipData, setOwnershipData] = useState<CompanyOwnership[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
@@ -54,25 +53,28 @@ const CustomReports = () => {
     }
   };
 
-  const addTicker = () => {
-    if (
-      tickerInput.trim() &&
-      !selectedTickers.includes(tickerInput.toUpperCase()) &&
-      selectedTickers.length < 5
-    ) {
-      setSelectedTickers([...selectedTickers, tickerInput.toUpperCase()]);
-      setTickerInput("");
+  const handleCompanySelect = (selectedOptions: any) => {
+    if (selectedOptions && selectedOptions.length > 0) {
+      // Extract tickers from selected companies using the symbol field
+      const newTickers = selectedOptions.slice(0, 5).map((option: any) => {
+        return option.symbol || option.company?.symbol || option.company?.ticker || option.label.split(' ')[0];
+      }).filter((ticker: string) => ticker); // Filter out any null/undefined values
+      
+      // Merge with existing tickers, keeping global company ticker if it exists
+      const allTickers = [...new Set([...selectedTickers, ...newTickers])]; // Remove duplicates
+      setSelectedTickers(allTickers.slice(0, 5)); // Limit to 5 companies
+    } else {
+      // Only clear if global company ticker is not present
+      if (companyGlobalSearchTicker) {
+        setSelectedTickers([companyGlobalSearchTicker]);
+      } else {
+        setSelectedTickers([]);
+      }
     }
   };
 
   const removeTicker = (ticker: string) => {
     setSelectedTickers(selectedTickers.filter(t => t !== ticker));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      addTicker();
-    }
   };
 
   // Download CSV
@@ -106,25 +108,17 @@ const CustomReports = () => {
         </Button>
       </div>
 
-      {/* Ticker Input Section */}
+      {/* Ticker Search Section */}
       <div className="mb-8">
-        <div className="flex gap-3 mb-4 w-[400px]">
-          <FormInput
-            type="text"
-            placeholder="Enter ticker symbol (e.g., AAPL)"
-            value={tickerInput}
-            onChange={(e) => setTickerInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="w-[300px] max-w-2xl px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+        <div className="mb-4 w-full">
+          <CompanySelect
+            value={[]}
+            onChange={handleCompanySelect}
+            isMulti={true}
+            placeholder="Search and select up to 5 companies..."
+            className="w-full"
+            isClearable={true}
           />
-          <Button
-            variant="primary"
-            onClick={addTicker}
-            disabled={!tickerInput.trim() || selectedTickers.length >= 5 || selectedTickers.includes(tickerInput.toUpperCase())}
-            className="flex items-center gap-2 px-6 py-3 font-semibold rounded-lg transition-colors duration-200 flex-shrink-0"
-          >
-            <FaPlus size={14} /> Add Ticker
-          </Button>
         </div>
 
         {/* Selected Tickers */}
@@ -144,7 +138,7 @@ const CustomReports = () => {
             </div>
           ))}
         </div>
-        <p className="text-sm text-gray-700 font-medium">Maximum 5 tickers can be selected at a time.</p>
+        <p className="text-sm text-gray-700 font-medium">Maximum 5 companies can be selected at a time.</p>
       </div>
 
       {/* Error Message */}
@@ -156,65 +150,64 @@ const CustomReports = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex justify-center items-center py-12">
-          <LoadingIcon icon="spinning-circles" className="w-10 h-10 text-primary" />
-          <span className="ml-3 text-lg text-gray-800 font-medium">Loading ownership data...</span>
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
         </div>
       )}
 
-      {/* Separate Tables for Each Company */}
+      {/* Single Combined Table */}
       {!loading && ownershipData.length > 0 && (
-        <div className="space-y-8">
-          {ownershipData.map((company) => (
-            <div key={company.ticker} className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-              {/* Company Header */}
-              <div className="bg-primary px-6 py-4">
-                <h3 className="text-xl font-bold text-white">
-                  {company.ticker} - {company.company_name}
-                </h3>
-                <p className="text-white/80 text-sm mt-1">
-                  Top {Math.min(20, company.ownership_data.length)} Institutional Owners
-                </p>
-              </div>
-              
-              {/* Company Table */}
-              <TableWrapper>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <Table.Thead>
-                      <Table.Tr className="bg-gray-100 border-b-2 border-gray-200">
-                        <Table.Td className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wide">
-                          #
-                        </Table.Td>
-                        <Table.Td className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wide">
-                          Institution Name
-                        </Table.Td>
-                        <Table.Td className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wide">
-                          Ownership %
-                        </Table.Td>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {company.ownership_data.slice(0, 20).map((inv, index) => (
-                        <Table.Tr key={inv.filer_id} className="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100">
-                          <Table.Td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800 bg-gray-50">
-                            {index + 1}
+        <TableWrapper>
+          <div className="overflow-x-auto">
+            <Table>
+              <Table.Thead>
+                <Table.Tr className="bg-primary text-white text-sm">
+                  {ownershipData.map(company => (
+                    <React.Fragment key={company.ticker}>
+                      <Table.Td className="px-6 py-3 font-semibold text-left min-w-[250px]">
+                        {company.ticker} - {company.company_name}
+                      </Table.Td>
+                      <Table.Td className="px-6 py-3 font-semibold text-center min-w-[120px]">Ownership %</Table.Td>
+                    </React.Fragment>
+                  ))}
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {[...Array(20)].map((_, rowIdx) => (
+                  <Table.Tr key={rowIdx} className="hover:bg-gray-50 transition-colors duration-150">
+                    {ownershipData.map(company => {
+                      const inv = company.ownership_data?.[rowIdx];
+                      if (!inv) {
+                        return (
+                          <React.Fragment key={company.ticker + rowIdx}>
+                            <Table.Td className="px-6 py-3 text-gray-400 min-w-[250px]"></Table.Td>
+                            <Table.Td className="px-6 py-3 text-gray-400 min-w-[120px]"></Table.Td>
+                          </React.Fragment>
+                        );
+                      }
+                      return (
+                        <React.Fragment key={company.ticker + rowIdx}>
+                          <Table.Td className="px-6 py-3 text-sm font-medium text-left min-w-[250px]">
+                            <span className={inv.status ? "text-green-600 font-semibold" : "text-gray-900"}>
+                              {inv.institution_name}
+                            </span>
                           </Table.Td>
-                          <Table.Td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                            {inv.institution_name}
-                          </Table.Td>
-                          <Table.Td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary">
+                          <Table.Td className="px-6 py-3 text-sm font-bold text-primary text-center min-w-[120px]">
                             {inv.percent_ownership}%
                           </Table.Td>
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </div>
-              </TableWrapper>
-            </div>
-          ))}
-        </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </div>
+        </TableWrapper>
       )}
 
       {/* No Data State */}

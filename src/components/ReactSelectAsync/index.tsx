@@ -12,6 +12,8 @@ interface CompanyData {
 interface OptionType {
   value: number;
   label: string;
+  symbol?: string;
+  company?: any;
 }
 
 interface CompanySelectProps {
@@ -67,11 +69,15 @@ const fetchOptions = async (
           .map((company: any) => ({
             value: company?.id ?? company,
             label: company?.name ?? company,
+            symbol: company?.symbol || company?.ticker, // Add symbol/ticker field
+            company: company // Add complete company object
           }));
       }
       return response.results.map((company: any) => ({
         value: company?.id ?? company,
         label: company?.name ?? company,
+        symbol: company?.symbol || company?.ticker, // Add symbol/ticker field
+        company: company // Add complete company object
       }));
     }
   } catch (error) {
