@@ -14,6 +14,8 @@ import {
   fetchVdsProxyAllInvestor,
   fetchVdsProxyDashboard,
   getProxyVotingRationale,
+  getProxyVotingRationaleTop20,
+  getProxyVotingRationaleAllInvestors,
   setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
@@ -77,9 +79,9 @@ const VdsProxyVotingTable = () => {
           )
         )
       );
-      // Also fetch voting rationale for Top-20 tab
+      // Also fetch voting rationale for Top-20 tab (no institution_name parameter)
       dispatch(
-        getProxyVotingRationale(
+        getProxyVotingRationaleTop20(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
             year: yearTicker!,
@@ -97,9 +99,9 @@ const VdsProxyVotingTable = () => {
           )
         )
       );
-      // Also fetch voting rationale for initial load
+      // Also fetch voting rationale for initial load (no institution_name parameter)
       dispatch(
-        getProxyVotingRationale(
+        getProxyVotingRationaleTop20(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
             year: yearTicker!,
@@ -132,7 +134,7 @@ const VdsProxyVotingTable = () => {
           )
         );
         dispatch(
-          getProxyVotingRationale(
+          getProxyVotingRationaleAllInvestors(
             createDynamicURL(`/vds_proxy_voting_rationale/`, {
               ticker: companyGlobalSearchTicker,
               year: yearTicker!,
@@ -153,7 +155,7 @@ const VdsProxyVotingTable = () => {
           )
         );
         dispatch(
-          getProxyVotingRationale(
+          getProxyVotingRationaleAllInvestors(
             createDynamicURL(`/vds_proxy_voting_rationale/`, {
               ticker: companyGlobalSearchTicker,
               year: yearTicker!,
@@ -177,7 +179,7 @@ const VdsProxyVotingTable = () => {
       );
 
       dispatch(
-        getProxyVotingRationale(
+        getProxyVotingRationaleAllInvestors(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
             year: yearTicker!,
@@ -197,15 +199,15 @@ const VdsProxyVotingTable = () => {
           })
         )
       );
-      dispatch(
-        getProxyVotingRationale(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: "Top 10",
-          })
-        )
-      );
+        dispatch(
+          getProxyVotingRationaleAllInvestors(
+            createDynamicURL(`/vds_proxy_voting_rationale/`, {
+              ticker: companyGlobalSearchTicker,
+              year: yearTicker!,
+              institution_name: "Top 10",
+            })
+          )
+        );
       setAllInvestorsLoaded(true);
       setLastFilterState(currentFilterState);
     }
@@ -627,7 +629,7 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  <VotingRationale meetingDate={meetingDate}/>
+                  <VotingRationale meetingDate={meetingDate} tabType="top20"/>
                 </Tab.Panel>
                 
                 <Tab.Panel className="leading-relaxed">
@@ -927,7 +929,7 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  <VotingRationale meetingDate={meetingDate} filter={filter} />
+                  <VotingRationale meetingDate={meetingDate} filter={filter} tabType="allInvestors" />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

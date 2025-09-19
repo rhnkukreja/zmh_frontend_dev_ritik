@@ -88,7 +88,9 @@ interface CompanySliceState {
   getBoardDirectorMembersLoading: boolean;
   getProxyVotingRationaleLoading: boolean;
   boardDirectorMembers: BoardDirectorMembers[];
-  votingRationale: any[];
+  votingRationale: any[]; // Keep for backward compatibility
+  votingRationaleTop20: any[]; // Separate storage for Top 20 tab
+  votingRationaleAllInvestors: any[]; // Separate storage for All Investors tab
   graphQLBoardDataLoading: boolean;
   graphQLBoardData: any;
 }
@@ -141,6 +143,8 @@ const initialState: CompanySliceState = {
   getProxyVotingRationaleLoading: false,
   boardDirectorMembers: [],
   votingRationale: [],
+  votingRationaleTop20: [],
+  votingRationaleAllInvestors: [],
   graphQLBoardDataLoading: false,
   graphQLBoardData: null,
 
@@ -273,6 +277,22 @@ export const getProxyVotingRationale = createAsyncThunk<
   return { result: response.result };
 });
 
+export const getProxyVotingRationaleTop20 = createAsyncThunk<
+  { result: ProxyVotingRationale[] },
+  string
+>(`${name}/getProxyVotingRationaleTop20`, async (url: string) => {
+  const response = await dashboardService.getProxyVotingRationale(url);
+  return { result: response.result };
+});
+
+export const getProxyVotingRationaleAllInvestors = createAsyncThunk<
+  { result: ProxyVotingRationale[] },
+  string
+>(`${name}/getProxyVotingRationaleAllInvestors`, async (url: string) => {
+  const response = await dashboardService.getProxyVotingRationale(url);
+  return { result: response.result };
+});
+
 export const getGraphQLBoardData = createAsyncThunk<
   { result: any },
   string
@@ -341,6 +361,22 @@ const companySlice = createSlice({
 
     clearVotingRationale(state) {
       state.votingRationale = [];
+    },
+    
+    setVotingRationaleTop20(state, action: PayloadAction<any[]>) {
+      state.votingRationaleTop20 = action.payload;
+    },
+    
+    setVotingRationaleAllInvestors(state, action: PayloadAction<any[]>) {
+      state.votingRationaleAllInvestors = action.payload;
+    },
+    
+    clearVotingRationaleTop20(state) {
+      state.votingRationaleTop20 = [];
+    },
+    
+    clearVotingRationaleAllInvestors(state) {
+      state.votingRationaleAllInvestors = [];
     },
   },
   extraReducers: (builder) => {
@@ -677,6 +713,38 @@ const companySlice = createSlice({
           action.error.message || "Failed to fetch company dashboard";
       })
 
+      // Top 20 voting rationale reducers
+      .addCase(getProxyVotingRationaleTop20.pending, (state) => {
+        state.getProxyVotingRationaleLoading = true;
+        state.error = null;
+      })
+      .addCase(getProxyVotingRationaleTop20.fulfilled, (state, action) => {
+        state.getProxyVotingRationaleLoading = false;
+        state.votingRationaleTop20 = action.payload.result;
+        state.error = null;
+      })
+      .addCase(getProxyVotingRationaleTop20.rejected, (state, action) => {
+        state.getProxyVotingRationaleLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch Top 20 voting rationale";
+      })
+
+      // All Investors voting rationale reducers  
+      .addCase(getProxyVotingRationaleAllInvestors.pending, (state) => {
+        state.getProxyVotingRationaleLoading = true;
+        state.error = null;
+      })
+      .addCase(getProxyVotingRationaleAllInvestors.fulfilled, (state, action) => {
+        state.getProxyVotingRationaleLoading = false;
+        state.votingRationaleAllInvestors = action.payload.result;
+        state.error = null;
+      })
+      .addCase(getProxyVotingRationaleAllInvestors.rejected, (state, action) => {
+        state.getProxyVotingRationaleLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch All Investors voting rationale";
+      })
+
       // GraphQL board data
 
       .addCase(getGraphQLBoardData.pending, (state) => {
@@ -708,4 +776,8 @@ export const {
   // setVotingRationalePage,
   // resetVotingRationalePage,
   clearVotingRationale,
+  setVotingRationaleTop20,
+  setVotingRationaleAllInvestors,
+  clearVotingRationaleTop20,
+  clearVotingRationaleAllInvestors,
 } = companySlice.actions;

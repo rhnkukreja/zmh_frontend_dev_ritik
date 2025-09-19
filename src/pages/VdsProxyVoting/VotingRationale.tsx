@@ -16,22 +16,26 @@ import { FaCheckCircle } from "react-icons/fa";
 interface VotingRationaleProps {
   filter?: any;
   meetingDate?: string;
+  tabType?: "top20" | "allInvestors";
 }
-const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }) => {
+const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, tabType }) => {
   const dispatch = useAppDispatch();
   const { companyGlobalSearchTicker } = useAppSelector(
     (state) => state.authentiction
   );
 
-  const { getProxyVotingRationaleLoading, votingRationale, tab } =
+  const { getProxyVotingRationaleLoading, votingRationale, votingRationaleTop20, votingRationaleAllInvestors, tab } =
     useAppSelector((state) => state.dashboard);
   const [searchParams] = useSearchParams();
   const [groupVotingRationale, setGroupVotingRationale] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const yearTicker = searchParams.get("year");
 
+  // Select the correct voting rationale data based on tab type
+  const currentVotingRationale = tabType === "top20" ? votingRationaleTop20 : votingRationaleAllInvestors;
+
   useEffect(() => {
-    const groupedQuestions = votingRationale?.reduce(
+    const groupedQuestions = currentVotingRationale?.reduce(
       (acc: any, question: any) => {
         const investorName = question?.investor_name;
         if (!acc[investorName]) {
@@ -44,7 +48,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
     );
 
     setGroupVotingRationale(groupedQuestions);
-  }, [votingRationale]);
+  }, [currentVotingRationale]);
 
   useEffect(() => {
     if (groupVotingRationale) {
@@ -92,14 +96,14 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
             }
           </div>
         </div>
-        {votingRationale?.length > 0 && (
+        {currentVotingRationale?.length > 0 && (
           <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
             <Tippy content="Download Excel" options={{ theme: "light" }}>
               <div
                 className="box p-[5px] cursor-pointer"
                 onClick={() =>
                   downloadXlsxFile({
-                    data: votingRationale,
+                    data: currentVotingRationale,
                     fileName: `Voting_Rational_${companyGlobalSearchTicker}.xlsx`,
                   })
                 }
@@ -111,7 +115,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
         )}
       </div>
 
-      {votingRationale?.length > 0 && (
+      {currentVotingRationale?.length > 0 && (
         <>
           <TableWrapper isLoading={getProxyVotingRationaleLoading}>
             <div className="overflow-auto max-h-[400px]">
@@ -224,7 +228,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
         }}
       />
 
-      {votingRationale?.length === 0 && getProxyVotingRationaleLoading && (
+      {currentVotingRationale?.length === 0 && getProxyVotingRationaleLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <LoadingIcon
             color="#800000"
@@ -235,7 +239,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
       )}
 
       {tab === "Top-20" &&
-        votingRationale?.length === 0 &&
+        currentVotingRationale?.length === 0 &&
         !getProxyVotingRationaleLoading && (
           <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
             <div className="text-center text-slate-500 dark:text-slate-400">
@@ -246,7 +250,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
           </div>
         )}
 
-      {votingRationale?.length === 0 && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && (
+      {currentVotingRationale?.length === 0 && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <div className="text-center text-slate-500 dark:text-slate-400">
             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -256,7 +260,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
         </div>
       )}
 
-      {votingRationale?.length === 0 && filter?.length > 0 && !getProxyVotingRationaleLoading && (
+      {currentVotingRationale?.length === 0 && filter?.length > 0 && !getProxyVotingRationaleLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <div className="text-center text-slate-500 dark:text-slate-400">
             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
