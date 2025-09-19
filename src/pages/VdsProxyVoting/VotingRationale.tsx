@@ -78,7 +78,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate }
       <div className="flex justify-between mb-4 mt-1">
         <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
           <div>
-            <h1 className="text-xl font-semibold mt-4 text-slate-800 dark:text-slate-200">
+            <h1 className="text-lg font-bold">
               Voting Rationale
             </h1>
             {filter?.length === 0 && tab === "Top-20" && (
