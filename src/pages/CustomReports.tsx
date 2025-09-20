@@ -174,7 +174,7 @@ const CustomReports = () => {
       {/* Ticker Search Section */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <div>
+          <div className="w-[550px]">
             <CompanySelect
               value={[]}
               onChange={handleCompanySelect}

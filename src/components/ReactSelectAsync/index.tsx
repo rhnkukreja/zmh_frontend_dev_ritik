@@ -176,6 +176,27 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   }, [setDefaultValue]);
 
   const customStyles = {
+    control: (provided: any, state: any) => ({
+      ...provided,
+      minHeight: '42px',
+      width: '100%',
+      maxWidth: '100%',
+      borderColor: state.isFocused ? '#800000' : '#e2e8f0',
+      boxShadow: state.isFocused ? '0 0 0 1px #800000' : 'none',
+      '&:hover': {
+        borderColor: '#800000',
+      },
+    }),
+    input: (provided: any) => ({
+      ...provided,
+      minWidth: '100px', // Ensures input doesn't shrink too much
+      width: 'auto', // Allows input to grow
+    }),
+    valueContainer: (provided: any) => ({
+      ...provided,
+      padding: '2px 8px',
+      flexWrap: 'wrap',
+    }),
     multiValue: (provided: any) => ({
       ...provided,
       backgroundColor: "#e2e8f0",

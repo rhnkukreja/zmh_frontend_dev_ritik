@@ -824,6 +824,7 @@ function Main() {
                   "/voting-data",
                   "/investor-profile",
                   "/engagement-question",
+                  "/custom-reports",
                   "/voting-guidelines",
                 ]?.includes(location.pathname) || 
                 location.pathname.startsWith("/proxy-contest-detail/") ? (
