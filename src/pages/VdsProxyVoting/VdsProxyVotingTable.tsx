@@ -71,7 +71,7 @@ const VdsProxyVotingTable = () => {
   });
 
   useEffect(() => {
-    if (tab === "Top-20" && isCompanySelected && !top20Loaded) {
+    if (tab === "Top-20" && (isCompanySelected || !top20Loaded)) {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
@@ -112,11 +112,53 @@ const VdsProxyVotingTable = () => {
     }
   }, [companyGlobalSearchTicker, searchTicker, tab]);
 
-  // Reset the flags when company changes
+  // Reset the flags when company changes and trigger reload
   useEffect(() => {
+    // Reset loading flags immediately to ensure loading state is shown
     setTop20Loaded(false);
     setAllInvestorsLoaded(false);
     setLastFilterState("");
+    
+    // When company changes, force a reload by setting isCompanySelected to true
+    dispatch(setIsCompanySelected(true));
+    
+    // Direct API calls to immediately reload data for both tabs when company changes
+    if (tab === "Top-20") {
+      dispatch(
+        fetchVdsProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
+          )
+        )
+      );
+      dispatch(
+        getProxyVotingRationaleTop20(
+          createDynamicURL(`/vds_proxy_voting_rationale/`, {
+            ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
+          })
+        )
+      );
+    } else if (tab === "All-Investor") {
+      dispatch(
+        fetchVdsProxyAllInvestor(
+          createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
+            ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
+            institution_name: filter?.length > 0 ? filter : "Top 10",
+          })
+        )
+      );
+      dispatch(
+        getProxyVotingRationaleAllInvestors(
+          createDynamicURL(`/vds_proxy_voting_rationale/`, {
+            ticker: companyGlobalSearchTicker,
+            year: yearTicker!,
+            institution_name: filter?.length > 0 ? filter : "Top 10",
+          })
+        )
+      );
+    }
   }, [companyGlobalSearchTicker]);
 
   useEffect(() => {
@@ -143,8 +185,8 @@ const VdsProxyVotingTable = () => {
           )
         );
         setLastFilterState(currentFilterState);
-      } else if (!allInvestorsLoaded) {
-        // Default to "Top 10" when no institution is selected and not already loaded
+      } else {
+        // Always reload when company changes or when not loaded yet
         dispatch(
           fetchVdsProxyAllInvestor(
             createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
@@ -426,7 +468,9 @@ const VdsProxyVotingTable = () => {
                       )}
                   </div>
 
-                  <TableWrapper>
+                  <TableWrapper
+                    isLoading={vdsProxyLoading}
+                  >
                     <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                       <Table className="table_2 w-full">
                         <Table.Thead className="sticky top-50 z-10">
@@ -620,11 +664,14 @@ const VdsProxyVotingTable = () => {
                     )}
 
                     {vdsProxyDetails?.vds_report?.length === 0 &&
-                      !vdsProxyLoading && (
-                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                          <h1 className="font-semibold">
-                            Top 20 Proxy Records Not Found..
-                          </h1>
+                      !vdsProxyLoading && 
+                      top20Loaded && (  // Only show after loading is complete
+                        <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                          <div className="text-center text-slate-500 dark:text-slate-400">
+                            <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
+                            <h3 className="text-lg font-medium mb-2">Top 20 Proxy Records Not Found</h3>
+                            <p className="text-sm">Proxy voting data may not be available for this company or time period.</p>
+                          </div>
                         </div>
                       )}
                   </TableWrapper>
@@ -908,7 +955,8 @@ const VdsProxyVotingTable = () => {
                     </div>
                   </TableWrapper>
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length === 0 && !vdsProxyAllInvestorLoading && (
+                    filter?.length === 0 && !vdsProxyAllInvestorLoading && 
+                    allInvestorsLoaded && ( // Only show after loading is complete
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -919,11 +967,12 @@ const VdsProxyVotingTable = () => {
                     )}
 
                   {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length > 0 && !vdsProxyAllInvestorLoading && (
+                    filter?.length > 0 && !vdsProxyAllInvestorLoading && 
+                    allInvestorsLoaded && ( // Only show after loading is complete
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
-                          <h3 className="text-lg font-medium mb-2">No VDS Records Available</h3>
+                          <h3 className="text-lg font-medium mb-2">No Proxy Records Available</h3>
                           <p className="text-sm">Try adjusting your filters or selecting different institutions.</p>
                         </div>
                       </div>

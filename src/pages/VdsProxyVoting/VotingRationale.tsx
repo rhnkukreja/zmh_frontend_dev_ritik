@@ -228,7 +228,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         }}
       />
 
-      {currentVotingRationale?.length === 0 && getProxyVotingRationaleLoading && (
+      {/* Single loading indicator for all scenarios */}
+      {getProxyVotingRationaleLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <LoadingIcon
             color="#800000"
@@ -237,7 +238,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
           />
         </div>
       )}
-
+        
+      {/* Only show "No Voting Rationale" when not loading */}
       {tab === "Top-20" &&
         currentVotingRationale?.length === 0 &&
         !getProxyVotingRationaleLoading && (
@@ -259,6 +261,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
           </div>
         </div>
       )}
+
+      {/* Removed duplicate loading indicator for All-Investor tab with filter */}
 
       {currentVotingRationale?.length === 0 && filter?.length > 0 && !getProxyVotingRationaleLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
