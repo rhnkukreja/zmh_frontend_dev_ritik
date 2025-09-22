@@ -995,7 +995,6 @@ const index = () => {
                     <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "30%" }}>Proposal</Table.Td>
                     <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Category</Table.Td>
                     <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Vote</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Shares Voted</Table.Td>
                     <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Fund Name</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
@@ -1022,23 +1021,13 @@ const index = () => {
                             )}
                           >
                             <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                              {noAction?.vote_description}
+                              {noAction?.proposal}
                             </Table.Td>
                             <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
                               {convertToTitleCase(noAction?.vote_category)}
                             </Table.Td>
                             <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
                               {convertToTitleCase(noAction?.vote)}
-                            </Table.Td>
-                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                              {noAction?.shares_voted
-                                ?.split(" ")
-                                .map((num: string) =>
-                                  new Intl.NumberFormat("en-US").format(
-                                    Math.floor(Number(num))
-                                  )
-                                )
-                                .join(" ")}
                             </Table.Td>
                             <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
                               {noAction?.fund_name}
