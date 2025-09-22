@@ -4,6 +4,9 @@ import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { FaDownload, FaTimes } from "react-icons/fa";
+import Lucide from "@/components/Base/Lucide";
+import Tippy from "@/components/Base/Tippy";
+import downloadIcon from "@/assets/images/zmh-images/download-icon.png";
 import { reportsService, CompanyOwnership, OwnershipData } from "@/services/reports";
 import { useAppSelector } from "@/stores/hooks";
 import CompanySelect from "@/components/ReactSelectAsync";
@@ -12,16 +15,46 @@ const CustomReports = () => {
   // Get global company ticker from authentication store
   const { companyGlobalSearchTicker } = useAppSelector((state) => state.authentiction);
 
-  // Initialize with global company ticker if available, otherwise use default values
+  // Initialize with local storage data, global company ticker, or default values
   const getInitialTickers = () => {
+    // Try to get saved tickers from localStorage first
+    const savedTickers = localStorage.getItem('customReports_selectedTickers');
+    if (savedTickers) {
+      try {
+        const parsedTickers = JSON.parse(savedTickers);
+        if (Array.isArray(parsedTickers) && parsedTickers.length > 0) {
+          return parsedTickers;
+        }
+      } catch (e) {
+        console.error("Error parsing saved tickers:", e);
+      }
+    }
+    
+    // Fall back to global ticker or defaults
     if (companyGlobalSearchTicker) {
       return [companyGlobalSearchTicker];
     }
     return ["AAPL", "AMZN"];
   };
+  
+  // Get initial ownership data from localStorage if available
+  const getInitialOwnershipData = () => {
+    const savedData = localStorage.getItem('customReports_ownershipData');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          return parsedData;
+        }
+      } catch (e) {
+        console.error("Error parsing saved ownership data:", e);
+      }
+    }
+    return [];
+  };
 
   const [selectedTickers, setSelectedTickers] = useState<string[]>(getInitialTickers());
-  const [ownershipData, setOwnershipData] = useState<CompanyOwnership[]>([]);
+  const [ownershipData, setOwnershipData] = useState<CompanyOwnership[]>(getInitialOwnershipData());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
@@ -50,10 +83,10 @@ const CustomReports = () => {
     }
   }, [companyGlobalSearchTicker]);
 
-  // Fetch ownership data on initial load if we have selected tickers
+  // Fetch ownership data on initial load if we have selected tickers but no cached data
   useEffect(() => {
-    // On initial mount, if we have selected tickers, fetch data
-    if (selectedTickers.length > 0) {
+    // On initial mount, if we have selected tickers and no cached data, fetch data
+    if (selectedTickers.length > 0 && ownershipData.length === 0) {
       fetchOwnershipData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,6 +121,9 @@ const CustomReports = () => {
       console.log("Final filtered data for tickers:", filteredData.map(item => item.ticker));
       setOwnershipData(filteredData);
       
+      // Save to localStorage
+      localStorage.setItem('customReports_ownershipData', JSON.stringify(filteredData));
+      
       // Check if we're missing any data
       const returnedTickers = filteredData.map(item => item.ticker.toUpperCase());
       const missingTickers = normalizedCurrentTickers.filter(t => !returnedTickers.includes(t));
@@ -112,15 +148,23 @@ const CustomReports = () => {
 
       // Merge with existing tickers, keeping global company ticker if it exists
       const allTickers = [...new Set([...selectedTickers, ...newTickers])]; // Remove duplicates
-      setSelectedTickers(allTickers.slice(0, 5)); // Limit to 5 companies
+      const finalTickers = allTickers.slice(0, 5); // Limit to 5 companies
+      
+      setSelectedTickers(finalTickers);
+      // Save to localStorage
+      saveTickersToLocalStorage(finalTickers);
     } else {
       // Only clear if global company ticker is not present
-      if (companyGlobalSearchTicker) {
-        setSelectedTickers([companyGlobalSearchTicker]);
-      } else {
-        setSelectedTickers([]);
-      }
+      const defaultTickers = companyGlobalSearchTicker ? [companyGlobalSearchTicker] : [];
+      setSelectedTickers(defaultTickers);
+      // Save to localStorage
+      saveTickersToLocalStorage(defaultTickers);
     }
+  };
+
+  // Save selected tickers to local storage
+  const saveTickersToLocalStorage = (tickers: string[]) => {
+    localStorage.setItem('customReports_selectedTickers', JSON.stringify(tickers));
   };
 
   const removeTicker = (ticker: string) => {
@@ -129,6 +173,8 @@ const CustomReports = () => {
     
     // Update the selected tickers
     setSelectedTickers(updatedTickers);
+    // Save to localStorage
+    saveTickersToLocalStorage(updatedTickers);
     
     // If we have tickers left, fetch new data
     if (updatedTickers.length > 0) {
@@ -140,7 +186,7 @@ const CustomReports = () => {
     }
   };
 
-  // Download CSV
+  // Download Excel
   const handleDownload = () => {
     let csv = "Ticker,Company Name,Investor Name,Ownership %\n";
     ownershipData.forEach(company => {
@@ -152,7 +198,7 @@ const CustomReports = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "custom_reports.csv";
+    a.download = "ownership_summary.xlsx";
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -160,15 +206,24 @@ const CustomReports = () => {
   return (
     <div className="box p-5 mt-3.5">
       <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-center mb-4">
-        <h1 className="text-lg font-bold">Custom Reports</h1>
-        <Button
-          variant="primary"
-          onClick={handleDownload}
-          className="flex items-center gap-2"
-          disabled={loading || ownershipData.length === 0}
-        >
-          <FaDownload /> Download CSV
-        </Button>
+        <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 can be selected)</h1>
+        <div className="flex items-center gap-2">
+          <Tippy content="Download Excel" options={{ theme: "light" }}>
+            <div
+              className="box p-[5px] cursor-pointer"
+              onClick={() => !loading && handleDownload()}
+            >
+              {loading ? (
+                <Lucide
+                  icon="Loader"
+                  className="w-6 h-7 stroke-[1.3] animate-spin"
+                />
+              ) : (
+                <img alt="download-icon" src={downloadIcon} />
+              )}
+            </div>
+          </Tippy>
+        </div>
       </div>
 
       {/* Ticker Search Section */}
@@ -194,10 +249,13 @@ const CustomReports = () => {
           <Button
             variant="outline-secondary"
             onClick={() => {
+              const defaultTickers = companyGlobalSearchTicker ? [companyGlobalSearchTicker] : [];
               // Just clear selections without triggering API call
-              setSelectedTickers(companyGlobalSearchTicker ? [companyGlobalSearchTicker] : []);
+              setSelectedTickers(defaultTickers);
+              saveTickersToLocalStorage(defaultTickers);
               // Also clear any displayed data and errors
               setOwnershipData([]);
+              localStorage.removeItem('customReports_ownershipData');
               setError("");
             }}
             className="whitespace-nowrap"
@@ -225,7 +283,6 @@ const CustomReports = () => {
             </div>
           ))}
         </div>
-        <p className="text-sm text-gray-700 font-medium">Maximum 5 companies can be selected at a time.</p>
       </div>
 
       {/* Error Message */}
@@ -248,27 +305,36 @@ const CustomReports = () => {
 
       {/* Single Combined Table */}
       {!loading && ownershipData.length > 0 && (
-        <TableWrapper>
-          <div className="overflow-x-auto">
-            <Table>
-              <Table.Thead>
-                <Table.Tr className="bg-primary text-white text-sm">
+        <TableWrapper isLoading={loading}>
+          <div className="overflow-x-auto max-h-[400px] overflow-y-scroll">
+            <Table className="table_ownership w-full">
+              <Table.Thead className="sticky top-0 z-10">
+                <Table.Tr className="row_ownership">
                   {/* Only show columns for companies that match currently selected tickers */}
                   {ownershipData
                     .filter(company => selectedTickers.map(t => t.toUpperCase()).includes(company.ticker.toUpperCase()))
-                    .map(company => (
+                    .map((company, companyIndex, arr) => (
                       <React.Fragment key={company.ticker}>
-                        <Table.Td className="px-6 py-3 font-semibold text-left min-w-[250px]">
-                          {company.ticker} - {company.company_name}
+                        <Table.Td 
+                          className={`cell_ownership py-2 font-semibold h-[50px] bg-header text-[#000000B2] text-left w-[220px] 
+                            ${companyIndex === 0 ? 'first:rounded-tl-[0.6rem]' : ''} 
+                            ${companyIndex === 0 && arr.length === 1 ? 'last:rounded-tr-[0.6rem]' : ''}`}
+                        >
+                          {company.company_name}
                         </Table.Td>
-                        <Table.Td className="px-6 py-3 font-semibold text-center min-w-[120px]">Ownership %</Table.Td>
+                        <Table.Td 
+                          className={`cell_ownership py-2 font-semibold h-[50px] bg-header text-[#000000B2] text-center w-[140px]
+                            ${(companyIndex === arr.length - 1) ? 'last:rounded-tr-[0.6rem]' : ''}`}
+                        >
+                          Ownership
+                        </Table.Td>
                       </React.Fragment>
                     ))}
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
                 {[...Array(20)].map((_, rowIdx) => (
-                  <Table.Tr key={rowIdx} className="hover:bg-gray-50 transition-colors duration-150">
+                  <Table.Tr key={rowIdx} className="row_ownership [&_td]:last:border-b-0">
                     {/* Only show data for companies that match currently selected tickers */}
                     {ownershipData
                       .filter(company => selectedTickers.map(t => t.toUpperCase()).includes(company.ticker.toUpperCase()))
@@ -277,24 +343,26 @@ const CustomReports = () => {
                         if (!inv) {
                           return (
                             <React.Fragment key={company.ticker + rowIdx}>
-                              <Table.Td className="px-6 py-3 text-gray-400 min-w-[250px]"></Table.Td>
-                              <Table.Td className="px-6 py-3 text-gray-400 min-w-[120px]"></Table.Td>
+                              <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[220px] text-left"></Table.Td>
+                              <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[140px] text-center"></Table.Td>
                             </React.Fragment>
                           );
                         }
                         return (
                           <React.Fragment key={company.ticker + rowIdx}>
-                          <Table.Td className="px-6 py-3 text-sm font-medium text-left min-w-[250px]">
-                            <span className={inv.status ? "text-green-600 font-semibold" : "text-gray-900"}>
-                              {inv.institution_name}
-                            </span>
-                          </Table.Td>
-                          <Table.Td className="px-6 py-3 text-sm font-bold text-primary text-center min-w-[120px]">
-                            {inv.percent_ownership}%
-                          </Table.Td>
-                        </React.Fragment>
-                      );
-                    })}
+                            <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[220px] text-left">
+                              <h1 className={inv.status ? "font-semibold text-primary" : ""}>
+                                {inv.institution_name}
+                              </h1>
+                            </Table.Td>
+                            <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[140px] text-center">
+                              <h1 className={parseFloat(inv.percent_ownership) < 1 ? "text-red-700 font-semibold" : "font-semibold text-primary"}>
+                                {inv.percent_ownership}%
+                              </h1>
+                            </Table.Td>
+                          </React.Fragment>
+                        );
+                      })}
                   </Table.Tr>
                 ))}
               </Table.Tbody>
