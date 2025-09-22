@@ -17,8 +17,9 @@ interface VotingRationaleProps {
   filter?: any;
   meetingDate?: string;
   tabType?: "top20" | "allInvestors";
+  parentLoading?: boolean; // Add parent loading state prop
 }
-const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, tabType }) => {
+const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, tabType, parentLoading }) => {
   const dispatch = useAppDispatch();
   const { companyGlobalSearchTicker } = useAppSelector(
     (state) => state.authentiction
@@ -228,8 +229,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         }}
       />
 
-      {/* Single loading indicator for all scenarios */}
-      {getProxyVotingRationaleLoading && (
+      {/* Single loading indicator for all scenarios - only show when no data yet AND parent is not loading */}
+      {getProxyVotingRationaleLoading && !currentVotingRationale?.length && !parentLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <LoadingIcon
             color="#800000"
@@ -242,7 +243,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
       {/* Only show "No Voting Rationale" when not loading - handle null/undefined case */}
       {tab === "Top-20" &&
         (!currentVotingRationale || currentVotingRationale?.length === 0) &&
-        !getProxyVotingRationaleLoading && (
+        !getProxyVotingRationaleLoading && 
+        !parentLoading && (
           <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
             <div className="text-center text-slate-500 dark:text-slate-400">
               <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -253,7 +255,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         )}
 
       {/* Handle null/undefined case for filter condition */}
-      {(!currentVotingRationale || currentVotingRationale?.length === 0) && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && (
+      {(!currentVotingRationale || currentVotingRationale?.length === 0) && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && !parentLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <div className="text-center text-slate-500 dark:text-slate-400">
             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -266,7 +268,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
       {/* Removed duplicate loading indicator for All-Investor tab with filter */}
 
       {/* Handle null/undefined case for filter length > 0 */}
-      {(!currentVotingRationale || currentVotingRationale?.length === 0) && filter?.length > 0 && !getProxyVotingRationaleLoading && (
+      {(!currentVotingRationale || currentVotingRationale?.length === 0) && filter?.length > 0 && !getProxyVotingRationaleLoading && !parentLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <div className="text-center text-slate-500 dark:text-slate-400">
             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />

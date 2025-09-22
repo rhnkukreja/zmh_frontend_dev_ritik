@@ -677,7 +677,11 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  <VotingRationale meetingDate={meetingDate} tabType="top20"/>
+                  <VotingRationale 
+                    meetingDate={meetingDate} 
+                    tabType="top20"
+                    parentLoading={vdsProxyLoading} // Pass parent loading state
+                  />
                 </Tab.Panel>
                 
                 <Tab.Panel className="leading-relaxed">
@@ -981,7 +985,12 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  <VotingRationale meetingDate={meetingDate} filter={filter} tabType="allInvestors" />
+                  <VotingRationale 
+                    meetingDate={meetingDate} 
+                    filter={filter} 
+                    tabType="allInvestors"
+                    parentLoading={vdsProxyAllInvestorLoading} // Pass parent loading state
+                  />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>
