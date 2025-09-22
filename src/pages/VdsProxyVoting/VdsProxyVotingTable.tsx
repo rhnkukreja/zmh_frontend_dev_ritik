@@ -663,9 +663,10 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                    {vdsProxyDetails?.vds_report?.length === 0 &&
-                      !vdsProxyLoading && 
-                      top20Loaded && (  // Only show after loading is complete
+                    {/* Handle both cases: empty array or undefined/null vdsProxyDetails */}
+                    {((vdsProxyDetails?.vds_report?.length === 0) || 
+                      (!vdsProxyDetails && top20Loaded)) &&
+                      !vdsProxyLoading && (
                         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                           <div className="text-center text-slate-500 dark:text-slate-400">
                             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -954,9 +955,10 @@ const VdsProxyVotingTable = () => {
                       </Table>
                     </div>
                   </TableWrapper>
-                  {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length === 0 && !vdsProxyAllInvestorLoading && 
-                    allInvestorsLoaded && ( // Only show after loading is complete
+                  {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
+                  {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
+                    (!vdsProxyAllInvestorDetails && allInvestorsLoaded)) &&
+                    filter?.length === 0 && !vdsProxyAllInvestorLoading && (
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -966,9 +968,10 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length > 0 && !vdsProxyAllInvestorLoading && 
-                    allInvestorsLoaded && ( // Only show after loading is complete
+                  {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
+                  {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
+                    (!vdsProxyAllInvestorDetails && allInvestorsLoaded)) &&
+                    filter?.length > 0 && !vdsProxyAllInvestorLoading && (
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />

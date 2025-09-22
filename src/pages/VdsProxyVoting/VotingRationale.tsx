@@ -239,9 +239,9 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         </div>
       )}
         
-      {/* Only show "No Voting Rationale" when not loading */}
+      {/* Only show "No Voting Rationale" when not loading - handle null/undefined case */}
       {tab === "Top-20" &&
-        currentVotingRationale?.length === 0 &&
+        (!currentVotingRationale || currentVotingRationale?.length === 0) &&
         !getProxyVotingRationaleLoading && (
           <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
             <div className="text-center text-slate-500 dark:text-slate-400">
@@ -252,7 +252,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
           </div>
         )}
 
-      {currentVotingRationale?.length === 0 && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && (
+      {/* Handle null/undefined case for filter condition */}
+      {(!currentVotingRationale || currentVotingRationale?.length === 0) && filter && filter?.length === 0 && !getProxyVotingRationaleLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <div className="text-center text-slate-500 dark:text-slate-400">
             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -264,7 +265,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
 
       {/* Removed duplicate loading indicator for All-Investor tab with filter */}
 
-      {currentVotingRationale?.length === 0 && filter?.length > 0 && !getProxyVotingRationaleLoading && (
+      {/* Handle null/undefined case for filter length > 0 */}
+      {(!currentVotingRationale || currentVotingRationale?.length === 0) && filter?.length > 0 && !getProxyVotingRationaleLoading && (
         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
           <div className="text-center text-slate-500 dark:text-slate-400">
             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
