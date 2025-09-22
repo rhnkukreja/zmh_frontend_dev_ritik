@@ -92,19 +92,46 @@ class DashboardService {
 
   public async fetchInstitutionByName(
     institutionValue?: string,
-    companyGlobalSearchName?: string
+    companyGlobalSearchName?: string,
+    year?: string
   ): Promise<{
     results: CompanyData[];
   }> {
-    let results = {institution: []};
+    let results = {all_institution: []};
     if (institutionValue !== "") {
-      const url = `/get_npx_dropdown_values/?global_search=${companyGlobalSearchName}&institution_name=${institutionValue}`;
+      // Use URLSearchParams to build the URL properly
+      const params = new URLSearchParams();
+      
+      // Add global_search parameter
+      if (companyGlobalSearchName) {
+        params.append('global_search', companyGlobalSearchName);
+      }
+      
+      // Always add year parameter for NPX-related requests
+      // Get year from parameter or URL or default to 2024
+      const yearParam = year || 
+                       (window.location.search.includes('year=') ? 
+                        new URLSearchParams(window.location.search).get('year') : '2024');
+      
+      // Always add year parameter
+      params.append('year', yearParam);
+      
+      // Add the selected institution to get relevant data for other fields
+      // Only add if this is a search, not initial loading
+      if (institutionValue !== "a") {
+        // We need to pass the institution_name as an array without JSON.stringify
+        // The createDynamicURL function will handle the stringifying
+        params.append('institution_name', institutionValue);
+      }
+      
+      const url = `/get_npx_dropdown_values/?${params.toString()}`;
+      console.log("fetchInstitutionByName URL:", url);
       const response = await axiosInstance.get(url);
       results = response.data;
     }
 
     return {
-      results: results?.institution,
+      results: results?.all_institution || [],
     };
   }
 
@@ -175,7 +202,19 @@ class DashboardService {
   public async fetchNpxProxyDashboard(
     url: string
   ): Promise<{ results: any; count: number }> {
-    const response = await axiosInstance.get(url);
+    // Ensure year parameter is included
+    let finalUrl = url;
+    if (!url.includes('year=')) {
+      // Get year from URL or use default
+      const urlParams = new URLSearchParams(window.location.search);
+      const yearParam = urlParams.get('year') || '2024';
+      
+      // Add year parameter to the URL
+      finalUrl = url.includes('?') ? `${url}&year=${yearParam}` : `${url}?year=${yearParam}`;
+    }
+    
+    console.log("NPX Dashboard API call:", finalUrl);
+    const response = await axiosInstance.get(finalUrl);
     const { results, count } = response.data;
     return { results, count };
   }
@@ -233,10 +272,23 @@ class DashboardService {
   public async getDynamicNPXDropdownValues(paramFilter?: any): Promise<{
     result: any;
   }> {
-    const response = await axiosInstance.get(
-      createDynamicURL(`/get_npx_dropdown_values/`, paramFilter)
-    );
+    // Make sure we have the year parameter
+    const enhancedFilter = { ...paramFilter };
+    
+    if (!enhancedFilter.year) {
+      // Get year from URL or use default
+      const urlParams = new URLSearchParams(window.location.search);
+      const yearParam = urlParams.get('year') || '2024';
+      enhancedFilter.year = yearParam;
+    }
+    
+    const url = createDynamicURL(`/get_npx_dropdown_values/`, enhancedFilter);
+    console.log("getDynamicNPXDropdownValues URL:", url);
+    
+    const response = await axiosInstance.get(url);
     const result = response.data;
+    
+    console.log("getDynamicNPXDropdownValues response:", result);
     return {
       result: result,
     };

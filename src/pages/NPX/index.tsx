@@ -64,6 +64,7 @@ const index = () => {
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
+  const year = searchParams.get("year") ?? "2024"; // Default to 2024 if not specified
 
   const [filter, setFilter] = useState("");
   const [allApplyFilter, setallApplyFilter] = useState<any>({});
@@ -89,25 +90,67 @@ const index = () => {
       vote: [],
       vote_category: [],
     });
+    
+  // State to store all institutions
+  const [allInstitutions, setAllInstitutions] = useState<any[]>([]);
 
 
   const getFundNameDependentDropdown = async (value: any) => {
     if (value !== "") {
+      // Always explicitly include year parameter
       const paramFilter = {
         global_search: companyGlobalSearchName,
-        institution_name: [value],
+        year: year || '2024', // Always provide a year value
+        institution_name: [value], // Include the selected institution as an array
       };
       try {
         setGetFundNameDropdownLoader(true);
+        console.log("getFundNameDependentDropdown params:", paramFilter);
         const res = await dashboardService.getDynamicNPXDropdownValues(
           paramFilter
         );
         if (res.result) {
+          console.log("getFundNameDependentDropdown API response:", res.result);
+          
           setMeetingDate(res.result?.meeting_date);
-          setShowFundName(res.result?.is_institution);
-          setApiFundNameDropdown({ ...res.result });
+          
+          // Always show fund name when an institution is selected, regardless of API response
+          setShowFundName(true);
+          
+          // Make sure to extract fund names from the correct part of the response
+          // Check all possible locations in the API response and ensure we get an array
+          let fundData = [];
+          
+          // Log the response structure to debug
+          console.log("Fund data response structure:", {
+            fund_name: Array.isArray(res.result?.fund_name) ? `Array with ${res.result?.fund_name?.length} items` : typeof res.result?.fund_name,
+            funds: Array.isArray(res.result?.funds) ? `Array with ${res.result?.funds?.length} items` : typeof res.result?.funds,
+            fund: Array.isArray(res.result?.fund) ? `Array with ${res.result?.fund?.length} items` : typeof res.result?.fund
+          });
+          
+          // Try different locations in order of preference
+          if (Array.isArray(res.result?.fund_name) && res.result.fund_name.length > 0) {
+            fundData = res.result.fund_name;
+          } else if (Array.isArray(res.result?.funds) && res.result.funds.length > 0) {
+            fundData = res.result.funds;
+          } else if (Array.isArray(res.result?.fund) && res.result.fund.length > 0) {
+            fundData = res.result.fund;
+          } else if (typeof res.result?.fund_name === 'object' && res.result?.fund_name !== null) {
+            // Handle case where fund_name might be an object with values
+            fundData = Object.values(res.result.fund_name);
+          }
+          
+          // Set fund data from the new API structure
+          setApiFundNameDropdown({ 
+            ...res.result,
+            fund_name: fundData 
+          });
+          
+          // Output for debugging
+          console.log("Fund data set to:", fundData);
         }
       } catch (error) {
+        console.error("Error in getFundNameDependentDropdown:", error);
         return error;
       } finally {
         setGetFundNameDropdownLoader(false);
@@ -115,44 +158,161 @@ const index = () => {
     }
   };
 
-  const getMeetingDateAPI = async () => {
-    const paramFilter = {
-      global_search: companyGlobalSearchName,
-    };
+  // Function to fetch all available institutions
+  const fetchAllInstitutions = useCallback(async () => {
     try {
+      // Prepare parameters for API call to fetch all institutions
+      // Always include year parameter explicitly
+      const paramFilter = {
+        global_search: companyGlobalSearchName,
+        year: year || '2024', // Ensure we always have a year value
+      };
+      
+      console.log("Fetching institutions with params:", paramFilter);
       const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
-      if (res.result) {
-        setMeetingDate(res.result?.meeting_date);
+      
+      if (res.result && res.result.all_institutions && res.result.all_institutions.length > 0) {
+        // Store all institutions
+        setAllInstitutions(res.result.all_institutions);
+        
+        // Auto-select the first institution
+        const firstInstitution = res.result.all_institutions[0];
+        
+        // Format for the dropdown
+        const institutionValue = {
+          label: firstInstitution,
+          value: firstInstitution
+        };
+        
+        // Set the institution in the form
+        setValue("institution_name", institutionValue);
+        
+        // Update dropdown values
+        handleDropdownChange("institution_name", firstInstitution);
+        
+        // Fetch fund names for the selected institution
+        getFundNameDependentDropdown(firstInstitution);
+        
+        // Set up the filter object with the selected institution
+        // Explicitly include year parameter for all API calls
+        const filterObj = {
+          global_search: companyGlobalSearchName,
+          institution_name: [firstInstitution],
+          year: year || '2024' // Always pass year parameter
+        };
+        
+        // Create filter object for chips
+        const filterObjForChips = {
+          institution_name: [firstInstitution],
+          fund_name: [], // For MultiSelectDropdown, always use an empty array for initial state
+          proposal: [],
+          vote: [],
+          vote_category: [],
+          keyword: ""
+        };
+        
+        // Update the filter state and UI
+        setallApplyFilter(filterObj);
+        setSelectedChipFilters(generateFilterChips(filterObjForChips));
+        setFiltersLength(countValidFilters(filterObjForChips));
+        
+        // Fetch data with the selected institution
+        dispatch(resetPage());
+        const url = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1);
+        console.log("Fetching NPX dashboard data with URL:", url);
+        dispatch(fetchNpxProxyDashboard(url));
       }
     } catch (error) {
-      return error;
-    } finally {
+      console.error("Error fetching institutions:", error);
     }
-  };
+  }, [companyGlobalSearchName, year, dispatch]);
 
+  // Combined data fetching function to reduce API calls
+  const fetchInitialData = useCallback(async () => {
+    try {
+      // Prepare parameters with year and selected institution if any
+      const paramFilter = {
+        global_search: companyGlobalSearchName,
+        year: year,
+        // Include selected institution if available
+        ...(dropdownValues?.institution_name && {
+          institution_name: Array.isArray(dropdownValues.institution_name)
+            ? dropdownValues.institution_name
+            : [dropdownValues.institution_name]
+        }),
+      };
+      
+      // Make a single API call
+      const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+      
+      if (res.result) {
+        // Set meeting date
+        setMeetingDate(res.result?.meeting_date);
+        
+        // Set dependent dropdown options
+        setApiDependentDropdownOptions({ ...res.result });
+      }
+    } catch (error) {
+      console.error("Error fetching initial data:", error);
+    }
+  }, [companyGlobalSearchName, year]);
+  
   useEffect(() => {
+    // Reset values
     setMeetingDate('');
-    getMeetingDateAPI();
-  }, [companyGlobalSearchName])
+    
+    // Reset dropdown values to prevent unnecessary API calls
+    setDropdownValues({
+      institution_name: [],
+      fund_name: [],
+    });
+    
+    // Fetch all institutions and auto-select the first one
+    fetchAllInstitutions();
+    
+    // Fetch all initial data with a single API call
+    fetchInitialData();
+  }, [companyGlobalSearchName, year, fetchInitialData, fetchAllInstitutions]) // Also depend on year
 
 
   const getDependentDropdown = async () => {
+    // Prepare parameters for API call
     const paramFilter = {
       global_search: companyGlobalSearchName,
-      institution_name:
-        dropdownValues?.institution_name !== ""
-          ? [dropdownValues?.institution_name]
-          : [],
-      fund_name: dropdownValues?.fund_name,
+      year: year, // Add year parameter from URL
+      // Always include the selected institution if available - critical for dependent dropdowns
+      ...(dropdownValues?.institution_name && { 
+        institution_name: Array.isArray(dropdownValues.institution_name) 
+          ? dropdownValues.institution_name 
+          : [dropdownValues.institution_name]
+      }),
+      // Only include fund_name if there's a value
+      // With MultiSelectDropdown, fund_name values are always an array
+      ...(dropdownValues?.fund_name?.length > 0 && { 
+        fund_name: dropdownValues.fund_name
+      }),
     };
 
     try {
       setGetDynamicDropdownLoader(true);
+      console.log("getDependentDropdown params:", paramFilter);
       const res = await dashboardService.getDynamicNPXDropdownValues(
         paramFilter
       );
       if (res.result) {
+        console.log("getDependentDropdown response:", res.result);
+        // Still using the same result structure for dropdown options
         setApiDependentDropdownOptions({ ...res.result });
+        
+        // Make sure any available fund_name data is also added to apiFundNameDropdown
+        if (res.result.fund_name && res.result.fund_name.length > 0) {
+          setApiFundNameDropdown(prev => ({
+            ...prev,
+            fund_name: res.result.fund_name
+          }));
+          // If fund names are found, make sure to show the dropdown
+          setShowFundName(true);
+        }
       }
     } catch (error) {
       return error;
@@ -168,9 +328,25 @@ const index = () => {
     }));
   };
 
+  // We've combined the initial data fetching, so this useEffect is only needed
+  // for when the user explicitly changes filters
   useEffect(() => {
-    getDependentDropdown();
-  }, [dropdownValues]);
+    // Only make additional API calls when a user explicitly selects an institution or fund
+    const hasExplicitSelection = 
+      (dropdownValues.fund_name && dropdownValues.fund_name.length > 0) || 
+      dropdownValues.institution_name;
+      
+    if (hasExplicitSelection) {
+      // When institution is selected, we need to fetch dependent dropdowns
+      // with the institution_name included in the payload
+      getDependentDropdown();
+      
+      // If an institution was selected, also get the fund name dropdown
+      if (dropdownValues.institution_name) {
+        getFundNameDependentDropdown(dropdownValues.institution_name);
+      }
+    }
+  }, [dropdownValues.fund_name, dropdownValues.institution_name]);
 
   useEffect(() => {
     if (allApplyFilter) {
@@ -181,7 +357,7 @@ const index = () => {
           fetchNpxProxyDashboard(
             createDynamicURL(
               `${baseURL}/npx/detail/`,
-              undefined,
+              { year }, // Pass year parameter
               undefined,
               page
             )
@@ -193,7 +369,7 @@ const index = () => {
           fetchNpxProxyDashboard(
             createDynamicURL(
               `${baseURL}/npx/detail/`,
-              allApplyFilter,
+              { ...allApplyFilter, year }, // Include year with all filters
               undefined,
               page
             )
@@ -249,6 +425,43 @@ const index = () => {
       updatedFilters[removeKey] = "";
     }
 
+    // Update the form control values to match the updated filters
+    if (removeKey === "institution_name") {
+      setValue("institution_name", null);
+      // Also clear fund_name if institution is removed
+      setValue("fund_name", []);
+      setShowFundName(false);
+      setDropdownValues(prev => ({
+        ...prev,
+        institution_name: "",
+        fund_name: []
+      }));
+    } else if (removeKey === "fund_name") {
+      // For MultiSelectDropdown, we need to ensure the state is updated correctly
+      const remainingFundValues = updatedFilters.fund_name || [];
+      
+      // Convert the remaining values to the format expected by MultiSelectDropdown
+      const formattedValues = remainingFundValues.map((value: string) => ({
+        value,
+        label: value
+      }));
+      
+      // Update form field value with the raw values
+      setValue("fund_name", remainingFundValues);
+      
+      // Update dropdown state with the raw values
+      setDropdownValues(prev => ({
+        ...prev,
+        fund_name: remainingFundValues
+      }));
+    } else if (removeKey === "vote_category") {
+      setValue("vote_category", updatedFilters.vote_category || []);
+    } else if (removeKey === "proposal") {
+      setValue("proposal", updatedFilters.proposal || []);
+    } else if (removeKey === "vote") {
+      setValue("vote", updatedFilters.vote || []);
+    }
+
     // Create filter object for chips (exclude global_search)
     const filterObjForChips = {
       institution_name: updatedFilters.institution_name,
@@ -262,6 +475,18 @@ const index = () => {
     setallApplyFilter(updatedFilters);
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
+    
+    // Always explicitly include year parameter
+    const yearParam = year || '2024'; // Ensure we always have a year value
+    updatedFilters.year = yearParam;
+    
+    // Dispatch data fetch with updated filters
+    dispatch(resetPage());
+    dispatch(
+      fetchNpxProxyDashboard(
+        createDynamicURL(`${baseURL}/npx/detail/`, updatedFilters, undefined, 1)
+      )
+    );
   };
 
   const onSubmit = async (npxFilter: any) => {
@@ -276,12 +501,14 @@ const index = () => {
         "Select" === npxFilter?.institution_name?.label
           ? ""
           : [npxFilter?.institution_name?.label],
-      fund_name: "Select" === npxFilter?.fund_name ? "" : npxFilter?.fund_name,
+      // Handle MultiSelectDropdown values properly
+      fund_name: Array.isArray(npxFilter?.fund_name) ? npxFilter?.fund_name : [],
       proposal: "Select" === npxFilter?.proposal ? "" : npxFilter?.proposal,
       vote: "Select" === npxFilter?.vote ? "" : npxFilter?.vote,
       vote_category:
         "Select" === npxFilter?.vote_category ? "" : npxFilter?.vote_category,
       keyword: npxFilter?.keyword,
+      year: year || '2024', // Always include year parameter
     };
 
     // Create filter object for chips (exclude global_search)
@@ -298,27 +525,68 @@ const index = () => {
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
     dispatch(resetPage());
+    
+    // Fetch data with filter object including year
+    dispatch(
+      fetchNpxProxyDashboard(
+        createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
+      )
+    );
+    
     setIsFilterCollapse(false);
   };
 
   const onFilterClear = () => {
+    // Reset all form values properly
+    reset({
+      institution_name: null,
+      fund_name: [],
+      vote_category: [],
+      proposal: [],
+      vote: [],
+      meeting_date: ''
+    });
+    
+    // Reset dropdown state values
+    setDropdownValues({
+      institution_name: "",
+      fund_name: []
+    });
+    
+    // Clear filters and UI state
     setSelectedChipFilters([]);
     setFiltersLength(0);
     setShowFundName(false);
-    resetFormValues();
     setallApplyFilter({});
+    
+    // Reset pagination and fetch fresh data with year parameter
+    // Always explicitly include year parameter
     dispatch(resetPage());
+    const yearParam = year || '2024'; // Ensure we always have a year
     dispatch(
       fetchNpxProxyDashboard(
-        createDynamicURL(`${baseURL}/npx/detail/`, undefined, undefined, page)
+        createDynamicURL(`${baseURL}/npx/detail/`, { year: yearParam }, undefined, 1)
       )
     );
+    
+    // After clearing filters, fetch all institutions again and select the first one
+    fetchAllInstitutions();
   };
 
   const resetFormValues: any = () => {
-    // setApiDropdownOptions({ institution: [] });
-    // setApiDependentDropdownOptions({ fund_name: [], proposal: [], vote: [] });
-    setValue("institution_name", "Select");
+    // Reset all form fields to default values
+    setValue("institution_name", null);
+    setValue("fund_name", []);
+    setValue("vote_category", []);
+    setValue("proposal", []);
+    setValue("vote", []);
+    setValue("meeting_date", "");
+    
+    // Reset dropdown state
+    setDropdownValues({
+      institution_name: "",
+      fund_name: []
+    });
     setValue("fund_name", []);
     setValue("proposal", []);
     setValue("vote", []);
@@ -473,8 +741,10 @@ const index = () => {
                         isInstitution={true}
                         companyGlobalSearchName={companyGlobalSearchName}
                         value={field.value}
+                        year={year} // Pass year from URL
                         onChange={(value: any) => {
                           field.onChange(value);
+                          // Pass the selected institution value for API calls
                           handleDropdownChange(
                             "institution_name",
                             value?.label
@@ -497,29 +767,32 @@ const index = () => {
                       control={control}
                       defaultValue={[]}
                       render={({ field }) => (
-                        <TomSelect
-                          value={field.value || []}
-                          onChange={(value) => {
-                            handleDropdownChange(
-                              "fund_name",
-                              value?.target?.value
-                            );
-                            field.onChange(value);
+                        <MultiSelectDropdown
+                          loading={getFundNameDropdownLoader}
+                          selectedOption={field.value || []}
+                          onChange={(selectedOptions) => {
+                            console.log("Fund selection changed:", selectedOptions);
+                            
+                            // Extract values from the selected options
+                            const selectedValues = selectedOptions.map((option: any) => option.value);
+                            
+                            // Update both the form control and local state
+                            handleDropdownChange("fund_name", selectedValues);
+                            field.onChange(selectedValues);
                           }}
-                          options={{ placeholder: "Select Fund" }}
-                          className="w-full"
-                          multiple
-                        >
-                          {getFundNameDropdownLoader ? (
-                            <option disabled>Loading...</option>
-                          ) : (
-                            apiFundNameDropdown?.fund_name?.map((fund: any) => (
-                              <option key={fund} value={fund}>
-                                {fund}
-                              </option>
-                            ))
-                          )}
-                        </TomSelect>
+                          data={
+                            getFundNameDropdownLoader
+                              ? []
+                              : (apiFundNameDropdown?.fund_name?.length > 0)
+                                ? apiFundNameDropdown.fund_name.map((fund: string) => ({
+                                    value: fund,
+                                    label: fund
+                                  }))
+                                : []
+                          }
+                          placeholder="Select Fund"
+                          fieldName="fund"
+                        />
                       )}
                     />
                   </div>
@@ -538,9 +811,25 @@ const index = () => {
                       <TomSelect
                         value={field.value || []}
                         onChange={(value) => {
-                          field.onChange(value);
+                          // Handle both direct value and event objects from TomSelect
+                          let selectedValues;
+                          
+                          if (value && typeof value === 'object' && 'target' in value) {
+                            // It's an event object with target.value
+                            selectedValues = value.target.value;
+                          } else {
+                            // It's a direct value
+                            selectedValues = value;
+                          }
+                          
+                          field.onChange(selectedValues);
                         }}
-                        options={{ placeholder: "Select Vote Category" }}
+                        options={{ 
+                          placeholder: "Select Vote Category",
+                          onItemAdd: function(value) {
+                            console.log("Vote Category item added:", value);
+                          }
+                        }}
                         className="w-full"
                         multiple
                       >
@@ -576,9 +865,25 @@ const index = () => {
                       <TomSelect
                         value={field.value || []}
                         onChange={(value) => {
-                          field.onChange(value);
+                          // Handle both direct value and event objects from TomSelect
+                          let selectedValues;
+                          
+                          if (value && typeof value === 'object' && 'target' in value) {
+                            // It's an event object with target.value
+                            selectedValues = value.target.value;
+                          } else {
+                            // It's a direct value
+                            selectedValues = value;
+                          }
+                          
+                          field.onChange(selectedValues);
                         }}
-                        options={{ placeholder: "Select Proposal" }}
+                        options={{ 
+                          placeholder: "Select Proposal",
+                          onItemAdd: function(value) {
+                            console.log("Proposal item added:", value);
+                          }
+                        }}
                         className="w-full"
                         multiple
                       >
@@ -611,9 +916,25 @@ const index = () => {
                       <TomSelect
                         value={field.value || []}
                         onChange={(value) => {
-                          field.onChange(value);
+                          // Handle both direct value and event objects from TomSelect
+                          let selectedValues;
+                          
+                          if (value && typeof value === 'object' && 'target' in value) {
+                            // It's an event object with target.value
+                            selectedValues = value.target.value;
+                          } else {
+                            // It's a direct value
+                            selectedValues = value;
+                          }
+                          
+                          field.onChange(selectedValues);
                         }}
-                        options={{ placeholder: "Select Vote" }}
+                        options={{ 
+                          placeholder: "Select Vote",
+                          onItemAdd: function(value) {
+                            console.log("Vote item added:", value);
+                          }
+                        }}
                         className="w-full"
                         multiple
                       >

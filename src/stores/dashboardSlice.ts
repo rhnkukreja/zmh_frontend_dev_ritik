@@ -230,7 +230,18 @@ export const fetchNpxProxyDashboard = createAsyncThunk<
   { results: any; count: number },
   string
 >(`${name}/fetchNpxProxyDashboard`, async (url: string) => {
-  return await dashboardService.fetchNpxProxyDashboard(url);
+  // Make sure URL contains year parameter
+  let finalUrl = url;
+  if (!url.includes('year=')) {
+    // Get year from URL or use default
+    const urlParams = new URLSearchParams(window.location.search);
+    const yearParam = urlParams.get('year') || '2024';
+    
+    // Add year parameter to the URL
+    finalUrl = url.includes('?') ? `${url}&year=${yearParam}` : `${url}?year=${yearParam}`;
+  }
+  console.log("fetchNpxProxyDashboard with URL:", finalUrl);
+  return await dashboardService.fetchNpxProxyDashboard(finalUrl);
 });
 
 export const fetchInvestorProfileDetails = createAsyncThunk<

@@ -44,8 +44,15 @@ const init = <T extends string | string[]>(
         newOption.text = value.toString();
         originalEl.add(newOption);
 
+        // Log option add for debugging
+        console.log("TomSelect option added:", value.toString());
+
         // Emit option add
         props.onOptionAdd && props.onOptionAdd(value.toString());
+      },
+      // Add item event for better tracking
+      onItemAdd: function(value: string, item: HTMLElement) {
+        console.log("TomSelect item added:", value);
       },
       ...computedOptions,
     };
@@ -56,11 +63,21 @@ const init = <T extends string | string[]>(
   // On change
   clonedEl.TomSelect.on("change", function (selectedItems: string[] | string) {
     if (props.onChange) {
+      // Ensure we're handling both single and multiple selection properly
+      // Also make sure to create a new array for array values to trigger proper state updates
+      const finalValue = Array.isArray(selectedItems)
+        ? ([...selectedItems] as T) // Create a new array to ensure reactivity
+        : (selectedItems as T);
+        
+      // Log selection for debugging
+      console.log("TomSelect onChange:", {
+        selectedItems,
+        finalValue
+      });
+      
       props.onChange({
         target: {
-          value: Array.isArray(selectedItems)
-            ? ([...selectedItems] as T)
-            : (selectedItems as T),
+          value: finalValue,
         },
       });
     }

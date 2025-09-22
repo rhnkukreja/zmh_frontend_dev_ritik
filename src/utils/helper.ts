@@ -212,36 +212,59 @@ const getPageNumbers = (totalCounts: number, perPageCount = PAGE_SIZE): number =
   return Math.ceil(totalCounts / perPageCount);
 };
 
-function createDynamicURL<T extends Record<string, string | string[]>>(
+function createDynamicURL<T extends Record<string, string | string[] | any>>(
   baseURL: string,
   filters?: T,
-  extraPrams?: Record<string, string | string[]> | undefined,
+  extraPrams?: Record<string, string | string[] | any> | undefined,
   page?: number
 ): string {
   const queryParams = new URLSearchParams();
+  
+  // Helper function to handle parameter formatting consistently
+  const addParamToQuery = (key: string, value: any) => {
+    // If already stringified JSON, add directly
+    if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
+      queryParams.append(key, value);
+    } 
+    // If array, stringify it
+    else if (Array.isArray(value)) {
+      if (value.length > 0) {
+        queryParams.append(key, JSON.stringify(value));
+      }
+    } 
+    // For other values
+    else if (value !== null && value !== undefined && value !== "" && value !== " ") {
+      queryParams.append(key, value.toString());
+    }
+  };
+
+  // Always ensure we have a year parameter in NPX-related API calls
+  const isNPXRequest = 
+    baseURL.includes('/npx/') || 
+    baseURL.includes('get_npx_dropdown_values') || 
+    baseURL.includes('npx') || 
+    baseURL.includes('NPX');
+
+  if (isNPXRequest && !filters?.year && !extraPrams?.year) {
+    // Get year from URL or use default
+    const urlParams = new URLSearchParams(window.location.search);
+    const yearParam = urlParams.get('year') || '2024';
+    
+    // Add year parameter explicitly
+    queryParams.append('year', yearParam);
+  }
+
+  // Add extra params first
   if (extraPrams) {
     for (const key in extraPrams) {
-      const value = extraPrams[key];
-      if (Array.isArray(value)) {
-        if (value.length > 0) {
-          queryParams.append(key, JSON.stringify(value));
-        }
-      } else if (value !== null && value !== undefined && value !== "") {
-        queryParams.append(key, value);
-      }
+      addParamToQuery(key, extraPrams[key]);
     }
   }
 
+  // Then add filters
   if (filters) {
     for (const key in filters) {
-      const value = filters[key];
-      if (Array.isArray(value)) {
-        if (value.length > 0) {
-          queryParams.append(key, JSON.stringify(value));
-        }
-      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
-        queryParams.append(key, value);
-      }
+      addParamToQuery(key, filters[key]);
     }
   }
 

@@ -29,6 +29,7 @@ interface CompanySelectProps {
   isHideCurrentCompany?: boolean;
   currentCompany?: string;
   currentFilters?: any;
+  year?: string; // Add year parameter
 }
 
 const fetchOptions = async (
@@ -39,14 +40,21 @@ const fetchOptions = async (
   arrayKeyName?: string,
   isHideCurrentCompany?: boolean,
   currentCompany?: string,
-  currentFilters?: any
+  currentFilters?: any,
+  year?: string
 ): Promise<OptionType[]> => {
-
+  // Always ensure year parameter is included
+  const yearParam = year || 
+                   (window.location.search.includes('year=') ? 
+                    new URLSearchParams(window.location.search).get('year') : 
+                    '2024');
+  
   try {
     const response = isInstitution
       ? await dashboardService.fetchInstitutionByName(
           inputValue,
-          companyGlobalSearchName
+          companyGlobalSearchName,
+          yearParam // Always pass year parameter
         )
       : await dashboardService.fetchCompanyByName(
           inputValue,
@@ -95,6 +103,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   isHideCurrentCompany = false,
   currentCompany = "",
   currentFilters,
+  year,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
@@ -103,6 +112,12 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   const loadOptions = useCallback(
     _.debounce(
       (inputValue: string, callback: (options: OptionType[]) => void) => {
+        // Always ensure year parameter is included for NPX-related components
+        const yearParam = year || 
+                         (window.location.search.includes('year=') ? 
+                          new URLSearchParams(window.location.search).get('year') : 
+                          '2024');
+                          
         fetchOptions(
           inputValue,
           isInstitution,
@@ -111,7 +126,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           arrayKeyName,
           isHideCurrentCompany,
           currentCompany,
-          currentFilters
+          currentFilters,
+          yearParam // Always pass year parameter
         ).then((options) => {
           callback(options);
         });
@@ -126,6 +142,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       isHideCurrentCompany,
       currentCompany,
       currentFilters,
+      // Always include year in dependencies
+      year
     ]
   );
 
@@ -133,6 +151,12 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     const fetchDefaultOptions = async () => {
       try {
         setIsLoadingDefault(true);
+        // Always ensure year parameter is included for NPX-related components
+        const yearParam = year || 
+                         (window.location.search.includes('year=') ? 
+                          new URLSearchParams(window.location.search).get('year') : 
+                          '2024');
+                          
         const options = await fetchOptions(
           "a",
           isInstitution,
@@ -141,7 +165,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           arrayKeyName,
           isHideCurrentCompany,
           currentCompany,
-          currentFilters
+          currentFilters,
+          yearParam // Always pass year parameter
         );
         setDefaultOptions(options);
       } catch (error) {
@@ -152,11 +177,14 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       }
     };
 
-    // Only fetch default options on initial load, not when currentFilters change
-    if (defaultOptions.length === 0 && isLoadingDefault) {
-      fetchDefaultOptions();
-    }
-}, []);
+    // Fetch options when component mounts or when critical props change
+    fetchDefaultOptions();
+    
+  }, [
+    // Always include companyGlobalSearchName and year in dependencies
+    companyGlobalSearchName,
+    year
+  ]); // Refresh options when company or year changes
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
   };
