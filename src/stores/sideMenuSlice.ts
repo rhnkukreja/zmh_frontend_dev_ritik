@@ -155,12 +155,11 @@ const initialState: any = {
       title: "Email Alert",
     },
 
-      // {
-      //   icon: "BarChart2",
-      //   pathname: "/custom-reports",
-      //   title: "Custom Reports",
-      //   ignore: true,
-      // },
+      {
+        icon: "BarChart2",
+        pathname: "/custom-reports",
+        title: "Custom Reports",
+      },
     {
       icon: "FileText",
       pathname: "/notes",

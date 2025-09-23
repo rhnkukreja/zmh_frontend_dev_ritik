@@ -12,6 +12,8 @@ interface CompanyData {
 interface OptionType {
   value: number;
   label: string;
+  symbol?: string;
+  company?: any;
 }
 
 interface CompanySelectProps {
@@ -75,11 +77,15 @@ const fetchOptions = async (
           .map((company: any) => ({
             value: company?.id ?? company,
             label: company?.name ?? company,
+            symbol: company?.symbol || company?.ticker, // Add symbol/ticker field
+            company: company // Add complete company object
           }));
       }
       return response.results.map((company: any) => ({
         value: company?.id ?? company,
         label: company?.name ?? company,
+        symbol: company?.symbol || company?.ticker, // Add symbol/ticker field
+        company: company // Add complete company object
       }));
     }
   } catch (error) {
@@ -218,6 +224,27 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   }, [setDefaultValue]);
 
   const customStyles = {
+    control: (provided: any, state: any) => ({
+      ...provided,
+      minHeight: '42px',
+      width: '100%',
+      maxWidth: '100%',
+      borderColor: state.isFocused ? '#800000' : '#e2e8f0',
+      boxShadow: state.isFocused ? '0 0 0 1px #800000' : 'none',
+      '&:hover': {
+        borderColor: '#800000',
+      },
+    }),
+    input: (provided: any) => ({
+      ...provided,
+      minWidth: '100px', // Ensures input doesn't shrink too much
+      width: 'auto', // Allows input to grow
+    }),
+    valueContainer: (provided: any) => ({
+      ...provided,
+      padding: '2px 8px',
+      flexWrap: 'wrap',
+    }),
     multiValue: (provided: any) => ({
       ...provided,
       backgroundColor: "#e2e8f0",

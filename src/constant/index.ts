@@ -79,6 +79,7 @@ export const subSidebarRoutes = ["/notes"];
 export const pageTitles: Record<string, string | null> = {
   "/notes": "Notes",
   "/investor-profile": null,
+  "/custom-reports": null,
   "/engagement-question": null,
   "/voting-guidelines": null,
   "/case-studies": null,
