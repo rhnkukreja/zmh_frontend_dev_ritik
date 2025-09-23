@@ -108,6 +108,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
   const [isLoadingDefault, setIsLoadingDefault] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
 
   const loadOptions = useCallback(
     _.debounce(
@@ -193,6 +194,25 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     return newValue;
   };
 
+  const handleFocus = () => {
+    setIsFocused(true);
+    // Always clear the input value when focusing to allow new search
+    setInputValue("");
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    // Reset input value when blurring if no selection is made
+    if (!value || (Array.isArray(value) && value.length === 0)) {
+      setInputValue("");
+    }
+  };
+
+  const handleMenuOpen = () => {
+    // Also clear input when menu opens
+    setInputValue("");
+  };
+
   useEffect(() => {
     handleInputChange(setDefaultValue?.label ?? setDefaultValue ?? "");
   }, [setDefaultValue]);
@@ -228,6 +248,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       placeholder={
         isLoadingDefault 
           ? "Loading..." 
+          : isFocused 
+          ? "" // Always show empty placeholder when focused to allow typing
           : placeholder
           ? placeholder
           : isInstitution
@@ -235,13 +257,19 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           : "Search Company"
       }
       onInputChange={handleInputChange}
-      inputValue={inputValue}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onMenuOpen={handleMenuOpen}
+      inputValue={isFocused ? "" : inputValue} // Force empty input when focused
       value={value}
       className={className}
       onChange={onChangeSelect}
       menuPortalTarget={document.body}
       isClearable={isClearable}
       isLoading={isLoadingDefault}
+      openMenuOnFocus={true}
+      openMenuOnClick={true}
+      controlShouldRenderValue={!isFocused} // Hide selected value when focused
     />
   );
 };
