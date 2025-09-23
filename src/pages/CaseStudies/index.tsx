@@ -1099,6 +1099,25 @@ function CaseStudies() {
                         </>
                       )}
 
+                      <div className="mx-2">
+                        <div className="text-left text-slate-500 mb-1">
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{ fontSize: '14px' }}>
+                            <FaSearch className="text-gray-400" /> Keyword Search
+                          </span>
+                        </div>
+                        <Controller
+                          name="keyword"
+                          control={control}
+                          render={({ field }) => (
+                            <FormInput
+                              placeholder="Enter keyword to search..."
+                              {...field}
+                              className="w-full"
+                            />
+                          )}
+                        />
+                      </div>
+
 
                     </div>
                   </div>
