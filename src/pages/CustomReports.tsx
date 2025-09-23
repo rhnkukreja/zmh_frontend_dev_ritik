@@ -351,12 +351,12 @@ const CustomReports = () => {
                         return (
                           <React.Fragment key={company.ticker + rowIdx}>
                             <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[220px] text-left">
-                              <h1 className={inv.status ? "font-semibold text-primary" : ""}>
+                              <h1 className={inv.status ? "font-semibold text-blue-600" : ""}>
                                 {inv.institution_name}
                               </h1>
                             </Table.Td>
                             <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[140px] text-center">
-                              <h1 className={parseFloat(inv.percent_ownership) < 1 ? "text-red-700 font-semibold" : "font-semibold text-primary"}>
+                              <h1 className={parseFloat(inv.percent_ownership) < 1 ? "text-red-700 font-semibold" : "font-semibold text-[#b91c1c]"}>
                                 {inv.percent_ownership}%
                               </h1>
                             </Table.Td>
