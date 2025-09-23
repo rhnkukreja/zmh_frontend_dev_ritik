@@ -783,11 +783,10 @@ const index = () => {
                         isInstitution={true}
                         companyGlobalSearchName={companyGlobalSearchName}
                         value={field.value}
-                        year={year}
-                        placeholder="Search Institution"
-                        isClearable={true}
+                        year={year} // Pass year from URL
                         onChange={(value: any) => {
                           field.onChange(value);
+                          // Pass the selected institution value for API calls
                           handleDropdownChange(
                             "institution_name",
                             value?.label
