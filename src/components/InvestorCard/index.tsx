@@ -402,15 +402,15 @@ const index = () => {
                                             )}
                                             <h1
                                               onClick={() =>
-                                                dashboard?.institution_id &&
+                                                dashboard?.investor_profile_id &&
                                                 window.open(
-                                                  `/investor-company-details/${dashboard?.institution_id}`,
+                                                  `/investor-company-details/${dashboard?.investor_profile_id}`,
                                                   "_blank"
                                                 )
                                               }
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                dashboard?.institution_id &&
+                                                dashboard?.investor_profile_id &&
                                                 "cursor-pointer underline",
                                               ])}
                                             >
@@ -425,14 +425,14 @@ const index = () => {
                                             )}
                                           </div>
                                           <div className="flex items-center gap-x-2">
-                                            {dashboard?.institution_id ? (
+                                            {dashboard?.investor_profile_id ? (
                                               <Tippy
                                                 content="Investor Profile"
                                                 options={{ theme: "light" }}
                                                 className="w-5 h-5"
                                                 onClick={() =>
                                                   navigate(
-                                                    `/investor-profile/investor/${dashboard?.institution_id}?from=dashboard`
+                                                    `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
                                                   )
                                                 }
                                               >
