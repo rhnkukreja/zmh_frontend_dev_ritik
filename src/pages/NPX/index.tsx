@@ -53,6 +53,15 @@ const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
   const { npxProxyDetails, npxProxyLoading, tempSearch, page, totalNPXCount } =
     useAppSelector((state) => state.dashboard);
+  
+  // Debug data state
+  console.log("🔍 Data State Debug:", {
+    npxProxyDetails: npxProxyDetails?.length || 0,
+    npxProxyLoading,
+    totalNPXCount,
+    hasData: npxProxyDetails?.length > 0
+  });
+  
   const totalPages = Math.ceil(totalNPXCount / 10);
   const [searchParams] = useSearchParams();
 
@@ -162,21 +171,18 @@ const index = () => {
   const fetchAllInstitutions = useCallback(async () => {
     try {
       // Prepare parameters for API call to fetch all institutions
-      // Always include year parameter explicitly
       const paramFilter = {
         global_search: companyGlobalSearchName,
-        year: year || '2024', // Ensure we always have a year value
+        year: year || '2024',
       };
       
-      console.log("Fetching institutions with params:", paramFilter);
       const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
       
-      if (res.result && res.result.all_institutions && res.result.all_institutions.length > 0) {
-        // Store all institutions
-        setAllInstitutions(res.result.all_institutions);
+      if (res.result && res.result.all_institution && res.result.all_institution.length > 0) {
+        setAllInstitutions(res.result.all_institution);
         
         // Auto-select the first institution
-        const firstInstitution = res.result.all_institutions[0];
+        const firstInstitution = res.result.all_institution[0];
         
         // Format for the dropdown
         const institutionValue = {
@@ -190,40 +196,44 @@ const index = () => {
         // Update dropdown values
         handleDropdownChange("institution_name", firstInstitution);
         
-        // Fetch fund names for the selected institution
-        getFundNameDependentDropdown(firstInstitution);
-        
-        // Set up the filter object with the selected institution
-        // Explicitly include year parameter for all API calls
+        // Create filter object with the selected institution
         const filterObj = {
           global_search: companyGlobalSearchName,
           institution_name: [firstInstitution],
-          year: year || '2024' // Always pass year parameter
+          year: year || '2024',
         };
-        
-        // Create filter object for chips
+
+        // Create filter object for chips (excluding global_search and year)
         const filterObjForChips = {
           institution_name: [firstInstitution],
-          fund_name: [], // For MultiSelectDropdown, always use an empty array for initial state
+          fund_name: [],
           proposal: [],
           vote: [],
           vote_category: [],
-          keyword: ""
+          keyword: "",
         };
-        
-        // Update the filter state and UI
+
+        // Update filter states to show the institution pill
         setallApplyFilter(filterObj);
         setSelectedChipFilters(generateFilterChips(filterObjForChips));
         setFiltersLength(countValidFilters(filterObjForChips));
-        
-        // Fetch data with the selected institution
+
+        // Fetch NPX data with the selected institution
         dispatch(resetPage());
-        const url = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1);
-        console.log("Fetching NPX dashboard data with URL:", url);
-        dispatch(fetchNpxProxyDashboard(url));
+        dispatch(
+          fetchNpxProxyDashboard(
+            createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
+          )
+        );
+        
+        // Fetch fund names for the selected institution
+        getFundNameDependentDropdown(firstInstitution);
+      } else {
+        setAllInstitutions([]);
       }
     } catch (error) {
       console.error("Error fetching institutions:", error);
+      setAllInstitutions([]);
     }
   }, [companyGlobalSearchName, year, dispatch]);
 
@@ -258,21 +268,39 @@ const index = () => {
   }, [companyGlobalSearchName, year]);
   
   useEffect(() => {
-    // Reset values
+    // Reset values on company or year change
     setMeetingDate('');
+    setAllInstitutions([]);
     
     // Reset dropdown values to prevent unnecessary API calls
     setDropdownValues({
       institution_name: [],
       fund_name: [],
     });
+
+    // Clear any existing data
+    setallApplyFilter({});
+    setSelectedChipFilters([]);
+    setFiltersLength(0);
     
-    // Fetch all institutions and auto-select the first one
-    fetchAllInstitutions();
-    
-    // Fetch all initial data with a single API call
-    fetchInitialData();
-  }, [companyGlobalSearchName, year, fetchInitialData, fetchAllInstitutions]) // Also depend on year
+    // Only fetch institutions if we have company data
+    if (companyGlobalSearchName) {
+      // Trigger initial loading state by dispatching a basic fetch first
+      // This ensures the loader is shown while we're fetching institutions and auto-selecting
+      dispatch(
+        fetchNpxProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/npx/detail/`,
+            { global_search: companyGlobalSearchName, year: year || '2024' },
+            undefined,
+            1
+          )
+        )
+      );
+      // Then fetch institutions and auto-select
+      fetchAllInstitutions();
+    }
+  }, [companyGlobalSearchName, year]);
 
 
   const getDependentDropdown = async () => {
@@ -349,7 +377,7 @@ const index = () => {
   }, [dropdownValues.fund_name, dropdownValues.institution_name]);
 
   useEffect(() => {
-    if (allApplyFilter) {
+    if (allApplyFilter && Object.keys(allApplyFilter).length > 0) {
       if (isCompanySelected) {
         reset();
         setShowFundName(false);
@@ -357,7 +385,7 @@ const index = () => {
           fetchNpxProxyDashboard(
             createDynamicURL(
               `${baseURL}/npx/detail/`,
-              { year }, // Pass year parameter
+              { global_search: companyGlobalSearchName, year: year || '2024' },
               undefined,
               page
             )
@@ -369,7 +397,7 @@ const index = () => {
           fetchNpxProxyDashboard(
             createDynamicURL(
               `${baseURL}/npx/detail/`,
-              { ...allApplyFilter, year }, // Include year with all filters
+              { ...allApplyFilter, year: year || '2024' },
               undefined,
               page
             )
@@ -405,11 +433,12 @@ const index = () => {
     watch,
   } = useForm<any>({
     defaultValues: {
-      institution_name: "Select",
+      institution_name: null,
       fund_name: [],
       proposal: [],
       vote: [],
       vote_category: [],
+      keyword: '',
       meeting_date: ''
     },
   });
@@ -490,7 +519,10 @@ const index = () => {
   };
 
   const onSubmit = async (npxFilter: any) => {
-    if (npxFilter?.institution_name === "Select") {
+    console.log("=== DEBUG: onSubmit called ===");
+    console.log("Raw form data:", npxFilter);
+    
+    if (!npxFilter?.institution_name || !npxFilter?.institution_name?.label) {
       toast.warning("Please select Institution");
       return;
     }
@@ -501,36 +533,48 @@ const index = () => {
         "Select" === npxFilter?.institution_name?.label
           ? ""
           : [npxFilter?.institution_name?.label],
-      // Handle MultiSelectDropdown values properly
       fund_name: Array.isArray(npxFilter?.fund_name) ? npxFilter?.fund_name : [],
       proposal: "Select" === npxFilter?.proposal ? "" : npxFilter?.proposal,
       vote: "Select" === npxFilter?.vote ? "" : npxFilter?.vote,
       vote_category:
         "Select" === npxFilter?.vote_category ? "" : npxFilter?.vote_category,
       keyword: npxFilter?.keyword,
-      year: year || '2024', // Always include year parameter
+      year: year || '2024',
     };
 
-    // Create filter object for chips (exclude global_search)
+    console.log("Filter object constructed:", filterObj);
+    console.log("=== END DEBUG ===");
+
     const filterObjForChips = {
       institution_name: filterObj.institution_name,
       fund_name: filterObj.fund_name,
-      proposal: filterObj.proposal,
+      proposal: filterObj.proposal, 
       vote: filterObj.vote,
       vote_category: filterObj.vote_category,
       keyword: filterObj.keyword,
     };
 
+    console.log("Form data received:", npxFilter);
+    console.log("Filter object being sent to API:", filterObj);
+    
     setallApplyFilter(filterObj);
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
     dispatch(resetPage());
     
-    // Fetch data with filter object including year
+    const apiUrl = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1);
+    console.log("🔍 DEBUGGING API URL:");
+    console.log("Full URL:", apiUrl);
+    
+    // Parse the URL to check individual parameters
+    const url = new URL(apiUrl);
+    const params = new URLSearchParams(url.search);
+    console.log("URL Parameters:");
+    for (const [key, value] of params.entries()) {
+      console.log(`  ${key}: ${value}`);
+    }
     dispatch(
-      fetchNpxProxyDashboard(
-        createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
-      )
+      fetchNpxProxyDashboard(apiUrl)
     );
     
     setIsFilterCollapse(false);
@@ -559,18 +603,16 @@ const index = () => {
     setShowFundName(false);
     setallApplyFilter({});
     
-    // Reset pagination and fetch fresh data with year parameter
-    // Always explicitly include year parameter
+    // Reset pagination and fetch fresh data with just basic parameters
     dispatch(resetPage());
-    const yearParam = year || '2024'; // Ensure we always have a year
     dispatch(
       fetchNpxProxyDashboard(
-        createDynamicURL(`${baseURL}/npx/detail/`, { year: yearParam }, undefined, 1)
+        createDynamicURL(`${baseURL}/npx/detail/`, { 
+          global_search: companyGlobalSearchName, 
+          year: year || '2024' 
+        }, undefined, 1)
       )
     );
-    
-    // After clearing filters, fetch all institutions again and select the first one
-    fetchAllInstitutions();
   };
 
   const resetFormValues: any = () => {
@@ -986,73 +1028,95 @@ const index = () => {
         )}
 
         {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
-        {npxProxyDetails?.length > 0 ? (
-          <TableWrapper isLoading={allApplyFilter && npxProxyLoading}>
+        {npxProxyLoading ? (
+          // Show loading skeleton while data is being fetched
+          <TableWrapper isLoading={true}>
             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
               <Table>
                 <Table.Thead>
                   <Table.Tr className="bg-primary text-white text-sm">
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "30%" }}>Proposal</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Category</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Vote</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "17.5%" }}>Fund Name</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "25%" }}>Proposal</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Category</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Vote</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Fund Name</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Shares Voted</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {npxProxyLoading ? (
-                    Array.from({ length: 8 }).map((_, i) => (
-                      <Table.Tr key={i} className="animate-pulse">
-                        {Array.from({ length: 5 }).map((_, j) => (
-                          <Table.Td key={j}><Skeleton height={24} /></Table.Td>
-                        ))}
-                      </Table.Tr>
-                    ))
-                  ) : npxProxyDetails?.length > 0 ? (
-                    (() => {
-                      let toggle = false;
-                      return npxProxyDetails.map((noAction: any, index: number) => {
-                        toggle = !toggle;
-                        return (
-                          <Table.Tr
-                            key={noAction?.id}
-                            className={clsx(
-                              "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
-                              toggle ? "bg-white" : "bg-gray-50"
-                            )}
-                          >
-                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                              {noAction?.proposal}
-                            </Table.Td>
-                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                              {convertToTitleCase(noAction?.vote_category)}
-                            </Table.Td>
-                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                              {convertToTitleCase(noAction?.vote)}
-                            </Table.Td>
-                            <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                              {noAction?.fund_name}
-                            </Table.Td>
-                          </Table.Tr>
-                        );
-                      });
-                    })()
-                  ) : (
-                    <Table.Tr>
-                      <Table.Td colSpan={5} className="text-center py-10 text-gray-400 text-lg font-semibold">
-                        <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-                        No NPX records available. Try adjusting your filters!
-                      </Table.Td>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Table.Tr key={i} className="animate-pulse">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <Table.Td key={j}><Skeleton height={24} /></Table.Td>
+                      ))}
                     </Table.Tr>
-                  )}
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </div>
+          </TableWrapper>
+        ) : npxProxyDetails?.length > 0 ? (
+          // Show data table when we have data
+          <TableWrapper isLoading={false}>
+            <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+              <Table>
+                <Table.Thead>
+                  <Table.Tr className="bg-primary text-white text-sm">
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "25%" }}>Proposal</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Category</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Vote</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Fund Name</Table.Td>
+                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Shares Voted</Table.Td>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {(() => {
+                    let toggle = false;
+                    return npxProxyDetails.map((noAction: any, index: number) => {
+                      toggle = !toggle;
+                      return (
+                        <Table.Tr
+                          key={noAction?.id}
+                          className={clsx(
+                            "[&_td]:last:border-b-0 transition-all hover:bg-primary/5 cursor-pointer",
+                            toggle ? "bg-white" : "bg-gray-50"
+                          )}
+                        >
+                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.proposal}
+                          </Table.Td>
+                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {convertToTitleCase(noAction?.vote_category)}
+                          </Table.Td>
+                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {convertToTitleCase(noAction?.vote)}
+                          </Table.Td>
+                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.fund_name}
+                          </Table.Td>
+                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.shares_voted ? 
+                              // Format shares_voted properly, handling multiple numbers if needed
+                              noAction?.shares_voted.toString().split(' ').map(num => {
+                                const parsedNum = parseInt(num, 10);
+                                return !isNaN(parsedNum) ? parsedNum.toLocaleString() : num;
+                              }).join(' ') 
+                              : '-'}
+                          </Table.Td>
+                        </Table.Tr>
+                      );
+                    });
+                  })()}
                 </Table.Tbody>
               </Table>
             </div>
           </TableWrapper>
         ) : (
+          // Show "No data found" when no data is available
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
             <div className="text-center text-gray-400 text-lg font-semibold">
-              <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-              Select an institution
+              <FaTimes className="mx-auto mb-2 text-4xl text-red-500" />
+              <div>No data found</div>
+              <div className="text-sm mt-1">Try adjusting your filters!</div>
             </div>
           </div>
         )}

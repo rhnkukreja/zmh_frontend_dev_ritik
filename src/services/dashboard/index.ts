@@ -97,7 +97,7 @@ class DashboardService {
   ): Promise<{
     results: CompanyData[];
   }> {
-    let results = {all_institution: []};
+    let results: any = {all_institution: []};
     if (institutionValue !== "") {
       // Use URLSearchParams to build the URL properly
       const params = new URLSearchParams();
@@ -117,10 +117,9 @@ class DashboardService {
       params.append('year', yearParam);
       
       // Add the selected institution to get relevant data for other fields
-      // Only add if this is a search, not initial loading
-      if (institutionValue !== "a") {
-        // We need to pass the institution_name as an array without JSON.stringify
-        // The createDynamicURL function will handle the stringifying
+      // Only add institution_name parameter if this is a search with actual input
+      if (institutionValue && institutionValue !== "a" && institutionValue.trim() !== "") {
+        // For search queries, pass the search term as institution_name
         params.append('institution_name', institutionValue);
       }
       
@@ -131,7 +130,11 @@ class DashboardService {
     }
 
     return {
-      results: results?.all_institution || [],
+      // When user is actively searching (institutionValue has content), use 'institution' key for search results
+      // When loading all institutions (no search term or placeholder "a"), use 'all_institution' key
+      results: (institutionValue && institutionValue !== "a" && institutionValue.trim() !== "") 
+        ? (results?.institution || [])
+        : (results?.all_institution || []),
     };
   }
 
