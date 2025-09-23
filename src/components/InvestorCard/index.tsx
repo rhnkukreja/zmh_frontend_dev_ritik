@@ -386,7 +386,7 @@ const index = () => {
 
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center  whitespace-nowrap">
-                                            {!dashboard.investor_profile_id && (
+                                            {!dashboard.institution_id && (
 
                                               <sup
                                                 className="cursor-pointer text-lg absolute left-2 top-1"
@@ -402,15 +402,15 @@ const index = () => {
                                             )}
                                             <h1
                                               onClick={() =>
-                                                dashboard?.investor_profile_id &&
+                                                dashboard?.institution_id &&
                                                 window.open(
-                                                  `/investor-company-details/${dashboard?.investor_profile_id}`,
+                                                  `/investor-company-details/${dashboard?.institution_id}`,
                                                   "_blank"
                                                 )
                                               }
                                               className={clsx([
                                                 "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                dashboard?.investor_profile_id &&
+                                                dashboard?.institution_id &&
                                                 "cursor-pointer underline",
                                               ])}
                                             >
@@ -425,14 +425,14 @@ const index = () => {
                                             )}
                                           </div>
                                           <div className="flex items-center gap-x-2">
-                                            {dashboard?.investor_profile_id ? (
+                                            {dashboard?.institution_id ? (
                                               <Tippy
                                                 content="Investor Profile"
                                                 options={{ theme: "light" }}
                                                 className="w-5 h-5"
                                                 onClick={() =>
                                                   navigate(
-                                                    `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
+                                                    `/investor-profile/investor/${dashboard?.institution_id}?from=dashboard`
                                                   )
                                                 }
                                               >
@@ -553,7 +553,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        {!dashboard.investor_profile_id ? (
+                                        {!dashboard.institution_id ? (
                                           <div className="whitespace-nowrap flex items-center justify-center">
                                             <span className="text-lg cursor-pointer" onClick={() => {
                                               window.scrollBy({
@@ -586,7 +586,7 @@ const index = () => {
                                         )}
                                       </Table.Td>
                                       <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        {!dashboard.investor_profile_id ? (
+                                        {!dashboard.institution_id ? (
                                           <div className="whitespace-nowrap flex items-center justify-center">
                                             <span className="text-lg cursor-pointer" onClick={() => {
                                               window.scrollBy({
