@@ -1,54 +1,123 @@
-import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
-import Tippy from "@/components/Base/Tippy";
-import users from "@/fakers/users";
+import { FormInput, FormLabel } from "@/components/Base/Form";
+
 import Button from "@/components/Base/Button";
 import clsx from "clsx";
 import _ from "lodash";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
-import { Link } from "react-router-dom";
-import { useForm, SubmitHandler, Controller } from "react-hook-form";
+
+import { Link, useNavigate } from "react-router-dom";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 
 import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import { signUp } from "@/stores/authenticationSlice";
+import { signUp, VerifySignUpOtp, resendSignUpOtp } from "@/stores/authenticationSlice";
 import Lucide from "@/components/Base/Lucide";
+import { toast } from "react-toastify";
+import logo from "../../assets/images/logo/zmh-logo.jpg";
+import CompanyAdvertisement from "@/components/CompanyAdvertisement";
+import { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 interface FormInputs {
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   email: string;
   password: string;
   passwordConfirmation: string;
-  agreeToPolicy: boolean;
 }
-
+interface VerifyOtpInputs {
+  otp: string;
+  email?: string;
+}
 function Main() {
   const {
     register,
-    control,
+    watch,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormInputs>();
+  } = useForm<any>();
   const dispatch: AppDispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showVerificationMsg, setShowVerificationMsg] = useState(true); // initially true to show message
+  const [formView, setFormView] = useState<"signup" | "verifyOtp">("signup");
+  const [userEmail, setUserEmail] = useState("");
+  const [signupData, setSignupData] = useState<any>(null);
+
+  // Show green message on initial load (coming from sign up)
+  useEffect(() => {
+    setShowVerificationMsg(true);
+  }, []);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
-    console.log("data: ", data);
+    const { passwordConfirmation, ...restData } = data;
 
-    const response = await dispatch(
-      signUp({
-        username: data.firstName + data.lastName,
-        email: data.email,
-        password: data.password,
-        user_type: data.agreeToPolicy === true ? "Employer" : "Candidate",
-      })
-    ).unwrap();
+    const signupPayload = {
+      ...restData,
+      user_type: "Employee",
+      username: restData?.email,
+      confirm_password: data.passwordConfirmation,
+    };
 
-    console.log({ response });
+    try {
+      const response = await dispatch(signUp(signupPayload)).unwrap();
+
+      if (response?.email) {
+        setFormView("verifyOtp");
+        setUserEmail(response?.email);
+        setSignupData(signupPayload); // Store the signup data for resend
+      }
+    } catch (error) {
+      return error;
+    }
   };
+  const handleVerifyOTP = async (data: VerifyOtpInputs) => {
+    try {
+      const response = await dispatch(
+        VerifySignUpOtp({
+          email: userEmail,
+          otp: data.otp,
+        })
+      ).unwrap();
 
+      if (response.message === "Signup completed successfully!") {
+        toast.success(response.message);
+        navigate("/login");
+      }
+
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
+
+  const handleResendOTP = async () => {
+    try {
+      // Use the same payload as the initial signup but don't show notification
+      const response = await dispatch(
+        resendSignUpOtp({
+          email: userEmail,
+          first_name: signupData.first_name,
+          last_name: signupData.last_name,
+          password: signupData.password,
+          username: signupData.username,
+          user_type: signupData.user_type,
+          confirm_password: signupData.confirm_password,
+        })
+      ).unwrap();
+
+      // No notification shown for resend OTP
+    } catch (error) {
+      console.error("Error resending OTP:", error);
+      toast.error("Failed to resend OTP");
+    }
+  }
   return (
     <>
+      <Helmet>
+        <title>ZMH Analytics - ZMH Advisors</title>
+      </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
           className={clsx([
@@ -56,103 +125,144 @@ function Main() {
             "before:content-[''] before:absolute before:inset-0 before:-mb-3.5 before:bg-white/40 before:rounded-2xl before:mx-5",
           ])}
         >
+          
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
-            <div className="rounded-[0.8rem] w-[55px] h-[55px] border border-primary/30 flex items-center justify-center">
-              <div className="relative flex items-center justify-center w-[50px] rounded-[0.6rem] h-[50px] bg-gradient-to-b from-theme-1/90 to-theme-2/90 bg-white">
-                <div className="w-[26px] h-[26px] relative -rotate-45 [&_div]:bg-white">
-                  <div className="absolute w-[20%] left-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                  <div className="absolute w-[20%] inset-0 m-auto h-[120%] rounded-full"></div>
-                  <div className="absolute w-[20%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
+            {/* For Urgent Use */}
+            {/* <p className="mb-6 text-base font-medium text-center text-red-600 bold">
+    We are upgrading our Dashboard. Login will be available soon.
+  </p> */}
+            <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
+              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-360">
+                <div className="w-full h-full overflow-hidden     image-fit">
+                  <img alt="Logo" src={logo} />
                 </div>
               </div>
             </div>
             <div className="mt-10">
-              <div className="text-2xl font-medium">Sign Up</div>
-              <div className="mt-2.5 text-slate-600">
-                Already have an account?{" "}
-                <Link className="font-medium text-primary" to="/login">
+              <div className="text-2xl font-medium">{formView === "signup" ? "Sign Up" : "Enter Verification Code"}</div>
+              {formView === "signup" && <div className="mt-2.5 text-slate-600">
+                Already have an account?
+                <Link className="ml-2 font-medium text-primary" to="/login">
                   Sign In
                 </Link>
-              </div>
-              <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
-                <div>
-                  <FormLabel>First Name*</FormLabel>
-                  <FormInput
-                    type="text"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="First Name"
-                    {...register("firstName", {
-                      required: "First name is required",
-                    })}
-                  />
-                  {errors.firstName && (
-                    <span className="text-red-500">
-                      {errors.firstName.message}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-5">
-                  <FormLabel>Last Name*</FormLabel>
-                  <FormInput
-                    type="text"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Last Name"
-                    {...register("lastName", {
-                      required: "Last name is required",
-                    })}
-                  />
-                  {errors.lastName && (
-                    <span className="text-red-500">
-                      {errors.lastName.message}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-5">
-                  <FormLabel>Email*</FormLabel>
-                  <FormInput
-                    type="email"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Email"
-                    {...register("email", { required: "Email is required" })}
-                  />
-                  {errors.email && (
-                    <span className="text-red-500">{errors.email.message}</span>
-                  )}
-                </div>
-                <div className="mt-5">
-                  <FormLabel>Password*</FormLabel>
-                  <FormInput
-                    type="password"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Password"
-                    {...register("password", {
-                      required: "Password is required",
-                    })}
-                  />
-                  {errors.password && (
-                    <span className="text-red-500">
-                      {errors.password.message}
-                    </span>
-                  )}
-                </div>
+              </div>}
 
-                <div className="mt-5">
-                  <FormLabel>Password Confirmation*</FormLabel>
-                  <FormInput
-                    type="password"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="Confirm Password"
-                    {...register("passwordConfirmation", {
-                      required: "Password confirmation is required",
-                    })}
-                  />
-                  {errors.passwordConfirmation && (
-                    <span className="text-red-500">
-                      {errors.passwordConfirmation.message}
+              {formView === "signup" ?
+                <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
+                  <div>
+                    <FormLabel>First Name*</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      {...register("first_name", {
+                        required: "First name is required",
+                      })}
+                    />
+                    {errors.first_name && (
+                      <span className="text-red-500">
+                        {typeof errors.first_name.message === "string" ? errors.first_name.message : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-5">
+                    <FormLabel>Last Name*</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      {...register("last_name", {
+                        required: "Last name is required",
+                      })}
+                    />
+                    {errors.last_name && (
+                      <span className="text-red-500">
+                        {typeof errors.last_name.message === "string" ? errors.last_name.message : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-5">
+                    <FormLabel>Email*</FormLabel>
+                    <FormInput
+                      type="email"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      {...register("email", { required: "Email is required" })}
+                    />
+                    {errors.email && (
+                      <span className="text-red-500">
+                        {typeof errors.email.message === "string" ? errors.email.message : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-5 relative">
+                    <FormLabel>Password*</FormLabel>
+                    <FormInput
+                      type={showPassword ? "text" : "password"}
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      {...register("password", {
+                        required: "Password is required",
+                      })}
+                    />
+                    <span className="absolute top-[52%] right-[5%] cursor-pointer">
+                      {showPassword && (
+                        <Eye
+                          onClick={() => setShowPassword(!showPassword)}
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
+                      {!showPassword && (
+                        <EyeOff
+                          onClick={() => setShowPassword(!showPassword)}
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
                     </span>
-                  )}
-                </div>
-                <div className="flex items-center mt-5 text-xs text-slate-500 sm:text-sm">
+                    {errors.password && (
+                      <span className="text-red-500">
+                        {typeof errors.password.message === "string" ? errors.password.message : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-5 relative">
+                    <FormLabel>Confirm Password*</FormLabel>
+                    <FormInput
+                      type={showConfirmPassword ? "text" : "password"}
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      {...register("passwordConfirmation", {
+                        required: "Password confirmation is required",
+                        validate: (value) =>
+                          value === watch("password") || "Passwords do not match",
+                      })}
+                    />
+                    <span className="absolute top-[52%] right-[5%] cursor-pointer">
+                      {showConfirmPassword && (
+                        <Eye
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
+                      {!showConfirmPassword && (
+                        <EyeOff
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          strokeWidth={0.75}
+                          size={20}
+                        />
+                      )}
+                    </span>
+                    {errors.passwordConfirmation && (
+                      <span className="text-red-500">
+                        {typeof errors.passwordConfirmation.message === "string" ? errors.passwordConfirmation.message : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* <div className="flex items-center mt-5 text-xs text-slate-500 sm:text-sm">
                   <Controller
                     name="agreeToPolicy"
                     control={control}
@@ -173,7 +283,7 @@ function Main() {
                     className="cursor-pointer select-none"
                     htmlFor="agree-to-policy"
                   >
-                    I agree to the 
+                    I agree to the
                   </label>
                   <a className="ml-1 text-primary dark:text-slate-200" href="">
                     Privacy Policy
@@ -184,27 +294,101 @@ function Main() {
                   <span className="text-red-500">
                     {errors.agreeToPolicy.message}
                   </span>
-                )}
-                <div className="mt-5 text-center xl:mt-8 xl:text-left">
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    rounded
-                    disabled={loading}
-                    className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
-                  >
-                    {loading && (
-                      <Lucide
-                        icon="Loader"
-                        className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                          loading ? "animate-spin" : ""
-                        }`}
-                      />
-                    )}
-                    Sign Up
-                  </Button>
-                </div>
-              </form>
+                )} */}
+                  <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      rounded
+                      disabled={loading}
+                      // disabled
+                      className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                    >
+                      {loading && (
+                        <Lucide
+                          icon="Loader"
+                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                            }`}
+                        />
+                      )}
+                      Sign Up
+                    </Button>
+                  </div>
+                </form>
+                :
+                <form
+                  onSubmit={handleSubmit((data) => {
+                    handleVerifyOTP(data);
+                    setShowVerificationMsg(false); // hide on confirm
+                  })}
+                  className="mt-6"
+                >
+                  {/* Professional green verification message */}
+                  {showVerificationMsg && (
+                    <p className="text-green-600 font-medium text-sm mb-3">
+                      A verification code has been sent to your email.
+                    </p>
+                  )}
+
+                  <FormInput
+                    type="text"
+                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder=""
+                    {...register("otp", { required: "OTP is required" })}
+                  />
+                  {errors.otp && (
+                    <p className="text-red-500">
+                      {typeof errors.otp.message === "string" ? errors.otp.message : ""}
+                    </p>
+                  )}
+
+                  <div className="flex justify-between mt-4 text-xs text-slate-500 sm:text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setFormView("signup")}
+                      className="flex items-center"
+                    >
+                      <Lucide icon="ArrowLeft" className="w-4 h-4" /> Back To Sign Up
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleResendOTP();
+                        setShowVerificationMsg(false); // hide immediately
+                        setTimeout(() => setShowVerificationMsg(true), 1500); // show again after 1.5s
+                      }}
+                      disabled={loading}
+                      className="flex items-center text-primary hover:text-primary/80 disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <Lucide icon="Loader" className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Lucide icon="RefreshCw" className="w-4 h-4 mr-1" />
+                      )}
+                      Resend Code
+                    </button>
+                  </div>
+
+                  <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                    <Button
+                      variant="primary"
+                      rounded
+                      className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {loading && (
+                        <Lucide
+                          icon="Loader"
+                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                            }`}
+                        />
+                      )}
+                      Confirm Code
+                    </Button>
+                  </div>
+                </form>}
             </div>
           </div>
         </div>
@@ -225,62 +409,11 @@ function Main() {
           ])}
         >
           <div className="sticky top-0 z-10 flex-col justify-center hidden h-screen ml-16 lg:flex xl:ml-28 2xl:ml-36">
-            <div className="leading-[1.4] text-[2.6rem] xl:text-5xl font-medium xl:leading-[1.2] text-white">
-              Embrace Excellence <br /> in Dashboard Development
-            </div>
-            <div className="mt-5 text-base leading-relaxed xl:text-lg text-white/70">
-              Unlock the potential of Tailwise, where developers craft
-              meticulously structured, visually stunning dashboards with
-              feature-rich modules. Join us today to shape the future of your
-              application development.
-            </div>
-            <div className="flex flex-col gap-3 mt-10 xl:items-center xl:flex-row">
-              <div className="flex items-center">
-                <div className="w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-              </div>
-              <div className="text-base xl:ml-2 2xl:ml-3 text-white/70">
-                Over 7k+ strong and growing! Your journey begins here.
-              </div>
-            </div>
+            <CompanyAdvertisement />
           </div>
         </div>
       </div>
-      <ThemeSwitcher />
+      {/* <ThemeSwitcher /> */}
     </>
   );
 }

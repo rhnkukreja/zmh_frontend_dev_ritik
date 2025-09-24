@@ -1,26 +1,58 @@
 export class LoginRequestDTO {
-    constructor(
+  constructor(
     //   public email: string,
-      public password: string,
-      public username: string
-    ) {}
-  }
-  
+    public password: string,
+    public email: string
+  ) { }
+}
+
 export class SignUpRequestDTO {
   constructor(
+    public first_name: string,
+    public last_name: string,
     public email: string,
     public password: string,
     public username: string,
-    public user_type: string
-  ) {}
+    public user_type: string,
+    public confirm_password: string,
+    public phone?: string,
+    public company?: number | null
+  ) { }
+}
+export class VerifySignUpOtpDTO {
+  constructor(
+    public email: string,
+    public otp: string
+
+  ) { }
+}
+export class SendOtpDTO {
+  constructor(
+
+    public password: string,
+    public email: string,
+    public confirm_password: string
+
+  ) { }
+}
+export class VerifyOtpDTO {
+  constructor(
+    public email: string,
+    public otp: string
+
+  ) { }
 }
 
-export class UserResponseDTO {
-  id: number;
-  email: string;
-
-  constructor(id: number, name: string, email: string) {
-    this.id = id;
-    this.email = email;
-  }
+export class ResendSignUpOtpDTO {
+  constructor(
+    public email: string,
+    public first_name: string,
+    public last_name: string,
+    public password: string,
+    public username: string,
+    public user_type: string,
+    public confirm_password: string,
+    public phone?: string,
+    public company?: number | null
+  ) { }
 }

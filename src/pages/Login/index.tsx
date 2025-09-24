@@ -1,51 +1,154 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 import { RootState, AppDispatch } from "../../stores/store";
-import { login } from "../../stores/authenticationSlice";
+import { login, sendOtp, verifyOtp } from "../../stores/authenticationSlice";
 import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
 import Tippy from "@/components/Base/Tippy";
 import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
 
 import clsx from "clsx";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
-import { Link } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
+// import { toast } from "react-toastify";
+import logo from "../../assets/images/logo/zmh-logo.jpg";
+import CompanyAdvertisement from "@/components/CompanyAdvertisement";
+import { Eye, EyeOff } from "lucide-react";
+import { Helmet } from "react-helmet-async";
+import {
+  setDashboardGlobalSearch,
+  setFinhub,
+} from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 
 interface LoginFormInputs {
   email: string;
   password: string;
 }
+interface SendOtpInputs {
+  email: string;
+  password: string;
+  confirm_password: string;
+}
+interface VerifyOtpInputs {
+  email: string;
+  otp: string;
 
+}
 const Main: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showVerificationMsg, setShowVerificationMsg] = useState(false);
   const { loading } = useAppSelector((state: RootState) => state.authentiction);
+  const [formView, setFormView] = useState<"login" | "sendOtp" | "resetPassword">(
+    "login"
+  );
+  const [email, setEmail] = useState("");
+
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormInputs>();
+  } = useForm<any>();
+
+  useEffect(() => {
+    if (formView === "resetPassword") {
+      setShowVerificationMsg(true); // show message when entering this view
+    }
+  }, [formView]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
-      
       const response = await dispatch(
         login({
-          username: data.email,
+          email: data.email,
           password: data.password,
         })
       ).unwrap();
 
-      console.log("response: ", response);
-    } catch (error) {}
-  };
+      if (response.token) {
+        localStorage.setItem("User", JSON.stringify(response));
+        localStorage.setItem("token", response.token);
+      }
+      if (response?.company_id && response.company_name) {
+        dispatch(
+          setDashboardGlobalSearch({
+            id: response?.company_id,
+            ticker: response?.company_ticker!,
+            name: response?.company_name,
+            board_name: response?.company_name, // Use company_name as fallback for board_name
+          })
+        );
+        // toast.success("Logged In Successfully!");
+      }
+      if (response?.finnhub) {
+        dispatch(setFinhub(response?.finnhub));
+      }
 
+      const redirectPath = sessionStorage.getItem('redirectPath') || '/';
+      sessionStorage.removeItem('redirectPath');
+
+      if (redirectPath) {
+        navigate(redirectPath);
+      }
+      else {
+        navigate(`/?ticker=${response?.company_ticker}`);
+      }
+
+    } catch (error) { }
+  };
+  const handleSendOtp = async (data: SendOtpInputs) => {
+    try {
+
+      const response = await dispatch(
+        sendOtp({
+          email: data.email,
+          password: data.password,
+          confirm_password: data.confirm_password,
+        })
+      ).unwrap();
+
+
+      if (response.email) {
+        toast.success(response.message);
+        setEmail(response.email);
+        setFormView("resetPassword");
+      }
+
+
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
+  const handleVerifyOTP = async (data: VerifyOtpInputs) => {
+    try {
+      const response = await dispatch(
+        verifyOtp({
+          email: email,
+          otp: data.otp,
+        })
+      ).unwrap();
+
+      if (response.message === "Password reset successfully!") {
+        toast.success(response.message);
+        setFormView("login")
+      }
+
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
   return (
     <>
+      <Helmet>
+        <title>ZMH Analytics - ZMH Advisors</title>
+      </Helmet>
       <div className="container grid lg:h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] py-10 px-5 sm:py-14 sm:px-10 md:px-36 lg:py-0 lg:pl-14 lg:pr-12 xl:px-24">
         <div
           className={clsx([
@@ -54,84 +157,288 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
-            <div className="rounded-[0.8rem] w-[55px] h-[55px] border border-primary/30 flex items-center justify-center">
-              <div className="relative flex items-center justify-center w-[50px] rounded-[0.6rem] h-[50px] bg-gradient-to-b from-theme-1/90 to-theme-2/90 bg-white">
-                <div className="w-[26px] h-[26px] relative -rotate-45 [&_div]:bg-white">
-                  <div className="absolute w-[20%] left-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                  <div className="absolute w-[20%] inset-0 m-auto h-[120%] rounded-full"></div>
-                  <div className="absolute w-[20%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
+            {/* For Urgent Use */}
+            {/* <p className="mb-6 text-base font-medium text-center text-red-600 bold">
+    We are upgrading our Dashboard. Login will be available soon.
+  </p> */}
+            <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
+              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
+                <div className="w-full h-full overflow-hidden    image-fit">
+                  <img alt="Logo" src={logo} />
                 </div>
               </div>
             </div>
             <div className="mt-10">
-              <div className="text-2xl font-medium">Sign In</div>
-              <div className="mt-2.5 text-slate-600">
-                Don't have an account?{" "}
-                <Link className="font-medium text-primary" to="/register">
+              <div className="text-2xl font-medium">
+                {formView === "login" ? "Sign In" :
+                  formView === "sendOtp" ? "Reset Password" : "Enter Verification Code"}
+              </div>
+              {formView === "login" && <div className="mt-2.5 text-slate-600">
+                Don't have an account?
+                <Link className="ml-2 font-medium text-primary" to="/register">
                   Sign Up
                 </Link>
-              </div>
+              </div>}
+              {formView === "resetPassword" && <div className="mt-2.5 text-slate-600">
+                {/* Verification code sent to your email */}
+
+              </div>}
 
               <div className="mt-6">
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <FormLabel>Email*</FormLabel>
-                  <FormInput
-                    type="text"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder={users.fakeUsers()[0].email}
-                    {...register("email", { required: "Email is required" })}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500">{errors.email.message}</p>
-                  )}
-                  <FormLabel className="mt-4">Password*</FormLabel>
-                  <FormInput
-                    type="password"
-                    className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                    placeholder="************"
-                    {...register("password", {
-                      required: "Password is required",
-                    })}
-                  />
-                  {errors.password && (
-                    <p className="text-red-500">{errors.password.message}</p>
-                  )}
-                  <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
-                    <div className="flex items-center mr-auto">
-                      <FormCheck.Input
-                        id="remember-me"
-                        type="checkbox"
-                        className="mr-2.5 border"
+                {formView === "login" && (
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    <FormLabel>Email*</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Email"
+                      {...register("email", { required: "Email is required" })}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500">{errors.email?.message as string}</p>
+                    )}
+                    <FormLabel className="mt-4">Password*</FormLabel>
+                    <div className="relative">
+                      <FormInput
+                        type={showPassword ? "text" : "password"}
+                        className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                        placeholder="Enter your password"
+                        {...register("password", {
+                          required: "Password is required",
+                        })}
                       />
-                      <label
-                        className="cursor-pointer select-none"
-                        htmlFor="remember-me"
-                      >
-                        Remember me
-                      </label>
+                      <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                        {showPassword && (
+                          <Eye
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                        {!showPassword && (
+                          <EyeOff
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                      </span>
                     </div>
-                    <a href="">Forgot Password?</a>
-                  </div>
-                  <div className="mt-5 text-center xl:mt-8 xl:text-left">
-                    <Button
-                      variant="primary"
-                      rounded
-                      className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
-                      type="submit"
-                      disabled={loading}
-                    >
-                      {loading && (
-                        <Lucide
-                          icon="Loader"
-                          className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                            loading ? "animate-spin" : ""
-                          }`}
+
+                    {errors.password && (
+                      <p className="text-red-500">{typeof errors.password.message === "string" ? errors.password.message : ""}</p>
+                    )}
+                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
+                      <div className="flex items-center mr-auto">
+                        <FormCheck.Input
+                          id="remember-me"
+                          type="checkbox"
+                          className="mr-2.5 border"
                         />
-                      )}
-                      Log In
-                    </Button>
-                  </div>
-                </form>
+                        <label
+                          className="cursor-pointer select-none"
+                          htmlFor="remember-me"
+                        >
+                          Remember me
+                        </label>
+                      </div>
+                      <button type="button" onClick={() => {
+                        setFormView("sendOtp");
+                        setEmail("");
+
+
+                      }} >Forgot Password?</button>
+                    </div>
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                        // disabled
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Log In
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {formView === "sendOtp" && (
+                  <form onSubmit={handleSubmit(handleSendOtp)}>
+                    <FormLabel>Email*</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Email"
+                      {...register("email", { required: "Email is required" })}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500">{typeof errors.email?.message === "string" ? errors.email.message : ""}</p>
+                    )}
+                    <FormLabel className="mt-4">New Password*</FormLabel>
+                    <div className="relative">
+                      <FormInput
+                        type={showPassword ? "text" : "password"}
+                        className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                        placeholder="Enter your password"
+                        {...register("password", {
+                          required: "Password is required",
+                        })}
+                      />
+                      <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                        {showPassword && (
+                          <Eye
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                        {!showPassword && (
+                          <EyeOff
+                            onClick={() => setShowPassword(!showPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                      </span>
+                    </div>
+
+                    {errors.password && (
+                      <p className="text-red-500">{typeof errors.password?.message === "string" ? errors.password.message : ""}</p>
+                    )}
+                    <FormLabel className="mt-4">Confirm Password*</FormLabel>
+                    <div className="relative">
+                      <FormInput
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                        placeholder="Enter confirm password"
+                        {...register("confirm_password", {
+                          required: "Confirm Password is required",
+                        })}
+                      />
+                      <span className="absolute top-[28%] right-[5%] cursor-pointer">
+                        {showConfirmPassword && (
+                          <Eye
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                        {!showConfirmPassword && (
+                          <EyeOff
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            strokeWidth={0.75}
+                            size={20}
+                          />
+                        )}
+                      </span>
+                    </div>
+
+                    {errors.confirm_password && (
+                      <p className="text-red-500">{typeof errors.confirm_password?.message === "string" ? errors.confirm_password.message : ""}</p>
+                    )}
+
+                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm">
+                      <button type="button" onClick={() => setFormView("login")} className="flex items-center" >  <Lucide
+                        icon="ArrowLeft"
+                        className="w-4 h-4"
+                      /> Back To Login</button>
+                    </div>
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Send Verification Code
+                      </Button>
+                    </div>
+                  </form>)}
+                {formView === "resetPassword" && (
+                  <form
+                    onSubmit={handleSubmit((data) => {
+                      handleVerifyOTP(data);
+                      setShowVerificationMsg(false); // hide on confirm
+                    })}
+                  >
+                    {/* Professional green verification message */}
+                    {showVerificationMsg && (
+                      <p className="text-green-600 font-medium text-sm mb-3">
+                        A verification code has been sent to your email.
+                      </p>
+                    )}
+
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      placeholder="Enter Code"
+                      {...register("otp", { required: "OTP is required" })}
+                    />
+                    {errors.otp && (
+                      <p className="text-red-500">
+                        {typeof errors.otp.message === "string" ? errors.otp.message : ""}
+                      </p>
+                    )}
+
+                    <div className="flex mt-4 text-xs text-slate-500 sm:text-sm justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setFormView("sendOtp")}
+                        className="flex items-center"
+                      >
+                        <Lucide icon="ArrowLeft" className="w-4 h-4" /> Back
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormView("resetPassword"); // stay on same form
+                          setShowVerificationMsg(false); // hide immediately
+                          setTimeout(() => setShowVerificationMsg(true), 1500); // re-show after 1.5s
+                        }}
+                      >
+                        Resend Code
+                      </button>
+                    </div>
+
+                    <div className="mt-5 text-center xl:mt-8 xl:text-left">
+                      <Button
+                        variant="primary"
+                        rounded
+                        className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading && (
+                          <Lucide
+                            icon="Loader"
+                            className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
+                              }`}
+                          />
+                        )}
+                        Confirm Code
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
               </div>
             </div>
           </div>
@@ -153,62 +460,11 @@ const Main: React.FC = () => {
           ])}
         >
           <div className="sticky top-0 z-10 flex-col justify-center hidden h-screen ml-16 lg:flex xl:ml-28 2xl:ml-36">
-            <div className="leading-[1.4] text-[2.6rem] xl:text-5xl font-medium xl:leading-[1.2] text-white">
-              Embrace Excellence <br /> in Dashboard Development
-            </div>
-            <div className="mt-5 text-base leading-relaxed xl:text-lg text-white/70">
-              Unlock the potential of Tailwise, where developers craft
-              meticulously structured, visually stunning dashboards with
-              feature-rich modules. Join us today to shape the future of your
-              application development.
-            </div>
-            <div className="flex flex-col gap-3 mt-10 xl:items-center xl:flex-row">
-              <div className="flex items-center">
-                <div className="w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-              </div>
-              <div className="text-base xl:ml-2 2xl:ml-3 text-white/70">
-                Over 7k+ strong and growing! Your journey begins here.
-              </div>
-            </div>
+            <CompanyAdvertisement />
           </div>
         </div>
       </div>
-      <ThemeSwitcher />
+      {/* <ThemeSwitcher /> */}
     </>
   );
 };

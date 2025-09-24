@@ -1,6 +1,11 @@
+import { characterColors, PAGE_SIZE, proposal_keywords } from "@/constant";
+import { FormattedMenu } from "@/themes/Echo/side-menu";
+import { FilterObject } from "@/types/common";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { parseColor } from "tailwindcss/lib/util/color";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 dayjs.extend(duration);
 
@@ -33,6 +38,10 @@ const onlyNumber = (string: string) => {
   } else {
     return "";
   }
+};
+
+const getCurrentYear = () => {
+  return new Date().getFullYear();
 };
 
 const formatCurrency = (number: number) => {
@@ -140,7 +149,7 @@ const stringToHTML = (arg: string) => {
 const slideUp = (
   el: HTMLElement,
   duration = 300,
-  callback = (el: HTMLElement) => {}
+  callback = (el: HTMLElement) => { }
 ) => {
   el.style.transitionProperty = "height, margin, padding";
   el.style.transitionDuration = duration + "ms";
@@ -169,7 +178,7 @@ const slideUp = (
 const slideDown = (
   el: HTMLElement,
   duration = 300,
-  callback = (el: HTMLElement) => {}
+  callback = (el: HTMLElement) => { }
 ) => {
   el.style.removeProperty("display");
   let display = window.getComputedStyle(el).display;
@@ -199,6 +208,482 @@ const slideDown = (
   }, duration);
 };
 
+const getPageNumbers = (totalCounts: number, perPageCount = PAGE_SIZE): number => {
+  return Math.ceil(totalCounts / perPageCount);
+};
+
+function createDynamicURL<T extends Record<string, string | string[]>>(
+  baseURL: string,
+  filters?: T,
+  extraPrams?: Record<string, string | string[]> | undefined,
+  page?: number
+): string {
+  const queryParams = new URLSearchParams();
+  if (extraPrams) {
+    for (const key in extraPrams) {
+      const value = extraPrams[key];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          queryParams.append(key, JSON.stringify(value));
+        }
+      } else if (value !== null && value !== undefined && value !== "") {
+        queryParams.append(key, value);
+      }
+    }
+  }
+
+  if (filters) {
+    for (const key in filters) {
+      const value = filters[key];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          queryParams.append(key, JSON.stringify(value));
+        }
+      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
+        queryParams.append(key, value);
+      }
+    }
+  }
+
+  const queryString = queryParams.toString();
+  if (page && queryString) {
+    return `${baseURL}?${queryString}&page=${page}`;
+  } else if (queryString) {
+    return `${baseURL}?${queryString}`;
+  } else if (page) {
+    return `${baseURL}?page=${page}`;
+  } else {
+    return baseURL;
+  }
+}
+
+const getColorForCharacter = (char: string) => {
+  return characterColors[char.toUpperCase()] || "#FFFFFF";
+};
+
+function bytesToMB(bytes: number): number {
+  return parseFloat((bytes / (1024 * 1024)).toFixed(2));
+}
+
+const getYearRange = (range: number): string[] => {
+  const now = new Date().getUTCFullYear();
+  return Array(now - (now - range))
+    .fill("")
+    .map((v, idx) => now - idx)
+    .map(String);
+};
+
+const formatedDate = (dateString: string): string => {
+  const parsedDate = dayjs(dateString, "D MMM, YYYY");
+
+  const now = dayjs();
+  const fullDate = parsedDate
+    .set("hour", now.hour())
+    .set("minute", now.minute())
+    .set("second", now.second())
+    .set("millisecond", now.millisecond());
+
+  return fullDate.format("YYYY-MM-DDTHH:mm:ss");
+};
+
+const getDateWithoutTime = (datetimeString?: string): string => {
+  if (!datetimeString || !dayjs(datetimeString).isValid()) {
+    return "";
+  }
+  return dayjs(datetimeString).format("YYYY-MM-DD");
+};
+
+const getCustomRelativeDate = (dateStr: string): string => {
+  const now = dayjs().startOf("day");
+  const date = dayjs(dateStr).startOf("day");
+
+  const diff = now.diff(date, "day");
+
+  if (diff === 0) {
+    return `Today, ${date.format("MMM D")}`; 
+  } else if (diff === 1) {
+    return `Yesterday, ${date.format("MMM D")}`; 
+  } else {
+    return `${date.format("dddd")}, ${date.format("MMM D")}`; 
+  } 
+};
+
+const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
+  const userType = localStorage.getItem("userType")?.toLowerCase() || "";
+  const filteredMenuItems = menuItems.filter((item, index, arr) => {
+    if (userType !== "admin") {
+      if (typeof item === "string" && item.toLowerCase() === "Additional") {
+        let i = index + 1;
+        while (
+          i < arr.length &&
+          typeof arr[i] === "object" &&
+          (arr[i] as FormattedMenu).isAdmin === true
+        ) {
+          i++;
+        }
+        return false;
+      }
+      if (typeof item === "object" && item.isAdmin) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  return filteredMenuItems;
+};
+
+export const downloadFileFromAPI = async ({
+  url,
+  fileName,
+  setLoading,
+  serviceMethod
+}) => {
+  setLoading(true);
+  try {
+    const file = await serviceMethod(url + "&download=true");
+
+    const blobUrl = URL.createObjectURL(file.result);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+
+    URL.revokeObjectURL(blobUrl);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error downloading file:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// const downloadCSV = (csvContent: any, name: string) => {
+//   const blob = new Blob([csvContent], { type: "text/csv" });
+//   const url = window.URL.createObjectURL(blob);
+//   const a = document.createElement("a");
+//   a.setAttribute("href", url);
+//   a.setAttribute("download", `${name}.csv`);
+//   document.body.appendChild(a);
+//   a.click();
+//   document.body.removeChild(a);
+// };
+
+const downloadCSV = (csvContent: any, name: string) => {
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${name}.csv`);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+function countValidFilters(filters: FilterObject): number {
+  return Object.keys(filters).filter((key) => {
+    const value = filters[key];
+    return Array.isArray(value)
+      ? value.length !== 0
+      : value !== undefined && value !== "" && value !== " " && value !== null;
+  }).length;
+}
+
+// New function to count individual filter values (not just fields)
+function countIndividualFilters(filters: FilterObject): number {
+  let count = 0;
+  Object.keys(filters).forEach((key) => {
+    const value = filters[key];
+    if (Array.isArray(value)) {
+      count += value.length;
+    } else if (value !== undefined && value !== "" && value !== " " && value !== null) {
+      count += 1;
+    }
+  });
+  return count;
+}
+
+
+function generateFilterChips(filters: Record<string, any>) {
+  const mapping: Record<string, string> = {
+    company_name: "Company",
+    company_names: "Company",
+    institution_name: "Institution",
+    fund_name: "Fund",
+    year: "Year",
+    vote: "Vote",
+    vote_type: "Vote",
+    vote_category: "Category",
+    category: "Category",
+    keyword: "Keyword",
+    proposal: "Proposal",
+    index: "Index",
+    index_name: "Index",
+    proposal_type: "Proposal Category",
+    proponent_type: "Proponent",
+    meeting_type: "Meeting Type",
+    proposal_keyword: "Keywords",
+    country: "Country",
+    analyticsYear: "Year",
+    date_range: "Date Range",
+    themes: "Themes",
+    market: "Country",
+    sector: "Sector",
+    region: "Region",
+  };
+
+  // Define the order of filters as they appear in the UI
+  const filterOrder = [
+    'institution_name',    // First row
+    'fund_name',
+    'vote_category',
+    'proposal',            // Second row
+    'vote',
+    'keyword',
+    'analyticsYear', 'year',
+    'index_name', 'index',
+    'date_range',
+    'country',             
+    'meeting_type',
+    'proposal_type',
+    'proponent_type',
+    'vote_type',
+    // Additional filters that might not be in the main form
+    'company_name', 'company_names',
+    'category',
+    'proposal_keyword'
+  ];
+
+  // Create chips for each filter in the defined order
+  const sortedChips: any[] = [];
+  
+  filterOrder.forEach(filterKey => {
+    if (filters[filterKey] && filters[filterKey].length !== 0 && filters[filterKey] !== "") {
+      const value = filters[filterKey];
+      if (Array.isArray(value)) {
+        value.forEach((v) => {
+          sortedChips.push({
+            key: filterKey,
+            label: `${mapping[filterKey] || filterKey}: ${typeof v === 'object' && v.label ? v.label : v}`,
+            value: v,
+          });
+        });
+      } else {
+        sortedChips.push({
+          key: filterKey,
+          label: `${mapping[filterKey] || filterKey}: ${typeof value === 'object' && value.label ? value.label : value}`,
+          value,
+        });
+      }
+    }
+  });
+
+  // Add any remaining filters that weren't in the predefined order
+  Object.entries(filters)
+    .filter(([key, value]) => 
+      !filterOrder.includes(key) && 
+      value && 
+      value.length !== 0 && 
+      value !== ""
+    )
+    .forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((v) => {
+          sortedChips.push({
+            key,
+            label: `${mapping[key] || key}: ${typeof v === 'object' && v.label ? v.label : v}`,
+            value: v,
+          });
+        });
+      } else {
+        sortedChips.push({
+          key,
+          label: `${mapping[key] || key}: ${typeof value === 'object' && value.label ? value.label : value}`,
+          value,
+        });
+      }
+    });
+
+  return sortedChips;
+}
+
+function convertToTitleCase(str: string): string {
+  if (!str) {
+    return "";
+  }
+  if (str == "global_search" || str == "company_name" || str == "company_names") {
+    return "Company"
+  } else if (str == "institution_name") {
+    return "Institution"
+  }
+  else if (str == "date_range") {
+    return "Date Range"
+  }
+  else if (str == "proposal_type") {
+    return "Proposal Category"
+  }
+  else if (str == "proponent_type") {
+    return "Proponent"
+  }
+  else if (str == "country") {
+    return "Country"
+  }
+  else if (str == "index") {
+    return "Index"
+  }
+   else if (str == "index_name") {
+    return "Index"
+  }
+  else if (str == "custom_keywords") {
+    return "Keyword"
+  }
+  else if (str == "meeting_type") {
+    return "Meeting Type"
+  }
+  else if (str == "analyticsYear") {
+    return "Year"
+  }
+  else if (str == "proposal_keywords_mapping") {
+    return "Proposal Keywords"
+  }
+  else if (str == "outcome_percentage") {
+    return "Outcome Percentage"
+  }
+
+  return str
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/'\w/g, (match) => match.toLowerCase());
+}
+
+function updateQueryParams(params: { [key: string]: string }) {
+  const url = new URL(window.location.href);
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  window.history.replaceState({}, "", url.toString());
+}
+
+const localStorageHelper = {
+  setItem: (key: string, value: any) => {
+    if (typeof value === "object") {
+      localStorage.setItem(key, JSON.stringify(value));
+    } else {
+      localStorage.setItem(key, value);
+    }
+  },
+  getItem: (key: string) => {
+    const value = localStorage.getItem(key);
+    try {
+      return JSON.parse(value as any);
+    } catch {
+      return value;
+    }
+  },
+  removeItem: (key: string) => {
+    localStorage.removeItem(key);
+  },
+};
+
+const createQueryParams = (params: Record<string, any>) => {
+  const queryParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        queryParams.append(key, JSON.stringify(value));
+      }
+    } else if (value !== null && value !== undefined && value !== "") {
+      queryParams.append(key, value.toString());
+    }
+  });
+
+  return queryParams.toString();
+};
+
+const downloadXlsxFile = ({
+  data,
+  fileName = "data.xlsx",
+}: {
+  data: any[];
+  fileName: string;
+}) => {
+  // Transform each row so that the header keys are entirely in uppercase
+  const transformedData = data.map((row) => {
+    const newRow: Record<string, any> = {};
+    Object.keys(row).forEach((key) => {
+      const newKey = key.toUpperCase();
+      newRow[newKey] = row[key];
+    });
+    return newRow;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(transformedData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+  const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, fileName);
+};
+
+const downloadFileByServer = (blob: any, filename: string) => {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
+
+const cleanObject = (obj: Record<string, any>) => {
+  const cleaned: Record<string, any> = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    if (!(typeof value === "string" && value.trim() === "")) {
+      cleaned[key] = value;
+    }
+  }
+
+  return cleaned;
+};
+
+
+const groupByValue = (array: any, key: string, isCompany: boolean, selectedGroup: any) => {
+  const grouped = array.reduce((acc, note) => {
+    const companyName = note[key];
+    if (!acc[companyName]) {
+      acc[companyName] = [];
+    }
+    acc[companyName].push(note);
+    return acc;
+  }, {});
+
+  return Object.entries(grouped).map(([key, value]) => ({
+
+    institution_id: isCompany
+      ? value[0]?.institution
+      : selectedGroup?.institution_id,
+    company_id: isCompany ? selectedGroup?.company_id : value[0]?.company,
+    institutionName: selectedGroup?.institutionName,
+    companyName: selectedGroup?.companyName,
+    name: key,
+    data: value as any[],
+
+  }));
+};
+
+
+export default localStorageHelper;
+
 export {
   cutText,
   formatDate,
@@ -214,4 +699,27 @@ export {
   stringToHTML,
   slideUp,
   slideDown,
+  getPageNumbers,
+  createDynamicURL,
+  getColorForCharacter,
+  bytesToMB,
+  getYearRange,
+  formatedDate,
+  filterMenu,
+  downloadCSV,
+  countValidFilters,
+  countIndividualFilters,
+  updateQueryParams,
+  convertToTitleCase,
+  createQueryParams,
+  localStorageHelper,
+  getDateWithoutTime,
+  getCustomRelativeDate,
+  downloadXlsxFile,
+  downloadFileByServer,
+  generateFilterChips,
+  cleanObject,
+  groupByValue,
+  getCurrentYear,
+
 };

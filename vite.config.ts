@@ -22,4 +22,11 @@ export default defineConfig({
       ),
     },
   },
+  server: {
+    host: true,
+    allowedHosts: ["dev.zmhadvisors.com", "ai.zmhadvisors.com"]
+  },
+  preview: {
+    allowedHosts: ["dev.zmhadvisors.com", "ai.zmhadvisors.com"]
+  }
 });

@@ -1,25 +1,62 @@
 // services/UserService.ts
+import { Login, Register } from "@/types/users";
 import { axiosInstance } from "../index";
-import {LoginRequestDTO ,  SignUpRequestDTO } from "./auth.type";
-import { UserResponseDTO } from "./auth.type";
+import { LoginRequestDTO, SendOtpDTO, SignUpRequestDTO, VerifyOtpDTO ,VerifySignUpOtpDTO, ResendSignUpOtpDTO} from "./auth.type";
 
 class UserService {
-  public async signUp(user: SignUpRequestDTO): Promise<UserResponseDTO> {
-    const response = await axiosInstance.post("/user/register", user);
-    return new UserResponseDTO(
-      response.data.id,
-      response.data.name,
-      response.data.email
-    );
+  public async signUp(user: SignUpRequestDTO): Promise<any> {
+    try {
+      const response = await axiosInstance.post("/signup/request-otp/", user);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  }
+ public async verifySignUpOtp(data: VerifySignUpOtpDTO): Promise<any> {
+
+    try {
+      const response = await axiosInstance.post("/signup/verify-otp/", data);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
   }
 
-  public async login(user: LoginRequestDTO): Promise<UserResponseDTO> {
-    const response = await axiosInstance.post("/user/login/", user);
-    return new UserResponseDTO(
-      response.data.id,
-      response.data.name,
-      response.data.email
-    );
+  public async resendSignUpOtp(data: ResendSignUpOtpDTO): Promise<any> {
+    try {
+      const response = await axiosInstance.post("/signup/request-otp/", data);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  public async login(user: LoginRequestDTO): Promise<any> {
+    try {
+      const response = await axiosInstance.post("/user/login/", user);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  }
+  public async sendOtp(data: SendOtpDTO): Promise<any> {
+
+    try {
+      const response = await axiosInstance.post("/api/auth/forgot-password/", data);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  }
+  
+ public async verifyOtp(data: VerifyOtpDTO): Promise<any> {
+
+    try {
+      const response = await axiosInstance.post("/api/auth/verify-password-reset/", data);
+      return response.data;
+    } catch (error) {
+      return error;
+    }
   }
 }
 

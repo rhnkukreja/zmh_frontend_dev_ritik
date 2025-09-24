@@ -22,7 +22,7 @@ export interface LitepickerProps
       value: string;
     };
   }) => void;
-  value?: string;
+  value?: string | undefined;
   getRef?: (el: LitepickerElement) => void;
 }
 

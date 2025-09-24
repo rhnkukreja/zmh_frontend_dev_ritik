@@ -26,6 +26,357 @@
 @import "./components/_scrollbar-hidden.css";
 @import "./components/_typing-dots.css";
 @import "./components/_zoom-in.css";
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+
+/* .ck-tooltip {
+  background-color: #333 !important;
+  color: #fff !important; 
+}
+
+
+.ck-tooltip::after {
+  border-top-color: #333 !important; 
+} */
+
+.ck-balloon-panel.ck-balloon-panel_position_border-side_right.ck-powered-by-balloon {
+  display: none !important;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary) var(--primary);
+  font-family: montserrat;
+}
+
+/* Toastify Global Styling */
+.Toastify__toast {
+  font-weight: 600 !important; /* semibold */
+  font-family: montserrat !important;
+}
+
+.Toastify__toast-body {
+  font-weight: 600 !important; /* semibold */
+}
+
+.Toastify__toast--success {
+  font-weight: 600 !important;
+}
+
+.Toastify__toast--error {
+  font-weight: 600 !important;
+}
+
+.Toastify__toast--warning {
+  font-weight: 600 !important;
+}
+
+.Toastify__toast--info {
+  font-weight: 600 !important;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+body {
+  background-color: #0000000d;
+}
+
+.sticky-table {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Standardized Table Header Styles */
+.bg-header {
+  background-color: #f8fafc;
+  background-image: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.border-header {
+  border-color: #e2e8f0;
+}
+
+/* Table row hover effects */
+.table-row-hover:hover {
+  background-color: #f8fafc;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Standardized table cell padding and typography */
+.table-cell-standard {
+  padding: 12px 20px;
+  vertical-align: middle;
+}
+
+.table-header-standard {
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+*::-webkit-scrollbar {
+  width: 15px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--primary);
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--secondary);
+  border-radius: 14px;
+  border: 3px solid var(--primary);
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+.animate-spinOnce {
+  transition: transform 1s linear;
+  transform: rotate(0deg);
+}
+
+/* On hover */
+.animate-spinOnce {
+  transform: rotate(360deg);
+}
+
+.hide-pdf {
+  display: none !important;
+}
+
+.thumbnail-section {
+  height: 400px;
+}
+
+.css-13cymwt-control,
+.css-13cymwt-control:hover,
+.css-13cymwt-control:focus,
+.css-t3ipsp-control,
+.css-t3ipsp-control:hover,
+.css-t3ipsp-control:focus {
+  border-radius: 5px !important;
+  border-color: #d5dde7 !important;
+  box-shadow: #d5dde7 !important;
+
+}
+
+.css-v7duua:hover {
+  color: hsl(0, 0%, 60%) !important;
+  background-color: transparent !important;
+}
+
+.css-1p3m7a8-multiValue {
+  background-color: #e2e8f0 !important;
+}
+
+.css-tj5bde-Svg {
+  fill: #303030 !important
+}
+
+.css-1u9des2-indicatorSeparator {
+  background-color: transparent !important;
+}
+
+.css-1nmdiq5-menu {
+  z-index: 1000 !important;
+}
+
+.ts-dropdown-content {
+  text-align: left !important;
+}
+
+@media only screen and (min-width: 1400px) and (max-width: 1580px) {
+  .thumbnail-section {
+    /* width: 100%; */
+    height: 320px;
+  }
+}
+
+@media only screen and (min-width: 1100px) and (max-width: 1400px) {
+  .thumbnail-section {
+    height: 300px;
+  }
+}
+
+@media only screen and (min-width: 1023px) and (max-width: 1100px) {
+  .thumbnail-section {
+    height: 280px;
+  }
+}
+
+.link-ref span {
+  a {
+    color: blue;
+  }
+}
+
+.filter-section {
+  background: #6767670d;
+  border: 2px solid #0000000d;
+  border-radius: 15px;
+  margin: 10px;
+  padding: 10px;
+}
+
+.echo .side-menu__link--active .side-menu__link__title {
+  color: #ab123d !important;
+  font-weight: 700;
+  /* color: white !important; */
+}
+
+.echo .side-menu__link__title {
+  color: white !important;
+}
+
+.echo .side-menu__divider {
+  color: white !important;
+}
+
+@media (min-width: 1280px) {
+  .echo .side-menu--collapsed .side-menu__divider {
+    color: transparent !important;
+  }
+}
+
+.echo .side-menu ul.scrollable>li>.side-menu__link--active {
+  background: white !important;
+  /* border-color: #e2e8f0; */
+  border: 2px solid #e2e8f0;
+  box-shadow: 0px 2px 3px #0000000b;
+}
+
+a.side-menu__link.side-menu__link--active svg {
+  stroke: #ab123d;
+}
+
+.bold-sup {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 240px;
+  max-height: 180px;
+  background-color: #fff;
+  color: black;
+  text-align: start;
+  border-radius: 6px;
+  padding: 10px 10px;
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 100;
+  font-weight: 500;
+  left: 20px;
+  overflow-y: scroll;
+  overflow-x: scroll;
+  top: -70px;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+
+.html-link .ck-content a {
+  color: blue;
+}
+
+.css-13cymwt-control {
+  background: #f7f7f7 !important;
+}
+
+.select__control--is-disabled {
+  background-color: #c8c8c8 !important;
+}
+
+.recharts-label-list g line {
+  display: none;
+}
+
+.tom-select.ts-wrapper.multi.has-items .ts-control {
+  padding-right: 2rem !important;
+}
+
+.position-set {
+  top: -10px !important;
+  left: 12px !important;
+}
+
+.custom_keywords .css-1nmdiq5-menu {
+  display: none;
+}
+
+option[data-label="*"] {
+  color: red !important;
+  font-weight: bold;
+}
+
+.ts-wrapper.plugin-remove_button:not(.rtl) .item {
+  background-color: #e2e8f0 !important;
+  padding-left: 7px;
+  border-radius: 4px;
+}
+
+/* .ts-wrapper .ts-control .ts-dropdown .clear-button {
+  left: 350px !important;
+  font-size: 19px !important;
+  position: absolute !important; 
+} */
+
+.plugin-clear_button .clear-button {
+  left: 800px !important;
+  font-size: 25px !important;
+  position: absolute !important;
+  /* Ensure it's positioned correctly */
+}
+
+.email-alert .css-13cymwt-control {
+  background-color: transparent !important;
+}
+
+.tom-select .items {
+  width: 48rem !important;
+}
+
+.tom-select,
+.ts-wrapper.single .ts-control,
+.ts-wrapper.multi .ts-control,
+.ts-dropdown .option {
+  cursor: pointer !important;
+}
+
+.ts-wrapper {
+  cursor: pointer !important;
+}
+
+.ts-dropdown .option {
+  cursor: pointer !important;
+}
+
+.header-card {
+  z-index: 1000 !important;
+}
 
 /*
  |--------------------------------------------------------------------------
@@ -39,6 +390,7 @@
  | https://tailwindcss.com/docs/installation#include-tailwind-in-your-css
  |
  */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

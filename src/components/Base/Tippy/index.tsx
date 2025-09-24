@@ -12,7 +12,7 @@ type TippyProps<C extends React.ElementType> = PolymorphicComponentPropWithRef<
   C,
   {
     getRef?: (el: PopperElement | null) => void;
-    content: string;
+    content?: string;
     as?: C;
     options?: Partial<Props>;
   }

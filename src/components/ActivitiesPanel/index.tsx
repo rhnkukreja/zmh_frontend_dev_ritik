@@ -127,19 +127,19 @@ function Main(props: MainProps) {
                             <div className="grid grid-cols-3 overflow-hidden rounded-[0.6rem]">
                               <div className="h-12 sm:h-20 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
                                 <img
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={faker.images[0]}
                                 />
                               </div>
                               <div className="h-12 sm:h-20 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
                                 <img
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={faker.images[1]}
                                 />
                               </div>
                               <div className="h-12 sm:h-20 overflow-hidden border image-fit border-slate-100 saturate-[.6] hover:saturate-100 cursor-pointer">
                                 <img
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={faker.images[2]}
                                 />
                               </div>

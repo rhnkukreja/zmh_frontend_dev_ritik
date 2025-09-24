@@ -202,7 +202,7 @@ function Main() {
                               >
                                 <img
                                   className="rounded-lg"
-                                  alt="Tailwise - Admin Dashboard Template"
+                                  alt="ZMH Analytics"
                                   src={faker.images[0].path}
                                 />
                                 <Tippy

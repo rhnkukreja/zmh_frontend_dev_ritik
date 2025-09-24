@@ -212,10 +212,7 @@ function Main() {
                   key={fakerKey}
                 >
                   <div className="w-[22px] h-[22px] overflow-hidden border-2 rounded-full image-fit border-slate-200/70 box">
-                    <img
-                      alt="Tailwise - Admin Dashboard Template"
-                      src={faker.image}
-                    />
+                    <img alt="ZMH Analytics" src={faker.image} />
                   </div>
                   <div className="pr-8 ml-2.5 truncate">{faker.name}</div>
                   <div className="ml-auto">
@@ -333,7 +330,7 @@ function Main() {
                   >
                     <Tippy
                       as="img"
-                      alt="Tailwise - Admin Dashboard Template"
+                      alt="ZMH Analytics"
                       className="border-[3px] border-slate-50 rounded-full cursor-pointer"
                       src={faker.images[0].path}
                       content={faker.name}

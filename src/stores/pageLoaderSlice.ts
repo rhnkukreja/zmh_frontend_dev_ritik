@@ -25,4 +25,4 @@ export const selectPageLoader = (state: RootState) => {
   return state.pageLoader.value;
 };
 
-export default pageLoaderSlice.reducer;
+export default pageLoaderSlice;

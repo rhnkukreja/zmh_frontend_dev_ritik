@@ -35,6 +35,7 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
 
 const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   const formattedMenu: Array<FormattedMenu | string> = [];
+
   menu.forEach((item) => {
     if (typeof item !== "string") {
       const menuItem: FormattedMenu = {
@@ -44,7 +45,10 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         pathname: item.pathname,
         subMenu: item.subMenu,
         ignore: item.ignore,
+        isAdmin: item.isAdmin,
+        selectPathName: item?.selectPathName,
       };
+
       menuItem.active =
         ((location.forceActiveMenu !== undefined &&
           menuItem.pathname === location.forceActiveMenu) ||
@@ -56,7 +60,6 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
       if (menuItem.subMenu) {
         menuItem.activeDropdown = findActiveMenu(menuItem.subMenu, location);
 
-        // Nested menu
         const subMenu: Array<FormattedMenu> = [];
         nestedMenu(menuItem.subMenu, location).map(
           (menu) => typeof menu !== "string" && subMenu.push(menu)
@@ -73,11 +76,20 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   return formattedMenu;
 };
 
-const linkTo = (menu: FormattedMenu, navigate: NavigateFunction) => {
+const linkTo = (menu: FormattedMenu, navigate: NavigateFunction, companyGlobalSearchName?: string) => {
   if (menu.subMenu) {
     menu.activeDropdown = !menu.activeDropdown;
   } else {
-    if (menu.pathname !== undefined) {
+    // Check if selectPathName is defined and title is "Company Search"
+    if (
+      menu.pathname !== undefined &&
+      menu.title === "Company Search" &&
+      menu.selectPathName
+    ) {
+      navigate(menu.selectPathName);
+    }
+    // Navigate to pathname if it's defined and not "Notes"
+    else if (menu.pathname !== undefined && menu.pathname !== "Notes") {
       navigate(menu.pathname);
     }
   }
