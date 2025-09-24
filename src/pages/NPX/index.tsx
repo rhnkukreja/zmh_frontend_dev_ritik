@@ -438,7 +438,7 @@ const index = () => {
       proposal: [],
       vote: [],
       vote_category: [],
-      keyword: '',
+      keyword: [],
       meeting_date: ''
     },
   });
@@ -489,6 +489,8 @@ const index = () => {
       setValue("proposal", updatedFilters.proposal || []);
     } else if (removeKey === "vote") {
       setValue("vote", updatedFilters.vote || []);
+    } else if (removeKey === "keyword") {
+      setValue("keyword", updatedFilters.keyword || []);
     }
 
     // Create filter object for chips (exclude global_search)
@@ -538,7 +540,7 @@ const index = () => {
       vote: "Select" === npxFilter?.vote ? "" : npxFilter?.vote,
       vote_category:
         "Select" === npxFilter?.vote_category ? "" : npxFilter?.vote_category,
-      keyword: npxFilter?.keyword,
+      keyword: Array.isArray(npxFilter?.keyword) ? npxFilter?.keyword : [],
       year: year || '2024',
     };
 
@@ -588,6 +590,7 @@ const index = () => {
       vote_category: [],
       proposal: [],
       vote: [],
+      keyword: [],
       meeting_date: ''
     });
     
@@ -622,6 +625,7 @@ const index = () => {
     setValue("vote_category", []);
     setValue("proposal", []);
     setValue("vote", []);
+    setValue("keyword", []);
     setValue("meeting_date", "");
     
     // Reset dropdown state
@@ -629,11 +633,6 @@ const index = () => {
       institution_name: "",
       fund_name: []
     });
-    setValue("fund_name", []);
-    setValue("proposal", []);
-    setValue("vote", []);
-    setValue("vote_category", []);
-    setValue("keyword", "");
   };
 
   const handleNextPage = () => {
@@ -784,14 +783,21 @@ const index = () => {
                         companyGlobalSearchName={companyGlobalSearchName}
                         value={field.value}
                         year={year} // Pass year from URL
+                        isClearable={true}
                         onChange={(value: any) => {
                           field.onChange(value);
                           // Pass the selected institution value for API calls
                           handleDropdownChange(
                             "institution_name",
-                            value?.label
+                            value?.label || ""
                           );
-                          getFundNameDependentDropdown(value?.label);
+                          if (value?.label) {
+                            getFundNameDependentDropdown(value.label);
+                          } else {
+                            // Clear fund dropdown when institution is cleared
+                            setShowFundName(false);
+                            setApiFundNameDropdown({ fund_name: [] });
+                          }
                         }}
                       />
                     )}
@@ -999,25 +1005,19 @@ const index = () => {
                 {/* Keyword */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaSearch className="text-gray-400" /> Keyword
+                    <FaSearch className="text-gray-400" /> Keywords
                   </label>
                   <Controller
                     name="keyword"
                     control={control}
-                    defaultValue=""
+                    defaultValue={[]}
                     render={({ field }) => (
-                      <FormInput
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleSubmit(onSubmit)();
-                          }
+                      <CreatableInputSelect
+                        placeholder="Type and press Enter to add keywords..."
+                        value={field.value || []}
+                        onChange={(values: string[]) => {
+                          field.onChange(values);
                         }}
-                        value={field.value?.toString() || ""}
-                        onChange={field.onChange}
-                        type="text"
-                        className="mt-1"
-                        placeholder="Search Keyword"
                       />
                     )}
                   />

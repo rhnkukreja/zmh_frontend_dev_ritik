@@ -33,6 +33,7 @@ import { realTimeService } from "@/services/realTimeData";
 import Litepicker from "@/components/Base/Litepicker";
 import SummaryModal from "./components/ViewSummaryModal";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 
 
 
@@ -733,20 +734,28 @@ const index = () => {
                   <Controller
                     name="keyword"
                     control={control}
-                    defaultValue=""
+                    defaultValue={[]}
                     render={({ field }) => (
-                      <FormInput
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleSubmit(onSubmit)();
+                      <CreatableInputSelect
+                        placeholder="Type and press Enter to add keywords..."
+                        isMulti
+                        value={(field.value || []).map((keyword: string) => ({ label: keyword, value: keyword }))}
+                        onChange={(selectedOptions: any) => {
+                          const values = selectedOptions ? selectedOptions.map((option: any) => option.value) : [];
+                          field.onChange(values);
+                        }}
+                        onCreateOption={(inputValue: string) => {
+                          const trimmedValue = inputValue.trim();
+                          if (trimmedValue) {
+                            const currentValues = field.value || [];
+                            const newValues = [...currentValues, trimmedValue];
+                            field.onChange(newValues);
                           }
                         }}
-                        value={field.value?.toString() || ""}
-                        onChange={field.onChange}
-                        type="text"
-                        className="mt-1"
-                        placeholder="Search Keyword"
+                        formatCreateLabel={(inputValue: string) => `Add "${inputValue}"`}
+                        noOptionsMessage={() => "Type to add keywords..."}
+                        className="basic-multi-select"
+                        classNamePrefix="select"
                       />
                     )}
                   />

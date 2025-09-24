@@ -70,6 +70,7 @@ import StandardizedTable from "@/components/StandardizedTable";
 import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderProposalsAnalytics";
 import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
@@ -216,7 +217,7 @@ function ShareHolderProposal() {
       category: filters.category,
       sub_category: filters.sub_category,
       status: filters.status,
-      keyword: filters.keyword,
+      keyword: filters.keyword || [],
       // Ensure year is always an array of strings
       year: filters.year ? filters.year.map(String) : [],
       proponent_name: filters?.proponent_name,
@@ -239,7 +240,7 @@ function ShareHolderProposal() {
 
   const resetFormValues: any = () => {
     setValue("category", []);
-    setValue("keyword", "");
+    setValue("keyword", []);
     setValue("sub_category", []);
     setValue("status", []);
     setValue("year", []);
@@ -667,7 +668,7 @@ function ShareHolderProposal() {
     if (user?.saved_search["Shareholder Proposal"]) {
       const savedSearch = user.saved_search["Shareholder Proposal"];
       setSearchTerms([...savedSearch.proponent_name]);
-      setValue("keyword", savedSearch.keyword || "");
+      setValue("keyword", savedSearch.keyword || []);
       setValue("proponent_name", savedSearch.proponent_name || []);
       setValue("category", savedSearch.category || []);
       setValue("sub_category", savedSearch.sub_category || []);
@@ -677,7 +678,7 @@ function ShareHolderProposal() {
       dispatch(
         setAllFilters({
           proponent_name: savedSearch.proponent_name || [],
-          keyword: savedSearch.keyword || "",
+          keyword: savedSearch.keyword || [],
           category: savedSearch.category || [],
           sub_category: savedSearch.sub_category || [],
           year: savedSearch.year || [],
@@ -698,7 +699,7 @@ function ShareHolderProposal() {
       sub_category: filters?.sub_category || [],
       year: filters?.year || [],
       status: filters?.status || [],
-      keyword: filters?.keyword || "",
+      keyword: filters?.keyword || [],
       global_search: filters?.global_search,
       no_shareholder_proposal: filters?.no_shareholder_proposal,
       approved: filters?.approved,
@@ -718,7 +719,7 @@ function ShareHolderProposal() {
             sub_category: filters?.sub_category || [],
             year: filters?.year || [],
             status: filters?.status || [],
-            keyword: filters?.keyword || "",
+            keyword: filters?.keyword || [],
             index: filters?.index || "",
             global_search: filters?.global_search,
           },
@@ -1379,20 +1380,14 @@ function ShareHolderProposal() {
                         <Controller
                           name="keyword"
                           control={control}
-                          defaultValue=""
+                          defaultValue={[]}
                           render={({ field }) => (
-                            <FormInput
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  handleSubmit(onSubmit)();
-                                }
+                            <CreatableInputSelect
+                              placeholder="Type and press Enter to add keywords..."
+                              value={field.value || []}
+                              onChange={(values: string[]) => {
+                                field.onChange(values);
                               }}
-                              value={field.value?.toString() || ""}
-                              onChange={field.onChange}
-                              type="text"
-                              className="mt-1"
-                              placeholder="Search Keyword"
                             />
                           )}
                         />

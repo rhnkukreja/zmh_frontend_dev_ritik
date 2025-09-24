@@ -42,12 +42,13 @@ import FilterChips from "@/components/FilterChips";
 import StandardizedFilterPills from "@/components/StandardizedFilterPills";
 import StandardizedTable from "@/components/StandardizedTable";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 
 interface CaseStudyFilter {
-  keyword: string;
+  keyword: string[];
   market: string[];
   sector: string[];
   year: string[];
@@ -117,7 +118,7 @@ function CaseStudies() {
   } = useForm<CaseStudyFilter>({
     defaultValues: {
       themes: filters?.themes,
-      keyword: filters?.keyword,
+      keyword: filters?.keyword || [],
       market: filters?.market,
       sector: filters?.sector,
       // Ensure year is always an array of strings
@@ -138,7 +139,7 @@ function CaseStudies() {
 
   const resetFormValues = () => {
     setValue("themes", []);
-    setValue("keyword", "");
+    setValue("keyword", []);
     setValue("market", []);
     setValue("sector", []);
     setValue("year", []);
@@ -280,7 +281,7 @@ function CaseStudies() {
       const savedSearch = user.saved_search["Case Studies"];
 
       setSearchTerms([...savedSearch?.institution]);
-      setValue("keyword", savedSearch?.keyword || "");
+      setValue("keyword", savedSearch?.keyword || []);
       setValue("market", savedSearch?.market || []);
       setValue("sector", savedSearch?.sector || []);
       setValue("year", savedSearch?.year || []);
@@ -292,7 +293,7 @@ function CaseStudies() {
       setValue("index", user?.saved_search?.index || []);
       dispatch(
         setAllFilters({
-          keyword: savedSearch?.keyword || "",
+          keyword: savedSearch?.keyword || [],
           market: savedSearch?.market || [],
           sector: savedSearch?.sector || [],
           year: savedSearch?.year || [],
@@ -322,7 +323,7 @@ function CaseStudies() {
       proposal_type: filters.proposal_type || [],
       vote: filters.vote || [],
       year: filters.year || [],
-      keyword: filters.keyword || "",
+      keyword: filters.keyword || [],
       global_search: [companyGlobalSearchName],
       index: filters.index || "",
 
@@ -341,7 +342,7 @@ function CaseStudies() {
             proposal_type: filters.proposal_type || [],
             vote: filters.vote || [],
             year: filters.year || [],
-            keyword: filters.keyword || "",
+            keyword: filters.keyword || [],
             index: filters.index || "",
             global_search: [companyGlobalSearchName],
           },
@@ -1108,11 +1109,14 @@ function CaseStudies() {
                         <Controller
                           name="keyword"
                           control={control}
+                          defaultValue={[]}
                           render={({ field }) => (
-                            <FormInput
-                              placeholder="Enter keyword to search..."
-                              {...field}
-                              className="w-full"
+                            <CreatableInputSelect
+                              placeholder="Type and press Enter to add keywords..."
+                              value={field.value || []}
+                              onChange={(values: string[]) => {
+                                field.onChange(values);
+                              }}
                             />
                           )}
                         />

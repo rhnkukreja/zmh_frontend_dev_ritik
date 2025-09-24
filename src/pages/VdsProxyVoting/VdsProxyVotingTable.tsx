@@ -5,7 +5,7 @@ import {
   createDynamicURL,
   downloadCSV,
 } from "@/utils/helper";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -60,9 +60,11 @@ const VdsProxyVotingTable = () => {
   const yearTicker = searchParams.get("year")!;
 
   const [filter, setFilter] = useState<any>([]);
-  const [top20Loaded, setTop20Loaded] = useState<boolean>(false);
-  const [allInvestorsLoaded, setAllInvestorsLoaded] = useState<boolean>(false);
-  const [lastFilterState, setLastFilterState] = useState<string>("");
+  const loadedDataRef = useRef({
+    top20: '',
+    allInvestors: '',
+    filterState: ''
+  });
 
   const { handleSubmit, control, reset } = useForm<any>({
     defaultValues: {
@@ -70,60 +72,13 @@ const VdsProxyVotingTable = () => {
     },
   });
 
-  useEffect(() => {
-    if (tab === "Top-20" && (isCompanySelected || !top20Loaded)) {
-      dispatch(
-        fetchVdsProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
-          )
-        )
-      );
-      // Also fetch voting rationale for Top-20 tab (no institution_name parameter)
-      dispatch(
-        getProxyVotingRationaleTop20(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-          })
-        )
-      );
-      setTop20Loaded(true);
-    }
-
-    if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0 && !top20Loaded) {
-      dispatch(
-        fetchVdsProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
-          )
-        )
-      );
-      // Also fetch voting rationale for initial load (no institution_name parameter)
-      dispatch(
-        getProxyVotingRationaleTop20(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-          })
-        )
-      );
-      setTop20Loaded(true);
-    }
-  }, [companyGlobalSearchTicker, searchTicker, tab]);
-
-  // Reset the flags when company changes and trigger reload
-  useEffect(() => {
-    // Reset loading flags immediately to ensure loading state is shown
-    setTop20Loaded(false);
-    setAllInvestorsLoaded(false);
-    setLastFilterState("");
+  // Load Top-20 data function
+  const loadTop20Data = useCallback(() => {
+    if (!companyGlobalSearchTicker || !yearTicker) return;
     
-    // When company changes, force a reload by setting isCompanySelected to true
-    dispatch(setIsCompanySelected(true));
+    const currentCompanyYear = `${companyGlobalSearchTicker}-${yearTicker}`;
     
-    // Direct API calls to immediately reload data for both tabs when company changes
-    if (tab === "Top-20") {
+    if (loadedDataRef.current.top20 !== currentCompanyYear) {
       dispatch(
         fetchVdsProxyDashboard(
           createDynamicURL(
@@ -135,125 +90,64 @@ const VdsProxyVotingTable = () => {
         getProxyVotingRationaleTop20(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
+            year: yearTicker,
           })
         )
       );
-    } else if (tab === "All-Investor") {
-      dispatch(
-        fetchVdsProxyAllInvestor(
-          createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: filter?.length > 0 ? filter : "Top 10",
-          })
-        )
-      );
-      dispatch(
-        getProxyVotingRationaleAllInvestors(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: filter?.length > 0 ? filter : "Top 10",
-          })
-        )
-      );
+      loadedDataRef.current.top20 = currentCompanyYear;
     }
-  }, [companyGlobalSearchTicker]);
+  }, [companyGlobalSearchTicker, yearTicker, dispatch]);
 
-  useEffect(() => {
+  // Load All-Investor data function
+  const loadAllInvestorData = useCallback(() => {
+    if (!companyGlobalSearchTicker || !yearTicker) return;
+    
     const currentFilterState = filter?.length > 0 ? JSON.stringify(filter) : "empty";
+    const institutionName = filter?.length > 0 ? filter : "Top 10";
+    const currentCompanyYear = `${companyGlobalSearchTicker}-${yearTicker}`;
+    const dataKey = `${currentCompanyYear}-${currentFilterState}`;
     
-    if (tab === "All-Investor" && isCompanySelected) {
-      if (filter?.length > 0) {
-        dispatch(
-          fetchVdsProxyAllInvestor(
-            createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: filter,
-            })
-          )
-        );
-        dispatch(
-          getProxyVotingRationaleAllInvestors(
-            createDynamicURL(`/vds_proxy_voting_rationale/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: filter,
-            })
-          )
-        );
-        setLastFilterState(currentFilterState);
-      } else {
-        // Always reload when company changes or when not loaded yet
-        dispatch(
-          fetchVdsProxyAllInvestor(
-            createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: "Top 10",
-            })
-          )
-        );
-        dispatch(
-          getProxyVotingRationaleAllInvestors(
-            createDynamicURL(`/vds_proxy_voting_rationale/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: "Top 10",
-            })
-          )
-        );
-        setAllInvestorsLoaded(true);
-        setLastFilterState(currentFilterState);
-      }
-      dispatch(setIsCompanySelected(false));
-    } else if (filter?.length > 0 && lastFilterState !== currentFilterState) {
+    if (loadedDataRef.current.allInvestors !== dataKey) {
       dispatch(
         fetchVdsProxyAllInvestor(
           createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
             ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: filter,
+            year: yearTicker,
+            institution_name: institutionName,
           })
         )
       );
-
       dispatch(
         getProxyVotingRationaleAllInvestors(
           createDynamicURL(`/vds_proxy_voting_rationale/`, {
             ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: filter,
+            year: yearTicker,
+            institution_name: institutionName,
           })
         )
       );
-      setLastFilterState(currentFilterState);
-    } else if (filter?.length === 0 && !allInvestorsLoaded && lastFilterState !== currentFilterState) {
-      // Default to "Top 10" when no institution is selected and not already loaded
-      dispatch(
-        fetchVdsProxyAllInvestor(
-          createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: "Top 10",
-          })
-        )
-      );
-        dispatch(
-          getProxyVotingRationaleAllInvestors(
-            createDynamicURL(`/vds_proxy_voting_rationale/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: "Top 10",
-            })
-          )
-        );
-      setAllInvestorsLoaded(true);
-      setLastFilterState(currentFilterState);
+      loadedDataRef.current.allInvestors = dataKey;
+      loadedDataRef.current.filterState = currentFilterState;
     }
-  }, [filter, tab, companyGlobalSearchTicker]);
+  }, [companyGlobalSearchTicker, yearTicker, filter, dispatch]);
+
+  // Effect for Tab switching
+  useEffect(() => {
+    if (tab === "Top-20") {
+      loadTop20Data();
+    } else if (tab === "All-Investor") {
+      loadAllInvestorData();
+    }
+  }, [tab, loadTop20Data, loadAllInvestorData]);
+
+  // Effect to reset when company changes
+  useEffect(() => {
+    loadedDataRef.current = {
+      top20: '',
+      allInvestors: '',
+      filterState: ''
+    };
+  }, [companyGlobalSearchTicker]);
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -369,8 +263,9 @@ const VdsProxyVotingTable = () => {
 
   const onFilterClear = () => {
     setFilter([]);
-    setAllInvestorsLoaded(false);
-    setLastFilterState("");
+    // Reset only the allInvestors data in the ref to force reload with empty filter
+    loadedDataRef.current.allInvestors = '';
+    loadedDataRef.current.filterState = '';
     dispatch(clearVotingRationale());
     reset();
   };
@@ -665,7 +560,7 @@ const VdsProxyVotingTable = () => {
 
                     {/* Handle both cases: empty array or undefined/null vdsProxyDetails */}
                     {((vdsProxyDetails?.vds_report?.length === 0) || 
-                      (!vdsProxyDetails && top20Loaded)) &&
+                      (!vdsProxyDetails && loadedDataRef.current.top20 !== '')) &&
                       !vdsProxyLoading && (
                         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                           <div className="text-center text-slate-500 dark:text-slate-400">
@@ -961,7 +856,7 @@ const VdsProxyVotingTable = () => {
                   </TableWrapper>
                   {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
                   {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
-                    (!vdsProxyAllInvestorDetails && allInvestorsLoaded)) &&
+                    (!vdsProxyAllInvestorDetails && loadedDataRef.current.allInvestors !== '')) &&
                     filter?.length === 0 && !vdsProxyAllInvestorLoading && (
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">
@@ -974,7 +869,7 @@ const VdsProxyVotingTable = () => {
 
                   {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
                   {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
-                    (!vdsProxyAllInvestorDetails && allInvestorsLoaded)) &&
+                    (!vdsProxyAllInvestorDetails && loadedDataRef.current.allInvestors !== '')) &&
                     filter?.length > 0 && !vdsProxyAllInvestorLoading && (
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">

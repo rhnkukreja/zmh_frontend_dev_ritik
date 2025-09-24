@@ -5,6 +5,6 @@ export interface ShareHolderFilter {
   sub_category: string[];
   global_search?: string[];
   year: string[];
-  keyword: string;
+  keyword: string[];
   [key: string]: any;
 }
