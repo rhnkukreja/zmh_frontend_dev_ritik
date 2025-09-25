@@ -590,14 +590,20 @@ const index = () => {
                                                                 )}
 
                                                                 {/* Proxy Voting Icon */}
-                                                                <Tippy content="Proxy Voting (Top 5)" options={{ theme: "light" }}>
-                                                                    <div
-                                                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                                                        onClick={() => handleIconClick({ ...company, year: company.year }, 'proxy_voting')}
-                                                                    >
+                                                                {company.is_voting ? (
+                                                                    <Tippy content="Proxy Voting (Top 5)" options={{ theme: "light" }}>
+                                                                        <div
+                                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                            onClick={() => handleIconClick({ ...company, year: company.year }, 'proxy_voting')}
+                                                                        >
+                                                                            <Lucide icon="Vote" className="w-4 h-4" />
+                                                                        </div>
+                                                                    </Tippy>
+                                                                ) : (
+                                                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
                                                                         <Lucide icon="Vote" className="w-4 h-4" />
                                                                     </div>
-                                                                </Tippy>
+                                                                )}
                                                             </div>
                                                         </Table.Td>
                                                     </Table.Tr>
@@ -1017,10 +1023,10 @@ const index = () => {
                                                                                             <div className="text-left">
                                                                                                 {item[header.field] ? (
                                                                                                     <div className="flex items-center gap-2">
-                                                                                                        <span className={`text-sm font-medium ${
+                                                                                                        <span className={`text-sm ${
                                                                                                             item[header.field].vote === 'Withhold' || item[header.field].vote === 'Against' 
-                                                                                                                ? 'text-red-600' 
-                                                                                                                : 'text-gray-900'
+                                                                                                                ? 'text-red-700 font-semibold' 
+                                                                                                                : 'text-gray-900 font-medium'
                                                                                                         }`}>
                                                                                                             {item[header.field].vote || 'N/A'}
                                                                                                         </span>
@@ -1030,7 +1036,7 @@ const index = () => {
                                                                                                                 options={{ theme: "light", placement: "top" }}
                                                                                                             >
                                                                                                                 <div className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-help">
-                                                                                                                    <Lucide icon="Info" className="w-3 h-3 text-blue-600" />
+                                                                                                                    <Lucide icon="Info" className="w-4 h-4 text-blue-800" />
                                                                                                                 </div>
                                                                                                             </Tippy>
                                                                                                         )}
