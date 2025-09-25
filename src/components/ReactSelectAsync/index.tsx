@@ -263,6 +263,21 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
         color: "black",
       },
     }),
+    option: (provided: any, state: any) => ({
+      ...provided,
+      backgroundColor: state.isSelected 
+        ? '#800000' // Primary color for selected option
+        : state.isFocused 
+        ? '#f1f5f9' // Light gray for focused option
+        : 'white',
+      color: state.isSelected 
+        ? 'white' // White text for selected option
+        : 'black',
+      '&:hover': {
+        backgroundColor: state.isSelected ? '#800000' : '#f1f5f9',
+        color: state.isSelected ? 'white' : 'black',
+      },
+    }),
     menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
   };
 

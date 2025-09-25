@@ -249,7 +249,8 @@ const index = () => {
             'documents': 'Documents',
             'proxy_advisory_firm_recommendation': 'Proxy Advisory Firm Recommendation',
             'meeting_details': 'Meeting Details',
-            'case_studies': 'Case Studies'
+            'case_studies': 'Case Studies',
+            'proxy_voting': 'Proxy Voting (Top 5)'
         };
         setModalTitle(titles[type as keyof typeof titles] || 'Details');
 
@@ -265,6 +266,9 @@ const index = () => {
                     break;
                 case 'meeting_details':
                     apiUrl = `${baseURL}/voting_report_8k/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&year=${encodeURIComponent(company.year)}`;
+                    break;
+                case 'proxy_voting':
+                    apiUrl = `${baseURL}/vds_proxy_voting/?year=${company.year}&company_name=[%27${encodeURIComponent(company.company_name)}%27]&top=true`;
                     break;
                 default:
                     throw new Error(`Unknown modal type: ${type}`);
@@ -293,6 +297,11 @@ const index = () => {
             } else if (type === 'proxy_advisory_firm_recommendation') {
                 processedData = {
                     recommendations: data?.Activism_ISS_GL || []
+                };
+            } else if (type === 'proxy_voting') {
+                processedData = {
+                    vds_report: data?.vds_report || [],
+                    vds_report_headers: data?.vds_report_headers || []
                 };
             }
 
@@ -579,6 +588,16 @@ const index = () => {
                                                                         <Lucide icon="BookOpen" className="w-4 h-4" />
                                                                     </div>
                                                                 )}
+
+                                                                {/* Proxy Voting Icon */}
+                                                                <Tippy content="Proxy Voting (Top 5)" options={{ theme: "light" }}>
+                                                                    <div
+                                                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                                                        onClick={() => handleIconClick({ ...company, year: company.year }, 'proxy_voting')}
+                                                                    >
+                                                                        <Lucide icon="Vote" className="w-4 h-4" />
+                                                                    </div>
+                                                                </Tippy>
                                                             </div>
                                                         </Table.Td>
                                                     </Table.Tr>
@@ -956,6 +975,89 @@ const index = () => {
                                                             <Lucide icon="Calendar" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                                                             <h3 className="text-lg font-medium text-gray-900 mb-1">No Meeting Details Available</h3>
                                                             <p className="text-gray-500">No meeting details found for {selectedCompany?.company_name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {modalType === 'proxy_voting' && (
+                                                <div>
+                                                    {modalData?.vds_report && modalData.vds_report.length > 0 && modalData?.vds_report_headers && modalData.vds_report_headers.length > 0 ? (
+                                                        <TableWrapper>
+                                                            <div className="overflow-x-auto">
+                                                                <Table>
+                                                                    <Table.Thead>
+                                                                        <Table.Tr>
+                                                                            {modalData.vds_report_headers.map((header: any, index: number) => (
+                                                                                <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[80px]' : index === 1 ? 'min-w-[300px]' : 'min-w-[150px]'}`}>
+                                                                                    {header.header}
+                                                                                </Table.Td>
+                                                                            ))}
+                                                                        </Table.Tr>
+                                                                    </Table.Thead>
+                                                                    <Table.Tbody>
+                                                                        {modalData.vds_report.map((item: any, rowIndex: number) => (
+                                                                            <Table.Tr key={rowIndex} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                                                {modalData.vds_report_headers.map((header: any, colIndex: number) => (
+                                                                                    <Table.Td key={colIndex} className={`py-2 border-dashed text-sm ${colIndex === 0 ? 'min-w-[80px]' : colIndex === 1 ? 'min-w-[300px]' : 'min-w-[150px]'}`}>
+                                                                                        {colIndex === 0 ? (
+                                                                                            // Proposal number column
+                                                                                            <span className="inline-block px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs font-medium">
+                                                                                                {item[header.field] || 'N/A'}
+                                                                                            </span>
+                                                                                        ) : colIndex === 1 ? (
+                                                                                            // Proposal title column
+                                                                                            <div className="text-left">
+                                                                                                <span className="text-gray-900 font-medium text-sm">
+                                                                                                    {item[header.field] || 'N/A'}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            // Institution vote columns
+                                                                                            <div className="text-left">
+                                                                                                {item[header.field] ? (
+                                                                                                    <div className="flex items-center gap-2">
+                                                                                                        <span className={`text-sm font-medium ${
+                                                                                                            item[header.field].vote === 'Withhold' || item[header.field].vote === 'Against' 
+                                                                                                                ? 'text-red-600' 
+                                                                                                                : 'text-gray-900'
+                                                                                                        }`}>
+                                                                                                            {item[header.field].vote || 'N/A'}
+                                                                                                        </span>
+                                                                                                        {item[header.field].notes && (
+                                                                                                            <Tippy 
+                                                                                                                content={item[header.field].notes} 
+                                                                                                                options={{ theme: "light", placement: "top" }}
+                                                                                                            >
+                                                                                                                <div className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-help">
+                                                                                                                    <Lucide icon="Info" className="w-3 h-3 text-blue-600" />
+                                                                                                                </div>
+                                                                                                            </Tippy>
+                                                                                                        )}
+                                                                                                        {item[header.field].vote === 'Split Vote' && item[header.field].split_vote_counts && (
+                                                                                                            <div className="text-xs text-gray-600 ml-2">
+                                                                                                                (For: {item[header.field].split_vote_counts.for} | Against: {item[header.field].split_vote_counts.against})
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                ) : (
+                                                                                                    <span className="text-gray-400 text-sm">N/A</span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </Table.Td>
+                                                                                ))}
+                                                                            </Table.Tr>
+                                                                        ))}
+                                                                    </Table.Tbody>
+                                                                </Table>
+                                                            </div>
+                                                        </TableWrapper>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <Lucide icon="Vote" className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                            <h3 className="text-lg font-medium text-gray-900 mb-1">No Proxy Voting Data Available</h3>
+                                                            <p className="text-gray-500">No proxy voting data found for {selectedCompany?.company_name}.</p>
                                                         </div>
                                                     )}
                                                 </div>
