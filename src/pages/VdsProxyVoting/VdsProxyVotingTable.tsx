@@ -37,6 +37,73 @@ import TomSelect from "@/components/Base/TomSelect";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import VotingRationale from "./VotingRationale";
 
+// Cache utility types and constants
+interface CacheData {
+  data: any;
+  timestamp: number;
+  expiryMinutes: number;
+}
+
+interface CacheKey {
+  type: 'top20' | 'allInvestors';
+  company: string;
+  year: string;
+  filters?: string;
+}
+
+// Cache utility functions
+const generateCacheKey = (keyObj: CacheKey): string => {
+  const { type, company, year, filters } = keyObj;
+  return `vds_proxy_${type}_${company}_${year}${filters ? `_${filters}` : ''}`;
+};
+
+const getCachedData = (cacheKey: string, expiryMinutes: number = 30): any | null => {
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) return null;
+
+    const cacheData: CacheData = JSON.parse(cached);
+    const now = Date.now();
+    const expiryTime = cacheData.timestamp + (cacheData.expiryMinutes * 60 * 1000);
+
+    if (now > expiryTime) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+
+    return cacheData.data;
+  } catch (error) {
+    console.warn('Failed to read cache:', error);
+    return null;
+  }
+};
+
+const setCachedData = (cacheKey: string, data: any, expiryMinutes: number = 30): void => {
+  try {
+    const cacheData: CacheData = {
+      data,
+      timestamp: Date.now(),
+      expiryMinutes
+    };
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+  } catch (error) {
+    console.warn('Failed to set cache:', error);
+  }
+};
+
+const clearCacheForCompany = (company: string): void => {
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith(`vds_proxy_`) && key.includes(`_${company}_`)) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    console.warn('Failed to clear company cache:', error);
+  }
+};
+
 const VdsProxyVotingTable = () => {
   const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
@@ -60,11 +127,6 @@ const VdsProxyVotingTable = () => {
   const yearTicker = searchParams.get("year")!;
 
   const [filter, setFilter] = useState<any>([]);
-  const loadedDataRef = useRef({
-    top20: '',
-    allInvestors: '',
-    filterState: ''
-  });
 
   const { handleSubmit, control, reset } = useForm<any>({
     defaultValues: {
@@ -72,66 +134,116 @@ const VdsProxyVotingTable = () => {
     },
   });
 
-  // Load Top-20 data function
+  // Clean data loading function for Top-20 tab
   const loadTop20Data = useCallback(() => {
     if (!companyGlobalSearchTicker || !yearTicker) return;
+
+    const cacheKey = generateCacheKey({
+      type: 'top20',
+      company: companyGlobalSearchTicker,
+      year: yearTicker
+    });
+
+    // Check if we have valid cached data
+    const cachedData = getCachedData(cacheKey);
     
-    const currentCompanyYear = `${companyGlobalSearchTicker}-${yearTicker}`;
-    
-    if (loadedDataRef.current.top20 !== currentCompanyYear) {
-      dispatch(
-        fetchVdsProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
-          )
-        )
-      );
-      dispatch(
-        getProxyVotingRationaleTop20(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker,
-          })
-        )
-      );
-      loadedDataRef.current.top20 = currentCompanyYear;
+    if (cachedData) {
+      console.log('✅ Using cached Top-20 data for:', companyGlobalSearchTicker, yearTicker);
+      return; // Data already loaded from cache
     }
+
+    console.log('🚀 Loading fresh Top-20 data for:', companyGlobalSearchTicker, yearTicker);
+    
+    // Load data from API
+    const fetchPromise = dispatch(
+      fetchVdsProxyDashboard(
+        createDynamicURL(
+          `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
+        )
+      )
+    );
+
+    const rationalePromise = dispatch(
+      getProxyVotingRationaleTop20(
+        createDynamicURL(`/vds_proxy_voting_rationale/`, {
+          ticker: companyGlobalSearchTicker,
+          year: yearTicker,
+        })
+      )
+    );
+
+    // Cache the results when both API calls complete
+    Promise.all([fetchPromise, rationalePromise]).then(([fetchResult, rationaleResult]) => {
+      if (fetchResult.payload || rationaleResult.payload) {
+        setCachedData(cacheKey, {
+          vdsData: fetchResult.payload,
+          rationaleData: rationaleResult.payload
+        });
+      }
+    }).catch(error => {
+      console.warn('Failed to cache Top-20 data:', error);
+    });
   }, [companyGlobalSearchTicker, yearTicker, dispatch]);
 
-  // Load All-Investor data function
+  // Clean data loading function for All-Investor tab
   const loadAllInvestorData = useCallback(() => {
     if (!companyGlobalSearchTicker || !yearTicker) return;
-    
-    const currentFilterState = filter?.length > 0 ? JSON.stringify(filter) : "empty";
+
+    const filterString = filter?.length > 0 ? JSON.stringify(filter.sort()) : '';
     const institutionName = filter?.length > 0 ? filter : "Top 10";
-    const currentCompanyYear = `${companyGlobalSearchTicker}-${yearTicker}`;
-    const dataKey = `${currentCompanyYear}-${currentFilterState}`;
     
-    if (loadedDataRef.current.allInvestors !== dataKey) {
-      dispatch(
-        fetchVdsProxyAllInvestor(
-          createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker,
-            institution_name: institutionName,
-          })
-        )
-      );
-      dispatch(
-        getProxyVotingRationaleAllInvestors(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker,
-            institution_name: institutionName,
-          })
-        )
-      );
-      loadedDataRef.current.allInvestors = dataKey;
-      loadedDataRef.current.filterState = currentFilterState;
+    const cacheKey = generateCacheKey({
+      type: 'allInvestors',
+      company: companyGlobalSearchTicker,
+      year: yearTicker,
+      filters: filterString
+    });
+
+    // Check if we have valid cached data
+    const cachedData = getCachedData(cacheKey);
+    
+    if (cachedData) {
+      console.log('✅ Using cached All-Investor data for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
+      return; // Data already loaded from cache
     }
+
+    console.log('🚀 Loading fresh All-Investor data for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
+
+    // Load data from API
+    const fetchPromise = dispatch(
+      fetchVdsProxyAllInvestor(
+        createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
+          ticker: companyGlobalSearchTicker,
+          year: yearTicker,
+          institution_name: institutionName,
+        })
+      )
+    );
+
+    const rationalePromise = dispatch(
+      getProxyVotingRationaleAllInvestors(
+        createDynamicURL(`/vds_proxy_voting_rationale/`, {
+          ticker: companyGlobalSearchTicker,
+          year: yearTicker,
+          institution_name: institutionName,
+        })
+      )
+    );
+
+    // Cache the results when both API calls complete
+    Promise.all([fetchPromise, rationalePromise]).then(([fetchResult, rationaleResult]) => {
+      if (fetchResult.payload || rationaleResult.payload) {
+        setCachedData(cacheKey, {
+          vdsData: fetchResult.payload,
+          rationaleData: rationaleResult.payload
+        });
+      }
+    }).catch(error => {
+      console.warn('Failed to cache All-Investor data:', error);
+    });
   }, [companyGlobalSearchTicker, yearTicker, filter, dispatch]);
 
-  // Effect for Tab switching
+  // Effect for tab switching - triggers data loading based on current tab
   useEffect(() => {
     if (tab === "Top-20") {
       loadTop20Data();
@@ -140,13 +252,12 @@ const VdsProxyVotingTable = () => {
     }
   }, [tab, loadTop20Data, loadAllInvestorData]);
 
-  // Effect to reset when company changes
+  // Effect to clear cache when company changes
   useEffect(() => {
-    loadedDataRef.current = {
-      top20: '',
-      allInvestors: '',
-      filterState: ''
-    };
+    if (companyGlobalSearchTicker) {
+      console.log('🧹 Company changed, clearing cache for:', companyGlobalSearchTicker);
+      clearCacheForCompany(companyGlobalSearchTicker);
+    }
   }, [companyGlobalSearchTicker]);
 
   const isObject = (item: any) => {
@@ -263,9 +374,16 @@ const VdsProxyVotingTable = () => {
 
   const onFilterClear = () => {
     setFilter([]);
-    // Reset only the allInvestors data in the ref to force reload with empty filter
-    loadedDataRef.current.allInvestors = '';
-    loadedDataRef.current.filterState = '';
+    // Clear cache for All-Investor data to force reload with empty filter
+    if (companyGlobalSearchTicker && yearTicker) {
+      const allInvestorCacheKey = generateCacheKey({
+        type: 'allInvestors',
+        company: companyGlobalSearchTicker,
+        year: yearTicker,
+        filters: JSON.stringify(filter.sort())
+      });
+      localStorage.removeItem(allInvestorCacheKey);
+    }
     dispatch(clearVotingRationale());
     reset();
   };
@@ -560,8 +678,7 @@ const VdsProxyVotingTable = () => {
 
                     {/* Handle both cases: empty array or undefined/null vdsProxyDetails */}
                     {((vdsProxyDetails?.vds_report?.length === 0) || 
-                      (!vdsProxyDetails && loadedDataRef.current.top20 !== '')) &&
-                      !vdsProxyLoading && (
+                      (!vdsProxyDetails && !vdsProxyLoading)) && (
                         <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                           <div className="text-center text-slate-500 dark:text-slate-400">
                             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -856,8 +973,8 @@ const VdsProxyVotingTable = () => {
                   </TableWrapper>
                   {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
                   {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
-                    (!vdsProxyAllInvestorDetails && loadedDataRef.current.allInvestors !== '')) &&
-                    filter?.length === 0 && !vdsProxyAllInvestorLoading && (
+                    (!vdsProxyAllInvestorDetails && !vdsProxyAllInvestorLoading)) &&
+                    filter?.length === 0 && (
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
@@ -869,8 +986,8 @@ const VdsProxyVotingTable = () => {
 
                   {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
                   {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
-                    (!vdsProxyAllInvestorDetails && loadedDataRef.current.allInvestors !== '')) &&
-                    filter?.length > 0 && !vdsProxyAllInvestorLoading && (
+                    (!vdsProxyAllInvestorDetails && !vdsProxyAllInvestorLoading)) &&
+                    filter?.length > 0 && (
                       <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />

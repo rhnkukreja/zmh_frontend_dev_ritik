@@ -116,9 +116,20 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         )}
       </div>
 
+      {/* Show loading state when either parent loading or rationale loading */}
+      {(parentLoading || getProxyVotingRationaleLoading) && !currentVotingRationale?.length && (
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
+        </div>
+      )}
+
       {currentVotingRationale?.length > 0 && (
         <>
-          <TableWrapper isLoading={getProxyVotingRationaleLoading}>
+          <TableWrapper isLoading={getProxyVotingRationaleLoading || parentLoading}>
             <div className="overflow-auto max-h-[400px]">
               <Table>
                 <Table.Thead>
