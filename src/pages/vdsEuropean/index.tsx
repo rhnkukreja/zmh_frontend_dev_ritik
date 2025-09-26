@@ -1363,7 +1363,7 @@ const index = () => {
 
         dispatch(fetchVdsEuropeanAnalytics(analyticsUrl));
       }
-    };
+    };  
     fetchAnalytics();
 
     // Generate filter chips only when analytics filter changes and not restoring
@@ -1407,28 +1407,27 @@ const index = () => {
 
     // Only apply filters if at least one param is present
     if (institutionParam || companyParam) {
-      // Parse institution parameter (comma-separated)
-      const institutions = institutionParam ? institutionParam.split(',').map(inst => inst.trim()) : [];
-      // Parse company parameter (comma-separated)
-      const companies = companyParam ? companyParam.split(',').map(comp => decodeURIComponent(comp.trim())) : [];
+      // Parse institution parameter (split by '||', decode each)
+      const institutions = institutionParam ? institutionParam.split('||').map(inst => decodeURIComponent(inst.trim())) : [];
+      // Parse company parameter (split by '||', decode each)
+      const companies = companyParam ? companyParam.split('||').map(comp => decodeURIComponent(comp.trim())) : [];
 
-      // Set form values ONLY for institution and company_name
-      // Do NOT touch year or country - let them maintain their default behavior
-      setValue('institution_name', institutions);
-      setValue('company_name', companies);
+  // Set form values ONLY for institution and company_name (each as array of decoded strings)
+  setValue('institution_name', [...institutions]);
+  setValue('company_name', [...companies]);
 
-      // Build filter object with only these two filters
-      const filters: any = {};
-      if (institutions.length > 0) filters.institution_name = institutions;
-      if (companies.length > 0) filters.company_name = companies;
+  // Build filter object with only these two filters
+  const filters: any = {};
+  if (institutions.length > 0) filters.institution_name = [...institutions];
+  if (companies.length > 0) filters.company_name = [...companies];
 
-      // Apply filters to both analytics and regular
-      setAllAnalyticsFilter(filters);
-      setallApplyFilter(filters);
+  // Apply filters to both analytics and regular
+  setAllAnalyticsFilter(filters);
+  setallApplyFilter(filters);
 
-      // Update filter chips immediately
-      setSelectedChipFilters(generateFilterChips(filters));
-      setFiltersLength(countValidFilters(filters));
+  // Update filter chips immediately (each chip should be a separate entry)
+  setSelectedChipFilters(generateFilterChips(filters));
+  setFiltersLength(countValidFilters(filters));
     }
     // If no params, do nothing (keep default behavior)
   }, [searchParams, setValue]);

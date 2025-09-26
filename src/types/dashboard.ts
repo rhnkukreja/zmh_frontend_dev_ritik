@@ -52,4 +52,6 @@ export type ModulesCount = {
   engagement_details: number;
   shareholder_proposal: number;
   proxy_contest: boolean;
+  proxy_contest_2024: boolean;
+  proxy_contest_2025: boolean;
 };

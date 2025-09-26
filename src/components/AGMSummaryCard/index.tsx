@@ -19,7 +19,7 @@ import LoadingIcon from "../Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
 import { Tab } from "@/components/Base/Headless";
 
-const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, proxyContest = false }) => {
+const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -131,10 +131,21 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
 
-    if (proxyContest) {
-      // If proxy_contest is true, redirect to /vdsEuropean with filters
-      const institutions = "The Vanguard Group";
-      navigate(`/voting-data?institution=${institutions}&company=${companyGlobalSearchName}`);
+    // Use correct proxy contest prop for year
+    let proxyContestYear = proxyContest;
+    if (agmSummaryDetails?.Year === "2024") {
+      proxyContestYear = proxyContest2024;
+    } else if (agmSummaryDetails?.Year === "2025") {
+      proxyContestYear = proxyContest2025;
+    }
+
+    if (proxyContestYear) {
+      // If proxy_contest for year is true, redirect to /vdsEuropean with filters
+      const institutionArr = ["The Vanguard Group", "BlackRock, Inc."];
+      const companyArr = [companyGlobalSearchName];
+      const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
+      const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
+      navigate(`/voting-data?institution=${institutions}&company=${company}`);
     } else {
       // Otherwise, keep the existing behavior - open VDS details in new tab
       window.open(

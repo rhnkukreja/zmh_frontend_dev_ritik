@@ -169,6 +169,8 @@ function Main() {
     });
   }
 
+  console.log("modulesCount:", modulesCount)
+
 
   // useEffect(() => {
   //   if (companyGlobalSearchTicker === tempSearch) {
@@ -270,6 +272,8 @@ function Main() {
               companyGlobalSearchName={companyGlobalSearchName} 
               isMeetingModal={false}
               proxyContest={modulesCount?.proxy_contest || false}
+              proxyContest2024={modulesCount?.proxy_contest_2024 || false}
+              proxyContest2025={modulesCount?.proxy_contest_2025 || false}
             />
           </div>
 
