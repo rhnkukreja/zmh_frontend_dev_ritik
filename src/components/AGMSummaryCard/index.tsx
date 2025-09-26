@@ -255,7 +255,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         });
                       }}
                     >
-                      *Quorum: {agmSummaryDetails?.Quorum}
+                      {agmSummaryDetails.Quorum ? `*Quorum: ${agmSummaryDetails?.Quorum}` : ''}
                     </h4>
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
