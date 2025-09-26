@@ -146,7 +146,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       proxyContestYear = proxyContest2025;
     }
 
-    if (proxyContestYear) {
+    if (proxyContestYear === true) {
       // If proxy_contest for year is true, redirect to /vdsEuropean with filters
       const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
       const companyArr = [companyGlobalSearchName];
@@ -315,14 +315,16 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   </Tab.Group>
                 </div>
               }
+
+
+
               <div className="mt-5">
                 <TableWrapper isLoading={loading}>
                   <div
                     className={clsx([
                       locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}
-                    style={{overflowX: 'auto', width: '100%'}}
                   >
-                    <Table className="table_2 w-full" style={{tableLayout: 'fixed'}}>
+                    <Table className="table_2 w-full">
                       <Table.Thead className="sticky top-0 z-10">
                         <Table.Tr className="row_2">
                           {agmSummaryDetails?.nominees_headers?.length > 0 &&
@@ -330,11 +332,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                               (nomineeHeader: any, headerIndex: number) => (
                                 <Table.Td
                                   key={headerIndex}
+                                  // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
-                                    "cell_2 py-0.5 font-medium h-[28px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-left",
-                                    headerIndex === 0 && "w-[90px]",
+                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-left",
+                                    headerIndex === 0 && "w-[200px]",
                                   ])}
-                                  style={{fontSize: '0.75rem', padding: '2px 2px', whiteSpace: 'nowrap'}}
                                 >
                                   {nomineeHeader.header}
                                 </Table.Td>
@@ -361,10 +363,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                       <Table.Td
                                         key={headerIndex}
                                         className={clsx([
-                                          "cell_2 py-0.5 border-dashed dark:bg-darkmode-600 text-left",
-                                          headerIndex === 0 && "w-[90px]",
+                                          "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left",
+                                          headerIndex === 0 && "w-[200px]",
                                         ])}
-                                        style={{fontSize: '0.75rem', padding: '2px 2px', whiteSpace: 'nowrap'}}
                                       >
                                         <h1
                                           className={clsx([
@@ -379,7 +380,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                             ) < 85 &&
                                             "text-red-700 font-semibold",
                                           ])}
-                                          style={{fontSize: '0.75rem', whiteSpace: 'nowrap'}}
                                         >
                                           {nominee[nomineeHeader?.field]}
                                         </h1>
