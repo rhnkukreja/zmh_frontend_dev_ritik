@@ -315,9 +315,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   </Tab.Group>
                 </div>
               }
-
-
-
               <div className="mt-5">
                 <TableWrapper isLoading={loading}>
                   <div

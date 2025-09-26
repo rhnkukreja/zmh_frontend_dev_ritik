@@ -255,16 +255,7 @@ const CustomReports = () => {
           >
             Clear
           </Button>
-          {/* Expand Table Button */}
-          {ownershipData.length > 0 && (
-            <Button
-              variant={tableExpanded ? "outline-secondary" : "primary"}
-              onClick={() => setTableExpanded((prev) => !prev)}
-              className="whitespace-nowrap"
-            >
-              {tableExpanded ? "Collapse Table" : "Expand Table"}
-            </Button>
-          )}
+
         </div>
 
         {/* Selected Tickers */}
@@ -309,8 +300,8 @@ const CustomReports = () => {
       {/* Single Combined Table */}
       {!loading && ownershipData.length > 0 && (
         <TableWrapper isLoading={loading}>
-          <div className={tableExpanded ? "overflow-x-auto" : "overflow-x-auto max-h-[400px] overflow-y-scroll"} style={tableExpanded ? {maxHeight: "none"} : {}}>
-            <Table className="table_ownership w-full min-w-[600px]" style={tableExpanded ? {width: "100%"} : {minWidth: "600px"}}>
+          <div className="overflow-x-auto max-h-[650px] overflow-y-scroll">
+            <Table className="table_ownership w-full min-w-[600px]">
               <Table.Thead className="sticky top-0 z-10">
                 <Table.Tr className="row_ownership">
                   {/* Only show columns for companies that match currently selected tickers */}
