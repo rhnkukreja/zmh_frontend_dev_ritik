@@ -250,7 +250,7 @@ const index = () => {
             'proxy_advisory_firm_recommendation': 'Proxy Advisory Firm Recommendation',
             'meeting_details': 'Meeting Details',
             'case_studies': 'Case Studies',
-            'proxy_voting': 'Proxy Voting (Top 5)'
+            // 'proxy_voting': 'Proxy Voting (Top 5)'
         };
         setModalTitle(titles[type as keyof typeof titles] || 'Details');
 
@@ -267,12 +267,13 @@ const index = () => {
                 case 'meeting_details':
                     apiUrl = `${baseURL}/voting_report_8k/?company_name=${encodeURIComponent(JSON.stringify([company.company_name]))}&year=${encodeURIComponent(company.year)}`;
                     break;
-                case 'proxy_voting':
-                    apiUrl = `${baseURL}/vds_proxy_voting/?year=${company.year}&company_name=[%27${encodeURIComponent(company.company_name)}%27]&top=true`;
-                    break;
                 default:
                     throw new Error(`Unknown modal type: ${type}`);
             }
+
+            //  case 'proxy_voting':
+            //         apiUrl = `${baseURL}/vds_proxy_voting/?year=${company.year}&company_name=[%27${encodeURIComponent(company.company_name)}%27]&top=true`;
+            //         break;
 
             const response = await fetch(apiUrl, {
                 headers: {
@@ -298,13 +299,7 @@ const index = () => {
                 processedData = {
                     recommendations: data?.Activism_ISS_GL || []
                 };
-            } else if (type === 'proxy_voting') {
-                processedData = {
-                    vds_report: data?.vds_report || [],
-                    vds_report_headers: data?.vds_report_headers || []
-                };
-            }
-
+            } 
             setModalData(processedData);
         } catch (error) {
             console.error('Error fetching modal data:', error);
@@ -314,6 +309,13 @@ const index = () => {
             setModalLoading(false);
         }
     };
+
+    // else if (type === 'proxy_voting') {
+    //             processedData = {
+    //                 vds_report: data?.vds_report || [],
+    //                 vds_report_headers: data?.vds_report_headers || []
+    //             };
+    //         }
 
     return (
         <>
@@ -590,7 +592,7 @@ const index = () => {
                                                                 )}
 
                                                                 {/* Proxy Voting Icon */}
-                                                                {company.is_voting ? (
+                                                                {/* {company.is_voting ? (
                                                                     <Tippy content="Proxy Voting (Top 5)" options={{ theme: "light" }}>
                                                                         <div
                                                                             className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
@@ -603,7 +605,7 @@ const index = () => {
                                                                     <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
                                                                         <Lucide icon="Vote" className="w-4 h-4" />
                                                                     </div>
-                                                                )}
+                                                                )} */}
                                                             </div>
                                                         </Table.Td>
                                                     </Table.Tr>

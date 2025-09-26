@@ -615,7 +615,7 @@ const ProxyContestDetail = () => {
                         )}
 
                         {/* Proxy Voting (Top 5) */}
-                        {proxyVotingData && proxyVotingData.vds_report && proxyVotingData.vds_report.length > 0 && (
+                        {/* {proxyVotingData && proxyVotingData.vds_report && proxyVotingData.vds_report.length > 0 && (
                             <div className="box p-5 mt-5">
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-lg font-bold">Proxy Voting (Top 5)</h2>
@@ -691,7 +691,7 @@ const ProxyContestDetail = () => {
                                     </div>
                                 </TableWrapper>
                             </div>
-                        )}
+                        )} */}
 
 
 
