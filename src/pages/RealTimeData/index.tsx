@@ -738,24 +738,8 @@ const index = () => {
                     render={({ field }) => (
                       <CreatableInputSelect
                         placeholder="Type and press Enter to add keywords..."
-                        isMulti
-                        value={(field.value || []).map((keyword: string) => ({ label: keyword, value: keyword }))}
-                        onChange={(selectedOptions: any) => {
-                          const values = selectedOptions ? selectedOptions.map((option: any) => option.value) : [];
-                          field.onChange(values);
-                        }}
-                        onCreateOption={(inputValue: string) => {
-                          const trimmedValue = inputValue.trim();
-                          if (trimmedValue) {
-                            const currentValues = field.value || [];
-                            const newValues = [...currentValues, trimmedValue];
-                            field.onChange(newValues);
-                          }
-                        }}
-                        formatCreateLabel={(inputValue: string) => `Add "${inputValue}"`}
-                        noOptionsMessage={() => "Type to add keywords..."}
-                        className="basic-multi-select"
-                        classNamePrefix="select"
+                        value={field.value || []}
+                        onChange={field.onChange}
                       />
                     )}
                   />
