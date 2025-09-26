@@ -42,16 +42,14 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     yearFromQuery || ""
   );
 
-  // Ensure selectedYear is set to a valid year on first load
+  // Ensure selectedYear is set to a valid year on first load, but only after agmSummaryDetails loads
   useEffect(() => {
-    if (!selectedYear) {
-      if (agmSummaryDetails?.Year) {
-        setSelectedYear(agmSummaryDetails.Year.toString());
-      } else if (agmSummaryDetails?.total_year?.length > 0) {
-        setSelectedYear(agmSummaryDetails.total_year[0].toString());
-      }
+    if (agmSummaryDetails?.Year && selectedYear !== agmSummaryDetails.Year.toString()) {
+      setSelectedYear(agmSummaryDetails.Year.toString());
+    } else if (!selectedYear && agmSummaryDetails?.total_year?.length > 0) {
+      setSelectedYear(agmSummaryDetails.total_year[0].toString());
     }
-  }, [agmSummaryDetails, selectedYear]);
+  }, [agmSummaryDetails]);
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -151,29 +149,54 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
 
-    // Use selectedYear for tab logic, not agmSummaryDetails.Year
     const yearToCheck = selectedYear || agmSummaryDetails?.Year;
-    let proxyContestYear = proxyContest;
-    if (yearToCheck === "2024") {
-      proxyContestYear = proxyContest2024;
-    } else if (yearToCheck === "2025") {
-      proxyContestYear = proxyContest2025;
-    }
-
-    // Only redirect if proxyContestYear is strictly true
-    if (proxyContestYear === true) {
-      const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
-      const companyArr = [companyGlobalSearchName];
-      const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
-      const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
-      const year = encodeURIComponent(yearToCheck ?? new Date().getFullYear());
-      const url = `/voting-data?institution=${institutions}&company=${company}&year=${year}`;
-      window.open(url, "_blank");
+    // Debug log for troubleshooting
+    console.log('Voting Data click:', { yearToCheck, proxyContest2024, proxyContest2025, proxyContest });
+    if (yearToCheck === "2025") {
+      if (Boolean(proxyContest2025) === true) {
+        const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
+        const companyArr = [companyGlobalSearchName];
+        const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
+        const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
+        const year = encodeURIComponent(yearToCheck ?? new Date().getFullYear());
+        const url = `/voting-data?institution=${institutions}&company=${company}&year=${year}`;
+        window.open(url, "_blank");
+      } else {
+        window.open(
+          `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${yearToCheck ?? new Date().getFullYear()}`,
+          "_blank"
+        );
+      }
+    } else if (yearToCheck === "2024") {
+      if (Boolean(proxyContest2024) === true) {
+        const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
+        const companyArr = [companyGlobalSearchName];
+        const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
+        const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
+        const year = encodeURIComponent(yearToCheck ?? new Date().getFullYear());
+        const url = `/voting-data?institution=${institutions}&company=${company}&year=${year}`;
+        window.open(url, "_blank");
+      } else {
+        window.open(
+          `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${yearToCheck ?? new Date().getFullYear()}`,
+          "_blank"
+        );
+      }
     } else {
-      window.open(
-        `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${yearToCheck ?? new Date().getFullYear()}`,
-        "_blank"
-      );
+      if (Boolean(proxyContest) === true) {
+        const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
+        const companyArr = [companyGlobalSearchName];
+        const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
+        const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
+        const year = encodeURIComponent(yearToCheck ?? new Date().getFullYear());
+        const url = `/voting-data?institution=${institutions}&company=${company}&year=${year}`;
+        window.open(url, "_blank");
+      } else {
+        window.open(
+          `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${yearToCheck ?? new Date().getFullYear()}`,
+          "_blank"
+        );
+      }
     }
   };
 
