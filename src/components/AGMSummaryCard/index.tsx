@@ -6,7 +6,7 @@ import Tippy from "../Base/Tippy";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 import { useEffect, useState } from "react";
 
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -24,6 +24,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const location = useLocation();
   const locationPathName = location?.pathname;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const dispatch: AppDispatch = useAppDispatch();
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
     useAppSelector((state) => state.dashboard);
@@ -35,7 +36,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const meetingDetails = companyDetails[companyName];
   const meetingDate = meetingDetails?.split(" - ").pop();
 
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  // Extract year from query parameters
+  const yearFromQuery = searchParams.get("year");
+  const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery || "");
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -90,30 +93,34 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   useEffect(() => {
     if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
-      // setSelectedYear("");
-      dispatch(
-        fetchAGMSummaryDashboard(
-          createDynamicURL(
-            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
-          ) + (isMeetingModal ? `&year=2025` : "")
-        )
+      // Use year from query params or default behavior
+      const yearParam = yearFromQuery || (isMeetingModal ? "2025" : "");
+      const url = createDynamicURL(
+        `${baseURL}/voting_report_8k/`, 
+        { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
       );
+      dispatch(fetchAGMSummaryDashboard(url));
       // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
     else if (companyGlobalSearchTicker !== tempSearch) {
-      setSelectedYear("");
-      dispatch(
-        fetchAGMSummaryDashboard(
-          createDynamicURL(
-            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
-          ) + (isMeetingModal ? `&year=2025` : "")
-        )
+      // Use year from query params or reset to empty
+      const yearParam = yearFromQuery || "";
+      setSelectedYear(yearParam);
+      const url = createDynamicURL(
+        `${baseURL}/voting_report_8k/`, 
+        { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
       );
+      dispatch(fetchAGMSummaryDashboard(url));
       // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
+  }, [companyGlobalSearchTicker, yearFromQuery]);
 
-
-  }, [companyGlobalSearchTicker]);
+  // Handle year query parameter changes
+  useEffect(() => {
+    if (yearFromQuery && yearFromQuery !== selectedYear) {
+      setSelectedYear(yearFromQuery);
+    }
+  }, [yearFromQuery]);
 
   useEffect(() => {
     if (selectedYear) {
@@ -141,13 +148,15 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
     if (proxyContestYear) {
       // If proxy_contest for year is true, redirect to /vdsEuropean with filters
-      const institutionArr = ["The Vanguard Group", "BlackRock, Inc."];
+      const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
       const companyArr = [companyGlobalSearchName];
       const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
       const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
-      navigate(`/voting-data?institution=${institutions}&company=${company}`);
+      const year = encodeURIComponent(agmSummaryDetails?.Year ?? new Date().getFullYear());
+      const url = `/voting-data?institution=${institutions}&company=${company}&year=${year}`;
+      window.open(url, "_blank");
     } else {
-      // Otherwise, keep the existing behavior - open VDS details in new tab
+      // If proxy_contest for year is false, open VDS details in new tab
       window.open(
         `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? new Date().getFullYear()}`,
         "_blank"
@@ -314,8 +323,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   <div
                     className={clsx([
                       locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}
+                    style={{overflowX: 'auto', width: '100%'}}
                   >
-                    <Table className="table_2 w-full">
+                    <Table className="table_2 w-full" style={{tableLayout: 'fixed'}}>
                       <Table.Thead className="sticky top-0 z-10">
                         <Table.Tr className="row_2">
                           {agmSummaryDetails?.nominees_headers?.length > 0 &&
@@ -323,11 +333,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                               (nomineeHeader: any, headerIndex: number) => (
                                 <Table.Td
                                   key={headerIndex}
-                                  // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
-                                    "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-left",
-                                    headerIndex === 0 && "w-[200px]",
+                                    "cell_2 py-0.5 font-medium h-[28px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-left",
+                                    headerIndex === 0 && "w-[90px]",
                                   ])}
+                                  style={{fontSize: '0.75rem', padding: '2px 2px', whiteSpace: 'nowrap'}}
                                 >
                                   {nomineeHeader.header}
                                 </Table.Td>
@@ -354,9 +364,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                       <Table.Td
                                         key={headerIndex}
                                         className={clsx([
-                                          "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left",
-                                          headerIndex === 0 && "w-[200px]",
+                                          "cell_2 py-0.5 border-dashed dark:bg-darkmode-600 text-left",
+                                          headerIndex === 0 && "w-[90px]",
                                         ])}
+                                        style={{fontSize: '0.75rem', padding: '2px 2px', whiteSpace: 'nowrap'}}
                                       >
                                         <h1
                                           className={clsx([
@@ -371,6 +382,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                             ) < 85 &&
                                             "text-red-700 font-semibold",
                                           ])}
+                                          style={{fontSize: '0.75rem', whiteSpace: 'nowrap'}}
                                         >
                                           {nominee[nomineeHeader?.field]}
                                         </h1>

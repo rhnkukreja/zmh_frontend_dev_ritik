@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TableWrapper from "../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
@@ -57,6 +57,8 @@ const CustomReports = () => {
   const [ownershipData, setOwnershipData] = useState<CompanyOwnership[]>(getInitialOwnershipData());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [tableExpanded, setTableExpanded] = useState<boolean>(false);
+  const companySearchCache = useRef<Record<string, any[]>>({});
 
   // Update selected tickers when global company changes, but only on initial load or when empty
   useEffect(() => {
@@ -149,15 +151,12 @@ const CustomReports = () => {
       // Merge with existing tickers, keeping global company ticker if it exists
       const allTickers = [...new Set([...selectedTickers, ...newTickers])]; // Remove duplicates
       const finalTickers = allTickers.slice(0, 5); // Limit to 5 companies
-      
       setSelectedTickers(finalTickers);
-      // Save to localStorage
       saveTickersToLocalStorage(finalTickers);
     } else {
       // Only clear if global company ticker is not present
       const defaultTickers = companyGlobalSearchTicker ? [companyGlobalSearchTicker] : [];
       setSelectedTickers(defaultTickers);
-      // Save to localStorage
       saveTickersToLocalStorage(defaultTickers);
     }
   };
@@ -206,23 +205,19 @@ const CustomReports = () => {
   return (
     <div className="box p-5 mt-3.5">
       <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-center mb-4">
-        <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 can be selected)</h1>
+        <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 companies can be selected)</h1>
         <div className="flex items-center gap-2">
-          <Tippy content="Download Excel" options={{ theme: "light" }}>
-            <div
-              className="box p-[5px] cursor-pointer"
-              onClick={() => !loading && handleDownload()}
-            >
-              {loading ? (
-                <Lucide
-                  icon="Loader"
-                  className="w-6 h-7 stroke-[1.3] animate-spin"
-                />
-              ) : (
+          {/* Download icon only visible when not loading and data exists */}
+          {!loading && ownershipData.length > 0 && (
+            <Tippy content="Download Excel" options={{ theme: "light" }}>
+              <div
+                className="box p-[5px] cursor-pointer"
+                onClick={handleDownload}
+              >
                 <img alt="download-icon" src={downloadIcon} />
-              )}
-            </div>
-          </Tippy>
+              </div>
+            </Tippy>
+          )}
         </div>
       </div>
 
@@ -250,10 +245,8 @@ const CustomReports = () => {
             variant="outline-secondary"
             onClick={() => {
               const defaultTickers = companyGlobalSearchTicker ? [companyGlobalSearchTicker] : [];
-              // Just clear selections without triggering API call
               setSelectedTickers(defaultTickers);
               saveTickersToLocalStorage(defaultTickers);
-              // Also clear any displayed data and errors
               setOwnershipData([]);
               localStorage.removeItem('customReports_ownershipData');
               setError("");
@@ -262,6 +255,16 @@ const CustomReports = () => {
           >
             Clear
           </Button>
+          {/* Expand Table Button */}
+          {ownershipData.length > 0 && (
+            <Button
+              variant={tableExpanded ? "outline-secondary" : "primary"}
+              onClick={() => setTableExpanded((prev) => !prev)}
+              className="whitespace-nowrap"
+            >
+              {tableExpanded ? "Collapse Table" : "Expand Table"}
+            </Button>
+          )}
         </div>
 
         {/* Selected Tickers */}
@@ -306,8 +309,8 @@ const CustomReports = () => {
       {/* Single Combined Table */}
       {!loading && ownershipData.length > 0 && (
         <TableWrapper isLoading={loading}>
-          <div className="overflow-x-auto max-h-[400px] overflow-y-scroll">
-            <Table className="table_ownership w-full">
+          <div className={tableExpanded ? "overflow-x-auto" : "overflow-x-auto max-h-[400px] overflow-y-scroll"} style={tableExpanded ? {maxHeight: "none"} : {}}>
+            <Table className="table_ownership w-full min-w-[600px]" style={tableExpanded ? {width: "100%"} : {minWidth: "600px"}}>
               <Table.Thead className="sticky top-0 z-10">
                 <Table.Tr className="row_ownership">
                   {/* Only show columns for companies that match currently selected tickers */}

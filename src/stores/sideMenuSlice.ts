@@ -150,16 +150,15 @@ const initialState: any = {
       isAdmin: true,
     },
     {
+      icon: "BarChart2",
+      pathname: "/custom-reports",
+      title: "Custom Reports",
+    },
+    {
       icon: "Mail",
       pathname: "#",
       title: "Email Alert",
     },
-
-      {
-        icon: "BarChart2",
-        pathname: "/custom-reports",
-        title: "Custom Reports",
-      },
     {
       icon: "FileText",
       pathname: "/notes",

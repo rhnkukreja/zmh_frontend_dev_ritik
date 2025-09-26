@@ -266,10 +266,29 @@ const index = () => {
       // Check if query parameters are present first - they take precedence
       const institutionParam = searchParams.get('institution');
       const companyParam = searchParams.get('company');
+      const yearParam = searchParams.get('year');
       const hasQueryParams = institutionParam || companyParam;
 
-      // If query parameters are present, skip localStorage restoration
+      // If query parameters are present, set year from query param if present
       if (hasQueryParams) {
+        let filters: any = {};
+        const institutions = institutionParam ? institutionParam.split('||').map(inst => decodeURIComponent(inst.trim())) : [];
+        const companies = companyParam ? companyParam.split('||').map(comp => decodeURIComponent(comp.trim())) : [];
+        if (institutions.length > 0) filters.institution_name = [...institutions];
+        if (companies.length > 0) filters.company_name = [...companies];
+        if (yearParam) {
+          if (isViewAnalysis) {
+            setValue('analyticsYear', [yearParam]);
+          } else {
+            setValue('year', yearParam);
+          }
+          filters.year = yearParam;
+        }
+        // Always include year in both payloads
+        setallApplyFilter({ ...filters });
+        setAllAnalyticsFilter({ ...filters });
+        setSelectedChipFilters(generateFilterChips({ ...filters }));
+        setFiltersLength(countValidFilters({ ...filters }));
         setIsRestoringFromLocalStorage(false);
         return;
       }
@@ -310,10 +329,16 @@ const index = () => {
       if (!isViewAnalysis && savedRegularFilters) {
         try {
           const parsed = JSON.parse(savedRegularFilters);
-
+          // If year is present in query params, auto-select it
+          if (parsed.year) {
+            if (isViewAnalysis) {
+              setValue("analyticsYear", Array.isArray(parsed.year) ? parsed.year : [parsed.year]);
+            } else {
+              setValue("year", parsed.year);
+            }
+          }
           // Restore regular filters
           setallApplyFilter(parsed);
-
           // Restore all saved values with proper field mapping
           const restoredValues = {
             institution_name: parsed.institution_name || [],
@@ -325,20 +350,17 @@ const index = () => {
             date_range: parsed.date_range || "",
             country: parsed.country || ["USA"],
             index: parsed.index || [],
-            meeting_type: parsed.meeting_type || [],
+            meeting_type: [],
             proposal_type: parsed.proposal_type || [],
             proponent_type: parsed.proponent_type || [],
             proposal_keyword: parsed.proposal_keyword || [],
             keyword: parsed.keyword || "",
           };
-
           reset(restoredValues);
-
           // Generate filter chips from restored data
           setSelectedChipFilters(generateFilterChips(parsed));
           setFiltersLength(countValidFilters(parsed));
           setSelectedCountries(parsed.country || ["USA"]);
-
           setIsRestoringFromLocalStorage(false);
           return;
         } catch (e) {
@@ -406,26 +428,28 @@ const index = () => {
 
       if (!isViewAnalysis && hasAnyValidFilter(allApplyFilter)) {
         setIsLoading(true);
-
+        // Always include year in payload if present in allApplyFilter
+        const payload = { ...allApplyFilter };
+        if (payload.year) {
+          payload.year = payload.year;
+        }
         await dispatch(
           fetchVdsEuropeans(
             createDynamicURL(
               `${baseURL}/vds_european/`,
-              allApplyFilter,
+              payload,
               undefined,
               page
             )
           )
         );
-
         // Only update chips for regular filters if not in analytics mode
         // Don't overwrite chips if they were just restored from localStorage
         if (!isRestoringFromLocalStorage) {
-          setFiltersLength(countValidFilters(allApplyFilter));
-          setSelectedChipFilters(generateFilterChips(allApplyFilter));
+          setFiltersLength(countValidFilters(payload));
+          setSelectedChipFilters(generateFilterChips(payload));
         }
         dispatch(setTempSearch(companyGlobalSearchName));
-
         setIsLoading(false);
       }
     };
@@ -521,11 +545,15 @@ const index = () => {
     const companyParam = searchParams.get('company');
     const hasQueryParams = institutionParam || companyParam;
 
-    if (!hasQueryParams) {
-      // Only set default values when no query parameters are present
-      setValue('year', new Date().getFullYear().toString());
-      setValue('country', ["USA"]);
-    }
+      if (!hasQueryParams) {
+        // Only set default values when no query parameters are present
+        if (isViewAnalysis) {
+          setValue('analyticsYear', [new Date().getFullYear().toString()]);
+        } else {
+          setValue('year', new Date().getFullYear().toString());
+        }
+        setValue('country', ["USA"]);
+      }
   }, [searchParams, setValue]);
 
   // Track previous values to determine which field changed
@@ -556,13 +584,13 @@ const index = () => {
       if (currentDateRange.trim() !== "") {
         setValue("date_range", "");
       }
-      if (currentAnalyticsYear.length > 0) {
+      if (isViewAnalysis && currentAnalyticsYear.length > 0) {
         setValue("analyticsYear", []);
       }
     }
 
     // Check if analyticsYear changed and has a value
-    if (JSON.stringify(currentAnalyticsYear) !== JSON.stringify(prevAnalyticsYear) && currentAnalyticsYear.length > 0) {
+    if (isViewAnalysis && JSON.stringify(currentAnalyticsYear) !== JSON.stringify(prevAnalyticsYear) && currentAnalyticsYear.length > 0) {
       // Analytics year was set, clear date_range and regular year if they have values
       if (currentDateRange.trim() !== "") {
         setValue("date_range", "");
@@ -794,9 +822,11 @@ const index = () => {
         ? allAnalyticsFilter.company_name
         : [],
       year:
-        allAnalyticsFilter?.analyticsYear?.length > 0
-          ? allAnalyticsFilter?.analyticsYear
-          : [],
+        allAnalyticsFilter?.year
+          ? [allAnalyticsFilter.year]
+          : (allAnalyticsFilter?.analyticsYear?.length > 0
+            ? allAnalyticsFilter?.analyticsYear
+            : []),
       proponent_type: allAnalyticsFilter?.proponent_type
         ? allAnalyticsFilter?.proponent_type
         : [],
@@ -872,12 +902,11 @@ const index = () => {
       return;
     }
 
-    // Check if query parameters are present
     const institutionParam = searchParams.get('institution');
     const companyParam = searchParams.get('company');
-    const hasQueryParams = institutionParam || companyParam;
+    const yearParam = searchParams.get('year');
+    const hasQueryParams = institutionParam || companyParam || yearParam;
 
-    // Validate that at least one country is selected (only if no company is selected and no query params)
     if (!npxFilter?.company_name?.length && !hasQueryParams) {
       if (!npxFilter?.country?.length) {
         toast.warning("Please select at least one country");
@@ -885,8 +914,6 @@ const index = () => {
       }
     }
 
-    // Check if either year or date_range is provided (mutual exclusivity)
-    // Skip this validation if query parameters are present
     const hasYear = npxFilter?.year && npxFilter?.year.trim() !== "";
     const hasDateRange = npxFilter?.date_range && npxFilter?.date_range.trim() !== "";
 
@@ -1243,7 +1270,7 @@ const index = () => {
         }
         
         // If no companies left, restore USA country only if no query parameters
-        if ((!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) && !hasQueryParams) {
+        if ((!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) && !updatedFilters.country) {
           updatedFilters.country = ["USA"];
           setValue("country", ["USA"]);
           setSelectedCountries(["USA"]);
@@ -1317,7 +1344,8 @@ const index = () => {
         // Check if query parameters are present
         const institutionParam = searchParams.get('institution');
         const companyParam = searchParams.get('company');
-        const hasQueryParams = institutionParam || companyParam;
+        const yearParam = searchParams.get('year');
+        const hasQueryParams = institutionParam || companyParam || yearParam;
 
         const analyticsParams = {
           investor_company: allAnalyticsFilter?.institution_name?.length
@@ -1326,10 +1354,8 @@ const index = () => {
           company_name: allAnalyticsFilter?.company_name?.length > 0
             ? allAnalyticsFilter.company_name
             : [],
-          // Only include year if no query parameters are present
-          year: !hasQueryParams && allAnalyticsFilter?.analyticsYear?.length > 0
-            ? allAnalyticsFilter?.analyticsYear
-            : [],
+          // Include year from query params or from form
+          year: hasQueryParams ? yearParam : (allAnalyticsFilter?.analyticsYear?.length > 0 ? allAnalyticsFilter.analyticsYear[0] : undefined),
           proponent_type: allAnalyticsFilter?.proponent_type
             ? allAnalyticsFilter?.proponent_type
             : [],
@@ -1404,33 +1430,40 @@ const index = () => {
   useEffect(() => {
     const institutionParam = searchParams.get('institution');
     const companyParam = searchParams.get('company');
+    const yearParam = searchParams.get('year');
 
     // Only apply filters if at least one param is present
-    if (institutionParam || companyParam) {
+    if (institutionParam || companyParam || yearParam) {
       // Parse institution parameter (split by '||', decode each)
       const institutions = institutionParam ? institutionParam.split('||').map(inst => decodeURIComponent(inst.trim())) : [];
-      // Parse company parameter (split by '||', decode each)
-      const companies = companyParam ? companyParam.split('||').map(comp => decodeURIComponent(comp.trim())) : [];
+        // Parse company parameter (split by '||', decode each)
+        const companies = companyParam ? companyParam.split('||').map(comp => decodeURIComponent(comp.trim())) : [];
 
-  // Set form values ONLY for institution and company_name (each as array of decoded strings)
-  setValue('institution_name', [...institutions]);
-  setValue('company_name', [...companies]);
+        // Set form values for institution, company_name, and year
+        setValue('institution_name', [...institutions]);
+        setValue('company_name', [...companies]);
+        if (isViewAnalysis) {
+          setValue('analyticsYear', yearParam ? [yearParam] : []);
+        } else {
+          setValue('year', yearParam || "");
+        }
 
-  // Build filter object with only these two filters
-  const filters: any = {};
-  if (institutions.length > 0) filters.institution_name = [...institutions];
-  if (companies.length > 0) filters.company_name = [...companies];
+        // Build filter object with institution, company, and year
+        const filters: any = {};
+        if (institutions.length > 0) filters.institution_name = [...institutions];
+        if (companies.length > 0) filters.company_name = [...companies];
+        if (yearParam) filters.year = yearParam;
 
-  // Apply filters to both analytics and regular
-  setAllAnalyticsFilter(filters);
-  setallApplyFilter(filters);
+        // Apply filters to both analytics and regular
+        setAllAnalyticsFilter(filters);
+        setallApplyFilter(filters);
 
-  // Update filter chips immediately (each chip should be a separate entry)
-  setSelectedChipFilters(generateFilterChips(filters));
-  setFiltersLength(countValidFilters(filters));
-    }
-    // If no params, do nothing (keep default behavior)
-  }, [searchParams, setValue]);
+        // Update filter chips immediately (each chip should be a separate entry)
+        setSelectedChipFilters(generateFilterChips(filters));
+        setFiltersLength(countValidFilters(filters));
+      }
+      // If no params, do nothing (keep default behavior)
+    }, [searchParams, setValue]);
 
   const handleDownloadXlsx = async () => {
     try {
@@ -1765,20 +1798,40 @@ const index = () => {
                     <FaCalendarAlt className="text-gray-400" /> Year
                   </label>
                   <Controller
-                    name="analyticsYear"
+                    name={isViewAnalysis ? "analyticsYear" : "year"}
                     control={control}
-                    defaultValue={[]}
+                    defaultValue={isViewAnalysis ? [] : ""}
                     render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={yearOptions.map(year => year.toString())}
-                        placeholder="Select Year"
-                        loading={getDynamicDropdownLoader}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => option.value);
-                          field.onChange(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
+                      isViewAnalysis ? (
+                        <MultiSelectDropdown
+                          data={yearOptions.map(year => year.toString())}
+                          placeholder="Select Year"
+                          loading={getDynamicDropdownLoader}
+                          onChange={(selectedOptions) => {
+                            const selectedValues = selectedOptions.map((option) => option.value);
+                            field.onChange(selectedValues);
+                          }}
+                          selectedOption={field.value || []}
+                        />
+                      ) : (
+                        <TomSelect
+                          value={field.value || ""}
+                          onChange={(value) => field.onChange(value)}
+                          options={{
+                            placeholder: "Select Year",
+                            allowEmptyOption: true,
+                            create: false
+                          }}
+                          className="w-full"
+                        >
+                          <option value="">Select Year</option>
+                          {yearOptions.map(year => (
+                            <option key={year} value={year.toString()}>
+                              {year}
+                            </option>
+                          ))}
+                        </TomSelect>
+                      )
                     )}
                   />
                 </div>
@@ -1904,7 +1957,11 @@ const index = () => {
                             setValue("vote", []);
                             setValue("category", []);
                             setValue("date_range", "");
-                            setValue("analyticsYear", []);
+                            if (isViewAnalysis) {
+                              setValue("analyticsYear", []);
+                            } else {
+                              setValue("year", "");
+                            }
                             setValue("index", []);
                             setValue("meeting_type", []);
                             setValue("proposal_type", []);
