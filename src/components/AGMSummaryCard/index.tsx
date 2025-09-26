@@ -38,7 +38,20 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   // Extract year from query parameters
   const yearFromQuery = searchParams.get("year");
-  const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery || "");
+  const [selectedYear, setSelectedYear] = useState<string>(
+    yearFromQuery || ""
+  );
+
+  // Ensure selectedYear is set to a valid year on first load
+  useEffect(() => {
+    if (!selectedYear) {
+      if (agmSummaryDetails?.Year) {
+        setSelectedYear(agmSummaryDetails.Year.toString());
+      } else if (agmSummaryDetails?.total_year?.length > 0) {
+        setSelectedYear(agmSummaryDetails.total_year[0].toString());
+      }
+    }
+  }, [agmSummaryDetails, selectedYear]);
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -138,27 +151,27 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
 
-    // Use correct proxy contest prop for year
+    // Use selectedYear for tab logic, not agmSummaryDetails.Year
+    const yearToCheck = selectedYear || agmSummaryDetails?.Year;
     let proxyContestYear = proxyContest;
-    if (agmSummaryDetails?.Year === "2024") {
+    if (yearToCheck === "2024") {
       proxyContestYear = proxyContest2024;
-    } else if (agmSummaryDetails?.Year === "2025") {
+    } else if (yearToCheck === "2025") {
       proxyContestYear = proxyContest2025;
     }
 
+    // Only redirect if proxyContestYear is strictly true
     if (proxyContestYear === true) {
-      // If proxy_contest for year is true, redirect to /vdsEuropean with filters
       const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
       const companyArr = [companyGlobalSearchName];
       const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
       const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
-      const year = encodeURIComponent(agmSummaryDetails?.Year ?? new Date().getFullYear());
+      const year = encodeURIComponent(yearToCheck ?? new Date().getFullYear());
       const url = `/voting-data?institution=${institutions}&company=${company}&year=${year}`;
       window.open(url, "_blank");
     } else {
-      // If proxy_contest for year is false, open VDS details in new tab
       window.open(
-        `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? new Date().getFullYear()}`,
+        `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${yearToCheck ?? new Date().getFullYear()}`,
         "_blank"
       );
     }
