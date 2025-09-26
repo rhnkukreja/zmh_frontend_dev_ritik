@@ -1023,16 +1023,15 @@ const index = () => {
                                                                                             <div className="text-left">
                                                                                                 {item[header.field] ? (
                                                                                                     <div className="flex items-center gap-2">
-                                                                                                        <span className={`text-sm ${
-                                                                                                            item[header.field].vote === 'Withhold' || item[header.field].vote === 'Against' 
-                                                                                                                ? 'text-red-700 font-semibold' 
+                                                                                                        <span className={`text-sm ${item[header.field].vote === 'Withhold' || item[header.field].vote === 'Against'
+                                                                                                                ? 'text-red-700 font-semibold'
                                                                                                                 : 'text-gray-900 font-medium'
-                                                                                                        }`}>
+                                                                                                            }`}>
                                                                                                             {item[header.field].vote || 'N/A'}
                                                                                                         </span>
                                                                                                         {item[header.field].notes && (
-                                                                                                            <Tippy 
-                                                                                                                content={item[header.field].notes} 
+                                                                                                            <Tippy
+                                                                                                                content={item[header.field].notes}
                                                                                                                 options={{ theme: "light", placement: "top" }}
                                                                                                             >
                                                                                                                 <div className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-help">

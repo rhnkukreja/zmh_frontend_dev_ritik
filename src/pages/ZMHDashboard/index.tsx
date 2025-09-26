@@ -25,6 +25,7 @@ import Table from "@/components/Base/Table";
 import { dashboardService } from "@/services/dashboard";
 import useCompanySearch from "@/hooks/useCompanySearch";
 import { CompanyData } from "@/types/company";
+import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 
 function Main() {
@@ -32,6 +33,9 @@ function Main() {
 
   // Active tab state
   const [activeTab, setActiveTab] = useState('ownership');
+  
+  // Modules count state
+  const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
 
   // Format date function - Month and Year only
   const formatDate = (dateString: string) => {
@@ -100,6 +104,24 @@ function Main() {
       dispatch(getGraphQLBoardData(cleanSearchValue));
     }
   }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
+
+  // Fetch modules count when company changes
+  useEffect(() => {
+    const fetchModulesCount = async () => {
+      if (companyGlobalSearchName) {
+        try {
+          const response = await dashboardService.getModulesCount({
+            global_search: companyGlobalSearchName
+          });
+          setModulesCount(response.result);
+        } catch (error) {
+          console.error('Error fetching modules count:', error);
+        }
+      }
+    };
+
+    fetchModulesCount();
+  }, [companyGlobalSearchName]);
 
   // Scroll-based tab update
   useEffect(() => {
@@ -243,7 +265,12 @@ function Main() {
           {/* <BoardDirectorMembers /> */}
 
           <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
-            <AGMSummaryCard companyGlobalSearchTicker={companyGlobalSearchTicker} companyGlobalSearchName={companyGlobalSearchName} isMeetingModal={false} />
+            <AGMSummaryCard 
+              companyGlobalSearchTicker={companyGlobalSearchTicker} 
+              companyGlobalSearchName={companyGlobalSearchName} 
+              isMeetingModal={false}
+              proxyContest={modulesCount?.proxy_contest || false}
+            />
           </div>
 
           <div id="board-composition" className="col-span-12 xl:col-span-12">

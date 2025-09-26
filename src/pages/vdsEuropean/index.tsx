@@ -263,6 +263,17 @@ const index = () => {
     const restoreFilters = () => {
       setIsRestoringFromLocalStorage(true);
 
+      // Check if query parameters are present first - they take precedence
+      const institutionParam = searchParams.get('institution');
+      const companyParam = searchParams.get('company');
+      const hasQueryParams = institutionParam || companyParam;
+
+      // If query parameters are present, skip localStorage restoration
+      if (hasQueryParams) {
+        setIsRestoringFromLocalStorage(false);
+        return;
+      }
+
       // Check for analytics filters first since we start in analytics view
       const savedAnalyticsFilters = localStorage.getItem("vdsEuropeanAnalyticsFilters");
       const savedRegularFilters = localStorage.getItem("vdsEuropeanFilters");
@@ -384,7 +395,7 @@ const index = () => {
 
     // Use setTimeout to ensure component is fully mounted
     setTimeout(restoreFilters, 50);
-  }, [isViewAnalysis]);
+  }, [isViewAnalysis, searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -492,10 +503,10 @@ const index = () => {
       institution_name: [],
       vote: [],
       category: [],
-      year: new Date().getFullYear().toString(),
+      year: "",
       company_name: [],
       date_range: "",
-      country: ["USA"],
+      country: [],
     },
   });
 
@@ -503,6 +514,19 @@ const index = () => {
   const watchedDateRange = watch("date_range");
   const watchedYear = watch("year");
   const watchedAnalyticsYear = watch("analyticsYear");
+
+  // Set default values only if no query parameters are present
+  useEffect(() => {
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+    const hasQueryParams = institutionParam || companyParam;
+
+    if (!hasQueryParams) {
+      // Only set default values when no query parameters are present
+      setValue('year', new Date().getFullYear().toString());
+      setValue('country', ["USA"]);
+    }
+  }, [searchParams, setValue]);
 
   // Track previous values to determine which field changed
   const [prevDateRange, setPrevDateRange] = useState("");
@@ -567,7 +591,13 @@ const index = () => {
           ? 2024
           : null,
     };
-    if (dropdownValues?.institution_name && dropdownValues?.company_name) {
+    
+    // Only set year if no query parameters are present
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+    const hasQueryParams = institutionParam || companyParam;
+    
+    if (dropdownValues?.institution_name && dropdownValues?.company_name && !hasQueryParams) {
       setValue("year", new Date().getFullYear());
     }
     try {
@@ -735,10 +765,18 @@ const index = () => {
   };
 
   const handleDropdownChange = (key: string, value: any) => {
-    setDropdownValues((prev: any) => ({
-      ...prev,
-      [key]: value,
-    }));
+    // Check if query parameters are present to avoid triggering dependent dropdown logic
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+    const hasQueryParams = institutionParam || companyParam;
+    
+    // Only update dropdownValues if no query parameters are present
+    if (!hasQueryParams) {
+      setDropdownValues((prev: any) => ({
+        ...prev,
+        [key]: value,
+      }));
+    }
   };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -834,8 +872,13 @@ const index = () => {
       return;
     }
 
-    // Validate that at least one country is selected (only if no company is selected)
-    if (!npxFilter?.company_name?.length) {
+    // Check if query parameters are present
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+    const hasQueryParams = institutionParam || companyParam;
+
+    // Validate that at least one country is selected (only if no company is selected and no query params)
+    if (!npxFilter?.company_name?.length && !hasQueryParams) {
       if (!npxFilter?.country?.length) {
         toast.warning("Please select at least one country");
         return;
@@ -843,10 +886,11 @@ const index = () => {
     }
 
     // Check if either year or date_range is provided (mutual exclusivity)
+    // Skip this validation if query parameters are present
     const hasYear = npxFilter?.year && npxFilter?.year.trim() !== "";
     const hasDateRange = npxFilter?.date_range && npxFilter?.date_range.trim() !== "";
 
-    if (!hasYear && !hasDateRange) {
+    if (!hasQueryParams && !hasYear && !hasDateRange) {
       toast.warning("Please Select either Year or Date Range");
       return;
     }
@@ -873,10 +917,12 @@ const index = () => {
     };
 
     // Add only the active filter (year OR date_range, not both)
-    if (hasDateRange) {
+    // Only add year/date_range if query parameters are not present
+    if (hasDateRange && !hasQueryParams) {
       filterObj.date_range = npxFilter?.date_range;
       // Explicitly exclude year when date_range is selected
-    } else if (hasYear) {
+    } else if (hasYear && !hasQueryParams) {
+      // Only add year if no query parameters are present
       filterObj.year = npxFilter?.year;
       // Explicitly exclude date_range when year is selected
     }
@@ -907,8 +953,13 @@ const index = () => {
       return;
     }
 
-    // Validate that at least one country is selected (only if no company is selected)
-    if (!data?.company_name?.length) {
+    // Check if query parameters are present
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+    const hasQueryParams = institutionParam || companyParam;
+
+    // Validate that at least one country is selected (only if no company is selected and no query params)
+    if (!data?.company_name?.length && !hasQueryParams) {
       if (!data?.country?.length) {
         toast.warning("Please select at least one country");
         return;
@@ -920,8 +971,8 @@ const index = () => {
     const hasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
     const hasDateRange = data?.date_range && data?.date_range.trim() !== "";
 
-    // If neither year nor date_range is provided, default to current year
-    if (!hasYear && !hasDateRange) {
+    // If neither year nor date_range is provided, default to current year only if no query params
+    if (!hasQueryParams && !hasYear && !hasDateRange) {
       data.analyticsYear = [new Date().getFullYear().toString()];
     }
 
@@ -958,14 +1009,16 @@ const index = () => {
     const finalHasYear = data?.analyticsYear && data?.analyticsYear.length > 0;
     const finalHasDateRange = data?.date_range && data?.date_range.trim() !== "";
 
-    if (finalHasYear) {
+    if (finalHasYear && !hasQueryParams) {
+      // Only add year if no query parameters are present
       analyticsObj.analyticsYear = data?.analyticsYear;
       // Don't include date_range when year is provided
-    } else if (finalHasDateRange) {
+    } else if (finalHasDateRange && !hasQueryParams) {
+      // Only add date_range if no query parameters are present
       analyticsObj.date_range = data?.date_range;
       // Don't include year when date_range is provided
-    } else {
-      // Default to current year if neither is provided
+    } else if (!hasQueryParams) {
+      // Default to current year if neither is provided and no query params
       analyticsObj.analyticsYear = [new Date().getFullYear().toString()];
     }
 
@@ -976,10 +1029,15 @@ const index = () => {
   };
 
   const onFilterClear = (onAnalyticsTab) => {
+    // Check if query parameters are present
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+    const hasQueryParams = institutionParam || companyParam;
+
     setSelectedChipFilters([]);
     setFiltersLength(0);
     reset();
-    resetFormValues();
+    resetFormValues(hasQueryParams);
     setDropdownValues({
       company_name: [],
       institution: [],
@@ -990,27 +1048,29 @@ const index = () => {
       setAllAnalyticsFilter({
         institution_name: ["BlackRock, Inc."],
         index: ["S&P 500"],
-        country: ["USA"],
-        analyticsYear: [currentYear],
+        country: hasQueryParams ? [] : ["USA"],
+        analyticsYear: hasQueryParams ? [] : [currentYear],
       });
       setValue("institution_name", ["BlackRock, Inc."]);
       setValue("index", ["S&P 500"]);
-      setValue("country", ["USA"]);
-      setValue("analyticsYear", [currentYear]);
-      setSelectedCountries(["USA"]);
+      if (!hasQueryParams) {
+        setValue("country", ["USA"]);
+        setValue("analyticsYear", [currentYear]);
+        setSelectedCountries(["USA"]);
+      }
       localStorage.removeItem("vdsEuropeanAnalyticsFilters");
 
       // Fetch vote and year options for default institutions
       getInstitutionDependentOptions(["BlackRock, Inc."]);
     } else {
       const currentYear = new Date().getFullYear().toString();
-      setallApplyFilter({ country: ["USA"], year: currentYear });
+      // setallApplyFilter({ country: ["USA"], year: currentYear });
       dispatch(resetPage());
       dispatch(
         fetchVdsEuropeans(
           createDynamicURL(
             `${baseURL}/vds_european/`,
-            { country: ["USA"], year: currentYear },
+            hasQueryParams ? {} : { country: ["USA"], year: currentYear },
             undefined,
             page
           )
@@ -1030,12 +1090,21 @@ const index = () => {
     }
   };
 
-  const resetFormValues: any = () => {
+  const resetFormValues: any = (hasQueryParams = false) => {
     setValue("company_name", []);
     setValue("institution_name", ["BlackRock, Inc."]);
     setValue("vote", []);
     setValue("category", []);
-    setValue("year", new Date().getFullYear().toString());
+    if (!hasQueryParams) {
+      setValue("year", new Date().getFullYear().toString());
+      setValue("country", ["USA"]);
+      setSelectedCountries(["USA"]);
+      setCountryComponentKey(prev => prev + 1);
+    } else {
+      setValue("year", "");
+      setValue("country", []);
+      setSelectedCountries([]);
+    }
     setValue("keyword", "");
     setValue("date_range", "");
     setValue("analyticsYear", []);
@@ -1044,9 +1113,6 @@ const index = () => {
     setValue("proposal_type", []);
     setValue("proposal_keyword", []);
     setValue("meeting_type", []);
-    setValue("country", ["USA"]);
-    setSelectedCountries(["USA"]);
-    setCountryComponentKey(prev => prev + 1);
     setDropdownValues({
       company_name: [],
       institution: [],
@@ -1151,8 +1217,12 @@ const index = () => {
           );
         }
         
-        // If no companies left, restore USA country
-        if (!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) {
+        // If no companies left, restore USA country only if no query parameters
+        const institutionParam = searchParams.get('institution');
+        const companyParam = searchParams.get('company');
+        const hasQueryParams = institutionParam || companyParam;
+        
+        if ((!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) && !hasQueryParams) {
           updatedFilters.country = ["USA"];
           setValue("country", ["USA"]);
           setSelectedCountries(["USA"]);
@@ -1172,8 +1242,8 @@ const index = () => {
           );
         }
         
-        // If no companies left, restore USA country
-        if (!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) {
+        // If no companies left, restore USA country only if no query parameters
+        if ((!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) && !hasQueryParams) {
           updatedFilters.country = ["USA"];
           setValue("country", ["USA"]);
           setSelectedCountries(["USA"]);
@@ -1244,6 +1314,11 @@ const index = () => {
       if (isViewAnalysis && allAnalyticsFilter?.institution_name && allAnalyticsFilter.institution_name.length > 0) {
         dispatch(setAnalyticsFilters(allAnalyticsFilter));
 
+        // Check if query parameters are present
+        const institutionParam = searchParams.get('institution');
+        const companyParam = searchParams.get('company');
+        const hasQueryParams = institutionParam || companyParam;
+
         const analyticsParams = {
           investor_company: allAnalyticsFilter?.institution_name?.length
             ? allAnalyticsFilter.institution_name
@@ -1251,10 +1326,10 @@ const index = () => {
           company_name: allAnalyticsFilter?.company_name?.length > 0
             ? allAnalyticsFilter.company_name
             : [],
-          year:
-            allAnalyticsFilter?.analyticsYear?.length > 0
-              ? allAnalyticsFilter?.analyticsYear
-              : [],
+          // Only include year if no query parameters are present
+          year: !hasQueryParams && allAnalyticsFilter?.analyticsYear?.length > 0
+            ? allAnalyticsFilter?.analyticsYear
+            : [],
           proponent_type: allAnalyticsFilter?.proponent_type
             ? allAnalyticsFilter?.proponent_type
             : [],
@@ -1303,36 +1378,6 @@ const index = () => {
     }
   }, [allAnalyticsFilter, analyticsPage, isViewAnalysis, isRestoringFromLocalStorage]);
 
-  // Handle URL params for analytics initialization
-  useEffect(() => {
-    if (!isViewAnalysis) return;
-
-    // Only handle URL params if no filters are set and not restoring from localStorage
-    if (Object.keys(allAnalyticsFilter).length > 0 || isRestoringFromLocalStorage) return;
-
-    const query = new URLSearchParams(window.location.search);
-    const institution_name = query.get("institution_name");
-    const analyticsYear = query.get("year");
-
-    // Set defaults based on URL params if provided
-    if (institution_name || analyticsYear) {
-      const currentYear = new Date().getFullYear().toString();
-      const urlBasedFilters = {
-        institution_name: institution_name ? [institution_name] : ["BlackRock, Inc."],
-        analyticsYear: analyticsYear ? [analyticsYear] : [currentYear],
-        country: ["USA"],
-      };
-
-      setAllAnalyticsFilter(urlBasedFilters);
-      Object.entries(urlBasedFilters).forEach(([key, value]) => {
-        setValue(key, value);
-      });
-      setSelectedCountries(["USA"]);
-
-      // Fetch vote and year options for URL-based institutions
-      getInstitutionDependentOptions(urlBasedFilters.institution_name);
-    }
-  }, [isViewAnalysis, isRestoringFromLocalStorage]);
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -1353,6 +1398,40 @@ const index = () => {
       getAllCaseStudyDropdowns();
     }
   }, [isViewAnalysis]);
+
+  // Handle query parameters on component mount for /voting-data route
+  // Run immediately when query parameters are present
+  useEffect(() => {
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+
+    // Only apply filters if at least one param is present
+    if (institutionParam || companyParam) {
+      // Parse institution parameter (comma-separated)
+      const institutions = institutionParam ? institutionParam.split(',').map(inst => inst.trim()) : [];
+      // Parse company parameter (comma-separated)
+      const companies = companyParam ? companyParam.split(',').map(comp => decodeURIComponent(comp.trim())) : [];
+
+      // Set form values ONLY for institution and company_name
+      // Do NOT touch year or country - let them maintain their default behavior
+      setValue('institution_name', institutions);
+      setValue('company_name', companies);
+
+      // Build filter object with only these two filters
+      const filters: any = {};
+      if (institutions.length > 0) filters.institution_name = institutions;
+      if (companies.length > 0) filters.company_name = companies;
+
+      // Apply filters to both analytics and regular
+      setAllAnalyticsFilter(filters);
+      setallApplyFilter(filters);
+
+      // Update filter chips immediately
+      setSelectedChipFilters(generateFilterChips(filters));
+      setFiltersLength(countValidFilters(filters));
+    }
+    // If no params, do nothing (keep default behavior)
+  }, [searchParams, setValue]);
 
   const handleDownloadXlsx = async () => {
     try {
@@ -1808,12 +1887,19 @@ const index = () => {
 
                           field.onChange(companyNames);
 
+                          // Check if query parameters are present
+                          const institutionParam = searchParams.get('institution');
+                          const companyParam = searchParams.get('company');
+                          const hasQueryParams = institutionParam || companyParam;
+
                           // When company is selected, remove all country conditions and only pass institution and year
                           if (companyNames.length > 0) {
-                            // Clear country filter completely when company is selected
-                            setValue("country", []);
-                            setSelectedCountries([]);
-                            setCountryComponentKey(prev => prev + 1);
+                            // Only clear country filter if no query parameters are present
+                            if (!hasQueryParams) {
+                              setValue("country", []);
+                              setSelectedCountries([]);
+                              setCountryComponentKey(prev => prev + 1);
+                            }
                             
                             // Clear other filters
                             setValue("vote", []);
@@ -1830,10 +1916,12 @@ const index = () => {
                             // Update filter states - only keep institution and year, remove country
                             // Note: Filter updates removed - filters should only be applied via Apply button
                           } else {
-                            // When company is deselected, automatically apply USA country filter
-                            setValue("country", ["USA"]);
-                            setSelectedCountries(["USA"]);
-                            setCountryComponentKey(prev => prev + 1);
+                            // When company is deselected, automatically apply USA country filter only if no query params
+                            if (!hasQueryParams) {
+                              setValue("country", ["USA"]);
+                              setSelectedCountries(["USA"]);
+                              setCountryComponentKey(prev => prev + 1);
+                            }
                             
                             // Note: Filter updates removed - filters should only be applied via Apply button
                           }

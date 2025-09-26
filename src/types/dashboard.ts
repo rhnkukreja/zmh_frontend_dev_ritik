@@ -45,3 +45,11 @@ export type ProxyVotingRationale = {
   proposal: string;
   voting_rationale: string;
 };
+
+export type ModulesCount = {
+  case_studies: number;
+  engagement_questions: number;
+  engagement_details: number;
+  shareholder_proposal: number;
+  proxy_contest: boolean;
+};

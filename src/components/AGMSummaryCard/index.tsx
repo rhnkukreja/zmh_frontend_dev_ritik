@@ -6,7 +6,7 @@ import Tippy from "../Base/Tippy";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 import { useEffect, useState } from "react";
 
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -19,10 +19,11 @@ import LoadingIcon from "../Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
 import { Tab } from "@/components/Base/Headless";
 
-const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingModal}) => {
+const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, proxyContest = false }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
     useAppSelector((state) => state.dashboard);
@@ -94,7 +95,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
         fetchAGMSummaryDashboard(
           createDynamicURL(
             `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
-          )+(isMeetingModal ? `&year=2025`:"")
+          ) + (isMeetingModal ? `&year=2025` : "")
         )
       );
       // dispatch(setTempSearch(companyGlobalSearchTicker));
@@ -105,7 +106,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
         fetchAGMSummaryDashboard(
           createDynamicURL(
             `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker }
-          )+(isMeetingModal ? `&year=2025`:"")
+          ) + (isMeetingModal ? `&year=2025` : "")
         )
       );
       // dispatch(setTempSearch(companyGlobalSearchTicker));
@@ -128,16 +129,19 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
 
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    // event.preventDefault();
-    //     navigate(`vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}`, {
-    //       state: {
-    //         globeSearch: companyGlobalSearchTicker,
-    //       },
-    // })
-    window.open(
-      `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? new Date().getFullYear()}`,
-      "_blank"
-    );
+    event.preventDefault();
+
+    if (proxyContest) {
+      // If proxy_contest is true, redirect to /vdsEuropean with filters
+      const institutions = "The Vanguard Group";
+      navigate(`/voting-data?institution=${institutions}&company=${companyGlobalSearchName}`);
+    } else {
+      // Otherwise, keep the existing behavior - open VDS details in new tab
+      window.open(
+        `vds-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? new Date().getFullYear()}`,
+        "_blank"
+      );
+    }
   };
 
   const handleViewNPX = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -204,7 +208,7 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
 
-              {!isMeetingModal &&  <>   {
+                  {!isMeetingModal && <>   {
 
                     agmSummaryDetails?.vds_check &&
                     dashboardDataList?.total_year?.length > 0 && (
@@ -218,16 +222,16 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
                         {/* {agmSummaryDetails?.Year == "2025" ? "Real-Time 2025" : "View More"} */}
                       </button>
                     )}
-                  {dashboardDataList?.total_year?.length > 0 && agmSummaryDetails?.npx_check && (
-                    <button
-                      onClick={(event: any) => handleViewNPX(event)}
-                      className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
+                    {dashboardDataList?.total_year?.length > 0 && agmSummaryDetails?.npx_check && (
+                      <button
+                        onClick={(event: any) => handleViewNPX(event)}
+                        className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
                                    md:w-auto flex items-center justify-center border-red-800 border-2
                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                    >
-                      View N-PX
-                    </button>
-                  )}</>}
+                      >
+                        View N-PX
+                      </button>
+                    )}</>}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <div className="flex justify-between items-center gap-2">
@@ -473,28 +477,28 @@ const index = ({companyGlobalSearchTicker, companyGlobalSearchName ,isMeetingMod
       )}
 
       {!agmSummaryDetails?.Year && !loading &&
-      <>
-      {
-        isMeetingModal ?
-         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <h1 className="font-semibold">
-            {" "}
-             AGM Summary Has Not Been Released
-          </h1>
-        </div>
-        :
-         (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <h1 className="font-semibold">
-            {" "}
-            Previous AGM Summary Records Not Found..
-          </h1>
-        </div>
-      )
+        <>
+          {
+            isMeetingModal ?
+              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                <h1 className="font-semibold">
+                  {" "}
+                  AGM Summary Has Not Been Released
+                </h1>
+              </div>
+              :
+              (
+                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+                  <h1 className="font-semibold">
+                    {" "}
+                    Previous AGM Summary Records Not Found..
+                  </h1>
+                </div>
+              )
 
-      }
-      </>
-      
+          }
+        </>
+
       }
     </>
   );
