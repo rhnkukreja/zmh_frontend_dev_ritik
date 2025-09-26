@@ -298,6 +298,9 @@ function Main() {
                             <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] border-header text-[#000000B2] w-[200px] text-left">
                               Person Name
                             </Table.Td>
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[100px] text-left">
+                              Age
+                            </Table.Td>
                             <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[150px] text-left">
                               Title
                             </Table.Td>
@@ -343,6 +346,9 @@ function Main() {
                                 <Table.Tr key={index} className="[&_td]:last:border-b-0">
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px] text-left">
                                     <h1 className="font-semibold">{member.person?.name || '-'}</h1>
+                                  </Table.Td>
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-left">
+                                    <h1>{member.person?.age ?? '-'}</h1>
                                   </Table.Td>
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
                                     <h1>{member.title || '-'}</h1>
