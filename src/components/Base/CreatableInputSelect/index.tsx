@@ -37,11 +37,12 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
       onChange={handleChange}
       openMenuOnFocus={false} // allow typing but no dropdown on focus
       openMenuOnClick={false} 
+      formatCreateLabel={(inputValue) => `${inputValue}`} // Remove "Create" prefix, just show the keyword
     
       components={{
         DropdownIndicator: () => null, // remove dropdown arrow
         IndicatorSeparator: () => null, // remove separator
-         NoOptionsMessage: () => null,
+        NoOptionsMessage: () => null,
       }}
       className="basic-multi-select"
       classNamePrefix="select"

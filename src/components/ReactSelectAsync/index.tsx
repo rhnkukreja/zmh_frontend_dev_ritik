@@ -291,8 +291,6 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       placeholder={
         isLoadingDefault 
           ? "Loading..." 
-          : isFocused 
-          ? "" // Always show empty placeholder when focused to allow typing
           : placeholder
           ? placeholder
           : isInstitution
@@ -303,7 +301,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       onFocus={handleFocus}
       onBlur={handleBlur}
       onMenuOpen={handleMenuOpen}
-      inputValue={inputValue} // Show the actual input value, don't force empty when focused
+      inputValue={inputValue} // Show the actual input value
       value={value}
       className={className}
       onChange={onChangeSelect}
@@ -312,7 +310,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       isLoading={isLoadingDefault}
       openMenuOnFocus={true}
       openMenuOnClick={true}
-      controlShouldRenderValue={!isFocused} // Hide selected value when focused
+      controlShouldRenderValue={true} // Always render the selected value
     />
   );
 };

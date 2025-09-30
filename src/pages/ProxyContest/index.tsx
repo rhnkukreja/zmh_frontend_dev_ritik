@@ -7,6 +7,8 @@ import Button from "@/components/Base/Button";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import { Tooltip } from 'react-tooltip';
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import CPagination from "@/components/Pagination";
@@ -45,6 +47,11 @@ const index = () => {
     const [selectedCompany, setSelectedCompany] = useState<any>(null);
     const [modalData, setModalData] = useState<any>(null);
     const [modalLoading, setModalLoading] = useState<boolean>(false);
+
+    // Get global company from Redux store
+    const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+        (state: RootState) => state.authentiction
+    );
 
     // Filter states
     const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
@@ -337,6 +344,47 @@ const index = () => {
                             )}
 
                             <div className="flex items-center gap-2">
+                                {/* Voting Data button beside filter button */}
+                                <Button
+                                    variant="outline-primary"
+                                    className="w-full sm:w-auto flex items-center gap-2 border-2 border-red-800 text-red-800 hover:bg-red-800 hover:text-white hover:border-white"
+                                    onClick={() => {
+                                        // Replicate AGMSummaryTable logic: always redirect with all filters and meeting_type=Proxy Contest
+                                        const filters = { ...allApplyFilter, meeting_type: ["Proxy Contest"] };
+                                        const params = new URLSearchParams();
+                                        
+                                        // If there are selected companies, use them, otherwise use global company if available
+                                        if (filters.company && filters.company.length > 0) {
+                                            params.append("company", filters.company.map(encodeURIComponent).join("||"));
+                                        } else if (companyGlobalSearchName) {
+                                            params.append("company", encodeURIComponent(companyGlobalSearchName));
+                                        }
+                                        
+                                        if (filters.year && filters.year.length > 0) {
+                                            params.append("year", filters.year.map(encodeURIComponent).join("||"));
+                                        }
+                                        
+                                        if (filters.meeting_type && filters.meeting_type.length > 0) {
+                                            params.append("meeting_type", filters.meeting_type.map(encodeURIComponent).join("||"));
+                                        } else {
+                                            // Always add meeting_type=Proxy Contest if not present
+                                            params.append("meeting_type", "Proxy Contest");
+                                        }
+                                        
+                                        // Add the three standard institutions that are passed from AGMSummaryTable
+                                        params.append("institution", ["BlackRock, Inc.", "The Vanguard Group, Inc.", "State Street Global Advisors"].map(encodeURIComponent).join("||"));
+                                        
+                                        // Add global ticker if available
+                                        if (companyGlobalSearchTicker) {
+                                            params.append("ticker", encodeURIComponent(companyGlobalSearchTicker));
+                                        }
+                                        
+                                        // Add any other filters if needed
+                                        navigate(`/voting-data?${params.toString()}`);
+                                    }}
+                                >
+                                    Voting Data
+                                </Button>
                                 {/* Clear and Apply buttons outside filter */}
                                 <Popover className="inline-block">
                                     {({ close }) => (
