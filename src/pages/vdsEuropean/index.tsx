@@ -1368,7 +1368,14 @@ const index = () => {
         );
         // Also update the form field "vote"
         setValue("vote", updatedFilters[removeKey]);
-      } else if (Array.isArray(updatedFilters[removeKey])) {
+      } 
+      // Special handling for proposal_keyword - when clicked, remove all keywords at once
+      else if (removeKey === "proposal_keyword") {
+        // Clear all keywords at once since they're displayed in a single pill
+        updatedFilters[removeKey] = [];
+        setValue(removeKey, []);
+      }
+      else if (Array.isArray(updatedFilters[removeKey])) {
         updatedFilters[removeKey] = updatedFilters[removeKey].filter(
           (item) => item !== removeValue
         );
@@ -1388,7 +1395,13 @@ const index = () => {
 
     const updatedFilters = { ...allApplyFilter };
 
-    if (Array.isArray(updatedFilters[removeKey])) {
+    // Special handling for proposal_keyword - when clicked, remove all keywords at once
+    if (removeKey === "proposal_keyword") {
+      // Clear all keywords at once since they're displayed in a single pill
+      updatedFilters[removeKey] = [];
+      setValue(removeKey, []);
+    }
+    else if (Array.isArray(updatedFilters[removeKey])) {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
         (item) => item !== removeValue
       );
