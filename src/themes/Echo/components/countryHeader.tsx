@@ -7,6 +7,7 @@ import Lucide from "@/components/Base/Lucide";
 import TradingViewWidget from "@/components/TradingViewWidget";
 import { axiosInstance } from "@/services";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import { FormInput } from "@/components/Base/Form";
 
 const CountryInfoHeader = () => {
   const { finhub, companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
@@ -18,15 +19,19 @@ const CountryInfoHeader = () => {
   const [sharePriceCache, setSharePriceCache] = useState<Record<string, any>>({});
   const [sharePrice, setSharePrice] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [endDate, setEndDate] = useState<string>("");
 
   const symbol = finhub?.ticker || companyGlobalSearchTicker;
 
   const fetchSharePrice = async () => {
     if (!symbol) return;
 
+    // Create a cache key that includes both symbol and end date
+    const cacheKey = endDate ? `${symbol}_${endDate}` : symbol;
+
     // ✅ Use cached response if available
-    if (sharePriceCache[symbol]) {
-      setSharePrice(sharePriceCache[symbol]);
+    if (sharePriceCache[cacheKey]) {
+      setSharePrice(sharePriceCache[cacheKey]);
       return;
     }
 
@@ -34,13 +39,20 @@ const CountryInfoHeader = () => {
       setLoading(true);
       setSharePrice(null);
 
-      const response = await axiosInstance.get(`/share_price/?symbols=${symbol}`);
+      // Construct API URL with optional end_date parameter
+      const apiUrl = endDate
+        ? `/share_price/?symbols=${symbol}&end_date=${endDate}`
+        : `/share_price/?symbols=${symbol}`;
+
+      const response = await axiosInstance.get(apiUrl);
+      
+      // Always set the sharePrice with the response data
       setSharePrice(response.data);
 
       // ✅ Save in cache
       setSharePriceCache((prev) => ({
         ...prev,
-        [symbol]: response.data,
+        [cacheKey]: response.data,
       }));
     } catch (error) {
       console.error("Error fetching share price:", error);
@@ -142,7 +154,10 @@ const CountryInfoHeader = () => {
       {/* Price Performance Modal */}
       <Dialog
         open={isTableOpen}
-        onClose={() => setIsTableOpen(false)}
+        onClose={() => {
+          setIsTableOpen(false);
+          setEndDate(""); // Reset date filter when modal is closed
+        }}
         className="relative z-50"
         size="xl"
       >
@@ -158,6 +173,27 @@ const CountryInfoHeader = () => {
                 <Lucide icon="X" className="w-8 h-8 text-slate-400 hover:text-slate-600" />
               </div>
             </Dialog.Title>
+            
+            <div className="mb-6 flex justify-end">
+              <div className="flex items-center gap-2">
+                <label htmlFor="endDateFilter" className="text-sm font-medium text-gray-700">
+                  End Date:
+                </label>
+                <FormInput
+                  id="endDateFilter"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-40"
+                />
+                <button
+                  onClick={fetchSharePrice}
+                  className="bg-primary text-white px-3 py-2 rounded text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
 
             <div className="overflow-auto max-h-[calc(90vh-200px)] relative">
               {loading ? (
@@ -182,7 +218,19 @@ const CountryInfoHeader = () => {
                     <tbody>
                       {Object.entries(sharePrice).map(([ticker, data]: [string, any]) => {
                         if (ticker === "data_as_of") return null;
-                        if (data?.error) return null;
+                        
+                        // Check for error in company data
+                        if (data?.error) {
+                          return (
+                            <tr key={ticker} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
+                              <td colSpan={3} className="border border-gray-300 px-2 py-3 text-center text-red-500 font-medium">
+                                {data.error}
+                              </td>
+                            </tr>
+                          );
+                        }
+                        
                         return (
                           <tr key={ticker} className="hover:bg-gray-50">
                             <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
