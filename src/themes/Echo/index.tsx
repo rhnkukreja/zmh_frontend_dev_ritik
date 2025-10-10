@@ -1240,48 +1240,6 @@ function Main() {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-
-          {/* Divider */}
-          <div className="border-t border-gray-200 my-4"></div>
-
-          {/* Existing Korra AI Section */}
-          <div className="flex-1 flex flex-col">
-            <div className="text-left mb-2">
-              <h3 className="text-lg font-medium">ZMH AI Dashboard</h3>
-              <p className="text-sm text-gray-600">Access your personalized AI dashboard</p>
-            </div>
-            
-            <div className="relative flex-1">
-              {isFrameLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white">
-                  <LoadingIcon
-                    color="#800000"
-                    icon="three-dots"
-                    className="w-16 h-16"
-                  />
-                </div>
-              )}
-
-              {isError && !isFrameLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
-                  <p>
-                    Failed to load the embedded content. Please try again later.
-                  </p>
-                </div>
-              )}
-
-              <iframe
-                className={`w-full h-full rounded-lg ${isFrameLoading || isError ? "hidden" : ""
-                  }`}
-                src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
-                title="ZMH AI Dashboard"
-                onLoad={handleLoad}
-                onError={handleError}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-          </div>
         </Dialog.Panel>
       </Dialog>
 
