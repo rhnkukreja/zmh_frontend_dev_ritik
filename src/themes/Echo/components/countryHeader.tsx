@@ -1,6 +1,6 @@
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactCountryFlag from "react-country-flag";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
@@ -8,6 +8,8 @@ import TradingViewWidget from "@/components/TradingViewWidget";
 import { axiosInstance } from "@/services";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { FormInput } from "@/components/Base/Form";
+import Button from "@/components/Base/Button";
+import ReactSelectAsync from "@/components/ReactSelectAsync";
 
 const CountryInfoHeader = () => {
   const { finhub, companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
@@ -19,16 +21,20 @@ const CountryInfoHeader = () => {
   const [sharePriceCache, setSharePriceCache] = useState<Record<string, any>>({});
   const [sharePrice, setSharePrice] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Filter state
   const [endDate, setEndDate] = useState<string>("");
+  const [selectedCompanies, setSelectedCompanies] = useState<any[]>([]);
 
   const symbol = finhub?.ticker || companyGlobalSearchTicker;
 
-  const fetchSharePrice = async () => {
-    if (!symbol) return;
+  const fetchSharePrice = async (symbols?: string, date?: string) => {
+    const symbolsToFetch = symbols || symbol;
+    if (!symbolsToFetch) return;
 
-    // Create a cache key that includes both symbol and end date
-    const cacheKey = endDate ? `${symbol}_${endDate}` : symbol;
-
+    // Create cache key including symbols and date
+    const cacheKey = `${symbolsToFetch}_${date || ''}`;
+    
     // ✅ Use cached response if available
     if (sharePriceCache[cacheKey]) {
       setSharePrice(sharePriceCache[cacheKey]);
@@ -39,14 +45,12 @@ const CountryInfoHeader = () => {
       setLoading(true);
       setSharePrice(null);
 
-      // Construct API URL with optional end_date parameter
-      const apiUrl = endDate
-        ? `/share_price/?symbols=${symbol}&end_date=${endDate}`
-        : `/share_price/?symbols=${symbol}`;
+      let url = `/share_price/?symbols=${symbolsToFetch}`;
+      if (date) {
+        url += `&end_date=${date}`;
+      }
 
-      const response = await axiosInstance.get(apiUrl);
-      
-      // Always set the sharePrice with the response data
+      const response = await axiosInstance.get(url);
       setSharePrice(response.data);
 
       // ✅ Save in cache
@@ -59,6 +63,22 @@ const CountryInfoHeader = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyFilters = () => {
+    const symbolsParam = selectedCompanies.length > 0 
+      ? selectedCompanies.map(company => {
+          // Extract ticker/symbol from the company object
+          return company.symbol || company.company?.symbol || company.company?.ticker || company.value;
+        }).filter(Boolean).join(',')
+      : symbol;
+    fetchSharePrice(symbolsParam, endDate);
+  };
+
+  const handleResetFilters = () => {
+    setEndDate("");
+    setSelectedCompanies([]);
+    fetchSharePrice();
   };
 
   return (
@@ -154,10 +174,7 @@ const CountryInfoHeader = () => {
       {/* Price Performance Modal */}
       <Dialog
         open={isTableOpen}
-        onClose={() => {
-          setIsTableOpen(false);
-          setEndDate(""); // Reset date filter when modal is closed
-        }}
+        onClose={() => setIsTableOpen(false)}
         className="relative z-50"
         size="xl"
       >
@@ -173,29 +190,63 @@ const CountryInfoHeader = () => {
                 <Lucide icon="X" className="w-8 h-8 text-slate-400 hover:text-slate-600" />
               </div>
             </Dialog.Title>
-            
-            <div className="mb-6 flex justify-end">
-              <div className="flex items-center gap-2">
-                <label htmlFor="endDateFilter" className="text-sm font-medium text-gray-700">
-                  End Date:
-                </label>
-                <FormInput
-                  id="endDateFilter"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-40"
-                />
-                <button
-                  onClick={fetchSharePrice}
-                  className="bg-primary text-white px-3 py-2 rounded text-sm font-medium hover:bg-primary/90 transition-colors"
+
+            {/* Filter Form */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-medium mb-4">Share Price Performance Filter</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date
+                  </label>
+                  <FormInput
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    placeholder="Select end date"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Companies
+                  </label>
+                  <ReactSelectAsync
+                    value={selectedCompanies}
+                    onChange={(selectedOption) => {
+                      if (Array.isArray(selectedOption)) {
+                        setSelectedCompanies(selectedOption);
+                      } else if (selectedOption) {
+                        setSelectedCompanies([selectedOption]);
+                      } else {
+                        setSelectedCompanies([]);
+                      }
+                    }}
+                    isMulti={true}
+                    placeholder="Search and select companies..."
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={handleApplyFilters}
+                  className="bg-red-800 hover:bg-red-900 text-white"
                 >
                   Apply
-                </button>
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  onClick={handleResetFilters}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Reset
+                </Button>
               </div>
             </div>
 
-            <div className="overflow-auto max-h-[calc(90vh-200px)] relative">
+            <div className="overflow-auto max-h-[calc(90vh-400px)] relative">
               {loading ? (
                 <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
                   <LoadingIcon
@@ -218,19 +269,7 @@ const CountryInfoHeader = () => {
                     <tbody>
                       {Object.entries(sharePrice).map(([ticker, data]: [string, any]) => {
                         if (ticker === "data_as_of") return null;
-                        
-                        // Check for error in company data
-                        if (data?.error) {
-                          return (
-                            <tr key={ticker} className="hover:bg-gray-50">
-                              <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
-                              <td colSpan={3} className="border border-gray-300 px-2 py-3 text-center text-red-500 font-medium">
-                                {data.error}
-                              </td>
-                            </tr>
-                          );
-                        }
-                        
+                        if (data?.error) return null;
                         return (
                           <tr key={ticker} className="hover:bg-gray-50">
                             <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>

@@ -568,7 +568,17 @@ const index = () => {
                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                   <div className="flex items-center w-full h-full text-primary justify-center">
                                                     <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                      <span className="text-lg font-bold">*</span>
+                                                    </Tippy>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            {dashboard?.voted_against_directors ===
+                                              'NSE' && (
+                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                  <div className="flex items-center w-full h-full text-primary justify-center">
+                                                    <Tippy content="No Shares Eligible" options={{ theme: "light" }}>
+                                                      <CircleSlash2 size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                     </Tippy>
                                                   </div>
                                                 </div>
@@ -592,7 +602,18 @@ const index = () => {
                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                   <div className="flex items-center w-full h-full text-primary justify-center">
                                                     <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                      <span className="text-lg font-bold">*</span>
+                                                    </Tippy>
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                            {dashboard?.voted_against_say_on_pay ===
+                                              'NSE' && (
+                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                  <div className="flex items-center w-full h-full text-primary justify-center">
+                                                    <Tippy content="No Shares Eligible" options={{ theme: "light" }}>
+                                                      <CircleSlash2 size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                     </Tippy>
                                                   </div>
                                                 </div>

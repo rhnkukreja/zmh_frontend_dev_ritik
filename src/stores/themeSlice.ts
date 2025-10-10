@@ -68,9 +68,12 @@ interface ThemeState {
 
 export const getTheme = (search?: Themes["name"]) => {
   const theme = search === undefined ? localStorage.getItem("theme") : search;
-  return themes.filter((item, key) => {
+  const foundTheme = themes.filter((item, key) => {
     return item.name === theme;
   })[0];
+  
+  // Return the found theme or default to the first theme if not found
+  return foundTheme || themes[0];
 };
 
 const initialState: ThemeState = {

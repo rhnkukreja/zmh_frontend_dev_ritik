@@ -5,7 +5,7 @@ import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 
 class DashboardService {
-  public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?: string, currentFilters?: any): Promise<{
+  public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?:string, currentFilters?: any): Promise<{
     results: CompanyData[];
   }> {
     let results = [];
@@ -24,14 +24,14 @@ class DashboardService {
             // Search: use get_vds_european_dropdown_values with institution and search term
             const params = new URLSearchParams();
             params.append('company_name', companyName);
-
+            
             // Add institution_name from currentFilters
             if (currentFilters?.institution_name) {
               params.append('institution_name', JSON.stringify(currentFilters.institution_name));
             } else {
               params.append('institution_name', JSON.stringify(["BlackRock, Inc."]));
             }
-
+            
             url = `/get_vds_european_dropdown_values/?${params.toString()}`;
           }
         } else {
@@ -43,18 +43,18 @@ class DashboardService {
         if (companyName) {
           params.append('company_name', companyName);
         }
-
+        
         // For default load (when companyName is "a"), add index parameter
         if (companyName === "a") {
           params.append('index', JSON.stringify(["100"]));
         }
-
+        
         params.append('all', 'true');
         params.append('country', 'USA');
         url = `/company/?${params.toString()}`;
       }
       const response = await axiosInstance.get(url);
-      if (exactUrl) {
+      if(exactUrl){
         if (exactUrl === "get_vds_european_dropdown_values/" || exactUrl === "get_vds_european_dropdown_values_with_filters/") {
           if (companyName === "a") {
             // For default load using company endpoint, data comes as results array
@@ -80,7 +80,7 @@ class DashboardService {
         } else {
           results = arrayKeyName ? response.data[arrayKeyName] : response.data?.company;
         }
-      } else {
+      }else {
         results = response.data?.results || response.data;
       }
     }
@@ -97,32 +97,32 @@ class DashboardService {
   ): Promise<{
     results: CompanyData[];
   }> {
-    let results: any = { all_institution: [] };
+    let results: any = {all_institution: []};
     if (institutionValue !== "") {
       // Use URLSearchParams to build the URL properly
       const params = new URLSearchParams();
-
+      
       // Add global_search parameter
       if (companyGlobalSearchName) {
         params.append('global_search', companyGlobalSearchName);
       }
-
+      
       // Always add year parameter for NPX-related requests
       // Get year from parameter or URL or default to 2024
-      const yearParam = year ||
-        (window.location.search.includes('year=') ?
-          new URLSearchParams(window.location.search).get('year') : '2024');
-
+      const yearParam = year || 
+                       (window.location.search.includes('year=') ? 
+                        new URLSearchParams(window.location.search).get('year') : '2024');
+      
       // Always add year parameter
       params.append('year', yearParam);
-
+      
       // Add the selected institution to get relevant data for other fields
       // Only add institution_name parameter if this is a search with actual input
       if (institutionValue && institutionValue !== "a" && institutionValue.trim() !== "") {
         // For search queries, pass the search term as institution_name
         params.append('institution_name', institutionValue);
       }
-
+      
       const url = `/get_npx_dropdown_values/?${params.toString()}`;
       console.log("fetchInstitutionByName URL:", url);
       const response = await axiosInstance.get(url);
@@ -132,7 +132,7 @@ class DashboardService {
     return {
       // When user is actively searching (institutionValue has content), use 'institution' key for search results
       // When loading all institutions (no search term or placeholder "a"), use 'all_institution' key
-      results: (institutionValue && institutionValue !== "a" && institutionValue.trim() !== "")
+      results: (institutionValue && institutionValue !== "a" && institutionValue.trim() !== "") 
         ? (results?.institution || [])
         : (results?.all_institution || []),
     };
@@ -211,11 +211,11 @@ class DashboardService {
       // Get year from URL or use default
       const urlParams = new URLSearchParams(window.location.search);
       const yearParam = urlParams.get('year') || '2024';
-
+      
       // Add year parameter to the URL
       finalUrl = url.includes('?') ? `${url}&year=${yearParam}` : `${url}?year=${yearParam}`;
     }
-
+    
     console.log("NPX Dashboard API call:", finalUrl);
     const response = await axiosInstance.get(finalUrl);
     const { results, count } = response.data;
@@ -277,20 +277,20 @@ class DashboardService {
   }> {
     // Make sure we have the year parameter
     const enhancedFilter = { ...paramFilter };
-
+    
     if (!enhancedFilter.year) {
       // Get year from URL or use default
       const urlParams = new URLSearchParams(window.location.search);
       const yearParam = urlParams.get('year') || '2024';
       enhancedFilter.year = yearParam;
     }
-
+    
     const url = createDynamicURL(`/get_npx_dropdown_values/`, enhancedFilter);
     console.log("getDynamicNPXDropdownValues URL:", url);
-
+    
     const response = await axiosInstance.get(url);
     const result = response.data;
-
+    
     console.log("getDynamicNPXDropdownValues response:", result);
     return {
       result: result,
@@ -319,7 +319,7 @@ class DashboardService {
     };
   }
 
-  public async putDocumentStarred(id: number, data: any): Promise<{
+  public async putDocumentStarred(id: number, data:any): Promise<{
     result: any;
   }> {
     const response = await axiosInstance.put(`institute_documents/${id}/`, data);
@@ -345,7 +345,7 @@ class DashboardService {
   public async getNotifications(param): Promise<{
     result: any;
   }> {
-    const url = "/notifications/" + param
+    const url = "/notifications/"+param
     const response = await axiosInstance.get(
       createDynamicURL(url)
     );
@@ -359,15 +359,15 @@ class DashboardService {
     result: any;
   }> {
     const requestBody = {
-      query: `query MyQuery {\n  organizationKeywordSearch(filter: {searchKeyword: "${searchKeyword}"}) {\n    ... on OrganizationPagedResult {\n      __typename\n      items {\n        organizationName\n        organizationType\n        website\n        latestDailyMarketCapital\n        latestAnnualMarketRevenue\n        headOfficeAddress {\n          address\n          city\n          country\n        }\n        rolesBoard {\n          items {\n            person {\n              name\n              age\n            }\n            startDate {\n              displayDate\n            }\n            endDate {\n              displayDate\n            }\n            type\n            title\n          }\n        }\n        rolesEmployment {\n          items {\n            person {\n              name\n              age\n            }\n            type\n            title\n          }\n        }\n      }\n    }\n    ... on GenericError {\n      __typename\n      errorCode\n      errorMessage\n    }\n    ... on ValidationError {\n      __typename\n      errorCode\n      errorMessage\n    }\n  }\n}`,
+      query: `query MyQuery { organizationKeywordSearch(filter: {searchKeyword: "${searchKeyword}"}) { ... on OrganizationPagedResult { __typename items { organizationName organizationType website latestDailyMarketCapital latestAnnualMarketRevenue headOfficeAddress { address city country } rolesBoard { items { person { name } startDate { displayDate } endDate { displayDate } type title } } rolesEmployment { items { person { name } type title } } } } ... on GenericError { __typename errorCode errorMessage } ... on ValidationError { __typename errorCode errorMessage } } }`,
       variables: {}
     };
-
+    
     const response = await axiosInstance.post(
       "https://api.zmhadvisors.com/api/get_graphql_data/",
       requestBody
     );
-
+    
     return {
       result: response.data,
     };

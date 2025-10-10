@@ -2,6 +2,7 @@ import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
 import React, { useState, useEffect, createRef, useRef } from "react";
+import type { MouseEvent } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
 import {
@@ -112,7 +113,7 @@ function Main() {
   const [whatsNewFormVisible, setWhatsNewFormVisible] =
     useState<boolean>(false);
 
-  const toggleCompactMenu = (event: React.MouseEvent) => {
+  const toggleCompactMenu = (event: MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
@@ -156,7 +157,7 @@ function Main() {
     }
   };
 
-  const handleToggleMenu = (event: React.MouseEvent) => {
+  const handleToggleMenu = (event: MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
   };
@@ -244,7 +245,7 @@ function Main() {
   };
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: Event) => {
       if (
         tooltipRef.current &&
         !tooltipRef.current.contains(e.target as Node) &&
@@ -527,7 +528,7 @@ function Main() {
                             menu.activeDropdown,
                         },
                       ])}
-                      onClick={(event: React.MouseEvent) => {
+                      onClick={(event: MouseEvent) => {
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
@@ -663,7 +664,7 @@ function Main() {
                                     subMenu.activeDropdown,
                                 },
                               ])}
-                              onClick={(event: React.MouseEvent) => {
+                              onClick={(event: MouseEvent) => {
                                 event.preventDefault();
                                 linkTo(
                                   subMenu,
@@ -725,7 +726,7 @@ function Main() {
                                               lastSubMenu.activeDropdown,
                                           },
                                         ])}
-                                        onClick={(event: React.MouseEvent) => {
+                                        onClick={(event: MouseEvent) => {
                                           event.preventDefault();
                                           linkTo(
                                             lastSubMenu,
@@ -1205,9 +1206,9 @@ function Main() {
       )}
 
       <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
-        <Dialog.Panel className="p-10 text-center h-full">
-          <Dialog.Title>
-            {/* <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2> */}
+        <Dialog.Panel className="p-6 text-center h-full flex flex-col">
+          <Dialog.Title className="mb-4">
+            <h2 className="mr-auto text-xl font-semibold text-left">AI Assistant</h2>
             <div
               onClick={handleCloseModal}
               className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
@@ -1215,38 +1216,72 @@ function Main() {
               <Lucide icon="X" className="w-8 h-8 text-slate-400" />
             </div>
           </Dialog.Title>
-          {/* <Dialog.Description > */}
-          <div className="relative w-full h-full">
-            {isFrameLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white">
-                <LoadingIcon
-                  color="#800000"
-                  icon="three-dots"
-                  className="w-16 h-16"
-                />
-              </div>
-            )}
-
-            {isError && !isFrameLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
-                <p>
-                  Failed to load the embedded content. Please try again later.
-                </p>
-              </div>
-            )}
-
-            <iframe
-              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
-                }`}
-              src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
-              title="Embedded Dashboard"
-              onLoad={handleLoad}
-              onError={handleError}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+          
+          {/* Google Search Widget Section */}
+          <div className="mb-4">
+            <div className="text-left mb-2">
+              <h3 className="text-lg font-medium">Search with Google AI</h3>
+              <p className="text-sm text-gray-600">Use Google's advanced search capabilities</p>
+            </div>
+            
+            {/* Search widget element - hidden by default */}
+            <div
+              ref={(el) => {
+                if (el && !el.querySelector('gen-search-widget')) {
+                  el.innerHTML = '<gen-search-widget configId="d0779b69-98b9-4532-a6c9-d1b1f1b8a2d9" location="us" triggerId="searchWidgetTrigger"></gen-search-widget>';
+                }
+              }}
+            />
+            
+            {/* Trigger element that opens the widget on click */}
+            <input 
+              placeholder="Search here with Google AI..." 
+              id="searchWidgetTrigger" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
-          {/* </Dialog.Description> */}
+
+          {/* Divider */}
+          <div className="border-t border-gray-200 my-4"></div>
+
+          {/* Existing Korra AI Section */}
+          <div className="flex-1 flex flex-col">
+            <div className="text-left mb-2">
+              <h3 className="text-lg font-medium">ZMH AI Dashboard</h3>
+              <p className="text-sm text-gray-600">Access your personalized AI dashboard</p>
+            </div>
+            
+            <div className="relative flex-1">
+              {isFrameLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white">
+                  <LoadingIcon
+                    color="#800000"
+                    icon="three-dots"
+                    className="w-16 h-16"
+                  />
+                </div>
+              )}
+
+              {isError && !isFrameLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
+                  <p>
+                    Failed to load the embedded content. Please try again later.
+                  </p>
+                </div>
+              )}
+
+              <iframe
+                className={`w-full h-full rounded-lg ${isFrameLoading || isError ? "hidden" : ""
+                  }`}
+                src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
+                title="ZMH AI Dashboard"
+                onLoad={handleLoad}
+                onError={handleError}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
         </Dialog.Panel>
       </Dialog>
 
