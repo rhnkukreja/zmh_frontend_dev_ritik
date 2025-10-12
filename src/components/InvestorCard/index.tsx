@@ -566,10 +566,18 @@ const index = () => {
                                             {dashboard?.voted_against_directors ===
                                               'ND' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                      <span className="text-lg font-bold">*</span>
-                                                    </Tippy>
+                                                  <div className="flex items-center w-full h-full justify-center">
+                                                    <span 
+                                                      className="cursor-pointer"
+                                                      onClick={() => {
+                                                        window.scrollBy({
+                                                          top: 350,
+                                                          behavior: "smooth",
+                                                        });
+                                                      }}
+                                                    >
+                                                      *
+                                                    </span>
                                                   </div>
                                                 </div>
                                               )}
@@ -600,10 +608,18 @@ const index = () => {
                                             {dashboard?.voted_against_say_on_pay ===
                                               'ND' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                                      <span className="text-lg font-bold">*</span>
-                                                    </Tippy>
+                                                  <div className="flex items-center w-full h-full justify-center">
+                                                    <span 
+                                                      className="cursor-pointer"
+                                                      onClick={() => {
+                                                        window.scrollBy({
+                                                          top: 350,
+                                                          behavior: "smooth",
+                                                        });
+                                                      }}
+                                                    >
+                                                      *
+                                                    </span>
                                                   </div>
                                                 </div>
                                               )}
