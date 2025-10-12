@@ -214,17 +214,28 @@ const CountryInfoHeader = () => {
                     value={selectedCompanies}
                     onChange={(selectedOption) => {
                       if (Array.isArray(selectedOption)) {
-                        setSelectedCompanies(selectedOption);
+                        // Limit to maximum 5 companies
+                        if (selectedOption.length <= 5) {
+                          setSelectedCompanies(selectedOption);
+                        }
                       } else if (selectedOption) {
-                        setSelectedCompanies([selectedOption]);
+                        // Check if adding this company would exceed the limit
+                        if (selectedCompanies.length < 5) {
+                          setSelectedCompanies([selectedOption]);
+                        }
                       } else {
                         setSelectedCompanies([]);
                       }
                     }}
                     isMulti={true}
-                    placeholder="Search and select companies..."
+                    placeholder="Search and select companies (max 5)..."
                     className="w-full"
                   />
+                  {selectedCompanies.length >= 5 && (
+                    <p className="mt-1 text-xs text-amber-600">
+                      Maximum 5 companies can be selected
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
