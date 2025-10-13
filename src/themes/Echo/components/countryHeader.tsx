@@ -7,9 +7,10 @@ import Lucide from "@/components/Base/Lucide";
 import TradingViewWidget from "@/components/TradingViewWidget";
 import { axiosInstance } from "@/services";
 import LoadingIcon from "@/components/Base/LoadingIcon";
-import { FormInput } from "@/components/Base/Form";
+import { FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import ReactSelectAsync from "@/components/ReactSelectAsync";
+import Litepicker from "@/components/Base/Litepicker";
 
 const CountryInfoHeader = () => {
   const { finhub, companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
@@ -198,13 +199,28 @@ const CountryInfoHeader = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     End Date
                   </label>
-                  <FormInput
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    placeholder="Select end date"
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                      <Lucide icon="Calendar" className="w-4 h-4" />
+                    </div>
+                    <Litepicker
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      placeholder="Select end date"
+                      options={{
+                        autoApply: false,
+                        showWeekNumbers: true,
+                        dropdowns: {
+                          minYear: 2000,
+                          maxYear: new Date().getFullYear(),
+                          months: true,
+                          years: true,
+                        },
+                        maxDate: new Date().toISOString().split('T')[0],
+                      }}
+                      className="pl-12"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

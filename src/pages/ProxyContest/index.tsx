@@ -397,7 +397,7 @@ const index = () => {
                       "institution",
                       [
                         "BlackRock, Inc.",
-                        "The Vanguard Group, Inc.",
+                        "The Vanguard Group",
                         "State Street Global Advisors",
                       ]
                         .map(encodeURIComponent)

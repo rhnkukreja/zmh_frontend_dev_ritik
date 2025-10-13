@@ -1088,18 +1088,62 @@ const index = () => {
                             {convertToTitleCase(noAction?.vote_category)}
                           </Table.Td>
                           <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                            {convertToTitleCase(noAction?.vote)}
+                            {(() => {
+                              const voteText = convertToTitleCase(noAction?.vote);
+                              // Replace "Against For" with "Against / For" and "For Against" with "For / Against"
+                              return voteText?.replace(/Against\s+For/gi, 'Against / For')
+                                             ?.replace(/For\s+Against/gi, 'For / Against');
+                            })()}
                           </Table.Td>
                           <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
                             {noAction?.fund_name}
                           </Table.Td>
                           <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
                             {noAction?.shares_voted ? 
-                              // Format shares_voted properly, handling multiple numbers if needed
-                              noAction?.shares_voted.toString().split(' ').map(num => {
-                                const parsedNum = parseInt(num, 10);
-                                return !isNaN(parsedNum) ? parsedNum.toLocaleString() : num;
-                              }).join(' ') 
+                              (() => {
+                                const sharesText = noAction?.shares_voted.toString().trim();
+                                
+                                // Check if it contains multiple numbers separated by space, comma, or other separators
+                                // Pattern: "7458947 261243" or "7458947, 261243" or similar variations
+                                const multiNumberPattern = /(\d+)[\s,\/]*(\d+)/;
+                                const match = sharesText.match(multiNumberPattern);
+                                
+                                if (match && match[1] && match[2]) {
+                                  // Two numbers found - format as "number / number"
+                                  const num1 = parseInt(match[1]).toLocaleString();
+                                  const num2 = parseInt(match[2]).toLocaleString();
+                                  return `${num1} / ${num2}`;
+                                }
+                                
+                                // Handle voting patterns with text
+                                let formattedText = sharesText;
+                                
+                                // Pattern: number Against number For -> number / number
+                                formattedText = formattedText.replace(/(\d+)\s+Against\s+(\d+)\s+For/gi, (match, num1, num2) => {
+                                  const formatted1 = parseInt(num1).toLocaleString();
+                                  const formatted2 = parseInt(num2).toLocaleString();
+                                  return `${formatted1} / ${formatted2}`;
+                                });
+                                
+                                // Pattern: number For number Against -> number / number  
+                                formattedText = formattedText.replace(/(\d+)\s+For\s+(\d+)\s+Against/gi, (match, num1, num2) => {
+                                  const formatted1 = parseInt(num1).toLocaleString();
+                                  const formatted2 = parseInt(num2).toLocaleString();
+                                  return `${formatted1} / ${formatted2}`;
+                                });
+                                
+                                // Format any single large number
+                                if (/^\d+$/.test(formattedText)) {
+                                  return parseInt(formattedText).toLocaleString();
+                                }
+                                
+                                // Format standalone numbers in text
+                                formattedText = formattedText.replace(/\b(\d{4,})\b/g, (match, num) => {
+                                  return parseInt(num).toLocaleString();
+                                });
+                                
+                                return formattedText;
+                              })()
                               : '-'}
                           </Table.Td>
                         </Table.Tr>
