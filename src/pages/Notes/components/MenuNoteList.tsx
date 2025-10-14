@@ -25,8 +25,17 @@ export default function MenuNoteList({
           <Lucide icon="MoreVertical" className="w-4 h-4" />
         </Menu.Button>
         <Menu.Items className="w-48 bg-white z-50" placement="bottom-end">
-          <Menu.Item onClick={onClickDeleteIcon}>
-            <Lucide icon="Trash" className="w-4 h-4 mr-2" /> Delete
+          <Menu.Item>
+            {({ active }) => (
+              <button
+                className={`${
+                  active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                onClick={onClickDeleteIcon}
+              >
+                <Lucide icon="Trash" className="w-4 h-4 mr-2" /> Delete
+              </button>
+            )}
           </Menu.Item>
           {/* <Menu.Item>
           <Lucide icon="Pin" className="w-4 h-4 mr-2" /> Pin

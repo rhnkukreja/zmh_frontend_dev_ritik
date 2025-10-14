@@ -7,7 +7,9 @@ function Popover({
   children,
   className,
   ...props
-}: ExtractProps<typeof HeadlessPopover>) {
+}: ExtractProps<typeof HeadlessPopover> & {
+  className?: string;
+}) {
   return (
     <HeadlessPopover
       as="div"
@@ -44,6 +46,7 @@ Popover.Panel = ({
   placement = "bottom-end",
   ...props
 }: ExtractProps<typeof HeadlessPopover.Panel> & {
+  className?: string;
   placement?:
     | "top-start"
     | "top"
