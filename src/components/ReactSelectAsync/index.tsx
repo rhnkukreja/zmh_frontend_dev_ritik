@@ -203,8 +203,10 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
 
   const handleFocus = () => {
     setIsFocused(true);
-    // Always clear the input value when focusing to allow new search
-    setInputValue("");
+    // Only clear input if there's no current value or it's an empty array
+    if (!value || (Array.isArray(value) && value.length === 0)) {
+      setInputValue("");
+    }
   };
 
   const handleBlur = () => {
@@ -216,8 +218,10 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   };
 
   const handleMenuOpen = () => {
-    // Also clear input when menu opens
-    setInputValue("");
+    // Only clear input when menu opens if there's no current value or it's an empty array
+    if (!value || (Array.isArray(value) && value.length === 0)) {
+      setInputValue("");
+    }
   };
 
   useEffect(() => {

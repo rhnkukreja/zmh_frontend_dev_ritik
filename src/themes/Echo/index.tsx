@@ -58,6 +58,20 @@ import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
 
+// TypeScript declarations for Google AI Search Widget
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'gen-search-widget': {
+        configId?: string;
+        location?: string;
+        triggerId?: string;
+        children?: React.ReactNode;
+      };
+    }
+  }
+}
+
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
@@ -263,6 +277,30 @@ function Main() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [globalCreateNoteModalVisible]);
+
+  // Google AI Search Widget Script Loading
+  useEffect(() => {
+    const loadGoogleAIScript = () => {
+      // Check if script is already loaded
+      if (document.querySelector('script[src*="cloud.google.com/ai/gen-app-builder/client"]')) {
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://cloud.google.com/ai/gen-app-builder/client?hl=en_US';
+      script.async = true;
+      script.onload = () => {
+        console.log('Google AI Search Widget script loaded successfully');
+      };
+      script.onerror = () => {
+        console.error('Failed to load Google AI Search Widget script');
+      };
+      
+      document.head.appendChild(script);
+    };
+
+    loadGoogleAIScript();
+  }, []);
 
   useEffect(() => {
     const handleStorageChange = async (event: StorageEvent) => {
@@ -1225,12 +1263,10 @@ function Main() {
             </div>
             
             {/* Search widget element - hidden by default */}
-            <div
-              ref={(el) => {
-                if (el && !el.querySelector('gen-search-widget')) {
-                  el.innerHTML = '<gen-search-widget configId="d0779b69-98b9-4532-a6c9-d1b1f1b8a2d9" location="us" triggerId="searchWidgetTrigger"></gen-search-widget>';
-                }
-              }}
+            <gen-search-widget
+              configId="d0779b69-98b9-4532-a6c9-d1b1f1b8a2d9"
+              location="us"
+              triggerId="searchWidgetTrigger"
             />
             
             {/* Trigger element that opens the widget on click */}
