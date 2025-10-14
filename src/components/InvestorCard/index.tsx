@@ -585,7 +585,7 @@ const index = () => {
                                               'NSE' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                   <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content="No Shares Eligible" options={{ theme: "light" }}>
+                                                    <Tippy content="This proposal has not been disclosed by the investor." options={{ theme: "light" }}>
                                                       <CircleSlash2 size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                     </Tippy>
                                                   </div>
@@ -628,7 +628,7 @@ const index = () => {
                                               'NSE' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                   <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content="No Shares Eligible" options={{ theme: "light" }}>
+                                                    <Tippy content="This proposal has not been disclosed by the investor." options={{ theme: "light" }}>
                                                       <CircleSlash2 size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                     </Tippy>
                                                   </div>
