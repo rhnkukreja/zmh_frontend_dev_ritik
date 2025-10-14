@@ -222,7 +222,7 @@ const index = () => {
         dispatch(resetPage());
         dispatch(
           fetchNpxProxyDashboard(
-            createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1, 50)
+            createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
           )
         );
         
@@ -293,8 +293,7 @@ const index = () => {
             `${baseURL}/npx/detail/`,
             { global_search: companyGlobalSearchName, year: year || '2024' },
             undefined,
-            1,
-            50
+            1
           )
         )
       );
@@ -388,8 +387,7 @@ const index = () => {
               `${baseURL}/npx/detail/`,
               { global_search: companyGlobalSearchName, year: year || '2024' },
               undefined,
-              page,
-              50
+              page
             )
           )
         );
@@ -401,8 +399,7 @@ const index = () => {
               `${baseURL}/npx/detail/`,
               { ...allApplyFilter, year: year || '2024' },
               undefined,
-              page,
-              50
+              page
             )
           )
         );
@@ -518,7 +515,7 @@ const index = () => {
     dispatch(resetPage());
     dispatch(
       fetchNpxProxyDashboard(
-        createDynamicURL(`${baseURL}/npx/detail/`, updatedFilters, undefined, 1, 50)
+        createDynamicURL(`${baseURL}/npx/detail/`, updatedFilters, undefined, 1)
       )
     );
   };
@@ -567,7 +564,7 @@ const index = () => {
     setFiltersLength(countValidFilters(filterObjForChips));
     dispatch(resetPage());
     
-    const apiUrl = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1, 50);
+    const apiUrl = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1);
     console.log("🔍 DEBUGGING API URL:");
     console.log("Full URL:", apiUrl);
     
@@ -616,7 +613,7 @@ const index = () => {
         createDynamicURL(`${baseURL}/npx/detail/`, { 
           global_search: companyGlobalSearchName, 
           year: year || '2024' 
-        }, undefined, 1, 50)
+        }, undefined, 1)
       )
     );
   };
