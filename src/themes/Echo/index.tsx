@@ -1148,15 +1148,22 @@ function Main() {
                       <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
                     </Menu.Item> */}
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("login");
-                        dispatch(logout());
-                        persistor.purge();
-                      }}
-                    >
-                      <Lucide icon="Power" className="w-4 h-4 mr-2" />
-                      Logout
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            navigate("/login");
+                            dispatch(logout());
+                            persistor.purge();
+                          }}
+                        >
+                          <Lucide icon="Power" className="w-4 h-4 mr-2" />
+                          Logout
+                        </button>
+                      )}
                     </Menu.Item>
                   </Menu.Items>
                 </Menu>
