@@ -62,7 +62,7 @@ const index = () => {
     hasData: npxProxyDetails?.length > 0
   });
   
-  const totalPages = Math.ceil(totalNPXCount / 10);
+  const totalPages = Math.ceil(totalNPXCount / 50);
   const [searchParams] = useSearchParams();
 
   const {
@@ -222,7 +222,7 @@ const index = () => {
         dispatch(resetPage());
         dispatch(
           fetchNpxProxyDashboard(
-            createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
+            createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1, 50)
           )
         );
         
@@ -293,7 +293,8 @@ const index = () => {
             `${baseURL}/npx/detail/`,
             { global_search: companyGlobalSearchName, year: year || '2024' },
             undefined,
-            1
+            1,
+            50
           )
         )
       );
@@ -387,7 +388,8 @@ const index = () => {
               `${baseURL}/npx/detail/`,
               { global_search: companyGlobalSearchName, year: year || '2024' },
               undefined,
-              page
+              page,
+              50
             )
           )
         );
@@ -399,7 +401,8 @@ const index = () => {
               `${baseURL}/npx/detail/`,
               { ...allApplyFilter, year: year || '2024' },
               undefined,
-              page
+              page,
+              50
             )
           )
         );
@@ -515,7 +518,7 @@ const index = () => {
     dispatch(resetPage());
     dispatch(
       fetchNpxProxyDashboard(
-        createDynamicURL(`${baseURL}/npx/detail/`, updatedFilters, undefined, 1)
+        createDynamicURL(`${baseURL}/npx/detail/`, updatedFilters, undefined, 1, 50)
       )
     );
   };
@@ -564,7 +567,7 @@ const index = () => {
     setFiltersLength(countValidFilters(filterObjForChips));
     dispatch(resetPage());
     
-    const apiUrl = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1);
+    const apiUrl = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1, 50);
     console.log("🔍 DEBUGGING API URL:");
     console.log("Full URL:", apiUrl);
     
@@ -613,7 +616,7 @@ const index = () => {
         createDynamicURL(`${baseURL}/npx/detail/`, { 
           global_search: companyGlobalSearchName, 
           year: year || '2024' 
-        }, undefined, 1)
+        }, undefined, 1, 50)
       )
     );
   };
