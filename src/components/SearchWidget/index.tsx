@@ -1,7 +1,5 @@
 import React, { useEffect } from "react";
 
-// TypeScript declarations for Google AI Search Widget already exist in Echo theme
-
 const SearchWidget = () => {
   useEffect(() => {
     if (!document.querySelector('script[src="https://cloud.google.com/ai/gen-app-builder/client?hl=en_US"]')) {
@@ -35,6 +33,7 @@ const SearchWidget = () => {
         configId="d0779b69-98b9-4532-a6c9-d1b1f1b8a2d9"
         location="us"
         triggerId="searchWidgetTrigger"
+        alwaysOpened
       />
     </div>
   );
