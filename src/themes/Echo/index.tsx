@@ -1239,8 +1239,10 @@ function Main() {
             </div>
           </Dialog.Title>
           
-          {/* Google Search Widget Section */}
-          <SearchWidget />
+          <gen-search-widget configId="d0779b69-98b9-4532-a6c9-d1b1f1b8a2d9" location="us" triggerId="searchWidgetTrigger">
+          </gen-search-widget>
+
+          <input placeholder="Search here" id="searchWidgetTrigger" />
         </Dialog.Panel>
       </Dialog>
 
