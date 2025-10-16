@@ -57,6 +57,7 @@ import { dashboardService } from "@/services/dashboard";
 import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
+import SearchWidget from "@/components/SearchWidget";
 
 // TypeScript declarations for Google AI Search Widget
 declare global {
@@ -277,30 +278,6 @@ function Main() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [globalCreateNoteModalVisible]);
-
-  // Google AI Search Widget Script Loading
-  useEffect(() => {
-    const loadGoogleAIScript = () => {
-      // Check if script is already loaded
-      if (document.querySelector('script[src*="cloud.google.com/ai/gen-app-builder/client"]')) {
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://cloud.google.com/ai/gen-app-builder/client?hl=en_US';
-      script.async = true;
-      script.onload = () => {
-        console.log('Google AI Search Widget script loaded successfully');
-      };
-      script.onerror = () => {
-        console.error('Failed to load Google AI Search Widget script');
-      };
-      
-      document.head.appendChild(script);
-    };
-
-    loadGoogleAIScript();
-  }, []);
 
   useEffect(() => {
     const handleStorageChange = async (event: StorageEvent) => {
@@ -1263,26 +1240,7 @@ function Main() {
           </Dialog.Title>
           
           {/* Google Search Widget Section */}
-          <div className="mb-4">
-            <div className="text-left mb-2">
-              <h3 className="text-lg font-medium">Search with Google AI</h3>
-              <p className="text-sm text-gray-600">Use Google's advanced search capabilities</p>
-            </div>
-            
-            {/* Search widget element - hidden by default */}
-            <gen-search-widget
-              configId="d0779b69-98b9-4532-a6c9-d1b1f1b8a2d9"
-              location="us"
-              triggerId="searchWidgetTrigger"
-            />
-            
-            {/* Trigger element that opens the widget on click */}
-            <input 
-              placeholder="Search here with Google AI..." 
-              id="searchWidgetTrigger" 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          <SearchWidget />
         </Dialog.Panel>
       </Dialog>
 
