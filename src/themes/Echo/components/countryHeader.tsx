@@ -67,19 +67,44 @@ const CountryInfoHeader = () => {
   };
 
   const handleApplyFilters = () => {
-    const symbolsParam = selectedCompanies.length > 0 
-      ? selectedCompanies.map(company => {
-          // Extract ticker/symbol from the company object
-          return company.symbol || company.company?.symbol || company.company?.ticker || company.value;
-        }).filter(Boolean).join(',')
-      : symbol;
-    fetchSharePrice(symbolsParam, endDate);
+    // Always start with the global company symbol
+    const globalSymbol = symbol;
+    const symbolsArray = globalSymbol ? [globalSymbol] : [];
+    
+    // Add manually selected companies (up to 5 additional)
+    if (selectedCompanies.length > 0) {
+      const additionalSymbols = selectedCompanies.map(company => {
+        // Extract ticker/symbol from the company object
+        return company.symbol || company.company?.symbol || company.company?.ticker || company.value;
+      }).filter(Boolean).filter(sym => sym !== globalSymbol); // Avoid duplicates
+      
+      symbolsArray.push(...additionalSymbols);
+    }
+    
+    const symbolsParam = symbolsArray.join(',');
+    
+    // Format date to YYYY-MM-DD if it exists
+    let formattedDate = endDate;
+    if (endDate) {
+      try {
+        // Handle various date formats and convert to YYYY-MM-DD
+        const date = new Date(endDate);
+        if (!isNaN(date.getTime())) {
+          formattedDate = date.toISOString().split('T')[0];
+        }
+      } catch (error) {
+        console.error('Date formatting error:', error);
+      }
+    }
+    
+    fetchSharePrice(symbolsParam, formattedDate);
   };
 
   const handleResetFilters = () => {
     setEndDate("");
     setSelectedCompanies([]);
-    fetchSharePrice();
+    // Always fetch with global company when resetting
+    fetchSharePrice(symbol);
   };
 
   return (
@@ -139,7 +164,14 @@ const CountryInfoHeader = () => {
           className="relative flex items-center gap-1 pl-3 pr-6 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
           onClick={() => {
             setIsTableOpen(true);
-            fetchSharePrice(); // ✅ fetch only when opening
+            // ✅ Check if filters are applied and maintain state
+            if (selectedCompanies.length > 0 || endDate) {
+              // If filters are applied, reapply them to maintain state
+              handleApplyFilters();
+            } else {
+              // Always fetch with global company, even when no additional filters
+              fetchSharePrice(symbol);
+            }
           }}
         >
           <Lucide icon="Table" className="w-5 h-5 text-pink-400" />
@@ -224,7 +256,7 @@ const CountryInfoHeader = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Companies
+                    Additional Companies
                   </label>
                   <ReactSelectAsync
                     value={selectedCompanies}
@@ -247,11 +279,6 @@ const CountryInfoHeader = () => {
                     placeholder="Search and select companies (max 5)..."
                     className="w-full"
                   />
-                  {selectedCompanies.length >= 5 && (
-                    <p className="mt-1 text-xs text-amber-600">
-                      Maximum 5 companies can be selected
-                    </p>
-                  )}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -293,10 +320,40 @@ const CountryInfoHeader = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.entries(sharePrice).map(([ticker, data]: [string, any]) => {
-                        if (ticker === "data_as_of") return null;
-                        if (data?.error) return null;
-                        return (
+                      {(() => {
+                        // Filter and separate companies from composite indices
+                        const entries = Object.entries(sharePrice).filter(([ticker, data]: [string, any]) => {
+                          return ticker !== "data_as_of" && !data?.error;
+                        });
+
+                        // Separate individual companies from composite indices/benchmarks
+                        const companies = entries.filter(([ticker]) => {
+                          // Common composite index patterns - keep these at bottom
+                          const compositePatterns = [
+                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i, 
+                            /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
+                            /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
+                          ];
+                          return !compositePatterns.some(pattern => pattern.test(ticker));
+                        });
+
+                        const composites = entries.filter(([ticker]) => {
+                          // Common composite index patterns - keep these at bottom
+                          const compositePatterns = [
+                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i, 
+                            /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
+                            /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
+                          ];
+                          return compositePatterns.some(pattern => pattern.test(ticker));
+                        });
+
+                        // Sort companies alphabetically, keep composites at bottom in original order
+                        const sortedCompanies = companies.sort(([tickerA], [tickerB]) => 
+                          tickerA.localeCompare(tickerB)
+                        );
+
+                        // Combine sorted companies with composites at bottom
+                        return [...sortedCompanies, ...composites].map(([ticker, data]: [string, any]) => (
                           <tr key={ticker} className="hover:bg-gray-50">
                             <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
@@ -315,8 +372,8 @@ const CountryInfoHeader = () => {
                                 : 'N/A'}
                             </td>
                           </tr>
-                        );
-                      })}
+                        ));
+                      })()}
                     </tbody>
                   </table>
 

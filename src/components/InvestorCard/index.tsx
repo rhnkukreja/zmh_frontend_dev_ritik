@@ -7,7 +7,6 @@ import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { MegaphoneOff } from 'lucide-react';
-import { CircleSlash2 } from 'lucide-react';
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -585,8 +584,8 @@ const index = () => {
                                               'NSE' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                   <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content="This proposal has not been disclosed by the investor." options={{ theme: "light" }}>
-                                                      <CircleSlash2 size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                    <Tippy content="Not disclosed in NPX" options={{ theme: "light" }}>
+                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                     </Tippy>
                                                   </div>
                                                 </div>
@@ -628,8 +627,8 @@ const index = () => {
                                               'NSE' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
                                                   <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content="This proposal has not been disclosed by the investor." options={{ theme: "light" }}>
-                                                      <CircleSlash2 size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                    <Tippy content="Say on Pay not on ballot at 2025 shareholder meeting" options={{ theme: "light" }}>
+                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                     </Tippy>
                                                   </div>
                                                 </div>
