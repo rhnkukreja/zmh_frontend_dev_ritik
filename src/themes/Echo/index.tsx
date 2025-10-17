@@ -59,20 +59,6 @@ import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
 import SearchWidget from "@/components/SearchWidget";
 
-// TypeScript declarations for Google AI Search Widget
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'gen-search-widget': {
-        configId?: string;
-        location?: string;
-        triggerId?: string;
-        children?: React.ReactNode;
-      };
-    }
-  }
-}
-
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);

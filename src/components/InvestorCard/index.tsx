@@ -52,7 +52,6 @@ const index = () => {
     (state: RootState) => state.authentiction
   );
 
-
   const navigate = useNavigate();
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
@@ -64,7 +63,20 @@ const index = () => {
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
 
+  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
+  // Check if Say on Pay column should be shown based on selected year
+  const showSayOnPayColumn = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.say_on_pay_column_check === true;
+
+  useEffect(() => {
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.toLocaleString("en-US", { month: "long" });
+    const year = today.getFullYear();
+    const formattedDate = `${month} ${day}, ${year}`;
+    setTodayDate(formattedDate);
+  }, []);
 
   const fetchData = async () => {
     if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
@@ -89,32 +101,9 @@ const index = () => {
     }
   }
 
-
   useEffect(() => {
     fetchData()
   }, [companyGlobalSearchTicker, searchTicker]);
-
-  const checkImageUrl = async (url: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = url;
-
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-    });
-  };
-
-  const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
-
-  useEffect(() => {
-    const today = new Date();
-    const day = today.getDate();
-    const month = today.toLocaleString("en-US", { month: "long" });
-    const year = today.getFullYear();
-    const formattedDate = `${month} ${day}, ${year}`;
-    setTodayDate(formattedDate);
-  }, []);
 
   // useEffect(() => {
   //   const validateImages = async () => {
@@ -359,9 +348,11 @@ const index = () => {
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Voted Against Directors
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Voted Against Say on Pay
-                            </Table.Td>
+                            {showSayOnPayColumn && (
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                Voted Against Say on Pay
+                              </Table.Td>
+                            )}
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -592,49 +583,51 @@ const index = () => {
                                               )}
                                           </>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        
-                                          <>
-                                            {dashboard?.voted_against_say_on_pay ===
-                                              true && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                    &#10004;
+                                      {showSayOnPayColumn && (
+                                        <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                          
+                                            <>
+                                              {dashboard?.voted_against_say_on_pay ===
+                                                true && (
+                                                  <div className="whitespace-nowrap flex items-center justify-center">
+                                                    <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                      &#10004;
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              )}
+                                                )}
 
-                                            {dashboard?.voted_against_say_on_pay ===
-                                              'ND' && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full justify-center">
-                                                    <span 
-                                                      className="cursor-pointer"
-                                                      onClick={() => {
-                                                        window.scrollBy({
-                                                          top: 350,
-                                                          behavior: "smooth",
-                                                        });
-                                                      }}
-                                                    >
-                                                      *
-                                                    </span>
+                                              {dashboard?.voted_against_say_on_pay ===
+                                                'ND' && (
+                                                  <div className="whitespace-nowrap flex items-center justify-center">
+                                                    <div className="flex items-center w-full h-full justify-center">
+                                                      <span 
+                                                        className="cursor-pointer"
+                                                        onClick={() => {
+                                                          window.scrollBy({
+                                                            top: 350,
+                                                            behavior: "smooth",
+                                                          });
+                                                        }}
+                                                      >
+                                                        *
+                                                      </span>
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              )}
+                                                )}
 
-                                            {dashboard?.voted_against_say_on_pay ===
-                                              'NSE' && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content="Not Disclosed in NPX" options={{ theme: "light" }}>
-                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                    </Tippy>
+                                              {dashboard?.voted_against_say_on_pay ===
+                                                'NSE' && (
+                                                  <div className="whitespace-nowrap flex items-center justify-center">
+                                                    <div className="flex items-center w-full h-full text-primary justify-center">
+                                                      <Tippy content="Say on Pay not on ballot at 2025 shareholder meeting" options={{ theme: "light" }}>
+                                                        <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                      </Tippy>
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              )}
-                                          </>
-                                      </Table.Td>
+                                                )}
+                                            </>
+                                        </Table.Td>
+                                      )}
                                     </>
                                   )}
                                 </Table.Tr>
