@@ -78,6 +78,7 @@ import React, { useEffect } from "react";
 import CompanyList from "@/pages/Company";
 import SharedHolder from "@/pages/sharedHolder";
 import PeerAnalysis from "@/pages/PeerAnalysis";
+import AISearchOnly from "../pages/AISearchOnly";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
@@ -506,6 +507,10 @@ function Router() {
     {
       path: "/landing-page",
       element: <LandingPage />,
+    },
+    {
+      path: "/ai-search",
+      element: <AISearchOnly />,
     },
     {
       path: "login",
