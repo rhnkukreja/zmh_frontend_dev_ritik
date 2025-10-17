@@ -68,6 +68,7 @@ const index = () => {
 
   // Check if Say on Pay column should be shown based on selected year
   const showSayOnPayColumn = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.say_on_pay_column_check === true;
+  const isColumnGrayedOut = !showSayOnPayColumn;
 
   useEffect(() => {
     const today = new Date();
@@ -348,11 +349,16 @@ const index = () => {
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Voted Against Directors
                             </Table.Td>
-                            {showSayOnPayColumn && (
-                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
+                              <div className="flex items-center justify-center gap-1">
                                 Voted Against Say on Pay
-                              </Table.Td>
-                            )}
+                                {isColumnGrayedOut && (
+                                  <Tippy content="Say on Pay not on ballot at 2025 shareholder meeting" options={{ theme: "light" }}>
+                                    <Lucide icon="Info" className="w-4 h-4 text-gray-400 cursor-help" />
+                                  </Tippy>
+                                )}
+                              </div>
+                            </Table.Td>
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -583,51 +589,56 @@ const index = () => {
                                               )}
                                           </>
                                       </Table.Td>
-                                      {showSayOnPayColumn && (
-                                        <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                          
-                                            <>
-                                              {dashboard?.voted_against_say_on_pay ===
-                                                true && (
-                                                  <div className="whitespace-nowrap flex items-center justify-center">
-                                                    <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                      &#10004;
-                                                    </div>
+                                      <Table.Td className={`cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
+                                        {showSayOnPayColumn ? (
+                                          <>
+                                            {dashboard?.voted_against_say_on_pay ===
+                                              true && (
+                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                  <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                    &#10004;
                                                   </div>
-                                                )}
+                                                </div>
+                                              )}
 
-                                              {dashboard?.voted_against_say_on_pay ===
-                                                'ND' && (
-                                                  <div className="whitespace-nowrap flex items-center justify-center">
-                                                    <div className="flex items-center w-full h-full justify-center">
-                                                      <span 
-                                                        className="cursor-pointer"
-                                                        onClick={() => {
-                                                          window.scrollBy({
-                                                            top: 350,
-                                                            behavior: "smooth",
-                                                          });
-                                                        }}
-                                                      >
-                                                        *
-                                                      </span>
-                                                    </div>
+                                            {dashboard?.voted_against_say_on_pay ===
+                                              'ND' && (
+                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                  <div className="flex items-center w-full h-full justify-center">
+                                                    <span 
+                                                      className="cursor-pointer"
+                                                      onClick={() => {
+                                                        window.scrollBy({
+                                                          top: 350,
+                                                          behavior: "smooth",
+                                                        });
+                                                      }}
+                                                    >
+                                                      *
+                                                    </span>
                                                   </div>
-                                                )}
+                                                </div>
+                                              )}
 
-                                              {dashboard?.voted_against_say_on_pay ===
-                                                'NSE' && (
-                                                  <div className="whitespace-nowrap flex items-center justify-center">
-                                                    <div className="flex items-center w-full h-full text-primary justify-center">
-                                                      <Tippy content="Say on Pay not on ballot at 2025 shareholder meeting" options={{ theme: "light" }}>
-                                                        <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                      </Tippy>
-                                                    </div>
+                                            {dashboard?.voted_against_say_on_pay ===
+                                              'NSE' && (
+                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                  <div className="flex items-center w-full h-full text-primary justify-center">
+                                                    <Tippy content="Say on Pay not on ballot at 2025 shareholder meeting" options={{ theme: "light" }}>
+                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                    </Tippy>
                                                   </div>
-                                                )}
-                                            </>
-                                        </Table.Td>
-                                      )}
+                                                </div>
+                                              )}
+                                          </>
+                                        ) : (
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="text-gray-400">
+                                              —
+                                            </div>
+                                          </div>
+                                        )}
+                                      </Table.Td>
                                     </>
                                   )}
                                 </Table.Tr>
