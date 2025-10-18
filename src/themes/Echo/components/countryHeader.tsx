@@ -81,6 +81,14 @@ const CountryInfoHeader = () => {
       symbolsArray.push(...additionalSymbols);
     }
     
+    // ✅ Always include benchmark indices (NASDAQ Composite & S&P 500) regardless of selections
+    const benchmarkSymbols = ['IXIC', 'SPX']; // NASDAQ Composite and S&P 500
+    benchmarkSymbols.forEach(benchmark => {
+      if (!symbolsArray.includes(benchmark)) {
+        symbolsArray.push(benchmark);
+      }
+    });
+    
     const symbolsParam = symbolsArray.join(',');
     
     // Format date to YYYY-MM-DD if it exists
@@ -88,23 +96,42 @@ const CountryInfoHeader = () => {
     if (endDate) {
       try {
         // Handle various date formats and convert to YYYY-MM-DD
+        // Avoid timezone issues by using local date formatting
         const date = new Date(endDate);
         if (!isNaN(date.getTime())) {
-          formattedDate = date.toISOString().split('T')[0];
+          // Use local timezone to avoid offset issues
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          formattedDate = `${year}-${month}-${day}`;
         }
       } catch (error) {
         console.error('Date formatting error:', error);
       }
     }
     
+    // Check cache first before making API call
+    const cacheKey = `${symbolsParam}_${formattedDate || ''}`;
+    if (sharePriceCache[cacheKey]) {
+      setSharePrice(sharePriceCache[cacheKey]);
+      return;
+    }
+    
+    // If no cache, fetch fresh data
     fetchSharePrice(symbolsParam, formattedDate);
   };
 
   const handleResetFilters = () => {
     setEndDate("");
     setSelectedCompanies([]);
-    // Always fetch with global company when resetting
-    fetchSharePrice(symbol);
+    // Always fetch with global company + benchmarks when resetting
+    const globalSymbol = symbol;
+    const benchmarkSymbols = ['IXIC', 'SPX']; // Always include NASDAQ & S&P 500
+    const symbolsToFetch = globalSymbol 
+      ? [globalSymbol, ...benchmarkSymbols].join(',')
+      : benchmarkSymbols.join(',');
+    
+    fetchSharePrice(symbolsToFetch);
   };
 
   return (
@@ -164,13 +191,27 @@ const CountryInfoHeader = () => {
           className="relative flex items-center gap-1 pl-3 pr-6 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
           onClick={() => {
             setIsTableOpen(true);
-            // ✅ Check if filters are applied and maintain state
+            // ✅ Always fetch data when opening modal to ensure cache works properly
             if (selectedCompanies.length > 0 || endDate) {
-              // If filters are applied, reapply them to maintain state
+              // If filters are applied, use them
               handleApplyFilters();
             } else {
-              // Always fetch with global company, even when no additional filters
-              fetchSharePrice(symbol);
+              // Always fetch with global company + benchmarks, check cache first
+              const globalSymbol = symbol;
+              const benchmarkSymbols = ['IXIC', 'SPX']; // Always include NASDAQ & S&P 500
+              const symbolsToFetch = globalSymbol 
+                ? [globalSymbol, ...benchmarkSymbols].join(',')
+                : benchmarkSymbols.join(',');
+              
+              const cacheKey = `${symbolsToFetch}_`;
+              
+              // Check if we have cached data for this combination
+              if (sharePriceCache[cacheKey]) {
+                setSharePrice(sharePriceCache[cacheKey]);
+              } else {
+                // Fetch fresh data if no cache
+                fetchSharePrice(symbolsToFetch);
+              }
             }
           }}
         >
@@ -235,6 +276,16 @@ const CountryInfoHeader = () => {
                     <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
                       <Lucide icon="Calendar" className="w-4 h-4" />
                     </div>
+                    {endDate && (
+                      <button
+                        type="button"
+                        onClick={() => setEndDate("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-gray-600"
+                        title="Clear date"
+                      >
+                        <Lucide icon="X" className="w-4 h-4" />
+                      </button>
+                    )}
                     <Litepicker
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
@@ -250,7 +301,7 @@ const CountryInfoHeader = () => {
                         },
                         maxDate: new Date().toISOString().split('T')[0],
                       }}
-                      className="pl-12"
+                      className={`pl-12 ${endDate ? 'pr-10' : ''}`}
                     />
                   </div>
                 </div>
@@ -328,7 +379,7 @@ const CountryInfoHeader = () => {
 
                         // Separate individual companies from composite indices/benchmarks
                         const companies = entries.filter(([ticker]) => {
-                          // Common composite index patterns - keep these at bottom
+                          // Common composite index patterns - these will always be shown at bottom
                           const compositePatterns = [
                             /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i, 
                             /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
@@ -338,7 +389,7 @@ const CountryInfoHeader = () => {
                         });
 
                         const composites = entries.filter(([ticker]) => {
-                          // Common composite index patterns - keep these at bottom
+                          // Common composite index patterns - always show these at bottom
                           const compositePatterns = [
                             /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i, 
                             /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
@@ -347,12 +398,12 @@ const CountryInfoHeader = () => {
                           return compositePatterns.some(pattern => pattern.test(ticker));
                         });
 
-                        // Sort companies alphabetically, keep composites at bottom in original order
+                        // Sort companies alphabetically, always show composites at bottom
                         const sortedCompanies = companies.sort(([tickerA], [tickerB]) => 
                           tickerA.localeCompare(tickerB)
                         );
 
-                        // Combine sorted companies with composites at bottom
+                        // Always combine companies with composites - composites should never be hidden
                         return [...sortedCompanies, ...composites].map(([ticker, data]: [string, any]) => (
                           <tr key={ticker} className="hover:bg-gray-50">
                             <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
