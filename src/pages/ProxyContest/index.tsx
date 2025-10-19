@@ -398,7 +398,7 @@ const index = () => {
                       [
                         "BlackRock, Inc.",
                         "The Vanguard Group",
-                        "State Street Global Advisors",
+                        // "State Street Global Advisors",
                       ]
                         .map(encodeURIComponent)
                         .join("||")
