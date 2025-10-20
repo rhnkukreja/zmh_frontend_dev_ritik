@@ -858,15 +858,13 @@ function Main() {
                 )}
 
                 {/* BEGIN: AI Assistant - Always Visible */}
-                <a
-                  href="/ai-search"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setBasicModalPreview(true)}
                   className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex"
                 >
                   <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
                   <span className="ml-2 text-sm font-medium hidden xl:flex">AI Assistant</span>
-                </a>
+                </button>
                 {/* END: AI Assistant - Always Visible */}
               </>
 
@@ -1223,7 +1221,13 @@ function Main() {
             </div>
           </Dialog.Title>
           
-          <SearchWidget />
+          <div className="flex-1 w-full">
+            <iframe
+              src="/ai-search"
+              className="w-full h-[550px] border-0 rounded-lg"
+              title="AI Assistant"
+            />
+          </div>
         </Dialog.Panel>
       </Dialog>
 

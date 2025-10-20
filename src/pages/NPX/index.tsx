@@ -653,9 +653,6 @@ const index = () => {
 
   return (
     <>
-      {/* {npxProxyDetails?.npx_report?.length === 0 &&
-        !npxProxyLoading &&
-        location.pathname !== "/" && ( */}
       <Button
         onClick={() => {
           navigate("/");
@@ -670,7 +667,6 @@ const index = () => {
         />
         Back
       </Button>
-      {/* )} */}
 
       <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
       <div className="p-5 mt-1 box">
@@ -1094,7 +1090,52 @@ const index = () => {
                             {noAction?.fund_name}
                           </Table.Td>
                           <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                            {noAction?.shares_voted_split}
+                            {noAction?.shares_voted ? 
+                              (() => {
+                                const sharesText = noAction?.shares_voted.toString().trim();
+                                
+                                // Check if it contains multiple numbers separated by space, comma, or other separators
+                                // Pattern: "7458947 261243" or "7458947, 261243" (removed / pattern)
+                                const multiNumberPattern = /(\d+)[\s,]*(\d+)/;
+                                const match = sharesText.match(multiNumberPattern);
+                                
+                                if (match && match[1] && match[2]) {
+                                  // Two numbers found - format as "number - number" (avoiding / character)
+                                  const num1 = parseInt(match[1]).toLocaleString();
+                                  const num2 = parseInt(match[2]).toLocaleString();
+                                  return `${num1} - ${num2}`;
+                                }
+                                
+                                // Handle voting patterns with text
+                                let formattedText = sharesText;
+                                
+                                // Pattern: number Against number For -> number - number (changed from /)
+                                formattedText = formattedText.replace(/(\d+)\s+Against\s+(\d+)\s+For/gi, (match, num1, num2) => {
+                                  const formatted1 = parseInt(num1).toLocaleString();
+                                  const formatted2 = parseInt(num2).toLocaleString();
+                                  return `${formatted1} - ${formatted2}`;
+                                });
+                                
+                                // Pattern: number For number Against -> number - number (changed from /)
+                                formattedText = formattedText.replace(/(\d+)\s+For\s+(\d+)\s+Against/gi, (match, num1, num2) => {
+                                  const formatted1 = parseInt(num1).toLocaleString();
+                                  const formatted2 = parseInt(num2).toLocaleString();
+                                  return `${formatted1} - ${formatted2}`;
+                                });
+                                
+                                // Format any single large number
+                                if (/^\d+$/.test(formattedText)) {
+                                  return parseInt(formattedText).toLocaleString();
+                                }
+                                
+                                // Format standalone numbers in text
+                                formattedText = formattedText.replace(/\b(\d{4,})\b/g, (match, num) => {
+                                  return parseInt(num).toLocaleString();
+                                });
+                                
+                                return formattedText;
+                              })()
+                              : '-'}
                           </Table.Td>
                         </Table.Tr>
                       );
