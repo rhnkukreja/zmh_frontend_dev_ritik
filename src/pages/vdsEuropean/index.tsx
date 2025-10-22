@@ -1276,12 +1276,27 @@ const index = () => {
         setValue("country", updatedCountries);
         setSelectedCountries(updatedCountries);
         localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+        
+        // Update filter chips to reflect the changes
+        setSelectedChipFilters(generateFilterChips(updatedFilters));
+        setFiltersLength(countValidFilters(updatedFilters));
+        
+        // Trigger analytics data reload
+        dispatch(resetAnalyticsDataLoaded());
       } else {
         const updatedFilters = { ...allApplyFilter, country: updatedCountries };
         setallApplyFilter(updatedFilters);
         setValue("country", updatedCountries);
         setSelectedCountries(updatedCountries);
         localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+        
+        // Update filter chips to reflect the changes
+        setSelectedChipFilters(generateFilterChips(updatedFilters));
+        setFiltersLength(countValidFilters(updatedFilters));
+        
+        // Trigger regular data reload
+        dispatch(resetPage());
+        dispatch(resetDataLoaded());
       }
       return;
     }
@@ -1296,11 +1311,26 @@ const index = () => {
         setAllAnalyticsFilter(updatedFilters);
         setValue("institution_name", updatedInstitutions);
         localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+        
+        // Update filter chips to reflect the changes
+        setSelectedChipFilters(generateFilterChips(updatedFilters));
+        setFiltersLength(countValidFilters(updatedFilters));
+        
+        // Trigger analytics data reload
+        dispatch(resetAnalyticsDataLoaded());
       } else {
         const updatedFilters = { ...allApplyFilter, institution_name: updatedInstitutions };
         setallApplyFilter(updatedFilters);
         setValue("institution_name", updatedInstitutions);
         localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+        
+        // Update filter chips to reflect the changes
+        setSelectedChipFilters(generateFilterChips(updatedFilters));
+        setFiltersLength(countValidFilters(updatedFilters));
+        
+        // Trigger regular data reload
+        dispatch(resetPage());
+        dispatch(resetDataLoaded());
       }
       return;
     }
@@ -1333,6 +1363,13 @@ const index = () => {
         setValue(removeKey, updatedFilters[removeKey]);
         setAllAnalyticsFilter(updatedFilters);
         localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+        
+        // Update filter chips to reflect the changes
+        setSelectedChipFilters(generateFilterChips(updatedFilters));
+        setFiltersLength(countValidFilters(updatedFilters));
+        
+        // Trigger analytics data reload
+        dispatch(resetAnalyticsDataLoaded());
       } else {
         const updatedFilters = { ...allApplyFilter };
         
@@ -1354,6 +1391,14 @@ const index = () => {
         setValue(removeKey, updatedFilters[removeKey]);
         setallApplyFilter(updatedFilters);
         localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+        
+        // Update filter chips to reflect the changes
+        setSelectedChipFilters(generateFilterChips(updatedFilters));
+        setFiltersLength(countValidFilters(updatedFilters));
+        
+        // Trigger regular data reload
+        dispatch(resetPage());
+        dispatch(resetDataLoaded());
       }
       return;
     }
@@ -1390,6 +1435,13 @@ const index = () => {
       }
       setAllAnalyticsFilter(updatedFilters);
       localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
+      
+      // Update filter chips to reflect the changes
+      setSelectedChipFilters(generateFilterChips(updatedFilters));
+      setFiltersLength(countValidFilters(updatedFilters));
+      
+      // Trigger analytics data reload
+      dispatch(resetAnalyticsDataLoaded());
       return;
     }
 
@@ -1416,6 +1468,14 @@ const index = () => {
     setValue(removeKey, updatedFilters[removeKey]);
     setallApplyFilter(updatedFilters);
     localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
+    
+    // Update filter chips to reflect the changes
+    setSelectedChipFilters(generateFilterChips(updatedFilters));
+    setFiltersLength(countValidFilters(updatedFilters));
+    
+    // Trigger regular data reload
+    dispatch(resetPage());
+    dispatch(resetDataLoaded());
   };
 
   useEffect(() => {
