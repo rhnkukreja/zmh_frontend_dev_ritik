@@ -1507,8 +1507,12 @@ const index = () => {
           company_name: allAnalyticsFilter?.company_name?.length > 0
             ? allAnalyticsFilter.company_name
             : [],
-          // Include year from query params or from form
-          year: hasQueryParams ? yearParam : (allAnalyticsFilter?.analyticsYear?.length > 0 ? allAnalyticsFilter.analyticsYear[0] : undefined),
+          // Include year from query params or from form - send entire array for analytics
+          year: hasQueryParams 
+            ? (yearParam ? [yearParam] : [])
+            : (allAnalyticsFilter?.analyticsYear?.length > 0 
+              ? allAnalyticsFilter.analyticsYear 
+              : []),
           proponent_type: allAnalyticsFilter?.proponent_type
             ? allAnalyticsFilter?.proponent_type
             : [],
