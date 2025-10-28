@@ -34,6 +34,8 @@ export type CompanyDashboard = {
   institution_id: number;
   unpri_signatory: boolean;
   voted_against_say_on_pay: any;
+  voted_against_directors_message?: string;
+  voted_against_say_on_pay_message?: string;
   company_id: number;
   company_name: string;
   engagement_questions: boolean

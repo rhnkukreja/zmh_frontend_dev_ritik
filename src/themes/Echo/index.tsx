@@ -879,7 +879,7 @@ function Main() {
 
                   
                   {/* Your existing layout container */}
-                  <VotingDataBanner /> {/* Add the banner component here */}
+                  {/* <VotingDataBanner /> */} {/* Info icon hidden */}
                   {/* User Guide Button */}
                   <a
                     className="px-3 py-1.5 bg-red-100 rounded-full flex items-center justify-center transition-colors hover:bg-red-200"

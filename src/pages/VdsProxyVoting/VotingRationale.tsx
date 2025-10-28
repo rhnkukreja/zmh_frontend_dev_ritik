@@ -71,6 +71,31 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
     }));
   };
 
+  const expandAllGroups = () => {
+    if (!groupVotingRationale) return;
+
+    const allInvestorNames = Object.keys(groupVotingRationale);
+    const allExpanded = allInvestorNames.every(name => openGroups[name]);
+
+    if (allExpanded) {
+      // Collapse all
+      setOpenGroups({});
+    } else {
+      // Expand all
+      const newOpenGroups: { [key: string]: boolean } = {};
+      allInvestorNames.forEach(name => {
+        newOpenGroups[name] = true;
+      });
+      setOpenGroups(newOpenGroups);
+    }
+  };
+
+  const areAllGroupsExpanded = () => {
+    if (!groupVotingRationale) return false;
+    const allInvestorNames = Object.keys(groupVotingRationale);
+    return allInvestorNames.length > 0 && allInvestorNames.every(name => openGroups[name]);
+  };
+
   // NOTE: All API calls for voting rationale are now handled by the parent component
   // This component only displays the data from Redux store
   // No useEffect for API calls needed here
@@ -99,6 +124,21 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         </div>
         {currentVotingRationale?.length > 0 && (
           <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
+            {/* Expand All Button */}
+            {Object.keys(groupVotingRationale || {}).length > 0 && (
+              <button
+                onClick={expandAllGroups}
+                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors duration-200 border border-primary/30"
+              >
+                <Lucide 
+                  icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} 
+                  className="w-4 h-4" 
+                />
+                <span className="text-sm font-medium">
+                  {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
+                </span>
+              </button>
+            )}
             <Tippy content="Download Excel" options={{ theme: "light" }}>
               <div
                 className="box p-[5px] cursor-pointer"
@@ -134,14 +174,14 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
               <Table>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0">
                       Investor Name
                     </Table.Td>
 
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0">
                       Proposal
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0">
                       Voting Rationale
                     </Table.Td>
                   </Table.Tr>
@@ -157,25 +197,29 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
                         ]) => (
                           <>
                             <Table.Tr
-                              className="bg-gray-100 dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10"
+                              className="bg-gray-50 dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10 hover:bg-gray-100 dark:hover:bg-darkmode-600 transition-all duration-200"
                               onClick={() => toggleGroup(investorName)}
                             >
                               <Table.Td
                                 colSpan={5}
-                                className="font-semibold py-2 "
+                                className="font-semibold py-3 px-4"
                               >
-                                <div className="flex flex-row justify-start items-center">
-                                  {investorName}
-                                  <button className="ml-2 text-blue-500">
+                                <div className="flex flex-row justify-between items-center">
+                                  <div className="flex items-center">
+                                    <span className="text-gray-800 dark:text-white font-medium">
+                                      {investorName}
+                                    </span>
+                                  </div>
+                                  <button className="text-primary hover:text-primary/80 transition-colors duration-200">
                                     {openGroups[investorName] ? (
                                       <Lucide
                                         icon="ChevronUp"
-                                        className="w-6 h-6 mr-2"
+                                        className="w-5 h-5"
                                       />
                                     ) : (
                                       <Lucide
                                         icon="ChevronDown"
-                                        className="w-6 h-6 mr-2"
+                                        className="w-5 h-5"
                                       />
                                     )}
                                   </button>
@@ -190,22 +234,20 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
                                   key={question?.id}
                                   className="[&_td]:last:border-b-0"
                                 >
-                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600  !w-[200px] "></Table.Td>
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800"></Table.Td>
 
-                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 !min-w-[150px] ">
-                                    {question?.proposal}
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !min-w-[150px] bg-gray-50 dark:bg-darkmode-800">
+                                    <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
+                                      {question?.proposal}
+                                    </div>
                                   </Table.Td>
 
-                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600">
                                     <div
                                       dangerouslySetInnerHTML={{
                                         __html: question?.voting_rationale,
                                       }}
-                                      data-tooltip-id="tooltip-for-question"
-                                      data-tooltip-html={
-                                        question?.voting_rationale
-                                      }
-                                      className="whitespace-normal capitalize  overflow-hidden text-ellipsis line-clamp-2"
+                                      className="whitespace-normal text-gray-700 dark:text-gray-300 leading-relaxed text-sm"
                                     ></div>
                                   </Table.Td>
                                 </Table.Tr>
@@ -231,14 +273,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         </>
       )}
 
-      <Tooltip
-        id="tooltip-for-question"
-        className="!max-w-[700px] !bg-white !text-black !text-sm"
-        place="top-start"
-        style={{
-          boxShadow: "2px 4px 6px rgba(0, 0, 0, 0.2)",
-        }}
-      />
+
 
       {/* Single loading indicator for all scenarios - only show when no data yet AND parent is not loading */}
       {getProxyVotingRationaleLoading && !currentVotingRationale?.length && !parentLoading && (
