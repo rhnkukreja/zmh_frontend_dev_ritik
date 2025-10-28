@@ -128,15 +128,15 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
             {Object.keys(groupVotingRationale || {}).length > 0 && (
               <button
                 onClick={expandAllGroups}
-                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors duration-200 border border-primary/30"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
               >
+                <span className="text-sm font-medium">
+                  {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
+                </span>
                 <Lucide 
                   icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} 
                   className="w-4 h-4" 
                 />
-                <span className="text-sm font-medium">
-                  {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
-                </span>
               </button>
             )}
             <Tippy content="Download Excel" options={{ theme: "light" }}>
@@ -174,14 +174,14 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
               <Table>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0">
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                       Investor Name
                     </Table.Td>
 
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0">
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                       Proposal
                     </Table.Td>
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0">
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                       Voting Rationale
                     </Table.Td>
                   </Table.Tr>

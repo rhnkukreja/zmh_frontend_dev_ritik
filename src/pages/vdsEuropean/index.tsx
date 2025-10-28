@@ -327,7 +327,7 @@ const index = () => {
         let filters: any = {};
         const institutions = institutionParam ? institutionParam.split('||').map(inst => decodeURIComponent(inst.trim())) : [];
         const companies = companyParam ? companyParam.split('||').map(comp => decodeURIComponent(comp.trim())) : [];
-        
+
         if (institutions.length > 0) {
           filters.institution_name = [...institutions];
           setValue('institution_name', institutions); // Set form value for institutions
@@ -336,7 +336,7 @@ const index = () => {
           filters.company_name = [...companies];
           setValue('company_name', companies); // Set form value for companies
         }
-        
+
         // Handle meeting_type parameter
         if (meetingTypeParam) {
           const meetingTypes = meetingTypeParam.split('||').map(mt => decodeURIComponent(mt.trim()));
@@ -345,7 +345,7 @@ const index = () => {
             setValue('meeting_type', meetingTypes);
           }
         }
-        
+
         if (yearParam) {
           if (isViewAnalysis) {
             setValue('analyticsYear', [yearParam]);
@@ -500,7 +500,7 @@ const index = () => {
       if (!isViewAnalysis && hasAnyValidFilter(allApplyFilter)) {
         // If data is already loaded and we're not changing filters, don't fetch again
         const shouldRefetch = !dataLoaded || page > 1;
-        
+
         if (shouldRefetch) {
           setIsLoading(true);
           // Always include year in payload if present in allApplyFilter
@@ -653,15 +653,15 @@ const index = () => {
     const meetingTypeParam = searchParams.get('meeting_type');
     const hasQueryParams = institutionParam || companyParam || meetingTypeParam;
 
-      if (!hasQueryParams) {
-        // Only set default values when no query parameters are present
-        if (isViewAnalysis) {
-          setValue('analyticsYear', [new Date().getFullYear().toString()]);
-        } else {
-          setValue('year', new Date().getFullYear().toString());
-        }
-        setValue('country', ["USA"]);
+    if (!hasQueryParams) {
+      // Only set default values when no query parameters are present
+      if (isViewAnalysis) {
+        setValue('analyticsYear', [new Date().getFullYear().toString()]);
+      } else {
+        setValue('year', new Date().getFullYear().toString());
       }
+      setValue('country', ["USA"]);
+    }
   }, [searchParams, setValue]);
 
   // Track previous values to determine which field changed
@@ -727,13 +727,13 @@ const index = () => {
           ? 2024
           : null,
     };
-    
+
     // Only set year if no query parameters are present
     const institutionParam = searchParams.get('institution');
     const companyParam = searchParams.get('company');
     const meetingTypeParam = searchParams.get('meeting_type');
     const hasQueryParams = institutionParam || companyParam || meetingTypeParam;
-    
+
     if (dropdownValues?.institution_name && dropdownValues?.company_name && !hasQueryParams) {
       setValue("year", new Date().getFullYear());
     }
@@ -843,10 +843,10 @@ const index = () => {
         // Update other dependent dropdowns with the API response
         setVoteOptions(res.result.vote || []);
         setYearOptions(res.result.year || []);
-        
+
         // Update the general dropdown options state
-        setApiDependentDropdownOptions(prev => ({ 
-          ...prev, 
+        setApiDependentDropdownOptions(prev => ({
+          ...prev,
           vote: res.result.vote || [],
           year: res.result.year || [],
           category: res.result.category || [],
@@ -907,7 +907,7 @@ const index = () => {
     const companyParam = searchParams.get('company');
     const meetingTypeParam = searchParams.get('meeting_type');
     const hasQueryParams = institutionParam || companyParam || meetingTypeParam;
-    
+
     // Only update dropdownValues if no query parameters are present
     if (!hasQueryParams) {
       setDropdownValues((prev: any) => ({
@@ -1191,7 +1191,7 @@ const index = () => {
     });
     if (onAnalyticsTab) {
       const currentYear = new Date().getFullYear().toString();
-      
+
       // If we have query parameters with institutions, preserve them
       let institutionsToUse = ["BlackRock, Inc."];
       if (hasQueryParams && institutionParam) {
@@ -1200,7 +1200,7 @@ const index = () => {
           institutionsToUse = institutions;
         }
       }
-      
+
       setAllAnalyticsFilter({
         institution_name: institutionsToUse,
         index: ["S&P 500"],
@@ -1326,7 +1326,7 @@ const index = () => {
     // Handle country filter removal - prevent removal if company is selected
     if (removeKey === "country") {
       const currentCompanies = isViewAnalysis ? allAnalyticsFilter.company_name || [] : allApplyFilter.company_name || [];
-      
+
       // If company is selected, don't allow country removal
       if (currentCompanies.length > 0) {
         return; // Block removal when company is selected
@@ -1343,11 +1343,11 @@ const index = () => {
         setValue("country", updatedCountries);
         setSelectedCountries(updatedCountries);
         localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
-        
+
         // Update filter chips to reflect the changes
         setSelectedChipFilters(generateFilterChips(updatedFilters));
         setFiltersLength(countValidFilters(updatedFilters));
-        
+
         // Trigger analytics data reload
         dispatch(resetAnalyticsDataLoaded());
       } else {
@@ -1356,11 +1356,11 @@ const index = () => {
         setValue("country", updatedCountries);
         setSelectedCountries(updatedCountries);
         localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
-        
+
         // Update filter chips to reflect the changes
         setSelectedChipFilters(generateFilterChips(updatedFilters));
         setFiltersLength(countValidFilters(updatedFilters));
-        
+
         // Trigger regular data reload
         dispatch(resetPage());
         dispatch(resetDataLoaded());
@@ -1378,11 +1378,11 @@ const index = () => {
         setAllAnalyticsFilter(updatedFilters);
         setValue("institution_name", updatedInstitutions);
         localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
-        
+
         // Update filter chips to reflect the changes
         setSelectedChipFilters(generateFilterChips(updatedFilters));
         setFiltersLength(countValidFilters(updatedFilters));
-        
+
         // Trigger analytics data reload
         dispatch(resetAnalyticsDataLoaded());
       } else {
@@ -1390,11 +1390,11 @@ const index = () => {
         setallApplyFilter(updatedFilters);
         setValue("institution_name", updatedInstitutions);
         localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
-        
+
         // Update filter chips to reflect the changes
         setSelectedChipFilters(generateFilterChips(updatedFilters));
         setFiltersLength(countValidFilters(updatedFilters));
-        
+
         // Trigger regular data reload
         dispatch(resetPage());
         dispatch(resetDataLoaded());
@@ -1406,47 +1406,47 @@ const index = () => {
     if (removeKey === "company_name") {
       if (isViewAnalysis) {
         const updatedFilters = { ...allAnalyticsFilter };
-        
+
         // Remove the specific company
         if (Array.isArray(updatedFilters[removeKey])) {
           updatedFilters[removeKey] = updatedFilters[removeKey].filter(
             (item) => item !== removeValue
           );
         }
-        
+
         // If no companies left, restore USA country only if no query parameters
         const institutionParam = searchParams.get('institution');
         const companyParam = searchParams.get('company');
         const meetingTypeParam = searchParams.get('meeting_type');
         const hasQueryParams = institutionParam || companyParam || meetingTypeParam;
-        
+
         if ((!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) && !hasQueryParams) {
           updatedFilters.country = ["USA"];
           setValue("country", ["USA"]);
           setSelectedCountries(["USA"]);
           setCountryComponentKey(prev => prev + 1);
         }
-        
+
         setValue(removeKey, updatedFilters[removeKey]);
         setAllAnalyticsFilter(updatedFilters);
         localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
-        
+
         // Update filter chips to reflect the changes
         setSelectedChipFilters(generateFilterChips(updatedFilters));
         setFiltersLength(countValidFilters(updatedFilters));
-        
+
         // Trigger analytics data reload
         dispatch(resetAnalyticsDataLoaded());
       } else {
         const updatedFilters = { ...allApplyFilter };
-        
+
         // Remove the specific company
         if (Array.isArray(updatedFilters[removeKey])) {
           updatedFilters[removeKey] = updatedFilters[removeKey].filter(
             (item) => item !== removeValue
           );
         }
-        
+
         // If no companies left, restore USA country only if no query parameters
         if ((!updatedFilters[removeKey] || updatedFilters[removeKey].length === 0) && !updatedFilters.country) {
           updatedFilters.country = ["USA"];
@@ -1454,15 +1454,15 @@ const index = () => {
           setSelectedCountries(["USA"]);
           setCountryComponentKey(prev => prev + 1);
         }
-        
+
         setValue(removeKey, updatedFilters[removeKey]);
         setallApplyFilter(updatedFilters);
         localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
-        
+
         // Update filter chips to reflect the changes
         setSelectedChipFilters(generateFilterChips(updatedFilters));
         setFiltersLength(countValidFilters(updatedFilters));
-        
+
         // Trigger regular data reload
         dispatch(resetPage());
         dispatch(resetDataLoaded());
@@ -1480,7 +1480,7 @@ const index = () => {
         );
         // Also update the form field "vote"
         setValue("vote", updatedFilters[removeKey]);
-      } 
+      }
       // Special handling for proposal_keyword - when clicked, remove all keywords at once
       else if (removeKey === "proposal_keyword") {
         // Clear all keywords at once since they're displayed in a single pill
@@ -1502,11 +1502,11 @@ const index = () => {
       }
       setAllAnalyticsFilter(updatedFilters);
       localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(updatedFilters));
-      
+
       // Update filter chips to reflect the changes
       setSelectedChipFilters(generateFilterChips(updatedFilters));
       setFiltersLength(countValidFilters(updatedFilters));
-      
+
       // Trigger analytics data reload
       dispatch(resetAnalyticsDataLoaded());
       return;
@@ -1535,11 +1535,11 @@ const index = () => {
     setValue(removeKey, updatedFilters[removeKey]);
     setallApplyFilter(updatedFilters);
     localStorage.setItem("vdsEuropeanFilters", JSON.stringify(updatedFilters));
-    
+
     // Update filter chips to reflect the changes
     setSelectedChipFilters(generateFilterChips(updatedFilters));
     setFiltersLength(countValidFilters(updatedFilters));
-    
+
     // Trigger regular data reload
     dispatch(resetPage());
     dispatch(resetDataLoaded());
@@ -1575,10 +1575,10 @@ const index = () => {
             ? allAnalyticsFilter.company_name
             : [],
           // Include year from query params or from form - send entire array for analytics as numbers
-          year: hasQueryParams 
+          year: hasQueryParams
             ? (yearParam ? [parseInt(yearParam)] : [])
-            : (allAnalyticsFilter?.analyticsYear?.length > 0 
-              ? allAnalyticsFilter.analyticsYear.map((year: string) => parseInt(year)) 
+            : (allAnalyticsFilter?.analyticsYear?.length > 0
+              ? allAnalyticsFilter.analyticsYear.map((year: string) => parseInt(year))
               : []),
           proponent_type: allAnalyticsFilter?.proponent_type
             ? allAnalyticsFilter?.proponent_type
@@ -1610,13 +1610,13 @@ const index = () => {
           `${baseURL}/api/proposal-voting-stats/`,
           analyticsParams
         );
-        
+
         // Only fetch if data isn't already loaded or we're on a different page
         if (!analyticsDataLoaded || analyticsPage > 1) {
           dispatch(fetchVdsEuropeanAnalytics(analyticsUrl));
         }
       }
-    };  
+    };
     fetchAnalytics();
 
     // Generate filter chips only when analytics filter changes and not restoring
@@ -1663,34 +1663,34 @@ const index = () => {
     if (institutionParam || companyParam || yearParam) {
       // Parse institution parameter (split by '||', decode each)
       const institutions = institutionParam ? institutionParam.split('||').map(inst => decodeURIComponent(inst.trim())) : [];
-        // Parse company parameter (split by '||', decode each)
-        const companies = companyParam ? companyParam.split('||').map(comp => decodeURIComponent(comp.trim())) : [];
+      // Parse company parameter (split by '||', decode each)
+      const companies = companyParam ? companyParam.split('||').map(comp => decodeURIComponent(comp.trim())) : [];
 
-        // Set form values for institution, company_name, and year
-        setValue('institution_name', [...institutions]);
-        setValue('company_name', [...companies]);
-        if (isViewAnalysis) {
-          setValue('analyticsYear', yearParam ? [yearParam] : []);
-        } else {
-          setValue('year', yearParam || "");
-        }
-
-        // Build filter object with institution, company, and year
-        const filters: any = {};
-        if (institutions.length > 0) filters.institution_name = [...institutions];
-        if (companies.length > 0) filters.company_name = [...companies];
-        if (yearParam) filters.year = yearParam;
-
-        // Apply filters to both analytics and regular
-        setAllAnalyticsFilter(filters);
-        setallApplyFilter(filters);
-
-        // Update filter chips immediately (each chip should be a separate entry)
-        setSelectedChipFilters(generateFilterChips(filters));
-        setFiltersLength(countValidFilters(filters));
+      // Set form values for institution, company_name, and year
+      setValue('institution_name', [...institutions]);
+      setValue('company_name', [...companies]);
+      if (isViewAnalysis) {
+        setValue('analyticsYear', yearParam ? [yearParam] : []);
+      } else {
+        setValue('year', yearParam || "");
       }
-      // If no params, do nothing (keep default behavior)
-    }, [searchParams, setValue]);
+
+      // Build filter object with institution, company, and year
+      const filters: any = {};
+      if (institutions.length > 0) filters.institution_name = [...institutions];
+      if (companies.length > 0) filters.company_name = [...companies];
+      if (yearParam) filters.year = yearParam;
+
+      // Apply filters to both analytics and regular
+      setAllAnalyticsFilter(filters);
+      setallApplyFilter(filters);
+
+      // Update filter chips immediately (each chip should be a separate entry)
+      setSelectedChipFilters(generateFilterChips(filters));
+      setFiltersLength(countValidFilters(filters));
+    }
+    // If no params, do nothing (keep default behavior)
+  }, [searchParams, setValue]);
 
   const handleDownloadXlsx = async () => {
     try {
@@ -1699,15 +1699,15 @@ const index = () => {
       console.log('isViewAnalysis:', isViewAnalysis);
       console.log('analytics:', analytics);
       console.log('VdsEuropeans:', VdsEuropeans);
-      
+
       // Import XLSX library dynamically
       const XLSX = await import('xlsx');
       console.log('XLSX library loaded:', !!XLSX);
-      
+
       if (isViewAnalysis && analytics?.by_institution) {
         // Export analytics summary data
         const institutions = analytics.by_institution || [];
-        
+
         if (institutions.length === 0) {
           console.warn("No analytics data available for download");
           setLoadingDownload(false);
@@ -1723,7 +1723,7 @@ const index = () => {
 
         // Prepare summary data for Excel export
         const summaryData = [];
-        
+
         // Header row with institution names
         const headerRow1 = ['Summary'];
         institutions.forEach(institution => {
@@ -1815,7 +1815,7 @@ const index = () => {
 
         // Write and download the file
         XLSX.writeFile(workbook, filename);
-        
+
         console.log(`Downloaded: ${filename}`);
       } else if (!isViewAnalysis && VdsEuropeans?.length > 0) {
         // Export regular table data
@@ -1860,7 +1860,7 @@ const index = () => {
 
         // Write and download the file
         XLSX.writeFile(workbook, filename);
-        
+
         console.log(`Downloaded: ${filename}`);
       } else {
         console.warn("No data available for download");
@@ -1956,7 +1956,7 @@ const index = () => {
             ))}
           </div>
         )}
-        
+
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
@@ -2176,7 +2176,7 @@ const index = () => {
                             // Get dependent options for the selected companies
                             const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
                             getCompanyDependentOptions(companyNames, currentInstitutions);
-                            
+
                             // We shouldn't clear other filters, but just make sure we have the right options available
                             // Only update country if it's empty and no query parameters
                             if ((!watch("country") || watch("country").length === 0) && !hasQueryParams) {
@@ -2189,7 +2189,7 @@ const index = () => {
                             // Removed: setValue("proponent_type", []);
                             // Removed: setValue("proposal_keyword", []);
                             // Removed: setValue("keyword", "");
-                            
+
                             // Update filter states - only keep institution and year, remove country
                             // Note: Filter updates removed - filters should only be applied via Apply button
                           } else {
@@ -2199,17 +2199,17 @@ const index = () => {
                               setSelectedCountries(["USA"]);
                               setCountryComponentKey(prev => prev + 1);
                             }
-                            
+
                             // Note: Filter updates removed - filters should only be applied via Apply button
                           }
 
                           // Only call API when there's an actual change in selection
                           const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
                           const previousCompanies = field.value || [];
-                          
+
                           // Check if the selection actually changed
                           const hasChanged = JSON.stringify(companyNames.sort()) !== JSON.stringify(previousCompanies.sort());
-                          
+
                           if (hasChanged) {
                             getCompanyDependentOptions(companyNames, currentInstitutions);
                           }
@@ -2413,15 +2413,15 @@ const index = () => {
               </Tippy>
               <button
                 onClick={expandAllGroups}
-                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors duration-200 border border-primary/30"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
               >
-                <Lucide 
-                  icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} 
-                  className="w-4 h-4" 
-                />
                 <span>
                   {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
                 </span>
+                <Lucide
+                  icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"}
+                  className="w-4 h-4"
+                />
               </button>
             </div>
             <div className="divide-y divide-gray-100">
@@ -2446,7 +2446,7 @@ const index = () => {
                             />
                           ) : (
                             <Lucide
-                              icon="ChevronDown"  
+                              icon="ChevronDown"
                               className="w-5 h-5"
                             />
                           )}
@@ -2534,9 +2534,9 @@ const index = () => {
                   onClick={expandAllInstitutionGroups}
                   className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors duration-200 border border-primary/30"
                 >
-                  <Lucide 
-                    icon={areAllInstitutionGroupsExpanded() ? "ChevronUp" : "ChevronDown"} 
-                    className="w-4 h-4" 
+                  <Lucide
+                    icon={areAllInstitutionGroupsExpanded() ? "ChevronUp" : "ChevronDown"}
+                    className="w-4 h-4"
                   />
                   <span>
                     {areAllInstitutionGroupsExpanded() ? "Collapse All" : "Expand All"}
@@ -2561,136 +2561,136 @@ const index = () => {
             )}
             <TableWrapper isLoading={allApplyFilter && loading}>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-              <Table>
-                <Table.Thead>
-                  <Table.Tr className="sticky top-0 z-20 bg-primary/90 text-white shadow-md">
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "17.5%" }}>Institution</Table.Td>
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "17.5%" }}>Meeting Type</Table.Td>
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "5%" }}>No.</Table.Td>
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "25%" }}>Proposal</Table.Td>
-                    <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "30%" }}>Vote Cast</Table.Td>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {loading ? (
-                    Array.from({ length: 8 }).map((_, i) => (
-                      <Table.Tr key={i} className="animate-pulse">
-                        {Array.from({ length: 5 }).map((_, j) => (
-                          <Table.Td key={j}><Skeleton height={24} /></Table.Td>
-                        ))}
-                      </Table.Tr>
-                    ))
-                  ) : VdsEuropeans?.length > 0 ? (
-                    (() => {
-                      // Group data by institution
-                      const groupedData = VdsEuropeans.reduce((acc: any, vds: any) => {
-                        const institutionName = vds?.excel_institution_name || 'Unknown Institution';
-                        if (!acc[institutionName]) {
-                          acc[institutionName] = [];
-                        }
-                        acc[institutionName].push(vds);
-                        return acc;
-                      }, {});
-
-                      return Object.entries(groupedData).map(([institutionName, institutionData]: [string, any]) => (
-                        <>
-                          {/* Institution Header Row */}
-                          <Table.Tr
-                            key={`header-${institutionName}`}
-                            className="bg-gray-50 dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10 hover:bg-gray-100 dark:hover:bg-darkmode-600 transition-all duration-200"
-                            onClick={() => toggleInstitutionGroup(institutionName)}
-                          >
-                            <Table.Td
-                              colSpan={5}
-                              className="font-semibold py-3 px-4"
-                            >
-                              <div className="flex flex-row justify-between items-center">
-                                <div className="flex items-center">
-                                  <span className="text-gray-800 dark:text-white font-medium">
-                                    {institutionName}
-                                  </span>
-                                </div>
-                                <button className="text-primary hover:text-primary/80 transition-colors duration-200">
-                                  {openInstitutionGroups[institutionName] ? (
-                                    <Lucide
-                                      icon="ChevronUp"
-                                      className="w-5 h-5"
-                                    />
-                                  ) : (
-                                    <Lucide
-                                      icon="ChevronDown"
-                                      className="w-5 h-5"
-                                    />
-                                  )}
-                                </button>
-                              </div>
-                            </Table.Td>
-                          </Table.Tr>
-
-                          {/* Institution Data Rows - Show when expanded */}
-                          {openInstitutionGroups[institutionName] &&
-                            institutionData.map((vds: any, index: number) => (
-                              <Table.Tr
-                                key={vds?.id}
-                                className="[&_td]:last:border-b-0"
-                                style={getSequentialBorderStyle(vds?.proposal_num, institutionData, index)}
-                              >
-                                <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800">
-                                  {/* Empty cell for institution name since it's in the header */}
-                                </Table.Td>
-                                <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
-                                  <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
-                                    {convertToTitleCase(vds?.meeting_type)}
-                                  </div>
-                                </Table.Td>
-                                <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
-                                  <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
-                                    {vds?.proposal_num}
-                                  </div>
-                                </Table.Td>
-                                <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
-                                  <div className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm">
-                                    <span className="block truncate" title={vds?.proposal}>{vds?.proposal}</span>
-                                  </div>
-                                </Table.Td>
-                                <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
-                                  <div className="flex items-center gap-2">
-                                    {vds?.vote === "Split Vote" ? (
-                                      <Tippy content={vds?.split_vote_counts} options={{ theme: "light" }}>
-                                        <span className="text-yellow-800 text-sm font-medium">{vds?.vote}</span>
-                                      </Tippy>
-                                    ) : (
-                                      <span className={clsx([
-                                        "text-sm font-medium",
-                                        (vds?.vote?.includes("Against") || vds?.vote?.includes("Withhold")) ? "text-red-600" : "text-gray-700"
-                                      ])}>
-                                        {vds?.vote}
-                                      </span>
-                                    )}
-                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                      <span data-tooltip-id="my-tooltip-data-html" data-tooltip-html={vds?.notes}>
-                                        <Lucide icon="Info" className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-600 cursor-pointer" />
-                                      </span>
-                                    )}
-                                  </div>
-                                </Table.Td>
-                              </Table.Tr>
-                            ))}
-                        </>
-                      ));
-                    })()
-                  ) : (
-                    <Table.Tr>
-                      <Table.Td colSpan={5} className="text-center py-10 text-gray-400 text-lg font-semibold">
-                        <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
-                        No Voting Data available. Try adjusting your filters!
-                      </Table.Td>
+                <Table>
+                  <Table.Thead>
+                    <Table.Tr className="sticky top-0 z-20 bg-primary/90 text-white shadow-md">
+                      <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "17.5%" }}>Institution</Table.Td>
+                      <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "17.5%" }}>Meeting Type</Table.Td>
+                      <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "5%" }}>No.</Table.Td>
+                      <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "25%" }}>Proposal</Table.Td>
+                      <Table.Td className="py-3 font-semibold h-[50px] bg-primary text-white first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-0" style={{ width: "30%" }}>Vote Cast</Table.Td>
                     </Table.Tr>
-                  )}
-                </Table.Tbody>
-              </Table>
-            </div>
-          </TableWrapper>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {loading ? (
+                      Array.from({ length: 8 }).map((_, i) => (
+                        <Table.Tr key={i} className="animate-pulse">
+                          {Array.from({ length: 5 }).map((_, j) => (
+                            <Table.Td key={j}><Skeleton height={24} /></Table.Td>
+                          ))}
+                        </Table.Tr>
+                      ))
+                    ) : VdsEuropeans?.length > 0 ? (
+                      (() => {
+                        // Group data by institution
+                        const groupedData = VdsEuropeans.reduce((acc: any, vds: any) => {
+                          const institutionName = vds?.excel_institution_name || 'Unknown Institution';
+                          if (!acc[institutionName]) {
+                            acc[institutionName] = [];
+                          }
+                          acc[institutionName].push(vds);
+                          return acc;
+                        }, {});
+
+                        return Object.entries(groupedData).map(([institutionName, institutionData]: [string, any]) => (
+                          <>
+                            {/* Institution Header Row */}
+                            <Table.Tr
+                              key={`header-${institutionName}`}
+                              className="bg-gray-50 dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10 hover:bg-gray-100 dark:hover:bg-darkmode-600 transition-all duration-200"
+                              onClick={() => toggleInstitutionGroup(institutionName)}
+                            >
+                              <Table.Td
+                                colSpan={5}
+                                className="font-semibold py-3 px-4"
+                              >
+                                <div className="flex flex-row justify-between items-center">
+                                  <div className="flex items-center">
+                                    <span className="text-gray-800 dark:text-white font-medium">
+                                      {institutionName}
+                                    </span>
+                                  </div>
+                                  <button className="text-primary hover:text-primary/80 transition-colors duration-200">
+                                    {openInstitutionGroups[institutionName] ? (
+                                      <Lucide
+                                        icon="ChevronUp"
+                                        className="w-5 h-5"
+                                      />
+                                    ) : (
+                                      <Lucide
+                                        icon="ChevronDown"
+                                        className="w-5 h-5"
+                                      />
+                                    )}
+                                  </button>
+                                </div>
+                              </Table.Td>
+                            </Table.Tr>
+
+                            {/* Institution Data Rows - Show when expanded */}
+                            {openInstitutionGroups[institutionName] &&
+                              institutionData.map((vds: any, index: number) => (
+                                <Table.Tr
+                                  key={vds?.id}
+                                  className="[&_td]:last:border-b-0"
+                                  style={getSequentialBorderStyle(vds?.proposal_num, institutionData, index)}
+                                >
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800">
+                                    {/* Empty cell for institution name since it's in the header */}
+                                  </Table.Td>
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
+                                    <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
+                                      {convertToTitleCase(vds?.meeting_type)}
+                                    </div>
+                                  </Table.Td>
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
+                                    <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
+                                      {vds?.proposal_num}
+                                    </div>
+                                  </Table.Td>
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
+                                    <div className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm">
+                                      <span className="block truncate" title={vds?.proposal}>{vds?.proposal}</span>
+                                    </div>
+                                  </Table.Td>
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
+                                    <div className="flex items-center gap-2">
+                                      {vds?.vote === "Split Vote" ? (
+                                        <Tippy content={vds?.split_vote_counts} options={{ theme: "light" }}>
+                                          <span className="text-yellow-800 text-sm font-medium">{vds?.vote}</span>
+                                        </Tippy>
+                                      ) : (
+                                        <span className={clsx([
+                                          "text-sm font-medium",
+                                          (vds?.vote?.includes("Against") || vds?.vote?.includes("Withhold")) ? "text-red-600" : "text-gray-700"
+                                        ])}>
+                                          {vds?.vote}
+                                        </span>
+                                      )}
+                                      {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                        <span data-tooltip-id="my-tooltip-data-html" data-tooltip-html={vds?.notes}>
+                                          <Lucide icon="Info" className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-600 cursor-pointer" />
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Table.Td>
+                                </Table.Tr>
+                              ))}
+                          </>
+                        ));
+                      })()
+                    ) : (
+                      <Table.Tr>
+                        <Table.Td colSpan={5} className="text-center py-10 text-gray-400 text-lg font-semibold">
+                          <FaCheckCircle className="mx-auto mb-2 text-4xl text-primary/60" />
+                          No Voting Data available. Try adjusting your filters!
+                        </Table.Td>
+                      </Table.Tr>
+                    )}
+                  </Table.Tbody>
+                </Table>
+              </div>
+            </TableWrapper>
           </>
         )}
 
@@ -2752,18 +2752,18 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
                 years.map((year) => {
                   const yearData = institution.years[year as string];
                   const apiDateRange = yearData?.date_range;
-                  
+
                   // Use filtered date range if available, otherwise use API date range
-                  const displayDateRange = filteredDateRange && filteredDateRange.trim() !== "" 
-                    ? filteredDateRange 
+                  const displayDateRange = filteredDateRange && filteredDateRange.trim() !== ""
+                    ? filteredDateRange
                     : apiDateRange;
-                  
+
                   return (
                     <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 pt-0 text-center font-semibold">
                       <div className="flex flex-col">
                         {displayDateRange && (
                           <div className="text-xs font-semibold mt-1">
-                            {filteredDateRange && filteredDateRange.trim() !== "" 
+                            {filteredDateRange && filteredDateRange.trim() !== ""
                               ? `(${filteredDateRange})`
                               : `(${apiDateRange.start_meeting} - ${apiDateRange.end_meeting})`
                             }
