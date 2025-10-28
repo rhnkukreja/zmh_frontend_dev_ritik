@@ -562,18 +562,10 @@ const index = () => {
                                             {dashboard?.voted_against_directors ===
                                               'ND' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full justify-center">
-                                                    <span 
-                                                      className="cursor-pointer"
-                                                      onClick={() => {
-                                                        window.scrollBy({
-                                                          top: 350,
-                                                          behavior: "smooth",
-                                                        });
-                                                      }}
-                                                    >
-                                                      *
-                                                    </span>
+                                                  <div className="flex items-center w-full h-full text-primary justify-center">
+                                                    <Tippy content={dashboard?.voted_against_directors_message || "No Data"} options={{ theme: "light" }}>
+                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                    </Tippy>
                                                   </div>
                                                 </div>
                                               )}
@@ -604,18 +596,10 @@ const index = () => {
                                             {dashboard?.voted_against_say_on_pay ===
                                               'ND' && (
                                                 <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full justify-center">
-                                                    <span 
-                                                      className="cursor-pointer"
-                                                      onClick={() => {
-                                                        window.scrollBy({
-                                                          top: 350,
-                                                          behavior: "smooth",
-                                                        });
-                                                      }}
-                                                    >
-                                                      *
-                                                    </span>
+                                                  <div className="flex items-center w-full h-full text-primary justify-center">
+                                                    <Tippy content={dashboard?.voted_against_say_on_pay_message || "No Data"} options={{ theme: "light" }}>
+                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                    </Tippy>
                                                   </div>
                                                 </div>
                                               )}

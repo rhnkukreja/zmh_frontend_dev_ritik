@@ -494,12 +494,12 @@ const VdsProxyVotingTable = () => {
                                   <Table.Td
                                     key={headerIndex}
                                     className={clsx([
-                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                      "cell_2 py-2 font-semibold h-[50px] bg-primary first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-white text-left",
                                       "sticky top-0",
                                       headerIndex === 0 &&
-                                        "sticky left-0 bg-header z-[5000] ",
+                                        "sticky left-0 bg-primary z-[5000] ",
                                       headerIndex === 1 &&
-                                        "sticky left-[50px] min-w-[200px] max-w-[250px] bg-header z-[5000] ",
+                                        "sticky left-[50px] min-w-[200px] max-w-[250px] bg-primary z-[5000] ",
                                       headerIndex !== 0 &&
                                         headerIndex !== 1 &&
                                         "min-w-[150px] max-w-[170px] ",
@@ -556,8 +556,57 @@ const VdsProxyVotingTable = () => {
                                                 "flex items-center ",
                                               ])}
                                             >
-                                              {vdsProxy[vdsHeader?.field]
-                                                ?.vote === "Split Vote" ? (
+                                                {vdsProxy[vdsHeader?.field]
+                                                  ?.vote === "Split Vote" ? (
+                                                  <Tippy
+                                                    content={
+                                                      isObject(
+                                                        vdsProxy[vdsHeader?.field]
+                                                      ) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]
+                                                          ?.split_vote_counts
+                                                      )
+                                                    }
+                                                    options={{ theme: "light" }}
+                                                  >
+                                                    <span className="text-yellow-800 text-xs font-medium">
+                                                      {
+                                                        vdsProxy[vdsHeader?.field]
+                                                          ?.vote
+                                                      }
+                                                    </span>
+                                                  </Tippy>
+                                                ) : (
+                                                  <span className={clsx([
+                                                    "text-xs font-medium",
+                                                    (vdsProxy[vdsHeader?.field]?.vote?.includes("Against") || vdsProxy[vdsHeader?.field]?.vote?.includes("Withhold")) && "text-red-600"
+                                                  ])}>
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
+                                                )}
+
+                                                <div
+                                                  data-tooltip-id="my-tooltip-data-html"
+                                                  data-tooltip-html={
+                                                    vdsProxy[vdsHeader?.field]
+                                                      ?.notes
+                                                  }
+                                                >
+                                                  <div className="bg-primary/10 hover:bg-primary/20 transition-colors duration-200 p-1 rounded-full cursor-help">
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className="w-3.5 h-3.5 text-primary"
+                                                    />
+                                                  </div>
+                                                </div>
+                                              </h1>
+                                            ) : isObject(
+                                                vdsProxy[vdsHeader?.field]
+                                              ) &&
+                                              vdsProxy[vdsHeader?.field]
+                                                ?.notes === null ? (
+                                              vdsProxy[vdsHeader?.field]?.vote === "Split Vote" ? (
                                                 <Tippy
                                                   content={
                                                     isObject(
@@ -570,91 +619,22 @@ const VdsProxyVotingTable = () => {
                                                   }
                                                   options={{ theme: "light" }}
                                                 >
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
+                                                  <span className="text-yellow-800 text-xs font-medium">
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
                                                 </Tippy>
                                               ) : (
-                                                <span className="for ">
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
+                                                <span className={clsx([
+                                                  "text-xs font-medium",
+                                                  (vdsProxy[vdsHeader?.field]?.vote?.includes("Against") || vdsProxy[vdsHeader?.field]?.vote?.includes("Withhold")) && "text-red-600"
+                                                ])}>
+                                                  {vdsProxy[vdsHeader?.field]?.vote}
                                                 </span>
-                                              )}
-
-                                              {/* <Tippy content={<span dangerouslySetInnerHTML={{ __html: getContent(vdsProxy[vdsHeader?.field]?.notes) ?? '' }}/>}> */}
-                                              <div
-                                                data-tooltip-id="my-tooltip-data-html"
-                                                data-tooltip-html={
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.notes
-                                                }
-                                              >
-                                                <Lucide
-                                                  icon="Info"
-                                                  className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                />
-                                                {/* <span className="tooltiptext shadow-md" >
-                                                  </span> */}
-                                                {/* </Tippy> */}
-                                              </div>
-                                            </h1>
-                                          ) : isObject(
-                                              vdsProxy[vdsHeader?.field]
-                                            ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null ? (
-                                            <h1
-                                              className={clsx([
-                                                (vdsProxy[
-                                                  vdsHeader?.field
-                                                ]?.vote?.includes("Against") ||
-                                                  vdsProxy[
-                                                    vdsHeader?.field
-                                                  ]?.vote?.includes(
-                                                    "Withhold"
-                                                  )) &&
-                                                  "text-red-700 font-semibold ",
-                                              ])}
-                                            >
-                                              {vdsProxy[vdsHeader?.field]
-                                                ?.vote !== "Split Vote"
-                                                ? vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                : ""}
-                                            </h1>
-                                          ) : (
-                                            <h1 className="check ">
-                                              {vdsProxy[vdsHeader?.field]}
-                                            </h1>
-                                          )}
-
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null &&
-                                            vdsProxy[vdsHeader?.field]?.vote ===
-                                              "Split Vote" && (
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  getSplitContents(
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.split_vote_counts
-                                                  )
-                                                }
-                                                options={{ theme: "light" }}
-                                              >
-                                                {
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                }
-                                              </Tippy>
+                                              )
+                                            ) : (
+                                              <h1 className="check ">
+                                                {vdsProxy[vdsHeader?.field]}
+                                              </h1>
                                             )}
                                         </Table.Td>
                                       )
@@ -799,12 +779,12 @@ const VdsProxyVotingTable = () => {
                                   <Table.Td
                                     key={headerIndex}
                                     className={clsx([
-                                      "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                      "cell_3 py-2 font-semibold h-[50px] bg-primary first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-white  text-left",
                                       "sticky top-0", // Ensure the header remains sticky at the top
                                       headerIndex === 0 &&
-                                        "sticky left-0 bg-header z-[5000] ", // Fix first column
+                                        "sticky left-0 bg-primary z-[5000] ", // Fix first column
                                       headerIndex === 1 &&
-                                        "sticky left-[50px] min-w-[200px] max-w-[250px] bg-header z-[5000] ", // Fix second column (adjust 'left' value according to width)
+                                        "sticky left-[50px] min-w-[200px] max-w-[250px] bg-primary z-[5000] ", // Fix second column (adjust 'left' value according to width)
                                       headerIndex !== 0 &&
                                         headerIndex !== 1 &&
                                         "min-w-[150px] max-w-[170px] ",
@@ -842,27 +822,80 @@ const VdsProxyVotingTable = () => {
                                               "min-w-[150px] max-w-[170px] ",
                                           ])}
                                         >
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                          vdsProxy[vdsHeader?.field]?.notes !==
-                                            null ? (
-                                            <h1
-                                              className={clsx([
-                                                (vdsProxy[
-                                                  vdsHeader?.field
-                                                ]?.vote?.includes("Against") ||
+                                            {isObject(
+                                              vdsProxy[vdsHeader?.field]
+                                            ) &&
+                                            vdsProxy[vdsHeader?.field]?.notes !==
+                                              null ? (
+                                              <div
+                                                className={clsx([
+                                                  "flex items-center gap-2",
+                                                  (vdsProxy[
+                                                    vdsHeader?.field
+                                                  ]?.vote?.includes("Against") ||
+                                                    vdsProxy[
+                                                      vdsHeader?.field
+                                                    ]?.vote?.includes(
+                                                      "Withhold"
+                                                    )) &&
+                                                    "text-red-600 font-semibold",
                                                   vdsProxy[
                                                     vdsHeader?.field
-                                                  ]?.vote?.includes(
-                                                    "Withhold"
-                                                  )) &&
-                                                  "text-red-700 font-semibold",
-                                                "flex items-center",
-                                              ])}
-                                            >
-                                              {vdsProxy[vdsHeader?.field]
-                                                ?.vote === "Split Vote" ? (
+                                                  ]?.vote?.includes("For") &&
+                                                    "text-green-600 font-semibold",
+                                                ])}
+                                              >
+                                                {vdsProxy[vdsHeader?.field]
+                                                  ?.vote === "Split Vote" ? (
+                                                  <Tippy
+                                                    content={
+                                                      isObject(
+                                                        vdsProxy[vdsHeader?.field]
+                                                      ) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]
+                                                          ?.split_vote_counts
+                                                      )
+                                                    }
+                                                    options={{ theme: "light" }}
+                                                  >
+                                                    <span className="text-yellow-800 text-xs font-medium">
+                                                      {
+                                                        vdsProxy[vdsHeader?.field]
+                                                          ?.vote
+                                                      }
+                                                    </span>
+                                                  </Tippy>
+                                                ) : (
+                                                  <span className={clsx([
+                                                    "text-xs font-medium",
+                                                    (vdsProxy[vdsHeader?.field]?.vote?.includes("Against") || vdsProxy[vdsHeader?.field]?.vote?.includes("Withhold")) && "text-red-600"
+                                                  ])}>
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
+                                                )}
+
+                                                <div
+                                                  data-tooltip-id="my-tooltip-data-html"
+                                                  data-tooltip-html={
+                                                    vdsProxy[vdsHeader?.field]
+                                                      ?.notes
+                                                  }
+                                                >
+                                                  <div className="bg-primary/10 hover:bg-primary/20 transition-colors duration-200 p-1 rounded-full cursor-help">
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className="w-3.5 h-3.5 text-primary"
+                                                    />
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ) : isObject(
+                                                vdsProxy[vdsHeader?.field]
+                                              ) &&
+                                              vdsProxy[vdsHeader?.field]
+                                                ?.notes === null ? (
+                                              vdsProxy[vdsHeader?.field]?.vote === "Split Vote" ? (
                                                 <Tippy
                                                   content={
                                                     isObject(
@@ -875,98 +908,29 @@ const VdsProxyVotingTable = () => {
                                                   }
                                                   options={{ theme: "light" }}
                                                 >
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
+                                                  <span className="text-yellow-800 text-xs font-medium">
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
                                                 </Tippy>
                                               ) : (
-                                                <span className="for">
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
+                                                <span className={clsx([
+                                                  "text-xs font-medium",
+                                                  (vdsProxy[vdsHeader?.field]?.vote?.includes("Against") || vdsProxy[vdsHeader?.field]?.vote?.includes("Withhold")) && "text-red-600"
+                                                ])}>
+                                                  {vdsProxy[vdsHeader?.field]?.vote}
                                                 </span>
-                                              )}
-
-                                              {/* <Tippy content={<span dangerouslySetInnerHTML={{ __html: getContent(vdsProxy[vdsHeader?.field]?.notes) ?? '' }}/>}> */}
-                                              <div
-                                                data-tooltip-id="my-tooltip-data-html"
-                                                data-tooltip-html={
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.notes
-                                                }
-                                              >
-                                                <Lucide
-                                                  icon="Info"
-                                                  className=" w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                />
-                                                {/* <span className="tooltiptext shadow-md" >
-                                                  </span> */}
-                                                {/* </Tippy> */}
-                                              </div>
-                                            </h1>
-                                          ) : isObject(
-                                              vdsProxy[vdsHeader?.field]
-                                            ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null ? (
-                                            <h1
-                                              className={clsx([
-                                                (vdsProxy[
-                                                  vdsHeader?.field
-                                                ]?.vote?.includes("Against") ||
-                                                  vdsProxy[
-                                                    vdsHeader?.field
-                                                  ]?.vote?.includes(
-                                                    "Withhold"
-                                                  )) &&
-                                                  "text-red-700 font-semibold",
-                                              ])}
-                                            >
-                                              {vdsProxy[vdsHeader?.field]
-                                                ?.vote !== "Split Vote"
-                                                ? vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                : ""}
-                                            </h1>
-                                          ) : (
-                                            <h1 className="check">
-                                              {vdsProxy[vdsHeader?.field]}
-                                            </h1>
-                                          )}
-
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null &&
-                                            vdsProxy[vdsHeader?.field]?.vote ===
-                                              "Split Vote" && (
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  getSplitContents(
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.split_vote_counts
-                                                  )
-                                                }
-                                                options={{ theme: "light" }}
-                                              >
-                                                {
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                }
-                                              </Tippy>
+                                              )
+                                            ) : (
+                                              <h1 className="check">
+                                                {vdsProxy[vdsHeader?.field]}
+                                              </h1>
                                             )}
-                                        </Table.Td>
-                                      )
-                                    )}
-                                </Table.Tr>
-                              )
-                            )}
+                                          </Table.Td>
+                                        )
+                                      )}
+                                  </Table.Tr>
+                                )
+                              )}
                         </Table.Tbody>
                       </Table>
                     </div>
