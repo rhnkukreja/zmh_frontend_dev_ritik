@@ -354,7 +354,7 @@ const index = () => {
                                 Voted Against Say on Pay
                                 {isColumnGrayedOut && (
                                   <Tippy content="Say on Pay not on ballot at 2025 shareholder meeting" options={{ theme: "light" }}>
-                                    <Lucide icon="Info" className="w-4 h-4 text-gray-400 cursor-help" />
+                                    <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
                                   </Tippy>
                                 )}
                               </div>
