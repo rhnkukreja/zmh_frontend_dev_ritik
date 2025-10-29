@@ -395,20 +395,42 @@ const VdsProxyVotingTable = () => {
 
   return (
     <>
-      <Button
-        onClick={() => {
-          navigate("/");
-        }}
-        variant="primary"
-        className="bg-theme-2 border-bg-theme-2 mb-1"
-      >
-        <ChevronLeft
-          className="group-[.mode--light]:text-white text-white"
-          size={18}
-          strokeWidth={1.5}
-        />
-        Back
-      </Button>
+      <div className="flex justify-between items-center mb-1">
+        <Button
+          onClick={() => {
+            navigate("/");
+          }}
+          variant="primary"
+          className="bg-theme-2 border-bg-theme-2"
+        >
+          <ChevronLeft
+            className="group-[.mode--light]:text-white text-white"
+            size={18}
+            strokeWidth={1.5}
+          />
+          Back
+        </Button>
+        
+        <Button
+          onClick={() => {
+            const votingRationaleSection = document.querySelector('[data-voting-rationale]');
+            if (votingRationaleSection) {
+              votingRationaleSection.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+              });
+            }
+          }}
+          variant="primary"
+          className="bg-theme-2 border-bg-theme-2 flex items-center gap-2"
+        >
+          <span>Voting Rationale</span>
+          <Lucide 
+            icon="ChevronDown" 
+            className="w-4 h-4" 
+          />
+        </Button>
+      </div>
 
       <div className="p-5 mt-1 box">
         <div className="w-full">
@@ -689,11 +711,13 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  <VotingRationale 
-                    meetingDate={meetingDate} 
-                    tabType="top20"
-                    parentLoading={vdsProxyLoading} // Pass parent loading state
-                  />
+                  <div data-voting-rationale>
+                    <VotingRationale 
+                      meetingDate={meetingDate} 
+                      tabType="top20"
+                      parentLoading={vdsProxyLoading} // Pass parent loading state
+                    />
+                  </div>
                 </Tab.Panel>
                 
                 <Tab.Panel className="leading-relaxed">
@@ -997,12 +1021,14 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  <VotingRationale 
-                    meetingDate={meetingDate} 
-                    filter={filter} 
-                    tabType="allInvestors"
-                    parentLoading={vdsProxyAllInvestorLoading} // Pass parent loading state
-                  />
+                  <div data-voting-rationale>
+                    <VotingRationale 
+                      meetingDate={meetingDate} 
+                      filter={filter} 
+                      tabType="allInvestors"
+                      parentLoading={vdsProxyAllInvestorLoading} // Pass parent loading state
+                    />
+                  </div>
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

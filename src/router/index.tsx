@@ -96,6 +96,7 @@ import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVot
 import VdsEuropean from "@/pages/vdsEuropean";
 import RealTimeData from "@/pages/RealTimeData";
 import CustomReports from "../pages/CustomReports";
+import VotingRationalePage from "@/pages/VotingRationalePage";
 
 function Router() {
   const TitleManager = () => {
@@ -449,6 +450,11 @@ function Router() {
           path: "vds-proxy-details",
           element: <VdsProxyVoting />,
           data: { titleName: "Proxy Voting - ZMH Analytics" },
+        },
+        {
+          path: "voting-rationale",
+          element: <VotingRationalePage />,
+          data: { titleName: "Voting Rationale - ZMH Analytics" },
         },
         {
           path: "investor-company-details/:id",

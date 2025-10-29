@@ -102,6 +102,9 @@ const index = () => {
     
   // State to store all institutions
   const [allInstitutions, setAllInstitutions] = useState<any[]>([]);
+  
+  // Local loading state to prevent "No data found" flash
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
 
 
   const getFundNameDependentDropdown = async (value: any) => {
@@ -167,9 +170,12 @@ const index = () => {
     }
   };
 
-  // Function to fetch all available institutions
+  // Function to fetch all available institutions and auto-select first one with single API call
   const fetchAllInstitutions = useCallback(async () => {
     try {
+      // Keep initial loading true until we complete the process
+      setInitialLoading(true);
+      
       // Prepare parameters for API call to fetch all institutions
       const paramFilter = {
         global_search: companyGlobalSearchName,
@@ -218,7 +224,7 @@ const index = () => {
         setSelectedChipFilters(generateFilterChips(filterObjForChips));
         setFiltersLength(countValidFilters(filterObjForChips));
 
-        // Fetch NPX data with the selected institution
+        // Reset page and fetch NPX data with the selected institution
         dispatch(resetPage());
         dispatch(
           fetchNpxProxyDashboard(
@@ -226,14 +232,32 @@ const index = () => {
           )
         );
         
-        // Fetch fund names for the selected institution
-        getFundNameDependentDropdown(firstInstitution);
+        // Set meeting date from the same response to avoid another API call
+        setMeetingDate(res.result?.meeting_date);
+        
+        // Set fund names from the same response if available
+        if (res.result.fund_name && res.result.fund_name.length > 0) {
+          setApiFundNameDropdown({ 
+            fund_name: res.result.fund_name 
+          });
+          setShowFundName(true);
+        }
+        
+        // Set dependent dropdown options from the same response
+        setApiDependentDropdownOptions({ ...res.result });
+        
       } else {
         setAllInstitutions([]);
+        // Even if no institutions, we need to stop initial loading
+        setInitialLoading(false);
       }
     } catch (error) {
       console.error("Error fetching institutions:", error);
       setAllInstitutions([]);
+      setInitialLoading(false);
+    } finally {
+      // Ensure initial loading is set to false after the first API call completes
+      setInitialLoading(false);
     }
   }, [companyGlobalSearchName, year, dispatch]);
 
@@ -283,22 +307,16 @@ const index = () => {
     setSelectedChipFilters([]);
     setFiltersLength(0);
     
+    // Set initial loading to true when company changes
+    setInitialLoading(true);
+    
     // Only fetch institutions if we have company data
+    // This will make ONLY ONE API call that handles everything
     if (companyGlobalSearchName) {
-      // Trigger initial loading state by dispatching a basic fetch first
-      // This ensures the loader is shown while we're fetching institutions and auto-selecting
-      dispatch(
-        fetchNpxProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/npx/detail/`,
-            { global_search: companyGlobalSearchName, year: year || '2024' },
-            undefined,
-            1
-          )
-        )
-      );
-      // Then fetch institutions and auto-select
       fetchAllInstitutions();
+    } else {
+      // If no company, stop loading
+      setInitialLoading(false);
     }
   }, [companyGlobalSearchName, year]);
 
@@ -356,57 +374,43 @@ const index = () => {
     }));
   };
 
-  // We've combined the initial data fetching, so this useEffect is only needed
-  // for when the user explicitly changes filters
+  // Only make additional API calls when user explicitly changes filters after initial load
   useEffect(() => {
-    // Only make additional API calls when a user explicitly selects an institution or fund
-    const hasExplicitSelection = 
-      (dropdownValues.fund_name && dropdownValues.fund_name.length > 0) || 
-      dropdownValues.institution_name;
+    // Skip if this is the initial auto-selection (when allInstitutions is being set)
+    if (allInstitutions.length === 0) return;
+    
+    // Only make API calls when user explicitly changes filters
+    const hasManualSelection = 
+      (dropdownValues.fund_name && dropdownValues.fund_name.length > 0);
       
-    if (hasExplicitSelection) {
-      // When institution is selected, we need to fetch dependent dropdowns
-      // with the institution_name included in the payload
+    if (hasManualSelection) {
+      // When fund is selected, fetch dependent dropdowns
       getDependentDropdown();
-      
-      // If an institution was selected, also get the fund name dropdown
-      if (dropdownValues.institution_name) {
-        getFundNameDependentDropdown(dropdownValues.institution_name);
-      }
     }
-  }, [dropdownValues.fund_name, dropdownValues.institution_name]);
+  }, [dropdownValues.fund_name, allInstitutions.length]);
 
   useEffect(() => {
-    if (allApplyFilter && Object.keys(allApplyFilter).length > 0) {
-      if (isCompanySelected) {
-        reset();
-        setShowFundName(false);
-        dispatch(
-          fetchNpxProxyDashboard(
-            createDynamicURL(
-              `${baseURL}/npx/detail/`,
-              { global_search: companyGlobalSearchName, year: year || '2024' },
-              undefined,
-              page
-            )
+    // Only handle pagination changes, not initial data loading
+    if (allApplyFilter && Object.keys(allApplyFilter).length > 0 && page > 1) {
+      dispatch(
+        fetchNpxProxyDashboard(
+          createDynamicURL(
+            `${baseURL}/npx/detail/`,
+            { ...allApplyFilter, year: year || '2024' },
+            undefined,
+            page
           )
-        );
-        dispatch(setIsCompanySelected(false));
-      } else {
-        dispatch(
-          fetchNpxProxyDashboard(
-            createDynamicURL(
-              `${baseURL}/npx/detail/`,
-              { ...allApplyFilter, year: year || '2024' },
-              undefined,
-              page
-            )
-          )
-        );
-      }
-      dispatch(setTempSearch(companyGlobalSearchName));
+        )
+      );
     }
-  }, [companyGlobalSearchTicker, searchTicker, filter, allApplyFilter, page]);
+    
+    // Handle company change reset
+    if (isCompanySelected) {
+      reset();
+      setShowFundName(false);
+      dispatch(setIsCompanySelected(false));
+    }
+  }, [page, isCompanySelected]);
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -674,7 +678,7 @@ const index = () => {
           <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
             <span>
               <h1 className="text-lg font-bold flex items-center gap-2">
-                N-PX Voting (Beta)
+                N-PX Voting
               </h1>
               {
                 meetingDate &&
@@ -1024,7 +1028,7 @@ const index = () => {
         )}
 
         {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
-        {npxProxyLoading ? (
+        {(npxProxyLoading || initialLoading) ? (
           // Show loading skeleton while data is being fetched
           <TableWrapper isLoading={true}>
             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
@@ -1101,7 +1105,7 @@ const index = () => {
             </div>
           </TableWrapper>
         ) : (
-          // Show "No data found" when no data is available
+          // Show "No data found" when no data is available and not loading
           <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
             <div className="text-center text-gray-400 text-lg font-semibold">
               <FaTimes className="mx-auto mb-2 text-4xl text-red-500" />

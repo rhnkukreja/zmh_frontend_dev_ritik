@@ -357,7 +357,14 @@ function Main() {
                                     <h1>{formatDate(member.startDate?.displayDate) || '-'}</h1>
                                   </Table.Td>
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[130px] text-center">
-                                    <h1>{calculateTenure(member.startDate?.displayDate, member.endDate?.displayDate)}</h1>
+                                    <h1 className={(() => {
+                                      const tenure = calculateTenure(member.startDate?.displayDate, member.endDate?.displayDate);
+                                      const tenureMatch = tenure.match(/(\d+)\s+year/);
+                                      const years = tenureMatch ? parseInt(tenureMatch[1]) : 0;
+                                      return years > 10 ? "text-red-700 font-semibold" : "";
+                                    })()}>
+                                      {calculateTenure(member.startDate?.displayDate, member.endDate?.displayDate)}
+                                    </h1>
                                   </Table.Td>
                                 </Table.Tr>
                               ));

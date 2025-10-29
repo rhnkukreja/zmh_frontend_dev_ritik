@@ -126,18 +126,45 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
           <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
             {/* Expand All Button */}
             {Object.keys(groupVotingRationale || {}).length > 0 && (
-              <button
-                onClick={expandAllGroups}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
-              >
-                <span className="text-sm font-medium">
-                  {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
+              <>
+                <span 
+                  className="cursor-pointer"
+                  onClick={() => {
+                    // Store data temporarily in sessionStorage
+                    const votingRationaleData = {
+                      ticker: companyGlobalSearchTicker || '',
+                      meetingDate: meetingDate || '',
+                      data: groupVotingRationale || {}
+                    };
+                    
+                    // Store in sessionStorage with unique key
+                    const storageKey = `voting-rationale-${Date.now()}`;
+                    sessionStorage.setItem(storageKey, JSON.stringify(votingRationaleData));
+                    
+                    // Open in new tab with just the storage key
+                    const url = `/voting-rationale?key=${storageKey}`;
+                    window.open(url, '_blank');
+                  }}
+                  title="Open in New Tab"
+                >
+                  <div className="box p-2 cursor-pointer">
+                    <img alt="tab-icon" src="/src/assets/images/zmh-images/new-tab-icon.png" />
+                  </div>
                 </span>
-                <Lucide 
-                  icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} 
-                  className="w-4 h-4" 
-                />
-              </button>
+                
+                <button
+                  onClick={expandAllGroups}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
+                >
+                  <span className="text-sm font-medium">
+                    {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
+                  </span>
+                  <Lucide 
+                    icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} 
+                    className="w-4 h-4" 
+                  />
+                </button>
+              </>
             )}
             <Tippy content="Download Excel" options={{ theme: "light" }}>
               <div
@@ -182,7 +209,15 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
                       Proposal
                     </Table.Td>
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                      Voting Rationale
+                      <div className="flex items-center gap-2">
+                        <span>Voting Rationale</span>
+                        {Object.values(openGroups).some(isOpen => isOpen) && (
+                          <Lucide
+                            icon="ChevronUp"
+                            className="w-4 h-4 text-primary"
+                          />
+                        )}
+                      </div>
                     </Table.Td>
                   </Table.Tr>
                 </Table.Thead>
@@ -194,55 +229,55 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
                         ([investorName, institutionQuestions]: [
                           string,
                           any
-                        ]) => (
+                        ], index: number) => (
                           <>
-                            <Table.Tr
-                              className="bg-gray-50 dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10 hover:bg-gray-100 dark:hover:bg-darkmode-600 transition-all duration-200"
-                              onClick={() => toggleGroup(investorName)}
-                            >
-                              <Table.Td
-                                colSpan={5}
-                                className="font-semibold py-3 px-4"
+                            {!openGroups[investorName] && (
+                              <Table.Tr
+                                className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'} dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10 hover:bg-gray-200 dark:hover:bg-darkmode-600 transition-all duration-200`}
+                                onClick={() => toggleGroup(investorName)}
                               >
-                                <div className="flex flex-row justify-between items-center">
-                                  <div className="flex items-center">
-                                    <span className="text-gray-800 dark:text-white font-medium">
-                                      {investorName}
-                                    </span>
-                                  </div>
-                                  <button className="text-primary hover:text-primary/80 transition-colors duration-200">
-                                    {openGroups[investorName] ? (
-                                      <Lucide
-                                        icon="ChevronUp"
-                                        className="w-5 h-5"
-                                      />
-                                    ) : (
+                                <Table.Td
+                                  colSpan={5}
+                                  className="font-semibold py-3 px-4"
+                                >
+                                  <div className="flex flex-row justify-between items-center">
+                                    <div className="flex items-center">
+                                      <span className="text-gray-800 dark:text-white font-medium">
+                                        {investorName}
+                                      </span>
+                                    </div>
+                                    <button className="text-primary hover:text-primary/80 transition-colors duration-200">
                                       <Lucide
                                         icon="ChevronDown"
                                         className="w-5 h-5"
                                       />
-                                    )}
-                                  </button>
-                                </div>
-                              </Table.Td>
-                            </Table.Tr>
+                                    </button>
+                                  </div>
+                                </Table.Td>
+                              </Table.Tr>
+                            )}
 
                             {openGroups[investorName] &&
                               Array.isArray(institutionQuestions) &&
-                              institutionQuestions.map((question: any) => (
+                              institutionQuestions.map((question: any, questionIndex: number) => (
                                 <Table.Tr
                                   key={question?.id}
-                                  className="[&_td]:last:border-b-0"
+                                  className={`[&_td]:last:border-b-0 ${questionIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} dark:bg-darkmode-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-darkmode-600 transition-colors duration-200`}
+                                  onClick={() => toggleGroup(investorName)}
                                 >
-                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800"></Table.Td>
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 w-[200px] bg-inherit">
+                                    <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
+                                      {investorName}
+                                    </div>
+                                  </Table.Td>
 
-                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !min-w-[150px] bg-gray-50 dark:bg-darkmode-800">
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 min-w-[200px] bg-inherit">
                                     <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
                                       {question?.proposal}
                                     </div>
                                   </Table.Td>
 
-                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600">
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-inherit">
                                     <div
                                       dangerouslySetInnerHTML={{
                                         __html: question?.voting_rationale,
