@@ -351,7 +351,7 @@ function Main() {
                                     <h1>{member.title || '-'}</h1>
                                   </Table.Td>
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-left">
-                                    <h1>{member.person?.age ?? '-'}</h1>
+                                    <h1>{member.person?.age}</h1>
                                   </Table.Td>
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[130px] text-left">
                                     <h1>{formatDate(member.startDate?.displayDate) || '-'}</h1>

@@ -359,7 +359,7 @@ class DashboardService {
     result: any;
   }> {
     const requestBody = {
-      query: `query MyQuery { organizationKeywordSearch(filter: {searchKeyword: "${searchKeyword}"}) { ... on OrganizationPagedResult { __typename items { organizationName organizationType website latestDailyMarketCapital latestAnnualMarketRevenue headOfficeAddress { address city country } rolesBoard { items { person { name } startDate { displayDate } endDate { displayDate } type title } } rolesEmployment { items { person { name } type title } } } } ... on GenericError { __typename errorCode errorMessage } ... on ValidationError { __typename errorCode errorMessage } } }`,
+      query: `query MyQuery { organizationKeywordSearch(filter: {searchKeyword: "${searchKeyword}"}) { ... on OrganizationPagedResult { __typename items { organizationName organizationType website latestDailyMarketCapital latestAnnualMarketRevenue headOfficeAddress { address city country } rolesBoard { items { person { name age } startDate { displayDate } endDate { displayDate } type title } } rolesEmployment { items { person { name age } type title } } } } ... on GenericError { __typename errorCode errorMessage } ... on ValidationError { __typename errorCode errorMessage } } }`,
       variables: {}
     };
     
