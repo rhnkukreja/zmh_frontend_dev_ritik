@@ -618,23 +618,25 @@ const VdsProxyVotingTable = () => {
                                             >
                                               {vdsProxy[vdsHeader?.field]
                                                 ?.vote === "Split Vote" ? (
-                                                <Tippy
-                                                  content={
-                                                    isObject(
-                                                      vdsProxy[vdsHeader?.field]
-                                                    ) &&
-                                                    getSplitContents(
-                                                      vdsProxy[vdsHeader?.field]
-                                                        ?.split_vote_counts
-                                                    )
-                                                  }
-                                                  options={{ theme: "light" }}
-                                                >
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
-                                                </Tippy>
+                                                <div className="flex items-center">
+                                                  <span className="for">
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
+                                                  <div
+                                                    data-tooltip-id="my-tooltip-data-html"
+                                                    data-tooltip-html={
+                                                      isObject(vdsProxy[vdsHeader?.field]) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                      )
+                                                    }
+                                                  >
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    />
+                                                  </div>
+                                                </div>
                                               ) : (
                                                 <span className="for ">
                                                   {
@@ -683,39 +685,33 @@ const VdsProxyVotingTable = () => {
                                                 ?.vote !== "Split Vote"
                                                 ? vdsProxy[vdsHeader?.field]
                                                     ?.vote
-                                                : ""}
+                                                : (
+                                                  <div className="flex items-center">
+                                                    <span className="for">
+                                                      {vdsProxy[vdsHeader?.field]?.vote}
+                                                    </span>
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={
+                                                        isObject(vdsProxy[vdsHeader?.field]) &&
+                                                        getSplitContents(
+                                                          vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                        )
+                                                      }
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                )}
                                             </h1>
                                           ) : (
                                             <h1 className="check ">
                                               {vdsProxy[vdsHeader?.field]}
                                             </h1>
                                           )}
-
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null &&
-                                            vdsProxy[vdsHeader?.field]?.vote ===
-                                              "Split Vote" && (
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  getSplitContents(
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.split_vote_counts
-                                                  )
-                                                }
-                                                options={{ theme: "light" }}
-                                              >
-                                                {
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                }
-                                              </Tippy>
-                                            )}
                                         </Table.Td>
                                       )
                                     )}
@@ -925,23 +921,25 @@ const VdsProxyVotingTable = () => {
                                             >
                                               {vdsProxy[vdsHeader?.field]
                                                 ?.vote === "Split Vote" ? (
-                                                <Tippy
-                                                  content={
-                                                    isObject(
-                                                      vdsProxy[vdsHeader?.field]
-                                                    ) &&
-                                                    getSplitContents(
-                                                      vdsProxy[vdsHeader?.field]
-                                                        ?.split_vote_counts
-                                                    )
-                                                  }
-                                                  options={{ theme: "light" }}
-                                                >
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
-                                                </Tippy>
+                                                <div className="flex items-center">
+                                                  <span className="for">
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
+                                                  <div
+                                                    data-tooltip-id="my-tooltip-data-html"
+                                                    data-tooltip-html={
+                                                      isObject(vdsProxy[vdsHeader?.field]) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                      )
+                                                    }
+                                                  >
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    />
+                                                  </div>
+                                                </div>
                                               ) : (
                                                 <span className="for">
                                                   {
@@ -990,39 +988,33 @@ const VdsProxyVotingTable = () => {
                                                 ?.vote !== "Split Vote"
                                                 ? vdsProxy[vdsHeader?.field]
                                                     ?.vote
-                                                : ""}
+                                                : (
+                                                  <div className="flex items-center">
+                                                    <span className="for">
+                                                      {vdsProxy[vdsHeader?.field]?.vote}
+                                                    </span>
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={
+                                                        isObject(vdsProxy[vdsHeader?.field]) &&
+                                                        getSplitContents(
+                                                          vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                        )
+                                                      }
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                )}
                                             </h1>
                                           ) : (
                                             <h1 className="check">
                                               {vdsProxy[vdsHeader?.field]}
                                             </h1>
                                           )}
-
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null &&
-                                            vdsProxy[vdsHeader?.field]?.vote ===
-                                              "Split Vote" && (
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  getSplitContents(
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.split_vote_counts
-                                                  )
-                                                }
-                                                options={{ theme: "light" }}
-                                              >
-                                                {
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                }
-                                              </Tippy>
-                                            )}
                                         </Table.Td>
                                       )
                                     )}
