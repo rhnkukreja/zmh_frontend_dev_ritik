@@ -116,6 +116,14 @@ const VdsProxyVotingTable = () => {
     tab,
   } = useAppSelector((state) => state.dashboard);
   const [searchParams] = useSearchParams();
+  
+  // Ref to track last API call parameters to prevent duplicates
+  const lastApiCallRef = useRef<{
+    company: string;
+    year: string;
+    tab: string;
+    filter: string;
+  } | null>(null);
 
   const {
     companyGlobalSearchName,
@@ -138,21 +146,27 @@ const VdsProxyVotingTable = () => {
   const loadTop20Data = useCallback(() => {
     if (!companyGlobalSearchTicker || !yearTicker) return;
 
-    const cacheKey = generateCacheKey({
-      type: 'top20',
+    // Check if we've already made this exact API call
+    const currentCall = {
       company: companyGlobalSearchTicker,
-      year: yearTicker
-    });
+      year: yearTicker,
+      tab: 'Top-20',
+      filter: ''
+    };
 
-    // Check if we have valid cached data
-    const cachedData = getCachedData(cacheKey);
-    
-    if (cachedData) {
-      console.log('✅ Using cached Top-20 data for:', companyGlobalSearchTicker, yearTicker);
-      return; // Data already loaded from cache
+    if (lastApiCallRef.current && 
+        lastApiCallRef.current.company === currentCall.company &&
+        lastApiCallRef.current.year === currentCall.year &&
+        lastApiCallRef.current.tab === currentCall.tab &&
+        lastApiCallRef.current.filter === currentCall.filter) {
+      console.log('⏭️ Skipping duplicate Top-20 API call for:', companyGlobalSearchTicker, yearTicker);
+      return;
     }
 
-    console.log('🚀 Loading fresh Top-20 data for:', companyGlobalSearchTicker, yearTicker);
+    console.log('🚀 Loading Top-20 data for:', companyGlobalSearchTicker, yearTicker);
+    
+    // Update the ref to track this API call
+    lastApiCallRef.current = currentCall;
     
     // Load data from API
     const fetchPromise = dispatch(
@@ -173,6 +187,12 @@ const VdsProxyVotingTable = () => {
     );
 
     // Cache the results when both API calls complete
+    const cacheKey = generateCacheKey({
+      type: 'top20',
+      company: companyGlobalSearchTicker,
+      year: yearTicker
+    });
+
     Promise.all([fetchPromise, rationalePromise]).then(([fetchResult, rationaleResult]) => {
       if (fetchResult.payload || rationaleResult.payload) {
         setCachedData(cacheKey, {
@@ -192,22 +212,27 @@ const VdsProxyVotingTable = () => {
     const filterString = filter?.length > 0 ? JSON.stringify(filter.sort()) : '';
     const institutionName = filter?.length > 0 ? filter : "Top 10";
     
-    const cacheKey = generateCacheKey({
-      type: 'allInvestors',
+    // Check if we've already made this exact API call
+    const currentCall = {
       company: companyGlobalSearchTicker,
       year: yearTicker,
-      filters: filterString
-    });
+      tab: 'All-Investor',
+      filter: filterString
+    };
 
-    // Check if we have valid cached data
-    const cachedData = getCachedData(cacheKey);
-    
-    if (cachedData) {
-      console.log('✅ Using cached All-Investor data for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
-      return; // Data already loaded from cache
+    if (lastApiCallRef.current && 
+        lastApiCallRef.current.company === currentCall.company &&
+        lastApiCallRef.current.year === currentCall.year &&
+        lastApiCallRef.current.tab === currentCall.tab &&
+        lastApiCallRef.current.filter === currentCall.filter) {
+      console.log('⏭️ Skipping duplicate All-Investor API call for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
+      return;
     }
+    
+    console.log('🚀 Loading All-Investor data for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
 
-    console.log('🚀 Loading fresh All-Investor data for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
+    // Update the ref to track this API call
+    lastApiCallRef.current = currentCall;
 
     // Load data from API
     const fetchPromise = dispatch(
@@ -231,6 +256,13 @@ const VdsProxyVotingTable = () => {
     );
 
     // Cache the results when both API calls complete
+    const cacheKey = generateCacheKey({
+      type: 'allInvestors',
+      company: companyGlobalSearchTicker,
+      year: yearTicker,
+      filters: filterString
+    });
+
     Promise.all([fetchPromise, rationalePromise]).then(([fetchResult, rationaleResult]) => {
       if (fetchResult.payload || rationaleResult.payload) {
         setCachedData(cacheKey, {
@@ -243,20 +275,27 @@ const VdsProxyVotingTable = () => {
     });
   }, [companyGlobalSearchTicker, yearTicker, filter, dispatch]);
 
-  // Effect for tab switching - triggers data loading based on current tab
+  // Single effect to handle data loading - prevents duplicate API calls
   useEffect(() => {
+    if (!companyGlobalSearchTicker || !yearTicker) return;
+
+    console.log('📊 Loading data for:', companyGlobalSearchTicker, yearTicker, 'tab:', tab);
+    
+    // Load data based on current tab
     if (tab === "Top-20") {
       loadTop20Data();
     } else if (tab === "All-Investor") {
       loadAllInvestorData();
     }
-  }, [tab, loadTop20Data, loadAllInvestorData]);
+  }, [companyGlobalSearchTicker, yearTicker, tab, loadTop20Data, loadAllInvestorData]);
 
-  // Effect to clear cache when company changes
+  // Separate effect to clear cache only when company changes (not year or tab)
   useEffect(() => {
     if (companyGlobalSearchTicker) {
-      console.log('🧹 Company changed, clearing cache for:', companyGlobalSearchTicker);
+      console.log('🧹 Company changed, clearing cache and API call tracking for:', companyGlobalSearchTicker);
       clearCacheForCompany(companyGlobalSearchTicker);
+      // Reset API call tracking when company changes
+      lastApiCallRef.current = null;
     }
   }, [companyGlobalSearchTicker]);
 

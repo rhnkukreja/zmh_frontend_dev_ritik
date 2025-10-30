@@ -183,18 +183,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         )}
       </div>
 
-      {/* Show loading state when either parent loading or rationale loading */}
-      {(parentLoading || getProxyVotingRationaleLoading) && !currentVotingRationale?.length && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
-      )}
-
-      {currentVotingRationale?.length > 0 && (
+      {/* TableWrapper handles loading state - show when loading or when data exists */}
+      {((parentLoading || getProxyVotingRationaleLoading) || currentVotingRationale?.length > 0) && (
         <>
           <TableWrapper isLoading={getProxyVotingRationaleLoading || parentLoading}>
             <div className="overflow-auto max-h-[400px]">
@@ -308,19 +298,6 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
         </>
       )}
 
-
-
-      {/* Single loading indicator for all scenarios - only show when no data yet AND parent is not loading */}
-      {getProxyVotingRationaleLoading && !currentVotingRationale?.length && !parentLoading && (
-        <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
-      )}
-        
       {/* Only show "No Voting Rationale" when not loading - handle null/undefined case */}
       {tab === "Top-20" &&
         (!currentVotingRationale || currentVotingRationale?.length === 0) &&
