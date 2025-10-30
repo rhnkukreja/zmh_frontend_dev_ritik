@@ -421,8 +421,7 @@ const VdsProxyVotingTable = () => {
               });
             }
           }}
-          variant="primary"
-          className="bg-theme-2 border-bg-theme-2 flex items-center gap-2"
+          className="px-5 py-2 rounded flex gap-2 items-center border border-primary text-primary"
         >
           <span>Voting Rationale</span>
           <Lucide 
