@@ -2008,6 +2008,17 @@ const index = () => {
                         loading={getFundNameDropdownLoader}
                         onChange={(selectedOptions) => {
                           const selectedValues = selectedOptions.map((option) => option.value);
+                          
+                          // Show warning when selecting the third institution
+                          if (selectedValues.length === 3) {
+                            toast.warning("Maximum institutions are selected");
+                          }
+                          
+                          // Prevent selecting more than 3 institutions
+                          if (selectedValues.length > 3) {
+                            return; // Don't update the field if more than 3 are selected
+                          }
+                          
                           field.onChange(selectedValues);
                           handleDropdownChange("institution_name", selectedValues);
                           // Fetch vote and year options based on selected institutions
