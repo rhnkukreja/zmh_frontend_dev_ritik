@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Lucide from "@/components/Base/Lucide";
 
@@ -10,28 +10,86 @@ interface VotingQuestion {
 const VotingRationalePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+  const [companyTicker, setCompanyTicker] = useState('N/A');
+  const [meetingDate, setMeetingDate] = useState('N/A');
+  const [groupVotingRationale, setGroupVotingRationale] = useState<Record<string, VotingQuestion[]>>({});
+  const [dataLoaded, setDataLoaded] = useState(false);
   
-  // Get data from sessionStorage using the key from URL
-  const storageKey = searchParams.get('key');
-  let companyTicker = 'N/A';
-  let meetingDate = 'N/A';
-  let groupVotingRationale: Record<string, VotingQuestion[]> = {};
-  
-  if (storageKey) {
-    try {
-      const storedData = sessionStorage.getItem(storageKey);
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        companyTicker = parsedData.ticker || 'N/A';
-        meetingDate = parsedData.meetingDate || 'N/A';
-        groupVotingRationale = parsedData.data || {};
-        
-        // Clean up - remove from sessionStorage after reading
-        sessionStorage.removeItem(storageKey);
+  // Load data from sessionStorage
+  useEffect(() => {
+    const storageKey = searchParams.get('key');
+    if (storageKey) {
+      try {
+        const storedData = sessionStorage.getItem(storageKey);
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          setCompanyTicker(parsedData.ticker || 'N/A');
+          setMeetingDate(parsedData.meetingDate || 'N/A');
+          setGroupVotingRationale(parsedData.data || {});
+          
+          // Initialize accordion state - expand all if expandAll flag is true
+          const expandAll = parsedData.expandAll || false;
+          const initialOpenGroups: { [key: string]: boolean } = {};
+          Object.keys(parsedData.data || {}).forEach(investorName => {
+            initialOpenGroups[investorName] = expandAll;
+          });
+          setOpenGroups(initialOpenGroups);
+          setDataLoaded(true);
+          
+          // Clean up sessionStorage after a short delay to ensure rendering is complete
+          setTimeout(() => {
+            sessionStorage.removeItem(storageKey);
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error parsing voting rationale data:', error);
+        setDataLoaded(true);
       }
-    } catch (error) {
-      console.error('Error parsing voting rationale data:', error);
+    } else {
+      setDataLoaded(true);
     }
+  }, [searchParams]);
+
+  const toggleGroup = (investorName: string) => {
+    setOpenGroups((prevState) => ({
+      ...prevState,
+      [investorName]: !prevState[investorName],
+    }));
+  };
+
+  const expandAllGroups = () => {
+    const allInvestorNames = Object.keys(groupVotingRationale);
+    const allExpanded = allInvestorNames.every(name => openGroups[name]);
+
+    if (allExpanded) {
+      // Collapse all
+      setOpenGroups({});
+    } else {
+      // Expand all
+      const newOpenGroups: { [key: string]: boolean } = {};
+      allInvestorNames.forEach(name => {
+        newOpenGroups[name] = true;
+      });
+      setOpenGroups(newOpenGroups);
+    }
+  };
+
+  const areAllGroupsExpanded = () => {
+    const allInvestorNames = Object.keys(groupVotingRationale);
+    return allInvestorNames.length > 0 && allInvestorNames.every(name => openGroups[name]);
+  };
+
+  // Show loading state while data is being loaded
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading voting rationale data...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -49,28 +107,41 @@ const VotingRationalePage: React.FC = () => {
               </p>
             </div>
             
-            <button
-              onClick={() => {
-                try {
-                  // Check if this was opened in a new tab/window
-                  if (window.opener && !window.opener.closed) {
-                    // Close the tab if it was opened from another window
-                    window.close();
-                  } else {
-                    // Try browser back navigation
-                    window.history.back();
+            <div className="flex items-center gap-4">
+              {Object.keys(groupVotingRationale).length > 0 && (
+                <button
+                  onClick={expandAllGroups}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors duration-200 font-medium text-sm border border-slate-300"
+                >
+                  <span className="text-sm font-medium">
+                    {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
+                  </span>
+                  <Lucide 
+                    icon={areAllGroupsExpanded() ? "ChevronUp" : "ChevronDown"} 
+                    className="w-4 h-4" 
+                  />
+                </button>
+              )}
+              
+              <button
+                onClick={() => {
+                  try {
+                    if (window.opener && !window.opener.closed) {
+                      window.close();
+                    } else {
+                      window.history.back();
+                    }
+                  } catch (error) {
+                    navigate('/');
                   }
-                } catch (error) {
-                  // Fallback: navigate to home
-                  navigate('/');
-                }
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-200 font-medium text-sm"
-            >
-              <Lucide icon="ArrowLeft" className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-          </div>
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-200 font-medium text-sm"
+              >
+                <Lucide icon="ArrowLeft" className="w-4 h-4" />
+                <span>Back</span>
+              </button>
+            </div>
+          </div> 
         </div>
 
         {/* Voting Rationale Content */}
@@ -88,59 +159,72 @@ const VotingRationalePage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-200">
-              {Object.entries(groupVotingRationale).map(([investorName, questions], investorIndex) => (
-                <div key={investorName} className="p-6">
-                  {/* Investor Header */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Lucide icon="Building2" className="w-4 h-4 text-primary" />
+            <div className="overflow-auto">
+              {Object.entries(groupVotingRationale).map(([investorName, questions], index) => (
+                <React.Fragment key={investorName}>
+                  {/* Accordion Header */}
+                  <div
+                    className={`${index % 2 === 0 ? 'bg-slate-100' : 'bg-slate-50'} cursor-pointer hover:bg-slate-200 transition-all duration-200 border-b-2 border-slate-300 p-4`}
+                    onClick={() => toggleGroup(investorName)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Lucide
+                          icon={openGroups[investorName] ? "ChevronUp" : "ChevronDown"}
+                          className="w-5 h-5 text-primary transition-transform duration-200"
+                        />
+                        <span className="text-gray-800 font-medium text-lg">
+                          {investorName}
+                        </span>
+                      </div>
                     </div>
-                    <h2 className="text-xl font-semibold text-slate-900">
-                      {investorName}
-                    </h2>
                   </div>
 
-                  {/* Questions/Proposals */}
-                  {Array.isArray(questions) && questions.length > 0 ? (
-                    <div className="space-y-4">
-                      {questions.map((question, questionIndex) => (
-                        <div
-                          key={questionIndex}
-                          className={`p-4 rounded-lg border border-slate-200 ${
-                            questionIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'
-                          }`}
-                        >
-                          <div className="mb-3">
-                            <h3 className="font-semibold text-slate-900 text-sm mb-1 flex items-center gap-2">
-                              <Lucide icon="FileCheck" className="w-4 h-4 text-slate-500" />
-                              Proposal
-                            </h3>
-                            <p className="text-slate-700 text-sm leading-relaxed">
-                              {question?.proposal || 'No proposal information available'}
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <h3 className="font-semibold text-slate-900 text-sm mb-1 flex items-center gap-2">
-                              <Lucide icon="MessageSquare" className="w-4 h-4 text-slate-500" />
-                              Voting Rationale
-                            </h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
-                              {question?.voting_rationale || 'No rationale provided'}
-                            </p>
-                          </div>
+                  {/* Accordion Content */}
+                  {openGroups[investorName] && (
+                    <div className="p-6 bg-white border-b border-slate-200">
+                      {Array.isArray(questions) && questions.length > 0 ? (
+                        <div className="space-y-4">
+                          {questions.map((question, questionIndex) => (
+                            <div
+                              key={questionIndex}
+                              className={`p-4 rounded-lg border border-slate-200 ${
+                                questionIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'
+                              }`}
+                            >
+                              <div className="mb-3">
+                                <h3 className="font-medium text-gray-800 text-sm mb-2">
+                                  <span className="font-semibold">Proposal:</span>
+                                </h3>
+                                <div className="text-gray-700 text-sm leading-relaxed pl-4">
+                                  {question?.proposal || 'No proposal information available'}
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h3 className="font-medium text-gray-800 text-sm mb-2">
+                                  <span className="font-semibold">Voting Rationale:</span>
+                                </h3>
+                                <div 
+                                  className="text-gray-700 text-sm leading-relaxed pl-4"
+                                  dangerouslySetInnerHTML={{
+                                    __html: question?.voting_rationale || 'No rationale provided',
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                      <p className="text-slate-500 text-sm text-center">
-                        No proposals or voting rationale available for this investor.
-                      </p>
+                      ) : (
+                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                          <p className="text-slate-500 text-sm text-center">
+                            No proposals or voting rationale available for this investor.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+                </React.Fragment>
               ))}
             </div>
           )}

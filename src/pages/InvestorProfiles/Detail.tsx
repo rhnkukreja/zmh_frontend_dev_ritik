@@ -55,9 +55,9 @@ function Main() {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [expandedSections, setExpandedSections] = useState<boolean[]>(() => {
- 
-  return Object.keys(investorProfileEditableSectionsInvestors).map((_, idx) => idx === 0);
-});
+
+    return Object.keys(investorProfileEditableSectionsInvestors).map((_, idx) => idx === 0);
+  });
 
   const navigate = useNavigate();
   const toggleExpand = () => {
@@ -103,15 +103,15 @@ function Main() {
       toast.error("Something went wrong!");
     }
   };
- const areAllGroupsExpanded = () => {
-  return expandedSections.slice(1).every(Boolean); 
-};
-const toggleAllGroups = () => {
-  const shouldExpand = !areAllGroupsExpanded();
-  setExpandedSections(prev =>
-    prev.map((_, idx) => (idx === 0 ? true : shouldExpand))
-  );
-};
+  const areAllGroupsExpanded = () => {
+    return expandedSections.slice(1).every(Boolean);
+  };
+  const toggleAllGroups = () => {
+    const shouldExpand = !areAllGroupsExpanded();
+    setExpandedSections(prev =>
+      prev.map((_, idx) => (idx === 0 ? true : shouldExpand))
+    );
+  };
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -261,7 +261,7 @@ const toggleAllGroups = () => {
 
     validateImages();
   }, [singleInvesterProfile?.key_contacts]);
- 
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 ">
@@ -336,9 +336,9 @@ const toggleAllGroups = () => {
               </div>
             )}
           </div>
-       
+
           <div className="mt-2 flex flex-col lg:flex-row  gap-x-2">
-            
+
             <div
               className=
               {clsx(
@@ -348,7 +348,7 @@ const toggleAllGroups = () => {
                 params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
               )}
             >
-                  
+
               {params?.type === "investor" &&
                 Object.keys(investorProfileEditableSectionsInvestors)?.map(
                   (key, index) => {
@@ -380,17 +380,17 @@ const toggleAllGroups = () => {
                         field={key as keyof InvestersProfile}
                         expanded={expandedSections[index]}
                         onToggle={() =>
-                         setExpandedSections(prev =>
-                         prev.map((v, i) => (i === index ? !v : v))
-                         )}
-                         toggleAllGroups={toggleAllGroups}
-                         areAllGroupsExpanded={areAllGroupsExpanded}
-      
+                          setExpandedSections(prev =>
+                            prev.map((v, i) => (i === index ? !v : v))
+                          )}
+                        toggleAllGroups={toggleAllGroups}
+                        areAllGroupsExpanded={areAllGroupsExpanded}
+
                       />
                     );
                   }
                 )}
-              
+
               {params?.type === "equity" &&
                 Object.keys(investorProfileEditableSectionsEquity).map(
                   (key, index) => {
@@ -427,7 +427,7 @@ const toggleAllGroups = () => {
                           // ?.concat("</li>") || ""
                         }
                         field={key as keyof InvestersProfile}
-                        
+
                       />
                     );
                   }
@@ -457,6 +457,17 @@ const toggleAllGroups = () => {
                     </a>
                   </div>
                 )}
+                <div className="flex flex-col box mb-4 p-5 bg-white from-slate-50 to-slate-100 border border-slate-200 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <h4 className="text-sm font-medium text-slate-600 uppercase tracking-wide">
+                      Data As Of
+                    </h4>
+                  </div>
+                  <h5 className="text-lg font-semibold text-slate-900">
+                    February 2025
+                  </h5>
+                </div>
                 <div className="flex flex-col box">
                   <div
                     className={clsx(

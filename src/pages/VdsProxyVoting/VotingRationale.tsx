@@ -8,7 +8,7 @@ import { getProxyVotingRationale } from "@/stores/dashboardSlice";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { createDynamicURL, downloadXlsxFile } from "@/utils/helper";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Tooltip } from "react-tooltip";
 import { useSearchParams } from "react-router-dom";
 import { FaCheckCircle } from "react-icons/fa";
@@ -130,11 +130,20 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
                 <span 
                   className="cursor-pointer"
                   onClick={() => {
+                    // Prepare expanded data - all accordions should be open
+                    const expandedData: Record<string, any[]> = {};
+                    
+                    // Copy all data with all accordions expanded
+                    Object.keys(groupVotingRationale || {}).forEach(investorName => {
+                      expandedData[investorName] = groupVotingRationale[investorName] || [];
+                    });
+                    
                     // Store data temporarily in sessionStorage
                     const votingRationaleData = {
                       ticker: companyGlobalSearchTicker || '',
                       meetingDate: meetingDate || '',
-                      data: groupVotingRationale || {}
+                      data: expandedData,
+                      expandAll: true // Flag to indicate all should be expanded
                     };
                     
                     // Store in sessionStorage with unique key
@@ -220,40 +229,37 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
                           string,
                           any
                         ], index: number) => (
-                          <>
-                            {!openGroups[investorName] && (
-                              <Table.Tr
-                                className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'} dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10 hover:bg-gray-200 dark:hover:bg-darkmode-600 transition-all duration-200`}
-                                onClick={() => toggleGroup(investorName)}
+                          <React.Fragment key={investorName}>
+                            {/* Accordion Header - Always visible */}
+                            <Table.Tr
+                              className={`${index % 2 === 0 ? 'bg-slate-100' : 'bg-slate-50'} dark:bg-darkmode-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-darkmode-600 transition-all duration-200 border-b-2 border-slate-300 dark:border-darkmode-500`}
+                              onClick={() => toggleGroup(investorName)}
+                            >
+                              <Table.Td
+                                colSpan={3}
+                                className="font-semibold py-4 px-4"
                               >
-                                <Table.Td
-                                  colSpan={5}
-                                  className="font-semibold py-3 px-4"
-                                >
                                   <div className="flex flex-row justify-between items-center">
-                                    <div className="flex items-center">
-                                      <span className="text-gray-800 dark:text-white font-medium">
-                                        {investorName}
-                                      </span>
-                                    </div>
-                                    <button className="text-primary hover:text-primary/80 transition-colors duration-200">
-                                      <Lucide
-                                        icon="ChevronDown"
-                                        className="w-5 h-5"
-                                      />
-                                    </button>
+                                  <div className="flex items-center gap-3">
+                                    <Lucide
+                                      icon={openGroups[investorName] ? "ChevronUp" : "ChevronDown"}
+                                      className="w-5 h-5 text-primary transition-transform duration-200"
+                                    />
+                                    <span className="text-gray-800 dark:text-white font-medium">
+                                      {investorName}
+                                    </span>
                                   </div>
-                                </Table.Td>
-                              </Table.Tr>
-                            )}
+                                </div>
+                              </Table.Td>
+                            </Table.Tr>
 
+                            {/* Accordion Content - Only visible when expanded */}
                             {openGroups[investorName] &&
                               Array.isArray(institutionQuestions) &&
                               institutionQuestions.map((question: any, questionIndex: number) => (
                                 <Table.Tr
-                                  key={question?.id}
-                                  className={`[&_td]:last:border-b-0 ${questionIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} dark:bg-darkmode-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-darkmode-600 transition-colors duration-200`}
-                                  onClick={() => toggleGroup(investorName)}
+                                  key={`${investorName}-${questionIndex}`}
+                                  className={`[&_td]:last:border-b-0 ${questionIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'} dark:bg-darkmode-800 hover:bg-slate-100 dark:hover:bg-darkmode-600 transition-colors duration-200`}
                                 >
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 w-[200px] bg-inherit">
                                     <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
@@ -277,7 +283,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({ filter, meetingDate, 
                                   </Table.Td>
                                 </Table.Tr>
                               ))}
-                          </>
+                          </React.Fragment>
                         )
                       )
                     ) : (
