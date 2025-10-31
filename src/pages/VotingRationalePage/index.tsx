@@ -50,7 +50,21 @@ const VotingRationalePage: React.FC = () => {
             </div>
             
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                try {
+                  // Check if this was opened in a new tab/window
+                  if (window.opener && !window.opener.closed) {
+                    // Close the tab if it was opened from another window
+                    window.close();
+                  } else {
+                    // Try browser back navigation
+                    window.history.back();
+                  }
+                } catch (error) {
+                  // Fallback: navigate to home
+                  navigate('/');
+                }
+              }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors duration-200 font-medium text-sm"
             >
               <Lucide icon="ArrowLeft" className="w-4 h-4" />
