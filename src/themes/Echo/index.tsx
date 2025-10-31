@@ -876,10 +876,8 @@ function Main() {
               {/* BEGIN: Notification & User Menu */}
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
-
-                  
                   {/* Your existing layout container */}
-                  {/* <VotingDataBanner /> */} {/* Info icon hidden */}
+                  <VotingDataBanner />  {/* Info icon hidden */}
                   {/* User Guide Button */}
                   <a
                     className="px-3 py-1.5 bg-red-100 rounded-full flex items-center justify-center transition-colors hover:bg-red-200"

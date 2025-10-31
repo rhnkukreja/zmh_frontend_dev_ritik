@@ -63,10 +63,10 @@ const VotingDataBanner = () => {
                     <div className="flex justify-between items-start">
                         <div className="flex-1 space-y-2">
                             <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                <strong>BlackRock, Vanguard, T. Rowe, and SSgA</strong> Q2 2025 voting data has been added to the Dashboard.
+                                BlackRock's Q2 2025 engagement details are available in Engagement module
                             </p>
                             <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                <strong>BlackRock, Vanguard, T. Rowe, Dimensional, and SSgA</strong> NPX voting data has been added to the Dashboard.
+                                Q3 2025 voting data for BlackRock, Dimensional, and State Street is available in Voting Data module
                             </p>
                         </div>
 
