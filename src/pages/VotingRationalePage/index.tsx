@@ -131,11 +131,6 @@ const VotingRationalePage: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="mt-6 text-center text-sm text-slate-500">
-          <p>Generated on {new Date().toLocaleDateString()} • ZMH Analytics</p>
-        </div>
       </div>
     </div>
   );
