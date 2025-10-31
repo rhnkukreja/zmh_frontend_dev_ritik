@@ -28,11 +28,10 @@ const VotingRationalePage: React.FC = () => {
           setMeetingDate(parsedData.meetingDate || 'N/A');
           setGroupVotingRationale(parsedData.data || {});
           
-          // Initialize accordion state - expand all if expandAll flag is true
-          const expandAll = parsedData.expandAll || false;
+          // Initialize accordion state - all closed by default
           const initialOpenGroups: { [key: string]: boolean } = {};
           Object.keys(parsedData.data || {}).forEach(investorName => {
-            initialOpenGroups[investorName] = expandAll;
+            initialOpenGroups[investorName] = false; // All closed by default
           });
           setOpenGroups(initialOpenGroups);
           setDataLoaded(true);
