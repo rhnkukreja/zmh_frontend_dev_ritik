@@ -158,6 +158,9 @@ const index = () => {
             fund_name: fundData 
           });
           
+          // Also update the dependent dropdown options when institution changes
+          setApiDependentDropdownOptions({ ...res.result });
+          
           // Output for debugging
           console.log("Fund data set to:", fundData);
         }
@@ -379,11 +382,12 @@ const index = () => {
     // Skip if this is the initial auto-selection (when allInstitutions is being set)
     if (allInstitutions.length === 0) return;
     
-    // Only make API calls when user explicitly changes filters
-    const hasManualSelection = 
+    // Only make API calls when user explicitly changes fund filters
+    // Institution changes are handled by getFundNameDependentDropdown directly
+    const hasManualFundSelection = 
       (dropdownValues.fund_name && dropdownValues.fund_name.length > 0);
       
-    if (hasManualSelection) {
+    if (hasManualFundSelection) {
       // When fund is selected, fetch dependent dropdowns
       getDependentDropdown();
     }
@@ -794,9 +798,14 @@ const index = () => {
                           if (value?.label) {
                             getFundNameDependentDropdown(value.label);
                           } else {
-                            // Clear fund dropdown when institution is cleared
+                            // Clear fund dropdown and all dependent dropdowns when institution is cleared
                             setShowFundName(false);
                             setApiFundNameDropdown({ fund_name: [] });
+                            setApiDependentDropdownOptions({
+                              proposal: [],
+                              vote: [],
+                              vote_category: [],
+                            });
                           }
                         }}
                       />
