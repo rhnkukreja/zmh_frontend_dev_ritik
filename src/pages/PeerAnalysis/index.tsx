@@ -1073,7 +1073,7 @@ function PeerAnalysis() {
                           <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Year
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
                             Institution
                           </Table.Td>
                           {isAllCompanySelected && (
@@ -1090,7 +1090,7 @@ function PeerAnalysis() {
                           <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
                             Environmental
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[200px]" style={{fontSize: '14px'}}>
                             Social
                           </Table.Td>
                           <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
@@ -1109,7 +1109,7 @@ function PeerAnalysis() {
                                 </span>
                               </Table.Td>
                               <Table.Td className="border-dashed">
-                                <p className="font-medium text-wrap w-[150px]">
+                                <p className="font-medium text-wrap">
                                   {peer?.institution_name}
                                 </p>
                               </Table.Td>
