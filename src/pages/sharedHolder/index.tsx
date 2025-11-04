@@ -2193,31 +2193,37 @@ function ShareHolderProposal() {
                       </div>
                       <StandardizedTable isLoading={loading} maxHeight="400px">
                         <StandardizedTable.Header>
-                          <StandardizedTable.Cell isHeader width="10%">
+                          <StandardizedTable.Cell isHeader width="8%">
                             Proxy Year
                           </StandardizedTable.Cell>
                           {isAllCompanySelected && (
-                            <StandardizedTable.Cell isHeader width="15%">
+                            <StandardizedTable.Cell isHeader width="12%">
                               Company
                             </StandardizedTable.Cell>
                           )}
-                          <StandardizedTable.Cell isHeader width="20%">
+                          <StandardizedTable.Cell isHeader width="15%">
                             Proponent
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="20%">
+                            Proposal Name
+                          </StandardizedTable.Cell>
+                          <StandardizedTable.Cell isHeader width="12%">
+                            Category
                           </StandardizedTable.Cell>
                           <StandardizedTable.Cell
                             isHeader
-                            width="15%"
+                            width="10%"
                             className="text-center cursor-pointer"
                           >
                             % Support*
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="15%" className="text-center">
+                          <StandardizedTable.Cell isHeader width="10%" className="text-center">
                             Vote Details
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="15%" className="text-center">
+                          <StandardizedTable.Cell isHeader width="8%" className="text-center">
                             No Action Letters
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="10%" className="text-center">
+                          <StandardizedTable.Cell isHeader width="8%" className="text-center">
                             Details
                           </StandardizedTable.Cell>
                         </StandardizedTable.Header>
@@ -2252,6 +2258,16 @@ function ShareHolderProposal() {
                                           "Not Disclosed"
                                           ? noAction?.proponent_name
                                           : noAction?.proponent}
+                                    </span>
+                                  </StandardizedTable.Cell>
+                                  <StandardizedTable.Cell>
+                                    <span className="font-medium text-sm">
+                                      {noAction?.proposal_name || '-'}
+                                    </span>
+                                  </StandardizedTable.Cell>
+                                  <StandardizedTable.Cell>
+                                    <span className="font-medium text-sm">
+                                      {noAction?.category || '-'}
                                     </span>
                                   </StandardizedTable.Cell>
                                   <StandardizedTable.Cell className="text-center">
