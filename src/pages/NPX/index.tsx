@@ -74,6 +74,7 @@ const index = () => {
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
   const year = searchParams.get("year") ?? "2024"; // Default to 2024 if not specified
+  const meetingDateFromURL = searchParams.get("meeting_date"); // Get meeting date from URL if available
 
   const [filter, setFilter] = useState("");
   const [allApplyFilter, setallApplyFilter] = useState<any>({});
@@ -106,14 +107,36 @@ const index = () => {
   // Local loading state to prevent "No data found" flash
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
 
+  // Function to format meeting date to YYYY-MM-DD format
+  const formatMeetingDate = (dateString: string) => {
+    if (!dateString) return '';
+    
+    try {
+      // If it's already in YYYY-MM-DD format, return as is
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+      }
+      
+      // Parse the date and convert to YYYY-MM-DD format
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+    } catch (error) {
+      console.error('Error formatting meeting date:', error);
+      return '';
+    }
+  };
 
   const getFundNameDependentDropdown = async (value: any) => {
     if (value !== "") {
       // Always explicitly include year parameter
+      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024', // Always provide a year value
         institution_name: [value], // Include the selected institution as an array
+        ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
       };
       try {
         setGetFundNameDropdownLoader(true);
@@ -180,9 +203,11 @@ const index = () => {
       setInitialLoading(true);
       
       // Prepare parameters for API call to fetch all institutions
+      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024',
+        ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
       };
       
       const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
@@ -210,6 +235,7 @@ const index = () => {
           global_search: companyGlobalSearchName,
           institution_name: [firstInstitution],
           year: year || '2024',
+          ...(res.result?.meeting_date && { meeting_date: formatMeetingDate(res.result.meeting_date) }), // Include formatted meeting date from API response
         };
 
         // Create filter object for chips (excluding global_search and year)
@@ -268,9 +294,11 @@ const index = () => {
   const fetchInitialData = useCallback(async () => {
     try {
       // Prepare parameters with year and selected institution if any
+      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year,
+        ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
         // Include selected institution if available
         ...(dropdownValues?.institution_name && {
           institution_name: Array.isArray(dropdownValues.institution_name)
@@ -326,9 +354,11 @@ const index = () => {
 
   const getDependentDropdown = async () => {
     // Prepare parameters for API call
+    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
     const paramFilter = {
       global_search: companyGlobalSearchName,
       year: year, // Add year parameter from URL
+      ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
       // Always include the selected institution if available - critical for dependent dropdowns
       ...(dropdownValues?.institution_name && { 
         institution_name: Array.isArray(dropdownValues.institution_name) 
@@ -396,11 +426,16 @@ const index = () => {
   useEffect(() => {
     // Only handle pagination changes, not initial data loading
     if (allApplyFilter && Object.keys(allApplyFilter).length > 0 && page > 1) {
+      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
             `${baseURL}/npx/detail/`,
-            { ...allApplyFilter, year: year || '2024' },
+            { 
+              ...allApplyFilter, 
+              year: year || '2024', 
+              ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) })
+            },
             undefined,
             page
           )
@@ -515,9 +550,13 @@ const index = () => {
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
     
-    // Always explicitly include year parameter
+    // Always explicitly include year parameter and meeting date
     const yearParam = year || '2024'; // Ensure we always have a year value
+    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
     updatedFilters.year = yearParam;
+    if (currentMeetingDate) {
+      updatedFilters.meeting_date = formatMeetingDate(currentMeetingDate); // Include formatted meeting date
+    }
     
     // Dispatch data fetch with updated filters
     dispatch(resetPage());
@@ -537,6 +576,7 @@ const index = () => {
       return;
     }
 
+    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
     const filterObj = {
       global_search: companyGlobalSearchName,
       institution_name:
@@ -550,6 +590,7 @@ const index = () => {
         "Select" === npxFilter?.vote_category ? "" : npxFilter?.vote_category,
       keyword: Array.isArray(npxFilter?.keyword) ? npxFilter?.keyword : [],
       year: year || '2024',
+      ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date
     };
 
     console.log("Filter object constructed:", filterObj);
@@ -615,12 +656,14 @@ const index = () => {
     setallApplyFilter({});
     
     // Reset pagination and fetch fresh data with just basic parameters
+    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
     dispatch(resetPage());
     dispatch(
       fetchNpxProxyDashboard(
         createDynamicURL(`${baseURL}/npx/detail/`, { 
           global_search: companyGlobalSearchName, 
-          year: year || '2024' 
+          year: year || '2024',
+          ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }) // Include formatted meeting date
         }, undefined, 1)
       )
     );

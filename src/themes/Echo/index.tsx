@@ -43,6 +43,7 @@ import { resetInvestorProfiles } from "@/stores/investersProfileSlice";
 import { resetCompany } from "@/stores/companySlice";
 import { resetInstitution } from "@/stores/institutionSlice";
 import { resetShareholderProposal } from "@/stores/shareholderProposalSlice";
+import { toast } from "react-toastify";
 import { resetProxyVotingGuidelines } from "@/stores/proxyVotingGuidelineSlice";
 import { resetEngagementQuestions } from "@/stores/engagementQuestionSlice";
 import { resetPeerAnalysis } from "@/stores/peerAnalysisSlice";
@@ -181,6 +182,16 @@ function Main() {
     setBasicModalPreview(false);
     setIsFrameLoading(true);
     setIsError(false);
+  };
+
+  const handleCopyQuestion = async (question: string) => {
+    try {
+      await navigator.clipboard.writeText(question);
+      toast.success("Question copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy text: ", error);
+      toast.error("Failed to copy question");
+    }
   };
 
   const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
@@ -1208,7 +1219,7 @@ function Main() {
       )}
 
       <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
-        <Dialog.Panel className="p-6 text-center h-full flex flex-col">
+        <Dialog.Panel className="p-6 h-full flex flex-col max-h-[80vh]">
           <Dialog.Title className="mb-4">
             <h2 className="mr-auto text-xl font-semibold text-left">AI Assistant</h2>
             <div
@@ -1219,12 +1230,61 @@ function Main() {
             </div>
           </Dialog.Title>
           
-          <div className="flex-1 w-full">
-            <iframe
-              src="/ai-search"
-              className="w-full h-[550px] border-0 rounded-lg"
-              title="AI Assistant"
-            />
+          <div className="flex gap-4 flex-1">
+            {/* Left Section - AI Assistant (70% width) */}
+            <div className="w-[70%]">
+              <iframe
+                src="/ai-search"
+                className="w-full h-[550px] border border-gray-200 rounded-lg"
+                title="AI Assistant"
+              />
+            </div>
+            
+            {/* Right Section - Logo and Recommended Questions (30% width) */}
+            <div className="w-[30%] flex flex-col">
+              {/* ZMH Logo */}
+              <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-3 mb-4">
+                <img 
+                  src={logo} 
+                  alt="ZMH Analytics Logo" 
+                  className="w-16 h-16 object-contain mb-2"
+                />
+                <span className="text-xs text-gray-600 font-medium">ZMH Analytics</span>
+              </div>
+              
+              {/* Recommended Questions */}
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-left mb-3 text-gray-800">Recommended Questions</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleCopyQuestion("What are Blackrock's engagement priorities?")}
+                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-colors group"
+                  >
+                    <span className="text-primary text-xs group-hover:text-primary/80">
+                      What are Blackrock's engagement priorities?
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleCopyQuestion("How does State Street evaluate shareholder proposals on climate?")}
+                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-colors group"
+                  >
+                    <span className="text-primary text-xs group-hover:text-primary/80">
+                      How does State Street evaluate shareholder proposals on climate?
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleCopyQuestion("How does Vanguard vote on say on pay proposals?")}
+                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-colors group"
+                  >
+                    <span className="text-primary text-xs group-hover:text-primary/80">
+                      How does Vanguard vote on say on pay proposals?
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </Dialog.Panel>
       </Dialog>

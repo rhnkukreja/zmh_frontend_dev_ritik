@@ -205,7 +205,7 @@ function Main() {
         <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: "8.3rem" }}>
           <div className="bg-white mb-4 flex flex-col md:flex-row items-center justify-between">
             <div className="border-b border-gray-200 w-full">
-              <nav className="grid grid-cols-3 w-full">
+              <nav className="grid grid-cols-2 w-full">
                 <button
                   onClick={() => {
                     setActiveTab('ownership');
@@ -238,7 +238,7 @@ function Main() {
                 >
                   Shareholder Meeting Results
                 </button>
-                <button
+                {/* <button
                   onClick={() => {
                     setActiveTab('board-composition');
                     const element = document.getElementById('board-composition');
@@ -253,7 +253,7 @@ function Main() {
                     }`}
                 >
                   Board Composition (Beta)
-                </button>
+                </button> */}
               </nav>
             </div>
           </div>
@@ -277,7 +277,7 @@ function Main() {
             />
           </div>
 
-          <div id="board-composition" className="col-span-12 xl:col-span-12">
+          {/* <div id="board-composition" className="col-span-12 xl:col-span-12">
             <div className="p-5 mt-3.5 box">
               <div className="w-full">
                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
@@ -288,7 +288,6 @@ function Main() {
                   </div>
                 </div>
 
-                {/* Board Composition Section */}
                 <div id="board-composition" className="mt-5">
                   <TableWrapper isLoading={graphQLBoardDataLoading}>
                     <div>
@@ -321,11 +320,10 @@ function Main() {
                             console.log('Board Items:', boardItems);
 
                             if (boardItems && boardItems.length > 0) {
-                              // Filter out members with end dates or without start dates, and sort by tenure (highest to lowest)
                               const activeMembers = boardItems
                                 .filter((member: any) =>
-                                  !member.endDate?.displayDate && // Hide members with end dates
-                                  member.startDate?.displayDate   // Hide members without start dates
+                                  !member.endDate?.displayDate &&
+                                  member.startDate?.displayDate 
                                 )
                                 .map((member: any) => ({
                                   ...member,
@@ -340,7 +338,7 @@ function Main() {
                                     return Math.floor(diffInMonths / 12);
                                   })()
                                 }))
-                                .sort((a: any, b: any) => b.tenureValue - a.tenureValue); // Sort highest to lowest
+                                .sort((a: any, b: any) => b.tenureValue - a.tenureValue);
 
                               return activeMembers.map((member: any, index: number) => (
                                 <Table.Tr key={index} className="[&_td]:last:border-b-0">
@@ -387,14 +385,13 @@ function Main() {
                     </div>
                   </TableWrapper>
 
-                  {/* Source at bottom of table */}
                   <div className="mt-3">
                     <p className="text-sm italic text-gray-500">Source: Altrata</p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* <div className="col-span-12 xl:col-span-12">
             <CaseStudiesCard />

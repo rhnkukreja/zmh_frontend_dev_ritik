@@ -207,10 +207,33 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     //         globeSearch: companyGlobalSearchTicker,
     //       },
     // })
-    window.open(
-      `npx-details/?ticker=${companyGlobalSearchTicker.split("-")[0]}&year=${agmSummaryDetails?.Year ?? new Date().getFullYear()}`,
-      "_blank"
-    );
+    
+    // Format meeting date to YYYY-MM-DD if available
+    const formatMeetingDateForURL = (dateString: string) => {
+      if (!dateString) return '';
+      try {
+        // If it's already in YYYY-MM-DD format, return as is
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+          return dateString;
+        }
+        // Parse the date and convert to YYYY-MM-DD format
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        return date.toISOString().split('T')[0];
+      } catch (error) {
+        console.error('Error formatting meeting date for URL:', error);
+        return '';
+      }
+    };
+
+    const formattedMeetingDate = formatMeetingDateForURL(meetingDate);
+    const urlParams = new URLSearchParams({
+      ticker: companyGlobalSearchTicker.split("-")[0],
+      year: (agmSummaryDetails?.Year ?? new Date().getFullYear()).toString(),
+      ...(formattedMeetingDate && { meeting_date: formattedMeetingDate })
+    });
+
+    window.open(`npx-details/?${urlParams.toString()}`, "_blank");
   };
 
   const [isInstitutionList, setIsInstitutionList] = useState<boolean>(false);
