@@ -167,15 +167,13 @@ const VotingRationalePage: React.FC = () => {
                     onClick={() => toggleGroup(investorName)}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Lucide
-                          icon={openGroups[investorName] ? "ChevronUp" : "ChevronDown"}
-                          className="w-5 h-5 text-primary transition-transform duration-200"
-                        />
-                        <span className="text-gray-800 font-medium text-lg">
-                          {investorName}
-                        </span>
-                      </div>
+                      <span className="text-gray-800 font-medium text-lg">
+                        {investorName}
+                      </span>
+                      <Lucide
+                        icon={openGroups[investorName] ? "ChevronUp" : "ChevronDown"}
+                        className="w-5 h-5 text-primary transition-transform duration-200"
+                      />
                     </div>
                   </div>
 
@@ -191,25 +189,29 @@ const VotingRationalePage: React.FC = () => {
                                 questionIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'
                               }`}
                             >
-                              <div className="mb-3">
-                                <h3 className="font-medium text-gray-800 text-sm mb-2">
-                                  <span className="font-semibold">Proposal:</span>
-                                </h3>
-                                <div className="text-gray-700 text-sm leading-relaxed pl-4">
-                                  {question?.proposal || 'No proposal information available'}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Proposal Section */}
+                                <div>
+                                  <h3 className="font-medium text-gray-800 text-sm mb-2">
+                                    <span className="font-semibold">Proposal:</span>
+                                  </h3>
+                                  <div className="text-gray-700 text-sm leading-relaxed">
+                                    {question?.proposal || 'No proposal information available'}
+                                  </div>
                                 </div>
-                              </div>
-                              
-                              <div>
-                                <h3 className="font-medium text-gray-800 text-sm mb-2">
-                                  <span className="font-semibold">Voting Rationale:</span>
-                                </h3>
-                                <div 
-                                  className="text-gray-700 text-sm leading-relaxed pl-4"
-                                  dangerouslySetInnerHTML={{
-                                    __html: question?.voting_rationale || 'No rationale provided',
-                                  }}
-                                />
+                                
+                                {/* Voting Rationale Section */}
+                                <div>
+                                  <h3 className="font-medium text-gray-800 text-sm mb-2">
+                                    <span className="font-semibold">Voting Rationale:</span>
+                                  </h3>
+                                  <div 
+                                    className="text-gray-700 text-sm leading-relaxed"
+                                    dangerouslySetInnerHTML={{
+                                      __html: question?.voting_rationale || 'No rationale provided',
+                                    }}
+                                  />
+                                </div>
                               </div>
                             </div>
                           ))}

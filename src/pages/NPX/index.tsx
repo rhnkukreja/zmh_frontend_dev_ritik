@@ -121,7 +121,12 @@ const index = () => {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '';
       
-      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+      // Use local date to avoid timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
     } catch (error) {
       console.error('Error formatting meeting date:', error);
       return '';
@@ -146,6 +151,7 @@ const index = () => {
         );
         if (res.result) {
           console.log("getFundNameDependentDropdown API response:", res.result);
+          console.log("Raw meeting_date from API:", res.result?.meeting_date);
           
           setMeetingDate(res.result?.meeting_date);
           
@@ -262,6 +268,7 @@ const index = () => {
         );
         
         // Set meeting date from the same response to avoid another API call
+        console.log("Raw meeting_date from fetchAllInstitutions API:", res.result?.meeting_date);
         setMeetingDate(res.result?.meeting_date);
         
         // Set fund names from the same response if available
@@ -729,7 +736,10 @@ const index = () => {
               </h1>
               {
                 meetingDate &&
-                <p className=" italic"> Meeting Date: {meetingDate} </p>
+                <>
+                  {console.log("Displaying meetingDate:", meetingDate)}
+                  <p className=" italic"> Meeting Date: {meetingDate} </p>
+                </>
               }
             </span>
           </div>

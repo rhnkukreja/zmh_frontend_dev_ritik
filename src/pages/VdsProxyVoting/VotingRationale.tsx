@@ -264,7 +264,9 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                             <Table.Tr
                               className={`${
                                 index % 2 === 0 ? "bg-slate-100" : "bg-slate-50"
-                              } dark:bg-darkmode-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-darkmode-600 transition-all duration-200 border-b-2 border-slate-300 dark:border-darkmode-500`}
+                              } dark:bg-darkmode-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-darkmode-600 transition-all duration-200 border-b-2 border-slate-300 dark:border-darkmode-500 ${
+                                openGroups[investorName] ? "sticky top-0 z-10" : ""
+                              }`}
                               onClick={() => toggleGroup(investorName)}
                             >
                               <Table.Td
@@ -272,19 +274,17 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                                 className="font-semibold py-4 px-4"
                               >
                                 <div className="flex flex-row justify-between items-center">
-                                  <div className="flex items-center gap-3">
-                                    <Lucide
-                                      icon={
-                                        openGroups[investorName]
-                                          ? "ChevronUp"
-                                          : "ChevronDown"
-                                      }
-                                      className="w-5 h-5 text-primary transition-transform duration-200"
-                                    />
-                                    <span className="text-gray-800 dark:text-white font-medium">
-                                      {investorName}
-                                    </span>
-                                  </div>
+                                  <span className="text-gray-800 dark:text-white font-medium">
+                                    {investorName}
+                                  </span>
+                                  <Lucide
+                                    icon={
+                                      openGroups[investorName]
+                                        ? "ChevronUp"
+                                        : "ChevronDown"
+                                    }
+                                    className="w-5 h-5 text-primary transition-transform duration-200"
+                                  />
                                 </div>
                               </Table.Td>
                             </Table.Tr>
