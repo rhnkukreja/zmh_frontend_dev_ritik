@@ -2205,7 +2205,7 @@ function ShareHolderProposal() {
                             Proponent
                           </StandardizedTable.Cell>
                           <StandardizedTable.Cell isHeader width="20%">
-                            Proposal Name
+                            Proposal
                           </StandardizedTable.Cell>
                           <StandardizedTable.Cell isHeader width="12%">
                             Category
