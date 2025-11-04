@@ -184,13 +184,21 @@ function Main() {
     setIsError(false);
   };
 
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
+
   const handleCopyQuestion = async (question: string) => {
     try {
       await navigator.clipboard.writeText(question);
-      toast.success("Question copied to clipboard!");
+      setCopiedMessage("Copied to clipboard");
+      setTimeout(() => {
+        setCopiedMessage(null);
+      }, 3000);
     } catch (error) {
       console.error("Failed to copy text: ", error);
-      toast.error("Failed to copy question");
+      setCopiedMessage("Failed to copy");
+      setTimeout(() => {
+        setCopiedMessage(null);
+      }, 3000);
     }
   };
 
@@ -1254,7 +1262,15 @@ function Main() {
               
               {/* Recommended Questions */}
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-left mb-3 text-gray-800">Recommended Questions</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-left text-gray-800">Recommended Questions</h3>
+                  {copiedMessage && (
+                    <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md transition-all duration-500 ease-in-out transform animate-in fade-in slide-in-from-right-2">
+                      <Lucide icon="Info" className="w-3 h-3 mr-1" />
+                      <span>{copiedMessage}</span>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <button
                     onClick={() => handleCopyQuestion("What are Blackrock's engagement priorities?")}
