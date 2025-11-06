@@ -459,12 +459,11 @@ function Main() {
                 )}
                 <div className="flex flex-col box mb-4 p-5 bg-white from-slate-50 to-slate-100 border border-slate-200 rounded-lg shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <h4 className="text-sm font-medium text-slate-600 uppercase tracking-wide">
+                    <h4 className="text-sm font-semibold text-slate-600 tracking-wide">
                       Data As Of
                     </h4>
                   </div>
-                  <h5 className="text-lg font-semibold text-slate-900">
+                  <h5 className="text-[18px] font-semibold text-left text-black">
                     February 2025
                   </h5>
                 </div>
