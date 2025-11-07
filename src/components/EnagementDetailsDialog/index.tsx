@@ -1,6 +1,7 @@
 import { TopEngagementTopics } from "@/types/peerAnalysis";
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import Lucide from "@/components/Base/Lucide";
 
 interface ChartComponentProps {
     investorData: {
@@ -16,6 +17,7 @@ interface ChartComponentProps {
     }[];
     handleSearch: (searchTerms: string[]) => void;
     topEngagementTopics: TopEngagementTopics;
+    onDocumentClick?: (institutionName: string) => void;
 }
 
 const COLORS = ["#00C49F", "#FF6F00", "#0088FE"];
@@ -25,7 +27,7 @@ const formatNumberWithCommas = (num: number): string => {
 };
 
 
-const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics }) => {
+const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics, onDocumentClick }) => {
     const isInvestorDataAvailable = investorData && investorData.length > 0;
 
     if (!investorData) {
@@ -59,11 +61,46 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     {investorData.map((investor, index) => (
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
                                             <td
-                                                className="py-2 px-3 text-left text-blue-600 cursor-pointer hover:underline"
+                                                className="py-2 px-3 text-left"
                                                 style={{fontSize: '14px'}}
-                                                onClick={() => handleSearch([investor.institution__institution])}
                                             >
-                                                {investor.institution__institution}
+                                                <div className="flex items-center gap-2">
+                                                    <span 
+                                                        className="text-blue-600 cursor-pointer hover:underline"
+                                                        onClick={() => handleSearch([investor.institution__institution])}
+                                                    >
+                                                        {investor.institution__institution}
+                                                    </span>
+                                                    {onDocumentClick && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                // Map institution name to document URL and open in new tab
+                                                                const mapping: Record<string, string> = {
+                                                                    "Blackrock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                    "Blackrock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                    "The Vanguard Group": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                                    "Vanguard": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                                    "Baillie Gifford and Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q2-2025",
+                                                                    "Baillie Gifford": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q2-2025",
+                                                                    "Schroder Investment Management Ltd": "",
+                                                                    "Schroders": "",
+                                                                };
+                                                                
+                                                                const url = mapping[investor.institution__institution] ?? "";
+                                                                if (url) {
+                                                                    window.open(url, '_blank', 'noopener,noreferrer');
+                                                                } else {
+                                                                    alert(`No document available for ${investor.institution__institution}`);
+                                                                }
+                                                            }}
+                                                            className="text-blue-600 hover:text-blue-800 p-1 rounded"
+                                                            aria-label={`Open documents for ${investor.institution__institution}`}
+                                                        >
+                                                            <Lucide icon="ExternalLink" className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.unique_companies)}</td>
                                             <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.environmental)}</td>

@@ -1045,7 +1045,13 @@ function PeerAnalysis() {
                     <div className="text-lg font-medium">No Analytics found</div>
                   </div>
                 ) : (
-                  <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />
+                  <ChartComponent 
+                    investorData={investorData} 
+                    pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} 
+                    handleSearch={handleSearch} 
+                    topEngagementTopics={topEngagementTopics}
+                    onDocumentClick={() => {}} // No longer needed, but keeping for compatibility
+                  />
                 )
               )}
 
