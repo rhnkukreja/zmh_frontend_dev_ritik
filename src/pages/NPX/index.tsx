@@ -27,6 +27,7 @@ import {
   FormInput,
 } from "@/components/Base/Form";
 import { dashboardService } from "@/services/dashboard";
+import { axiosInstance } from "@/services";
 import TomSelect from "@/components/Base/TomSelect";
 import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
@@ -106,6 +107,8 @@ const index = () => {
   
   // Local loading state to prevent "No data found" flash
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
+  const [keywordLoading, setKeywordLoading] = useState(false);
 
   // Function to format meeting date to YYYY-MM-DD format
   const formatMeetingDate = (dateString: string) => {
@@ -412,6 +415,43 @@ const index = () => {
       ...prev,
       [key]: value,
     }));
+  };
+
+  const fetchKeywordSuggestions = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setKeywordDropdownOptions([]);
+      return;
+    }
+
+    setKeywordLoading(true);
+    
+    try {
+      // Include the necessary parameters that the NPX API expects
+      const params = {
+        keyword: searchTerm,
+        global_search: companyGlobalSearchName,
+        year: year || '2024'
+      };
+
+      const dynamicURL = createDynamicURL(
+        '/get_npx_dropdown_values/',
+        null,
+        params,
+        null
+      );
+      
+      const response = await axiosInstance.get(dynamicURL);
+      
+      // Extract synonyms from the response
+      const synonyms = response.data.synonyms || [];
+      console.log('Received synonyms:', synonyms); // Debug log
+      setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
+    } catch (error) {
+      console.error('Error fetching keyword suggestions:', error);
+      setKeywordDropdownOptions([]);
+    } finally {
+      setKeywordLoading(false);
+    }
   };
 
   // Only make additional API calls when user explicitly changes filters after initial load
@@ -1080,6 +1120,11 @@ const index = () => {
                         onChange={(values: string[]) => {
                           field.onChange(values);
                         }}
+                        onInputChange={(inputValue: string) => {
+                          fetchKeywordSuggestions(inputValue);
+                        }}
+                        options={keywordDropdownOptions}
+                        loading={keywordLoading}
                       />
                     )}
                   />

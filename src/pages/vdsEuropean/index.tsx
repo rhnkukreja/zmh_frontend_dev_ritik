@@ -38,6 +38,7 @@ import {
   resetAnalyticsDataLoaded,
 } from "@/stores/vdsEuropeanSlice";
 import { vdsEuropeanService } from "@/services/vdsEuropean";
+import { axiosInstance } from "@/services";
 import { setTempSearch } from "@/stores/dashboardSlice";
 import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
@@ -123,6 +124,8 @@ const index = () => {
   const [companyOptions, setCompanyOptions] = useState<any[]>([]);
   const [companySearchLoading, setCompanySearchLoading] = useState<boolean>(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
+  const [keywordLoading, setKeywordLoading] = useState(false);
   const formatNumberWithCommas = (num: number): string => num.toLocaleString();
 
   // Helper function to check if proposal number has duplicates
@@ -876,6 +879,36 @@ const index = () => {
     } catch (error) {
       console.error("Error fetching default companies:", error);
       setCompanyOptions([]);
+    }
+  };
+
+  const fetchKeywordSuggestions = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setKeywordDropdownOptions([]);
+      return;
+    }
+
+    setKeywordLoading(true);
+    
+    try {
+      const dynamicURL = createDynamicURL(
+        '/get_vds_european_dropdown_values/',
+        null,
+        { keyword: searchTerm },
+        null
+      );
+      
+      const response = await axiosInstance.get(dynamicURL);
+      
+      // Extract synonyms from the response
+      const synonyms = response.data.synonyms || [];
+      console.log('Received synonyms:', synonyms); // Debug log
+      setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
+    } catch (error) {
+      console.error('Error fetching keyword suggestions:', error);
+      setKeywordDropdownOptions([]);
+    } finally {
+      setKeywordLoading(false);
     }
   };
 
@@ -2383,6 +2416,11 @@ const index = () => {
                       <CreatableInputSelect
                         value={field.value || []}
                         onChange={(val) => field.onChange(val)}
+                        onInputChange={(inputValue: string) => {
+                          fetchKeywordSuggestions(inputValue);
+                        }}
+                        options={keywordDropdownOptions}
+                        loading={keywordLoading}
                       />
                     )}
                   />

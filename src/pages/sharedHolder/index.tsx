@@ -53,6 +53,7 @@ import {
 } from "@/types/shareHolder";
 import clsx from "clsx";
 import { commonService } from "@/services/common";
+import { axiosInstance } from "@/services";
 import {
   setIsCompanySelected,
   setSavedSearch,
@@ -166,6 +167,8 @@ function ShareHolderProposal() {
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+  const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
+  const [keywordLoading, setKeywordLoading] = useState(false);
   const [getDropdownLoader, setGetDropdownLoader] = useState<boolean>(false);
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -726,6 +729,36 @@ function ShareHolderProposal() {
         })
       );
       // toast.success("Searched saved successfully");
+    }
+  };
+
+  const fetchKeywordSuggestions = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setKeywordDropdownOptions([]);
+      return;
+    }
+
+    setKeywordLoading(true);
+    
+    try {
+      const dynamicURL = createDynamicURL(
+        '/get_shareholder_dropdown_values/',
+        null,
+        { keyword: searchTerm },
+        null
+      );
+      
+      const response = await axiosInstance.get(dynamicURL);
+      
+      // Extract synonyms from the response
+      const synonyms = response.data.synonyms || [];
+      console.log('Received synonyms:', synonyms); // Debug log
+      setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
+    } catch (error) {
+      console.error('Error fetching keyword suggestions:', error);
+      setKeywordDropdownOptions([]);
+    } finally {
+      setKeywordLoading(false);
     }
   };
 
@@ -1388,6 +1421,11 @@ function ShareHolderProposal() {
                               onChange={(values: string[]) => {
                                 field.onChange(values);
                               }}
+                              onInputChange={(inputValue: string) => {
+                                fetchKeywordSuggestions(inputValue);
+                              }}
+                              options={keywordDropdownOptions}
+                              loading={keywordLoading}
                             />
                           )}
                         />

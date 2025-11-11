@@ -12,21 +12,38 @@ interface CreatableInputSelectProps {
   placeholder?: string;
   value: string[];
   onChange: (options: string[]) => void;
+  onInputChange?: (inputValue: string) => void;
+  options?: string[];
+  loading?: boolean;
 }
 
 const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
   placeholder = "Type Keywords",
   value,
   onChange,
+  onInputChange,
+  options = [],
+  loading = false,
 }) => {
   const selectOptions: OptionType[] = value.map((val) => ({
     label: val,
     value: val,
   }));
 
+  const suggestionOptions: OptionType[] = options.map((option) => ({
+    label: option,
+    value: option,
+  }));
+
   const handleChange = (newValue: MultiValue<OptionType>) => {
     const values = (newValue as OptionType[]).map((option) => option.value);
     onChange(values);
+  };
+
+  const handleInputChange = (inputValue: string) => {
+    if (onInputChange) {
+      onInputChange(inputValue);
+    }
   };
 
   return (
@@ -35,14 +52,20 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
       placeholder={placeholder}
       value={selectOptions}
       onChange={handleChange}
-      openMenuOnFocus={false} // allow typing but no dropdown on focus
-      openMenuOnClick={false} 
-      formatCreateLabel={(inputValue) => `${inputValue}`} // Remove "Create" prefix, just show the keyword
-    
+      onInputChange={handleInputChange}
+      options={suggestionOptions}
+      isLoading={loading}
+      openMenuOnFocus={true}
+      openMenuOnClick={true}
+      menuIsOpen={options.length > 0 ? undefined : false} // Open menu when options are available
+      formatCreateLabel={(inputValue) => `${inputValue}`}
+      loadingMessage={() => "Loading suggestions..."}
+      noOptionsMessage={({ inputValue }) => 
+        inputValue.length > 0 ? "Type to search keywords..." : "Start typing to search keywords..."
+      }
       components={{
-        DropdownIndicator: () => null, // remove dropdown arrow
-        IndicatorSeparator: () => null, // remove separator
-        NoOptionsMessage: () => null,
+        DropdownIndicator: () => null,
+        IndicatorSeparator: () => null,
       }}
       className="basic-multi-select"
       classNamePrefix="select"

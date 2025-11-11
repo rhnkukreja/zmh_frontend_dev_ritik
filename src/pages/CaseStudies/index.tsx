@@ -29,6 +29,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { commonService } from "@/services/common";
+import { axiosInstance } from "@/services";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
@@ -107,6 +108,8 @@ function CaseStudies() {
     useState<boolean>(false);
 
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+  const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
+  const [keywordLoading, setKeywordLoading] = useState(false);
 
   const {
     handleSubmit,
@@ -149,6 +152,36 @@ function CaseStudies() {
     setValue("approval_status", "");
     setValue("caspio_company_name", "");
     setValue("index", []);
+  };
+
+    const fetchKeywordSuggestions = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setKeywordDropdownOptions([]);
+      return;
+    }
+
+    setKeywordLoading(true);
+    
+    try {
+      const dynamicURL = createDynamicURL(
+        '/get_case_studies_dropdown_values/',
+        null,
+        { keyword: searchTerm },
+        null
+      );
+      
+      const response = await axiosInstance.get(dynamicURL);
+      
+      // Extract synonyms from the response
+      const synonyms = response.data.synonyms || [];
+      console.log('Received synonyms:', synonyms); // Debug log
+      setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
+    } catch (error) {
+      console.error('Error fetching keyword suggestions:', error);
+      setKeywordDropdownOptions([]);
+    } finally {
+      setKeywordLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -1117,6 +1150,11 @@ function CaseStudies() {
                               onChange={(values: string[]) => {
                                 field.onChange(values);
                               }}
+                              onInputChange={(inputValue: string) => {
+                                fetchKeywordSuggestions(inputValue);
+                              }}
+                              options={keywordDropdownOptions}
+                              loading={keywordLoading}
                             />
                           )}
                         />
