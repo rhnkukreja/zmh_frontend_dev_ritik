@@ -475,6 +475,10 @@ function PeerAnalysis() {
       serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
     });
   };
+
+  const handleDocumentClick = (institutionName: string) => {
+  console.log("Clicked:", institutionName);
+};
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -1050,7 +1054,8 @@ function PeerAnalysis() {
                     pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} 
                     handleSearch={handleSearch} 
                     topEngagementTopics={topEngagementTopics}
-                    onDocumentClick={true} // Enable document links
+                    onDocumentClick={handleDocumentClick}
+
                   />
                 )
               )}
