@@ -1120,9 +1120,28 @@ const index = () => {
 
                 {/* Keyword */}
                 <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaSearch className="text-gray-400" /> Keywords
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="flex items-center gap-2 text-slate-600 font-semibold">
+                      <FaSearch className="text-gray-400" /> Keywords
+                    </label>
+                    {keywordDropdownOptions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentField = control._getWatch("keyword") || [];
+                          const allKeywords = [...new Set([...currentField, ...keywordDropdownOptions])];
+                          control._formState.defaultValues = {
+                            ...control._formState.defaultValues,
+                            keyword: allKeywords
+                          };
+                          control._reset(control._formState.defaultValues);
+                        }}
+                        className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors"
+                      >
+                        Select All
+                      </button>
+                    )}
+                  </div>
                   <Controller
                     name="keyword"
                     control={control}

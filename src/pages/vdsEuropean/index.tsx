@@ -2416,14 +2416,34 @@ const index = () => {
               <div className="grid gap-6 md:grid-cols-4 grid-cols-4 mt-6">
                 {/* Keywords */}
                 <div>
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                    <FaTags className="text-gray-400" /> Keywords
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="flex items-center gap-2 text-slate-600 font-semibold">
+                      <FaTags className="text-gray-400" /> Keywords
+                    </label>
+                    {keywordDropdownOptions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentField = control._getWatch("proposal_keyword") || [];
+                          const allKeywords = [...new Set([...currentField, ...keywordDropdownOptions])];
+                          control._formState.defaultValues = {
+                            ...control._formState.defaultValues,
+                            proposal_keyword: allKeywords
+                          };
+                          control._reset(control._formState.defaultValues);
+                        }}
+                        className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors"
+                      >
+                        Select All
+                      </button>
+                    )}
+                  </div>
                   <Controller
                     name="proposal_keyword"
                     control={control}
                     render={({ field }) => (
                       <CreatableInputSelect
+                        placeholder="Type and press Enter to add keywords..."
                         value={field.value || []}
                         onChange={(val) => field.onChange(val)}
                         onInputChange={(inputValue: string) => {

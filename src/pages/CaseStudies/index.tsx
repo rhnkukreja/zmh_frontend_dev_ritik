@@ -1143,10 +1143,27 @@ function CaseStudies() {
                       )}
 
                       <div className="mx-2">
-                        <div className="text-left text-slate-500 mb-1">
+                        <div className="text-left text-slate-500 mb-1 flex justify-between items-center">
                           <span className="flex items-center gap-2 text-slate-600 font-semibold" style={{ fontSize: '14px' }}>
                             <FaSearch className="text-gray-400" /> Keyword Search
                           </span>
+                          {keywordDropdownOptions.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentField = control._getWatch("keyword") || [];
+                                const allKeywords = [...new Set([...currentField, ...keywordDropdownOptions])];
+                                control._formState.defaultValues = {
+                                  ...control._formState.defaultValues,
+                                  keyword: allKeywords
+                                };
+                                control._reset(control._formState.defaultValues);
+                              }}
+                              className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors"
+                            >
+                              Select All
+                            </button>
+                          )}
                         </div>
                         <Controller
                           name="keyword"

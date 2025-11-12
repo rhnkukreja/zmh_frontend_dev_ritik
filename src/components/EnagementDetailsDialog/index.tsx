@@ -50,11 +50,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-primary text-white">
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Institution</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Unique Companies</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Environmental</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Social</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>Governance</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Unique Companies</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Environmental</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Social</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Governance</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -62,50 +62,116 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
                                             <td
                                                 className="py-2 px-3 text-left"
-                                                style={{fontSize: '14px'}}
+                                                style={{ fontSize: '14px' }}
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    <span 
+                                                    <span
                                                         className="text-blue-600 cursor-pointer hover:underline"
                                                         onClick={() => handleSearch([investor.institution__institution])}
                                                     >
                                                         {investor.institution__institution}
                                                     </span>
-                                                    {onDocumentClick && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                // Map institution name to document URL and open in new tab
-                                                                const mapping: Record<string, string> = {
-                                                                    "Blackrock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                    "Blackrock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                    "The Vanguard Group": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-                                                                    "Vanguard": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-                                                                    "Baillie Gifford and Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q2-2025",
-                                                                    "Baillie Gifford": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q2-2025",
-                                                                    "Schroder Investment Management Ltd": "",
-                                                                    "Schroders": "",
-                                                                };
-                                                                
-                                                                const url = mapping[investor.institution__institution] ?? "";
-                                                                if (url) {
-                                                                    window.open(url, '_blank', 'noopener,noreferrer');
-                                                                } else {
-                                                                    alert(`No document available for ${investor.institution__institution}`);
-                                                                }
-                                                            }}
-                                                            className="text-blue-600 hover:text-blue-800 p-1 rounded"
-                                                            aria-label={`Open documents for ${investor.institution__institution}`}
-                                                        >
-                                                            <Lucide icon="ExternalLink" className="w-4 h-4" />
-                                                        </button>
-                                                    )}
+                                                    {(() => {
+                                                        // Map institution name to document URL
+                                                        const mapping: Record<string, string> = {
+                                                            // BlackRock variations
+                                                            "Blackrock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                            "Blackrock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                            "BlackRock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                            "BlackRock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+
+                                                            // Vanguard variations  
+                                                            "The Vanguard Group": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                            "Vanguard": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                            "The Vanguard Group, Inc.": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+
+                                                            // Baillie Gifford variations
+                                                            "Baillie Gifford and Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                            "Baillie Gifford": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                            "Baillie Gifford & Co": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                            "Baillie Gifford & Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+
+                                                            // Schroder variations
+                                                            "Schroder Investment Management Ltd": "Q2 2025 Sustainable Investment Report",
+                                                            "Schroders": "Q2 2025 Sustainable Investment Report",
+
+                                                            // State Street Global Advisors variations
+                                                            "State Street Global Advisors": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/2025/asset-stewardship-activity-report-q4-24.pdf",
+                                                            "SSGA": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/2025/asset-stewardship-activity-report-q4-24.pdf",
+
+                                                            // T. Rowe Price variations
+                                                            "T Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                            "T. Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                            "T Rowe Price": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                        };
+
+                                                        const institutionName = investor.institution__institution;
+                                                        let url = mapping[institutionName] ?? "";
+
+                                                        // Always log the actual institution name for debugging
+                                                        console.log(`Processing institution: "${institutionName}"`);
+
+                                                        // If no direct match, try case-insensitive partial matching
+                                                        if (!url || url.trim() === "") {
+                                                            const lowerInstitution = institutionName.toLowerCase();
+
+                                                            // More flexible matching patterns
+                                                            if (lowerInstitution.includes('blackrock') || lowerInstitution.includes('black rock')) {
+                                                                url = "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf";
+                                                                console.log(`Matched BlackRock for: "${institutionName}"`);
+                                                            } else if (lowerInstitution.includes('vanguard')) {
+                                                                url = "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf";
+                                                                console.log(`Matched Vanguard for: "${institutionName}"`);
+                                                            } else if (lowerInstitution.includes('baillie') || lowerInstitution.includes('gifford')) {
+                                                                url = "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q2-2025";
+                                                                console.log(`Matched Baillie Gifford for: "${institutionName}"`);
+                                                            } else if (lowerInstitution.includes('schroder') || lowerInstitution.includes('schroders')) {
+                                                                url = "Q2 2025 Sustainable Investment Report";
+                                                                console.log(`Matched Schroder for: "${institutionName}"`);
+                                                            } else if (lowerInstitution.includes('state street') || lowerInstitution.includes('global advisors')) {
+                                                                // Add State Street document if available
+                                                                url = ""; // No document yet, but we can identify it
+                                                                console.log(`Identified State Street (no document): "${institutionName}"`);
+                                                            } else if (lowerInstitution.includes('rowe') || lowerInstitution.includes('price')) {
+                                                                // Add T. Rowe Price document if available  
+                                                                url = ""; // No document yet, but we can identify it
+                                                                console.log(`Identified T. Rowe Price (no document): "${institutionName}"`);
+                                                            }
+                                                        }
+
+                                                        // Log results for debugging
+                                                        if (!url || url.trim() === "") {
+                                                            console.log(`❌ No document URL found for: "${institutionName}"`);
+                                                        } else {
+                                                            console.log(`✅ Document found for: "${institutionName}" -> ${url.substring(0, 50)}...`);
+                                                        }
+
+                                                        // Fix: Check if onDocumentClick exists (not function check) and URL exists
+                                                        return onDocumentClick && url && url.trim() !== "" ? (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // Check if URL is a web link or just text
+                                                                    if (url.startsWith('http')) {
+                                                                        window.open(url, '_blank', 'noopener,noreferrer');
+                                                                    } else {
+                                                                        // For non-URL documents (like Schroder's text), show an alert with the document name
+                                                                        alert(`Document: ${url}\n\nThis document is available but not accessible via direct link.`);
+                                                                    }
+                                                                }}
+                                                                className="text-blue-600 hover:text-blue-800 p-1 rounded"
+                                                                aria-label={`Open documents for ${institutionName}`}
+                                                            >
+                                                                <Lucide icon="Info" className="w-4 h-4" />
+                                                            </button>
+                                                        ) : null;
+                                                    })()}
                                                 </div>
                                             </td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.unique_companies)}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.environmental)}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.social)}</td>
-                                            <td className="py-2 px-3 text-center" style={{fontSize: '14px'}}>{formatNumberWithCommas(investor.governance)}</td>
+                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.unique_companies)}</td>
+                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.environmental)}</td>
+                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.social)}</td>
+                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.governance)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -130,7 +196,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                 const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
                                                 const x = cx + radius * Math.cos(-midAngle * RADIAN);
                                                 const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                                                
+
                                                 return (
                                                     <text
                                                         x={x}
@@ -160,21 +226,21 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-md font-semibold mb-2" style={{fontSize: '14px'}}>Governance</h3>
+                            <h3 className="text-md font-semibold mb-2" style={{ fontSize: '14px' }}>Governance</h3>
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-primary text-white">
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Topic</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>%</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {topEngagementTopics.gov.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
-                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_gov_engagements * 100).toFixed(1)}%</td>
+                                            <td className="py-2 px-3 font-medium" style={{ fontSize: '14px' }}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>{(topic.percentage_gov_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -182,42 +248,42 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                         </div>
 
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-md font-semibold mb-2" style={{fontSize: '14px'}}>Environmental</h3>
+                            <h3 className="text-md font-semibold mb-2" style={{ fontSize: '14px' }}>Environmental</h3>
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-primary text-white">
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Topic</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>%</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {topEngagementTopics.env.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
-                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_env_engagements * 100).toFixed(1)}%</td>
+                                            <td className="py-2 px-3 font-medium" style={{ fontSize: '14px' }}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>{(topic.percentage_env_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
                         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-                            <h3 className="text-md font-semibold mb-2" style={{fontSize: '14px'}}>Social</h3>
+                            <h3 className="text-md font-semibold mb-2" style={{ fontSize: '14px' }}>Social</h3>
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-primary text-white">
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Topic</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>Count</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>%</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {topEngagementTopics.soc.slice(0, 5).map((topic, index) => (
                                         <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                            <td className="py-2 px-3 font-medium" style={{fontSize: '14px'}}>{topic.topic}</td>
-                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{formatNumberWithCommas(topic.count)}</td>
-                                            <td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px'}}>{(topic.percentage_soc_engagements * 100).toFixed(1)}%</td>
+                                            <td className="py-2 px-3 font-medium" style={{ fontSize: '14px' }}>{topic.topic}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>{formatNumberWithCommas(topic.count)}</td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>{(topic.percentage_soc_engagements * 100).toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>

@@ -1050,7 +1050,7 @@ function PeerAnalysis() {
                     pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} 
                     handleSearch={handleSearch} 
                     topEngagementTopics={topEngagementTopics}
-                    onDocumentClick={() => {}} // No longer needed, but keeping for compatibility
+                    onDocumentClick={true} // Enable document links
                   />
                 )
               )}
