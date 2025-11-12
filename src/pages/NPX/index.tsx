@@ -7,8 +7,9 @@ import {
   generateFilterChips,
   downloadFileFromAPI,
 } from "@/utils/helper";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   fetchNpxProxyDashboard,
@@ -46,7 +47,7 @@ import { MdOutlineClear } from "react-icons/md";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
 import Litepicker from "@/components/Base/Litepicker";
-import React, { useCallback } from "react";
+import React from "react";
 
 const index = () => {
 
@@ -54,7 +55,7 @@ const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
   const { npxProxyDetails, npxProxyLoading, tempSearch, page, totalNPXCount } =
     useAppSelector((state) => state.dashboard);
-  
+
   // Debug data state
   console.log("🔍 Data State Debug:", {
     npxProxyDetails: npxProxyDetails?.length || 0,
@@ -62,7 +63,7 @@ const index = () => {
     totalNPXCount,
     hasData: npxProxyDetails?.length > 0
   });
-  
+
   const totalPages = Math.ceil(totalNPXCount / 50);
   const [searchParams] = useSearchParams();
 
@@ -101,10 +102,10 @@ const index = () => {
       vote: [],
       vote_category: [],
     });
-    
+
   // State to store all institutions
   const [allInstitutions, setAllInstitutions] = useState<any[]>([]);
-  
+
   // Local loading state to prevent "No data found" flash
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
@@ -113,22 +114,22 @@ const index = () => {
   // Function to format meeting date to YYYY-MM-DD format
   const formatMeetingDate = (dateString: string) => {
     if (!dateString) return '';
-    
+
     try {
       // If it's already in YYYY-MM-DD format, return as is
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
         return dateString;
       }
-      
+
       // Parse the date and convert to YYYY-MM-DD format
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '';
-      
+
       // Use local date to avoid timezone issues
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      
+
       return `${year}-${month}-${day}`;
     } catch (error) {
       console.error('Error formatting meeting date:', error);
@@ -155,23 +156,23 @@ const index = () => {
         if (res.result) {
           console.log("getFundNameDependentDropdown API response:", res.result);
           console.log("Raw meeting_date from API:", res.result?.meeting_date);
-          
+
           setMeetingDate(res.result?.meeting_date);
-          
+
           // Always show fund name when an institution is selected, regardless of API response
           setShowFundName(true);
-          
+
           // Make sure to extract fund names from the correct part of the response
           // Check all possible locations in the API response and ensure we get an array
           let fundData = [];
-          
+
           // Log the response structure to debug
           console.log("Fund data response structure:", {
             fund_name: Array.isArray(res.result?.fund_name) ? `Array with ${res.result?.fund_name?.length} items` : typeof res.result?.fund_name,
             funds: Array.isArray(res.result?.funds) ? `Array with ${res.result?.funds?.length} items` : typeof res.result?.funds,
             fund: Array.isArray(res.result?.fund) ? `Array with ${res.result?.fund?.length} items` : typeof res.result?.fund
           });
-          
+
           // Try different locations in order of preference
           if (Array.isArray(res.result?.fund_name) && res.result.fund_name.length > 0) {
             fundData = res.result.fund_name;
@@ -183,16 +184,16 @@ const index = () => {
             // Handle case where fund_name might be an object with values
             fundData = Object.values(res.result.fund_name);
           }
-          
+
           // Set fund data from the new API structure
-          setApiFundNameDropdown({ 
+          setApiFundNameDropdown({
             ...res.result,
-            fund_name: fundData 
+            fund_name: fundData
           });
-          
+
           // Also update the dependent dropdown options when institution changes
           setApiDependentDropdownOptions({ ...res.result });
-          
+
           // Output for debugging
           console.log("Fund data set to:", fundData);
         }
@@ -210,7 +211,7 @@ const index = () => {
     try {
       // Keep initial loading true until we complete the process
       setInitialLoading(true);
-      
+
       // Prepare parameters for API call to fetch all institutions
       const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
       const paramFilter = {
@@ -218,27 +219,27 @@ const index = () => {
         year: year || '2024',
         ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
       };
-      
+
       const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
-      
+
       if (res.result && res.result.all_institution && res.result.all_institution.length > 0) {
         setAllInstitutions(res.result.all_institution);
-        
+
         // Auto-select the first institution
         const firstInstitution = res.result.all_institution[0];
-        
+
         // Format for the dropdown
         const institutionValue = {
           label: firstInstitution,
           value: firstInstitution
         };
-        
+
         // Set the institution in the form
         setValue("institution_name", institutionValue);
-        
+
         // Update dropdown values
         handleDropdownChange("institution_name", firstInstitution);
-        
+
         // Create filter object with the selected institution
         const filterObj = {
           global_search: companyGlobalSearchName,
@@ -269,22 +270,22 @@ const index = () => {
             createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
           )
         );
-        
+
         // Set meeting date from the same response to avoid another API call
         console.log("Raw meeting_date from fetchAllInstitutions API:", res.result?.meeting_date);
         setMeetingDate(res.result?.meeting_date);
-        
+
         // Set fund names from the same response if available
         if (res.result.fund_name && res.result.fund_name.length > 0) {
-          setApiFundNameDropdown({ 
-            fund_name: res.result.fund_name 
+          setApiFundNameDropdown({
+            fund_name: res.result.fund_name
           });
           setShowFundName(true);
         }
-        
+
         // Set dependent dropdown options from the same response
         setApiDependentDropdownOptions({ ...res.result });
-        
+
       } else {
         setAllInstitutions([]);
         // Even if no institutions, we need to stop initial loading
@@ -316,14 +317,14 @@ const index = () => {
             : [dropdownValues.institution_name]
         }),
       };
-      
+
       // Make a single API call
       const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
-      
+
       if (res.result) {
         // Set meeting date
         setMeetingDate(res.result?.meeting_date);
-        
+
         // Set dependent dropdown options
         setApiDependentDropdownOptions({ ...res.result });
       }
@@ -331,12 +332,12 @@ const index = () => {
       console.error("Error fetching initial data:", error);
     }
   }, [companyGlobalSearchName, year]);
-  
+
   useEffect(() => {
     // Reset values on company or year change
     setMeetingDate('');
     setAllInstitutions([]);
-    
+
     // Reset dropdown values to prevent unnecessary API calls
     setDropdownValues({
       institution_name: [],
@@ -347,10 +348,14 @@ const index = () => {
     setallApplyFilter({});
     setSelectedChipFilters([]);
     setFiltersLength(0);
-    
+
+    // Clear keyword search state
+    setKeywordDropdownOptions([]);
+    setKeywordLoading(false);
+
     // Set initial loading to true when company changes
     setInitialLoading(true);
-    
+
     // Only fetch institutions if we have company data
     // This will make ONLY ONE API call that handles everything
     if (companyGlobalSearchName) {
@@ -370,14 +375,14 @@ const index = () => {
       year: year, // Add year parameter from URL
       ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
       // Always include the selected institution if available - critical for dependent dropdowns
-      ...(dropdownValues?.institution_name && { 
-        institution_name: Array.isArray(dropdownValues.institution_name) 
-          ? dropdownValues.institution_name 
+      ...(dropdownValues?.institution_name && {
+        institution_name: Array.isArray(dropdownValues.institution_name)
+          ? dropdownValues.institution_name
           : [dropdownValues.institution_name]
       }),
       // Only include fund_name if there's a value
       // With MultiSelectDropdown, fund_name values are always an array
-      ...(dropdownValues?.fund_name?.length > 0 && { 
+      ...(dropdownValues?.fund_name?.length > 0 && {
         fund_name: dropdownValues.fund_name
       }),
     };
@@ -392,7 +397,7 @@ const index = () => {
         console.log("getDependentDropdown response:", res.result);
         // Still using the same result structure for dropdown options
         setApiDependentDropdownOptions({ ...res.result });
-        
+
         // Make sure any available fund_name data is also added to apiFundNameDropdown
         if (res.result.fund_name && res.result.fund_name.length > 0) {
           setApiFundNameDropdown(prev => ({
@@ -417,53 +422,62 @@ const index = () => {
     }));
   };
 
-  const fetchKeywordSuggestions = async (searchTerm: string) => {
-    if (searchTerm.length < 2) {
-      setKeywordDropdownOptions([]);
-      return;
-    }
+  // Debounced keyword search function using Lodash (same as global search)
+  const debouncedFetchKeywordSuggestions = useCallback(
+    _.debounce(async (searchTerm: string) => {
+      if (searchTerm.length < 2) {
+        setKeywordDropdownOptions([]);
+        setKeywordLoading(false);
+        return;
+      }
 
-    setKeywordLoading(true);
-    
-    try {
-      // Include the necessary parameters that the NPX API expects
-      const params = {
-        keyword: searchTerm,
-        global_search: companyGlobalSearchName,
-        year: year || '2024'
-      };
+      setKeywordLoading(true);
 
-      const dynamicURL = createDynamicURL(
-        '/get_npx_dropdown_values/',
-        null,
-        params,
-        null
-      );
-      
-      const response = await axiosInstance.get(dynamicURL);
-      
-      // Extract synonyms from the response
-      const synonyms = response.data.synonyms || [];
-      console.log('Received synonyms:', synonyms); // Debug log
-      setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
-    } catch (error) {
-      console.error('Error fetching keyword suggestions:', error);
-      setKeywordDropdownOptions([]);
-    } finally {
-      setKeywordLoading(false);
-    }
+      try {
+        // Include the necessary parameters that the NPX API expects
+        const params = {
+          keyword: searchTerm,
+          global_search: companyGlobalSearchName,
+          year: year || '2024'
+        };
+
+        const dynamicURL = createDynamicURL(
+          '/get_npx_dropdown_values/',
+          null,
+          params,
+          null
+        );
+
+        const response = await axiosInstance.get(dynamicURL);
+
+        // Extract synonyms from the response
+        const synonyms = response.data.synonyms || [];
+        console.log('Received synonyms:', synonyms); // Debug log
+        setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
+      } catch (error) {
+        console.error('Error fetching keyword suggestions:', error);
+        setKeywordDropdownOptions([]);
+      } finally {
+        setKeywordLoading(false);
+      }
+    }, 500), // 500ms debounce like global search
+    [companyGlobalSearchName, year]
+  );
+
+  const fetchKeywordSuggestions = (searchTerm: string) => {
+    debouncedFetchKeywordSuggestions(searchTerm);
   };
 
   // Only make additional API calls when user explicitly changes filters after initial load
   useEffect(() => {
     // Skip if this is the initial auto-selection (when allInstitutions is being set)
     if (allInstitutions.length === 0) return;
-    
+
     // Only make API calls when user explicitly changes fund filters
     // Institution changes are handled by getFundNameDependentDropdown directly
-    const hasManualFundSelection = 
+    const hasManualFundSelection =
       (dropdownValues.fund_name && dropdownValues.fund_name.length > 0);
-      
+
     if (hasManualFundSelection) {
       // When fund is selected, fetch dependent dropdowns
       getDependentDropdown();
@@ -478,9 +492,9 @@ const index = () => {
         fetchNpxProxyDashboard(
           createDynamicURL(
             `${baseURL}/npx/detail/`,
-            { 
-              ...allApplyFilter, 
-              year: year || '2024', 
+            {
+              ...allApplyFilter,
+              year: year || '2024',
               ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) })
             },
             undefined,
@@ -489,7 +503,7 @@ const index = () => {
         )
       );
     }
-    
+
     // Handle company change reset
     if (isCompanySelected) {
       reset();
@@ -558,16 +572,16 @@ const index = () => {
     } else if (removeKey === "fund_name") {
       // For MultiSelectDropdown, we need to ensure the state is updated correctly
       const remainingFundValues = updatedFilters.fund_name || [];
-      
+
       // Convert the remaining values to the format expected by MultiSelectDropdown
       const formattedValues = remainingFundValues.map((value: string) => ({
         value,
         label: value
       }));
-      
+
       // Update form field value with the raw values
       setValue("fund_name", remainingFundValues);
-      
+
       // Update dropdown state with the raw values
       setDropdownValues(prev => ({
         ...prev,
@@ -596,7 +610,7 @@ const index = () => {
     setallApplyFilter(updatedFilters);
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
-    
+
     // Always explicitly include year parameter and meeting date
     const yearParam = year || '2024'; // Ensure we always have a year value
     const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
@@ -604,7 +618,7 @@ const index = () => {
     if (currentMeetingDate) {
       updatedFilters.meeting_date = formatMeetingDate(currentMeetingDate); // Include formatted meeting date
     }
-    
+
     // Dispatch data fetch with updated filters
     dispatch(resetPage());
     dispatch(
@@ -617,7 +631,7 @@ const index = () => {
   const onSubmit = async (npxFilter: any) => {
     console.log("=== DEBUG: onSubmit called ===");
     console.log("Raw form data:", npxFilter);
-    
+
     if (!npxFilter?.institution_name || !npxFilter?.institution_name?.label) {
       toast.warning("Please select Institution");
       return;
@@ -646,7 +660,7 @@ const index = () => {
     const filterObjForChips = {
       institution_name: filterObj.institution_name,
       fund_name: filterObj.fund_name,
-      proposal: filterObj.proposal, 
+      proposal: filterObj.proposal,
       vote: filterObj.vote,
       vote_category: filterObj.vote_category,
       keyword: filterObj.keyword,
@@ -654,16 +668,16 @@ const index = () => {
 
     console.log("Form data received:", npxFilter);
     console.log("Filter object being sent to API:", filterObj);
-    
+
     setallApplyFilter(filterObj);
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
     dispatch(resetPage());
-    
+
     const apiUrl = createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1);
     console.log("🔍 DEBUGGING API URL:");
     console.log("Full URL:", apiUrl);
-    
+
     // Parse the URL to check individual parameters
     const url = new URL(apiUrl);
     const params = new URLSearchParams(url.search);
@@ -674,7 +688,7 @@ const index = () => {
     dispatch(
       fetchNpxProxyDashboard(apiUrl)
     );
-    
+
     setIsFilterCollapse(false);
   };
 
@@ -689,26 +703,26 @@ const index = () => {
       keyword: [],
       meeting_date: ''
     });
-    
+
     // Reset dropdown state values
     setDropdownValues({
       institution_name: "",
       fund_name: []
     });
-    
+
     // Clear filters and UI state
     setSelectedChipFilters([]);
     setFiltersLength(0);
     setShowFundName(false);
     setallApplyFilter({});
-    
+
     // Reset pagination and fetch fresh data with just basic parameters
     const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
     dispatch(resetPage());
     dispatch(
       fetchNpxProxyDashboard(
-        createDynamicURL(`${baseURL}/npx/detail/`, { 
-          global_search: companyGlobalSearchName, 
+        createDynamicURL(`${baseURL}/npx/detail/`, {
+          global_search: companyGlobalSearchName,
           year: year || '2024',
           ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }) // Include formatted meeting date
         }, undefined, 1)
@@ -725,7 +739,7 @@ const index = () => {
     setValue("vote", []);
     setValue("keyword", []);
     setValue("meeting_date", "");
-    
+
     // Reset dropdown state
     setDropdownValues({
       institution_name: "",
@@ -922,10 +936,10 @@ const index = () => {
                           selectedOption={field.value || []}
                           onChange={(selectedOptions) => {
                             console.log("Fund selection changed:", selectedOptions);
-                            
+
                             // Extract values from the selected options
                             const selectedValues = selectedOptions.map((option: any) => option.value);
-                            
+
                             // Update both the form control and local state
                             handleDropdownChange("fund_name", selectedValues);
                             field.onChange(selectedValues);
@@ -935,9 +949,9 @@ const index = () => {
                               ? []
                               : (apiFundNameDropdown?.fund_name?.length > 0)
                                 ? apiFundNameDropdown.fund_name.map((fund: string) => ({
-                                    value: fund,
-                                    label: fund
-                                  }))
+                                  value: fund,
+                                  label: fund
+                                }))
                                 : []
                           }
                           placeholder="Select Fund"
@@ -963,7 +977,7 @@ const index = () => {
                         onChange={(value) => {
                           // Handle both direct value and event objects from TomSelect
                           let selectedValues;
-                          
+
                           if (value && typeof value === 'object' && 'target' in value) {
                             // It's an event object with target.value
                             selectedValues = value.target.value;
@@ -971,12 +985,12 @@ const index = () => {
                             // It's a direct value
                             selectedValues = value;
                           }
-                          
+
                           field.onChange(selectedValues);
                         }}
-                        options={{ 
+                        options={{
                           placeholder: "Select Vote Category",
-                          onItemAdd: function(value) {
+                          onItemAdd: function (value) {
                             console.log("Vote Category item added:", value);
                           }
                         }}
@@ -1017,7 +1031,7 @@ const index = () => {
                         onChange={(value) => {
                           // Handle both direct value and event objects from TomSelect
                           let selectedValues;
-                          
+
                           if (value && typeof value === 'object' && 'target' in value) {
                             // It's an event object with target.value
                             selectedValues = value.target.value;
@@ -1025,12 +1039,12 @@ const index = () => {
                             // It's a direct value
                             selectedValues = value;
                           }
-                          
+
                           field.onChange(selectedValues);
                         }}
-                        options={{ 
+                        options={{
                           placeholder: "Select Proposal",
-                          onItemAdd: function(value) {
+                          onItemAdd: function (value) {
                             console.log("Proposal item added:", value);
                           }
                         }}
@@ -1068,7 +1082,7 @@ const index = () => {
                         onChange={(value) => {
                           // Handle both direct value and event objects from TomSelect
                           let selectedValues;
-                          
+
                           if (value && typeof value === 'object' && 'target' in value) {
                             // It's an event object with target.value
                             selectedValues = value.target.value;
@@ -1076,12 +1090,12 @@ const index = () => {
                             // It's a direct value
                             selectedValues = value;
                           }
-                          
+
                           field.onChange(selectedValues);
                         }}
-                        options={{ 
+                        options={{
                           placeholder: "Select Vote",
-                          onItemAdd: function(value) {
+                          onItemAdd: function (value) {
                             console.log("Vote item added:", value);
                           }
                         }}

@@ -3,7 +3,7 @@ import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -154,34 +154,43 @@ function CaseStudies() {
     setValue("index", []);
   };
 
-    const fetchKeywordSuggestions = async (searchTerm: string) => {
-    if (searchTerm.length < 2) {
-      setKeywordDropdownOptions([]);
-      return;
-    }
+  // Debounced keyword search function using Lodash (same as global search)
+  const debouncedFetchKeywordSuggestions = useCallback(
+    _.debounce(async (searchTerm: string) => {
+      if (searchTerm.length < 2) {
+        setKeywordDropdownOptions([]);
+        setKeywordLoading(false);
+        return;
+      }
 
-    setKeywordLoading(true);
-    
-    try {
-      const dynamicURL = createDynamicURL(
-        '/get_case_studies_dropdown_values/',
-        null,
-        { keyword: searchTerm },
-        null
-      );
-      
-      const response = await axiosInstance.get(dynamicURL);
-      
-      // Extract synonyms from the response
-      const synonyms = response.data.synonyms || [];
-      console.log('Received synonyms:', synonyms); // Debug log
-      setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
-    } catch (error) {
-      console.error('Error fetching keyword suggestions:', error);
-      setKeywordDropdownOptions([]);
-    } finally {
-      setKeywordLoading(false);
-    }
+      setKeywordLoading(true);
+
+      try {
+        const dynamicURL = createDynamicURL(
+          '/get_case_studies_dropdown_values/',
+          null,
+          { keyword: searchTerm },
+          null
+        );
+        
+        const response = await axiosInstance.get(dynamicURL);
+        
+        // Extract synonyms from the response
+        const synonyms = response.data.synonyms || [];
+        console.log('Received synonyms:', synonyms); // Debug log
+        setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
+      } catch (error) {
+        console.error('Error fetching keyword suggestions:', error);
+        setKeywordDropdownOptions([]);
+      } finally {
+        setKeywordLoading(false);
+      }
+    }, 500), // 500ms debounce like global search
+    []
+  );
+
+  const fetchKeywordSuggestions = (searchTerm: string) => {
+    debouncedFetchKeywordSuggestions(searchTerm);
   };
 
   useEffect(() => {

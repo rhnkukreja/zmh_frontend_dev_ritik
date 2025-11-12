@@ -8,8 +8,9 @@ import {
   generateFilterChips,
   downloadFileFromAPI,
 } from "@/utils/helper";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
   baseURL,
@@ -55,7 +56,7 @@ import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
 import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
 import Litepicker from "@/components/Base/Litepicker";
-import React, { useCallback } from "react";
+import React from "react";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -882,34 +883,43 @@ const index = () => {
     }
   };
 
-  const fetchKeywordSuggestions = async (searchTerm: string) => {
-    if (searchTerm.length < 2) {
-      setKeywordDropdownOptions([]);
-      return;
-    }
+  // Debounced keyword search function using Lodash (same as global search)
+  const debouncedFetchKeywordSuggestions = useCallback(
+    _.debounce(async (searchTerm: string) => {
+      if (searchTerm.length < 2) {
+        setKeywordDropdownOptions([]);
+        setKeywordLoading(false);
+        return;
+      }
 
-    setKeywordLoading(true);
-    
-    try {
-      const dynamicURL = createDynamicURL(
-        '/get_vds_european_dropdown_values/',
-        null,
-        { keyword: searchTerm },
-        null
-      );
-      
-      const response = await axiosInstance.get(dynamicURL);
-      
-      // Extract synonyms from the response
-      const synonyms = response.data.synonyms || [];
-      console.log('Received synonyms:', synonyms); // Debug log
-      setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
-    } catch (error) {
-      console.error('Error fetching keyword suggestions:', error);
-      setKeywordDropdownOptions([]);
-    } finally {
-      setKeywordLoading(false);
-    }
+      setKeywordLoading(true);
+
+      try {
+        const dynamicURL = createDynamicURL(
+          '/get_vds_european_dropdown_values/',
+          null,
+          { keyword: searchTerm },
+          null
+        );
+        
+        const response = await axiosInstance.get(dynamicURL);
+        
+        // Extract synonyms from the response
+        const synonyms = response.data.synonyms || [];
+        console.log('Received synonyms:', synonyms); // Debug log
+        setKeywordDropdownOptions(synonyms); // Set strings directly, not objects
+      } catch (error) {
+        console.error('Error fetching keyword suggestions:', error);
+        setKeywordDropdownOptions([]);
+      } finally {
+        setKeywordLoading(false);
+      }
+    }, 500), // 500ms debounce like global search
+    []
+  );
+
+  const fetchKeywordSuggestions = (searchTerm: string) => {
+    debouncedFetchKeywordSuggestions(searchTerm);
   };
 
   const getInstituionDependentDropdown = async (value: any) => {
