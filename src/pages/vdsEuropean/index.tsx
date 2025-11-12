@@ -2443,7 +2443,7 @@ const index = () => {
                     control={control}
                     render={({ field }) => (
                       <CreatableInputSelect
-                        placeholder="Type and press Enter to add keywords..."
+                        placeholder="Type and press Enter to add keywords"
                         value={field.value || []}
                         onChange={(val) => field.onChange(val)}
                         onInputChange={(inputValue: string) => {

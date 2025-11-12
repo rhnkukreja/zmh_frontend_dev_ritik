@@ -6,6 +6,7 @@ import { MultiValue, components } from "react-select";
 export interface OptionType {
   label: string;
   value: string;
+    __isNew__?: boolean;
 }
 
 interface CreatableInputSelectProps {
@@ -18,7 +19,7 @@ interface CreatableInputSelectProps {
 }
 
 const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
-  placeholder = "Type and press Enter to add keywords...",
+  placeholder = "Type and press Enter to add keywords",
   value,
   onChange,
   onInputChange,
@@ -64,7 +65,7 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
       noOptionsMessage={({ inputValue }) => 
         inputValue.length > 0 
           ? `Press Enter to add "${inputValue}" as a custom keyword` 
-          : "Start typing to search keywords or create custom ones..."
+          : "Start typing to search keywords or create custom ones"
       }
       components={{
         DropdownIndicator: () => null,

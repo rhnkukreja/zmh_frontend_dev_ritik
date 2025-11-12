@@ -1171,7 +1171,7 @@ function CaseStudies() {
                           defaultValue={[]}
                           render={({ field }) => (
                             <CreatableInputSelect
-                              placeholder="Type and press Enter to add keywords..."
+                              placeholder="Type and press Enter to add keywords"
                               value={field.value || []}
                               onChange={(values: string[]) => {
                                 field.onChange(values);
