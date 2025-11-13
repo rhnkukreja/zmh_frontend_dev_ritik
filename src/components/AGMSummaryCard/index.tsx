@@ -288,7 +288,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                 <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
                   <span>
                     <h1 className="text-lg font-bold">
-                      Shareholder Meeting Summary {agmSummaryDetails?.Year}
+                      Shareholder Meeting Summary
                     </h1>
                     <p className=" italic"> Meeting Date: {meetingDate}</p>
                   </span>
@@ -304,7 +304,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                      font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                       >
                         Voting Data
-                        {/* {agmSummaryDetails?.Year == "2025" ? "Real-Time 2025" : "View More"} */}
                       </button>
                     )}
                     {dashboardDataList?.total_year?.length > 0 && agmSummaryDetails?.npx_check && (

@@ -1050,6 +1050,12 @@ const index = () => {
       setIsFilterCollapse(false); // Ensure filter panel collapses in analytics mode
       return;
     }
+    
+    // Check if institution is empty for regular view
+    if (!npxFilter?.institution_name?.length) {
+      return;
+    }
+    
     if (!npxFilter?.company_name || npxFilter?.company_name.length === 0) {
       toast.warning("Please Select Company Name");
       return;
@@ -1134,7 +1140,6 @@ const index = () => {
   const onAnalyticsSubmit = async (data: any) => {
     // Perform all validations first
     if (isViewAnalysis && !data?.institution_name?.length) {
-      toast.warning("Please Select Institution Name");
       return;
     }
 
@@ -1411,9 +1416,15 @@ const index = () => {
       return;
     }
 
-    // Handle institution filter removal - allow removal even if company is selected
+    // Handle institution filter removal - prevent removal of last institution
     if (removeKey === "institution_name") {
       const currentInstitutions = isViewAnalysis ? allAnalyticsFilter.institution_name || [] : allApplyFilter.institution_name || [];
+      
+      // Prevent removal if it's the last institution
+      if (currentInstitutions.length <= 1) {
+        return; // Block removal when only one institution remains
+      }
+      
       // Remove the specific institution value
       const updatedInstitutions = currentInstitutions.filter((institution: string) => institution !== removeValue);
       if (isViewAnalysis) {
@@ -2029,8 +2040,8 @@ const index = () => {
             </div>
             {/* Filter Toggle and Advanced Filters Button */}
             <form onSubmit={handleSubmit(onSubmit)}>
-              {/* First row: Institution, Year, Index, Date Range, Company */}
-              <div className="grid gap-6 md:grid-cols-5 grid-cols-1">
+              {/* First row: Institution, Year, Index, Date Range */}
+              <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
                 {/* Institution */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -2040,35 +2051,50 @@ const index = () => {
                     name="institution_name"
                     control={control}
                     defaultValue={[]}
-                    render={({ field }) => (
-                      <MultiSelectDropdown
-                        data={institutionOptions.map(option => ({
-                          value: option,
-                          label: option,
-                          isDisabled: field.value?.length >= 3 && !field.value.includes(option)
-                        }))}
-                        placeholder="Select Institutions"
-                        loading={getFundNameDropdownLoader}
-                        onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => option.value);
-                          
-                          // Show warning when selecting the third institution
-                          if (selectedValues.length === 3) {
-                            toast.warning("Maximum institutions are selected");
-                          }
-                          
-                          // Prevent selecting more than 3 institutions
-                          if (selectedValues.length > 3) {
-                            return; // Don't update the field if more than 3 are selected
-                          }
-                          
-                          field.onChange(selectedValues);
-                          handleDropdownChange("institution_name", selectedValues);
-                          // Fetch vote and year options based on selected institutions
-                          getInstitutionDependentOptions(selectedValues);
-                        }}
-                        selectedOption={field.value || []}
-                      />
+                    rules={{
+                      required: "At least one institution must be selected",
+                      validate: (value) => 
+                        value && value.length >= 1 ? true : "At least one institution must be selected"
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <div>
+                        <MultiSelectDropdown
+                          data={institutionOptions.map(option => ({
+                            value: option,
+                            label: option,
+                            isDisabled: field.value?.length >= 3 && !field.value.includes(option)
+                          }))}
+                          placeholder="Select Institutions"
+                          loading={getFundNameDropdownLoader}
+                          onChange={(selectedOptions) => {
+                            const selectedValues = selectedOptions.map((option) => option.value);
+                            
+                            // Show warning when selecting the third institution
+                            if (selectedValues.length === 3) {
+                              toast.warning("Maximum institutions are selected");
+                            }
+                            
+                            // Prevent selecting more than 3 institutions
+                            if (selectedValues.length > 3) {
+                              return; // Don't update the field if more than 3 are selected
+                            }
+                            
+                            field.onChange(selectedValues);
+                            handleDropdownChange("institution_name", selectedValues);
+                            // Fetch vote and year options based on selected institutions
+                            getInstitutionDependentOptions(selectedValues);
+                          }}
+                          selectedOption={field.value || []}
+                        />
+                        {(!field.value || field.value?.length === 0) && (
+                          <div className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            At least one institution must be selected
+                          </div>
+                        )}
+                      </div>
                     )}
                   />
                 </div>
@@ -2189,6 +2215,9 @@ const index = () => {
                     />
                   </div>
                 </div>
+              </div>
+              {/* Second row: Company, Country, Meeting Type, Proposal Category */}
+              <div className="grid gap-6 md:grid-cols-4 grid-cols-1 mt-6">
                 {/* Company */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -2200,57 +2229,17 @@ const index = () => {
                     defaultValue={[]}
                     render={({ field }) => (
                       <CompanySelect
-                        value={(field.value || []).map(companyName => {
-                          // Find the full company object for this name
-                          const companyObj = companyOptions.find(c =>
-                            (typeof c === 'object' ? (c.name || c.company_name || c.label) : c) === companyName
-                          );
-                          return {
-                            value: companyName,
-                            label: companyName
-                          };
-                        })}
-                        onChange={(selectedCompanies) => {
-                          // Extract company names for form storage and API calls
-                          const companiesArray = Array.isArray(selectedCompanies) ? selectedCompanies : (selectedCompanies ? [selectedCompanies] : []);
-                          const companyNames = companiesArray.map(company =>
-                            typeof company === 'string' ? company : company.label || company.value
-                          );
-
+                        selectedCompany={field.value || []}
+                        onSelectionChange={(companyNames) => {
                           field.onChange(companyNames);
-
-                          // Check if query parameters are present
-                          const institutionParam = searchParams.get('institution');
-                          const companyParam = searchParams.get('company');
-                          const meetingTypeParam = searchParams.get('meeting_type');
-                          const hasQueryParams = institutionParam || companyParam || meetingTypeParam;
-
-                          // When company is selected, fetch dependent options for the selected companies
-                          if (companyNames.length > 0) {
-                            // Get dependent options for the selected companies
-                            const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
-                            getCompanyDependentOptions(companyNames, currentInstitutions);
-
-                            // We shouldn't clear other filters, but just make sure we have the right options available
-                            // Only update country if it's empty and no query parameters
-                            if ((!watch("country") || watch("country").length === 0) && !hasQueryParams) {
-                              // Only set default country if none is selected
-                              setValue("country", ["USA"]);
-                              setSelectedCountries(["USA"]);
-                              setCountryComponentKey(prev => prev + 1);
-                            }
-                            // Don't clear other filter values, especially institution_name
-                            // Removed: setValue("proponent_type", []);
-                            // Removed: setValue("proposal_keyword", []);
-                            // Removed: setValue("keyword", "");
-
-                            // Update filter states - only keep institution and year, remove country
-                            // Note: Filter updates removed - filters should only be applied via Apply button
-                          } else {
-                            // When company is deselected, automatically apply USA country filter only if no query params
-                            if (!hasQueryParams) {
-                              setValue("country", ["USA"]);
-                              setSelectedCountries(["USA"]);
+                          
+                          // Clear country when company is selected
+                          if (companyNames && companyNames.length > 0) {
+                            // Only clear country if it hasn't been manually set
+                            const currentCountries = watch("country") || [];
+                            if (currentCountries.length > 0) {
+                              setValue("country", []);
+                              setSelectedCountries([]);
                               setCountryComponentKey(prev => prev + 1);
                             }
 
@@ -2281,9 +2270,6 @@ const index = () => {
                     )}
                   />
                 </div>
-              </div>
-              {/* Second row: Country, Meeting Type, Proposal Category, Proponent, Vote */}
-              <div className="grid gap-6 md:grid-cols-5 grid-cols-1 mt-6">
                 {/* Country */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -2363,6 +2349,9 @@ const index = () => {
                     )}
                   />
                 </div>
+              </div>
+              {/* Third row: Proponent, Vote, Keywords */}
+              <div className="grid gap-6 md:grid-cols-4 grid-cols-1 mt-6">
                 {/* Proponent */}
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -2411,9 +2400,6 @@ const index = () => {
                     )}
                   />
                 </div>
-              </div>
-              {/* Third row: Keywords */}
-              <div className="grid gap-6 md:grid-cols-4 grid-cols-4 mt-6">
                 {/* Keywords */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
