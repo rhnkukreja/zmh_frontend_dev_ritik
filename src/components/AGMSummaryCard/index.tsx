@@ -272,10 +272,18 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     setSelectedYear(tab);
   }
 
+  // Generate available year tabs - only show years that actually have data
+  const getAvailableYears = () => {
+    if (!agmSummaryDetails?.total_year?.length) return [];
+    
+    // Return the actual years that have data
+    return agmSummaryDetails.total_year.map((year: any) => year.toString());
+  };
+
   const getSelectedTabIndex = () => {
-    // const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString()));
-    const tabIndex = agmSummaryDetails?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ? selectedYear?.toString() : agmSummaryDetails?.Year.toString()));
-    return tabIndex || 0;
+    const availableYears = getAvailableYears();
+    const tabIndex = availableYears.findIndex((year: string) => year === (selectedYear?.toString() !== "" ? selectedYear?.toString() : agmSummaryDetails?.Year.toString()));
+    return tabIndex >= 0 ? tabIndex : 0;
   };
 
   return (
@@ -353,7 +361,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                 </div>
               </div>
               {
-                agmSummaryDetails.total_year?.length > 1 &&
+                agmSummaryDetails.total_year?.length > 0 &&
                 <div >
                   <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                     <Tab.List
@@ -361,8 +369,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                       className="w-[100px] border-none bg-transparent"
                     >
                       {
-                        agmSummaryDetails.total_year?.length > 1 &&
-                        agmSummaryDetails.total_year?.map((tab: any, index: number) => (
+                        getAvailableYears().map((tab: string, index: number) => (
                           <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
                      last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
                             <Tab.Button

@@ -179,11 +179,19 @@ const index = () => {
     setSelectedYear(tab);
   }
 
+  // Generate available year tabs - only show years that actually have data
+  const getAvailableYears = () => {
+    if (!dashboardDataList?.total_year?.length) return [];
+    
+    // Return the actual years that have data
+    return dashboardDataList.total_year.map((year: any) => year.toString());
+  };
+
   const getSelectedTabIndex = () => {
-    const tabIndex = dashboardDataList?.total_year?.findIndex((year: any) => year?.toString() === (selectedYear?.toString() !== "" ?
+    const availableYears = getAvailableYears();
+    const tabIndex = availableYears.findIndex((year: string) => year === (selectedYear?.toString() !== "" ?
       selectedYear?.toString() : dashboardDataList?.all_year_data[0]?.year?.toString()));
-    // setSelectedIndex(tabIndex);
-    return tabIndex || 0;
+    return tabIndex >= 0 ? tabIndex : 0;
   };
 
   useEffect(() => {
@@ -251,7 +259,7 @@ const index = () => {
               </div>
 
               {
-                dashboardDataList?.total_year?.length > 1 &&
+                dashboardDataList?.total_year?.length > 0 &&
                 <div >
                   <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                     <Tab.List
@@ -259,8 +267,7 @@ const index = () => {
                       className="w-[100px] border-none bg-transparent"
                     >
                       {
-                        dashboardDataList?.total_year?.length > 1 &&
-                        dashboardDataList?.total_year?.map((tab: any, index: number) => (
+                        getAvailableYears().map((tab: string, index: number) => (
                           <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
                                    last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
                             <Tab.Button

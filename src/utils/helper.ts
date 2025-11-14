@@ -486,13 +486,15 @@ function generateFilterChips(filters: Record<string, any>) {
     if (filters[filterKey] && filters[filterKey].length !== 0 && filters[filterKey] !== "") {
       const value = filters[filterKey];
       
-      // Special handling for proposal_keyword - combine all values into a single chip
+      // Special handling for proposal_keyword - create separate chips for each keyword
       if (filterKey === 'proposal_keyword' && Array.isArray(value) && value.length > 0) {
-        const combinedValue = value.map(v => typeof v === 'object' && v.label ? v.label : v).join(', ');
-        sortedChips.push({
-          key: filterKey,
-          label: `${mapping[filterKey] || filterKey}: ${combinedValue}`,
-          value: value, // Keep the original array as value for removing functionality
+        value.forEach((keyword) => {
+          const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
+          sortedChips.push({
+            key: filterKey,
+            label: `${mapping[filterKey] || filterKey}: ${keywordValue}`,
+            value: keyword,
+          });
         });
       } else if (Array.isArray(value)) {
         value.forEach((v) => {
@@ -521,13 +523,15 @@ function generateFilterChips(filters: Record<string, any>) {
       value !== ""
     )
     .forEach(([key, value]) => {
-      // Special handling for proposal_keyword - combine all values into a single chip
+      // Special handling for proposal_keyword - create separate chips for each keyword
       if (key === 'proposal_keyword' && Array.isArray(value) && value.length > 0) {
-        const combinedValue = value.map(v => typeof v === 'object' && v.label ? v.label : v).join(', ');
-        sortedChips.push({
-          key,
-          label: `${mapping[key] || key}: ${combinedValue}`,
-          value: value, // Keep the original array as value for removing functionality
+        value.forEach((keyword) => {
+          const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
+          sortedChips.push({
+            key,
+            label: `${mapping[key] || key}: ${keywordValue}`,
+            value: keyword,
+          });
         });
       } else if (Array.isArray(value)) {
         value.forEach((v) => {

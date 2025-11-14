@@ -457,16 +457,6 @@ function Main() {
                     </a>
                   </div>
                 )}
-                <div className="flex flex-col box mb-4 p-5 bg-white from-slate-50 to-slate-100 border border-slate-200 rounded-lg shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="text-sm font-semibold text-slate-600 tracking-wide">
-                      Data As Of
-                    </h4>
-                  </div>
-                  <h5 className="text-[18px] font-semibold text-left text-black">
-                    February 2025
-                  </h5>
-                </div>
                 <div className="flex flex-col box">
                   <div
                     className={clsx(
@@ -478,10 +468,16 @@ function Main() {
                   //     ? "h-[70px] mt-4"
                   //     : "h-[70px] mt-4"
                   >
-                    <div className="flex items-center justify-between  w-full h-full ">
-                      <h4 className="text-[18px]  font-semibold text-left ml-2 leading-none text-black ">
-                        Key Contacts
-                      </h4>
+                    <div className="flex items-center justify-between  w-full h-full">
+                      <div className="px-4 py-3">
+                        <h4 className="text-[18px] font-semibold text-left leading-none text-black">
+                          Key Contacts
+                        </h4>
+                        <div className="text-[12px] text-slate-500 mt-1">
+                          <span className="font-bold mr-2">Data as of:</span>
+                          February 2025
+                        </div>
+                      </div>
                       {user?.user_type === "Admin" && (
                         <div
                           className="exclude-from-pdf ml-4 cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2 transition-colors duration-200 hover:bg-primary hover:text-white"

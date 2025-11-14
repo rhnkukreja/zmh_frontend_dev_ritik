@@ -1535,11 +1535,17 @@ const index = () => {
         // Also update the form field "vote"
         setValue("vote", updatedFilters[removeKey]);
       }
-      // Special handling for proposal_keyword - when clicked, remove all keywords at once
+      // Special handling for proposal_keyword - remove individual keywords
       else if (removeKey === "proposal_keyword") {
-        // Clear all keywords at once since they're displayed in a single pill
-        updatedFilters[removeKey] = [];
-        setValue(removeKey, []);
+        const currentKeywords = updatedFilters[removeKey] || [];
+        // Remove the specific keyword from the array
+        const updatedKeywords = currentKeywords.filter((keyword: any) => {
+          const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
+          const removeValueStr = typeof removeValue === 'object' && removeValue.label ? removeValue.label : removeValue;
+          return keywordValue !== removeValueStr;
+        });
+        updatedFilters[removeKey] = updatedKeywords;
+        setValue(removeKey, updatedKeywords);
       }
       else if (Array.isArray(updatedFilters[removeKey])) {
         updatedFilters[removeKey] = updatedFilters[removeKey].filter(
@@ -1568,11 +1574,17 @@ const index = () => {
 
     const updatedFilters = { ...allApplyFilter };
 
-    // Special handling for proposal_keyword - when clicked, remove all keywords at once
+    // Special handling for proposal_keyword - remove individual keywords
     if (removeKey === "proposal_keyword") {
-      // Clear all keywords at once since they're displayed in a single pill
-      updatedFilters[removeKey] = [];
-      setValue(removeKey, []);
+      const currentKeywords = updatedFilters[removeKey] || [];
+      // Remove the specific keyword from the array
+      const updatedKeywords = currentKeywords.filter((keyword: any) => {
+        const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
+        const removeValueStr = typeof removeValue === 'object' && removeValue.label ? removeValue.label : removeValue;
+        return keywordValue !== removeValueStr;
+      });
+      updatedFilters[removeKey] = updatedKeywords;
+      setValue(removeKey, updatedKeywords);
     }
     else if (Array.isArray(updatedFilters[removeKey])) {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(

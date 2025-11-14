@@ -41,8 +41,9 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
     onChange(values);
   };
 
-  const handleInputChange = (inputValue: string) => {
-    if (onInputChange) {
+  const handleInputChange = (inputValue: string, { action }: any) => {
+    // Only call onInputChange for actual user input, not for other actions
+    if (action === 'input-change' && onInputChange) {
       onInputChange(inputValue);
     }
   };
@@ -58,8 +59,16 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
       isLoading={loading}
       openMenuOnFocus={true}
       openMenuOnClick={true}
-      // Always allow menu to open so users can create custom keywords
+      // Keep menu open after selection so users can select multiple options
+      closeMenuOnSelect={false}
+      // Prevent menu from closing when input is blurred (important!)
+      blurInputOnSelect={false}
+      // Don't clear input when an option is selected
+      isClearable={false}
+      // Control menu opening behavior
       menuIsOpen={undefined}
+      // Prevent automatic menu closing on certain actions
+      captureMenuScroll={false}
       formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
       loadingMessage={() => "Loading suggestions..."}
       noOptionsMessage={({ inputValue }) => 
