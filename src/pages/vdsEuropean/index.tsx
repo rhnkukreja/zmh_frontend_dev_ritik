@@ -1185,7 +1185,7 @@ const index = () => {
       institution_name: data?.institution_name || [],
       index: data?.index || [],
       company_name: Array.isArray(data?.company_name) && data.company_name.length > 0
-        ? data.company_name.map((item: any) => item.label || item.value || item)
+        ? data.company_name
         : [],
       vote_type: data?.vote || [], // always set vote_types
       proposal_type: data?.proposal_type || [],
@@ -2359,15 +2359,29 @@ const index = () => {
                     defaultValue={[]}
                     render={({ field }) => (
                       <CompanySelect
-                        value={field.value || []}
+                        value={
+                          // Convert string array back to object array for display
+                          (field.value || []).map((companyName: string) => ({
+                            value: companyName,
+                            label: companyName,
+                            company: { name: companyName }
+                          }))
+                        }
                         onChange={(companyNames) => {
-                          field.onChange(companyNames);
-                          
                           // Ensure companyNames is always treated as an array
                           const companyArray = Array.isArray(companyNames) ? companyNames : companyNames ? [companyNames] : [];
                           
+                          // Extract company names as strings from the objects
+                          const companyNameStrings = companyArray.map((item: any) => {
+                            if (typeof item === 'string') return item;
+                            return item?.label || item?.company?.name || item?.value || item;
+                          });
+                          
+                          // Set the form field with string array
+                          field.onChange(companyNameStrings);
+                          
                           // Clear country when company is selected
-                          if (companyArray && companyArray.length > 0) {
+                          if (companyNameStrings && companyNameStrings.length > 0) {
                             // Only clear country if it hasn't been manually set
                             const currentCountries = watch("country") || [];
                             if (currentCountries.length > 0) {
@@ -2384,10 +2398,10 @@ const index = () => {
                           const previousCompanies = field.value || [];
 
                           // Check if the selection actually changed
-                          const hasChanged = JSON.stringify(companyArray.sort()) !== JSON.stringify(previousCompanies.sort());
+                          const hasChanged = JSON.stringify(companyNameStrings.sort()) !== JSON.stringify(previousCompanies.sort());
 
                           if (hasChanged) {
-                            getCompanyDependentOptions(companyArray, currentInstitutions);
+                            getCompanyDependentOptions(companyNameStrings, currentInstitutions);
                           }
                         }}
                         // Use exactUrl to handle VDS European specific API calls
