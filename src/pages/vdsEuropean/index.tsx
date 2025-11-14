@@ -2359,12 +2359,15 @@ const index = () => {
                     defaultValue={[]}
                     render={({ field }) => (
                       <CompanySelect
-                        selectedCompany={field.value || []}
-                        onSelectionChange={(companyNames) => {
+                        value={field.value || []}
+                        onChange={(companyNames) => {
                           field.onChange(companyNames);
                           
+                          // Ensure companyNames is always treated as an array
+                          const companyArray = Array.isArray(companyNames) ? companyNames : companyNames ? [companyNames] : [];
+                          
                           // Clear country when company is selected
-                          if (companyNames && companyNames.length > 0) {
+                          if (companyArray && companyArray.length > 0) {
                             // Only clear country if it hasn't been manually set
                             const currentCountries = watch("country") || [];
                             if (currentCountries.length > 0) {
@@ -2381,10 +2384,10 @@ const index = () => {
                           const previousCompanies = field.value || [];
 
                           // Check if the selection actually changed
-                          const hasChanged = JSON.stringify(companyNames.sort()) !== JSON.stringify(previousCompanies.sort());
+                          const hasChanged = JSON.stringify(companyArray.sort()) !== JSON.stringify(previousCompanies.sort());
 
                           if (hasChanged) {
-                            getCompanyDependentOptions(companyNames, currentInstitutions);
+                            getCompanyDependentOptions(companyArray, currentInstitutions);
                           }
                         }}
                         // Use exactUrl to handle VDS European specific API calls
