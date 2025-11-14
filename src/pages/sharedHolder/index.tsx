@@ -2456,7 +2456,7 @@ function ShareHolderProposal() {
                         {shareHolderProposal?.length === 0 && (
                           <Table.Tbody>
                             <Table.Tr>
-                              <Table.Td colSpan={isAllCompanySelected ? 7 : 6} className="text-center py-12">
+                              <Table.Td colSpan={12} className="text-center py-12">
                                 <div className="flex flex-col items-center justify-center">
                                   <Lucide
                                     icon="FileSearch"
@@ -2795,7 +2795,7 @@ function ShareHolderProposal() {
                         {shareHolderProposal?.length === 0 && (
                           <Table.Tbody>
                             <Table.Tr>
-                              <Table.Td colSpan={isAllCompanySelected ? 5 : 4} className="text-center py-12">
+                              <Table.Td colSpan={12} className="text-center py-12">
                                 <div className="flex flex-col items-center justify-center">
                                   <Lucide
                                     icon="FileSearch"
