@@ -460,21 +460,21 @@ function Main() {
                 <div className="flex flex-col box">
                   <div
                     className={clsx(
-                      "relative flex border-b-2 border-gray-100 flex-col px-4  sm:px-2 items-center  transition-all duration-300 ease-in-out overflow-hidden",
-                      isExpanded ? "h-[270px] sm:h-[270px]" : "h-[52px]",
+                      "relative flex border-b-2 border-gray-100 flex-col px-4 sm:px-2 items-center transition-all duration-300 ease-in-out",
+                      isExpanded ? "min-h-[270px]" : "h-[70px]",
                       !singleInvesterProfile?.key_contacts && "h-[120px]"
                     )}
                   // user?.user_type?.toLowerCase() === "admin"
                   //     ? "h-[70px] mt-4"
                   //     : "h-[70px] mt-4"
                   >
-                    <div className="flex items-center justify-between  w-full h-full">
-                      <div className="px-4 py-3">
-                        <h4 className="text-[18px] font-semibold text-left leading-none text-black">
+                    <div className="flex items-start justify-between w-full h-full">
+                      <div className="px-3 py-4 w-full">
+                        <h4 className="text-[18px] font-semibold leading-none text-black mb-1">
                           Key Contacts
                         </h4>
-                        <div className="text-[12px] text-slate-500 mt-1">
-                          <span className="font-bold mr-2">Data as of:</span>
+                        <div className="text-[12px] text-slate-500">
+                          <span className="font-bold mr-2">Last Updated:</span>
                           February 2025
                         </div>
                       </div>
@@ -545,7 +545,7 @@ function Main() {
 
                     }
                   </div>
-                  <div className="max-h-auto">
+                  <div className="pb-4">
                     {loading ? (
                       <div className="mt-[-20px]">
                         <LoadingWrapper height={200} />
@@ -556,9 +556,9 @@ function Main() {
                           (contacts: KeyContact, index: any) => (
                             <div
                               key={index}
-                              className="flex py-2  flex-col px-4  border-b-2 border-gray-100 "
+                              className="flex py-3 flex-col px-4 border-b border-gray-200 last:border-b-0"
                             >
-                              <div className="flex  items-center   border-b border-dashed last:pb-0 last:mb-0 last:border-0">
+                              <div className="flex items-center">
                                 <div>
                                   <div className="w-12 h-12 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
                                     {

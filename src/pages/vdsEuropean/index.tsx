@@ -1221,6 +1221,126 @@ const index = () => {
     localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(analyticsObj));
   };
 
+  const onClearAll = () => {
+    // Check if query parameters are present
+    const institutionParam = searchParams.get('institution');
+    const companyParam = searchParams.get('company');
+    const meetingTypeParam = searchParams.get('meeting_type');
+    const hasQueryParams = institutionParam || companyParam || meetingTypeParam;
+
+    // Clear all filters except mandatory ones
+    const currentYear = new Date().getFullYear().toString();
+    let institutionsToKeep = ["BlackRock, Inc."];
+    let countryToKeep = ["USA"];
+    let indexToKeep = ["S&P 500"];
+    
+    // Preserve query parameter values if present
+    if (hasQueryParams && institutionParam) {
+      const institutions = institutionParam.split('||').map(inst => decodeURIComponent(inst.trim()));
+      if (institutions.length > 0) {
+        institutionsToKeep = institutions;
+      }
+    }
+
+    if (isViewAnalysis) {
+      // For analytics view, keep only mandatory fields
+      const mandatoryFilters = {
+        institution_name: institutionsToKeep,
+        index: indexToKeep,
+        country: hasQueryParams ? [] : countryToKeep,
+        analyticsYear: hasQueryParams ? [] : [currentYear],
+      };
+      
+      setAllAnalyticsFilter(mandatoryFilters);
+      
+      // Reset form to mandatory values only
+      setValue("institution_name", institutionsToKeep);
+      setValue("index", indexToKeep);
+      if (!hasQueryParams) {
+        setValue("country", countryToKeep);
+        setValue("analyticsYear", [currentYear]);
+        setSelectedCountries(countryToKeep);
+      } else {
+        setValue("country", []);
+        setValue("analyticsYear", []);
+        setSelectedCountries([]);
+      }
+      
+      // Clear non-mandatory fields
+      setValue("company_name", []);
+      setValue("vote", []);
+      setValue("category", []);
+      setValue("keyword", "");
+      setValue("date_range", "");
+      setValue("proponent_type", []);
+      setValue("proposal_type", []);
+      setValue("proposal_keyword", []);
+      setValue("meeting_type", []);
+      setValue("year", "");
+      
+      // Update filter chips and save to localStorage
+      setSelectedChipFilters(generateFilterChips(mandatoryFilters));
+      setFiltersLength(countValidFilters(mandatoryFilters));
+      localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(mandatoryFilters));
+      
+      // Reset analytics data to force refetch
+      dispatch(resetAnalyticsDataLoaded());
+    } else {
+      // For regular view, keep only mandatory fields
+      const mandatoryFilters = {
+        institution_name: institutionsToKeep,
+        country: hasQueryParams ? [] : countryToKeep,
+        year: hasQueryParams ? "" : currentYear,
+      };
+      
+      setallApplyFilter(mandatoryFilters);
+      
+      // Reset form to mandatory values only
+      setValue("institution_name", institutionsToKeep);
+      if (!hasQueryParams) {
+        setValue("country", countryToKeep);
+        setValue("year", currentYear);
+        setSelectedCountries(countryToKeep);
+      } else {
+        setValue("country", []);
+        setValue("year", "");
+        setSelectedCountries([]);
+      }
+      
+      // Clear non-mandatory fields
+      setValue("company_name", []);
+      setValue("vote", []);
+      setValue("category", []);
+      setValue("keyword", "");
+      setValue("date_range", "");
+      setValue("analyticsYear", []);
+      setValue("index", []);
+      setValue("proponent_type", []);
+      setValue("proposal_type", []);
+      setValue("proposal_keyword", []);
+      setValue("meeting_type", []);
+      
+      // Update filter chips and save to localStorage
+      setSelectedChipFilters(generateFilterChips(mandatoryFilters));
+      setFiltersLength(countValidFilters(mandatoryFilters));
+      localStorage.setItem("vdsEuropeanFilters", JSON.stringify(mandatoryFilters));
+      
+      // Reset page and data to force refetch
+      dispatch(resetPage());
+      dispatch(resetDataLoaded());
+    }
+    
+    // Reset dropdown values
+    setDropdownValues({
+      company_name: [],
+      institution: [],
+      index: [],
+    });
+    
+    // Force country component refresh
+    setCountryComponentKey(prev => prev + 1);
+  };
+
   const onFilterClear = (onAnalyticsTab) => {
     // Check if query parameters are present
     const institutionParam = searchParams.get('institution');
@@ -2030,16 +2150,14 @@ const index = () => {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
               <div className="flex items-center gap-2">
-                {/* <Button
+                <Button
                   variant="outline-secondary"
-                  onClick={() => {
-                    onFilterClear(false);
-                  }}
-                  className="w-full sm:w-auto flex items-center gap-2"
+                  onClick={onClearAll}
+                  className="w-full sm:w-auto"
                   type="button"
                 >
-                  <MdOutlineClear className="text-lg mr-1" /> Clear
-                </Button> */}
+                  Clear All
+                </Button>
 
                 <Button
                   variant="primary"
