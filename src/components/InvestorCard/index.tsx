@@ -259,6 +259,30 @@ const index = () => {
               </div>
 
               <div className="mt-5">
+                {/* Year selection tabs - only show when both 2024 and 2025 data are available */}
+                {getAvailableYears().includes('2024') && getAvailableYears().includes('2025') && (
+                  <div className="mb-4">
+                    <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
+                      <Tab.List
+                        variant="boxed-tabs"
+                        className="w-[200px] border-none bg-transparent"
+                      >
+                        {getAvailableYears().map((tab: string, index: number) => (
+                          <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
+                                   last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
+                            <Tab.Button
+                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                              as="button"
+                              onClick={() => handleAGMYearTab(tab, index)}>
+                              {tab}
+                            </Tab.Button>
+                          </Tab>
+                        ))}
+                      </Tab.List>
+                    </Tab.Group>
+                  </div>
+                )}
+
                 <div>
                   <TableWrapper isLoading={investorCardLoading}>
                     <div
