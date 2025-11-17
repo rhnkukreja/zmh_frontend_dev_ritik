@@ -258,34 +258,6 @@ const index = () => {
                 </div>
               </div>
 
-              {
-                dashboardDataList?.total_year?.length > 0 &&
-                <div >
-                  <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
-                    <Tab.List
-                      variant="boxed-tabs"
-                      className="w-[100px] border-none bg-transparent"
-                    >
-                      {
-                        getAvailableYears().map((tab: string, index: number) => (
-                          <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
-                                   last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
-                            <Tab.Button
-                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
-                              as="button"
-                              onClick={() => handleAGMYearTab(tab, getSelectedTabIndex())}>
-                              {tab}
-                            </Tab.Button>
-                          </Tab>
-                        ))
-                      }
-
-                    </Tab.List>
-                  </Tab.Group>
-                </div>
-              }
-
-
               <div className="mt-5">
                 <div>
                   <TableWrapper isLoading={investorCardLoading}>
@@ -354,13 +326,20 @@ const index = () => {
                               Engagement Topic
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Voted Against Directors
+                              <div className="flex items-center justify-center gap-1">
+                                Voted Against Directors
+                                {!getAvailableYears().includes('2025') && (
+                                  <Tippy content="2025 meeting not held yet. Data based on 2024 voting details" options={{ theme: "light" }}>
+                                    <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
+                                  </Tippy>
+                                )}
+                              </div>
                             </Table.Td>
                             <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
                               <div className="flex items-center justify-center gap-1">
                                 Voted Against Say on Pay
-                                {isColumnGrayedOut && (
-                                  <Tippy content="Say on Pay not on ballot at 2025 shareholder meeting" options={{ theme: "light" }}>
+                                {(isColumnGrayedOut || !getAvailableYears().includes('2025')) && (
+                                  <Tippy content={isColumnGrayedOut ? "Say on Pay not on ballot at 2025 shareholder meeting" : "2025 meeting not held yet. Data based 2024 voting details"} options={{ theme: "light" }}>
                                     <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
                                   </Tippy>
                                 )}

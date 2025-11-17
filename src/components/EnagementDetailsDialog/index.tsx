@@ -94,12 +94,25 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                                     "Baillie Gifford & Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
 
                                                                     // Schroder variations
-                                                                    "Schroder Investment Management Ltd": "Q2 2025 Sustainable Investment Report",
-                                                                    "Schroders": "Q2 2025 Sustainable Investment Report",
+                                                                    "Schroder Investment Management Ltd": "https://publications.schroders.com/view/833551848/19/",
+                                                                    "Schroders": "https://publications.schroders.com/view/833551848/19/",
+
+                                                                    // UBS Asset Management variations
+                                                                    "UBS Asset Management AG": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+                                                                    "UBS Asset Management": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+                                                                    "UBS": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+
+                                                                    // Northern Trust variations
+                                                                    "Northern Trust Asset Management": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
+                                                                    "Northern Trust": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
+
+                                                                    // Allspring Global Investments variations
+                                                                    "Allspring Global Investments": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
+                                                                    "Allspring": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
 
                                                                     // State Street Global Advisors variations
-                                                                    "State Street Global Advisors": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/2025/asset-stewardship-activity-report-q4-24.pdf",
-                                                                    "SSGA": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/2025/asset-stewardship-activity-report-q4-24.pdf",
+                                                                    "State Street Global Advisors": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
+                                                                    "SSGA": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
 
                                                                     // T. Rowe Price variations
                                                                     "T Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
@@ -122,9 +135,15 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                                     } else if (lowerInstitution.includes('baillie') || lowerInstitution.includes('gifford')) {
                                                                         url = "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025";
                                                                     } else if (lowerInstitution.includes('schroder') || lowerInstitution.includes('schroders')) {
-                                                                        url = "Q2 2025 Sustainable Investment Report";
+                                                                        url = "https://publications.schroders.com/view/833551848/19/";
+                                                                    } else if (lowerInstitution.includes('ubs')) {
+                                                                        url = "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf";
+                                                                    } else if (lowerInstitution.includes('northern trust')) {
+                                                                        url = "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf";
+                                                                    } else if (lowerInstitution.includes('allspring')) {
+                                                                        url = "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf";
                                                                     } else if (lowerInstitution.includes('state street') || lowerInstitution.includes('global advisors')) {
-                                                                        url = "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/2025/asset-stewardship-activity-report-q4-24.pdf";
+                                                                        url = "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf";
                                                                     } else if (lowerInstitution.includes('rowe') || lowerInstitution.includes('price')) {
                                                                         url = "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf";
                                                                     }
@@ -135,13 +154,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            // Check if URL is a web link or just text
-                                                                            if (url.startsWith('http')) {
-                                                                                window.open(url, '_blank', 'noopener,noreferrer');
-                                                                            } else {
-                                                                                // For non-URL documents (like Schroder's text), show an alert with the document name
-                                                                                alert(`Document: ${url}\n\nThis document is available but not accessible via direct link.`);
-                                                                            }
+                                                                            // All documents now have URLs, so open in new tab
+                                                                            window.open(url, '_blank', 'noopener,noreferrer');
                                                                         }}
                                                                         className="text-blue-600 hover:text-blue-800 p-1 rounded"
                                                                         aria-label={`Open documents for ${institutionName}`}

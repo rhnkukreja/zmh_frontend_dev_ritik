@@ -114,6 +114,8 @@ function Main() {
   const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
   const [whatsNewFormVisible, setWhatsNewFormVisible] =
     useState<boolean>(false);
+  const [podcastModalVisible, setPodcastModalVisible] =
+    useState<boolean>(false);
 
   const toggleCompactMenu = (event: MouseEvent) => {
     event.preventDefault();
@@ -554,6 +556,8 @@ function Main() {
                           setHelpFormVisible(true);
                         } else if (menu.title === "Email Alert") {
                           setWhatsNewFormVisible(true);
+                        } else if (menu.title === "Podcasts") {
+                          setPodcastModalVisible(true);
                         } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
@@ -1228,8 +1232,9 @@ function Main() {
 
       <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
         <Dialog.Panel className="p-6 h-full flex flex-col max-h-[80vh]">
-          <Dialog.Title className="mb-4">
-            <h2 className="mr-auto text-xl font-semibold text-left">AI Assistant</h2>
+          <Dialog.Title className="mb-2">
+            <h2 className="mr-auto text-xl font-semibold text-left">AI Assistant (Beta)</h2>
+            <p className="text-sm text-gray-500 mt-1 mb-3">AI Assistant can make mistakes. Verify important info.</p>
             <div
               onClick={handleCloseModal}
               className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
@@ -1244,7 +1249,7 @@ function Main() {
               <iframe
                 src="/ai-search"
                 className="w-full h-[550px] border border-gray-200 rounded-lg"
-                title="AI Assistant"
+                title="AI Assistant (Beta)"
               />
             </div>
             
@@ -1302,6 +1307,39 @@ function Main() {
               </div>
             </div>
           </div>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* Podcast Modal */}
+      <Dialog size="xl" open={podcastModalVisible} onClose={() => setPodcastModalVisible(false)}>
+        <Dialog.Panel className="p-6">
+          <Dialog.Title>
+            <div className="flex items-center justify-between w-[100%]">
+              <h2 className="text-xl font-semibold">Podcasts</h2>
+              <div
+                onClick={() => setPodcastModalVisible(false)}
+                className="cursor-pointer"
+              >
+                <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+              </div>
+            </div>
+          </Dialog.Title>
+          <Dialog.Description>
+            <div className="mt-4">
+              <iframe 
+                src="https://player.rss.com/the-deep-dive-podcast/?theme=light&v=2" 
+                title="The Deep Dive Podcast" 
+                width="100%" 
+                height="393px" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen 
+                scrolling="no"
+              >
+                <a href="https://rss.com/podcasts/the-deep-dive-podcast/">The Deep Dive Podcast</a>
+              </iframe>
+            </div>
+          </Dialog.Description>
         </Dialog.Panel>
       </Dialog>
 

@@ -150,6 +150,11 @@ const initialState: any = {
       isAdmin: true,
     },
     {
+      icon: "Headphones",
+      pathname: "#",
+      title: "Podcasts",
+    },
+    {
       icon: "BarChart2",
       pathname: "/custom-reports",
       title: "Custom Reports",
