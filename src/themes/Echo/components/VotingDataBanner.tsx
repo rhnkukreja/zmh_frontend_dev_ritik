@@ -71,7 +71,7 @@ const VotingDataBanner = () => {
             <div className="flex-1 space-y-2">
               <div className="flex-1 space-y-2">
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  <strong>BlackRock’s</strong> Q2 2025 engagement details are
+                <strong>Ballie Gifford</strong> Q3, <strong> BlackRock</strong> Q2, and<strong> State Street</strong> Q1 2025 engagement details are
                   now available in the Engagement module.
                 </p>
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
