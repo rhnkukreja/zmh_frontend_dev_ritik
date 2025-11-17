@@ -2551,7 +2551,7 @@ const index = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="flex items-center gap-2 text-slate-600 font-semibold">
-                      <FaTags className="text-gray-400" /> Keywords
+                      <FaTags className="text-gray-400" /> Keywords (Beta)
                     </label>
                   </div>
                   <Controller
