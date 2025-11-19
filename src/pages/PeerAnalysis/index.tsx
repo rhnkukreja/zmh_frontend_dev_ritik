@@ -479,6 +479,13 @@ function PeerAnalysis() {
   const handleDocumentClick = (institutionName: string) => {
   console.log("Clicked:", institutionName);
 };
+
+  const formatEngagementData = (data: string | null | undefined): string => {
+    if (data === null || data === undefined || data === "" || data === "0") {
+      return "ND";
+    }
+    return data;
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -1138,13 +1145,13 @@ function PeerAnalysis() {
                                 {peer?.company_sector}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
-                                {peer?.env_list}
+                                {formatEngagementData(peer?.env_list)}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
-                                {peer?.soc_list}
+                                {formatEngagementData(peer?.soc_list)}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
-                                {peer?.gov_list}
+                                {formatEngagementData(peer?.gov_list)}
                               </Table.Td>
                             </Table.Tr>
                           ))}

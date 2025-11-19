@@ -26,6 +26,10 @@ const formatNumberWithCommas = (num: number): string => {
     return num.toLocaleString();
 };
 
+const formatEngagementValue = (num: number): string => {
+    return num === 0 ? "ND" : num.toLocaleString();
+};
+
 
 const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics, onDocumentClick }) => {
     const isInvestorDataAvailable = investorData && investorData.length > 0;
@@ -51,7 +55,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <thead>
                                     <tr className="bg-primary text-white">
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Unique Companies</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>No. of Engagements.</th>
                                         <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Environmental</th>
                                         <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Social</th>
                                         <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Governance</th>
@@ -173,9 +177,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                 </div>
                                             </td>
                                             <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.unique_companies)}</td>
-                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.environmental)}</td>
-                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.social)}</td>
-                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.governance)}</td>
+                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.environmental)}</td>
+                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.social)}</td>
+                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.governance)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

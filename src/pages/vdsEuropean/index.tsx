@@ -915,12 +915,23 @@ const index = () => {
         setKeywordLoading(false);
       }
     }, 500), // 500ms debounce like global search
-    []
+    [setKeywordDropdownOptions, setKeywordLoading]
   );
 
-  const fetchKeywordSuggestions = (searchTerm: string) => {
+  const fetchKeywordSuggestions = useCallback((searchTerm: string) => {
+    // Add additional safety checks to prevent interference
+    if (!searchTerm || typeof searchTerm !== 'string') {
+      return;
+    }
     debouncedFetchKeywordSuggestions(searchTerm);
-  };
+  }, [debouncedFetchKeywordSuggestions]);
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      debouncedFetchKeywordSuggestions.cancel();
+    };
+  }, [debouncedFetchKeywordSuggestions]);
 
   const getInstituionDependentDropdown = async (value: any) => {
     if (value !== "") {
@@ -1415,39 +1426,43 @@ const index = () => {
   };
 
   const resetFormValues: any = (hasQueryParams = false) => {
-    setValue("company_name", []);
-    // If we have query parameters, preserve the institution_name from URL params
-    const institutionParam = searchParams.get('institution');
-    if (hasQueryParams && institutionParam) {
-      const institutions = institutionParam.split('||').map(inst => decodeURIComponent(inst.trim()));
-      if (institutions.length > 0) {
-        setValue("institution_name", institutions);
+    // Use setTimeout to ensure all form operations complete before resetting
+    setTimeout(() => {
+      setValue("company_name", []);
+      // If we have query parameters, preserve the institution_name from URL params
+      const institutionParam = searchParams.get('institution');
+      if (hasQueryParams && institutionParam) {
+        const institutions = institutionParam.split('||').map(inst => decodeURIComponent(inst.trim()));
+        if (institutions.length > 0) {
+          setValue("institution_name", institutions);
+        } else {
+          setValue("institution_name", ["BlackRock, Inc."]);
+        }
       } else {
         setValue("institution_name", ["BlackRock, Inc."]);
       }
-    } else {
-      setValue("institution_name", ["BlackRock, Inc."]);
-    }
-    setValue("vote", []);
-    setValue("category", []);
-    if (!hasQueryParams) {
-      setValue("year", new Date().getFullYear().toString());
-      setValue("country", ["USA"]);
-      setSelectedCountries(["USA"]);
-      setCountryComponentKey(prev => prev + 1);
-    } else {
-      setValue("year", "");
-      setValue("country", []);
-      setSelectedCountries([]);
-    }
-    setValue("keyword", "");
-    setValue("date_range", "");
-    setValue("analyticsYear", []);
-    setValue("index", []);
-    setValue("proponent_type", []);
-    setValue("proposal_type", []);
-    setValue("proposal_keyword", []);
-    setValue("meeting_type", []);
+      setValue("vote", []);
+      setValue("category", []);
+      if (!hasQueryParams) {
+        setValue("year", new Date().getFullYear().toString());
+        setValue("country", ["USA"]);
+        setSelectedCountries(["USA"]);
+        setCountryComponentKey(prev => prev + 1);
+      } else {
+        setValue("year", "");
+        setValue("country", []);
+        setSelectedCountries([]);
+      }
+      setValue("keyword", "");
+      setValue("date_range", "");
+      setValue("analyticsYear", []);
+      setValue("index", []);
+      setValue("proponent_type", []);
+      setValue("proposal_type", []);
+      setValue("proposal_keyword", []);
+      setValue("meeting_type", []);
+    }, 50); // Small delay to prevent form interference
+    
     setDropdownValues({
       company_name: [],
       institution: [],
@@ -1665,7 +1680,11 @@ const index = () => {
           return keywordValue !== removeValueStr;
         });
         updatedFilters[removeKey] = updatedKeywords;
-        setValue(removeKey, updatedKeywords);
+        
+        // Use setTimeout to prevent form field interference
+        setTimeout(() => {
+          setValue(removeKey, updatedKeywords);
+        }, 0);
       }
       else if (Array.isArray(updatedFilters[removeKey])) {
         updatedFilters[removeKey] = updatedFilters[removeKey].filter(
@@ -1704,7 +1723,11 @@ const index = () => {
         return keywordValue !== removeValueStr;
       });
       updatedFilters[removeKey] = updatedKeywords;
-      setValue(removeKey, updatedKeywords);
+      
+      // Use setTimeout to prevent form field interference
+      setTimeout(() => {
+        setValue(removeKey, updatedKeywords);
+      }, 0);
     }
     else if (Array.isArray(updatedFilters[removeKey])) {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
@@ -2553,6 +2576,21 @@ const index = () => {
                     <label className="flex items-center gap-2 text-slate-600 font-semibold">
                       <FaTags className="text-gray-400" /> Keywords (Beta)
                     </label>
+                    {keywordDropdownOptions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentValue = watch("proposal_keyword") || [];
+                          const allKeywords = [...new Set([...currentValue, ...keywordDropdownOptions])];
+                          setTimeout(() => {
+                            setValue("proposal_keyword", allKeywords);
+                          }, 0);
+                        }}
+                        className="text-xs text-primary hover:text-primary/80 font-medium"
+                      >
+                        Select All
+                      </button>
+                    )}
                   </div>
                   <Controller
                     name="proposal_keyword"
@@ -2561,9 +2599,17 @@ const index = () => {
                       <CreatableInputSelect
                         placeholder="Type and press Enter to add keywords"
                         value={field.value || []}
-                        onChange={(val) => field.onChange(val)}
+                        onChange={(val) => {
+                          // Prevent event bubbling that could affect other form fields
+                          setTimeout(() => {
+                            field.onChange(val);
+                          }, 0);
+                        }}
                         onInputChange={(inputValue: string) => {
-                          fetchKeywordSuggestions(inputValue);
+                          // Debounce and prevent interference with other form operations
+                          if (inputValue && inputValue.trim()) {
+                            fetchKeywordSuggestions(inputValue);
+                          }
                         }}
                         options={keywordDropdownOptions}
                         loading={keywordLoading}

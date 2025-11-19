@@ -1233,8 +1233,10 @@ function Main() {
       <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
         <Dialog.Panel className="p-6 h-full flex flex-col max-h-[80vh]">
           <Dialog.Title className="mb-2">
-            <h2 className="mr-auto text-xl font-semibold text-left">AI Assistant (Beta)</h2>
-            <p className="text-sm text-gray-500 mt-1 mb-3">AI Assistant can make mistakes. Verify important info.</p>
+            <div>
+              <h2 className="text-xl font-semibold text-left">AI Assistant (Beta)</h2>
+              <p className="text-sm text-gray-500 mt-1">AI Assistant can make mistakes. Verify important info.</p>
+            </div>
             <div
               onClick={handleCloseModal}
               className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
@@ -1260,9 +1262,8 @@ function Main() {
                 <img 
                   src={logo} 
                   alt="ZMH Analytics Logo" 
-                  className="w-16 h-16 object-contain mb-2"
+                  className="w-16 h-16 object-contain"
                 />
-                <span className="text-xs text-gray-600 font-medium">ZMH Analytics</span>
               </div>
               
               {/* Recommended Questions */}
