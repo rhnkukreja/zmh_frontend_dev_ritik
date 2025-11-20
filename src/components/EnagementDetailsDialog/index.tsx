@@ -18,6 +18,7 @@ interface ChartComponentProps {
     handleSearch: (searchTerms: string[]) => void;
     topEngagementTopics: TopEngagementTopics;
     onDocumentClick?: (institutionName: string) => void;
+    isAllCompanySelected: boolean;
 }
 
 const COLORS = ["#00C49F", "#FF6F00", "#0088FE"];
@@ -30,14 +31,14 @@ const formatEngagementValue = (value: any): JSX.Element | string => {
     if (value === "ND" || value === 0) {
         return (
             <sup 
-                className="cursor-pointer text-gray-400 hover:text-gray-600"
+                className="cursor-pointer text-gray-400 hover:text-gray-600 inline-flex items-center justify-center"
                 onClick={() => {
                     const footnoteElement = document.getElementById('footnote');
                     if (footnoteElement) {
                         footnoteElement.scrollIntoView({ behavior: 'smooth' });
                     }
                 }}
-                style={{ fontSize: "1em" }}
+                style={{ fontSize: "1em", verticalAlign: "middle" }}
             >
                 *
             </sup>
@@ -47,7 +48,7 @@ const formatEngagementValue = (value: any): JSX.Element | string => {
 };
 
 
-const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics, onDocumentClick }) => {
+const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics, onDocumentClick, isAllCompanySelected }) => {
     const isInvestorDataAvailable = investorData && investorData.length > 0;
 
     if (!investorData) {
@@ -71,7 +72,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <thead>
                                     <tr className="bg-primary text-white">
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>No. of Engagements.</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
+                                            {isAllCompanySelected ? "No of unique companies" : "No of Engagements"}
+                                        </th>
                                         <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Environmental</th>
                                         <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Social</th>
                                         <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Governance</th>

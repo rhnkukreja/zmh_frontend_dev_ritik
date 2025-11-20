@@ -32,6 +32,8 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
   const [showLoading, setShowLoading] = useState<boolean>(loading);
   const [hasInitialLoad, setHasInitialLoad] = useState<boolean>(false);
+  const [isUserSelecting, setIsUserSelecting] = useState<boolean>(false);
+  const [inputValue, setInputValue] = useState<string>("");
 
   // Update showLoading when loading prop changes
   useEffect(() => {
@@ -40,6 +42,11 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
   // Synchronize selected options with the `selectedOption` prop
   useEffect(() => {
+    // Don't override user's active selection
+    if (isUserSelecting) {
+      return;
+    }
+    
     if (Array.isArray(selectedOption)) {
       const formattedSelectedOptions = selectedOption.map((item) => {
         if (typeof item === 'string') {
@@ -54,7 +61,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     } else {
       setSelectedOptions([]);
     }
-  }, [selectedOption]);
+  }, [selectedOption, isUserSelecting]);
 
   // Format options from the data
   useEffect(() => {
@@ -78,14 +85,23 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   const handleChange = (selected: MultiValue<Option>) => {
     const newSelectedOptions = selected as Option[];
     
+    // Set flag to indicate user is actively selecting
+    setIsUserSelecting(true);
+    
     // Check if trying to remove the last item when preventRemoveLastItem is true
     if (preventRemoveLastItem && selectedOptions.length === 1 && newSelectedOptions.length === 0) {
       toast.error(`At least one ${fieldName} must be selected`);
+      setIsUserSelecting(false);
       return; // Don't update the state, keep the current selection
     }
     
     setSelectedOptions(newSelectedOptions);
     onChange(newSelectedOptions);
+    
+    // Reset the flag after a short delay to allow prop updates
+    setTimeout(() => {
+      setIsUserSelecting(false);
+    }, 100);
   };
 
   const CustomOption = (props: any) => {
@@ -116,6 +132,13 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       options={options}
       value={selectedOptions}
       onChange={handleChange}
+      onInputChange={(newValue, actionMeta) => {
+        // Only update input value for user input, not for other actions
+        if (actionMeta.action === 'input-change') {
+          setInputValue(newValue);
+        }
+      }}
+      inputValue={inputValue}
       placeholder={showLoading || !hasInitialLoad ? "Loading options..." : placeholder}
       hideSelectedOptions={false}
       components={{
@@ -138,6 +161,11 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       classNamePrefix="select"
       closeMenuOnSelect={false}
       isLoading={showLoading}
+      isSearchable={true}
+      isClearable={false}
+      blurInputOnSelect={false}
+      openMenuOnFocus={true}
+      openMenuOnClick={true}
     />
   );
 };

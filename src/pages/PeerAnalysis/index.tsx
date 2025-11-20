@@ -69,6 +69,8 @@ function PeerAnalysis() {
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [viewAll, setViewAll] = useState<boolean>(false);
   const [isViewAnalysis, setIsViewAnalysis] = useState(true);
+  const [shouldTriggerAPI, setShouldTriggerAPI] = useState(false);
+  const [lastTriggeredPage, setLastTriggeredPage] = useState(1);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
@@ -143,6 +145,8 @@ function PeerAnalysis() {
 
   useEffect(() => {
     getAllCaseStudyDropdowns();
+    // Trigger initial data load
+    setShouldTriggerAPI(true);
   }, []);
   const resetFormValues = () => {
     setValue("year", []);
@@ -175,28 +179,11 @@ function PeerAnalysis() {
       return;
     }
 
-    // if (isAllCompanySelected === true && filters?.global_search.length > 0) {
+    // Only make API calls if shouldTriggerAPI is true, or if it's a page change after filters have been applied
+    if (!shouldTriggerAPI && (page === 1 || page === lastTriggeredPage)) {
+      return;
+    }
 
-    //     const { institution_name, global_search, ...restFilters } = filters;
-    //     const dynamicURL = createDynamicURL(
-    //       `${baseURL}/peer_analysis/`,
-    //       restFilters,
-    //       undefined,
-    //       page
-    //     );
-    //     dispatch(fetchPeerAnalysis(dynamicURL));
-
-    //     setFiltersLength(
-    //       countValidFilters(
-    //         isAllCompanySelected === false
-    //           ? restFilters
-    //           : { ...restFilters }
-    //       )
-    //     );
-    //     setSelectedChipFilters(generateFilterChips(restFilters));
-    //     console.log("inner one")
-    //     return;
-    // }
     const { global_search, ...restFilters } = filters;
     const dynamicURL = createDynamicURL(
       `${baseURL}/peer_analysis/`,
@@ -215,8 +202,13 @@ function PeerAnalysis() {
       )
     );
     setSelectedChipFilters(generateFilterChips(chipFilters));
-  }, [page, filters]);
-
+    
+    // Reset the trigger flag after API call
+    if (shouldTriggerAPI) {
+      setShouldTriggerAPI(false);
+    }
+    setLastTriggeredPage(page);
+  }, [page, filters, shouldTriggerAPI]);
 
 
   const handleNextPage = () => {
@@ -366,6 +358,9 @@ function PeerAnalysis() {
     );
     setIsFilterCollapse(!isFilterCollapse);
     dispatch(resetPage());
+    
+    // Trigger API call when Apply is clicked
+    setShouldTriggerAPI(true);
   };
 
   const multSearchUrl = useMemo(() => {
@@ -479,26 +474,6 @@ function PeerAnalysis() {
   const handleDocumentClick = (institutionName: string) => {
   console.log("Clicked:", institutionName);
 };
-
-  const formatEngagementData = (data: string | null | undefined): JSX.Element | string => {
-    if (data === null || data === undefined || data === "" || data === "ND") {
-      return (
-        <sup 
-          className="cursor-pointer text-gray-400 hover:text-gray-600"
-          onClick={() => {
-            const footnoteElement = document.getElementById('footnote');
-            if (footnoteElement) {
-              footnoteElement.scrollIntoView({ behavior: 'smooth' });
-            }
-          }}
-          style={{ fontSize: "1em" }}
-        >
-          *
-        </sup>
-      );
-    }
-    return data;
-  };
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -1007,7 +982,6 @@ function PeerAnalysis() {
                                   const selectedValues = selectedOptions.map((option) => option.value);
                                   field.onChange(selectedValues);
                                   dispatch(setFilter({ key: "sector", value: selectedValues }));
-
                                 }}
                                 selectedOption={field.value || []}
                               />
@@ -1075,7 +1049,7 @@ function PeerAnalysis() {
                     handleSearch={handleSearch} 
                     topEngagementTopics={topEngagementTopics}
                     onDocumentClick={handleDocumentClick}
-
+                    isAllCompanySelected={isAllCompanySelected}
                   />
                 )
               )}
@@ -1158,13 +1132,13 @@ function PeerAnalysis() {
                                 {peer?.company_sector}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
-                                {formatEngagementData(peer?.env_list)}
+                                {peer?.env_list}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
-                                {formatEngagementData(peer?.soc_list)}
+                                {peer?.soc_list}
                               </Table.Td>
                               <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
-                                {formatEngagementData(peer?.gov_list)}
+                                {peer?.gov_list}
                               </Table.Td>
                             </Table.Tr>
                           ))}
