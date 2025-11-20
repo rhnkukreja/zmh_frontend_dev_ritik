@@ -483,21 +483,18 @@ function PeerAnalysis() {
   const formatEngagementData = (data: string | null | undefined): JSX.Element | string => {
     if (data === null || data === undefined || data === "" || data === "ND") {
       return (
-        <span>
-          ND
-          <sup 
-            className="cursor-pointer text-primary hover:underline ml-1"
-            onClick={() => {
-              const footnoteElement = document.getElementById('footnote');
-              if (footnoteElement) {
-                footnoteElement.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            style={{ fontSize: "0.8em" }}
-          >
-            *
-          </sup>
-        </span>
+        <sup 
+          className="cursor-pointer text-gray-400 hover:text-gray-600"
+          onClick={() => {
+            const footnoteElement = document.getElementById('footnote');
+            if (footnoteElement) {
+              footnoteElement.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+          style={{ fontSize: "1em" }}
+        >
+          *
+        </sup>
       );
     }
     return data;
