@@ -480,9 +480,25 @@ function PeerAnalysis() {
   console.log("Clicked:", institutionName);
 };
 
-  const formatEngagementData = (data: string | null | undefined): string => {
-    if (data === null || data === undefined || data === "" || data === "0") {
-      return "ND";
+  const formatEngagementData = (data: string | null | undefined): JSX.Element | string => {
+    if (data === null || data === undefined || data === "" || data === "ND") {
+      return (
+        <span>
+          ND
+          <sup 
+            className="cursor-pointer text-primary hover:underline ml-1"
+            onClick={() => {
+              const footnoteElement = document.getElementById('footnote');
+              if (footnoteElement) {
+                footnoteElement.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            style={{ fontSize: "0.8em" }}
+          >
+            *
+          </sup>
+        </span>
+      );
     }
     return data;
   };

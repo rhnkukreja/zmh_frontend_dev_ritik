@@ -26,8 +26,27 @@ const formatNumberWithCommas = (num: number): string => {
     return num.toLocaleString();
 };
 
-const formatEngagementValue = (num: number): string => {
-    return num === 0 ? "ND" : num.toLocaleString();
+const formatEngagementValue = (value: any): JSX.Element | string => {
+    if (value === "ND" || value === 0) {
+        return (
+            <span>
+                ND
+                <sup 
+                    className="cursor-pointer text-primary hover:underline ml-1"
+                    onClick={() => {
+                        const footnoteElement = document.getElementById('footnote');
+                        if (footnoteElement) {
+                            footnoteElement.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }}
+                    style={{ fontSize: "0.8em" }}
+                >
+                    *
+                </sup>
+            </span>
+        );
+    }
+    return typeof value === 'number' ? formatNumberWithCommas(value) : value;
 };
 
 
