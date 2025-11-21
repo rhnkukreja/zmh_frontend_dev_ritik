@@ -30,18 +30,18 @@ const formatNumberWithCommas = (num: number): string => {
 const formatEngagementValue = (value: any): JSX.Element | string => {
     if (value === "ND" || value === 0) {
         return (
-            <sup 
-                className="cursor-pointer text-gray-400 hover:text-gray-600 inline-flex items-center justify-center"
+            <span
+                className="cursor-pointer text-gray-400 hover:text-gray-600 inline-block mt-3"
                 onClick={() => {
                     const footnoteElement = document.getElementById('footnote');
                     if (footnoteElement) {
                         footnoteElement.scrollIntoView({ behavior: 'smooth' });
                     }
                 }}
-                style={{ fontSize: "1em", verticalAlign: "middle" }}
+                style={{ fontSize: "1em", transform: "translateY(-1px)" }}
             >
                 *
-            </sup>
+            </span>
         );
     }
     return typeof value === 'number' ? formatNumberWithCommas(value) : value;
@@ -67,142 +67,148 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
             ) : (
                 <>
                     <div className="flex gap-6 rounded-lg">
-                        <div className="w-3/5 overflow-auto max-h-80 rounded-lg">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr className="bg-primary text-white">
-                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
-                                            {isAllCompanySelected ? "No of unique companies" : "No of Engagements"}
-                                        </th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Environmental</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Social</th>
-                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Governance</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {investorData.map((investor, index) => (
-                                        <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
-                                            <td
-                                                className="py-2 px-3 text-left"
-                                                style={{ fontSize: '14px' }}
-                                            >
-                                                <div className="flex items-center justify-between w-full">
-                                                    <span
-                                                        className="text-blue-600 cursor-pointer hover:underline flex-1"
-                                                        onClick={() => handleSearch([investor.institution__institution])}
-                                                    >
-                                                        {investor.institution__institution}
-                                                    </span>
-                                                    {onDocumentClick && (
-                                                        <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                                                            {(() => {
-                                                                // Map institution name to document URL
-                                                                const mapping: Record<string, string> = {
-                                                                    // BlackRock variations
-                                                                    "Blackrock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                    "Blackrock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                    "BlackRock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                    "BlackRock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-
-                                                                    // Vanguard variations  
-                                                                    "The Vanguard Group": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-                                                                    "Vanguard": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-                                                                    "The Vanguard Group, Inc.": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-
-                                                                    // Baillie Gifford variations
-                                                                    "Baillie Gifford and Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-                                                                    "Baillie Gifford": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-                                                                    "Baillie Gifford & Co": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-                                                                    "Baillie Gifford & Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-
-                                                                    // Schroder variations
-                                                                    "Schroder Investment Management Ltd": "https://publications.schroders.com/view/833551848/19/",
-                                                                    "Schroders": "https://publications.schroders.com/view/833551848/19/",
-
-                                                                    // UBS Asset Management variations
-                                                                    "UBS Asset Management AG": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
-                                                                    "UBS Asset Management": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
-                                                                    "UBS": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
-
-                                                                    // Northern Trust variations
-                                                                    "Northern Trust Asset Management": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
-                                                                    "Northern Trust": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
-
-                                                                    // Allspring Global Investments variations
-                                                                    "Allspring Global Investments": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
-                                                                    "Allspring": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
-
-                                                                    // State Street Global Advisors variations
-                                                                    "State Street Global Advisors": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
-                                                                    "SSGA": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
-
-                                                                    // T. Rowe Price variations
-                                                                    "T Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
-                                                                    "T. Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
-                                                                    "T Rowe Price": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
-                                                                };
-
-                                                                const institutionName = investor.institution__institution;
-                                                                let url = mapping[institutionName] ?? "";
-
-                                                                // If no direct match, try case-insensitive partial matching
-                                                                if (!url || url.trim() === "") {
-                                                                    const lowerInstitution = institutionName.toLowerCase();
-
-                                                                    // More flexible matching patterns
-                                                                    if (lowerInstitution.includes('blackrock') || lowerInstitution.includes('black rock')) {
-                                                                        url = "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf";
-                                                                    } else if (lowerInstitution.includes('vanguard')) {
-                                                                        url = "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf";
-                                                                    } else if (lowerInstitution.includes('baillie') || lowerInstitution.includes('gifford')) {
-                                                                        url = "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025";
-                                                                    } else if (lowerInstitution.includes('schroder') || lowerInstitution.includes('schroders')) {
-                                                                        url = "https://publications.schroders.com/view/833551848/19/";
-                                                                    } else if (lowerInstitution.includes('ubs')) {
-                                                                        url = "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf";
-                                                                    } else if (lowerInstitution.includes('northern trust')) {
-                                                                        url = "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf";
-                                                                    } else if (lowerInstitution.includes('allspring')) {
-                                                                        url = "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf";
-                                                                    } else if (lowerInstitution.includes('state street') || lowerInstitution.includes('global advisors')) {
-                                                                        url = "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf";
-                                                                    } else if (lowerInstitution.includes('rowe') || lowerInstitution.includes('price')) {
-                                                                        url = "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf";
-                                                                    }
-                                                                }
-
-                                                                // Always show info icon, but only make it clickable if URL exists
-                                                                return url && url.trim() !== "" ? (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            // All documents now have URLs, so open in new tab
-                                                                            window.open(url, '_blank', 'noopener,noreferrer');
-                                                                        }}
-                                                                        className="text-blue-600 hover:text-blue-800 p-1 rounded"
-                                                                        aria-label={`Open documents for ${institutionName}`}
-                                                                    >
-                                                                        <Lucide icon="Info" className="w-4 h-4" />
-                                                                    </button>
-                                                                ) : (
-                                                                    <div className="p-1">
-                                                                        <Lucide icon="Info" className="w-4 h-4 text-gray-300" />
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.unique_companies)}</td>
-                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.environmental)}</td>
-                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.social)}</td>
-                                            <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.governance)}</td>
+                        <div>
+                            <div className="w-5/5 overflow-auto max-h-80 rounded-lg">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-primary text-white">
+                                            <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
+                                            <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
+                                                {isAllCompanySelected ? "No of unique companies" : "No of Engagements"}
+                                            </th>
+                                            <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Environmental</th>
+                                            <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Social</th>
+                                            <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Governance</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {investorData.map((investor, index) => (
+                                            <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
+                                                <td
+                                                    className="py-2 px-3 text-left"
+                                                    style={{ fontSize: '14px' }}
+                                                >
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <span
+                                                            className="text-blue-600 cursor-pointer hover:underline flex-1"
+                                                            onClick={() => handleSearch([investor.institution__institution])}
+                                                        >
+                                                            {investor.institution__institution}
+                                                        </span>
+                                                        {onDocumentClick && (
+                                                            <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                                                                {(() => {
+                                                                    // Map institution name to document URL
+                                                                    const mapping: Record<string, string> = {
+                                                                        // BlackRock variations
+                                                                        "Blackrock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                        "Blackrock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                        "BlackRock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                        "BlackRock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+
+                                                                        // Vanguard variations  
+                                                                        "The Vanguard Group": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                                        "Vanguard": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                                        "The Vanguard Group, Inc.": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+
+                                                                        // Baillie Gifford variations
+                                                                        "Baillie Gifford and Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                                        "Baillie Gifford": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                                        "Baillie Gifford & Co": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                                        "Baillie Gifford & Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+
+                                                                        // Schroder variations
+                                                                        "Schroder Investment Management Ltd": "https://publications.schroders.com/view/833551848/19/",
+                                                                        "Schroders": "https://publications.schroders.com/view/833551848/19/",
+
+                                                                        // UBS Asset Management variations
+                                                                        "UBS Asset Management AG": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+                                                                        "UBS Asset Management": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+                                                                        "UBS": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+
+                                                                        // Northern Trust variations
+                                                                        "Northern Trust Asset Management": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
+                                                                        "Northern Trust": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
+
+                                                                        // Allspring Global Investments variations
+                                                                        "Allspring Global Investments": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
+                                                                        "Allspring": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
+
+                                                                        // State Street Global Advisors variations
+                                                                        "State Street Global Advisors": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
+                                                                        "SSGA": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
+
+                                                                        // T. Rowe Price variations
+                                                                        "T Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                                        "T. Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                                        "T Rowe Price": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                                    };
+
+                                                                    const institutionName = investor.institution__institution;
+                                                                    let url = mapping[institutionName] ?? "";
+
+                                                                    // If no direct match, try case-insensitive partial matching
+                                                                    if (!url || url.trim() === "") {
+                                                                        const lowerInstitution = institutionName.toLowerCase();
+
+                                                                        // More flexible matching patterns
+                                                                        if (lowerInstitution.includes('blackrock') || lowerInstitution.includes('black rock')) {
+                                                                            url = "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf";
+                                                                        } else if (lowerInstitution.includes('vanguard')) {
+                                                                            url = "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf";
+                                                                        } else if (lowerInstitution.includes('baillie') || lowerInstitution.includes('gifford')) {
+                                                                            url = "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025";
+                                                                        } else if (lowerInstitution.includes('schroder') || lowerInstitution.includes('schroders')) {
+                                                                            url = "https://publications.schroders.com/view/833551848/19/";
+                                                                        } else if (lowerInstitution.includes('ubs')) {
+                                                                            url = "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf";
+                                                                        } else if (lowerInstitution.includes('northern trust')) {
+                                                                            url = "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf";
+                                                                        } else if (lowerInstitution.includes('allspring')) {
+                                                                            url = "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf";
+                                                                        } else if (lowerInstitution.includes('state street') || lowerInstitution.includes('global advisors')) {
+                                                                            url = "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf";
+                                                                        } else if (lowerInstitution.includes('rowe') || lowerInstitution.includes('price')) {
+                                                                            url = "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf";
+                                                                        }
+                                                                    }
+
+                                                                    // Always show info icon, but only make it clickable if URL exists
+                                                                    return url && url.trim() !== "" ? (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                // All documents now have URLs, so open in new tab
+                                                                                window.open(url, '_blank', 'noopener,noreferrer');
+                                                                            }}
+                                                                            className="text-blue-600 hover:text-blue-800 p-1 rounded"
+                                                                            aria-label={`Open documents for ${institutionName}`}
+                                                                        >
+                                                                            <Lucide icon="Info" className="w-4 h-4" />
+                                                                        </button>
+                                                                    ) : (
+                                                                        <div className="p-1">
+                                                                            <Lucide icon="Info" className="w-4 h-4 text-gray-300" />
+                                                                        </div>
+                                                                    );
+                                                                })()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatNumberWithCommas(investor.unique_companies)}</td>
+                                                <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.environmental)}</td>
+                                                <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.social)}</td>
+                                                <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>{formatEngagementValue(investor.governance)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {/* Footnote for ESG tables */}
+                            <div className="mt-4 text-xs text-gray-500 italic">
+                                *Investor does not disclose engagement details
+                            </div>
                         </div>
 
                         <div className="w-6/12 rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
@@ -318,8 +324,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                         </div>
                     </div>
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };
 

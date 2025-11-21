@@ -69,8 +69,6 @@ function PeerAnalysis() {
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [viewAll, setViewAll] = useState<boolean>(false);
   const [isViewAnalysis, setIsViewAnalysis] = useState(true);
-  const [shouldTriggerAPI, setShouldTriggerAPI] = useState(false);
-  const [lastTriggeredPage, setLastTriggeredPage] = useState(1);
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
@@ -145,8 +143,6 @@ function PeerAnalysis() {
 
   useEffect(() => {
     getAllCaseStudyDropdowns();
-    // Trigger initial data load
-    setShouldTriggerAPI(true);
   }, []);
   const resetFormValues = () => {
     setValue("year", []);
@@ -179,11 +175,6 @@ function PeerAnalysis() {
       return;
     }
 
-    // Only make API calls if shouldTriggerAPI is true, or if it's a page change after filters have been applied
-    if (!shouldTriggerAPI && (page === 1 || page === lastTriggeredPage)) {
-      return;
-    }
-
     const { global_search, ...restFilters } = filters;
     const dynamicURL = createDynamicURL(
       `${baseURL}/peer_analysis/`,
@@ -202,13 +193,7 @@ function PeerAnalysis() {
       )
     );
     setSelectedChipFilters(generateFilterChips(chipFilters));
-    
-    // Reset the trigger flag after API call
-    if (shouldTriggerAPI) {
-      setShouldTriggerAPI(false);
-    }
-    setLastTriggeredPage(page);
-  }, [page, filters, shouldTriggerAPI]);
+  }, [page, filters]);
 
 
   const handleNextPage = () => {
@@ -358,9 +343,6 @@ function PeerAnalysis() {
     );
     setIsFilterCollapse(!isFilterCollapse);
     dispatch(resetPage());
-    
-    // Trigger API call when Apply is clicked
-    setShouldTriggerAPI(true);
   };
 
   const multSearchUrl = useMemo(() => {
@@ -481,7 +463,7 @@ function PeerAnalysis() {
           {/* Sticky Header OUTSIDE scrollable content */}
           <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
             {isAllCompanySelected === true ? (
-              <h1 className="text-lg font-bold flex items-center gap-2">
+              <h1 className="font-semibold text-lg">
                 All Engagement Details
               </h1>
             ) : (
