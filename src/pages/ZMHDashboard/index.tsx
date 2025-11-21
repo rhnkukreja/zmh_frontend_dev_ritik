@@ -129,7 +129,6 @@ function Main() {
       const sections = [
         { id: 'ownership', tab: 'ownership' },
         { id: 'shareholder-meeting-results', tab: 'shareholder-meeting-results' },
-        { id: 'board-composition', tab: 'board-composition' }
       ];
 
       const scrollPosition = window.scrollY + 250; // Increased offset for sticky header

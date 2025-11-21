@@ -7,6 +7,7 @@ import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import { MegaphoneOff } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -65,6 +66,7 @@ const index = () => {
 
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [showChart, setShowChart] = useState<boolean>(false);
 
   // Check if Say on Pay column should be shown based on selected year
   const showSayOnPayColumn = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.say_on_pay_column_check === true;
@@ -199,6 +201,20 @@ const index = () => {
     setSelectedIndex(index);
   }, [selectedYear])
 
+  // Analytics data processing
+  const getAnalyticsData = () => {
+    const analyticsData = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics;
+    if (!analyticsData) return [];
+    
+    return Object.entries(analyticsData).map(([key, value]) => ({
+      name: key,
+      value: parseFloat(String(value).replace('%', '')),
+      displayValue: String(value)
+    }));
+  };
+
+  const ANALYTICS_COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7c7c", "#8dd1e1"];
+
   return (
     <>
       {location.pathname !== "/" && (
@@ -235,26 +251,48 @@ const index = () => {
                       History of Schedule 13D Filing
                     </h4>
                   </div>
-                  <Tippy content="Download Excel" options={{ theme: "light" }}>
-                    <div
-                      className="box p-[5px] cursor-pointer"
-                      onClick={convertDivTableToCSV}
-                    >
-                      <img alt="download-icon" src={downloadIcon} />
-                    </div>
-                  </Tippy>
-                  {locationPathName === "/" && (
-                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                  <div className="flex items-center gap-2">
+                    <Tippy content="Download Excel" options={{ theme: "light" }}>
                       <div
-                        className="box p-2 cursor-pointer"
-                        onClick={() =>
-                          window.open("investor-details", "_blank")
-                        }
+                        className="box p-[5px] cursor-pointer"
+                        onClick={convertDivTableToCSV}
                       >
-                        <img alt="tab-icon" src={tabIcon} />
+                        <img alt="download-icon" src={downloadIcon} />
                       </div>
                     </Tippy>
-                  )}
+                    {locationPathName === "/" && (
+                      <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                        <div
+                          className="box p-2 cursor-pointer"
+                          onClick={() =>
+                            window.open("investor-details", "_blank")
+                          }
+                        >
+                          <img alt="tab-icon" src={tabIcon} />
+                        </div>
+                      </Tippy>
+                    )}
+                    
+                    {/* Chart Toggle Button */}
+                    {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
+                      <Tippy content={showChart ? "Hide Analytics Chart" : "Show Analytics Chart"} options={{ theme: "light" }}>
+                        <div
+                          className={`box p-2 cursor-pointer transition-all duration-200 ${
+                            showChart 
+                              ? 'bg-primary text-white hover:bg-red-600 shadow-md' 
+                              : 'hover:bg-gray-100 hover:shadow-md'
+                          }`}
+                          onClick={() => setShowChart(!showChart)}
+                        >
+                          <Lucide 
+                            icon="BarChart3" 
+                            className="w-4 h-4" 
+                            color={showChart ? "white" : "#800000"}
+                          />
+                        </div>
+                      </Tippy>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -283,14 +321,16 @@ const index = () => {
                   </div>
                 )}
 
-                <div>
-                  <TableWrapper isLoading={investorCardLoading}>
-                    <div
-                      className={clsx([
-                        locationPathName === "/" &&
-                        "overflow-auto max-h-[600px]",
-                      ])}
-                    >
+                <div className={`grid gap-6 ${showChart && dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'grid-cols-1 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                  {/* Left Side - Investor Table */}
+                  <div className={showChart && dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'xl:col-span-2' : 'col-span-1'}>
+                    <TableWrapper isLoading={investorCardLoading}>
+                      <div
+                        className={clsx([
+                          locationPathName === "/" &&
+                          "overflow-auto max-h-[600px]",
+                        ])}
+                      >
                       <Table className="table">
                         <Table.Thead>
                           <Table.Tr className="row">
@@ -643,6 +683,71 @@ const index = () => {
                     </div>
                   </TableWrapper>
                 </div>
+
+                {/* Right Side - Analytics Chart */}
+                {showChart && dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
+                  <div className="xl:col-span-1">
+                    <div className="bg-white p-6 rounded-lg border border-gray-100 h-fit sticky top-4">
+                      <h3 className="text-lg font-semibold mb-6 text-center">Analytics</h3>
+                      
+                      {/* Pie Chart */}
+                      <div className="w-full h-64 mb-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={getAnalyticsData()}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({value}) => `${value}%`}
+                              outerRadius={80}
+                              innerRadius={25}
+                              fill="#8884d8"
+                              dataKey="value"
+                              strokeWidth={2}
+                              stroke="#ffffff"
+                            >
+                              {getAnalyticsData().map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value, name) => [`${value}%`, name]}
+                              labelFormatter={(label) => `Advisory Service`}
+                              contentStyle={{
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Legend */}
+                      <div className="space-y-3">
+                        {getAnalyticsData().map((item, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex items-center">
+                              <div 
+                                className="w-4 h-4 rounded-full mr-3" 
+                                style={{ backgroundColor: ANALYTICS_COLORS[index % ANALYTICS_COLORS.length] }}
+                              ></div>
+                              <span className="text-sm font-medium text-gray-700">
+                                {item.name.replace(', ', ' + ')}
+                              </span>
+                            </div>
+                            <span className="text-sm font-bold text-primary">
+                              {item.displayValue}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
               </div>
             </div>
 
