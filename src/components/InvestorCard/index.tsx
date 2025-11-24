@@ -66,7 +66,6 @@ const index = () => {
 
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [showChart, setShowChart] = useState<boolean>(false);
 
   // Check if Say on Pay column should be shown based on selected year
   const showSayOnPayColumn = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.say_on_pay_column_check === true;
@@ -272,26 +271,6 @@ const index = () => {
                         </div>
                       </Tippy>
                     )}
-                    
-                    {/* Chart Toggle Button */}
-                    {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
-                      <Tippy content={showChart ? "Hide Analytics Chart" : "Show Analytics Chart"} options={{ theme: "light" }}>
-                        <div
-                          className={`box p-2 cursor-pointer transition-all duration-200 ${
-                            showChart 
-                              ? 'bg-primary text-white hover:bg-red-600 shadow-md' 
-                              : 'hover:bg-gray-100 hover:shadow-md'
-                          }`}
-                          onClick={() => setShowChart(!showChart)}
-                        >
-                          <Lucide 
-                            icon="BarChart3" 
-                            className="w-4 h-4" 
-                            color={showChart ? "white" : "#800000"}
-                          />
-                        </div>
-                      </Tippy>
-                    )}
                   </div>
                 </div>
               </div>
@@ -321,23 +300,25 @@ const index = () => {
                   </div>
                 )}
 
-                <div className={`grid gap-6 ${showChart && dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'grid-cols-1 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                <div className={`grid gap-6 ${dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'grid-cols-1 xl:grid-cols-3' : 'grid-cols-1'}`}>
                   {/* Left Side - Investor Table */}
-                  <div className={showChart && dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'xl:col-span-2' : 'col-span-1'}>
+                  <div className={dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'xl:col-span-2' : 'col-span-1'}>
                     <TableWrapper isLoading={investorCardLoading}>
                       <div
                         className={clsx([
                           locationPathName === "/" &&
                           "overflow-auto max-h-[600px]",
+                          "relative"
                         ])}
+                        style={{ overflowX: 'auto' }}
                       >
                       <Table className="table">
                         <Table.Thead>
                           <Table.Tr className="row">
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky left-0 z-10">
                               No.
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky left-[60px] z-10">
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -422,13 +403,13 @@ const index = () => {
                                 >
                                   {dashboard?.institution_name && (
                                     <>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 sticky left-0 z-10 bg-white">
                                         <div className="flex items-center font-semibold ">
                                           {index + 1}
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="relative w-full px-4 py-2">
+                                      <Table.Td className="relative w-full px-4 py-2 sticky left-[60px] z-10 bg-white">
 
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center  whitespace-nowrap">
@@ -685,7 +666,7 @@ const index = () => {
                 </div>
 
                 {/* Right Side - Analytics Chart */}
-                {showChart && dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
+                {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
                   <div className="xl:col-span-1">
                     <div className="bg-white p-6 rounded-lg border border-gray-100 h-fit sticky top-4">
                       <h3 className="text-lg font-semibold mb-6 text-center">Proxy Advisory Influence Analysis<br/><span className="text-sm font-normal text-gray-600">(Top 20)</span></h3>
