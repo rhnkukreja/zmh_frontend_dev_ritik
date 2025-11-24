@@ -213,7 +213,7 @@ const index = () => {
     }));
   };
 
-  const ANALYTICS_COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7c7c", "#8dd1e1"];
+  const ANALYTICS_COLORS = ["#4F83FF", "#E74C8C", "#9B59B6", "#1ABC9C", "#F39C12"];
 
   return (
     <>
@@ -688,7 +688,7 @@ const index = () => {
                 {showChart && dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
                   <div className="xl:col-span-1">
                     <div className="bg-white p-6 rounded-lg border border-gray-100 h-fit sticky top-4">
-                      <h3 className="text-lg font-semibold mb-6 text-center">Analytics</h3>
+                      <h3 className="text-lg font-semibold mb-6 text-center">Proxy Advisory Influence Analysis<br/><span className="text-sm font-normal text-gray-600">(Top 20)</span></h3>
                       
                       {/* Pie Chart */}
                       <div className="w-full h-64 mb-6">
