@@ -300,9 +300,9 @@ const index = () => {
                   </div>
                 )}
 
-                <div className={`grid gap-6 ${dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'grid-cols-1 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                <div className={`grid gap-6 ${dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'grid-cols-1 xl:grid-cols-4' : 'grid-cols-1'}`}>
                   {/* Left Side - Investor Table */}
-                  <div className={dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'xl:col-span-2' : 'col-span-1'}>
+                  <div className={dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'xl:col-span-3' : 'col-span-1'}>
                     <TableWrapper isLoading={investorCardLoading}>
                       <div
                         className={clsx([
@@ -317,7 +317,7 @@ const index = () => {
                             <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky top-0 sticky left-0 bg-header z-[5000] min-w-[60px]">
                               No.
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky top-0 sticky left-[60px] min-w-[200px] max-w-[250px] bg-header z-[5000]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky top-0 sticky left-[60px] min-w-[280px] max-w-[350px] bg-header z-[5000]">
                               Shareholder
                             </Table.Td>
                             <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
@@ -408,7 +408,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="relative w-full px-4 py-2 sticky left-[60px] min-w-[200px] max-w-[250px] bg-white z-[9]">
+                                      <Table.Td className="relative w-full px-4 py-2 sticky left-[60px] min-w-[280px] max-w-[350px] bg-white z-[9]">
 
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center  whitespace-nowrap">
@@ -667,11 +667,11 @@ const index = () => {
                 {/* Right Side - Analytics Chart */}
                 {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
                   <div className="xl:col-span-1">
-                    <div className="bg-white p-6 rounded-lg border border-gray-100 h-fit sticky top-4">
-                      <h3 className="text-lg font-semibold mb-6 text-center">Proxy Advisory Influence Analysis<br/><span className="text-sm font-normal text-gray-600">(Top 20)</span></h3>
+                    <div className="bg-white p-4 rounded-lg border border-gray-100 h-fit sticky top-4">
+                      <h3 className="text-base font-semibold mb-4 text-center">Proxy Advisory Influence Analysis<br/><span className="text-xs font-normal text-gray-600">(Top 20)</span></h3>
                       
                       {/* Pie Chart */}
-                      <div className="w-full h-64 mb-6">
+                      <div className="w-full h-48 mb-4">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -680,8 +680,8 @@ const index = () => {
                               cy="50%"
                               labelLine={false}
                               label={({value}) => `${value}%`}
-                              outerRadius={80}
-                              innerRadius={25}
+                              outerRadius={60}
+                              innerRadius={20}
                               fill="#8884d8"
                               dataKey="value"
                               strokeWidth={2}
@@ -706,19 +706,19 @@ const index = () => {
                       </div>
 
                       {/* Legend */}
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {getAnalyticsData().map((item, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <div key={index} className="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors">
                             <div className="flex items-center">
                               <div 
-                                className="w-4 h-4 rounded-full mr-3" 
+                                className="w-3 h-3 rounded-full mr-2" 
                                 style={{ backgroundColor: ANALYTICS_COLORS[index % ANALYTICS_COLORS.length] }}
                               ></div>
-                              <span className="text-sm font-medium text-gray-700">
+                              <span className="text-xs font-medium text-gray-700">
                                 {item.name.replace(', ', ' + ')}
                               </span>
                             </div>
-                            <span className="text-sm font-bold text-primary">
+                            <span className="text-xs font-bold text-primary">
                               {item.displayValue}
                             </span>
                           </div>
