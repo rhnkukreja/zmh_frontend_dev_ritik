@@ -307,21 +307,20 @@ const index = () => {
                       <div
                         className={clsx([
                           locationPathName === "/" &&
-                          "overflow-auto max-h-[600px]",
-                          "relative"
+                          "max-h-[600px]",
+                          "overflow-x-auto max-h-[60vh] overflow-y-scroll"
                         ])}
-                        style={{ overflowX: 'auto' }}
                       >
-                      <Table className="table">
-                        <Table.Thead>
+                      <Table className="table w-full">
+                        <Table.Thead className="sticky top-0 z-10">
                           <Table.Tr className="row">
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky left-0 z-10">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky top-0 sticky left-0 bg-header z-[5000] min-w-[60px]">
                               No.
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky left-[60px] z-10">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky top-0 sticky left-[60px] min-w-[200px] max-w-[250px] bg-header z-[5000]">
                               Shareholder
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
                               <span
                                 id="footnote-1"
                                 className="cursor-pointer"
@@ -341,13 +340,13 @@ const index = () => {
                                 </sup>
                               </span>
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold  h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
                               Proxy Advisory Influence
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
                               UN PRI Signatory
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[150px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[150px] max-w-[170px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <span
                                 id="footnote-1"
                                 className="cursor-pointer"
@@ -367,10 +366,10 @@ const index = () => {
                                 </sup>
                               </span>
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
                               Engagement Topic
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
                               <div className="flex items-center justify-center gap-1">
                                 Voted Against Directors
                                 {!getAvailableYears().includes('2025') && (
@@ -380,7 +379,7 @@ const index = () => {
                                 )}
                               </div>
                             </Table.Td>
-                            <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
+                            <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] max-w-[170px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
                               <div className="flex items-center justify-center gap-1">
                                 Voted Against Say on Pay
                                 {(isColumnGrayedOut || !getAvailableYears().includes('2025')) && (
@@ -403,13 +402,13 @@ const index = () => {
                                 >
                                   {dashboard?.institution_name && (
                                     <>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 sticky left-0 z-10 bg-white">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 sticky left-0 bg-white z-[9] min-w-[60px]">
                                         <div className="flex items-center font-semibold ">
                                           {index + 1}
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="relative w-full px-4 py-2 sticky left-[60px] z-10 bg-white">
+                                      <Table.Td className="relative w-full px-4 py-2 sticky left-[60px] min-w-[200px] max-w-[250px] bg-white z-[9]">
 
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center  whitespace-nowrap">
@@ -521,18 +520,18 @@ const index = () => {
                                           </div>
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
                                         <div className="whitespace-nowrap flex items-center justify-center">
                                           {dashboard?.percent_ownership}%
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
                                         <div className="whitespace-nowrap ">
                                           {dashboard.proxy_advisor_influence ||
                                             "-"}
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
                                         <div className="whitespace-nowrap ">
                                           {dashboard?.unpri_signatory ===
                                             true && (
@@ -545,7 +544,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
                                         {dashboard?.company_engaged ===
                                           true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
@@ -555,7 +554,7 @@ const index = () => {
                                             </div>
                                           )}
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 ">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
                                         <div className="whitespace-nowrap flex items-center justify-center">
                                           <div className="flex space-x-2">
                                             {dashboard?.engagement_topic
@@ -579,7 +578,7 @@ const index = () => {
                                           </div>
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
                                         
                                           <>
                                             {dashboard?.voted_against_directors ===
@@ -612,7 +611,7 @@ const index = () => {
                                               )}
                                           </>
                                       </Table.Td>
-                                      <Table.Td className={`cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
+                                      <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[120px] max-w-[170px] ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
                                         {showSayOnPayColumn ? (
                                           <>
                                             {dashboard?.voted_against_say_on_pay ===
