@@ -510,12 +510,9 @@ function PeerAnalysis() {
                       placeholder: "Select Institution", closeAfterSelect: true,
                       render: {
                         option: (data: any, escape: any) => {
-                          // text-red-600
-                          // ${escape(data.value)} ${data.label ? '*' : ''}
                           return `
-                            <div class="p-2 ${data.label ? '' : 'font-bold'}">
-                              ${escape(data.value)} 
-                              <span class=" ${data.label ? 'text-black font-bold' : ''}">${data.label ? '*' : ''}<span/>
+                            <div class="p-2">
+                              ${escape(data.value)}
                             </div>
                           `;
                         }
@@ -536,18 +533,8 @@ function PeerAnalysis() {
                               <option
                                 key={inst?.institution_name}
                                 value={inst?.institution_name}
-                                disabled={inst?.label}
-                                data-label={inst?.label ? "*" : ""}
-                                className={inst?.label ? "" : ""}
-                                onClick={() => {
-                                  inst?.label ?
-                                    window.scrollBy({
-                                      top: 350,
-                                      behavior: "smooth",
-                                    }) : "";
-                                }}
                               >
-                                {inst?.institution_name} {inst?.label ? "*" : ""}
+                                {inst?.institution_name}
                               </option>
                             );
                           }
@@ -1157,18 +1144,6 @@ function PeerAnalysis() {
                 />
 
                 <footer className="!pt-3 flex items-start flex-col">
-                  <span className="!pt-3 flex items-center relative">
-                    <sup
-                      className="bold-sup cursor-pointer ml-1"
-                      style={{ fontSize: "0.8em" }}
-                    >
-                      *
-                    </sup>
-                    <p id="footnote" className="">
-                      Investor does not disclose engagement details. (SSGA and Dimensional does not disclose engagement topics)
-                    </p>
-
-                  </span>
                 </footer>
 
 
