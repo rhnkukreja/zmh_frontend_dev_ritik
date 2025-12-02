@@ -372,6 +372,17 @@ class DashboardService {
       result: response.data,
     };
   }
+
+  public async getVotingAnalytics(ticker: string): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(
+      `https://api.zmhadvisors.com/voting_report_8k/?ticker=${ticker}`
+    );
+    return {
+      result: response.data,
+    };
+  }
 }
 
 

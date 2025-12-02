@@ -63,6 +63,7 @@ const index = () => {
   const [data, setData] = useState<CompanyDashboard>();
   const [addNoteModalVisible, setAddNoteModalVisible] =
     useState<boolean>(false);
+  const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
 
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
@@ -300,27 +301,27 @@ const index = () => {
                   </div>
                 )}
 
-                <div className={`grid gap-6 ${dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'grid-cols-1 xl:grid-cols-4' : 'grid-cols-1'}`}>
+                <div className="grid gap-6 grid-cols-1">
                   {/* Left Side - Investor Table */}
-                  <div className={dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics ? 'xl:col-span-3' : 'col-span-1'}>
+                  <div className="col-span-1">
                     <TableWrapper isLoading={investorCardLoading}>
                       <div
                         className={clsx([
                           locationPathName === "/" &&
                           "max-h-[600px]",
-                          "overflow-x-auto max-h-[60vh] overflow-y-scroll"
+                          "max-h-[60vh] overflow-y-scroll"
                         ])}
                       >
                       <Table className="table w-full">
-                        <Table.Thead className="sticky top-0 z-10">
+                        <Table.Thead>
                           <Table.Tr className="row">
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky top-0 sticky left-0 bg-header z-[5000] min-w-[60px]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               No.
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] sticky top-0 sticky left-[60px] min-w-[280px] max-w-[350px] bg-header z-[5000]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Shareholder
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold w-[150px] h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <span
                                 id="footnote-1"
                                 className="cursor-pointer"
@@ -340,13 +341,24 @@ const index = () => {
                                 </sup>
                               </span>
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
-                              Proxy Advisory Influence
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              <div className="flex items-center justify-center gap-1">
+                                Proxy Advisory Influence
+                                {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
+                                  <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                                    <Lucide 
+                                      icon="BarChart3" 
+                                      className="w-4 h-4 text-primary cursor-pointer hover:text-primary/80" 
+                                      onClick={() => setChartModalVisible(true)}
+                                    />
+                                  </Tippy>
+                                )}
+                              </div>
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               UN PRI Signatory
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] min-w-[150px] max-w-[170px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <span
                                 id="footnote-1"
                                 className="cursor-pointer"
@@ -366,10 +378,10 @@ const index = () => {
                                 </sup>
                               </span>
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               Engagement Topic
                             </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] max-w-[170px]">
+                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                               <div className="flex items-center justify-center gap-1">
                                 Voted Against Directors
                                 {!getAvailableYears().includes('2025') && (
@@ -379,7 +391,7 @@ const index = () => {
                                 )}
                               </div>
                             </Table.Td>
-                            <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] min-w-[120px] max-w-[170px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
+                            <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
                               <div className="flex items-center justify-center gap-1">
                                 Voted Against Say on Pay
                                 {(isColumnGrayedOut || !getAvailableYears().includes('2025')) && (
@@ -402,13 +414,13 @@ const index = () => {
                                 >
                                   {dashboard?.institution_name && (
                                     <>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600 sticky left-0 bg-white z-[9] min-w-[60px]">
+                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div className="flex items-center font-semibold ">
                                           {index + 1}
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="relative w-full px-4 py-2 sticky left-[60px] min-w-[280px] max-w-[350px] bg-white z-[9]">
+                                      <Table.Td className="relative w-full px-4 py-2">
 
                                         <div className="flex justify-between items-center w-full">
                                           <div className="flex items-center  whitespace-nowrap">
@@ -520,18 +532,18 @@ const index = () => {
                                           </div>
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                         <div className="whitespace-nowrap flex items-center justify-center">
                                           {dashboard?.percent_ownership}%
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                         <div className="whitespace-nowrap ">
                                           {dashboard.proxy_advisor_influence ||
                                             "-"}
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                         <div className="whitespace-nowrap ">
                                           {dashboard?.unpri_signatory ===
                                             true && (
@@ -544,7 +556,7 @@ const index = () => {
                                         </div>
                                       </Table.Td>
 
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                         {dashboard?.company_engaged ===
                                           true && (
                                             <div className="whitespace-nowrap flex items-center justify-center">
@@ -554,7 +566,7 @@ const index = () => {
                                             </div>
                                           )}
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                         <div className="whitespace-nowrap flex items-center justify-center">
                                           <div className="flex space-x-2">
                                             {dashboard?.engagement_topic
@@ -578,7 +590,7 @@ const index = () => {
                                           </div>
                                         </div>
                                       </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] max-w-[170px]">
+                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                         
                                           <>
                                             {dashboard?.voted_against_directors ===
@@ -611,7 +623,7 @@ const index = () => {
                                               )}
                                           </>
                                       </Table.Td>
-                                      <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[120px] max-w-[170px] ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
+                                      <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
                                         {showSayOnPayColumn ? (
                                           <>
                                             {dashboard?.voted_against_say_on_pay ===
@@ -664,70 +676,8 @@ const index = () => {
                   </TableWrapper>
                 </div>
 
-                {/* Right Side - Analytics Chart */}
-                {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
-                  <div className="xl:col-span-1">
-                    <div className="bg-white p-4 rounded-lg border border-gray-100 h-fit sticky top-4">
-                      <h3 className="text-base font-semibold mb-4 text-center">Proxy Advisory Influence Analysis<br/><span className="text-xs font-normal text-gray-600">(Top 20)</span></h3>
-                      
-                      {/* Pie Chart */}
-                      <div className="w-full h-48 mb-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={getAnalyticsData()}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({value}) => `${value}%`}
-                              outerRadius={60}
-                              innerRadius={20}
-                              fill="#8884d8"
-                              dataKey="value"
-                              strokeWidth={2}
-                              stroke="#ffffff"
-                            >
-                              {getAnalyticsData().map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip 
-                              formatter={(value, name) => [`${value}%`, name]}
-                              labelFormatter={(label) => `Advisory Service`}
-                              contentStyle={{
-                                backgroundColor: '#ffffff',
-                                border: '1px solid #e5e7eb',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                              }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
+                </div>
 
-                      {/* Legend */}
-                      <div className="space-y-2">
-                        {getAnalyticsData().map((item, index) => (
-                          <div key={index} className="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="flex items-center">
-                              <div 
-                                className="w-3 h-3 rounded-full mr-2" 
-                                style={{ backgroundColor: ANALYTICS_COLORS[index % ANALYTICS_COLORS.length] }}
-                              ></div>
-                              <span className="text-xs font-medium text-gray-700">
-                                {item.name.replace(', ', ' + ')}
-                              </span>
-                            </div>
-                            <span className="text-xs font-bold text-primary">
-                              {item.displayValue}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
               </div>
             </div>
 
@@ -822,6 +772,83 @@ const index = () => {
           <Dialog.Description>
             <div className="w-full minh-[550px]">
               <EngagementQuestionsDialog data={data} />
+            </div>
+          </Dialog.Description>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* Chart Modal */}
+      <Dialog size="lg" open={chartModalVisible} onClose={() => setChartModalVisible(false)}>
+        <Dialog.Panel>
+          <Dialog.Title>
+            <h2 className="text-xl font-semibold">Proxy Advisory Influence Analysis</h2>
+            <div
+              onClick={() => setChartModalVisible(false)}
+              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+          <Dialog.Description>
+            <div className="w-full p-6">
+              <div className="bg-white rounded-lg">
+                <h3 className="text-lg font-semibold mb-6 text-center">Proxy Advisory Influence Analysis<br/><span className="text-sm font-normal text-gray-600">(Top 20)</span></h3>
+                
+                {/* Pie Chart */}
+                <div className="w-full h-80 mb-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={getAnalyticsData()}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({value}) => `${value}%`}
+                        outerRadius={120}
+                        innerRadius={40}
+                        fill="#8884d8"
+                        dataKey="value"
+                        strokeWidth={2}
+                        stroke="#ffffff"
+                      >
+                        {getAnalyticsData().map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value, name) => [`${value}%`, name]}
+                        labelFormatter={(label) => `Advisory Service`}
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Legend */}
+                <div className="space-y-3">
+                  {getAnalyticsData().map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center">
+                        <div 
+                          className="w-4 h-4 rounded-full mr-3" 
+                          style={{ backgroundColor: ANALYTICS_COLORS[index % ANALYTICS_COLORS.length] }}
+                        ></div>
+                        <span className="text-sm font-medium text-gray-700">
+                          {item.name.replace(', ', ' + ')}
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold text-primary">
+                        {item.displayValue}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </Dialog.Description>
         </Dialog.Panel>

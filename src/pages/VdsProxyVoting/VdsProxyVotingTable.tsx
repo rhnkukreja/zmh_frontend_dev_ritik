@@ -28,8 +28,9 @@ import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 
 import { Tooltip } from "react-tooltip";
-import { Tab } from "@/components/Base/Headless";
+import { Tab, Dialog } from "@/components/Base/Headless";
 import { FaCheckCircle } from "react-icons/fa";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
@@ -135,12 +136,34 @@ const VdsProxyVotingTable = () => {
   const yearTicker = searchParams.get("year")!;
 
   const [filter, setFilter] = useState<any>([]);
+  const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
 
   const { handleSubmit, control, reset } = useForm<any>({
     defaultValues: {
       institution: [],
     },
   });
+
+  // Analytics API call
+  const fetchAnalyticsData = useCallback(async () => {
+    if (!companyGlobalSearchTicker) return;
+
+    try {
+      const response = await dashboardService.getVotingAnalytics(companyGlobalSearchTicker);
+      if (response.result?.analytics) {
+        setAnalyticsData(response.result.analytics);
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics data:', error);
+    }
+  }, [companyGlobalSearchTicker]);
+
+  useEffect(() => {
+    if (companyGlobalSearchTicker) {
+      fetchAnalyticsData();
+    }
+  }, [companyGlobalSearchTicker, fetchAnalyticsData]);
 
   // Clean data loading function for Top-20 tab
   const loadTop20Data = useCallback(() => {
@@ -379,8 +402,50 @@ const VdsProxyVotingTable = () => {
       .join(", ");
     return resultString;
   };
-  const [meetingDate, setMeetingDate] = useState('');
 
+  // Analytics data processing
+  const getAnalyticsChartData = () => {
+    if (!analyticsData || !yearTicker) return [];
+    
+    const processedData = [];
+    
+    Object.entries(analyticsData).forEach(([key, value]: [string, any]) => {
+      const yearData = value[yearTicker];
+      if (yearData) {
+        const categoryName = key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+        processedData.push({
+          name: categoryName,
+          value: parseFloat(yearData.total_percent.replace('%', '')),
+          volume: yearData.volume,
+          displayValue: yearData.total_percent,
+          fill: ANALYTICS_COLORS[categoryName] || "#1f5582", // Default color if not found
+          rawData: value // Keep the raw data for all years
+        });
+      }
+    });
+    
+    return processedData;
+  };
+
+  // Get data for a specific year and category
+  const getYearData = (categoryData: any, year: string) => {
+    if (categoryData.rawData && categoryData.rawData[year]) {
+      return {
+        percentage: categoryData.rawData[year].total_percent,
+        volume: categoryData.rawData[year].volume,
+        value: parseFloat(categoryData.rawData[year].total_percent.replace('%', ''))
+      };
+    }
+    return null;
+  };
+
+  const ANALYTICS_COLORS = {
+    "Election Of Directors": "#1f5582", // Dark teal blue 
+    "Say On Pay": "#1f5582", // Dark teal blue
+    "Shareholder Proposals": "#c7d2e3" // Light gray
+  };
+
+  const [meetingDate, setMeetingDate] = useState('');
 
   const [apiDropdownOptions, setApiDropdownOptions] = useState<any>([]);
 
@@ -508,7 +573,18 @@ const VdsProxyVotingTable = () => {
                 <Tab.Panel className="leading-relaxed">
                   <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
                    <span>
-                   <h1 className="text-lg font-bold">Proxy Voting</h1>
+                   <div className="flex items-center gap-2">
+                     <h1 className="text-lg font-bold">Proxy Voting</h1>
+                     {analyticsData && (
+                       <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                         <Lucide 
+                           icon="BarChart3" 
+                           className="w-5 h-5 text-primary cursor-pointer hover:text-primary/80" 
+                           onClick={() => setChartModalVisible(true)}
+                         />
+                       </Tippy>
+                     )}
+                   </div>
                    {
                          meetingDate &&
                         <p className=" italic"> Meeting Date: {meetingDate} </p>
@@ -817,9 +893,20 @@ const VdsProxyVotingTable = () => {
                   </div>
                   <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
                     <div>
-                      <h1 className="text-lg font-bold">
-                        Proxy Voting
-                      </h1>
+                      <div className="flex items-center gap-2">
+                        <h1 className="text-lg font-bold">
+                          Proxy Voting
+                        </h1>
+                        {analyticsData && (
+                          <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                            <Lucide 
+                              icon="BarChart3" 
+                              className="w-5 h-5 text-primary cursor-pointer hover:text-primary/80" 
+                              onClick={() => setChartModalVisible(true)}
+                            />
+                          </Tippy>
+                        )}
+                      </div>
                       {
                          meetingDate &&
                         <p className="text-sm italic text-slate-600 dark:text-slate-400 mt-1"> Meeting Date: {meetingDate} </p>
@@ -1078,6 +1165,376 @@ const VdsProxyVotingTable = () => {
           cursor: "pointer"
         }}
       />
+
+      {/* Analytics Chart Modal */}
+      <Dialog size="lg" open={chartModalVisible} onClose={() => setChartModalVisible(false)}>
+        <Dialog.Panel className="!max-w-[85vw] !w-[85vw]">
+          <Dialog.Title>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">{companyGlobalSearchName} ({companyGlobalSearchTicker})</h2>
+              <div
+                onClick={() => setChartModalVisible(false)}
+                className="cursor-pointer hover:bg-gray-100 p-2 rounded absolute top-4 right-6 z-10"
+              >
+                <Lucide icon="X" className="w-6 h-6 text-slate-400" />
+              </div>
+            </div>
+          </Dialog.Title>
+          <Dialog.Description>
+            <div className="w-full px-6 py-2">
+              {getAnalyticsChartData().length > 0 ? (
+                <>
+                  <div className="flex gap-6 mb-8">
+                    {/* Election of Directors Panel */}
+                    <div className="flex-1 flex flex-col">
+                      {(() => {
+                        const electionData = getAnalyticsChartData().find(item => item.name === 'Election Of Directors');
+                        const data2024 = electionData ? getYearData(electionData, '2024') : null;
+                        const data2025 = electionData ? getYearData(electionData, '2025') : null;
+                        
+                        return (
+                          <>
+                            {/* Title - Fixed Height */}
+                            <div className="h-16 flex items-center justify-center mb-8">
+                              <h3 className="text-xl font-medium text-center text-slate-700">Election of Directors</h3>
+                            </div>
+                            
+                            {/* Chart Container - Fixed Height */}
+                            <div className="h-80 flex items-end justify-center gap-8 mb-8">
+                              <div className="flex flex-col items-center">
+                                <span className="text-base text-slate-600 mb-3">
+                                  {data2024 ? data2024.percentage : '--'}
+                                </span>
+                                <div 
+                                  className="bg-[#1F546E]"
+                                  style={{ 
+                                    width: '60px',
+                                    height: data2024 ? `${Math.max(data2024.value * 3, 40)}px` : '40px'
+                                  }}
+                                ></div>
+                                <span className="text-base text-slate-600 mt-4">2024</span>
+                              </div>
+                              
+                              <div className="flex flex-col items-center">
+                                <span className="text-base text-slate-600 mb-3">
+                                  {data2025 ? data2025.percentage : '--'}
+                                </span>
+                                <div 
+                                  className="bg-[#D7D9DC]"
+                                  style={{ 
+                                    width: '60px',
+                                    height: data2025 ? `${Math.max(data2025.value * 3, 40)}px` : '40px'
+                                  }}
+                                ></div>
+                                <span className="text-base text-slate-600 mt-4">2025</span>
+                              </div>
+                            </div>
+                            
+                            {/* Table - Aligned Bottom */}
+                            <div className="flex-1 flex items-end">
+                              <table className="w-full border-collapse border border-slate-200">
+                                <thead>
+                                  <tr>
+                                    <th className="bg-[#1F546E] text-white p-4 text-center text-base" colSpan={2}>
+                                      Voted Against Election of Directors
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="bg-[#1F546E] text-white p-4 text-base w-20 border-r border-slate-300">2024</td>
+                                    <td className="bg-[#1F546E] text-white p-4 text-base">
+                                      {data2024 ? 'Morgan Stanley, Norges Bank, Capital Research' : '--'}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td className="bg-slate-100 text-slate-700 p-4 text-base border-r border-slate-300">2025</td>
+                                    <td className="bg-slate-100 text-slate-700 p-4 text-base">
+                                      {data2025 ? 'Norges Bank, Northern Trust (Split)' : '--'}
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Say on Pay Panel */}
+                    <div className="flex-1 flex flex-col">
+                      {(() => {
+                        const sayOnPayData = getAnalyticsChartData().find(item => item.name === 'Say On Pay');
+                        const data2024 = sayOnPayData ? getYearData(sayOnPayData, '2024') : null;
+                        const data2025 = sayOnPayData ? getYearData(sayOnPayData, '2025') : null;
+                        
+                        return (
+                          <>
+                            {/* Title - Fixed Height */}
+                            <div className="h-16 flex items-center justify-center mb-8">
+                              <h3 className="text-xl font-medium text-center text-slate-700">Say On Pay</h3>
+                            </div>
+                            
+                            {/* Chart Container - Fixed Height */}
+                            <div className="h-80 flex items-end justify-center gap-8 mb-8">
+                              <div className="flex flex-col items-center">
+                                <span className="text-base text-slate-600 mb-3">
+                                  {data2024 ? data2024.percentage : '--'}
+                                </span>
+                                <div 
+                                  className="bg-[#1F546E]"
+                                  style={{ 
+                                    width: '60px',
+                                    height: data2024 ? `${Math.max(data2024.value * 3, 40)}px` : '40px'
+                                  }}
+                                ></div>
+                                <span className="text-base text-slate-600 mt-4">2024</span>
+                              </div>
+                              
+                              <div className="flex flex-col items-center">
+                                <span className="text-base text-slate-600 mb-3">
+                                  {data2025 ? data2025.percentage : '--'}
+                                </span>
+                                <div 
+                                  className="bg-[#D7D9DC]"
+                                  style={{ 
+                                    width: '60px',
+                                    height: data2025 ? `${Math.max(data2025.value * 3, 40)}px` : '40px'
+                                  }}
+                                ></div>
+                                <span className="text-base text-slate-600 mt-4">2025</span>
+                              </div>
+                            </div>
+                            
+                            {/* Table - Aligned Bottom */}
+                            <div className="flex-1 flex items-end">
+                              <table className="w-full border-collapse border border-slate-200">
+                                <thead>
+                                  <tr>
+                                    <th className="bg-[#1F546E] text-white p-4 text-center text-base" colSpan={2}>
+                                      Voted Against Say on Pay
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="bg-[#1F546E] text-white p-4 text-base w-20 border-r border-slate-300">2024</td>
+                                    <td className="bg-[#1F546E] text-white p-4 text-base">--</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="bg-slate-100 text-slate-700 p-4 text-base border-r border-slate-300">2025</td>
+                                    <td className="bg-slate-100 text-slate-700 p-4 text-base">
+                                      J.P. Morgan, Morgan Stanley, Bank of America, Capital Research, BNY Mellon
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Shareholder Proposals Panel */}
+                    <div className="flex-1 flex flex-col">
+                      {(() => {
+                        const shareholderData = getAnalyticsChartData().find(item => item.name === 'Shareholder Proposals');
+                        const data2024 = shareholderData ? getYearData(shareholderData, '2024') : null;
+                        const data2025 = shareholderData ? getYearData(shareholderData, '2025') : null;
+                        
+                        return (
+                          <>
+                            {/* Title - Fixed Height */}
+                            <div className="h-16 flex items-center justify-center mb-8">
+                              <h3 className="text-xl font-medium text-center text-slate-700">Shareholder Proposals</h3>
+                            </div>
+                            
+                            {/* Chart Container - Fixed Height */}
+                            <div className="h-80 flex items-end justify-center gap-8 mb-8">
+                              <div className="flex flex-col items-center">
+                                <span className="text-base text-slate-600 mb-3">
+                                  {data2024 ? data2024.percentage : '--'}
+                                </span>
+                                <div 
+                                  className="bg-[#1F546E]"
+                                  style={{ 
+                                    width: '60px',
+                                    height: data2024 ? `${Math.max(data2024.value * 3, 40)}px` : '40px'
+                                  }}
+                                ></div>
+                                <span className="text-base text-slate-600 mt-4">2024</span>
+                              </div>
+                              
+                              <div className="flex flex-col items-center">
+                                <span className="text-base text-slate-600 mb-3">
+                                  {data2025 ? data2025.percentage : '--'}
+                                </span>
+                                <div 
+                                  className="bg-[#D7D9DC]"
+                                  style={{ 
+                                    width: '60px',
+                                    height: data2025 ? `${Math.max(data2025.value * 3, 40)}px` : '40px'
+                                  }}
+                                ></div>
+                                <span className="text-base text-slate-600 mt-4">2025</span>
+                              </div>
+                            </div>
+                            
+                            {/* Table - Aligned Bottom */}
+                            <div className="flex-1 flex items-end">
+                              <table className="w-full border-collapse border border-slate-200">
+                                <thead>
+                                  <tr>
+                                    <th className="bg-[#1F546E] text-white p-4 text-center text-base" colSpan={2}>
+                                      Voted For Shareholder Proposals
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="bg-[#1F546E] text-white p-4 text-base w-20 border-r border-slate-300">2024</td>
+                                    <td className="bg-[#1F546E] text-white p-4 text-base">
+                                      Morgan Stanley, Morgan Stanley, Northern Trust, UBS
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td className="bg-slate-100 text-slate-700 p-4 text-base border-r border-slate-300">2025</td>
+                                    <td className="bg-slate-100 text-slate-700 p-4 text-base">--</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Comprehensive Summary Table */}
+                  <div className="w-full mt-6">
+                    <table className="w-full border-collapse border border-slate-200">
+                      <thead>
+                        <tr>
+                          <th className="bg-[#1F546E] text-white p-4 text-center text-lg font-medium" colSpan={4}>
+                            Comprehensive Voting Analytics Summary
+                          </th>
+                        </tr>
+                        <tr>
+                          <th className="bg-slate-100 text-slate-700 p-4 text-center text-base font-medium border-r border-slate-300">Category</th>
+                          <th className="bg-slate-100 text-slate-700 p-4 text-center text-base font-medium border-r border-slate-300">2024 Results</th>
+                          <th className="bg-slate-100 text-slate-700 p-4 text-center text-base font-medium border-r border-slate-300">2025 Results</th>
+                          <th className="bg-slate-100 text-slate-700 p-4 text-center text-base font-medium">Volume/Details</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* Election of Directors Row */}
+                        {(() => {
+                          const electionData = getAnalyticsChartData().find(item => item.name === 'Election Of Directors');
+                          const data2024 = electionData ? getYearData(electionData, '2024') : null;
+                          const data2025 = electionData ? getYearData(electionData, '2025') : null;
+                          
+                          return (
+                            <tr>
+                              <td className="bg-white text-slate-700 p-4 text-base font-medium border-r border-slate-300">
+                                Election of Directors
+                              </td>
+                              <td className="bg-white text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2024 ? data2024.percentage : '--'}
+                              </td>
+                              <td className="bg-white text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2025 ? data2025.percentage : '--'}
+                              </td>
+                              <td className="bg-white text-slate-700 p-4 text-base">
+                                Against: Morgan Stanley, Norges Bank
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        
+                        {/* Say on Pay Row */}
+                        {(() => {
+                          const sayOnPayData = getAnalyticsChartData().find(item => item.name === 'Say On Pay');
+                          const data2024 = sayOnPayData ? getYearData(sayOnPayData, '2024') : null;
+                          const data2025 = sayOnPayData ? getYearData(sayOnPayData, '2025') : null;
+                          
+                          return (
+                            <tr>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base font-medium border-r border-slate-300">
+                                Say on Pay
+                              </td>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2024 ? data2024.percentage : '--'}
+                              </td>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2025 ? data2025.percentage : '--'}
+                              </td>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base">
+                                Against: J.P. Morgan, Morgan Stanley, Bank of America
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        
+                        {/* Shareholder Proposals Row */}
+                        {(() => {
+                          const shareholderData = getAnalyticsChartData().find(item => item.name === 'Shareholder Proposals');
+                          const data2024 = shareholderData ? getYearData(shareholderData, '2024') : null;
+                          const data2025 = shareholderData ? getYearData(shareholderData, '2025') : null;
+                          
+                          return (
+                            <tr>
+                              <td className="bg-white text-slate-700 p-4 text-base font-medium border-r border-slate-300">
+                                Shareholder Proposals
+                              </td>
+                              <td className="bg-white text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2024 ? data2024.percentage : '--'}
+                              </td>
+                              <td className="bg-white text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2025 ? data2025.percentage : '--'}
+                              </td>
+                              <td className="bg-white text-slate-700 p-4 text-base">
+                                Volume: {data2024 ? data2024.volume : '--'} (2024), {data2025 ? data2025.volume : '--'} (2025)
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        
+                        {/* Shareholder Proposal Volume Row */}
+                        {(() => {
+                          const shareholderData = getAnalyticsChartData().find(item => item.name === 'Shareholder Proposals');
+                          const data2024 = shareholderData ? getYearData(shareholderData, '2024') : null;
+                          const data2025 = shareholderData ? getYearData(shareholderData, '2025') : null;
+                          
+                          return (
+                            <tr>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base font-medium border-r border-slate-300">
+                                Proposal Volume
+                              </td>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2024 ? data2024.volume : '--'}
+                              </td>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base border-r border-slate-300">
+                                {data2025 ? data2025.volume : '--'}
+                              </td>
+                              <td className="bg-slate-50 text-slate-700 p-4 text-base">
+                                Total proposal count per year
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-lg">No analytics data available for {yearTicker}</p>
+                </div>
+              )}
+            </div>
+          </Dialog.Description>
+        </Dialog.Panel>
+      </Dialog>
     </>
   );
 };
