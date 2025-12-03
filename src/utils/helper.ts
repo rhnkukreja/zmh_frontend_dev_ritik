@@ -290,11 +290,13 @@ function bytesToMB(bytes: number): number {
 
 const getYearRange = (range: number): string[] => {
   const now = new Date().getUTCFullYear();
-  return Array(now - (now - range))
+  const endYear = now + 1; // Include 2026
+  return Array(endYear - (endYear - range))
     .fill("")
-    .map((v, idx) => now - idx)
+    .map((v, idx) => endYear - idx)
     .map(String);
 };
+
 
 const formatedDate = (dateString: string): string => {
   const parsedDate = dayjs(dateString, "D MMM, YYYY");

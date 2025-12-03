@@ -28,7 +28,13 @@ const formatNumberWithCommas = (num: number): string => {
 };
 
 const formatEngagementValue = (value: any): JSX.Element | string => {
-    if (value === "ND" || value === 0) {
+    // If value is 0 → return blank
+    if (value === 0) {
+        return "0";
+    }
+
+    // If value is ND → return *
+    if (value === "ND") {
         return (
             <span
                 className="cursor-pointer text-gray-400 hover:text-gray-600 inline-block mt-3"
@@ -44,7 +50,9 @@ const formatEngagementValue = (value: any): JSX.Element | string => {
             </span>
         );
     }
-    return typeof value === 'number' ? formatNumberWithCommas(value) : value;
+
+    // Otherwise format normally
+    return typeof value === "number" ? formatNumberWithCommas(value) : value;
 };
 
 
@@ -142,6 +150,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                                         "T Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
                                                                         "T. Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
                                                                         "T Rowe Price": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+
+                                                                        // Dimensional 
+                                                                        "Dimensional Fund Advisors": "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf",
+                                                                        "Dimensional": "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf",
                                                                     };
 
                                                                     const institutionName = investor.institution__institution;
@@ -170,6 +182,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                                             url = "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf";
                                                                         } else if (lowerInstitution.includes('rowe') || lowerInstitution.includes('price')) {
                                                                             url = "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf";
+                                                                        } else if (lowerInstitution.includes('dimensional')) {
+                                                                            url = "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf";
                                                                         }
                                                                     }
 
