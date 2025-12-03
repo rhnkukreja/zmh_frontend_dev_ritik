@@ -184,7 +184,7 @@ const index = () => {
   // Generate available year tabs - only show years that actually have data
   const getAvailableYears = () => {
     if (!dashboardDataList?.total_year?.length) return [];
-    
+
     // Return the actual years that have data
     return dashboardDataList.total_year.map((year: any) => year.toString());
   };
@@ -205,7 +205,7 @@ const index = () => {
   const getAnalyticsData = () => {
     const analyticsData = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics;
     if (!analyticsData) return [];
-    
+
     return Object.entries(analyticsData).map(([key, value]) => ({
       name: key,
       value: parseFloat(String(value).replace('%', '')),
@@ -312,240 +312,252 @@ const index = () => {
                           "max-h-[60vh] overflow-y-scroll"
                         ])}
                       >
-                      <Table className="table w-full">
-                        <Table.Thead>
-                          <Table.Tr className="row">
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              No.
-                            </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Shareholder
-                            </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              <span
-                                id="footnote-1"
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  window.scrollBy({
-                                    top: 350,
-                                    behavior: "smooth",
-                                  });
-                                }}
-                              >
-                                Ownership
-                                <sup
-                                  className="bold-sup cursor-pointer"
-                                  style={{ fontSize: "0.8em" }}
+                        <Table className="table w-full">
+                          <Table.Thead>
+                            <Table.Tr className="row">
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                No.
+                              </Table.Td>
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                Shareholder
+                              </Table.Td>
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                <span
+                                  id="footnote-1"
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    window.scrollBy({
+                                      top: 350,
+                                      behavior: "smooth",
+                                    });
+                                  }}
                                 >
-                                  1
-                                </sup>
-                              </span>
-                            </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              <div className="flex items-center justify-center gap-1">
-                                Proxy Advisory Influence
-                                {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
-                                  <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
-                                    <Lucide 
-                                      icon="BarChart3" 
-                                      className="w-4 h-4 text-primary cursor-pointer hover:text-primary/80" 
-                                      onClick={() => setChartModalVisible(true)}
-                                    />
-                                  </Tippy>
-                                )}
-                              </div>
-                            </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              UN PRI Signatory
-                            </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              <span
-                                id="footnote-1"
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  window.scrollBy({
-                                    top: 350,
-                                    behavior: "smooth",
-                                  });
-                                }}
-                              >
-                                Engaged with Company
-                                <sup
-                                  className="bold-sup cursor-pointer"
-                                  style={{ fontSize: "0.8em" }}
+                                  Ownership
+                                  <sup
+                                    className="bold-sup cursor-pointer"
+                                    style={{ fontSize: "0.8em" }}
+                                  >
+                                    1
+                                  </sup>
+                                </span>
+                              </Table.Td>
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                <div className="flex items-center justify-center gap-1">
+                                  Proxy Advisory Influence
+                                  {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
+                                    <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                                      <Lucide
+                                        icon="BarChart3"
+                                        className="w-4 h-4 text-primary cursor-pointer hover:text-primary/80"
+                                        onClick={() => setChartModalVisible(true)}
+                                      />
+                                    </Tippy>
+                                  )}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                UN PRI Signatory
+                              </Table.Td>
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                <span
+                                  id="footnote-1"
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    window.scrollBy({
+                                      top: 350,
+                                      behavior: "smooth",
+                                    });
+                                  }}
                                 >
-                                  2
-                                </sup>
-                              </span>
-                            </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              Engagement Topic
-                            </Table.Td>
-                            <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                              <div className="flex items-center justify-center gap-1">
-                                Voted Against Directors
-                                {!getAvailableYears().includes('2025') && (
-                                  <Tippy content="2025 meeting not held yet. Data based on 2024 voting details" options={{ theme: "light" }}>
-                                    <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
-                                  </Tippy>
-                                )}
-                              </div>
-                            </Table.Td>
-                            <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
-                              <div className="flex items-center justify-center gap-1">
-                                Voted Against Say on Pay
-                                {(isColumnGrayedOut || !getAvailableYears().includes('2025')) && (
-                                  <Tippy content={isColumnGrayedOut ? "Say on Pay not on ballot at 2025 shareholder meeting" : "2025 meeting not held yet. Data based 2024 voting details"} options={{ theme: "light" }}>
-                                    <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
-                                  </Tippy>
-                                )}
-                              </div>
-                            </Table.Td>
-                          </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
+                                  Engaged with Company
+                                  <sup
+                                    className="bold-sup cursor-pointer"
+                                    style={{ fontSize: "0.8em" }}
+                                  >
+                                    2
+                                  </sup>
+                                </span>
+                              </Table.Td>
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                Engagement Topic
+                              </Table.Td>
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                                <div className="flex items-center justify-center gap-1">
+                                  Voted Against Directors
+                                  {!getAvailableYears().includes('2025') && (
+                                    <Tippy content="2025 meeting not held yet. Data based on 2024 voting details" options={{ theme: "light" }}>
+                                      <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
+                                    </Tippy>
+                                  )}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
+                                <div className="flex items-center justify-center gap-1">
+                                  Voted Against Say on Pay
+                                  {(isColumnGrayedOut || !getAvailableYears().includes('2025')) && (
+                                    <Tippy content={isColumnGrayedOut ? "Say on Pay not on ballot at 2025 shareholder meeting" : "2025 meeting not held yet. Data based 2024 voting details"} options={{ theme: "light" }}>
+                                      <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
+                                    </Tippy>
+                                  )}
+                                </div>
+                              </Table.Td>
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
 
-                          {dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
-                            dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.map(
-                              (dashboard: CompanyDashboard, index: number) => (
-                                <Table.Tr
-                                  key={dashboard.filer_id}
-                                  className="row [&_td]:last:border-b-0"
-                                >
-                                  {dashboard?.institution_name && (
-                                    <>
-                                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                                        <div className="flex items-center font-semibold ">
-                                          {index + 1}
-                                        </div>
-                                      </Table.Td>
-
-                                      <Table.Td className="relative w-full px-4 py-2">
-
-                                        <div className="flex justify-between items-center w-full">
-                                          <div className="flex items-center  whitespace-nowrap">
-                                            {!dashboard.institution_id && (
-
-                                              <sup
-                                                className="cursor-pointer text-lg absolute left-2 top-1"
-                                                onClick={() => {
-                                                  window.scrollBy({
-                                                    top: 350,
-                                                    behavior: "smooth",
-                                                  });
-                                                }}
-                                              >
-                                                *
-                                              </sup>
-                                            )}
-                                            <h1
-                                              onClick={() =>
-                                                dashboard?.investor_profile_id &&
-                                                window.open(
-                                                  `/investor-company-details/${dashboard?.investor_profile_id}`,
-                                                  "_blank"
-                                                )
-                                              }
-                                              className={clsx([
-                                                "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                dashboard?.investor_profile_id &&
-                                                "cursor-pointer underline",
-                                              ])}
-                                            >
-                                              {dashboard?.institution_name}
-                                            </h1>
-                                            {dashboard?.flag_13d === true && (
-                                              <img
-                                                className="w-3 ml-2"
-                                                alt="flag-icon"
-                                                src={flagIcon}
-                                              />
-                                            )}
+                            {dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
+                              dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.map(
+                                (dashboard: CompanyDashboard, index: number) => (
+                                  <Table.Tr
+                                    key={dashboard.filer_id}
+                                    className="row [&_td]:last:border-b-0"
+                                  >
+                                    {dashboard?.institution_name && (
+                                      <>
+                                        <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                          <div className="flex items-center font-semibold ">
+                                            {index + 1}
                                           </div>
-                                          <div className="flex items-center gap-x-2">
-                                            {dashboard?.investor_profile_id ? (
-                                              <Tippy
-                                                content="Investor Profile"
-                                                options={{ theme: "light" }}
-                                                className="w-5 h-5"
+                                        </Table.Td>
+
+                                        <Table.Td className="relative w-full px-4 py-2">
+
+                                          <div className="flex justify-between items-center w-full">
+                                            <div className="flex items-center  whitespace-nowrap">
+                                              {!dashboard.institution_id && (
+
+                                                <sup
+                                                  className="cursor-pointer text-lg absolute left-2 top-1"
+                                                  onClick={() => {
+                                                    window.scrollBy({
+                                                      top: 350,
+                                                      behavior: "smooth",
+                                                    });
+                                                  }}
+                                                >
+                                                  *
+                                                </sup>
+                                              )}
+                                              <h1
                                                 onClick={() =>
-                                                  navigate(
-                                                    `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
+                                                  dashboard?.investor_profile_id &&
+                                                  window.open(
+                                                    `/investor-company-details/${dashboard?.investor_profile_id}`,
+                                                    "_blank"
                                                   )
                                                 }
+                                                className={clsx([
+                                                  "cell whitespace-nowrap capitalize text-wrap font-semibold",
+                                                  dashboard?.investor_profile_id &&
+                                                  "cursor-pointer underline",
+                                                ])}
                                               >
-                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
-                                                  <Lucide
-                                                    icon="FileText"
-                                                    className="w-4 h-4 stroke-[1.3]"
-                                                  />
-                                                </div>
-                                              </Tippy>
-                                            ) : (
-                                              <div className="w-6 h-6" />
-                                            )}
+                                                {dashboard?.institution_name}
+                                              </h1>
+                                              {dashboard?.flag_13d === true && (
+                                                <img
+                                                  className="w-3 ml-2"
+                                                  alt="flag-icon"
+                                                  src={flagIcon}
+                                                />
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-x-2">
+                                              {dashboard?.investor_profile_id ? (
+                                                <Tippy
+                                                  content="Investor Profile"
+                                                  options={{ theme: "light" }}
+                                                  className="w-5 h-5"
+                                                  onClick={() =>
+                                                    navigate(
+                                                      `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
+                                                    )
+                                                  }
+                                                >
+                                                  <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                    <Lucide
+                                                      icon="FileText"
+                                                      className="w-4 h-4 stroke-[1.3]"
+                                                    />
+                                                  </div>
+                                                </Tippy>
+                                              ) : (
+                                                <div className="w-6 h-6" />
+                                              )}
 
-                                            {dashboard?.case_studies_id ? (
-                                              <Tippy
-                                                content="Case Studies"
-                                                options={{ theme: "light" }}
-                                                className="w-6 h-6 mt-1"
-                                                onClick={() =>
-                                                  redirectCaseStudy(
-                                                    dashboard?.institution_name
-                                                  )
-                                                }
-                                              >
-                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
-                                                  <Lucide
-                                                    icon="FileSearch2"
-                                                    className="w-4 h-4 stroke-[1.5]"
-                                                  />
-                                                </div>
-                                              </Tippy>
-                                            ) : (
-                                              <div className="w-6 h-6" />
-                                            )}
-                                            {(dashboard?.notes || dashboard?.engagement_questions) ? (
-                                              <Tippy
-                                                content="View Notes"
-                                                options={{ theme: "light" }}
-                                                className="w-6 h-6 mt-1"
-                                                onClick={() => openEngagementQuestionsDialog(dashboard)}
-                                              >
-                                                <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
-                                                  <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
-                                                </div>
-                                              </Tippy>
-                                            ) : (
-                                              <Tippy
-                                                content="Add Notes"
-                                                options={{ theme: "light" }}
-                                                className="w-6 h-6 mt-1"
-                                                onClick={() => openAddNotesDialog(dashboard)}
-                                              >
-                                                <div className="flex items-center justify-center w-6 h-6 text-primary ">
-                                                  <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
-                                                </div>
-                                              </Tippy>
-                                            )}
+                                              {dashboard?.case_studies_id ? (
+                                                <Tippy
+                                                  content="Case Studies"
+                                                  options={{ theme: "light" }}
+                                                  className="w-6 h-6 mt-1"
+                                                  onClick={() =>
+                                                    redirectCaseStudy(
+                                                      dashboard?.institution_name
+                                                    )
+                                                  }
+                                                >
+                                                  <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                    <Lucide
+                                                      icon="FileSearch2"
+                                                      className="w-4 h-4 stroke-[1.5]"
+                                                    />
+                                                  </div>
+                                                </Tippy>
+                                              ) : (
+                                                <div className="w-6 h-6" />
+                                              )}
+                                              {(dashboard?.notes || dashboard?.engagement_questions) ? (
+                                                <Tippy
+                                                  content="View Notes"
+                                                  options={{ theme: "light" }}
+                                                  className="w-6 h-6 mt-1"
+                                                  onClick={() => openEngagementQuestionsDialog(dashboard)}
+                                                >
+                                                  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
+                                                    <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
+                                                  </div>
+                                                </Tippy>
+                                              ) : (
+                                                <Tippy
+                                                  content="Add Notes"
+                                                  options={{ theme: "light" }}
+                                                  className="w-6 h-6 mt-1"
+                                                  onClick={() => openAddNotesDialog(dashboard)}
+                                                >
+                                                  <div className="flex items-center justify-center w-6 h-6 text-primary ">
+                                                    <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
+                                                  </div>
+                                                </Tippy>
+                                              )}
+                                            </div>
                                           </div>
-                                        </div>
-                                      </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                        <div className="whitespace-nowrap flex items-center justify-center">
-                                          {dashboard?.percent_ownership}%
-                                        </div>
-                                      </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                        <div className="whitespace-nowrap ">
-                                          {dashboard.proxy_advisor_influence ||
-                                            "-"}
-                                        </div>
-                                      </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                        <div className="whitespace-nowrap ">
-                                          {dashboard?.unpri_signatory ===
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            {dashboard?.percent_ownership}%
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                          <div className="whitespace-nowrap ">
+                                            {dashboard.proxy_advisor_influence ||
+                                              "-"}
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                          <div className="whitespace-nowrap ">
+                                            {dashboard?.unpri_signatory ===
+                                              true && (
+                                                <div className="whitespace-nowrap flex items-center justify-center">
+                                                  <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                    &#10004;
+                                                  </div>
+                                                </div>
+                                              )}
+                                          </div>
+                                        </Table.Td>
+
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                          {dashboard?.company_engaged ===
                                             true && (
                                               <div className="whitespace-nowrap flex items-center justify-center">
                                                 <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
@@ -553,45 +565,33 @@ const index = () => {
                                                 </div>
                                               </div>
                                             )}
-                                        </div>
-                                      </Table.Td>
-
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                        {dashboard?.company_engaged ===
-                                          true && (
-                                            <div className="whitespace-nowrap flex items-center justify-center">
-                                              <div className="bg-[#0DDE7B] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                &#10004;
-                                              </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="flex space-x-2">
+                                              {dashboard?.engagement_topic
+                                                ?.split("")
+                                                .map((char, index) => (
+                                                  <div
+                                                    key={index}
+                                                    className={clsx([
+                                                      char.toLowerCase() ===
+                                                      "s" && "bg-[#F5A623]",
+                                                      char.toLowerCase() ===
+                                                      "e" && "bg-[#05703E]",
+                                                      char.toLowerCase() ===
+                                                      "g" && "bg-[#115096]",
+                                                      "font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white",
+                                                    ])}
+                                                  >
+                                                    {char}
+                                                  </div>
+                                                ))}
                                             </div>
-                                          )}
-                                      </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                        <div className="whitespace-nowrap flex items-center justify-center">
-                                          <div className="flex space-x-2">
-                                            {dashboard?.engagement_topic
-                                              ?.split("")
-                                              .map((char, index) => (
-                                                <div
-                                                  key={index}
-                                                  className={clsx([
-                                                    char.toLowerCase() ===
-                                                    "s" && "bg-[#F5A623]",
-                                                    char.toLowerCase() ===
-                                                    "e" && "bg-[#05703E]",
-                                                    char.toLowerCase() ===
-                                                    "g" && "bg-[#115096]",
-                                                    "font-semibold flex items-center justify-center rounded-full w-6 h-6 text-[13px] text-white",
-                                                  ])}
-                                                >
-                                                  {char}
-                                                </div>
-                                              ))}
                                           </div>
-                                        </div>
-                                      </Table.Td>
-                                      <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                        
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+
                                           <>
                                             {dashboard?.voted_against_directors ===
                                               true && (
@@ -622,59 +622,59 @@ const index = () => {
                                                 </div>
                                               )}
                                           </>
-                                      </Table.Td>
-                                      <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
-                                        {showSayOnPayColumn ? (
-                                          <>
-                                            {dashboard?.voted_against_say_on_pay ===
-                                              true && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                    &#10004;
+                                        </Table.Td>
+                                        <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
+                                          {showSayOnPayColumn ? (
+                                            <>
+                                              {dashboard?.voted_against_say_on_pay ===
+                                                true && (
+                                                  <div className="whitespace-nowrap flex items-center justify-center">
+                                                    <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
+                                                      &#10004;
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              )}
+                                                )}
 
-                                            {dashboard?.voted_against_say_on_pay ===
-                                              'ND' && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content={dashboard?.voted_against_say_on_pay_message || "No Data"} options={{ theme: "light" }}>
-                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                    </Tippy>
+                                              {dashboard?.voted_against_say_on_pay ===
+                                                'ND' && (
+                                                  <div className="whitespace-nowrap flex items-center justify-center">
+                                                    <div className="flex items-center w-full h-full text-primary justify-center">
+                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || "No Data"} options={{ theme: "light" }}>
+                                                        <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                      </Tippy>
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              )}
+                                                )}
 
-                                            {dashboard?.voted_against_say_on_pay ===
-                                              'NSE' && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content={dashboard?.voted_against_say_on_pay_message || "Say on Pay not on ballot at 2025 shareholder meeting"} options={{ theme: "light" }}>
-                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                    </Tippy>
+                                              {dashboard?.voted_against_say_on_pay ===
+                                                'NSE' && (
+                                                  <div className="whitespace-nowrap flex items-center justify-center">
+                                                    <div className="flex items-center w-full h-full text-primary justify-center">
+                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || "Say on Pay not on ballot at 2025 shareholder meeting"} options={{ theme: "light" }}>
+                                                        <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+                                                      </Tippy>
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              )}
-                                          </>
-                                        ) : (
-                                          <div className="whitespace-nowrap flex items-center justify-center">
-                                            <div className="text-gray-400">
-                                              —
+                                                )}
+                                            </>
+                                          ) : (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="text-gray-400">
+                                                —
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
-                                      </Table.Td>
-                                    </>
-                                  )}
-                                </Table.Tr>
-                              )
-                            )}
-                        </Table.Tbody>
-                      </Table>
-                    </div>
-                  </TableWrapper>
-                </div>
+                                          )}
+                                        </Table.Td>
+                                      </>
+                                    )}
+                                  </Table.Tr>
+                                )
+                              )}
+                          </Table.Tbody>
+                        </Table>
+                      </div>
+                    </TableWrapper>
+                  </div>
 
                 </div>
 
@@ -758,7 +758,7 @@ const index = () => {
         />
       )}
 
-      <Dialog size="2xl" open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+      <Dialog size="xl" open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <Dialog.Panel>
           <Dialog.Title>
             <h2 className="text-xl font-semibold">Engagement Notes</h2>
@@ -778,75 +778,75 @@ const index = () => {
       </Dialog>
 
       {/* Chart Modal */}
-      <Dialog size="lg" open={chartModalVisible} onClose={() => setChartModalVisible(false)}>
+      <Dialog size="xl" open={chartModalVisible} onClose={() => setChartModalVisible(false)}>
         <Dialog.Panel>
-          <Dialog.Title>
-            <h2 className="text-xl font-semibold">Proxy Advisory Influence Analysis</h2>
-            <div
-              onClick={() => setChartModalVisible(false)}
-              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
-            >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-            </div>
-          </Dialog.Title>
+          <div
+            onClick={() => setChartModalVisible(false)}
+            className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+          >
+            <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+          </div>
           <Dialog.Description>
             <div className="w-full p-6">
               <div className="bg-white rounded-lg">
-                <h3 className="text-lg font-semibold mb-6 text-center">Proxy Advisory Influence Analysis<br/><span className="text-sm font-normal text-gray-600">(Top 20)</span></h3>
-                
-                {/* Pie Chart */}
-                <div className="w-full h-80 mb-6">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={getAnalyticsData()}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({value}) => `${value}%`}
-                        outerRadius={120}
-                        innerRadius={40}
-                        fill="#8884d8"
-                        dataKey="value"
-                        strokeWidth={2}
-                        stroke="#ffffff"
-                      >
-                        {getAnalyticsData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value, name) => [`${value}%`, name]}
-                        labelFormatter={(label) => `Advisory Service`}
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                <h3 className="text-lg font-semibold mb-6 text-center">Proxy Advisory Influence Analysis<br /><span className="text-sm font-normal text-gray-600">(Top 20)</span></h3>
 
-                {/* Legend */}
-                <div className="space-y-3">
-                  {getAnalyticsData().map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center">
-                        <div 
-                          className="w-4 h-4 rounded-full mr-3" 
-                          style={{ backgroundColor: ANALYTICS_COLORS[index % ANALYTICS_COLORS.length] }}
-                        ></div>
-                        <span className="text-sm font-medium text-gray-700">
-                          {item.name.replace(', ', ' + ')}
-                        </span>
-                      </div>
-                      <span className="text-sm font-bold text-primary">
-                        {item.displayValue}
-                      </span>
-                    </div>
-                  ))}
+                {/* Chart and Legend Layout */}
+                <div className="flex items-center justify-center">
+                  {/* Pie Chart with positioned labels */}
+                  <div className="w-[900px] h-[450px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={getAnalyticsData()}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={150}
+                          startAngle={90}
+                          endAngle={-270}
+                          label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
+                            const RADIAN = Math.PI / 180;
+                            const radius = innerRadius + (outerRadius - innerRadius) * 1.4;
+                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                            return (
+                              <text
+                                x={x}
+                                y={y}
+                                fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]}
+                                textAnchor={x > cx ? "start" : "end"}
+                                dominantBaseline="central"
+                                fontSize={12}
+                                fontWeight="500"
+                              >
+                                {`${name.replace(', ', ' + ')}: ${value}%`}
+                              </text>
+                            );
+                          }}
+                          labelLine={false}
+                          fill="#8884d8"
+                          dataKey="value"
+                          strokeWidth={2}
+                          stroke="#ffffff"
+                        >
+                          {getAnalyticsData().map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value, name) => [`${value}%`, name]}
+                          labelFormatter={(label) => `Advisory Service`}
+                          contentStyle={{
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             </div>
