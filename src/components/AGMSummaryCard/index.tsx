@@ -388,7 +388,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    {/* {analyticsData && (
+                    {analyticsData && (
                       <button
                         onClick={() => setChartModalVisible(true)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -397,7 +397,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                       >
                         View Analytics
                       </button>
-                    )} */}
+                    )}
                     </>}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
