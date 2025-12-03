@@ -28,13 +28,14 @@ const index = () => {
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state) => state.authentiction
   );
+
   const { id } = useParams();
   useEffect(() => {
     if (id && companyGlobalSearchTicker) {
       dispatch(
         fetchInvestorProfileDetails(
           createDynamicURL(
-            `${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}&global_search=${companyGlobalSearchName}`
+            `${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}`
           )
         )
       );
