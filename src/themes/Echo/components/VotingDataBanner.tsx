@@ -75,7 +75,7 @@ const VotingDataBanner = () => {
                   now available in the Engagement module.
                 </p>
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  <strong>BlackRock, Dimensional, and State Street </strong>Q3 2025 voting data has been added to the Dashboard.
+                  <strong>BlackRock, Vanguard, Dimensional, and State Street </strong>Q3 2025 voting data has been added to the Dashboard.
                 </p>
               </div>
             </div>
