@@ -1230,77 +1230,77 @@ function Main() {
         />
       )}
 
-      <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
-        <Dialog.Panel className="p-6 h-full flex flex-col max-h-[80vh]">
-          <Dialog.Title className="mb-2">
+      <Dialog size="lg" open={basicModalPreview} onClose={handleCloseModal}>
+        <Dialog.Panel className="p-4 h-full flex flex-col max-h-[70vh] w-full max-w-4xl mx-auto">
+          <Dialog.Title className="mb-3">
             <div>
-              <h2 className="text-xl font-semibold text-left">AI Assistant (Beta)</h2>
-              <p className="text-sm text-gray-500 mt-1">AI Assistant can make mistakes. Verify important info.</p>
+              <h2 className="text-lg font-semibold text-left">AI Assistant (Beta)</h2>
+              <p className="text-xs text-gray-500 mt-1">AI Assistant can make mistakes. Verify important info.</p>
             </div>
             <div
               onClick={handleCloseModal}
-              className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
+              className="absolute top-0 right-0 mt-4 mr-4 cursor-pointer"
             >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+              <Lucide icon="X" className="w-6 h-6 text-slate-400" />
             </div>
           </Dialog.Title>
           
-          <div className="flex gap-4 flex-1">
-            {/* Left Section - AI Assistant (70% width) */}
-            <div className="w-[70%]">
+          <div className="flex gap-3 flex-1 min-h-0">
+            {/* Left Section - AI Assistant (60% width) */}
+            <div className="w-[60%] flex flex-col min-h-0">
               <iframe
                 src="/ai-search"
-                className="w-full h-[550px] border border-gray-200 rounded-lg"
+                className="w-full flex-1 border border-gray-200 rounded-lg"
                 title="AI Assistant (Beta)"
               />
             </div>
             
-            {/* Right Section - Logo and Recommended Questions (30% width) */}
-            <div className="w-[30%] flex flex-col">
+            {/* Right Section - Logo and Recommended Questions (40% width) */}
+            <div className="w-[40%] flex flex-col min-h-0">
               {/* ZMH Logo */}
-              <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-3 mb-4">
+              <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-2 mb-3">
                 <img 
                   src={logo} 
                   alt="ZMH Analytics Logo" 
-                  className="w-16 h-16 object-contain"
+                  className="w-12 h-12 object-contain"
                 />
               </div>
               
               {/* Recommended Questions */}
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-left text-gray-800">Recommended Questions</h3>
+              <div className="flex-1 overflow-y-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold text-left text-gray-800">Recommended Questions</h3>
                   {copiedMessage && (
-                    <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md transition-all duration-500 ease-in-out transform animate-in fade-in slide-in-from-right-2">
-                      <Lucide icon="Info" className="w-3 h-3 mr-1" />
-                      <span>{copiedMessage}</span>
+                    <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded-md transition-all duration-500 ease-in-out transform animate-in fade-in slide-in-from-right-2">
+                      <Lucide icon="Info" className="w-2 h-2 mr-1" />
+                      <span className="text-xs">{copiedMessage}</span>
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <button
                     onClick={() => handleCopyQuestion("What are Blackrock's engagement priorities?")}
-                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-colors group"
+                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
                   >
-                    <span className="text-primary text-xs group-hover:text-primary/80">
+                    <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
                       What are Blackrock's engagement priorities?
                     </span>
                   </button>
                   
                   <button
                     onClick={() => handleCopyQuestion("How does State Street evaluate shareholder proposals on climate?")}
-                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-colors group"
+                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
                   >
-                    <span className="text-primary text-xs group-hover:text-primary/80">
+                    <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
                       How does State Street evaluate shareholder proposals on climate?
                     </span>
                   </button>
                   
                   <button
                     onClick={() => handleCopyQuestion("How does Vanguard vote on say on pay proposals?")}
-                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-colors group"
+                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
                   >
-                    <span className="text-primary text-xs group-hover:text-primary/80">
+                    <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
                       How does Vanguard vote on say on pay proposals?
                     </span>
                   </button>
