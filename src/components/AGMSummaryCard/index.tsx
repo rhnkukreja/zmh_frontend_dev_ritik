@@ -246,6 +246,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const [isInstitutionList, setIsInstitutionList] = useState<boolean>(false);
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [animateChart, setAnimateChart] = useState<boolean>(false);
 
   // Analytics API call
   const fetchAnalyticsData = useCallback(async () => {
@@ -266,6 +267,28 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       fetchAnalyticsData();
     }
   }, [companyGlobalSearchTicker, fetchAnalyticsData]);
+
+  // Trigger animation when modal opens
+  useEffect(() => {
+    if (chartModalVisible) {
+      setAnimateChart(false);
+      const timer = setTimeout(() => {
+        setAnimateChart(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [chartModalVisible]);
+
+  // Trigger animation when modal opens
+  useEffect(() => {
+    if (chartModalVisible) {
+      setAnimateChart(false);
+      const timer = setTimeout(() => {
+        setAnimateChart(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [chartModalVisible]);
 
   // Analytics data processing
   const getAnalyticsChartData = () => {
@@ -389,14 +412,15 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                       </button>
                     )}
                     {analyticsData && (
-                      <button
-                        onClick={() => setChartModalVisible(true)}
-                        className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
-                                   md:w-auto flex items-center justify-center border-red-800 border-2
-                                    font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                      >
-                        View Analytics
-                      </button>
+                      <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                        <button
+                          onClick={() => setChartModalVisible(true)}
+                          className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border
+                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                        >
+                          <Lucide icon="BarChart3" className="w-4 h-4" />
+                        </button>
+                      </Tippy>
                     )}
                     </>}
                 </div>
@@ -718,7 +742,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                     className="bg-primary transition-all duration-700 ease-out"
                                     style={{ 
                                       width: '48px',
-                                      height: data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '30px'
+                                      height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
@@ -732,7 +756,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                     className="bg-slate-400 transition-all duration-700 ease-out"
                                     style={{ 
                                       width: '48px',
-                                      height: data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '30px'
+                                      height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2025</span>
@@ -802,7 +826,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                     className="bg-primary transition-all duration-700 ease-out"
                                     style={{ 
                                       width: '48px',
-                                      height: data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '30px'
+                                      height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
@@ -816,7 +840,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                     className="bg-slate-400 transition-all duration-700 ease-out"
                                     style={{ 
                                       width: '48px',
-                                      height: data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '30px'
+                                      height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2025</span>
@@ -884,7 +908,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                     className="bg-primary transition-all duration-700 ease-out"
                                     style={{ 
                                       width: '48px',
-                                      height: data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '30px'
+                                      height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
@@ -898,7 +922,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                     className="bg-slate-400 transition-all duration-700 ease-out"
                                     style={{ 
                                       width: '48px',
-                                      height: data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '30px'
+                                      height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2025</span>
