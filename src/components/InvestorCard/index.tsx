@@ -778,72 +778,97 @@ const index = () => {
       </Dialog>
 
       {/* Chart Modal */}
-      <Dialog size="xl" open={chartModalVisible} onClose={() => setChartModalVisible(false)}>
+      <Dialog size="lg" open={chartModalVisible} onClose={() => setChartModalVisible(false)}>
         <Dialog.Panel>
-          <div
-            onClick={() => setChartModalVisible(false)}
-            className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
-          >
-            <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-          </div>
+          <Dialog.Title>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
+                <p className="text-sm text-slate-600 mt-1">Top 20 Investor: Proxy Influence Analysis</p>
+              </div>
+              <div
+                onClick={() => setChartModalVisible(false)}
+                className="cursor-pointer hover:bg-gray-100 p-2 rounded absolute top-4 right-6 z-10"
+              >
+                <Lucide icon="X" className="w-6 h-6 text-slate-400" />
+              </div>
+            </div>
+          </Dialog.Title>
           <Dialog.Description>
-            <div className="w-full p-6">
+            <div className="w-full">
               <div className="bg-white rounded-lg">
-                <h3 className="text-lg font-semibold mb-6 text-center">Proxy Advisory Influence Analysis<br /><span className="text-sm font-normal text-gray-600">(Top 20)</span></h3>
-
-                {/* Chart and Legend Layout */}
                 <div className="flex items-center justify-center">
-                  {/* Pie Chart with positioned labels */}
-                  <div className="w-[900px] h-[450px]">
+                  <div className="w-[500px] h-[380px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={getAnalyticsData()}
                           cx="50%"
                           cy="50%"
-                          outerRadius={150}
+                          outerRadius={90}
+                          innerRadius={45}
                           startAngle={90}
                           endAngle={-270}
-                          label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
-                            const RADIAN = Math.PI / 180;
-                            const radius = innerRadius + (outerRadius - innerRadius) * 1.4;
-                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                            return (
-                              <text
-                                x={x}
-                                y={y}
-                                fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]}
-                                textAnchor={x > cx ? "start" : "end"}
-                                dominantBaseline="central"
-                                fontSize={12}
-                                fontWeight="500"
-                              >
-                                {`${name.replace(', ', ' + ')}: ${value}%`}
-                              </text>
-                            );
-                          }}
-                          labelLine={false}
                           fill="#8884d8"
                           dataKey="value"
                           strokeWidth={2}
                           stroke="#ffffff"
+                          label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
+                            const RADIAN = Math.PI / 180;
+                            const radius = innerRadius + (outerRadius - innerRadius) * 1.3;
+                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                            
+                            // Calculate line end points for leader lines
+                            const lineRadius = outerRadius + 15;
+                            const lineX = cx + lineRadius * Math.cos(-midAngle * RADIAN);
+                            const lineY = cy + lineRadius * Math.sin(-midAngle * RADIAN);
+                            
+                            // Extend line horizontally (shorter extension)
+                            const extendedX = lineX + (lineX > cx ? 25 : -25);
+
+                            return (
+                              <g>
+                                {/* Leader line from pie to label */}
+                                <polyline
+                                  points={`${cx + outerRadius * Math.cos(-midAngle * RADIAN)},${cy + outerRadius * Math.sin(-midAngle * RADIAN)} ${lineX},${lineY} ${extendedX},${lineY}`}
+                                  fill="none"
+                                  stroke="#333"
+                                  strokeWidth={1.5}
+                                />
+                                {/* Label text */}
+                                <text
+                                  x={extendedX}
+                                  y={lineY - 8}
+                                  fill="#333"
+                                  textAnchor={extendedX > cx ? "start" : "end"}
+                                  dominantBaseline="central"
+                                  fontSize={12}
+                                  fontWeight="500"
+                                >
+                                  {name}
+                                </text>
+                                {/* Percentage text */}
+                                <text
+                                  x={extendedX}
+                                  y={lineY + 8}
+                                  fill="#666"
+                                  textAnchor={extendedX > cx ? "start" : "end"}
+                                  dominantBaseline="central"
+                                  fontSize={11}
+                                  fontWeight="600"
+                                >
+                                  {value}%
+                                </text>
+                              </g>
+                            );
+                          }}
+                          labelLine={false}
                         >
                           {getAnalyticsData().map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip
-                          formatter={(value, name) => [`${value}%`, name]}
-                          labelFormatter={(label) => `Advisory Service`}
-                          contentStyle={{
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: '8px',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                          }}
-                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>

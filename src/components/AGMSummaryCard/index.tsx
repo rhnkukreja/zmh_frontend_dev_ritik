@@ -695,7 +695,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         <Dialog.Panel className="!max-w-[85vw] !w-[85vw]">
           <Dialog.Title>
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">{companyGlobalSearchName} ({companyGlobalSearchTicker})</h2>
+              <div>
+                <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
+                <p className="text-sm text-slate-600 mt-1">Top 20 Investor: Voting Data Analysis</p>
+              </div>
               <div
                 onClick={() => setChartModalVisible(false)}
                 className="cursor-pointer hover:bg-gray-100 p-2 rounded absolute top-4 right-6 z-10"
