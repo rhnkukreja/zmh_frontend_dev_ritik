@@ -239,7 +239,7 @@ const index = () => {
             <div className="w-full">
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
                 <h1 className="text-lg font-bold">
-                  Top {dashboardDataList?.length || 20} Investor{" "}
+                  Top {dashboardDataList?.length || 20} Investors{" "}
                   <span className="text-base font-bold">
                     ({dashboardDataList?.total_percent_ownership} of shares outstanding)
                   </span>
@@ -784,7 +784,7 @@ const index = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
-                <p className="text-sm text-slate-600 mt-1">Top 20 Investor: Proxy Influence Analysis</p>
+                <p className="text-sm text-slate-600 mt-1">Top 20 Investors: Proxy Influence Analysis</p>
               </div>
               <div
                 onClick={() => setChartModalVisible(false)}

@@ -413,13 +413,18 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                     )}
                     {analyticsData && (
                       <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
-                        <button
-                          onClick={() => setChartModalVisible(true)}
-                          className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border
-                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                        >
-                          <Lucide icon="BarChart3" className="w-4 h-4" />
-                        </button>
+                        <div className="relative">
+                          <button
+                            onClick={() => setChartModalVisible(true)}
+                            className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border
+                                       font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                          >
+                            <Lucide icon="BarChart3" className="w-4 h-4" />
+                          </button>
+                          <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                            NEW
+                          </span>
+                        </div>
                       </Tippy>
                     )}
                     </>}
@@ -697,7 +702,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
-                <p className="text-sm text-slate-600 mt-1">Top 20 Investor</p>
+                <p className="text-sm text-slate-600 mt-1">Top 20 Investors</p>
               </div>
               <div
                 onClick={() => setChartModalVisible(false)}

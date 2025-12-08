@@ -3,6 +3,20 @@ import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
 import React, { useState, useEffect, createRef, useRef } from "react";
 import type { MouseEvent } from "react";
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'gen-search-widget': {
+        configid?: string;
+        location?: string;
+        triggerid?: string;
+        alwaysOpened?: boolean;
+        children?: React.ReactNode;
+      };
+    }
+  }
+}
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
 import {
@@ -58,7 +72,7 @@ import { dashboardService } from "@/services/dashboard";
 import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
-import SearchWidget from "@/components/SearchWidget";
+import SearchWidgetIframe from "@/components/SearchWidget";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -851,8 +865,8 @@ function Main() {
                   "/engagement-question",
                   "/custom-reports",
                   "/voting-guidelines",
-                ]?.includes(location.pathname) || 
-                location.pathname.startsWith("/proxy-contest-detail/") ? (
+                ]?.includes(location.pathname) ||
+                  location.pathname.startsWith("/proxy-contest-detail/") ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
                     {location.pathname.includes("/notes") &&
@@ -1131,9 +1145,8 @@ function Main() {
                     <Menu.Item>
                       {({ active }) => (
                         <button
-                          className={`${
-                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          className={`${active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                            } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                           onClick={() => {
                             navigate("/login");
                             dispatch(logout());
@@ -1230,42 +1243,43 @@ function Main() {
         />
       )}
 
-      <Dialog size="lg" open={basicModalPreview} onClose={handleCloseModal}>
-        <Dialog.Panel className="p-4 h-full flex flex-col max-h-[70vh] w-full max-w-4xl mx-auto">
-          <Dialog.Title className="mb-3">
+      <Dialog size={"2xl"} open={basicModalPreview} onClose={handleCloseModal} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-2">
+          <Dialog.Panel className="relative bg-white rounded-lg shadow-xl p-8 w-[90vw] h-[70vh] flex flex-col overflow-hidden">
+          <Dialog.Title className="mb-3 relative">
             <div>
               <h2 className="text-lg font-semibold text-left">AI Assistant (Beta)</h2>
               <p className="text-xs text-gray-500 mt-1">AI Assistant can make mistakes. Verify important info.</p>
             </div>
-            <div
+            <button
               onClick={handleCloseModal}
-              className="absolute top-0 right-0 mt-4 mr-4 cursor-pointer"
+              className="absolute top-0 right-0 mt-0 mr-0 cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-colors"
+              aria-label="Close modal"
             >
               <Lucide icon="X" className="w-6 h-6 text-slate-400" />
-            </div>
+            </button>
           </Dialog.Title>
-          
-          <div className="flex gap-3 flex-1 min-h-0">
-            {/* Left Section - AI Assistant (60% width) */}
-            <div className="w-[60%] flex flex-col min-h-0">
-              <iframe
-                src="/ai-search"
-                className="w-full flex-1 border border-gray-200 rounded-lg"
-                title="AI Assistant (Beta)"
-              />
+
+          <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
+            {/* Left Section - AI Assistant (65% width) */}
+            <div className="w-[65%] flex flex-col min-h-0">
+              <div className="w-full flex-1 border border-gray-200 rounded-lg overflow-hidden relative">
+                <SearchWidgetIframe />
+              </div>
             </div>
-            
-            {/* Right Section - Logo and Recommended Questions (40% width) */}
-            <div className="w-[40%] flex flex-col min-h-0">
+
+            {/* Right Section - Logo and Recommended Questions (35% width) */}
+            <div className="w-[35%] flex flex-col min-h-0">
               {/* ZMH Logo */}
               <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-2 mb-3">
-                <img 
-                  src={logo} 
-                  alt="ZMH Analytics Logo" 
+                <img
+                  src={logo}
+                  alt="ZMH Analytics Logo"
                   className="w-12 h-12 object-contain"
                 />
               </div>
-              
+
               {/* Recommended Questions */}
               <div className="flex-1 overflow-y-auto">
                 <div className="flex items-center justify-between mb-2">
@@ -1286,7 +1300,7 @@ function Main() {
                       What are Blackrock's engagement priorities?
                     </span>
                   </button>
-                  
+
                   <button
                     onClick={() => handleCopyQuestion("How does State Street evaluate shareholder proposals on climate?")}
                     className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
@@ -1295,7 +1309,7 @@ function Main() {
                       How does State Street evaluate shareholder proposals on climate?
                     </span>
                   </button>
-                  
+
                   <button
                     onClick={() => handleCopyQuestion("How does Vanguard vote on say on pay proposals?")}
                     className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
@@ -1308,7 +1322,8 @@ function Main() {
               </div>
             </div>
           </div>
-        </Dialog.Panel>
+          </Dialog.Panel>
+        </div>
       </Dialog>
 
       {/* Podcast Modal */}
@@ -1327,14 +1342,14 @@ function Main() {
           </Dialog.Title>
           <Dialog.Description>
             <div className="mt-4">
-              <iframe 
-                src="https://player.rss.com/the-deep-dive-podcast/?theme=light&v=2" 
-                title="The Deep Dive Podcast" 
-                width="100%" 
-                height="393px" 
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen 
+              <iframe
+                src="https://player.rss.com/the-deep-dive-podcast/?theme=light&v=2"
+                title="The Deep Dive Podcast"
+                width="100%"
+                height="393px"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
                 scrolling="no"
               >
                 <a href="https://rss.com/podcasts/the-deep-dive-podcast/">The Deep Dive Podcast</a>
@@ -1343,6 +1358,8 @@ function Main() {
           </Dialog.Description>
         </Dialog.Panel>
       </Dialog>
+
+
 
       {/* AI Bot Modal & Button */}
     </div>
