@@ -342,18 +342,16 @@ const index = () => {
                                 </span>
                               </Table.Td>
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                <div className="flex items-center justify-center gap-1">
-                                  Proxy Advisory Influence
-                                  {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
-                                    <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
-                                      <Lucide
-                                        icon="BarChart3"
-                                        className="w-4 h-4 text-primary cursor-pointer hover:text-primary/80"
-                                        onClick={() => setChartModalVisible(true)}
-                                      />
-                                    </Tippy>
-                                  )}
-                                </div>
+                                <span>Proxy Advisory Influence {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
+                                  <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                                    <Lucide
+                                      icon="BarChart3"
+                                      className="w-4 h-4 ml-1 text-primary cursor-pointer inline hover:text-primary/80"
+                                      onClick={() => setChartModalVisible(true)}
+                                    />
+                                  </Tippy>
+                                )}
+                                </span>
                               </Table.Td>
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 UN PRI Signatory
@@ -818,12 +816,12 @@ const index = () => {
                             const radius = innerRadius + (outerRadius - innerRadius) * 1.3;
                             const x = cx + radius * Math.cos(-midAngle * RADIAN);
                             const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                            
+
                             // Calculate line end points for leader lines
                             const lineRadius = outerRadius + 15;
                             const lineX = cx + lineRadius * Math.cos(-midAngle * RADIAN);
                             const lineY = cy + lineRadius * Math.sin(-midAngle * RADIAN);
-                            
+
                             // Extend line horizontally (shorter extension)
                             const extendedX = lineX + (lineX > cx ? 25 : -25);
 
