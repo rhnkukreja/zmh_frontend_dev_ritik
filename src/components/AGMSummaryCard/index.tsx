@@ -697,7 +697,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
-                <p className="text-sm text-slate-600 mt-1">Top 20 Investor: Voting Data Analysis</p>
+                <p className="text-sm text-slate-600 mt-1">Top 20 Investor</p>
               </div>
               <div
                 onClick={() => setChartModalVisible(false)}
