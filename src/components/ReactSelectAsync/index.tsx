@@ -194,6 +194,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   ]); // Refresh options when company or year changes
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
+    // Clear input value after selection
+    setInputValue("");
   };
   const handleInputChange = (newValue: string) => {
     const safeValue = newValue || "";
@@ -236,19 +238,47 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       maxWidth: '100%',
       borderColor: state.isFocused ? '#800000' : '#e2e8f0',
       boxShadow: state.isFocused ? '0 0 0 1px #800000' : 'none',
+      outline: 'none !important',
       '&:hover': {
         borderColor: '#800000',
       },
+      '&:focus': {
+        outline: 'none !important',
+        boxShadow: '0 0 0 1px #800000'
+      },
+      '&:focus-within': {
+        outline: 'none !important',
+        boxShadow: '0 0 0 1px #800000'
+      }
     }),
     input: (provided: any) => ({
       ...provided,
       minWidth: '100px', // Ensures input doesn't shrink too much
       width: 'auto', // Allows input to grow
+      color: '#374151',
+      outline: 'none !important',
+      boxShadow: 'none !important',
+      border: 'none !important',
+      '&::selection': {
+        backgroundColor: 'transparent !important',
+        color: 'inherit !important'
+      },
+      '&:focus': {
+        outline: 'none !important',
+        boxShadow: 'none !important',
+        border: 'none !important'
+      }
+    }),
+    placeholder: (provided: any) => ({
+      ...provided,
+      color: '#9CA3AF'
     }),
     valueContainer: (provided: any) => ({
       ...provided,
       padding: '2px 8px',
       flexWrap: 'wrap',
+      outline: 'none !important',
+      boxShadow: 'none !important'
     }),
     multiValue: (provided: any) => ({
       ...provided,

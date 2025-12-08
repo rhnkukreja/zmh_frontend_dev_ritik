@@ -126,6 +126,23 @@ const CreatableInputSelect: React.FC<CreatableInputSelectProps> = ({
             borderColor: '#6B7280',
           },
         }),
+        input: (provided) => ({
+          ...provided,
+          color: '#374151',
+          '&::selection': {
+            backgroundColor: 'transparent'
+          }
+        }),
+        placeholder: (provided) => ({
+          ...provided,
+          color: '#9CA3AF'
+        }),
+        option: (provided, state) => ({
+          ...provided,
+          backgroundColor: state.isSelected ? 'transparent' : state.isFocused ? '#F3F4F6' : 'white',
+          color: '#374151',
+          cursor: 'pointer'
+        }),
         multiValue: (provided) => ({
           ...provided,
           backgroundColor: '#F3F4F6',

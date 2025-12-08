@@ -126,6 +126,93 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     );
   };
 
+  // Custom styles to fix blue selection box and maintain proper styling
+  const customStyles = {
+    control: (provided: any, state: any) => ({
+      ...provided,
+      borderColor: '#d1d5db',
+      boxShadow: state.isFocused ? '0 0 0 1px #d1d5db' : 'none',
+      border: '1px solid #d1d5db !important',
+      outline: 'none',
+      minHeight: '42px',
+      '&:hover': {
+        borderColor: '#d1d5db',
+        border: '1px solid #d1d5db !important'
+      },
+      '&:focus': {
+        borderColor: '#d1d5db',
+        boxShadow: '0 0 0 1px #d1d5db',
+        border: '1px solid #d1d5db !important',
+        outline: 'none'
+      },
+      '&:focus-within': {
+        borderColor: '#d1d5db',
+        boxShadow: '0 0 0 1px #d1d5db',
+        border: '1px solid #d1d5db !important',
+        outline: 'none'
+      }
+    }),
+    input: (provided: any) => ({
+      ...provided,
+      color: '#374151',
+      outline: 'none !important',
+      boxShadow: 'none !important',
+      border: 'none !important',
+      background: 'transparent !important',
+      '&::selection': {
+        backgroundColor: 'transparent !important',
+        color: 'inherit !important'
+      },
+      '&:focus': {
+        outline: 'none !important',
+        boxShadow: 'none !important',
+        border: 'none !important',
+        background: 'transparent !important'
+      }
+    }),
+    valueContainer: (provided: any) => ({
+      ...provided,
+      padding: '2px 8px'
+    }),
+    placeholder: (provided: any) => ({
+      ...provided,
+      color: '#9ca3af'
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      zIndex: 999,
+      border: '1px solid #e5e7eb',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+    }),
+    option: (provided: any, state: any) => ({
+      ...provided,
+      backgroundColor: state.isSelected ? 'transparent' : state.isFocused ? '#f3f4f6' : 'white',
+      color: '#374151',
+      cursor: 'pointer',
+      padding: 0,
+      '&:hover': {
+        backgroundColor: '#f3f4f6'
+      }
+    }),
+    multiValue: (provided: any) => ({
+      ...provided,
+      backgroundColor: '#e5e7eb',
+      border: '1px solid #d1d5db'
+    }),
+    multiValueLabel: (provided: any) => ({
+      ...provided,
+      color: '#374151'
+    }),
+    multiValueRemove: (provided: any) => ({
+      ...provided,
+      color: '#6b7280',
+      '&:hover': {
+        backgroundColor: '#ef4444',
+        color: 'white'
+      }
+    })
+  };
+
   return (
     <Select
       isMulti
@@ -137,10 +224,15 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         if (actionMeta.action === 'input-change') {
           setInputValue(newValue);
         }
+        // Clear input value when user selects an option
+        if (actionMeta.action === 'set-value') {
+          setInputValue('');
+        }
       }}
       inputValue={inputValue}
       placeholder={showLoading || !hasInitialLoad ? "Loading options..." : placeholder}
       hideSelectedOptions={false}
+      styles={customStyles}
       components={{
         Option: CustomOption,
         NoOptionsMessage: () => (
