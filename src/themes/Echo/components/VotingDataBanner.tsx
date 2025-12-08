@@ -71,8 +71,7 @@ const VotingDataBanner = () => {
             <div className="flex-1 space-y-2">
               <div className="flex-1 space-y-2">
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                <strong>Ballie Gifford</strong> Q3, <strong> BlackRock</strong> Q2, and<strong> State Street</strong> Q1 2025 engagement details are
-                  now available in the Engagement module.
+                <strong>Analytics and charts </strong> have been added to the dashboard.
                 </p>
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
                   <strong>BlackRock, Vanguard, Dimensional, and State Street </strong>Q3 2025 voting data has been added to the Dashboard.
