@@ -299,7 +299,7 @@ const index = () => {
                     <h1 className="text-xl font-bold mb-4">
                       Top {dashboardDataList?.length || 20} Investors{" "}
                       <span className="text-lg font-bold">
-                        ({dashboardDataList?.total_percent_ownership} of shares outstanding)
+                        ({dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership} of shares outstanding)
                       </span>
                     </h1>
                   </div>
